@@ -10,7 +10,7 @@ https://pypi.org/manage/projects/
 More secure to use twine to upload
 $ pip3 install twine
 $ python3 setup.py sdist
-$ twine upload dist/keri-0.0.1.tar.gz
+$ twine upload dist/hio-0.0.1.tar.gz
 
 
 Best practices for setup.py and requirements.txt
@@ -31,10 +31,12 @@ from setuptools import setup
 
 setup(
     name='hio',
-    version='0.0.1',  #  also change in src/hio/__init__.py
+    version='0.0.2',  #  also change in src/hio/__init__.py
     license='Apache Software License 2.0',
-    description='Key Event Receipt Infrastructure',
-    long_description="HIO Hierarchical Concurrency and Async IO. Rich contextual async coroutines.",
+    description='Hierarchical Concurrency with Async IO',
+    long_description=("HIO Hierarchical Concurrency and Asynchronous IO Library. "
+                      "Rich structured contextual concurrrent coroutines with"
+                      " asynchrounous IO modules."),
     author='Samuel M. Smith',
     author_email='smith.samuel.m@gmail.com',
     url='https://github.com/ProSapien/hio',
