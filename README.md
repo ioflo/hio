@@ -1,2 +1,4 @@
 # hio
-Python Hierarchical Concurrency Rich Context Asynchronous IO.  
+## Hierarchical Concurrency Asyncrounous IO Library in Python
+
+Rich context structured concurrency with asynchronous IO.
