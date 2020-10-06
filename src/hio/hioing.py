@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 """
+hio.hioing module
+
 Generic Constants and Classes
+Exception Classes
+
 """
 import sys
 from collections import namedtuple
