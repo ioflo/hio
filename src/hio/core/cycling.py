@@ -1,9 +1,75 @@
 # -*- encoding: utf-8 -*-
 """
-hio
 hio.core.cycling Module
 """
+
 from ..hioing import ValidationError, VersionError
+
+
+
+class Cycler():
+    """
+    Cycler is root hierarchical time slice cycling object
+    Uses relative cycle time in seconds tracked by .tyme property and advanced
+    by .tock method.
+    .tyme may be artificial time or real time in seconds.
+
+    Attributes:
+
+    Properties:
+        .tyme is float relative cycle time, tyme is artificial time
+
+    """
+    def __init__(self, tyme=None, tick=None):
+        """
+        Initialize instance
+        Parameters:
+            tyme is float cycle time in seconds
+            time is fload tick time in seconds
+        """
+        self.tyme = float(tyme) if tyme is not None else 0.0
+        self.tick = float(tick) if tick is not None else 1.0
+
+    @property
+    def tyme(self):
+        """
+        tyme property getter, get ._tyme
+        .tyme is float cycle time in seconds
+        """
+        return self._tyme
+
+    @tyme.setter
+    def tyme(self, tyme):
+        """
+        cycle time property setter, set ._tyme to tyme
+        """
+        self._tyme = float(tyme)
+
+    @property
+    def tick(self):
+        """
+        tick property getter, get ._tick
+        .tick is float cycle time .tyme increment in seconds
+        """
+        return self._tick
+
+    @tick.setter
+    def tick(self, tick):
+        """
+        cycle time increment property setter, set ._tick to tick
+        """
+        self._tick= float(tick)
+
+    def tock(self, tick=None):
+        """
+        Advance cycle time .tyme by tick seconds when provided othewise by .tick
+        and return new .tyme
+        Parameters:
+            tick is float of amount of time in seconds to change .tyme
+        """
+        self.tyme += float(tick if tick is not None else self.tick)
+        return self.tyme
+
 
 
 class Tymer():
@@ -96,68 +162,6 @@ class Tymer():
         No time lost. Useful to extend Tymer so no time lost
         """
         return self.start(tyme=self._stop, duration=duration)
-
-
-class Cycler():
-    """
-    Cycler is root hierarchical time slice cycling object
-    Uses relative cycle time in seconds tracked by .tyme property and advanced
-    by .tock method.
-    .tyme may be artificial time or real time in seconds.
-
-    Attributes:
-
-    Properties:
-        .tyme is float relative cycle time, tyme is artificial time
-
-    """
-    def __init__(self, tyme=None):
-        """
-        Initialize instance
-        Parameters:
-            tyme is float cycle time in seconds
-        """
-        self.tyme = float(tyme) if tyme is not None else 0.0
-
-    @property
-    def tyme(self):
-        """
-        tyme property getter, get ._tyme
-        .tyme is float cycle time in seconds
-        """
-        return self._tyme
-
-    @tyme.setter
-    def tyme(self, tyme):
-        """
-        cycle time property setter, set ._tyme to tyme
-        """
-        self._tyme = float(tyme)
-
-    @property
-    def tick(self):
-        """
-        tick property getter, get ._tick
-        .tick is float cycle time .tyme increment in seconds
-        """
-        return self._tick
-
-    @tick.setter
-    def tick(self, tick):
-        """
-        cycle time increment property setter, set ._tick to tick
-        """
-        self._tick= float(tick)
-
-    def tock(self, tick=None):
-        """
-        Advance cycle time .tyme by tick seconds when provided othewise by .tick
-        and return new .tyme
-        Parameters:
-            tick is float of amount of time in seconds to change .tyme
-        """
-        self.tyme += float(tick if tick is not None else self.tick)
-        return self.tyme
 
 
 
