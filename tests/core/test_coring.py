@@ -3,6 +3,7 @@
 tests.core.test_coring module
 
 """
+
 import pytest
 
 from hio.core.coring import (normalizeHost, getDefaultHost, getDefaultBroadcast,
