@@ -5,7 +5,7 @@ tests.core.test_cycling module
 """
 import pytest
 
-from hio.core.cycling import Cycler, Tymer
+from hio.base.cycling import Cycler, Tymer
 
 def test_cycler():
     """
