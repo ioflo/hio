@@ -24,12 +24,14 @@ class HioError(Exception):
     To use   raise HioError("Error: message")
     """
 
+
 class ValidationError(HioError):
     """
     Validation related errors
     Usage:
         raise ValidationError("error message")
     """
+
 
 class VersionError(ValidationError):
     """
