@@ -120,8 +120,6 @@ def test_tymer():
     assert tymer.elapsed == 1.75
     assert tymer.remaining == -0.75
     assert tymer.expired == True
-
-
     """End Test """
 
 if __name__ == "__main__":
