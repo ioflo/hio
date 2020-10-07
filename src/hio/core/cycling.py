@@ -93,7 +93,7 @@ class Tymer():
 
     """
 
-    def __init__(self, cycler, duration = 0.0):
+    def __init__(self, cycler=None, duration=0.0):
         """
         Initialization method for instance.
         Parameters:
@@ -102,7 +102,7 @@ class Tymer():
         """
         self._stop =  0.0
         self._start = 0.0
-        self.cycler = cycler
+        self.cycler = cycler if cycler is not None else Cycler()
         self.start(duration=duration)
 
 

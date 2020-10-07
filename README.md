@@ -3,9 +3,9 @@
 ## Rich Hierachical Structured Concurrency with Asynchronous IO
 
 This builds on very early work on hierarchical structured concurrency with
-lifecycle contexts from [ioflo](https://ioflo.com) and
-[ioflo github](https://github.com/ioflo/ioflo) and
-[ioflo manuals](https://github.com/ioflo/ioflo_manuals)
+lifecycle contexts from [ioflo](https://ioflo.com),
+[ioflo github](https://github.com/ioflo/ioflo), and
+[ioflo manuals](https://github.com/ioflo/ioflo_manuals).
 
 ## Structured Concurrency with Asynchronous IO
 

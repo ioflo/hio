@@ -36,7 +36,77 @@ def test_cycler():
 
     """End Test """
 
+def test_tymer():
+    """
+    Test Tymer class
+    """
+    tymer = Tymer()
+    assert isinstance(tymer.cycler, Cycler)
+    assert tymer.cycler.tyme == 0.0
+    assert tymer.cycler.tick == 1.0
 
+    assert tymer.duration == 0.0
+    assert tymer.elapsed == 0.0
+    assert tymer.remaining == 0.0
+    assert tymer.expired == True
+
+    tymer.cycler.tick = 0.25
+    tymer.start(duration = 1.0)
+    assert tymer.duration == 1.0
+    assert tymer.elapsed ==  0.0
+    assert tymer.remaining == 1.0
+    assert tymer.expired == False
+
+    tymer.cycler.tock()
+    assert tymer.cycler.tyme == 0.25
+    assert tymer.elapsed ==  0.25
+    assert tymer.remaining == 0.75
+    assert tymer.expired == False
+
+    tymer.cycler.tock()
+    tymer.cycler.tock()
+    assert tymer.cycler.tyme == 0.75
+    assert tymer.elapsed ==  0.75
+    assert tymer.remaining == 0.25
+    assert tymer.expired == False
+
+    tymer.cycler.tock()
+    assert tymer.cycler.tyme == 1.0
+    assert tymer.elapsed ==  1.0
+    assert tymer.remaining == 0.0
+    assert tymer.expired == True
+
+    tymer.cycler.tock()
+    assert tymer.cycler.tyme == 1.25
+    assert tymer.elapsed ==  1.25
+    assert tymer.remaining == -0.25
+    assert tymer.expired == True
+
+    tymer.restart()
+    assert tymer.duration == 1.0
+    assert tymer.elapsed == 0.25
+    assert tymer.remaining == 0.75
+    assert tymer.expired == False
+
+    tymer.cycler.tyme = 2.0
+    assert tymer.elapsed ==  1.0
+    assert tymer.remaining == 0.0
+    assert tymer.expired == True
+
+    tymer.restart(duration=0.25)
+    assert tymer.duration == 0.25
+    assert tymer.elapsed ==  0.0
+    assert tymer.remaining == 0.25
+    assert tymer.expired == False
+
+    tymer.cycler.tock()
+    assert tymer.elapsed ==  0.25
+    assert tymer.remaining == 0.0
+    assert tymer.expired == True
+
+
+
+    """End Test """
 
 if __name__ == "__main__":
-    test_cycler()
+    test_tymer()
