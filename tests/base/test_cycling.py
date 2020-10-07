@@ -104,6 +104,22 @@ def test_tymer():
     assert tymer.remaining == 0.0
     assert tymer.expired == True
 
+    tymer = Tymer(duration=1.0, start=0.25)
+    assert tymer.cycler.tyme == 0.0
+    assert tymer.duration == 1.0
+    assert tymer.elapsed ==  -0.25
+    assert tymer.remaining == 1.25
+    assert tymer.expired == False
+    tymer.cycler.tock()
+    assert tymer.cycler.tyme == 1.0
+    assert tymer.elapsed ==  0.75
+    assert tymer.remaining == 0.25
+    assert tymer.expired == False
+    tymer.cycler.tock()
+    assert tymer.cycler.tyme == 2.0
+    assert tymer.elapsed == 1.75
+    assert tymer.remaining == -0.75
+    assert tymer.expired == True
 
 
     """End Test """

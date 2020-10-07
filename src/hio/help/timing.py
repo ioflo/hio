@@ -23,208 +23,183 @@ class RetroTimerError(TimerError):
 
 
 class Timer():
-    """ Class to manage real elaspsed time.  needs time module
-        attributes:
-        .duration = time duration of timer start to stop
-        .start = time started
-        .stop = time when timer expires
+    """
+    Class to manage real elaspsed time using time module.
+    Attributes:
+        ._start is start tyme in seconds
+        ._stop  is stop tyme in seconds
 
-        properties:
-        .elaspsed = time elasped since start
-        .remaining = time remaining until stop
-        .expired = True if expired, False otherwise
+    Properties:
+        .duration is float time duration in seconds of timer from ._start to ._stop
+        .elaspsed is float time elasped in seconds since ._start
+        .remaining is float time remaining in seconds until ._stop
+        .expired is boolean, True if expired, False otherwise, i.e. time >= ._stop
 
-        methods:
-        .extend() = extends/shrinks timer duration
-        .repeat() = restarts timer at last .stop so no time lost
-        .restart() = restarts timer
+    methods:
+        .start()  start timer at current time
+        .restart() = restart timer at last ._stop so no time lost
     """
 
-    def __init__(self, duration = 0.0):
-        """ Initialization method for instance.
-            duration in seconds (fractional)
+    def __init__(self, duration=0.0, start=None):
         """
-        self.restart(start=time.time(), duration=duration)
-
-    def getElapsed(self): #for property
-        """ Computes elapsed time in seconds (fractional) since start.
-            if zero then hasn't started yet
+        Initialization method for instance.
+        Parameters:
+            duration is float duration of timer in seconds (fractional)
+            start is float optional start time in seconds allows starting before
+               or after current time
         """
-        return max(0.0, time.time() - self.start)
-    elapsed = property(getElapsed, doc='Elapsed time.')
+        self._start = float(start) if start is not None else time.time()
+        self._stop = self._start + float(duration)  # need for default duration
+        self.start(duration=duration, start=start)
 
-    def getRemaining(self):# for property
-        """ Returns time remaining in seconds (fractional) before expires.
-            returns zero if it has already expired
+
+    @property
+    def duration(self):
         """
-        return max(0.0, self.stop - time.time())
-    remaining = property(getRemaining, doc='Remaining time.')
-
-    def getExpired(self):
-        if (time.time() >= self.stop):
-            return True
-        else:
-            return False
-    expired = property(getExpired, doc='True if expired, False otherwise')
-
-    def restart(self,start=None, duration=None):
-        """ Starts timer at start time secs for duration secs.
-            (fractional from epoc)
-            If start arg is missing then restarts at current time
-            If duration arg is missing then restarts for current duration
+        duration property getter,  .duration = ._stop - ._start
+        .duration is float duration tyme
         """
-        if start is not None:
-            self.start = abs(start) #must be non negative
-        else: #use current time
-            self.start = time.time()
+        return (self._stop - self._start)
 
-        if duration is not None:
-            self.duration = abs(duration) #must be non negative
-        #Otherwise keep old duration
 
-        self.stop = self.start + self.duration
-
-        return (self.start, self.stop)
-
-    def repeat(self):
-        """ Restarts timer at stop so no time lost
-
+    @property
+    def elapsed(self):
         """
-        return self.restart(start=self.stop)
-
-    def extend(self, extension=None):
-        """ Extends timer duration for additional extension seconds (fractional).
-            Useful so as not to lose time when  need more/less time on timer
-
-            If extension negative then shortens existing duration
-            If extension arg missing then extends for the existing duration
-            effectively doubling the time
-
+        elapsed time property getter,
+        Returns elapsed time in seconds (fractional) since ._start.
         """
-        if extension is None: #otherwise extend by .duration or double
-            extension = self.duration
+        return (time.time() - self._start)
 
-        duration = self.duration + extension
 
-        return self.restart(start=self.start, duration=duration)
+    @property
+    def remaining(self):
+        """
+        remaining time property getter,
+        Returns remaining time in seconds (fractional) before ._stop.
+        """
+        return (self._stop - time.time())
 
-class MonoTimer():
-    """ Class to manage real elaspsed time with monotonic guarantee.
-        If the system clock is retrograded (moved back in time)
-        while the timer is running then time.time() could move
-        to before the start time.
-        A MonoTimer detects this retrograde and if adjust is True then
-        shifts the timer back otherwise it raises a TimerRetroError
-        exception.
-        This timer is not able to detect a prograded clock
-        (moved forward in time)
 
-        Needs time module
-        attributes:
-        .duration = time duration of timer start to stop
-        .start = time started
-        .stop = time when timer expires
-        .retro = automaticall shift timer if retrograded clock detected
+    @property
+    def expired(self):
+        """
+        Returns True if timer has expired, False otherwise.
+        time.time() >= ._stop,
+        """
+        return (time.time() >= self._stop)
 
-        properties:
-        .elaspsed = time elasped since start
-        .remaining = time remaining until stop
-        .expired = True if expired, False otherwise
 
-        methods:
-        .extend() = extends/shrinks timer duration
-        .repeat() = restarts timer at last .stop so no time lost
-        .restart() = restarts timer
+    def start(self, duration=None, start=None):
+        """
+        Starts Timer of duration secs at start time start secs.
+            If duration not provided then uses current duration
+            If start not provided then starts at current time.time()
+        """
+        # remember current duration when duration not provided
+        duration = float(duration) if duration is not None else self.duration
+        self._start = float(start) if start is not None else time.time()
+        self._stop = self._start + duration
+        return self._start
+
+
+    def restart(self, duration=None):
+        """
+        Lossless restart of Timer at start = ._stop for duration if provided,
+        Otherwise current duration.
+        No time lost. Useful to extend Timer so no time lost
+        """
+        return self.start(duration=duration, start=self._stop)
+
+
+
+class MonoTimer(Timer):
+    """
+    Class to manage real elaspsed time using time module but with monotonically
+    increating time guarantee in spite of system time being retrograded.
+
+    If the system clock is retrograded (moved back in time) while the timer is
+    running then time.time() could move to before the start time.
+    MonoTimer detects this retrograde and if retro is True then
+    retrogrades the start and stop times back Otherwise it raises a TimerRetroError.
+    MonoTimer is not able to detect a prograded clock (moved forward in time)
+
+    Attributes:
+        ._start is start time in seconds
+        ._stop  is stop time in seconds
+        ._last is last measured time in seconds with retrograde handling
+        .retro is boolean If True retrograde ._start and ._stop when time is retrograded.
+
+    Properties:
+        .duration is float time duration in seconds of timer from ._start to ._stop
+        .elaspsed is float time elasped in seconds since ._start
+        .remaining is float time remaining in seconds until ._stop
+        .expired is boolean True if expired, False otherwise, i.e. time >= ._stop
+        .latest is float latest measured time in seconds with retrograte handling
+
+    methods:
+        .start() = start timer at current time returns start time
+        .restart() = restart timer at last ._stop so no time lost, returns start time
     """
 
-    def __init__(self, duration = 0.0, retro=False):
-        """ Initialization method for instance.
-            duration in seconds (fractional)
+    def __init__(self, duration=0.0, start=None, retro=True):
         """
-        self.retro = True if retro else False
-        self.start = None
-        self.stop = None
-        self.latest = time.time()  # last time checked current time
-        self.restart(start=self.latest, duration=duration)
+        Initialization method for instance.
+        Parameters:
+            duration in seconds (fractional)
+            start is float optional start time in seconds allows starting before
+               or after current time
+            retro is boolean IF True automaticall shift timer whenever
+                retrograded clock detected Otherwise ignore
+        """
+        self._start = float(start) if start is not None else time.time()
+        self._stop = self._start + float(duration)  # need for default duration
+        self._last = self._start
+        self.retro = True if retro else False  #  ensure boolean
+        self.start(duration=duration, start=start)
 
-    def update(self):
-        '''
-        Updates .latest to current time.
-        Checks for retrograde movement of system time.time() and either
-        raises a TimerRetroErrorexception or adjusts the timer attributes to compensate.
-        '''
-        delta = time.time() - self.latest  # current time - last time checked
+
+    @property
+    def elapsed(self):
+        """
+        elapsed time property getter,
+        Returns elapsed time in seconds (fractional) since ._start.
+        """
+        return (self.latest - self._start)
+
+
+    @property
+    def remaining(self):
+        """
+        remaining time property getter,
+        Returns remaining time in seconds (fractional) before ._stop.
+        """
+        return (self._stop - self.latest)
+
+
+    @property
+    def expired(self):
+        """
+        Returns True if timer has expired, False otherwise.
+        .latest >= ._stop,
+        """
+        return (self.latest >= self._stop)
+
+    @property
+    def latest(self):
+        """
+        latest measured time property getter,
+        Returns latest measured time in seconds adjusted for retrograded system time.
+        """
+        delta = time.time() - self._last  # current time - last time checked
         if delta < 0:  # system clock has retrograded
-            if not self.retro:
-                raise excepting.TimerRetroError("Timer retrograded by {0} "
-                                                "seconds\n".format(delta))
-            self.start = self.start + delta
-            self.stop = self.stop + delta
+            if self.retro:
+                self._start += delta
+                self._stop += delta
+            else:
+                raise RetroTimerError("System time retrograded by {0} seconds"
+                                      " while timer running.".format(delta))
 
-        self.latest += delta
+        self._last += delta
+        return self._last
 
-    def getElapsed(self): #for property
-        """ Computes elapsed time in seconds (fractional) since start.
-            if zero then hasn't started yet
-        """
-        self.update()
-        return max(0.0, self.latest - self.start)
-    elapsed = property(getElapsed, doc='Elapsed time.')
 
-    def getRemaining(self):# for property
-        """ Returns time remaining in seconds (fractional) before expires.
-            returns zero if it has already expired
-        """
-        self.update()
-        return max(0.0, self.stop - self.latest)
-    remaining = property(getRemaining, doc='Remaining time.')
-
-    def getExpired(self):
-        self.update()
-        if (self.latest >= self.stop):
-            return True
-        else:
-            return False
-    expired = property(getExpired, doc='True if expired, False otherwise')
-
-    def restart(self,start=None, duration=None):
-        """ Starts timer at start time secs for duration secs.
-            (fractional from epoc)
-            If start arg is missing then restarts at current time
-            If duration arg is missing then restarts for current duration
-        """
-        self.update()
-        if start is not None:
-            self.start = abs(start) #must be non negative
-        else: #use current time
-            self.start = self.latest
-
-        if duration is not None:
-            self.duration = abs(duration) #must be non negative
-        #Otherwise keep old duration
-
-        self.stop = self.start + self.duration
-
-        return (self.start, self.stop)
-
-    def repeat(self):
-        """ Restarts timer at stop so no time lost
-
-        """
-        return self.restart(start=self.stop)
-
-    def extend(self, extension=None):
-        """ Extends timer duration for additional extension seconds (fractional).
-            Useful so as not to lose time when  need more/less time on timer
-
-            If extension negative then shortens existing duration
-            If extension arg missing then extends for the existing duration
-            effectively doubling the time
-
-        """
-        if extension is None: #otherwise extend by .duration or double
-            extension = self.duration
-
-        duration = self.duration + extension
-
-        return self.restart(start=self.start, duration=duration)
