@@ -3,6 +3,7 @@
 tests.help.test_timing module
 
 """
+import time
 import pytest
 
 from hio.help.timing import TimerError, RetroTimerError
@@ -15,80 +16,117 @@ def test_timer():
     """
     timer = Timer()
     assert timer.duration == 0.0
-    assert timer.elapsed == 0.0
-    assert timer.remaining == 0.0
+    assert timer.elapsed > 0.0
+    assert timer.remaining < 0.0
     assert timer.expired == True
 
-    timer.start(duration = 1.0)
-    assert timer.duration == 1.0
-    assert timer.elapsed ==  0.0
-    assert timer.remaining == 1.0
+    timer.restart(duration=0.125)
+    assert timer.duration == 0.125
+    assert timer.elapsed > 0.0
+    assert timer.remaining > 0.0
     assert timer.expired == False
-
-    timer.cycler.tock()
-    assert timer.cycler.tyme == 0.25
-    assert timer.elapsed ==  0.25
-    assert timer.remaining == 0.75
-    assert timer.expired == False
-
-    timer.cycler.tock()
-    timer.cycler.tock()
-    assert timer.cycler.tyme == 0.75
-    assert timer.elapsed ==  0.75
-    assert timer.remaining == 0.25
-    assert timer.expired == False
-
-    timer.cycler.tock()
-    assert timer.cycler.tyme == 1.0
-    assert timer.elapsed ==  1.0
-    assert timer.remaining == 0.0
+    time.sleep(0.125)
     assert timer.expired == True
 
-    timer.cycler.tock()
-    assert timer.cycler.tyme == 1.25
-    assert timer.elapsed ==  1.25
-    assert timer.remaining == -0.25
+    timer.start(duration = 0.125)
+    assert timer.duration == 0.125
+    assert timer.elapsed < 0.125
+    assert timer.remaining > 0.0
+    assert timer.expired == False
+    time.sleep(0.125)
     assert timer.expired == True
 
-    timer.restart()
-    assert timer.duration == 1.0
-    assert timer.elapsed == 0.25
-    assert timer.remaining == 0.75
+    timer = Timer(duration=0.125)
+    assert timer.duration == 0.125
+    assert timer.elapsed > 0.0
+    assert timer.remaining > 0.0
     assert timer.expired == False
-
-    timer.cycler.tyme = 2.0
-    assert timer.elapsed ==  1.0
-    assert timer.remaining == 0.0
+    time.sleep(0.125)
     assert timer.expired == True
 
-    timer.restart(duration=0.25)
-    assert timer.duration == 0.25
-    assert timer.elapsed ==  0.0
-    assert timer.remaining == 0.25
+    timer = Timer(duration=0.125, start=time.time() + 0.05)
+    assert timer.duration == 0.125
+    assert timer.elapsed < 0.0
+    assert timer.remaining > 0.125
     assert timer.expired == False
-
-    timer.cycler.tock()
-    assert timer.elapsed ==  0.25
-    assert timer.remaining == 0.0
+    time.sleep(0.175)
     assert timer.expired == True
 
-    timer = Tymer(duration=1.0, start=0.25)
-    assert timer.cycler.tyme == 0.0
-    assert timer.duration == 1.0
-    assert timer.elapsed ==  -0.25
-    assert timer.remaining == 1.25
+    timer = Timer(duration=0.125, start=time.time() - 0.05)
+    assert timer.duration == 0.125
+    assert timer.elapsed > 0.0
+    assert timer.remaining < 0.075
     assert timer.expired == False
-    timer.cycler.tock()
-    assert timer.cycler.tyme == 1.0
-    assert timer.elapsed ==  0.75
-    assert timer.remaining == 0.25
-    assert timer.expired == False
-    timer.cycler.tock()
-    assert timer.cycler.tyme == 2.0
-    assert timer.elapsed == 1.75
-    assert timer.remaining == -0.75
+    time.sleep(0.075)
     assert timer.expired == True
+
+    """End Test """
+
+def test_monotimer():
+    """
+    Test MonoTimer class
+    """
+    timer = MonoTimer()
+    assert timer.duration == 0.0
+    assert timer.elapsed > 0.0
+    assert timer.remaining < 0.0
+    assert timer.expired == True
+
+    timer.restart(duration=0.125)
+    assert timer.duration == 0.125
+    assert timer.elapsed > 0.0
+    assert timer.remaining > 0.0
+    assert timer.expired == False
+    time.sleep(0.125)
+    assert timer.expired == True
+
+    timer.start(duration = 0.125)
+    assert timer.duration == 0.125
+    assert timer.elapsed < 0.125
+    assert timer.remaining > 0.0
+    assert timer.expired == False
+    time.sleep(0.125)
+    assert timer.expired == True
+
+    timer = MonoTimer(duration=0.125)
+    assert timer.duration == 0.125
+    assert timer.elapsed > 0.0
+    assert timer.remaining > 0.0
+    assert timer.expired == False
+    time.sleep(0.125)
+    assert timer.expired == True
+
+    timer = MonoTimer(duration=0.125, start=time.time() + 0.05)  #
+    assert timer.duration == 0.125
+    assert timer.elapsed <= 0.0
+    assert timer.remaining < 0.125
+    assert timer.expired == False
+    time.sleep(0.175)
+    assert timer.expired == True
+
+    timer = MonoTimer(duration=0.125, start=time.time() - 0.05)
+    assert timer.duration == 0.125
+    assert timer.elapsed > 0.0
+    assert timer.remaining < 0.075
+    assert timer.expired == False
+    time.sleep(0.075)
+    assert timer.expired == True
+
+    timer = MonoTimer(duration=0.125, retro=False)
+    timer._last = timer._start + 0.05  # simulate retrograded
+    with pytest.raises(RetroTimerError):
+        assert timer.elapsed > 0.0
+
+
+    timer = MonoTimer(duration=0.125)
+    timer._last = timer._start + 0.05  # simulate retrograded
+    assert timer.elapsed > 0.0
+    assert timer.remaining > 0.0
+    assert timer.expired == False
+    time.sleep(0.125)
+    assert timer.expired == True
+
     """End Test """
 
 if __name__ == "__main__":
-    test_timer()
+    test_monotimer()
