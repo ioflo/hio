@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
 """
-hio.core.coring Module
+hio.core.tcping Module
 """
 
