@@ -6,6 +6,8 @@ hio.core.coring Module
 import subprocess
 import socket
 
+import netifaces
+
 from ..hioing import ValidationError
 
 
@@ -39,6 +41,28 @@ def normalizeHost(host):
 
     host = info[0][4][0]
     return host
+
+
+def getDefaultHost():
+    """
+    Returns host ip address of default interface using netifaces
+    """
+    iface = netifaces.gateways()['default'][netifaces.AF_INET][1]
+    info = netifaces.ifaddresses(iface)[netifaces.AF_INET][0]
+    host = info['addr']
+    return host
+
+
+def getDefaultBroadcast():
+    """
+    Returns broadcast ip address of default interface using netifaces
+
+    """
+    iface =  netifaces.gateways()['default'][netifaces.AF_INET][1]
+    info = netifaces.ifaddresses(iface)[netifaces.AF_INET][0]
+    bcast = info['broadcast']
+    return bcast
+
 
 def arpCreate(ether, host, interface="en0", temp=True):
     """
@@ -118,44 +142,4 @@ def arpDelete(host, interface="en0"):
                                                 interface))
     console.flush()
 
-
-
-try:  # only if netifaces installed
-    import netifaces
-
-except ImportError:
-    pass
-
-else:
-    def getDefaultHost():
-        """
-        Gets host ip address of default interface using netifaces
-
-        import netifaces
-        >>> def_gw_device = netifaces.gateways()['default'][netifaces.AF_INET][1]
-        This will get you the name of the device used by the default IPv4 route. You can get the MAC address of that interface like this:
-
-        >>> macaddr = netifaces.ifaddresses('enp0s25')[netifaces.AF_LINK][0]['addr']
-
-        """
-        iface = netifaces.gateways()['default'][netifaces.AF_INET][1]
-        info = netifaces.ifaddresses(iface)[netifaces.AF_INET][0]
-        host = info['addr']
-        return host
-
-    def getDefaultBroadcast():
-        """
-        Gets host ip address of default interface using netifaces
-
-        import netifaces
-        >>> def_gw_device = netifaces.gateways()['default'][netifaces.AF_INET][1]
-        This will get you the name of the device used by the default IPv4 route. You can get the MAC address of that interface like this:
-
-        >>> macaddr = netifaces.ifaddresses('enp0s25')[netifaces.AF_LINK][0]['addr']
-
-        """
-        iface =  netifaces.gateways()['default'][netifaces.AF_INET][1]
-        info = netifaces.ifaddresses(iface)[netifaces.AF_INET][0]
-        bcast = info['broadcast']
-        return bcast
 

@@ -75,6 +75,7 @@ setup(
     ],
     python_requires='>=3.8.*',
     install_requires=[
+        'netifaces>=0.10.9',
         'lmdb>=0.98',
         'pysodium>=0.7.5',
         'blake3>=0.1.5',
