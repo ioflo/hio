@@ -6,7 +6,6 @@ hio.core.cycling Module
 from ..hioing import ValidationError, VersionError
 
 
-
 class Cycler():
     """
     Cycler is root hierarchical time slice cycling object
