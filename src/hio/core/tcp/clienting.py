@@ -182,7 +182,7 @@ class Client():
     def reinitHostPort(self, ha=None, hostname=u'127.0.0.1', port=56000):
         """
         Reinit self.ha and self.hostname from ha = (host, port) or hostname port
-        self.ha is of form (host, port) where host is either dns name or ip
+        self.ha is of form (host, port) where host is either dns name or ip address
         self.hostname is hostname as dns name
         host eventually is host ip address output from normalizeHost()
         """

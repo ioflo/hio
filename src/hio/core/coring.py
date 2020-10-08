@@ -14,7 +14,7 @@ from ..hioing import ValidationError
 def normalizeHost(host):
     """
     Returns ip address host string in normalized dotted form or empty string
-    converts host parameter which may be the dns name not ip address
+    converts host parameter which may be the dns name or ip address
     Prefers ipv4 addresses over ipv6 in that it will only return the ipv6
     address if no ipv4 address equivalent is available
     """

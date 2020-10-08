@@ -497,7 +497,6 @@ class Acceptor(object):
     """
 
     def __init__(self,
-                 name=u'',
                  ha=None,
                  host=u'',
                  port=56000,
@@ -506,7 +505,6 @@ class Acceptor(object):
                  wlog=None):
         """
         Initialization method for instance.
-        name = user friendly name string for Acceptor
         ha = host address duple (host, port) for listen socket
         host = host address for listen socket, '' means any interface on host
         port = socket port for listen socket
@@ -514,12 +512,11 @@ class Acceptor(object):
         bufsize = buffer size
         wlog = WireLog object if any
         """
-        self.name = name
         self.ha = ha or (host, port)  # ha = host address
         eha = eha or self.ha
         if eha:
             host, port = eha
-            host = aioing.normalizeHost(host)
+            host = coring.normalizeHost(host)
             if host in ('0.0.0.0',):
                 host = '127.0.0.1'
             elif host in ("::", "0:0:0:0:0:0:0:0"):
@@ -639,17 +636,17 @@ class Server(Acceptor):
     Timeout = 1.0  # timeout in seconds
 
     def __init__(self,
-                 store=None,
+                 cycler=None,
                  timeout=None,
                  **kwa):
         """
         Initialization method for instance.
 
-        store = data store reference if any
-        timeout = default timeout for incoming connections
+        cycler = Cycler instance if any to pass to incomers for incoming connections
+        timeout = default timeout for to pass to incomers for  incoming connections
         """
         super(Server, self).__init__(**kwa)
-        self.store = store or storing.Store(stamp=0.0)
+        self.cycler = cycler or coring.Cycler()
         self.timeout = timeout if timeout is not None else self.Timeout
 
         self.ixes = odict()  # ready to rx tx incoming connections, Incomer instances
@@ -672,7 +669,7 @@ class Server(Acceptor):
                               bs=self.bs,
                               cs=cs,
                               wlog=self.wlog,
-                              store=self.store,
+                              cycler=self.cycler,
                               timeout=self.timeout)
             if ca in self.ixes and self.ixes[ca] is not incomer:
                 self.shutdownIx[ca]
@@ -850,7 +847,7 @@ class ServerTls(Server):
                                  bs=self.bs,
                                  cs=cs,
                                  wlog=self.wlog,
-                                 store=self.store,
+                                 cycler=self.cycler,
                                  timeout=self.timeout,
                                  context=self.context,
                                  version=self.version,
