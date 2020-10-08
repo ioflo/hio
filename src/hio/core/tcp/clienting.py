@@ -19,13 +19,14 @@ from .. import coring
 
 
 @contextmanager
-def openClient(uid="test", cycler=None, cls=None):
+def openClient(cycler=None, timeout=None, cls=None):
     """
     Wrapper to create and open temporary (test) Client instances
     When used in with statement block, calls .close() on exit of with block
 
     Parameters:
-        name is str name of client
+        cycler is Cycler instance if provided
+        timeout is connection timeout in seconds
         cls is Class instance of subclass instance
 
     Usage:
@@ -39,7 +40,7 @@ def openClient(uid="test", cycler=None, cls=None):
     if cls is None:
         cls = Client
     try:
-        client = cls(uid=uid, cycler=cycler)
+        client = cls(cycler=cycler, timeout=timeout)
         client.reopen()
 
         yield client
@@ -61,10 +62,8 @@ class Client():
     """
     Timeout = 1.0  # timeout in seconds
     Reconnectable = False  # auto reconnect flag
-    Uid = 'client' # default uid
 
     def __init__(self,
-                 uid=None,
                  cycler=None,
                  timeout=None,
                  ha=None,
@@ -79,7 +78,6 @@ class Client():
         Initialization method for instance.
 
         Parameters:
-            uid = unique identifier for connection
             ha = host address duple (host, port) of remote server
             host = host address or tcp server to connect to
             port = socket port
@@ -91,7 +89,6 @@ class Client():
             txes = deque of data to send
             rxbs = bytearray of data received
         """
-        self.uid = uid if uid is not None else self.Uid
         self.cycler = cycler or cycling.Cycler(tyme=0.0)
         self.timeout = timeout if timeout is not None else self.Timeout
         self.tymer = cycling.Tymer(self.cycler, duration=self.timeout)

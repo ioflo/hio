@@ -1,6 +1,15 @@
 # -*- encoding: utf-8 -*-
 """
 hio.core.tcp.serving Module
+
+Accepter listens and accepts incoming TCP socket connections
+Server is subclass of Acceptor
+Server creates Incomers
+Incomer is accepted incoming socket connection
+
+ServerTls is subclass of Server
+IncomerTls is subclass of Incomer
+
 """
 
 import sys
@@ -11,115 +20,51 @@ import ssl
 from collections import deque
 from binascii import hexlify
 
-
-def initServerContext(context=None,
-                      version=None,
-                      certify=None,
-                      keypath=None,
-                      certpath=None,
-                      cafilepath=None
-                      ):
-    """
-    Initialize and return context for TLS Server
-    IF context is None THEN create a context
-
-    IF version is None THEN create context using ssl library default
-    ELSE create context with version
-
-    If certify is not None then use certify value provided Otherwise use default
-
-    context = context object for tls/ssl If None use default
-    version = ssl version If None use default
-    certify = cert requirement If None use default
-              ssl.CERT_NONE = 0
-              ssl.CERT_OPTIONAL = 1
-              ssl.CERT_REQUIRED = 2
-    keypath = pathname of local server side PKI private key file path
-              If given apply to context
-    certpath = pathname of local server side PKI public cert file path
-              If given apply to context
-    cafilepath = Cert Authority file path to use to verify client cert
-              If given apply to context
-    """
-    if context is None:  # create context
-        if not version:  # use default context
-            context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
-            context.verify_mode = certify if certify is not None else ssl.CERT_REQUIRED
-
-        else:  # create context with specified protocol version
-            context = ssl.SSLContext(version)
-            # disable bad protocols versions
-            context.options |= ssl.OP_NO_SSLv2
-            context.options |= ssl.OP_NO_SSLv3
-            # disable compression to prevent CRIME attacks (OpenSSL 1.0+)
-            context.options |= getattr(ssl._ssl, "OP_NO_COMPRESSION", 0)
-            # Prefer the server's ciphers by default fro stronger encryption
-            context.options |= getattr(ssl._ssl, "OP_CIPHER_SERVER_PREFERENCE", 0)
-            # Use single use keys in order to improve forward secrecy
-            context.options |= getattr(ssl._ssl, "OP_SINGLE_DH_USE", 0)
-            context.options |= getattr(ssl._ssl, "OP_SINGLE_ECDH_USE", 0)
-            # disallow ciphers with known vulnerabilities
-            context.set_ciphers(ssl._RESTRICTED_SERVER_CIPHERS)
-            context.verify_mode = certify if certify is not None else ssl.CERT_REQUIRED
-
-        if cafilepath:
-            context.load_verify_locations(cafile=cafilepath,
-                                          capath=None,
-                                          cadata=None)
-        elif context.verify_mode != ssl.CERT_NONE:
-            context.load_default_certs(purpose=ssl.Purpose.CLIENT_AUTH)
-
-        if keypath or certpath:
-            context.load_cert_chain(certfile=certpath, keyfile=keypath)
-    return context
+from ...base import cycling
+from .. import coring
 
 
 class Incomer(object):
     """
-    Manager class for incoming nonblocking TCP connections.
+    Class to service incoming nonblocking TCP connections.
+    Should only be used from Acceptor subclass
     """
     Timeout = 0.0  # timeout in seconds
 
     def __init__(self,
-                 name=u'',
-                 uid=0,
-                 ha=None,
-                 bs=None,
-                 ca=None,
-                 cs=None,
-                 wlog=None,
-                 store=None,
+                 cycler=None,
                  timeout=None,
-                 refreshable=True):
+                 ha=None,
+                 cs=None,
+                 refreshable=True,
+                 bs=8096,
+                 wlog=None
+                ):
 
         """
         Initialization method for instance.
-        name = user friendly name for connection
-        uid = unique identifier for connection
-        ha = host address duple (host, port) near side of connection
-        ca = virtual host address duple (host, port) far side of connection
-        cs = connection socket object
-        wlog = WireLog object if any
-        store = data store reference
+        cycler = Cycler instance
         timeout = timeout for .timer
+        ha = host address duple (host, port) near side of connection
+        cs = connection socket object
         refreshable = True if tx/rx activity refreshes timer False otherwise
+        bs = buffer size
+        wlog = WireLog object if any
         """
-        self.name = name
-        self.uid = uid
+        self.cycler = cycler or cycling.Cycler()
+        self.timeout = timeout if timeout is not None else self.Timeout
+        self.tymer = cycling.Tymer(cycler=self.cycler, duration=self.timeout)
         self.ha = ha
-        self.bs = bs
-        self.ca = ca
         self.cs = cs
-        self.wlog = wlog
-        self.cutoff = False # True when detect connection closed on far side
-        self.txes = deque()  # deque of data to send
-        self.rxbs = bytearray()  # bytearray of data received
         if self.cs:
             self.cs.setblocking(0)  # linux does not preserve blocking from accept
-        self.store = store or storing.Store(stamp=0.0)
-        self.timeout = timeout if timeout is not None else self.Timeout
-        self.timer = StoreTimer(self.store, duration=self.timeout)
+        self.cutoff = False # True when detect connection closed on far side
         self.refreshable = refreshable
+        self.bs = bs
+        self.txes = deque()  # deque of data to send
+        self.rxbs = bytearray()  # bytearray of data received
+        self.wlog = wlog
+
 
     def shutdown(self, how=socket.SHUT_RDWR):
         """
@@ -151,7 +96,7 @@ class Incomer(object):
             except socket.error as ex:
                 pass
 
-    def shutclose(self):
+    def close(self):
         """
         Shutdown and close connected socket .cs
         """
@@ -160,13 +105,11 @@ class Incomer(object):
             self.cs.close()  #close socket
             self.cs = None
 
-    close = shutclose  # alias
-
     def refresh(self):
         """
-        Restart timer
+        Restart tymer
         """
-        self.timer.restart()
+        self.tymer.restart()
 
     def receive(self):
         """
@@ -192,29 +135,14 @@ class Incomer(object):
                                 errno.EHOSTDOWN,
                                 errno.ETIMEDOUT,
                                 errno.ECONNREFUSED):
-                emsg = ("socket.error = {0}: Incomer at {1} while receiving "
-                        "from {2}\n".format(ex, self.ca, self.ha))
-                console.profuse(emsg)
                 self.cutoff = True  # this signals need to close/reopen connection
                 return bytes()  # data empty
             else:
-                emsg = ("socket.error = {0}: Incomer at {1} while receiving"
-                        " from {2}\n".format(ex, self.ha, self.ca))
-                console.profuse(emsg)
                 raise  # re-raise
 
         if data:  # connection open
-            if console._verbosity >= console.Wordage.profuse:  # faster to check
-                try:
-                    load = data.decode("UTF-8")
-                except UnicodeDecodeError as ex:
-                    load = "0x{0}".format(hexlify(data).decode("ASCII"))
-                cmsg = ("Incomer at {0}, received from {1}:\n------------\n"
-                        "{2}\n\n".format(self.ha, self.ca, load))
-                console.profuse(cmsg)
-
             if self.wlog:  # log over the wire rx
-                self.wlog.writeRx(self.ca, data)
+                self.wlog.writeRx(self.cs.getpeername(), data)
 
             if self.refreshable:
                 self.refresh()
@@ -286,29 +214,14 @@ class Incomer(object):
                                 errno.EHOSTDOWN,
                                 errno.ETIMEDOUT,
                                 errno.ECONNREFUSED):
-                emsg = ("socket.error = {0}: Outgoer at {1} while sending "
-                        "to {2} \n".format(ex, self.ca, self.ha))
-                console.profuse(emsg)
                 self.cutoff = True  # this signals need to close/reopen connection
                 result = 0
             else:
-                emsg = ("socket.error = {0}: Incomer at {1} while "
-                        "sending to {2}\n".format(ex, self.ha, self.ca))
-                console.profuse(emsg)
                 raise
 
         if result:
-            if console._verbosity >=  console.Wordage.profuse:
-                try:
-                    load = data[:result].decode("UTF-8")
-                except UnicodeDecodeError as ex:
-                    load = "0x{0}".format(hexlify(data[:result]).decode("ASCII"))
-                cmsg = ("Incomer at {0}, sent {1} bytes to {2}:\n------------\n"
-                        "{3}\n\n".format(self.ha, result, self.ca, load))
-                console.profuse(cmsg)
-
             if self.wlog:
-                self.wlog.writeTx(self.ca, data[:result])
+                self.wlog.writeTx(self.cs.getpeername(), data[:result])
 
             if self.refreshable:
                 self.refresh()
@@ -334,6 +247,70 @@ class Incomer(object):
             if count < len(data):  # put back unsent portion
                 self.txes.appendleft(data[count:])
                 break  # try again later
+
+
+
+def initServerContext(context=None,
+                      version=None,
+                      certify=None,
+                      keypath=None,
+                      certpath=None,
+                      cafilepath=None
+                      ):
+    """
+    Initialize and return context for TLS Server
+    IF context is None THEN create a context
+
+    IF version is None THEN create context using ssl library default
+    ELSE create context with version
+
+    If certify is not None then use certify value provided Otherwise use default
+
+    context = context object for tls/ssl If None use default
+    version = ssl version If None use default
+    certify = cert requirement If None use default
+              ssl.CERT_NONE = 0
+              ssl.CERT_OPTIONAL = 1
+              ssl.CERT_REQUIRED = 2
+    keypath = pathname of local server side PKI private key file path
+              If given apply to context
+    certpath = pathname of local server side PKI public cert file path
+              If given apply to context
+    cafilepath = Cert Authority file path to use to verify client cert
+              If given apply to context
+    """
+    if context is None:  # create context
+        if not version:  # use default context
+            context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
+            context.verify_mode = certify if certify is not None else ssl.CERT_REQUIRED
+
+        else:  # create context with specified protocol version
+            context = ssl.SSLContext(version)
+            # disable bad protocols versions
+            context.options |= ssl.OP_NO_SSLv2
+            context.options |= ssl.OP_NO_SSLv3
+            # disable compression to prevent CRIME attacks (OpenSSL 1.0+)
+            context.options |= getattr(ssl._ssl, "OP_NO_COMPRESSION", 0)
+            # Prefer the server's ciphers by default fro stronger encryption
+            context.options |= getattr(ssl._ssl, "OP_CIPHER_SERVER_PREFERENCE", 0)
+            # Use single use keys in order to improve forward secrecy
+            context.options |= getattr(ssl._ssl, "OP_SINGLE_DH_USE", 0)
+            context.options |= getattr(ssl._ssl, "OP_SINGLE_ECDH_USE", 0)
+            # disallow ciphers with known vulnerabilities
+            context.set_ciphers(ssl._RESTRICTED_SERVER_CIPHERS)
+            context.verify_mode = certify if certify is not None else ssl.CERT_REQUIRED
+
+        if cafilepath:
+            context.load_verify_locations(cafile=cafilepath,
+                                          capath=None,
+                                          cadata=None)
+        elif context.verify_mode != ssl.CERT_NONE:
+            context.load_default_certs(purpose=ssl.Purpose.CLIENT_AUTH)
+
+        if keypath or certpath:
+            context.load_cert_chain(certfile=certpath, keyfile=keypath)
+    return context
+
 
 
 class IncomerTls(Incomer):
@@ -464,29 +441,14 @@ class IncomerTls(Incomer):
                                 errno.ETIMEDOUT,
                                 errno.ECONNREFUSED,
                                 ssl.SSLEOFError):
-                emsg = ("socket.error = {0}: IncomerTLS at {1} while receiving"
-                        " from {2}\n".format(ex, self.ha, self.ca))
-                console.profuse(emsg)
                 self.cutoff = True  # this signals need to close/reopen connection
                 return bytes()  # data empty
             else:
-                emsg = ("socket.error = {0}: IncomerTLS at {1} while receiving"
-                        " from {2}\n".format(ex, self.ha, self.ca))
-                console.profuse(emsg)
                 raise  # re-raise
 
         if data:  # connection open
-            if console._verbosity >= console.Wordage.profuse:  # faster to check
-                try:
-                    load = data.decode("UTF-8")
-                except UnicodeDecodeError as ex:
-                    load = "0x{0}".format(hexlify(data).decode("ASCII"))
-                cmsg = ("Incomer at {0}, received from {1}:\n------------\n"
-                        "{2}\n\n".format(self.ha, self.ca, load))
-                console.profuse(cmsg)
-
             if self.wlog:  # log over the wire rx
-                self.wlog.writeRx(self.ca, data)
+                self.wlog.writeRx(self.cs.getpeername(), data)
 
         else:  # data empty so connection closed on other end
             self.cutoff = True
@@ -515,35 +477,21 @@ class IncomerTls(Incomer):
                                 errno.ETIMEDOUT,
                                 errno.ECONNREFUSED,
                                 ssl.SSLEOFError):
-                emsg = ("socket.error = {0}: IncomerTLS at {1} while "
-                        "sending to {2}\n".format(ex, self.ha, self.ca))
-                console.profuse(emsg)
                 self.cutoff = True  # this signals need to close/reopen connection
                 result = 0
             else:
-                emsg = ("socket.error = {0}: IncomerTLS at {1} while "
-                        "sending to {2}\n".format(ex, self.ha, self.ca))
-                console.profuse(emsg)
                 raise
 
         if result:
-            if console._verbosity >=  console.Wordage.profuse:
-                try:
-                    load = data[:result].decode("UTF-8")
-                except UnicodeDecodeError as ex:
-                    load = "0x{0}".format(hexlify(data[:result]).decode("ASCII"))
-                cmsg = ("Incomer at {0}, sent {1} bytes to {2}:\n------------\n"
-                        "{3}\n\n".format(self.ha, result, self.ca, load))
-                console.profuse(cmsg)
-
             if self.wlog:
-                self.wlog.writeTx(self.ca, data[:result])
+                self.wlog.writeTx(self.cs.getpeername(), data[:result])
 
         return result
 
 
 class Acceptor(object):
     """
+    Acceptor Base Class for Server.
     Nonblocking TCP Socket Acceptor Class.
     Listen socket for incoming TCP connections
     """
@@ -628,7 +576,6 @@ class Acceptor(object):
             self.ss.bind(self.ha)
             self.ss.listen(5)
         except socket.error as ex:
-            console.terse("socket.error = {0}\n".format(ex))
             return False
 
         self.ha = self.ss.getsockname()  # get resolved ha after bind
@@ -650,7 +597,6 @@ class Acceptor(object):
             try:
                 self.ss.shutdown(socket.SHUT_RDWR)  # shutdown socket
             except socket.error as ex:
-                #console.terse("socket.error = {0}\n".format(ex))
                 pass
             self.ss.close()  #close socket
             self.ss = None
@@ -668,9 +614,6 @@ class Acceptor(object):
         except socket.error as ex:
             if ex.errno in (errno.EAGAIN, errno.EWOULDBLOCK):
                 return (None, None)  # nothing yet
-            emsg = ("socket.error = {0}: server at {1} while "
-                    "accepting \n".format(ex, self.ha))
-            console.profuse(emsg)
             raise  # re-raise
 
         return (cs, ca)
@@ -690,8 +633,8 @@ class Acceptor(object):
 class Server(Acceptor):
     """
     Nonblocking TCP Socket Server Class.
-    Listen socket for incoming TCP connections
-    Incomer sockets for accepted connections
+    Listen socket for incoming TCP connections that generates Incomer sockets
+    for accepted connections
     """
     Timeout = 1.0  # timeout in seconds
 
@@ -727,7 +670,6 @@ class Server(Acceptor):
                                      self.eha, cs.getsockname(), ca, cs.getpeername()))
             incomer = Incomer(ha=cs.getsockname(),
                               bs=self.bs,
-                              ca=cs.getpeername(),
                               cs=cs,
                               wlog=self.wlog,
                               store=self.store,
@@ -906,7 +848,6 @@ class ServerTls(Server):
                                      self.ha, cs.getsockname(), ca, cs.getpeername()))
             incomer = IncomerTls(ha=cs.getsockname(),
                                  bs=self.bs,
-                                 ca=cs.getpeername(),
                                  cs=cs,
                                  wlog=self.wlog,
                                  store=self.store,

@@ -15,7 +15,6 @@ def test_tcp_client_server():
     Test the tcp connection between client and server
     """
     client = Client()
-    assert client.uid == "client"
     assert isinstance(client.cycler, cycling.Cycler)
     assert client.timeout == 1.0
     assert isinstance(client.tymer, cycling.Tymer)
@@ -38,9 +37,9 @@ def test_tcp_client_server():
     assert client.wlog == None
 
     cycler = cycling.Cycler()
-    with openClient(cycler=cycler) as client:
-        assert client.uid == "test"
+    with openClient(cycler=cycler, timeout=0.5) as client:
         assert client.cycler == cycler
+        assert client.timeout == 0.5
         assert client.ha == ('127.0.0.1', 56000)
         assert client.opened == True
         assert client.accepted == False
