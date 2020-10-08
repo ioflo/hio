@@ -11,128 +11,176 @@ import ssl
 from collections import deque
 from binascii import hexlify
 
-try:
-    import ssl
-except ImportError:
-    pass
+from contextlib import contextmanager
 
+from ...base import cycling
+from .. import coring
+
+
+
+@contextmanager
+def openClient(uid="test", cycler=None, cls=None):
+    """
+    Wrapper to create and open temporary (test) Client instances
+    When used in with statement block, calls .close() on exit of with block
+
+    Parameters:
+        name is str name of client
+        cls is Class instance of subclass instance
+
+    Usage:
+        with openClient(uid="myclient") as client0:
+            client0.accept()
+
+        with openClient(uid="myclient", cls=ClientTls) as client0:
+            client0.accept()
+
+    """
+    if cls is None:
+        cls = Client
+    try:
+        client = cls(uid=uid, cycler=cycler)
+        client.reopen()
+
+        yield client
+
+    finally:
+        client.close()
 
 
 class Client():
     """
     Nonblocking TCP Socket Client Class.
+
+    Attributes:
+
+    Properties:
+
+    Methods:
+
     """
     Timeout = 1.0  # timeout in seconds
     Reconnectable = False  # auto reconnect flag
+    Uid = 'client' # default uid
 
     def __init__(self,
-                 name=u'',
-                 uid=0,
-                 ha=None,
-                 host=u'127.0.0.1',
-                 port=56000,
-                 bufsize=8096,
-                 wlog=None,
-                 store=None,
+                 uid=None,
+                 cycler=None,
                  timeout=None,
+                 ha=None,
+                 host='127.0.0.1',
+                 port=56000,
                  reconnectable=None,
+                 bufsize=8096,
                  txes=None,
-                 rxbs=None):
+                 rxbs=None,
+                 wlog=None):
         """
         Initialization method for instance.
-        name = user friendly name for connection
-        uid = unique identifier for connection
-        ha = host address duple (host, port) of remote server
-        host = host address or tcp server to connect to
-        port = socket port
-        bufsize = buffer size
-        wlog = WireLog object if any
-        store = store reference
-        timeout = auto reconnect timeout
-        reconnectable = Boolean auto reconnect if timed out
-        txes = deque of data to send
-        rxbs = bytearray of data received
+
+        Parameters:
+            uid = unique identifier for connection
+            ha = host address duple (host, port) of remote server
+            host = host address or tcp server to connect to
+            port = socket port
+            bufsize = buffer size
+            wlog = WireLog object if any
+            cycler = Cycler instance reference
+            timeout = auto reconnect timeout
+            reconnectable = Boolean auto reconnect if timed out
+            txes = deque of data to send
+            rxbs = bytearray of data received
         """
-        self.name = name
-        self.uid = uid
+        self.uid = uid if uid is not None else self.Uid
+        self.cycler = cycler or cycling.Cycler(tyme=0.0)
+        self.timeout = timeout if timeout is not None else self.Timeout
+        self.tymer = cycling.Tymer(self.cycler, duration=self.timeout)
+
         self.reinitHostPort(ha=ha, hostname=host, port=port)
         self.ha = ha or (host, port)
         host, port = self.ha
         self.hostname = host  # host domain name
-        host = aioing.normalizeHost(host)  # ip host address
+        host = coring.normalizeHost(host)  # ip host address
         self.ha = (host, port)
-        self.bs = bufsize
-        self.wlog = wlog
 
         self.cs = None  # connection socket
         self.ca = (None, None)  # host address of local connection
         self._accepted = False  # attribute to support accepted property
         self.cutoff = False  # True when detect connection closed on far side
-        self.txes = txes if txes is not None else deque()  # deque of data to send
-        self.rxbs = rxbs if rxbs is not None else bytearray()  # byte array of data recieved
-        self.store = store or storing.Store(stamp=0.0)
-        self.timeout = timeout if timeout is not None else self.Timeout
-        self.timer = StoreTimer(self.store, duration=self.timeout)
         self.reconnectable = reconnectable if reconnectable is not None else self.Reconnectable
         self.opened = False
+
+        self.bs = bufsize
+        self.txes = txes if txes is not None else deque()  # deque of data to send
+        self.rxbs = rxbs if rxbs is not None else bytearray()  # byte array of data recieved
+        self.wlog = wlog
+
 
 
     @property
     def host(self):
-        '''
+        """
         Property that returns host in .ha duple
-        '''
+        """
         return self.ha[0]
+
 
     @host.setter
     def host(self, value):
-        '''
+        """
         setter for host property
-        '''
+        """
         self.ha = (value, self.port)
+
 
     @property
     def port(self):
-        '''
+        """
         Property that returns port in .ha duple
-        '''
+        """
         return self.ha[1]
+
 
     @port.setter
     def port(self, value):
-        '''
+        """
         setter for port property
-        '''
+        """
         self.ha = (self.host, value)
+
 
     @property
     def accepted(self):
-        '''
+        """
         Property that returns accepted state of TCP socket
-        '''
+        """
         return self._accepted
+
 
     @accepted.setter
     def accepted(self, value):
-        '''
+        """
         setter for accepted property
-        '''
+        """
         self._accepted = value
+
 
     @property
     def connected(self):
-        '''
+        """
         Property that returns connected state of TCP socket
         Non-tls tcp is connected when accepted
-        '''
+        """
         return self.accepted
+
 
     @connected.setter
     def connected(self, value):
-        '''
+        """
         setter for connected property
-        '''
+        """
         self.accepted = value
+
 
     def reinitHostPort(self, ha=None, hostname=u'127.0.0.1', port=56000):
         """
@@ -144,8 +192,9 @@ class Client():
         self.ha = ha or (hostname, port)
         hostname, port = self.ha
         self.hostname = hostname  # host domain name
-        host = aioing.normalizeHost(hostname)  # ip host address
+        host = coring.normalizeHost(hostname)  # ip host address
         self.ha = (host, port)
+
 
     def actualBufSizes(self):
         """
@@ -157,6 +206,7 @@ class Client():
 
         return (self.cs.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF),
                 self.cs.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF))
+
 
     def open(self):
         """
@@ -192,12 +242,14 @@ class Client():
         self.opened = True
         return True
 
+
     def reopen(self):
         """
         Idempotently opens socket
         """
         self.close()
         return self.open()
+
 
     def shutdown(self, how=socket.SHUT_RDWR):
         """
@@ -209,6 +261,7 @@ class Client():
             except socket.error as ex:
                 pass
 
+
     def shutdownSend(self):
         """
         Shutdown send on connected socket .cs
@@ -218,6 +271,7 @@ class Client():
                 self.shutdown(how=socket.SHUT_WR)  # shutdown socket
             except socket.error as ex:
                 pass
+
 
     def shutdownReceive(self):
         """
@@ -229,7 +283,8 @@ class Client():
             except socket.error as ex:
                 pass
 
-    def shutclose(self):
+
+    def close(self):
         """
         Shutdown and close connected socket .cs
         """
@@ -241,13 +296,13 @@ class Client():
             self.connected = False
             self.opened = False
 
-    close = shutclose  # alias
 
     def refresh(self):
         """
         Restart timer
         """
-        self.timer.restart()
+        self.tymer.restart()
+
 
     def accept(self):
         """
@@ -278,6 +333,7 @@ class Client():
         self.cutoff = False
         return True
 
+
     def connect(self):
         """
         Attempt nonblocking connect to .ha
@@ -286,6 +342,7 @@ class Client():
         For non-TLS tcp connect is done when accepted
         """
         return self.accept()
+
 
     def serviceConnect(self):
         """
@@ -297,11 +354,12 @@ class Client():
             self.connect()
 
             if not self.connected and self.reconnectable:
-                if self.timeout > 0.0 and self.timer.expired:  # timed out
+                if self.timeout > 0.0 and self.tymer.expired:  # timed out
                     self.reopen()
-                    self.timer.restart()
+                    self.tymer.restart()
 
         return self.connected
+
 
     def receive(self):
         """
@@ -354,6 +412,7 @@ class Client():
 
         return data
 
+
     def serviceReceives(self):
         """
         Service receives until no more
@@ -364,6 +423,7 @@ class Client():
                 break
             self.rxbs.extend(data)
 
+
     def serviceReceiveOnce(self):
         '''
         Retrieve from server only one reception
@@ -373,11 +433,13 @@ class Client():
             if data:
                 self.rxbs.extend(data)
 
+
     def clearRxbs(self):
         """
         Clear .rxbs
         """
         del self.rxbs[:]
+
 
     def catRxbs(self):
         """
@@ -387,6 +449,7 @@ class Client():
         self.clearRxbs()
         return rx
 
+
     def tailRxbs(self, index):
         """
         Returns duple of (bytes(self.rxbs[index:]), len(self.rxbs))
@@ -394,6 +457,7 @@ class Client():
         also the length of .rxbs to be used to update index
         """
         return (bytes(self.rxbs[index:]), len(self.rxbs))
+
 
     def send(self, data):
         """
@@ -441,11 +505,13 @@ class Client():
 
         return result
 
+
     def tx(self, data):
         '''
         Queue data onto .txes
         '''
         self.txes.append(data)
+
 
     def serviceTxes(self):
         """
@@ -466,6 +532,14 @@ class ClientTls(Client):
     """
     Outgoer with Nonblocking TLS/SSL support
     Nonblocking TCP Socket Client Class.
+
+    Attributes:
+
+
+    Properties:
+
+
+    Methods:
     """
     def __init__(self,
                  context=None,
@@ -481,29 +555,27 @@ class ClientTls(Client):
         Initialization method for instance.
 
         IF no context THEN create one
-
         IF no version THEN create using library default
-
         IF certify is not None then use certify else use default
-
         IF hostify is not none the use hostify else use default
 
-        context = context object for tls/ssl If None use default
-        version = ssl version If None use default
-        certify = cert requirement If None use default
-                  ssl.CERT_NONE = 0
-                  ssl.CERT_OPTIONAL = 1
-                  ssl.CERT_REQUIRED = 2
-        keypath = pathname of local client side PKI private key file path
-                  If given apply to context
-        certpath = pathname of local client side PKI public cert file path
-                  If given apply to context
-        cafilepath = Cert Authority file path to use to verify server cert
-                  If given apply to context
-        hostify = verify server hostName If None use default
-        certedhost = server's certificate common name (hostname) to check against
+        Parameters:
+            context = context object for tls/ssl If None use default
+            version = ssl version If None use default
+            certify = cert requirement If None use default
+                      ssl.CERT_NONE = 0
+                      ssl.CERT_OPTIONAL = 1
+                      ssl.CERT_REQUIRED = 2
+            keypath = pathname of local client side PKI private key file path
+                      If given apply to context
+            certpath = pathname of local client side PKI public cert file path
+                      If given apply to context
+            cafilepath = Cert Authority file path to use to verify server cert
+                      If given apply to context
+            hostify = verify server hostName If None use default
+            certedhost = server's certificate common name (hostname) to check against
         """
-        super(OutgoerTls, self).__init__(**kwa)
+        super(ClientTls, self).__init__(**kwa)
 
         self._connected = False  # attributed supporting connected property
 
@@ -544,17 +616,17 @@ class ClientTls(Client):
 
     @property
     def connected(self):
-        '''
+        """
         Property that returns connected state of TCP socket
         TLS tcp is connected when accepted and handshake completed
-        '''
+        """
         return self._connected
 
     @connected.setter
     def connected(self, value):
-        '''
+        """
         setter for connected property
-        '''
+        """
         self._connected = value
 
     def shutclose(self):
