@@ -166,6 +166,47 @@ def test_tcp_client_server():
         assert size == len(msgOut)
         assert msgOut == msgIn
 
+        #  gamma to server
+        while not gamma.connected or gamma.ca not in server.ixes:
+            gamma.serviceConnect()
+            server.serviceConnects()
+            time.sleep(0.05)
+
+        assert gamma.accepted == True
+        assert gamma.connected == True
+        assert gamma.cutoff == False
+        assert gamma.ca == gamma.cs.getsockname()
+        assert gamma.ha == gamma.cs.getpeername()
+        assert server.eha, gamma.ha
+        ixGamma = server.ixes[gamma.ca]
+        assert ixGamma.cs.getsockname() == gamma.cs.getpeername()
+        assert ixGamma.cs.getpeername() == gamma.cs.getsockname()
+        assert ixGamma.cs.getpeername() == gamma.ca
+        assert ixGamma.ha == gamma.ha
+
+        msgOut = b"Gamma sends to Server"
+        count = gamma.send(msgOut)
+        assert count == len(msgOut)
+        time.sleep(0.05)
+        msgIn = ixGamma.receive()
+        assert msgOut == msgIn
+
+        # receive without sending
+        msgIn = ixGamma.receive()
+        assert msgIn is None
+
+        # send from server to gamma
+        msgOut = b"Server sends to Gamma"
+        count = ixGamma.send(msgOut)
+        assert count == len(msgOut)
+        time.sleep(0.05)
+        msgIn = gamma.receive()
+        assert msgOut == msgIn
+
+        # recieve without sending
+        msgIn = gamma.receive()
+        assert msgIn is None
+
 
 
     assert client.opened == False
