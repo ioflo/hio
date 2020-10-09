@@ -9,6 +9,7 @@ from collections import deque
 
 from hio.base import cycling
 from hio.core.tcp.clienting import openClient, Client
+from hio.core.tcp.serving import openServer, Server, Incomer
 
 def test_tcp_client_server():
     """
@@ -50,6 +51,41 @@ def test_tcp_client_server():
     assert client.opened == False
     assert client.accepted == False
     assert client.cutoff == False
+
+    server = Server()
+    assert isinstance(server.cycler, cycling.Cycler)
+    assert server.timeout == 1.0
+
+    assert server.ha == ('', 56000)
+    assert server.eha == ('127.0.0.1', 56000)
+    assert server.opened == False
+
+    assert server.bs == 8096
+    assert isinstance(server.axes, deque)
+    assert isinstance(server.ixes, dict)
+    assert server.wlog == None
+
+    with openServer(cycler=cycler, timeout=1.5) as server:
+        assert server.ha == ('0.0.0.0', 56000)
+        assert server.eha == ('127.0.0.1', 56000)
+        assert server.opened == True
+
+
+    assert server.opened == False
+
+
+    with openServer(cycler=cycler, timeout=1.0) as server, \
+         openClient(cycler=cycler, timeout=1.0) as client:
+
+        assert server.opened == True
+        assert client.opened == True
+
+        assert server.ha == ('0.0.0.0', 56000)
+        assert client.ha == ('127.0.0.1', 56000)
+
+
+    assert client.opened == False
+    assert server.opened == False
 
     """Done Test"""
 

@@ -20,8 +20,499 @@ import ssl
 from collections import deque
 from binascii import hexlify
 
+from contextlib import contextmanager
+
 from ...base import cycling
 from .. import coring
+
+
+@contextmanager
+def openServer(cycler=None, timeout=None, cls=None):
+    """
+    Wrapper to create and open Server instances
+    When used in with statement block, calls .close() on exit of with block
+
+    Parameters:
+        cycler is Cycler instance if provided
+        timeout is connection timeout in seconds
+        cls is Class instance of subclass instance
+
+    Usage:
+        with openServer() as server0:
+            server0.
+
+        with openServer(cls=ServerTls) as server0:
+            server0.
+
+    """
+    if cls is None:
+        cls = Server
+    try:
+        server = cls(cycler=cycler, timeout=timeout)
+        server.reopen()  #  opens accept socket
+
+        yield server
+
+    finally:
+        server.closeAll()
+
+
+
+
+class Acceptor(object):
+    """
+    Acceptor Base Class for Server.
+    Nonblocking TCP Socket Acceptor Class.
+    Listen socket for incoming TCP connections
+    """
+
+    def __init__(self,
+                 ha=None,
+                 host=u'',
+                 port=56000,
+                 eha=None,
+                 bufsize=8096,
+                 wlog=None):
+        """
+        Initialization method for instance.
+        ha = host address duple (host, port) for listen socket
+        host = host address for listen socket, '' means any interface on host
+        port = socket port for listen socket
+        eha = external destination address for incoming connections used in tls
+        bufsize = buffer size
+        wlog = WireLog object if any
+        """
+        self.ha = ha or (host, port)  # ha = host address
+        eha = eha or self.ha
+        if eha:
+            host, port = eha
+            host = coring.normalizeHost(host)
+            if host in ('0.0.0.0',):
+                host = '127.0.0.1'
+            elif host in ("::", "0:0:0:0:0:0:0:0"):
+                host = "::1"
+            eha = (host, port)
+        self.eha = eha
+        self.bs = bufsize
+        self.wlog = wlog
+
+        self.ss = None  # listen socket for accepts
+        self.axes = deque()  # deque of duple (ca, cs) accepted connections
+        self.opened = False
+
+    def actualBufSizes(self):
+        """
+        Returns duple of the the actual socket send and receive buffer size
+        (send, receive)
+        """
+        if not self.ss:
+            return (0, 0)
+
+        return (self.ss.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF),
+                self.ss.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF))
+
+    def open(self):
+        """
+        Opens binds listen socket in non blocking mode.
+
+        if socket not closed properly, binding socket gets error
+           socket.error: (48, 'Address already in use')
+        """
+        #create server socket ss to listen on
+        self.ss = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        # make socket address reusable.
+        # the SO_REUSEADDR flag tells the kernel to reuse a local socket in
+        # TIME_WAIT state, without waiting for its natural timeout to expire.
+        self.ss.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+        # Linux TCP allocates twice the requested size
+        if sys.platform.startswith('linux'):
+            bs = 2 * self.bs  # get size is twice the set size
+        else:
+            bs = self.bs
+
+        if self.ss.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF) < bs:
+            self.ss.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self.bs)
+        if self.ss.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF) < bs:
+            self.ss.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self.bs)
+
+        self.ss.setblocking(0) #non blocking socket
+
+        try:  # bind to listen socket (host, port) to receive connections
+            self.ss.bind(self.ha)
+            self.ss.listen(5)
+        except socket.error as ex:
+            return False
+
+        self.ha = self.ss.getsockname()  # get resolved ha after bind
+        self.opened = True
+        return True
+
+    def reopen(self):
+        """
+        Idempotently opens listen socket
+        """
+        self.close()
+        return self.open()
+
+    def close(self):
+        """
+        Closes listen socket.
+        """
+        if self.ss:
+            try:
+                self.ss.shutdown(socket.SHUT_RDWR)  # shutdown socket
+            except socket.error as ex:
+                pass
+            self.ss.close()  #close socket
+            self.ss = None
+            self.opened = False
+
+    def accept(self):
+        """
+        Accept new connection nonblocking
+        Returns duple (cs, ca) of connected socket and connected host address
+        Otherwise if no new connection returns (None, None)
+        """
+        # accept new virtual connected socket created from server socket
+        try:
+            cs, ca = self.ss.accept()  # virtual connection (socket, host address)
+        except socket.error as ex:
+            if ex.errno in (errno.EAGAIN, errno.EWOULDBLOCK):
+                return (None, None)  # nothing yet
+            raise  # re-raise
+
+        return (cs, ca)
+
+    def serviceAccepts(self):
+        """
+        Service any accept requests
+        Adds to .cxes dict key by ca
+        """
+        while True:
+            cs, ca = self.accept()
+            if not cs:
+                break
+            self.axes.append((cs, ca))
+
+
+class Server(Acceptor):
+    """
+    Nonblocking TCP Socket Server Class.
+    Listen socket for incoming TCP connections that generates Incomer sockets
+    for accepted connections
+    """
+    Timeout = 1.0  # timeout in seconds
+
+    def __init__(self,
+                 cycler=None,
+                 timeout=None,
+                 **kwa):
+        """
+        Initialization method for instance.
+
+        cycler = Cycler instance if any to pass to incomers for incoming connections
+        timeout = default timeout for to pass to incomers for  incoming connections
+        """
+        super(Server, self).__init__(**kwa)
+        self.cycler = cycler or cycling.Cycler()
+        self.timeout = timeout if timeout is not None else self.Timeout
+
+        self.ixes = dict()  # ready to rx tx incoming connections, Incomer instances
+
+    def serviceAxes(self):
+        """
+        Service axes
+
+        For each newly accepted connection in .axes create Incomer
+        and add to .ixes keyed by ca
+        """
+        self.serviceAccepts()  # populate .axes
+        while self.axes:
+            cs, ca = self.axes.popleft()
+            if ca != cs.getpeername(): #or self.eha != cs.getsockname():
+                raise ValueError("Accepted socket host addresses malformed for "
+                                 "peer. eha {0} != {1}, ca {2} != {3}\n".format(
+                                     self.eha, cs.getsockname(), ca, cs.getpeername()))
+            incomer = Incomer(ha=cs.getsockname(),
+                              bs=self.bs,
+                              cs=cs,
+                              wlog=self.wlog,
+                              cycler=self.cycler,
+                              timeout=self.timeout)
+            if ca in self.ixes and self.ixes[ca] is not incomer:
+                self.shutdownIx[ca]
+            self.ixes[ca] = incomer
+
+    def serviceConnects(self):
+        """
+        Service connects is method name to be used
+        """
+        self.serviceAxes()
+
+    def shutdownIx(self, ca, how=socket.SHUT_RDWR):
+        """
+        Shutdown incomer given by connection address ca
+        """
+        if ca not in self.ixes:
+            emsg = "Invalid connection address '{0}'".format(ca)
+            raise ValueError(emsg)
+        self.ixes[ca].shutdown(how=how)
+
+    def shutdownSendIx(self, ca):
+        """
+        Shutdown send on incomer given by connection address ca
+        """
+        if ca not in self.ixes:
+            emsg = "Invalid connection address '{0}'".format(ca)
+            raise ValueError(emsg)
+        self.ixes[ca].shutdownSend()
+
+    def shutdownReceiveIx(self, ca):
+        """
+        Shutdown send on incomer given by connection address ca
+        """
+        if ca not in self.ixes:
+            emsg = "Invalid connection address '{0}'".format(ca)
+            raise ValueError(emsg)
+        self.ixes[ca].shutdownReceive()
+
+    def closeIx(self, ca):
+        """
+        Shutdown and close incomer given by connection address ca
+        """
+        if ca not in self.ixes:
+            emsg = "Invalid connection address '{0}'".format(ca)
+            raise ValueError(emsg)
+        self.ixes[ca].close()
+
+    def closeAllIx(self):
+        """
+        Shutdown and close all incomer connections
+        """
+        for ix in self.ixes.values():
+            ix.close()
+
+    def closeAll(self):
+        """
+        Close all sockets
+        """
+        self.close()
+        self.closeAllIx()
+
+    def removeIx(self, ca, shutclose=True):
+        """
+        Remove incomer given by connection address ca
+        """
+        if ca not in self.ixes:
+            emsg = "Invalid connection address '{0}'".format(ca)
+            raise ValueError(emsg)
+        if shutclose:
+            self.ixes[ca].close()  # shutdown and close socket
+        del self.ixes[ca]
+
+    def catRxbsIx(self, ca):
+        """
+        Return  copy and clear rxbs for incomer given by connection address ca
+        """
+        if ca not in self.ixes:
+            emsg = "Invalid connection address '{0}'".format(ca)
+            raise ValueError(emsg)
+        return (self.ixes[ca].catRxbs())
+
+    def serviceReceivesIx(self, ca):
+        """
+        Service receives for incomer by connection address ca
+        """
+        if ca not in self.ixes:
+            emsg = "Invalid connection address '{0}'".format(ca)
+            raise ValueError(emsg)
+        self.ixes[ca].serviceReceives()
+
+    def serviceReceivesAllIx(self):
+        """
+        Service receives for all incomers in .ixes
+        """
+        for ix in self.ixes.values():
+            ix.serviceReceives()
+
+    def transmitIx(self, data, ca):
+        '''
+        Queue data onto .txes for incomer given by connection address ca
+        '''
+        if ca not in self.ixes:
+            emsg = "Invalid connection address '{0}'".format(ca)
+            raise ValueError(emsg)
+        self.ixes[ca].tx(data)
+
+    def serviceTxesAllIx(self):
+        """
+        Service transmits for all incomers in .ixes
+        """
+        for ix in self.ixes.values():
+            ix.serviceTxes()
+
+    def serviceAll(self):
+        """
+        Service connects and service receives and txes for all ix.
+        """
+        self.serviceConnects()
+        self.serviceReceivesAllIx()
+        self.serviceTxesAllIx()
+
+
+
+def initServerContext(context=None,
+                      version=None,
+                      certify=None,
+                      keypath=None,
+                      certpath=None,
+                      cafilepath=None
+                      ):
+    """
+    Initialize and return context for TLS Server
+    IF context is None THEN create a context
+
+    IF version is None THEN create context using ssl library default
+    ELSE create context with version
+
+    If certify is not None then use certify value provided Otherwise use default
+
+    context = context object for tls/ssl If None use default
+    version = ssl version If None use default
+    certify = cert requirement If None use default
+              ssl.CERT_NONE = 0
+              ssl.CERT_OPTIONAL = 1
+              ssl.CERT_REQUIRED = 2
+    keypath = pathname of local server side PKI private key file path
+              If given apply to context
+    certpath = pathname of local server side PKI public cert file path
+              If given apply to context
+    cafilepath = Cert Authority file path to use to verify client cert
+              If given apply to context
+    """
+    if context is None:  # create context
+        if not version:  # use default context
+            context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
+            context.verify_mode = certify if certify is not None else ssl.CERT_REQUIRED
+
+        else:  # create context with specified protocol version
+            context = ssl.SSLContext(version)
+            # disable bad protocols versions
+            context.options |= ssl.OP_NO_SSLv2
+            context.options |= ssl.OP_NO_SSLv3
+            # disable compression to prevent CRIME attacks (OpenSSL 1.0+)
+            context.options |= getattr(ssl._ssl, "OP_NO_COMPRESSION", 0)
+            # Prefer the server's ciphers by default fro stronger encryption
+            context.options |= getattr(ssl._ssl, "OP_CIPHER_SERVER_PREFERENCE", 0)
+            # Use single use keys in order to improve forward secrecy
+            context.options |= getattr(ssl._ssl, "OP_SINGLE_DH_USE", 0)
+            context.options |= getattr(ssl._ssl, "OP_SINGLE_ECDH_USE", 0)
+            # disallow ciphers with known vulnerabilities
+            context.set_ciphers(ssl._RESTRICTED_SERVER_CIPHERS)
+            context.verify_mode = certify if certify is not None else ssl.CERT_REQUIRED
+
+        if cafilepath:
+            context.load_verify_locations(cafile=cafilepath,
+                                          capath=None,
+                                          cadata=None)
+        elif context.verify_mode != ssl.CERT_NONE:
+            context.load_default_certs(purpose=ssl.Purpose.CLIENT_AUTH)
+
+        if keypath or certpath:
+            context.load_cert_chain(certfile=certpath, keyfile=keypath)
+    return context
+
+
+
+class ServerTls(Server):
+    """
+    Server with Nonblocking TLS/SSL support
+    Nonblocking TCP Socket Server Class.
+    Listen socket for incoming TCP connections
+    IncomerTLS sockets for accepted connections
+    """
+    def __init__(self,
+                 context=None,
+                 version=None,
+                 certify=None,
+                 keypath=None,
+                 certpath=None,
+                 cafilepath=None,
+                 **kwa):
+        """
+        Initialization method for instance.
+        """
+        super(ServerTls, self).__init__(**kwa)
+
+        self.cxes = dict()  # accepted incoming connections, IncomerTLS instances
+
+        self.context = context
+        self.version = version
+        self.certify = certify
+        self.keypath = keypath
+        self.certpath = certpath
+        self.cafilepath = cafilepath
+
+        self.context = initServerContext(context=context,
+                                         version=version,
+                                         certify=certify,
+                                         keypath=keypath,
+                                         certpath=certpath,
+                                         cafilepath=cafilepath
+                                        )
+
+    def serviceAxes(self):
+        """
+        Service accepteds
+
+        For each new accepted connection create IncomerTLS and add to .cxes
+        Not Handshaked
+        """
+        self.serviceAccepts()  # populate .axes
+        while self.axes:
+            cs, ca = self.axes.popleft()
+            if ca != cs.getpeername() or self.eha != cs.getsockname():
+                raise ValueError("Accepted socket host addresses malformed for "
+                                 "peer ha {0} != {1}, ca {2} != {3}\n".format(
+                                     self.ha, cs.getsockname(), ca, cs.getpeername()))
+            incomer = IncomerTls(ha=cs.getsockname(),
+                                 bs=self.bs,
+                                 cs=cs,
+                                 wlog=self.wlog,
+                                 cycler=self.cycler,
+                                 timeout=self.timeout,
+                                 context=self.context,
+                                 version=self.version,
+                                 certify=self.certify,
+                                 keypath=self.keypath,
+                                 certpath=self.certpath,
+                                 cafilepath=self.cafilepath,
+                                )
+
+            self.cxes[ca] = incomer
+
+    def serviceCxes(self):
+        """
+        Service handshakes for every incomer in .cxes
+        If successful move to .ixes
+        """
+        for ca, cx in self.cxes.items():
+            if cx.serviceHandshake():
+                self.ixes[ca] = cx
+                del self.cxes[ca]
+
+    def serviceConnects(self):
+        """
+        Service accept and handshake attempts
+        If not already accepted and handshaked  Then
+             make nonblocking attempt
+        For each successful handshaked add to .ixes
+        Returns handshakeds
+        """
+        self.serviceAxes()
+        self.serviceCxes()
 
 
 class Incomer(object):
@@ -250,68 +741,6 @@ class Incomer(object):
 
 
 
-def initServerContext(context=None,
-                      version=None,
-                      certify=None,
-                      keypath=None,
-                      certpath=None,
-                      cafilepath=None
-                      ):
-    """
-    Initialize and return context for TLS Server
-    IF context is None THEN create a context
-
-    IF version is None THEN create context using ssl library default
-    ELSE create context with version
-
-    If certify is not None then use certify value provided Otherwise use default
-
-    context = context object for tls/ssl If None use default
-    version = ssl version If None use default
-    certify = cert requirement If None use default
-              ssl.CERT_NONE = 0
-              ssl.CERT_OPTIONAL = 1
-              ssl.CERT_REQUIRED = 2
-    keypath = pathname of local server side PKI private key file path
-              If given apply to context
-    certpath = pathname of local server side PKI public cert file path
-              If given apply to context
-    cafilepath = Cert Authority file path to use to verify client cert
-              If given apply to context
-    """
-    if context is None:  # create context
-        if not version:  # use default context
-            context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
-            context.verify_mode = certify if certify is not None else ssl.CERT_REQUIRED
-
-        else:  # create context with specified protocol version
-            context = ssl.SSLContext(version)
-            # disable bad protocols versions
-            context.options |= ssl.OP_NO_SSLv2
-            context.options |= ssl.OP_NO_SSLv3
-            # disable compression to prevent CRIME attacks (OpenSSL 1.0+)
-            context.options |= getattr(ssl._ssl, "OP_NO_COMPRESSION", 0)
-            # Prefer the server's ciphers by default fro stronger encryption
-            context.options |= getattr(ssl._ssl, "OP_CIPHER_SERVER_PREFERENCE", 0)
-            # Use single use keys in order to improve forward secrecy
-            context.options |= getattr(ssl._ssl, "OP_SINGLE_DH_USE", 0)
-            context.options |= getattr(ssl._ssl, "OP_SINGLE_ECDH_USE", 0)
-            # disallow ciphers with known vulnerabilities
-            context.set_ciphers(ssl._RESTRICTED_SERVER_CIPHERS)
-            context.verify_mode = certify if certify is not None else ssl.CERT_REQUIRED
-
-        if cafilepath:
-            context.load_verify_locations(cafile=cafilepath,
-                                          capath=None,
-                                          cadata=None)
-        elif context.verify_mode != ssl.CERT_NONE:
-            context.load_default_certs(purpose=ssl.Purpose.CLIENT_AUTH)
-
-        if keypath or certpath:
-            context.load_cert_chain(certfile=certpath, keyfile=keypath)
-    return context
-
-
 
 class IncomerTls(Incomer):
     """
@@ -487,399 +916,3 @@ class IncomerTls(Incomer):
                 self.wlog.writeTx(self.cs.getpeername(), data[:result])
 
         return result
-
-
-class Acceptor(object):
-    """
-    Acceptor Base Class for Server.
-    Nonblocking TCP Socket Acceptor Class.
-    Listen socket for incoming TCP connections
-    """
-
-    def __init__(self,
-                 ha=None,
-                 host=u'',
-                 port=56000,
-                 eha=None,
-                 bufsize=8096,
-                 wlog=None):
-        """
-        Initialization method for instance.
-        ha = host address duple (host, port) for listen socket
-        host = host address for listen socket, '' means any interface on host
-        port = socket port for listen socket
-        eha = external destination address for incoming connections used in tls
-        bufsize = buffer size
-        wlog = WireLog object if any
-        """
-        self.ha = ha or (host, port)  # ha = host address
-        eha = eha or self.ha
-        if eha:
-            host, port = eha
-            host = coring.normalizeHost(host)
-            if host in ('0.0.0.0',):
-                host = '127.0.0.1'
-            elif host in ("::", "0:0:0:0:0:0:0:0"):
-                host = "::1"
-            eha = (host, port)
-        self.eha = eha
-        self.bs = bufsize
-        self.wlog = wlog
-
-        self.ss = None  # listen socket for accepts
-        self.axes = deque()  # deque of duple (ca, cs) accepted connections
-        self.opened = False
-
-    def actualBufSizes(self):
-        """
-        Returns duple of the the actual socket send and receive buffer size
-        (send, receive)
-        """
-        if not self.ss:
-            return (0, 0)
-
-        return (self.ss.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF),
-                self.ss.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF))
-
-    def open(self):
-        """
-        Opens binds listen socket in non blocking mode.
-
-        if socket not closed properly, binding socket gets error
-           socket.error: (48, 'Address already in use')
-        """
-        #create server socket ss to listen on
-        self.ss = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-        # make socket address reusable.
-        # the SO_REUSEADDR flag tells the kernel to reuse a local socket in
-        # TIME_WAIT state, without waiting for its natural timeout to expire.
-        self.ss.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
-        # Linux TCP allocates twice the requested size
-        if sys.platform.startswith('linux'):
-            bs = 2 * self.bs  # get size is twice the set size
-        else:
-            bs = self.bs
-
-        if self.ss.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF) < bs:
-            self.ss.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self.bs)
-        if self.ss.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF) < bs:
-            self.ss.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self.bs)
-
-        self.ss.setblocking(0) #non blocking socket
-
-        try:  # bind to listen socket (host, port) to receive connections
-            self.ss.bind(self.ha)
-            self.ss.listen(5)
-        except socket.error as ex:
-            return False
-
-        self.ha = self.ss.getsockname()  # get resolved ha after bind
-        self.opened = True
-        return True
-
-    def reopen(self):
-        """
-        Idempotently opens listen socket
-        """
-        self.close()
-        return self.open()
-
-    def close(self):
-        """
-        Closes listen socket.
-        """
-        if self.ss:
-            try:
-                self.ss.shutdown(socket.SHUT_RDWR)  # shutdown socket
-            except socket.error as ex:
-                pass
-            self.ss.close()  #close socket
-            self.ss = None
-            self.opened = False
-
-    def accept(self):
-        """
-        Accept new connection nonblocking
-        Returns duple (cs, ca) of connected socket and connected host address
-        Otherwise if no new connection returns (None, None)
-        """
-        # accept new virtual connected socket created from server socket
-        try:
-            cs, ca = self.ss.accept()  # virtual connection (socket, host address)
-        except socket.error as ex:
-            if ex.errno in (errno.EAGAIN, errno.EWOULDBLOCK):
-                return (None, None)  # nothing yet
-            raise  # re-raise
-
-        return (cs, ca)
-
-    def serviceAccepts(self):
-        """
-        Service any accept requests
-        Adds to .cxes odict key by ca
-        """
-        while True:
-            cs, ca = self.accept()
-            if not cs:
-                break
-            self.axes.append((cs, ca))
-
-
-class Server(Acceptor):
-    """
-    Nonblocking TCP Socket Server Class.
-    Listen socket for incoming TCP connections that generates Incomer sockets
-    for accepted connections
-    """
-    Timeout = 1.0  # timeout in seconds
-
-    def __init__(self,
-                 cycler=None,
-                 timeout=None,
-                 **kwa):
-        """
-        Initialization method for instance.
-
-        cycler = Cycler instance if any to pass to incomers for incoming connections
-        timeout = default timeout for to pass to incomers for  incoming connections
-        """
-        super(Server, self).__init__(**kwa)
-        self.cycler = cycler or coring.Cycler()
-        self.timeout = timeout if timeout is not None else self.Timeout
-
-        self.ixes = odict()  # ready to rx tx incoming connections, Incomer instances
-
-    def serviceAxes(self):
-        """
-        Service axes
-
-        For each newly accepted connection in .axes create Incomer
-        and add to .ixes keyed by ca
-        """
-        self.serviceAccepts()  # populate .axes
-        while self.axes:
-            cs, ca = self.axes.popleft()
-            if ca != cs.getpeername(): #or self.eha != cs.getsockname():
-                raise ValueError("Accepted socket host addresses malformed for "
-                                 "peer. eha {0} != {1}, ca {2} != {3}\n".format(
-                                     self.eha, cs.getsockname(), ca, cs.getpeername()))
-            incomer = Incomer(ha=cs.getsockname(),
-                              bs=self.bs,
-                              cs=cs,
-                              wlog=self.wlog,
-                              cycler=self.cycler,
-                              timeout=self.timeout)
-            if ca in self.ixes and self.ixes[ca] is not incomer:
-                self.shutdownIx[ca]
-            self.ixes[ca] = incomer
-
-    def serviceConnects(self):
-        """
-        Service connects is method name to be used
-        """
-        self.serviceAxes()
-
-    def shutdownIx(self, ca, how=socket.SHUT_RDWR):
-        """
-        Shutdown incomer given by connection address ca
-        """
-        if ca not in self.ixes:
-            emsg = "Invalid connection address '{0}'".format(ca)
-            raise ValueError(emsg)
-        self.ixes[ca].shutdown(how=how)
-
-    def shutdownSendIx(self, ca):
-        """
-        Shutdown send on incomer given by connection address ca
-        """
-        if ca not in self.ixes:
-            emsg = "Invalid connection address '{0}'".format(ca)
-            raise ValueError(emsg)
-        self.ixes[ca].shutdownSend()
-
-    def shutdownReceiveIx(self, ca):
-        """
-        Shutdown send on incomer given by connection address ca
-        """
-        if ca not in self.ixes:
-            emsg = "Invalid connection address '{0}'".format(ca)
-            raise ValueError(emsg)
-        self.ixes[ca].shutdownReceive()
-
-    def closeIx(self, ca):
-        """
-        Shutdown and close incomer given by connection address ca
-        """
-        if ca not in self.ixes:
-            emsg = "Invalid connection address '{0}'".format(ca)
-            raise ValueError(emsg)
-        self.ixes[ca].close()
-
-    def closeAllIx(self):
-        """
-        Shutdown and close all incomer connections
-        """
-        for ix in self.ixes.values():
-            ix.close()
-
-    def closeAll(self):
-        """
-        Close all sockets
-        """
-        self.close()
-        self.closeAllIx()
-
-    def removeIx(self, ca, shutclose=True):
-        """
-        Remove incomer given by connection address ca
-        """
-        if ca not in self.ixes:
-            emsg = "Invalid connection address '{0}'".format(ca)
-            raise ValueError(emsg)
-        if shutclose:
-            self.ixes[ca].close()  # shutdown and close socket
-        del self.ixes[ca]
-
-    def catRxbsIx(self, ca):
-        """
-        Return  copy and clear rxbs for incomer given by connection address ca
-        """
-        if ca not in self.ixes:
-            emsg = "Invalid connection address '{0}'".format(ca)
-            raise ValueError(emsg)
-        return (self.ixes[ca].catRxbs())
-
-    def serviceReceivesIx(self, ca):
-        """
-        Service receives for incomer by connection address ca
-        """
-        if ca not in self.ixes:
-            emsg = "Invalid connection address '{0}'".format(ca)
-            raise ValueError(emsg)
-        self.ixes[ca].serviceReceives()
-
-    def serviceReceivesAllIx(self):
-        """
-        Service receives for all incomers in .ixes
-        """
-        for ix in self.ixes.values():
-            ix.serviceReceives()
-
-    def transmitIx(self, data, ca):
-        '''
-        Queue data onto .txes for incomer given by connection address ca
-        '''
-        if ca not in self.ixes:
-            emsg = "Invalid connection address '{0}'".format(ca)
-            raise ValueError(emsg)
-        self.ixes[ca].tx(data)
-
-    def serviceTxesAllIx(self):
-        """
-        Service transmits for all incomers in .ixes
-        """
-        for ix in self.ixes.values():
-            ix.serviceTxes()
-
-    def serviceAll(self):
-        """
-        Service connects and service receives and txes for all ix.
-        """
-        self.serviceConnects()
-        self.serviceReceivesAllIx()
-        self.serviceTxesAllIx()
-
-
-class ServerTls(Server):
-    """
-    Server with Nonblocking TLS/SSL support
-    Nonblocking TCP Socket Server Class.
-    Listen socket for incoming TCP connections
-    IncomerTLS sockets for accepted connections
-    """
-    def __init__(self,
-                 context=None,
-                 version=None,
-                 certify=None,
-                 keypath=None,
-                 certpath=None,
-                 cafilepath=None,
-                 **kwa):
-        """
-        Initialization method for instance.
-        """
-        super(ServerTls, self).__init__(**kwa)
-
-        self.cxes = odict()  # accepted incoming connections, IncomerTLS instances
-
-        self.context = context
-        self.version = version
-        self.certify = certify
-        self.keypath = keypath
-        self.certpath = certpath
-        self.cafilepath = cafilepath
-
-        self.context = initServerContext(context=context,
-                                         version=version,
-                                         certify=certify,
-                                         keypath=keypath,
-                                         certpath=certpath,
-                                         cafilepath=cafilepath
-                                        )
-
-    def serviceAxes(self):
-        """
-        Service accepteds
-
-        For each new accepted connection create IncomerTLS and add to .cxes
-        Not Handshaked
-        """
-        self.serviceAccepts()  # populate .axes
-        while self.axes:
-            cs, ca = self.axes.popleft()
-            if ca != cs.getpeername() or self.eha != cs.getsockname():
-                raise ValueError("Accepted socket host addresses malformed for "
-                                 "peer ha {0} != {1}, ca {2} != {3}\n".format(
-                                     self.ha, cs.getsockname(), ca, cs.getpeername()))
-            incomer = IncomerTls(ha=cs.getsockname(),
-                                 bs=self.bs,
-                                 cs=cs,
-                                 wlog=self.wlog,
-                                 cycler=self.cycler,
-                                 timeout=self.timeout,
-                                 context=self.context,
-                                 version=self.version,
-                                 certify=self.certify,
-                                 keypath=self.keypath,
-                                 certpath=self.certpath,
-                                 cafilepath=self.cafilepath,
-                                )
-
-            self.cxes[ca] = incomer
-
-    def serviceCxes(self):
-        """
-        Service handshakes for every incomer in .cxes
-        If successful move to .ixes
-        """
-        for ca, cx in self.cxes.items():
-            if cx.serviceHandshake():
-                self.ixes[ca] = cx
-                del self.cxes[ca]
-
-    def serviceConnects(self):
-        """
-        Service accept and handshake attempts
-        If not already accepted and handshaked  Then
-             make nonblocking attempt
-        For each successful handshaked add to .ixes
-        Returns handshakeds
-        """
-        self.serviceAxes()
-        self.serviceCxes()
-
-
-
-

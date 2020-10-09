@@ -21,7 +21,7 @@ from .. import coring
 @contextmanager
 def openClient(cycler=None, timeout=None, cls=None):
     """
-    Wrapper to create and open temporary (test) Client instances
+    Wrapper to create and open Client instances
     When used in with statement block, calls .close() on exit of with block
 
     Parameters:
@@ -30,10 +30,10 @@ def openClient(cycler=None, timeout=None, cls=None):
         cls is Class instance of subclass instance
 
     Usage:
-        with openClient(uid="myclient") as client0:
+        with openClient() as client0:
             client0.accept()
 
-        with openClient(uid="myclient", cls=ClientTls) as client0:
+        with openClient(cls=ClientTls) as client0:
             client0.accept()
 
     """
