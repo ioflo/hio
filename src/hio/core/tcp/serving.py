@@ -27,7 +27,7 @@ from .. import coring
 
 
 @contextmanager
-def openServer(cycler=None, timeout=None, cls=None):
+def openServer(cycler=None, timeout=None, ha=None, cls=None):
     """
     Wrapper to create and open Server instances
     When used in with statement block, calls .close() on exit of with block
@@ -48,7 +48,7 @@ def openServer(cycler=None, timeout=None, cls=None):
     if cls is None:
         cls = Server
     try:
-        server = cls(cycler=cycler, timeout=timeout)
+        server = cls(cycler=cycler, timeout=timeout, ha=ha)
         server.reopen()  #  opens accept socket
 
         yield server

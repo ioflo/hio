@@ -19,7 +19,7 @@ from .. import coring
 
 
 @contextmanager
-def openClient(cycler=None, timeout=None, cls=None):
+def openClient(cycler=None, timeout=None, ha=None, cls=None):
     """
     Wrapper to create and open Client instances
     When used in with statement block, calls .close() on exit of with block
@@ -40,7 +40,7 @@ def openClient(cycler=None, timeout=None, cls=None):
     if cls is None:
         cls = Client
     try:
-        client = cls(cycler=cycler, timeout=timeout)
+        client = cls(cycler=cycler, timeout=timeout, ha=ha)
         client.reopen()
 
         yield client
@@ -60,7 +60,7 @@ class Client():
     Methods:
 
     """
-    Timeout = 1.0  # timeout in seconds
+    Timeout = 0.0  # timeout in seconds, timeout of 0.0 means ignore timeout
     Reconnectable = False  # auto reconnect flag
 
     def __init__(self,
@@ -337,6 +337,7 @@ class Client():
         Returns True if successful
         Returns False if not so try again later
         For non-TLS tcp connect is done when accepted
+        This is placeholder for subclass Tls
         """
         return self.accept()
 
@@ -381,27 +382,13 @@ class Client():
                                 errno.EHOSTDOWN,
                                 errno.ETIMEDOUT,
                                 errno.ECONNREFUSED):
-                emsg = ("socket.error = {0}: Outgoer at {1} while receiving "
-                        "from {2}\n".format(ex, self.ca, self.ha))
-                console.profuse(emsg)
+
                 self.cutoff = True  # this signals need to close/reopen connection
                 return bytes()  # data empty
             else:
-                emsg = ("socket.error = {0}: Outgoer at {1} while receiving "
-                        "from {2}\n".format(ex, self.ca, self.ha))
-                console.profuse(emsg)
                 raise  # re-raise
 
         if data:  # connection open
-            if console._verbosity >= console.Wordage.profuse:  # faster to check
-                try:
-                    load = data.decode("UTF-8")
-                except UnicodeDecodeError as ex:
-                    load = "0x{0}".format(hexlify(data).decode("ASCII"))
-                cmsg = ("Outgoer at {0}, received from {1}:\n------------\n"
-                        "{2}\n\n".format(self.ca, self.ha, load))
-                console.profuse(cmsg)
-
             if self.wlog:  # log over the wire rx
                 self.wlog.writeRx(self.ha, data)
         else:  # data empty so connection closed on other end, whereas see above for blocked
@@ -476,27 +463,13 @@ class Client():
                                 errno.EHOSTDOWN,
                                 errno.ETIMEDOUT,
                                 errno.ECONNREFUSED):
-                emsg = ("socket.error = {0}: Outgoer at {1} while sending "
-                        "to {2} \n".format(ex, self.ca, self.ha))
-                console.profuse(emsg)
+
                 self.cutoff = True  # this signals need to close/reopen connection
                 result = 0
             else:
-                emsg = ("socket.error = {0}: Outgoer at {1} while sending "
-                        "to {2} \n".format(ex, self.ca, self.ha))
-                console.profuse(emsg)
                 raise
 
         if result:
-            if console._verbosity >= console.Wordage.profuse:
-                try:
-                    load = data[:result].decode("UTF-8")
-                except UnicodeDecodeError as ex:
-                    load = "0x{0}".format(hexlify(data[:result]).decode("ASCII"))
-                cmsg = ("Outgoer at {0}, sent {1} bytes to {2}:\n------------\n"
-                        "{3}\n\n".format(self.ca, result, self.ha, load))
-                console.profuse(cmsg)
-
             if self.wlog:
                 self.wlog.writeTx(self.ha, data[:result])
 
@@ -722,15 +695,10 @@ class ClientTls(Client):
                                 errno.ETIMEDOUT,
                                 errno.ECONNREFUSED,
                                 ssl.SSLEOFError):
-                emsg = ("socket.error = {0}: OutgoerTLS at {1} receiving"
-                        " from {2}\n".format(ex, self.ca, self.ha))
-                console.profuse(emsg)
+
                 self.cutoff = True  # this signals need to close/reopen connection
                 return bytes()  # data empty
             else:
-                emsg = ("socket.error = {0}: OutgoerTLS at {1} receiving"
-                        " from {2}\n".format(ex, self.ca, self.ha))
-                console.profuse(emsg)
                 raise  # re-raise
 
         if data:  # connection open
@@ -739,9 +707,6 @@ class ClientTls(Client):
                     load = data.decode("UTF-8")
                 except UnicodeDecodeError as ex:
                     load = "0x{0}".format(hexlify(data).decode("ASCII"))
-                cmsg = ("Outgoer at {0}, received from {1}:\n------------\n"
-                        "{2}\n\n".format(self.ca, self.ha, load))
-                console.profuse(cmsg)
 
             if self.wlog:  # log over the wire rx
                 self.wlog.writeRx(self.ha, data)
@@ -771,27 +736,13 @@ class ClientTls(Client):
                                 errno.ETIMEDOUT,
                                 errno.ECONNREFUSED,
                                 ssl.SSLEOFError):
-                emsg = ("socket.error = {0}: OutgoerTLS at {1} while sending "
-                        "to {2} \n".format(ex, self.ca, self.ha))
-                console.profuse(emsg)
+
                 self.cutoff = True  # this signals need to close/reopen connection
                 result = 0
             else:
-                emsg = ("socket.error = {0}: OutgoerTLS at {1} while sending "
-                        "to {2} \n".format(ex, self.ca, self.ha))
-                console.profuse(emsg)
                 raise
 
         if result:
-            if console._verbosity >=  console.Wordage.profuse:
-                try:
-                    load = data[:result].decode("UTF-8")
-                except UnicodeDecodeError as ex:
-                    load = "0x{0}".format(hexlify(data[:result]).decode("ASCII"))
-                cmsg = ("Outgoer at {0}, sent {1} bytes to {2}:\n------------\n"
-                        "{3}\n\n".format(self.ca, result, self.ha, load))
-                console.profuse(cmsg)
-
             if self.wlog:
                 self.wlog.writeTx(self.ha, data[:result])
 
