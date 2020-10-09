@@ -152,7 +152,7 @@ def test_tcp_client_server():
         msgOut = bytearray()
         count = 0
         while (len(msgOut) <= size * 4):
-            msgOut.extend(b" %i " %  (count))
+            msgOut.extend(b" %i " %  (count))  #  need to fix this
             count += 1
         assert len(msgOut) >= size * 4
 
