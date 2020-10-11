@@ -236,8 +236,9 @@ class Server(Acceptor):
                                  "peer. eha {0} != {1}, ca {2} != {3}\n".format(
                                      self.eha, cs.getsockname(), ca, cs.getpeername()))
             incomer = Incomer(ha=cs.getsockname(),
-                              bs=self.bs,
+                              ca=ca,
                               cs=cs,
+                              bs=self.bs,
                               wlog=self.wlog,
                               cycler=self.cycler,
                               timeout=self.timeout)
@@ -517,16 +518,17 @@ class ServerTls(Server):
 
 class Incomer(object):
     """
-    Class to service incoming nonblocking TCP connections.
+    Class to service incoming nonblocking TCP connections from remote client.
     Should only be used from Acceptor subclass
     """
     Timeout = 0.0  # timeout in seconds
 
     def __init__(self,
+                 ha,
+                 ca,
+                 cs,
                  cycler=None,
                  timeout=None,
-                 ha=None,
-                 cs=None,
                  refreshable=True,
                  bs=8096,
                  wlog=None
@@ -534,21 +536,28 @@ class Incomer(object):
 
         """
         Initialization method for instance.
+        ha = host address duple (host, port) near side of connection. cs.getsockname()
+             useful for debugging after cs is closed
+        ca = connection address used as key in severs's ixes. Need this to
+             know how to delete from .ixes when connection closed as .cs loses
+             cs.getpeername() after its closed.
+        cs = connection socket object
         cycler = Cycler instance
         timeout = timeout for .timer
-        ha = host address duple (host, port) near side of connection
-        cs = connection socket object
         refreshable = True if tx/rx activity refreshes timer False otherwise
         bs = buffer size
         wlog = WireLog object if any
         """
+        self.ha = ha  # connection address of server
+        self.ca = ca  # connection address of peer used to index in server.ixes
+        self.cs = cs  # connection socket
+        if self.cs:
+            self.cs.setblocking(0)  # linux does not preserve blocking from accept
         self.cycler = cycler or cycling.Cycler()
         self.timeout = timeout if timeout is not None else self.Timeout
         self.tymer = cycling.Tymer(cycler=self.cycler, duration=self.timeout)
-        self.ha = ha
-        self.cs = cs
-        if self.cs:
-            self.cs.setblocking(0)  # linux does not preserve blocking from accept
+
+
         self.cutoff = False # True when detect connection closed on far side
         self.refreshable = refreshable
         self.bs = bs
@@ -617,7 +626,7 @@ class Incomer(object):
         except socket.error as ex:
             # ex.args[0] is always ex.errno for better compat
             if ex.args[0] in (errno.EAGAIN, errno.EWOULDBLOCK):
-                return None
+                return None  # keep trying
             elif ex.args[0] in (errno.ECONNRESET,
                                 errno.ENETRESET,
                                 errno.ENETUNREACH,
@@ -633,7 +642,7 @@ class Incomer(object):
 
         if data:  # connection open
             if self.wlog:  # log over the wire rx
-                self.wlog.writeRx(self.cs.getpeername(), data)
+                self.wlog.writeRx(self.ca, data)
 
             if self.refreshable:
                 self.refresh()
@@ -712,7 +721,7 @@ class Incomer(object):
 
         if result:
             if self.wlog:
-                self.wlog.writeTx(self.cs.getpeername(), data[:result])
+                self.wlog.writeTx(self.ca, data[:result])
 
             if self.refreshable:
                 self.refresh()
