@@ -702,11 +702,6 @@ class ClientTls(Client):
                 raise  # re-raise
 
         if data:  # connection open
-            if console._verbosity >= console.Wordage.profuse:  # faster to check
-                try:
-                    load = data.decode("UTF-8")
-                except UnicodeDecodeError as ex:
-                    load = "0x{0}".format(hexlify(data).decode("ASCII"))
 
             if self.wlog:  # log over the wire rx
                 self.wlog.writeRx(self.ha, data)

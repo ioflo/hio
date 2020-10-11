@@ -479,6 +479,7 @@ class ServerTls(Server):
                                  "peer ha {0} != {1}, ca {2} != {3}\n".format(
                                      self.ha, cs.getsockname(), ca, cs.getpeername()))
             incomer = IncomerTls(ha=cs.getsockname(),
+                                 ca=ca,
                                  bs=self.bs,
                                  cs=cs,
                                  wlog=self.wlog,
@@ -499,7 +500,7 @@ class ServerTls(Server):
         Service handshakes for every incomer in .cxes
         If successful move to .ixes
         """
-        for ca, cx in self.cxes.items():
+        for ca, cx in list(self.cxes.items()):
             if cx.serviceHandshake():
                 self.ixes[ca] = cx
                 del self.cxes[ca]

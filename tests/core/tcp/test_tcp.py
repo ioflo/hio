@@ -6,15 +6,16 @@ tests.core.test_tcp module
 import pytest
 
 import sys
+import os
 import time
 import socket
 from collections import deque
 
 from hio.base import cycling
-from hio.core.tcp.clienting import openClient, Client
-from hio.core.tcp.serving import openServer, Server, Incomer
+from hio.core.tcp.clienting import openClient, Client, ClientTls
+from hio.core.tcp.serving import openServer, Server, Incomer, ServerTls
 
-def test_tcp_client_server():
+def test_tcp_basic():
     """
     Test the tcp connection between client and server
 
@@ -469,10 +470,22 @@ def test_tcp_client_server():
 
     """Done Test"""
 
-def  test_tls_default_client_server:
+def localTestCertDirPath():
     """
-    Test open connection with tls default config
+    Returns local testing directory path for TLS certs
     """
+    localDirPath = os.path.dirname(
+                    os.path.abspath(
+                        sys.modules.get(__name__).__file__))
+    return(os.path.join(localDirPath, 'certs'))
+
+def  test_tcp_tls_default_context():
+    """
+    Test tcp connection with tls default context
+    """
+
+    certDirPath = localTestCertDirPath()
+    assert os.path.exists(certDirPath)
     #serverKeypath = '/etc/pki/tls/certs/server_key.pem'  # local server private key
     #serverCertpath = '/etc/pki/tls/certs/server_cert.pem'  # local server public cert
     #clientCafilepath = '/etc/pki/tls/certs/client.pem' # remote client public cert
@@ -481,116 +494,104 @@ def  test_tls_default_client_server:
     #clientCertpath = '/etc/pki/tls/certs/client_cert.pem'  # local client public cert
     #serverCafilepath = '/etc/pki/tls/certs/server.pem' # remote server public cert
 
-    serverKeypath = self.certdirpath + '/server_key.pem'  # local server private key
-    serverCertpath = self.certdirpath + '/server_cert.pem'  # local server public cert
-    clientCafilepath = self.certdirpath + '/client.pem' # remote client public cert
+    serverKeyPath = os.path.join(certDirPath, 'server_key.pem')  # local server private key
+    serverCertPath = os.path.join(certDirPath, 'server_cert.pem')  # local server public cert
+    clientCaPath = os.path.join(certDirPath, 'client.pem') # remote client public cert
 
-    clientKeypath = self.certdirpath + '/client_key.pem'  # local client private key
-    clientCertpath = self.certdirpath + '/client_cert.pem'  # local client public cert
-    serverCafilepath = self.certdirpath + '/server.pem' # remote server public cert
+    clientKeyPath = os.path.join(certDirPath, 'client_key.pem')  # local client private key
+    clientCertPath = os.path.join(certDirPath, 'client_cert.pem')  # local client public cert
+    serverCaPath = os.path.join(certDirPath, 'server.pem') # remote server public cert
 
-    alpha = serving.ServerTls(host='localhost',
-                                  port = 6101,
-                                  bufsize=131072,
-                                  wlog=wireLogAlpha,
-                                  context=None,
-                                  version=None,
-                                  certify=None,
-                                  keypath=serverKeypath,
-                                  certpath=serverCertpath,
-                                  cafilepath=clientCafilepath,
-                                  )
-    self.assertIs(alpha.reopen(), True)
-    self.assertEqual(alpha.ha, ('127.0.0.1', 6101))
+    assert os.path.exists(serverKeyPath)
+    assert os.path.exists(serverCertPath)
+    assert os.path.exists(clientCaPath)
+    assert os.path.exists(clientKeyPath)
+    assert os.path.exists(clientCertPath)
+    assert os.path.exists(serverCaPath)
+
+    server = ServerTls(host='localhost',
+                        port = 6101,
+                        bufsize=16192,
+                        wlog=None,
+                        context=None,
+                        version=None,
+                        certify=None,
+                        keypath=serverKeyPath,
+                        certpath=serverCertPath,
+                        cafilepath=clientCaPath,
+                        )
+    assert server.reopen() == True
+    assert server.ha == ('127.0.0.1', 6101)
 
     serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
 
-    beta = clienting.ClientTls(ha=alpha.ha,
-                                  bufsize=131072,
-                                  wlog=wireLogBeta,
-                                  context=None,
-                                  version=None,
-                                  certify=None,
-                                  hostify=None,
-                                  certedhost=serverCertCommonName,
-                                  keypath=clientKeypath,
-                                  certpath=clientCertpath,
-                                  cafilepath=serverCafilepath,
-                                  )
-    self.assertIs(beta.reopen(), True)
-    self.assertIs(beta.accepted, False)
-    self.assertIs(beta.connected, False)
-    self.assertIs(beta.cutoff, False)
+    beta = ClientTls(ha=server.ha,
+                        bufsize=16192,
+                        wlog=None,
+                        context=None,
+                        version=None,
+                        certify=None,
+                        hostify=None,
+                        certedhost=serverCertCommonName,
+                        keypath=clientKeyPath,
+                        certpath=clientCertPath,
+                        cafilepath=serverCaPath,
+                        )
+    assert beta.reopen() == True
+    assert beta.accepted == False
+    assert beta.connected == False
+    assert beta.cutoff == False
 
-    console.terse("Connecting  and Handshaking beta to alpha\n")
-    while True:
+    # Connect beta to server
+    while not(beta.connected and len(server.ixes) >= 1):
         beta.serviceConnect()
-        alpha.serviceConnects()
-        if beta.connected and len(alpha.ixes) >= 1:
-            break
+        server.serviceConnects()
         time.sleep(0.01)
 
-    self.assertIs(beta.accepted, True)
-    self.assertIs(beta.connected, True)
-    self.assertIs(beta.cutoff, False)
-    self.assertEqual(beta.ca, beta.cs.getsockname())
-    self.assertEqual(beta.ha, beta.cs.getpeername())
-    self.assertIs(beta.connected, True)
+    assert beta.accepted == True
+    assert beta.connected == True
+    assert beta.cutoff == False
+    assert beta.ca == beta.cs.getsockname()
+    assert beta.ha == beta.cs.getpeername()
 
-    ixBeta = alpha.ixes[beta.ca]
-    self.assertIsNotNone(ixBeta.ca)
-    self.assertIsNotNone(ixBeta.cs)
-    self.assertEqual(ixBeta.cs.getsockname(), beta.cs.getpeername())
-    self.assertEqual(ixBeta.cs.getpeername(), beta.cs.getsockname())
-    self.assertEqual(ixBeta.ca, beta.ca)
-    self.assertEqual(ixBeta.ha, beta.ha)
+    ixBeta = server.ixes[beta.ca]
+    assert ixBeta.cs.getsockname() == beta.cs.getpeername()
+    assert ixBeta.cs.getpeername() == beta.cs.getsockname()
+    assert ixBeta.ca == beta.ca
+    assert ixBeta.ha == beta.ha
 
-    msgOut = b"Beta sends to Alpha\n"
+    msgOut = b"Beta sends to Server\n"
     beta.tx(msgOut)
-    while True:
+    while not( not beta.txes and ixBeta.rxbs):
         beta.serviceTxes()
-        alpha.serviceReceivesAllIx()
+        server.serviceReceivesAllIx()
         time.sleep(0.01)
-        if not beta.txes and ixBeta.rxbs:
-            break
+
 
     time.sleep(0.05)
-    alpha.serviceReceivesAllIx()
+    server.serviceReceivesAllIx()
 
     msgIn = bytes(ixBeta.rxbs)
-    self.assertEqual(msgIn, msgOut)
+    assert msgIn == msgOut
     #index = len(ixBeta.rxbs)
     ixBeta.clearRxbs()
 
-    msgOut = b'Alpha sends to Beta\n'
+    msgOut = b'Server sends to Beta\n'
     ixBeta.tx(msgOut)
-    while True:
-        alpha.serviceTxesAllIx()
+    while not (not ixBeta.txes and beta.rxbs):
+        server.serviceTxesAllIx()
         beta.serviceReceives()
         time.sleep(0.01)
-        if not ixBeta.txes and beta.rxbs:
-            break
 
     msgIn = bytes(beta.rxbs)
-    self.assertEqual(msgIn, msgOut)
+    assert msgIn == msgOut
     #index = len(beta.rxbs)
     beta.clearRxbs()
 
-    alpha.close()
+    server.close()
     beta.close()
 
-    self.assertEqual(wireLogAlpha.getRx(), wireLogAlpha.getTx())  # since wlog is same
-    self.assertTrue(b"Beta sends to Alpha\n" in wireLogAlpha.getRx())
-    self.assertTrue(b"Alpha sends to Beta\n" in wireLogAlpha.getRx())
-
-    self.assertEqual(wireLogBeta.getRx(), wireLogBeta.getTx())  # since wlog is same
-    self.assertTrue(b"Beta sends to Alpha\n" in wireLogBeta.getRx())
-    self.assertTrue(b"Alpha sends to Beta\n" in wireLogBeta.getRx())
-
-    wireLogAlpha.close()
-    wireLogBeta.close()
-    console.reinit(verbosity=console.Wordage.concise)
 
 
 if __name__ == "__main__":
-    test_tcp_client_server()
+    test_tcp_tls_default_context()
