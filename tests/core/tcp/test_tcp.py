@@ -470,135 +470,107 @@ def test_tcp_basic():
 
     """Done Test"""
 
-def test_tcp_service(self):
+def test_tcp_service():
     """
     Test Classes tcp service methods
     """
+    cycler = cycling.Cycler()
+    with openServer(cycler=cycler, timeout=1.0, ha=("", 6101)) as server, \
+         openClient(cycler=cycler, timeout=1.0, ha=("127.0.0.1", 6101)) as beta:
 
+        assert server.opened == True
+        assert server.ha == ('0.0.0.0', 6101)
+        assert server.eha == ('127.0.0.1', 6101)
 
-    tempDirpath = tempfile.mkdtemp(prefix="test", suffix="tcp", dir=userDirpath)
+        assert beta.opened == True
+        assert beta.accepted == False
+        assert beta.connected == False
+        assert beta.cutoff == False
 
-    logDirpath = os.path.join(tempDirpath, 'log')
-    if not os.path.exists(logDirpath):
-        os.makedirs(logDirpath)
+        # connect beta to server
+        while not (beta.connected and beta.ca in server.ixes):
+            beta.serviceConnect()
+            server.serviceConnects()
+            time.sleep(0.05)
 
-    wireLogAlpha = wiring.WireLog(path=logDirpath, same=True)
-    result = wireLogAlpha.reopen(prefix='alpha', midfix='6101')
+        assert beta.accepted == True
+        assert beta.connected == True
+        assert beta.cutoff == False
+        assert beta.ca == beta.cs.getsockname()
+        assert beta.ha == beta.cs.getpeername() == server.eha
 
-    wireLogBeta = wiring.WireLog(buffify=True,  same=True)
-    result = wireLogBeta.reopen()
+        ixBeta = server.ixes[beta.ca]
+        assert ixBeta.cs.getsockname() == beta.cs.getpeername()
+        assert ixBeta.cs.getpeername() == beta.cs.getsockname()
+        assert ixBeta.ca == beta.ca
+        assert ixBeta.ha == beta.ha
 
-    alpha = serving.Server(port = 6101, bs=131072, wlog=wireLogAlpha)
-    self.assertIs(alpha.reopen(), True)
-    self.assertEqual(alpha.ha, ('0.0.0.0', 6101))
-    self.assertEqual(alpha.eha, ('127.0.0.1', 6101))
+        msgOut1 = b"Beta sends to Server first"
+        beta.tx(msgOut1)
+        while not ixBeta.rxbs and beta.txes:
+            beta.serviceTxes()
+            server.serviceReceivesAllIx()
+            time.sleep(0.05)
+        msgIn = bytes(ixBeta.rxbs)
+        assert msgIn == msgOut1
+        offset = len(ixBeta.rxbs)  # offset into .rxbs of first message
 
-    beta = clienting.Client(ha=alpha.eha, bs=131072, wlog=wireLogBeta)
-    self.assertIs(beta.reopen(), True)
-    self.assertIs(beta.accepted, False)
-    self.assertIs(beta.connected, False)
-    self.assertIs(beta.cutoff, False)
+        # send multiple additional messages
+        msgOut2 = b"Beta sends to Server second"
+        beta.tx(msgOut2)
+        msgOut3 = b"Beta sends to Server third"
+        beta.tx(msgOut3)
+        while len(ixBeta.rxbs) < len(msgOut1) + len(msgOut2) + len(msgOut3):
+            beta.serviceTxes()
+            server.serviceReceivesAllIx()
+            time.sleep(0.05)
+        msgIn, offset = ixBeta.tailRxbs(offset)
+        assert msgIn == msgOut2 + msgOut3
+        ixBeta.clearRxbs()  # clear out the receive buffer
 
-    console.terse("Connecting beta to alpha\n")
-    while True:
-        beta.serviceConnect()
-        alpha.serviceConnects()
-        if beta.connected and beta.ca in alpha.ixes:
-            break
-        time.sleep(0.05)
+        # build message too big to fit in buffer
+        size = beta.actualBufSizes()[0]
+        msgOutBig = bytearray()
+        count = 0
+        while (len(msgOutBig) <= size * 4):
+            msgOutBig.extend(b"%032x_" % (count))
+            count += 1
+        assert len(msgOutBig) >= size * 4
 
-    self.assertIs(beta.accepted, True)
-    self.assertIs(beta.connected, True)
-    self.assertIs(beta.cutoff, False)
-    self.assertEqual(beta.ca, beta.cs.getsockname())
-    self.assertEqual(beta.ha, beta.cs.getpeername())
-    self.assertEqual(alpha.eha, beta.ha)
+        beta.tx(msgOutBig)
+        while len(ixBeta.rxbs) < len(msgOutBig):
+            beta.serviceTxes()
+            time.sleep(0.05)
+            server.serviceReceivesAllIx()
+            time.sleep(0.05)
+        msgIn = bytes(ixBeta.rxbs)
+        ixBeta.clearRxbs()
+        assert msgIn == msgOutBig
 
-    ixBeta = alpha.ixes[beta.ca]
-    self.assertIsNotNone(ixBeta.ca)
-    self.assertIsNotNone(ixBeta.cs)
-    self.assertEqual(ixBeta.cs.getsockname(), beta.cs.getpeername())
-    self.assertEqual(ixBeta.cs.getpeername(), beta.cs.getsockname())
-    self.assertEqual(ixBeta.ca, beta.ca)
-    self.assertEqual(ixBeta.ha, beta.ha)
+        # send from server to beta
+        msgOut = b"Server sends to Beta"
+        ixBeta.tx(msgOut)
+        while len(beta.rxbs) < len(msgOut):
+            server.serviceTxesAllIx()
+            beta.serviceReceives()
+            time.sleep(0.05)
+        msgIn = bytes(beta.rxbs)
+        beta.clearRxbs()
+        assert msgIn == msgOut
 
-    msgOut = b"Beta sends to Alpha"
-    beta.tx(msgOut)
-    while not ixBeta.rxbs and beta.txes:
-        beta.serviceTxes()
-        alpha.serviceReceivesAllIx()
-        time.sleep(0.05)
-    msgIn = bytes(ixBeta.rxbs)
-    self.assertEqual(msgIn, msgOut)
-    index = len(ixBeta.rxbs)
+        # send big from server to beta
+        ixBeta.tx(msgOutBig)
+        while len(beta.rxbs) < len(msgOutBig):
+            server.serviceTxesAllIx()
+            time.sleep(0.05)
+            beta.serviceReceives()
+            time.sleep(0.05)
+        msgIn = bytes(beta.rxbs)
+        beta.clearRxbs()
+        assert msgIn == msgOutBig
 
-    # send multiple
-    msgOut1 = b"First Message"
-    beta.tx(msgOut1)
-    msgOut2 = b"Second Message"
-    beta.tx(msgOut2)
-    while len(ixBeta.rxbs) < len(msgOut1 + msgOut2):
-        beta.serviceTxes()
-        alpha.serviceReceivesAllIx()
-        time.sleep(0.05)
-    msgIn, index = ixBeta.tailRxbs(index)
-    self.assertEqual(msgIn, msgOut1 + msgOut2)
-    ixBeta.clearRxbs()
-
-    # build message too big to fit in buffer
-    sizes = beta.actualBufSizes()
-    size = sizes[0]
-    msgOutBig = b""
-    count = 0
-    while (len(msgOutBig) <= size * 4):
-        msgOutBig += ns2b("{0:0>7d} ".format(count))
-        count += 1
-    self.assertTrue(len(msgOutBig) >= size * 4)
-
-    beta.tx(msgOutBig)
-    count = 0
-    while len(ixBeta.rxbs) < len(msgOutBig):
-        beta.serviceTxes()
-        time.sleep(0.05)
-        alpha.serviceReceivesAllIx()
-        time.sleep(0.05)
-    msgIn = bytes(ixBeta.rxbs)
-    ixBeta.clearRxbs()
-    self.assertEqual(msgIn, msgOutBig)
-
-    # send from alpha to beta
-    msgOut = b"Alpha sends to Beta"
-    ixBeta.tx(msgOut)
-    while len(beta.rxbs) < len(msgOut):
-        alpha.serviceTxesAllIx()
-        beta.serviceReceives()
-        time.sleep(0.05)
-    msgIn = bytes(beta.rxbs)
-    beta.clearRxbs()
-    self.assertEqual(msgIn, msgOut)
-
-    # send big from alpha to beta
-    ixBeta.tx(msgOutBig)
-    while len(beta.rxbs) < len(msgOutBig):
-        alpha.serviceTxesAllIx()
-        time.sleep(0.05)
-        beta.serviceReceives()
-        time.sleep(0.05)
-    msgIn = bytes(beta.rxbs)
-    beta.clearRxbs()
-    self.assertEqual(msgIn, msgOutBig)
-
-    alpha.close()
-    beta.close()
-
-    wlBetaRx = wireLogBeta.getRx()
-    wlBetaTx = wireLogBeta.getTx()
-    self.assertEqual(wlBetaRx, wlBetaTx)  # since wlog is same
-
-    wireLogAlpha.close()
-    wireLogBeta.close()
-    shutil.rmtree(tempDirpath)
-    console.reinit(verbosity=console.Wordage.concise)
+    assert beta.opened == False
+    assert server.opened == False
 
     """Done Test"""
 
@@ -808,4 +780,4 @@ def  test_tcp_tls_default_context():
 
 
 if __name__ == "__main__":
-    test_tcp_tls_default_context()
+    test_tcp_service()
