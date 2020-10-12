@@ -470,6 +470,230 @@ def test_tcp_basic():
 
     """Done Test"""
 
+def test_tcp_service(self):
+    """
+    Test Classes tcp service methods
+    """
+
+
+    tempDirpath = tempfile.mkdtemp(prefix="test", suffix="tcp", dir=userDirpath)
+
+    logDirpath = os.path.join(tempDirpath, 'log')
+    if not os.path.exists(logDirpath):
+        os.makedirs(logDirpath)
+
+    wireLogAlpha = wiring.WireLog(path=logDirpath, same=True)
+    result = wireLogAlpha.reopen(prefix='alpha', midfix='6101')
+
+    wireLogBeta = wiring.WireLog(buffify=True,  same=True)
+    result = wireLogBeta.reopen()
+
+    alpha = serving.Server(port = 6101, bs=131072, wlog=wireLogAlpha)
+    self.assertIs(alpha.reopen(), True)
+    self.assertEqual(alpha.ha, ('0.0.0.0', 6101))
+    self.assertEqual(alpha.eha, ('127.0.0.1', 6101))
+
+    beta = clienting.Client(ha=alpha.eha, bs=131072, wlog=wireLogBeta)
+    self.assertIs(beta.reopen(), True)
+    self.assertIs(beta.accepted, False)
+    self.assertIs(beta.connected, False)
+    self.assertIs(beta.cutoff, False)
+
+    console.terse("Connecting beta to alpha\n")
+    while True:
+        beta.serviceConnect()
+        alpha.serviceConnects()
+        if beta.connected and beta.ca in alpha.ixes:
+            break
+        time.sleep(0.05)
+
+    self.assertIs(beta.accepted, True)
+    self.assertIs(beta.connected, True)
+    self.assertIs(beta.cutoff, False)
+    self.assertEqual(beta.ca, beta.cs.getsockname())
+    self.assertEqual(beta.ha, beta.cs.getpeername())
+    self.assertEqual(alpha.eha, beta.ha)
+
+    ixBeta = alpha.ixes[beta.ca]
+    self.assertIsNotNone(ixBeta.ca)
+    self.assertIsNotNone(ixBeta.cs)
+    self.assertEqual(ixBeta.cs.getsockname(), beta.cs.getpeername())
+    self.assertEqual(ixBeta.cs.getpeername(), beta.cs.getsockname())
+    self.assertEqual(ixBeta.ca, beta.ca)
+    self.assertEqual(ixBeta.ha, beta.ha)
+
+    msgOut = b"Beta sends to Alpha"
+    beta.tx(msgOut)
+    while not ixBeta.rxbs and beta.txes:
+        beta.serviceTxes()
+        alpha.serviceReceivesAllIx()
+        time.sleep(0.05)
+    msgIn = bytes(ixBeta.rxbs)
+    self.assertEqual(msgIn, msgOut)
+    index = len(ixBeta.rxbs)
+
+    # send multiple
+    msgOut1 = b"First Message"
+    beta.tx(msgOut1)
+    msgOut2 = b"Second Message"
+    beta.tx(msgOut2)
+    while len(ixBeta.rxbs) < len(msgOut1 + msgOut2):
+        beta.serviceTxes()
+        alpha.serviceReceivesAllIx()
+        time.sleep(0.05)
+    msgIn, index = ixBeta.tailRxbs(index)
+    self.assertEqual(msgIn, msgOut1 + msgOut2)
+    ixBeta.clearRxbs()
+
+    # build message too big to fit in buffer
+    sizes = beta.actualBufSizes()
+    size = sizes[0]
+    msgOutBig = b""
+    count = 0
+    while (len(msgOutBig) <= size * 4):
+        msgOutBig += ns2b("{0:0>7d} ".format(count))
+        count += 1
+    self.assertTrue(len(msgOutBig) >= size * 4)
+
+    beta.tx(msgOutBig)
+    count = 0
+    while len(ixBeta.rxbs) < len(msgOutBig):
+        beta.serviceTxes()
+        time.sleep(0.05)
+        alpha.serviceReceivesAllIx()
+        time.sleep(0.05)
+    msgIn = bytes(ixBeta.rxbs)
+    ixBeta.clearRxbs()
+    self.assertEqual(msgIn, msgOutBig)
+
+    # send from alpha to beta
+    msgOut = b"Alpha sends to Beta"
+    ixBeta.tx(msgOut)
+    while len(beta.rxbs) < len(msgOut):
+        alpha.serviceTxesAllIx()
+        beta.serviceReceives()
+        time.sleep(0.05)
+    msgIn = bytes(beta.rxbs)
+    beta.clearRxbs()
+    self.assertEqual(msgIn, msgOut)
+
+    # send big from alpha to beta
+    ixBeta.tx(msgOutBig)
+    while len(beta.rxbs) < len(msgOutBig):
+        alpha.serviceTxesAllIx()
+        time.sleep(0.05)
+        beta.serviceReceives()
+        time.sleep(0.05)
+    msgIn = bytes(beta.rxbs)
+    beta.clearRxbs()
+    self.assertEqual(msgIn, msgOutBig)
+
+    alpha.close()
+    beta.close()
+
+    wlBetaRx = wireLogBeta.getRx()
+    wlBetaTx = wireLogBeta.getTx()
+    self.assertEqual(wlBetaRx, wlBetaTx)  # since wlog is same
+
+    wireLogAlpha.close()
+    wireLogBeta.close()
+    shutil.rmtree(tempDirpath)
+    console.reinit(verbosity=console.Wordage.concise)
+
+    """Done Test"""
+
+def test_client_auto_reconnect(self):
+    """
+    Test client auto reconnect when  .reconnectable
+    """
+    console.terse("{0}\n".format(self.testClientAutoReconnect.__doc__))
+    console.reinit(verbosity=console.Wordage.profuse)
+
+    wireLogAlpha = wiring.WireLog(buffify=True, same=True)
+    result = wireLogAlpha.reopen()
+
+    wireLogBeta = wiring.WireLog(buffify=True,  same=True)
+    result = wireLogBeta.reopen()
+
+    store = storing.Store(stamp=0.0)
+
+    beta = clienting.Client(ha=('127.0.0.1', 6101),
+                               bs=131072,
+                               wlog=wireLogBeta,
+                               store=store,
+                               timeout=0.2,
+                               reconnectable=True, )
+    self.assertIs(beta.reopen(), True)
+    self.assertIs(beta.accepted, False)
+    self.assertIs(beta.connected, False)
+    self.assertIs(beta.cutoff, False)
+    self.assertIs(beta.store, store)
+    self.assertIs(beta.reconnectable, True)
+
+    console.terse("Connecting beta to alpha when alpha not up\n")
+    while beta.store.stamp <= 0.25:
+        beta.serviceConnect()
+        if beta.connected and beta.ca in alpha.ixes:
+            break
+        beta.store.advanceStamp(0.05)
+        time.sleep(0.05)
+
+    self.assertIs(beta.accepted, False)
+    self.assertIs(beta.connected, False)
+
+    alpha = serving.Server(port = 6101, bs=131072, wlog=wireLogAlpha, store=store)
+    self.assertIs(alpha.reopen(), True)
+    self.assertEqual(alpha.ha, ('0.0.0.0', 6101))
+    self.assertEqual(alpha.eha, ('127.0.0.1', 6101))
+
+
+    console.terse("Connecting beta to alpha when alpha up\n")
+    while True:
+        beta.serviceConnect()
+        alpha.serviceConnects()
+        if beta.connected and beta.ca in alpha.ixes:
+            break
+        beta.store.advanceStamp(0.05)
+        time.sleep(0.05)
+
+    self.assertIs(beta.accepted, True)
+    self.assertIs(beta.connected, True)
+    self.assertIs(beta.cutoff, False)
+    self.assertEqual(beta.ca, beta.cs.getsockname())
+    self.assertEqual(beta.ha, beta.cs.getpeername())
+    self.assertEqual(alpha.eha, beta.ha)
+
+    ixBeta = alpha.ixes[beta.ca]
+    self.assertIsNotNone(ixBeta.ca)
+    self.assertIsNotNone(ixBeta.cs)
+    self.assertEqual(ixBeta.cs.getsockname(), beta.cs.getpeername())
+    self.assertEqual(ixBeta.cs.getpeername(), beta.cs.getsockname())
+    self.assertEqual(ixBeta.ca, beta.ca)
+    self.assertEqual(ixBeta.ha, beta.ha)
+
+    msgOut = b"Beta sends to Alpha"
+    beta.tx(msgOut)
+    while not ixBeta.rxbs and beta.txes:
+        beta.serviceTxes()
+        alpha.serviceReceivesAllIx()
+        time.sleep(0.05)
+    msgIn = bytes(ixBeta.rxbs)
+    self.assertEqual(msgIn, msgOut)
+    index = len(ixBeta.rxbs)
+
+    alpha.close()
+    beta.close()
+
+    wlBetaRx = wireLogBeta.getRx()
+    wlBetaTx = wireLogBeta.getTx()
+    self.assertEqual(wlBetaRx, wlBetaTx)  # since wlog is same
+
+    wireLogAlpha.close()
+    wireLogBeta.close()
+
+    console.reinit(verbosity=console.Wordage.concise)
+    """Done Test"""
+
 def localTestCertDirPath():
     """
     Returns local testing directory path for TLS certs
@@ -509,84 +733,74 @@ def  test_tcp_tls_default_context():
     assert os.path.exists(clientCertPath)
     assert os.path.exists(serverCaPath)
 
-    server = ServerTls(host='localhost',
-                        port = 6101,
-                        bufsize=16192,
-                        wlog=None,
-                        context=None,
-                        version=None,
-                        certify=None,
-                        keypath=serverKeyPath,
-                        certpath=serverCertPath,
-                        cafilepath=clientCaPath,
-                        )
-    assert server.reopen() == True
-    assert server.ha == ('127.0.0.1', 6101)
-
     serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
 
-    beta = ClientTls(ha=server.ha,
-                        bufsize=16192,
-                        wlog=None,
-                        context=None,
-                        version=None,
-                        certify=None,
-                        hostify=None,
-                        certedhost=serverCertCommonName,
-                        keypath=clientKeyPath,
-                        certpath=clientCertPath,
-                        cafilepath=serverCaPath,
-                        )
-    assert beta.reopen() == True
-    assert beta.accepted == False
-    assert beta.connected == False
-    assert beta.cutoff == False
+    cycler = cycling.Cycler()
+    with openServer(cls=ServerTls,
+                    cycler=cycler, ha=("", 6101), bs=16192,
+                    keypath=serverKeyPath,
+                    certpath=serverCertPath,
+                    cafilepath=clientCaPath) as server, \
+         openClient(cls=ClientTls,
+                    cycler=cycler, ha=("127.0.0.1", 6101), bs=16192,
+                    certedhost=serverCertCommonName,
+                    keypath=clientKeyPath,
+                    certpath=clientCertPath,
+                    cafilepath=serverCaPath,) as beta:
 
-    # Connect beta to server
-    while not(beta.connected and len(server.ixes) >= 1):
-        beta.serviceConnect()
-        server.serviceConnects()
-        time.sleep(0.01)
+        assert server.opened == True
+        assert server.eha == ('127.0.0.1', 6101)
+        assert server.ha == ('0.0.0.0', 6101)
 
-    assert beta.accepted == True
-    assert beta.connected == True
-    assert beta.cutoff == False
-    assert beta.ca == beta.cs.getsockname()
-    assert beta.ha == beta.cs.getpeername()
+        assert beta.opened == True
+        assert beta.accepted == False
+        assert beta.connected == False
+        assert beta.cutoff == False
 
-    ixBeta = server.ixes[beta.ca]
-    assert ixBeta.cs.getsockname() == beta.cs.getpeername()
-    assert ixBeta.cs.getpeername() == beta.cs.getsockname()
-    assert ixBeta.ca == beta.ca
-    assert ixBeta.ha == beta.ha
+        # Connect beta to server
+        while not(beta.connected and len(server.ixes) >= 1):
+            beta.serviceConnect()
+            server.serviceConnects()
+            time.sleep(0.01)
 
-    msgOut = b"Beta sends to Server\n"
-    beta.tx(msgOut)
-    while not( not beta.txes and ixBeta.rxbs):
-        beta.serviceTxes()
+        assert beta.accepted == True
+        assert beta.connected == True
+        assert beta.cutoff == False
+        assert beta.ca == beta.cs.getsockname()
+        assert beta.ha == beta.cs.getpeername()
+
+        ixBeta = server.ixes[beta.ca]
+        assert ixBeta.cs.getsockname() == beta.cs.getpeername()
+        assert ixBeta.cs.getpeername() == beta.cs.getsockname()
+        assert ixBeta.ca == beta.ca
+        assert ixBeta.ha == beta.ha
+
+        msgOut = b"Beta sends to Server\n"
+        beta.tx(msgOut)
+        while not( not beta.txes and ixBeta.rxbs):
+            beta.serviceTxes()
+            server.serviceReceivesAllIx()
+            time.sleep(0.01)
+
+        time.sleep(0.05)
         server.serviceReceivesAllIx()
-        time.sleep(0.01)
 
+        msgIn = bytes(ixBeta.rxbs)
+        assert msgIn == msgOut
+        #index = len(ixBeta.rxbs)
+        ixBeta.clearRxbs()
 
-    time.sleep(0.05)
-    server.serviceReceivesAllIx()
+        msgOut = b'Server sends to Beta\n'
+        ixBeta.tx(msgOut)
+        while not (not ixBeta.txes and beta.rxbs):
+            server.serviceTxesAllIx()
+            beta.serviceReceives()
+            time.sleep(0.01)
 
-    msgIn = bytes(ixBeta.rxbs)
-    assert msgIn == msgOut
-    #index = len(ixBeta.rxbs)
-    ixBeta.clearRxbs()
-
-    msgOut = b'Server sends to Beta\n'
-    ixBeta.tx(msgOut)
-    while not (not ixBeta.txes and beta.rxbs):
-        server.serviceTxesAllIx()
-        beta.serviceReceives()
-        time.sleep(0.01)
-
-    msgIn = bytes(beta.rxbs)
-    assert msgIn == msgOut
-    #index = len(beta.rxbs)
-    beta.clearRxbs()
+        msgIn = bytes(beta.rxbs)
+        assert msgIn == msgOut
+        #index = len(beta.rxbs)
+        beta.clearRxbs()
 
     server.close()
     beta.close()

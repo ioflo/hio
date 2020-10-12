@@ -19,14 +19,12 @@ from .. import coring
 
 
 @contextmanager
-def openClient(cycler=None, timeout=None, ha=None, cls=None):
+def openClient(cls=None, **kwa):
     """
     Wrapper to create and open Client instances
     When used in with statement block, calls .close() on exit of with block
 
     Parameters:
-        cycler is Cycler instance if provided
-        timeout is connection timeout in seconds
         cls is Class instance of subclass instance
 
     Usage:
@@ -40,7 +38,7 @@ def openClient(cycler=None, timeout=None, ha=None, cls=None):
     if cls is None:
         cls = Client
     try:
-        client = cls(cycler=cycler, timeout=timeout, ha=ha)
+        client = cls(**kwa)
         client.reopen()
 
         yield client
@@ -70,7 +68,7 @@ class Client():
                  host='127.0.0.1',
                  port=56000,
                  reconnectable=None,
-                 bufsize=8096,
+                 bs=8096,
                  txes=None,
                  rxbs=None,
                  wlog=None):
@@ -81,7 +79,7 @@ class Client():
             ha = host address duple (host, port) of remote server
             host = host address or tcp server to connect to
             port = socket port
-            bufsize = buffer size
+            bs = buffer size
             wlog = WireLog object if any
             cycler = Cycler instance reference
             timeout = auto reconnect timeout
@@ -107,7 +105,7 @@ class Client():
         self.reconnectable = reconnectable if reconnectable is not None else self.Reconnectable
         self.opened = False
 
-        self.bs = bufsize
+        self.bs = bs
         self.txes = txes if txes is not None else deque()  # deque of data to send
         self.rxbs = rxbs if rxbs is not None else bytearray()  # byte array of data recieved
         self.wlog = wlog

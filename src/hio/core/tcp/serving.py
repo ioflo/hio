@@ -27,14 +27,12 @@ from .. import coring
 
 
 @contextmanager
-def openServer(cycler=None, timeout=None, ha=None, cls=None):
+def openServer(cls=None, **kwa):
     """
     Wrapper to create and open Server instances
     When used in with statement block, calls .close() on exit of with block
 
     Parameters:
-        cycler is Cycler instance if provided
-        timeout is connection timeout in seconds
         cls is Class instance of subclass instance
 
     Usage:
@@ -45,16 +43,16 @@ def openServer(cycler=None, timeout=None, ha=None, cls=None):
             server0.
 
     """
-    if cls is None:
-        cls = Server
+    cls = cls if cls is not None else Server
+
     try:
-        server = cls(cycler=cycler, timeout=timeout, ha=ha)
+        server = cls(**kwa)
         server.reopen()  #  opens accept socket
 
         yield server
 
     finally:
-        server.closeAll()
+        server.close()
 
 
 
@@ -64,38 +62,39 @@ class Acceptor(object):
     Acceptor Base Class for Server.
     Nonblocking TCP Socket Acceptor Class.
     Listen socket for incoming TCP connections
+
+    Attributes:
+        .ha is (host,port) duple (two tuple)
+               host = "" or "0.0.0.0" means listen on all interfaces
+        .eha is normalized (host, port) duple for incoming TLS connections
+                as external facing address for TLS context
+        .bs is buffer size
+        .ss is server listen socket for incoming accept requests
+        .axes is deque of accepte connection duples (ca, cs)
+        .opened is boolean, True if listen socket .ss opened. False otherwise
     """
 
     def __init__(self,
                  ha=None,
-                 host=u'',
-                 port=56000,
-                 eha=None,
-                 bufsize=8096,
-                 wlog=None):
+                 bs=8096,
+                 ):
         """
         Initialization method for instance.
-        ha = host address duple (host, port) for listen socket
-        host = host address for listen socket, '' means any interface on host
-        port = socket port for listen socket
-        eha = external destination address for incoming connections used in tls
-        bufsize = buffer size
-        wlog = WireLog object if any
+        ha is host address duple (host, port) listen interfaces
+              host = "" or "0.0.0.0" means listen on all interfaces
+        bs = buffer size
+
         """
         self.ha = ha or (host, port)  # ha = host address
-        eha = eha or self.ha
-        if eha:
-            host, port = eha
-            host = coring.normalizeHost(host)
-            if host in ('0.0.0.0',):
-                host = '127.0.0.1'
-            elif host in ("::", "0:0:0:0:0:0:0:0"):
-                host = "::1"
-            eha = (host, port)
-        self.eha = eha
-        self.bs = bufsize
-        self.wlog = wlog
-
+        eha = self.ha
+        host, port = eha  # expand so can normalize host
+        host = coring.normalizeHost(host)
+        if host in ('0.0.0.0',):
+            host = '127.0.0.1'  # need specific interface for tls
+        elif host in ("::", "0:0:0:0:0:0:0:0"):
+            host = "::1" # need specific interface for tls
+        self.eha = (host, port)
+        self.bs = bs
         self.ss = None  # listen socket for accepts
         self.axes = deque()  # deque of duple (ca, cs) accepted connections
         self.opened = False
@@ -202,23 +201,50 @@ class Server(Acceptor):
     Nonblocking TCP Socket Server Class.
     Listen socket for incoming TCP connections that generates Incomer sockets
     for accepted connections
+
+    Inherited Attributes:
+        .ha is (host,port) duple (two tuple)
+               host = "" or "0.0.0.0" means listen on all interfaces
+        .eha is normalized (host, port) duple for incoming TLS connections
+                as external facing address for TLS context
+        .bs is buffer size
+        .ss is server listen socket for incoming accept requests
+        .axes is deque of accepte connection duples (ca, cs)
+        .opened is boolean, True if listen socket .ss opened. False otherwise
+
+    Attributes:
+        .cycler is Cycler instance
+        .timeout is timeout in seconds for connection refresh
+        .wlog is wire log
+        .ixes is dict of incoming connections indexed by remote (host, port) duple
     """
+
     Timeout = 1.0  # timeout in seconds
 
     def __init__(self,
+                 ha=None,
+                 host="",
+                 port=56000,
                  cycler=None,
                  timeout=None,
+                 wlog=None,
                  **kwa):
         """
         Initialization method for instance.
-
-        cycler = Cycler instance if any to pass to incomers for incoming connections
-        timeout = default timeout for to pass to incomers for  incoming connections
+        Parameters:
+            ha is TCP/IP (host, port) duple for listen socket
+            host is default TCP/IP host address for listen socket
+                "" or "0.0.0.0" is listen on all interfaces
+            port is default TCP/IP port
+            cycler is Cycler instance if any to pass to incomers for incoming connections
+            timeout is default timeout for to pass to incomers for  incoming connections
+            wlog is WireLog object if any
         """
-        super(Server, self).__init__(**kwa)
+        ha = ha or (host, port)
+        super(Server, self).__init__(ha=ha, **kwa)
         self.cycler = cycler or cycling.Cycler()
         self.timeout = timeout if timeout is not None else self.Timeout
-
+        self.wlog = wlog
         self.ixes = dict()  # ready to rx tx incoming connections, Incomer instances
 
     def serviceAxes(self):
@@ -295,12 +321,14 @@ class Server(Acceptor):
         for ix in self.ixes.values():
             ix.close()
 
-    def closeAll(self):
+    def close(self):
         """
         Close all sockets
         """
-        self.close()
+        super(Server, self).close()  #  call super close
         self.closeAllIx()
+
+    closeAll = close  # alias for now remove later
 
     def removeIx(self, ca, shutclose=True):
         """
@@ -433,6 +461,28 @@ class ServerTls(Server):
     Nonblocking TCP Socket Server Class.
     Listen socket for incoming TCP connections
     IncomerTLS sockets for accepted connections
+
+    Inherited Attributes:
+        .ha is (host,port) duple (two tuple)
+               host = "" or "0.0.0.0" means listen on all interfaces
+        .eha is normalized (host, port) duple for incoming TLS connections
+                as external facing address for TLS context
+        .bs is buffer size
+        .ss is server listen socket for incoming accept requests
+        .axes is deque of accepte connection duples (ca, cs)
+        .opened is boolean, True if listen socket .ss opened. False otherwise
+        .cycler is Cycler instance
+        .timeout is timeout in seconds for connection refresh
+        .wlog is wire log
+        .ixes is dict of incoming connections indexed by remote (host, port) duple
+
+    Attributes:
+        .context is TLS context instance
+        .version is TLS version
+        .certify is boolean, True to client certify, False otherwise
+        .keypath is path to key file
+        .certpath is path to cert file
+        .cafilepath is path to ca file
     """
     def __init__(self,
                  context=None,
