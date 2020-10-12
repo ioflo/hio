@@ -100,9 +100,9 @@ def test_tcp_basic():
     assert server.opened == False
 
     cycler = cycling.Cycler()
-    with openServer(cycler=cycler, timeout=1.0, ha=("", 6101)) as server, \
-         openClient(cycler=cycler, timeout=1.0, ha=("127.0.0.1", 6101)) as beta, \
-         openClient(cycler=cycler, timeout=1.0, ha=("127.0.0.1", 6101)) as gamma:
+    with openServer(cycler=cycler, ha=("", 6101)) as server, \
+         openClient(cycler=cycler, ha=("127.0.0.1", 6101)) as beta, \
+         openClient(cycler=cycler, ha=("127.0.0.1", 6101)) as gamma:
 
         assert server.opened == True
         assert beta.opened == True
@@ -475,8 +475,8 @@ def test_tcp_service():
     Test Classes tcp service methods
     """
     cycler = cycling.Cycler()
-    with openServer(cycler=cycler, timeout=1.0, ha=("", 6101)) as server, \
-         openClient(cycler=cycler, timeout=1.0, ha=("127.0.0.1", 6101)) as beta:
+    with openServer(cycler=cycler,  ha=("", 6101)) as server, \
+         openClient(cycler=cycler,  ha=("127.0.0.1", 6101)) as beta:
 
         assert server.opened == True
         assert server.ha == ('0.0.0.0', 6101)
@@ -509,6 +509,7 @@ def test_tcp_service():
         beta.tx(msgOut1)
         while not ixBeta.rxbs and beta.txes:
             beta.serviceTxes()
+            time.sleep(0.05)
             server.serviceReceivesAllIx()
             time.sleep(0.05)
         msgIn = bytes(ixBeta.rxbs)
@@ -574,96 +575,74 @@ def test_tcp_service():
 
     """Done Test"""
 
-def test_client_auto_reconnect(self):
+def test_client_auto_reconnect():
     """
     Test client auto reconnect when  .reconnectable
     """
-    console.terse("{0}\n".format(self.testClientAutoReconnect.__doc__))
-    console.reinit(verbosity=console.Wordage.profuse)
+    cycler = cycling.Cycler(tick=0.05)
+    with openServer(cycler=cycler, ha=("", 6101)) as server, \
+         openClient(cycler=cycler, timeout=0.2, reconnectable=True,
+                    ha=("127.0.0.1", 6101)) as beta:
 
-    wireLogAlpha = wiring.WireLog(buffify=True, same=True)
-    result = wireLogAlpha.reopen()
+        # close server
+        server.close()
+        assert server.opened == False
 
-    wireLogBeta = wiring.WireLog(buffify=True,  same=True)
-    result = wireLogBeta.reopen()
+        assert beta.opened == True
+        assert beta.accepted == False
+        assert beta.connected == False
+        assert beta.cutoff == False
+        assert beta.cycler == cycler
+        assert beta.reconnectable == True
 
-    store = storing.Store(stamp=0.0)
+        # attempt to connect beta to serve while server down (closed)
+        while beta.cycler.tyme <= 0.25:
+            beta.serviceConnect()
+            beta.cycler.tock()
+            time.sleep(0.05)
 
-    beta = clienting.Client(ha=('127.0.0.1', 6101),
-                               bs=131072,
-                               wlog=wireLogBeta,
-                               store=store,
-                               timeout=0.2,
-                               reconnectable=True, )
-    self.assertIs(beta.reopen(), True)
-    self.assertIs(beta.accepted, False)
-    self.assertIs(beta.connected, False)
-    self.assertIs(beta.cutoff, False)
-    self.assertIs(beta.store, store)
-    self.assertIs(beta.reconnectable, True)
+        assert beta.accepted == False
+        assert beta.connected == False
 
-    console.terse("Connecting beta to alpha when alpha not up\n")
-    while beta.store.stamp <= 0.25:
-        beta.serviceConnect()
-        if beta.connected and beta.ca in alpha.ixes:
-            break
-        beta.store.advanceStamp(0.05)
-        time.sleep(0.05)
+        assert server.reopen() == True
+        assert server.ha == ('0.0.0.0', 6101)
+        assert server.eha== ('127.0.0.1', 6101)
 
-    self.assertIs(beta.accepted, False)
-    self.assertIs(beta.connected, False)
+        assert beta.ha == server.eha
 
-    alpha = serving.Server(port = 6101, bs=131072, wlog=wireLogAlpha, store=store)
-    self.assertIs(alpha.reopen(), True)
-    self.assertEqual(alpha.ha, ('0.0.0.0', 6101))
-    self.assertEqual(alpha.eha, ('127.0.0.1', 6101))
+        # attempt to connect beta to server while server up (opened)
+        while not (beta.connected and beta.ca in server.ixes):
+            beta.serviceConnect()
+            server.serviceConnects()
+            beta.cycler.tock()  # advances clients reconnect retry tymer
+            time.sleep(0.05)
 
+        assert beta.accepted == True
+        assert beta.connected == True
+        assert beta.cutoff == False
+        assert beta.ca == beta.cs.getsockname()
+        assert beta.ha == beta.cs.getpeername()
+        assert server.eha == beta.ha
 
-    console.terse("Connecting beta to alpha when alpha up\n")
-    while True:
-        beta.serviceConnect()
-        alpha.serviceConnects()
-        if beta.connected and beta.ca in alpha.ixes:
-            break
-        beta.store.advanceStamp(0.05)
-        time.sleep(0.05)
+        ixBeta = server.ixes[beta.ca]
+        assert ixBeta.cs.getsockname() == beta.cs.getpeername()
+        assert ixBeta.cs.getpeername() == beta.cs.getsockname()
+        assert ixBeta.ca == beta.ca
+        assert ixBeta.ha == beta.ha
 
-    self.assertIs(beta.accepted, True)
-    self.assertIs(beta.connected, True)
-    self.assertIs(beta.cutoff, False)
-    self.assertEqual(beta.ca, beta.cs.getsockname())
-    self.assertEqual(beta.ha, beta.cs.getpeername())
-    self.assertEqual(alpha.eha, beta.ha)
+        msgOut = b"Beta sends to Server on reconnect"
+        beta.tx(msgOut)
+        while not ixBeta.rxbs and beta.txes:
+            beta.serviceTxes()
+            time.sleep(0.05)
+            server.serviceReceivesAllIx()
+            time.sleep(0.05)
+        msgIn = bytes(ixBeta.rxbs)
+        assert msgIn == msgOut
+        index = len(ixBeta.rxbs)
 
-    ixBeta = alpha.ixes[beta.ca]
-    self.assertIsNotNone(ixBeta.ca)
-    self.assertIsNotNone(ixBeta.cs)
-    self.assertEqual(ixBeta.cs.getsockname(), beta.cs.getpeername())
-    self.assertEqual(ixBeta.cs.getpeername(), beta.cs.getsockname())
-    self.assertEqual(ixBeta.ca, beta.ca)
-    self.assertEqual(ixBeta.ha, beta.ha)
-
-    msgOut = b"Beta sends to Alpha"
-    beta.tx(msgOut)
-    while not ixBeta.rxbs and beta.txes:
-        beta.serviceTxes()
-        alpha.serviceReceivesAllIx()
-        time.sleep(0.05)
-    msgIn = bytes(ixBeta.rxbs)
-    self.assertEqual(msgIn, msgOut)
-    index = len(ixBeta.rxbs)
-
-    alpha.close()
-    beta.close()
-
-    wlBetaRx = wireLogBeta.getRx()
-    wlBetaTx = wireLogBeta.getTx()
-    self.assertEqual(wlBetaRx, wlBetaTx)  # since wlog is same
-
-    wireLogAlpha.close()
-    wireLogBeta.close()
-
-    console.reinit(verbosity=console.Wordage.concise)
+    assert beta.opened == False
+    assert server.opened == False
     """Done Test"""
 
 def localTestCertDirPath():
@@ -780,4 +759,4 @@ def  test_tcp_tls_default_context():
 
 
 if __name__ == "__main__":
-    test_tcp_service()
+    test_client_auto_reconnect()

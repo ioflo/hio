@@ -82,14 +82,14 @@ class Client():
             bs = buffer size
             wlog = WireLog object if any
             cycler = Cycler instance reference
-            timeout = auto reconnect timeout
-            reconnectable = Boolean auto reconnect if timed out
+            timeout = auto reconnect retry timeout
+            reconnectable = Boolean retry auto reconnect if timed out
             txes = deque of data to send
             rxbs = bytearray of data received
         """
         self.cycler = cycler or cycling.Cycler(tyme=0.0)
         self.timeout = timeout if timeout is not None else self.Timeout
-        self.tymer = cycling.Tymer(self.cycler, duration=self.timeout)
+        self.tymer = cycling.Tymer(self.cycler, duration=self.timeout)  # reconnect retry timer
 
         self.reinitHostPort(ha=ha, hostname=host, port=port)
         self.ha = ha or (host, port)
@@ -324,7 +324,7 @@ class Client():
         # self.cs.getpeername() is self.ha
         self.ha = self.cs.getpeername()  # resolved remote connection address
 
-        self.accepted = True
+        self.accepted = True  # also sets .connected == True
         self.cutoff = False
         return True
 
@@ -347,7 +347,7 @@ class Client():
         Returns .connected
         """
         if not self.connected:
-            self.connect()
+            self.connect()  # if successful sets .accepted .connected to True
 
             if not self.connected and self.reconnectable:
                 if self.timeout > 0.0 and self.tymer.expired:  # timed out
