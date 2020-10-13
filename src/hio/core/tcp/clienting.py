@@ -76,16 +76,17 @@ class Client():
         Initialization method for instance.
 
         Parameters:
+            cycler = Cycler instance reference
+            timeout = auto reconnect retry timeout
+
             ha = host address duple (host, port) of remote server
             host = host address or tcp server to connect to
             port = socket port
-            bs = buffer size
-            wlog = WireLog object if any
-            cycler = Cycler instance reference
-            timeout = auto reconnect retry timeout
             reconnectable = Boolean retry auto reconnect if timed out
+            bs = buffer size
             txes = deque of data to send
             rxbs = bytearray of data received
+            wlog = WireLog object if any
         """
         self.cycler = cycler or cycling.Cycler(tyme=0.0)
         self.timeout = timeout if timeout is not None else self.Timeout
