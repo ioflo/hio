@@ -11,8 +11,8 @@ from ..help.timing import MonoTimer
 
 
 
-Ctl = enum.Enum('Control', 'ready start run stop abort')
-Sts = enum.Enum('Status', 'readied started running stopped aborted')
+Ctl = enum.Enum('Control', 'ready enter recur exit abort')
+Sts = enum.Enum('Status', 'readied entered recurring exited aborted')
 
 
 class Tasker():
@@ -37,8 +37,8 @@ class Tasker():
         """
         self.cycler = cycler or tasking.Cycler(tyme=0.0)
         self.tick = float(abs(time))  # desired time between runs, 0.0 means asap
-        self.status = Sts.stopped  # operational status of tasker
-        self.desire = Ctl.stop  # desired control next time Task is iterated
+        self.status = Sts.exited  # operational status of tasker
+        self.desire = Ctl.exit  # desired control next time Task is iterated
         self.done = True  # tasker completion state reset on restart
         self.doer = None  # reference to generator
         self.remake()  # make generator assign to .run and advance to yield
@@ -67,11 +67,11 @@ class Tasker():
         has less code because of defaults that just ignore control
         when it's not applicable to current status
         Status cycles:
-            readied -> started -> running -> stopped -> started -> ...
-            readied -> started -> running -> stopped -> aborted -> readied -> ...
+            readied -> entered -> recurring -> exited -> readied -> ...
+            readied -> entered -> recurring -> exited -> aborted -> readied -> ...
 
         """
-        self.desire = Ctl.stop  # default what to do next time, override below
+        self.desire = Ctl.exit  # default what to do next time, override below
         self.status = Sts.aborted # operational status of tasker
         self.done = True
 
@@ -79,36 +79,37 @@ class Tasker():
             while (True):
                 control = (yield (self.status))  # accept control and yield status
 
-                if control == Ctl.run:
-                    if self.status in (Sts.started, Sts.running):
-                        self.run()
-                        self.status = Sts.running
-                        # .run may change .desire
+                if control == Ctl.recur:
+                    if self.status in (Sts.entered, Sts.recurring):
+                        self.recur()
+                        self.status = Sts.recurring  # stary in recurring
+                        # .recur may change .desire
 
-                    elif self.status in (Sts.readied, Sts.stopped):
-                        self.desire == Ctl.start  #  auto start on run
+                    elif self.status in (Sts.readied, Sts.exited):
+                        self.desire == Ctl.enter  #  auto enter on run
 
-                elif control == Ctl.ready:  # may reready in any status
-                    self.ready()
-                    self.status = Sts.readied
-                    self.desire = Ctl.start  # auto start on ready
+                elif control == Ctl.ready:
+                    if self.status in (Sts.exited, Sts.aborted):
+                        self.ready()
+                        self.status = Sts.readied
+                        self.desire = Ctl.enter  # auto enter after ready
 
-                elif control == Ctl.start:  # may restart if stopped
-                    if self.status in (Sts.stopped, Sts.readied):
-                        self.start()
-                        self.status = Sts.started
+                elif control == Ctl.enter:
+                    if self.status in (Sts.readied):
+                        self.enter()
+                        self.status = Sts.entered
                         self.done = False  # done state updated by .run or .stop
-                        self.desire = Ctl.run  #  auto run on start
+                        self.desire = Ctl.recur  #  auto recur after enter
 
-                elif control == Ctl.stop:
-                    if self.status in (Sts.running, Sts.started):
-                        self.stop()
-                        self.status = Sts.stopped
-                        self.desire = Ctl.stop
+                elif control == Ctl.exit:
+                    if self.status in (Sts.entered, Sts.recurring):
+                        self.exit()
+                        self.status = Sts.exited
+                        self.desire = Ctl.exit  #  stay in exited
 
                 elif control == Ctl.abort:  # may abort from any status.
-                    if self.status in (Sts.started, Sts.running):
-                        self.stop(aborted=True)
+                    if self.status in (Sts.entered, Sts.recurring):
+                        self.exit(aborted=True)
                     self.abort()  # Idempotent
                     self.status = Sts.aborted
                     self.desire = Ctl.abort
@@ -130,17 +131,17 @@ class Tasker():
         Placeholder, Override in sub class
         """
 
-    def start(self):
+    def enter(self):
         """
         Placeholder, Override in sub class
         """
 
-    def run(self):
+    def recur(self):
         """
         Placeholder, Override in sub class
         """
 
-    def stop(self, aborted=False):
+    def exit(self, aborted=False):
         """
         Placeholder, Override in sub class
 
@@ -245,7 +246,7 @@ class Cycler():
 
             if retyme <= self.tyme:  # run it now
                 try:
-                    status = tasker.runner.send(tasker.desire)
+                    status = tasker.doer.send(tasker.desire)
                     if status != ABORTED:  # tasker did not abort itself
                         tasks.append((tasker, retyme + tasker.tick))
                         # allows for tick change during run
@@ -257,7 +258,7 @@ class Cycler():
                 tasks.append((tasker, retyme))  # reappend it
                 status = tasker.status
 
-            if status in (Sts.running, Sts.started):
+            if status in (Sts.recurring, Sts.entered):
                 more = True
 
         return (tasks, more)
@@ -284,7 +285,7 @@ class Cycler():
         tasks = deque()
         for tasker in self.taskers:
             tasker.desire = Ctl.ready
-            tasker.status = Sts.aborted
+            tasker.status = Sts.exited
             tasks.append((tasker, self.tyme))
 
 
@@ -313,7 +314,7 @@ class Cycler():
                             tasks.append((tasker, retyme))  # reappend it
                             status = tasker.status
 
-                        if status in (Sts.running, Sts.started):
+                        if status in (Sts.recurring, Sts.entered):
                             more = True
 
                     if not tasks:  # no pending taskers so done
