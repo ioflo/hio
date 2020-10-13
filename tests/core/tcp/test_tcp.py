@@ -856,5 +856,401 @@ def test_tcp_tls_verify_both():
     assert server.opened == False
     """Done Test"""
 
+def test_tcp_tls_verify_client():
+    """
+    Test TCP TLS client server connection with verify certs for client not server
+    """
+
+    certDirPath = localTestCertDirPath()
+    assert os.path.exists(certDirPath)
+
+    serverKeyPath = os.path.join(certDirPath, 'server_key.pem')  # local server private key
+    serverCertPath = os.path.join(certDirPath, 'server_cert.pem')  # local server public cert
+    clientCaPath = os.path.join(certDirPath, 'client.pem') # remote client public cert
+
+    clientKeyPath = os.path.join(certDirPath, 'client_key.pem')  # local client private key
+    clientCertPath = os.path.join(certDirPath, 'client_cert.pem')  # local client public cert
+    serverCaPath = os.path.join(certDirPath, 'server.pem') # remote server public cert
+
+    assert os.path.exists(serverKeyPath)
+    assert os.path.exists(serverCertPath)
+    assert os.path.exists(clientCaPath)
+    assert os.path.exists(clientKeyPath)
+    assert os.path.exists(clientCertPath)
+    assert os.path.exists(serverCaPath)
+
+    serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
+
+    cycler = cycling.Cycler()
+    with openServer(cls=ServerTls,
+                    cycler=cycler, ha=("", 6101), bs=16192,
+                    keypath=serverKeyPath,
+                    certpath=serverCertPath,
+                    cafilepath=clientCaPath,
+                    certify=ssl.CERT_REQUIRED,) as server, \
+         openClient(cls=ClientTls,
+                    cycler=cycler, ha=("127.0.0.1", 6101), bs=16192,
+                    certedhost=serverCertCommonName,
+                    keypath=clientKeyPath,
+                    certpath=clientCertPath,
+                    cafilepath=serverCaPath,
+                    certify=ssl.CERT_NONE,
+                    hostify=False,) as beta:
+
+        assert server.opened == True
+        assert server.eha == ('127.0.0.1', 6101)
+        assert server.ha == ('0.0.0.0', 6101)
+
+        assert beta.opened == True
+        assert beta.accepted == False
+        assert beta.connected == False
+        assert beta.cutoff == False
+
+
+        # Connect beta to server
+        while not(beta.connected and len(server.ixes) >= 1):
+            beta.serviceConnect()
+            server.serviceConnects()
+            time.sleep(0.01)
+
+        assert beta.accepted == True
+        assert beta.connected == True
+        assert beta.cutoff == False
+        assert beta.ca == beta.cs.getsockname()
+        assert beta.ha == beta.cs.getpeername()
+
+        ixBeta = server.ixes[beta.ca]
+        assert ixBeta.cs.getsockname() == beta.cs.getpeername()
+        assert ixBeta.cs.getpeername() == beta.cs.getsockname()
+        assert ixBeta.ca == beta.ca
+        assert ixBeta.ha == beta.ha
+
+        msgOut = b"Beta sends to Server\n"
+        beta.tx(msgOut)
+        while not( not beta.txes and ixBeta.rxbs):
+            beta.serviceTxes()
+            server.serviceReceivesAllIx()
+            time.sleep(0.01)
+
+        time.sleep(0.05)
+        server.serviceReceivesAllIx()
+
+        msgIn = bytes(ixBeta.rxbs)
+        assert msgIn == msgOut
+        ixBeta.clearRxbs()
+
+        msgOut = b'Server sends to Beta\n'
+        ixBeta.tx(msgOut)
+        while not (not ixBeta.txes and beta.rxbs):
+            server.serviceTxesAllIx()
+            beta.serviceReceives()
+            time.sleep(0.01)
+
+        msgIn = bytes(beta.rxbs)
+        assert msgIn == msgOut
+        beta.clearRxbs()
+
+    assert beta.opened == False
+    assert server.opened == False
+    """Done Test"""
+
+
+def test_tcp_tls_verify_server():
+    """
+    Test TCP TLS client server connection with verify certs for server not client
+    """
+
+    certDirPath = localTestCertDirPath()
+    assert os.path.exists(certDirPath)
+
+    serverKeyPath = os.path.join(certDirPath, 'server_key.pem')  # local server private key
+    serverCertPath = os.path.join(certDirPath, 'server_cert.pem')  # local server public cert
+    clientCaPath = os.path.join(certDirPath, 'client.pem') # remote client public cert
+
+    clientKeyPath = os.path.join(certDirPath, 'client_key.pem')  # local client private key
+    clientCertPath = os.path.join(certDirPath, 'client_cert.pem')  # local client public cert
+    serverCaPath = os.path.join(certDirPath, 'server.pem') # remote server public cert
+
+    assert os.path.exists(serverKeyPath)
+    assert os.path.exists(serverCertPath)
+    assert os.path.exists(clientCaPath)
+    assert os.path.exists(clientKeyPath)
+    assert os.path.exists(clientCertPath)
+    assert os.path.exists(serverCaPath)
+
+    serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
+
+    cycler = cycling.Cycler()
+    with openServer(cls=ServerTls,
+                    cycler=cycler, ha=("", 6101), bs=16192,
+                    keypath=serverKeyPath,
+                    certpath=serverCertPath,
+                    cafilepath=clientCaPath,
+                    certify=ssl.CERT_NONE ,) as server, \
+         openClient(cls=ClientTls,
+                    cycler=cycler, ha=("127.0.0.1", 6101), bs=16192,
+                    certedhost=serverCertCommonName,
+                    keypath=clientKeyPath,
+                    certpath=clientCertPath,
+                    cafilepath=serverCaPath,
+                    certify=ssl.CERT_REQUIRED,
+                    hostify=True,) as beta:
+
+        assert server.opened == True
+        assert server.eha == ('127.0.0.1', 6101)
+        assert server.ha == ('0.0.0.0', 6101)
+
+        assert beta.opened == True
+        assert beta.accepted == False
+        assert beta.connected == False
+        assert beta.cutoff == False
+
+
+        # Connect beta to server
+        while not(beta.connected and len(server.ixes) >= 1):
+            beta.serviceConnect()
+            server.serviceConnects()
+            time.sleep(0.01)
+
+        assert beta.accepted == True
+        assert beta.connected == True
+        assert beta.cutoff == False
+        assert beta.ca == beta.cs.getsockname()
+        assert beta.ha == beta.cs.getpeername()
+
+        ixBeta = server.ixes[beta.ca]
+        assert ixBeta.cs.getsockname() == beta.cs.getpeername()
+        assert ixBeta.cs.getpeername() == beta.cs.getsockname()
+        assert ixBeta.ca == beta.ca
+        assert ixBeta.ha == beta.ha
+
+        msgOut = b"Beta sends to Server\n"
+        beta.tx(msgOut)
+        while not( not beta.txes and ixBeta.rxbs):
+            beta.serviceTxes()
+            server.serviceReceivesAllIx()
+            time.sleep(0.01)
+
+        time.sleep(0.05)
+        server.serviceReceivesAllIx()
+
+        msgIn = bytes(ixBeta.rxbs)
+        assert msgIn == msgOut
+        ixBeta.clearRxbs()
+
+        msgOut = b'Server sends to Beta\n'
+        ixBeta.tx(msgOut)
+        while not (not ixBeta.txes and beta.rxbs):
+            server.serviceTxesAllIx()
+            beta.serviceReceives()
+            time.sleep(0.01)
+
+        msgIn = bytes(beta.rxbs)
+        assert msgIn == msgOut
+        beta.clearRxbs()
+
+    assert beta.opened == False
+    assert server.opened == False
+    """Done Test"""
+
+def test_tcp_tls_verify_neither():
+    """
+    Test TCP TLS client server connection with verify certs for neither server nor client
+    """
+
+    certDirPath = localTestCertDirPath()
+    assert os.path.exists(certDirPath)
+
+    serverKeyPath = os.path.join(certDirPath, 'server_key.pem')  # local server private key
+    serverCertPath = os.path.join(certDirPath, 'server_cert.pem')  # local server public cert
+    clientCaPath = os.path.join(certDirPath, 'client.pem') # remote client public cert
+
+    clientKeyPath = os.path.join(certDirPath, 'client_key.pem')  # local client private key
+    clientCertPath = os.path.join(certDirPath, 'client_cert.pem')  # local client public cert
+    serverCaPath = os.path.join(certDirPath, 'server.pem') # remote server public cert
+
+    assert os.path.exists(serverKeyPath)
+    assert os.path.exists(serverCertPath)
+    assert os.path.exists(clientCaPath)
+    assert os.path.exists(clientKeyPath)
+    assert os.path.exists(clientCertPath)
+    assert os.path.exists(serverCaPath)
+
+    serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
+
+    cycler = cycling.Cycler()
+    with openServer(cls=ServerTls,
+                    cycler=cycler, ha=("", 6101), bs=16192,
+                    keypath=serverKeyPath,
+                    certpath=serverCertPath,
+                    cafilepath=clientCaPath,
+                    certify=ssl.CERT_NONE ,) as server, \
+         openClient(cls=ClientTls,
+                    cycler=cycler, ha=("127.0.0.1", 6101), bs=16192,
+                    certedhost=serverCertCommonName,
+                    keypath=clientKeyPath,
+                    certpath=clientCertPath,
+                    cafilepath=serverCaPath,
+                    certify=ssl.CERT_NONE,
+                    hostify=False,) as beta:
+
+        assert server.opened == True
+        assert server.eha == ('127.0.0.1', 6101)
+        assert server.ha == ('0.0.0.0', 6101)
+
+        assert beta.opened == True
+        assert beta.accepted == False
+        assert beta.connected == False
+        assert beta.cutoff == False
+
+
+        # Connect beta to server
+        while not(beta.connected and len(server.ixes) >= 1):
+            beta.serviceConnect()
+            server.serviceConnects()
+            time.sleep(0.01)
+
+        assert beta.accepted == True
+        assert beta.connected == True
+        assert beta.cutoff == False
+        assert beta.ca == beta.cs.getsockname()
+        assert beta.ha == beta.cs.getpeername()
+
+        ixBeta = server.ixes[beta.ca]
+        assert ixBeta.cs.getsockname() == beta.cs.getpeername()
+        assert ixBeta.cs.getpeername() == beta.cs.getsockname()
+        assert ixBeta.ca == beta.ca
+        assert ixBeta.ha == beta.ha
+
+        msgOut = b"Beta sends to Server\n"
+        beta.tx(msgOut)
+        while not( not beta.txes and ixBeta.rxbs):
+            beta.serviceTxes()
+            server.serviceReceivesAllIx()
+            time.sleep(0.01)
+
+        time.sleep(0.05)
+        server.serviceReceivesAllIx()
+
+        msgIn = bytes(ixBeta.rxbs)
+        assert msgIn == msgOut
+        ixBeta.clearRxbs()
+
+        msgOut = b'Server sends to Beta\n'
+        ixBeta.tx(msgOut)
+        while not (not ixBeta.txes and beta.rxbs):
+            server.serviceTxesAllIx()
+            beta.serviceReceives()
+            time.sleep(0.01)
+
+        msgIn = bytes(beta.rxbs)
+        assert msgIn == msgOut
+        beta.clearRxbs()
+
+    assert beta.opened == False
+    assert server.opened == False
+    """Done Test"""
+
+def test_tcp_tls_verify_both_tlsv12():
+    """
+    Test TCP TLS client server connection with verify certs for both client and server
+    """
+
+    certDirPath = localTestCertDirPath()
+    assert os.path.exists(certDirPath)
+
+    serverKeyPath = os.path.join(certDirPath, 'server_key.pem')  # local server private key
+    serverCertPath = os.path.join(certDirPath, 'server_cert.pem')  # local server public cert
+    clientCaPath = os.path.join(certDirPath, 'client.pem') # remote client public cert
+
+    clientKeyPath = os.path.join(certDirPath, 'client_key.pem')  # local client private key
+    clientCertPath = os.path.join(certDirPath, 'client_cert.pem')  # local client public cert
+    serverCaPath = os.path.join(certDirPath, 'server.pem') # remote server public cert
+
+    assert os.path.exists(serverKeyPath)
+    assert os.path.exists(serverCertPath)
+    assert os.path.exists(clientCaPath)
+    assert os.path.exists(clientKeyPath)
+    assert os.path.exists(clientCertPath)
+    assert os.path.exists(serverCaPath)
+
+    serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
+
+    cycler = cycling.Cycler()
+    with openServer(cls=ServerTls,
+                    cycler=cycler, ha=("", 6101), bs=16192,
+                    keypath=serverKeyPath,
+                    certpath=serverCertPath,
+                    cafilepath=clientCaPath,
+                    certify=ssl.CERT_REQUIRED,
+                    version=ssl.PROTOCOL_TLSv1_2,) as server, \
+         openClient(cls=ClientTls,
+                    cycler=cycler, ha=("127.0.0.1", 6101), bs=16192,
+                    certedhost=serverCertCommonName,
+                    keypath=clientKeyPath,
+                    certpath=clientCertPath,
+                    cafilepath=serverCaPath,
+                    certify=ssl.CERT_REQUIRED,
+                    hostify=True,
+                    version=ssl.PROTOCOL_TLSv1_2,) as beta:
+
+
+        assert server.opened == True
+        assert server.eha == ('127.0.0.1', 6101)
+        assert server.ha == ('0.0.0.0', 6101)
+
+        assert beta.opened == True
+        assert beta.accepted == False
+        assert beta.connected == False
+        assert beta.cutoff == False
+
+
+        # Connect beta to server
+        while not(beta.connected and len(server.ixes) >= 1):
+            beta.serviceConnect()
+            server.serviceConnects()
+            time.sleep(0.01)
+
+        assert beta.accepted == True
+        assert beta.connected == True
+        assert beta.cutoff == False
+        assert beta.ca == beta.cs.getsockname()
+        assert beta.ha == beta.cs.getpeername()
+
+        ixBeta = server.ixes[beta.ca]
+        assert ixBeta.cs.getsockname() == beta.cs.getpeername()
+        assert ixBeta.cs.getpeername() == beta.cs.getsockname()
+        assert ixBeta.ca == beta.ca
+        assert ixBeta.ha == beta.ha
+
+        msgOut = b"Beta sends to Server\n"
+        beta.tx(msgOut)
+        while not( not beta.txes and ixBeta.rxbs):
+            beta.serviceTxes()
+            server.serviceReceivesAllIx()
+            time.sleep(0.01)
+
+        time.sleep(0.05)
+        server.serviceReceivesAllIx()
+
+        msgIn = bytes(ixBeta.rxbs)
+        assert msgIn == msgOut
+        ixBeta.clearRxbs()
+
+        msgOut = b'Server sends to Beta\n'
+        ixBeta.tx(msgOut)
+        while not (not ixBeta.txes and beta.rxbs):
+            server.serviceTxesAllIx()
+            beta.serviceReceives()
+            time.sleep(0.01)
+
+        msgIn = bytes(beta.rxbs)
+        assert msgIn == msgOut
+        beta.clearRxbs()
+
+    assert beta.opened == False
+    assert server.opened == False
+    """Done Test"""
+
 if __name__ == "__main__":
-    test_tcp_tls_verify_both()
+    test_tcp_tls_verify_both_tlsv12()

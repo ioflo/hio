@@ -409,7 +409,7 @@ def initServerContext(context=None,
     If certify is not None then use certify value provided Otherwise use default
 
     context = context object for tls/ssl If None use default
-    version = ssl version If None use default
+    version = ssl protocol version If None use default
     certify = cert requirement If None use default
               ssl.CERT_NONE = 0
               ssl.CERT_OPTIONAL = 1
@@ -422,12 +422,12 @@ def initServerContext(context=None,
               If given apply to context
     """
     if context is None:  # create context
-        if not version:  # use default context
+        if not version:  # use default context with default protocol version
             context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
             context.verify_mode = certify if certify is not None else ssl.CERT_REQUIRED
 
         else:  # create context with specified protocol version
-            context = ssl.SSLContext(version)
+            context = ssl.SSLContext(protocol=version)
             # disable bad protocols versions
             context.options |= ssl.OP_NO_SSLv2
             context.options |= ssl.OP_NO_SSLv3
@@ -442,15 +442,16 @@ def initServerContext(context=None,
             context.set_ciphers(ssl._RESTRICTED_SERVER_CIPHERS)
             context.verify_mode = certify if certify is not None else ssl.CERT_REQUIRED
 
-        if cafilepath:
-            context.load_verify_locations(cafile=cafilepath,
-                                          capath=None,
-                                          cadata=None)
-        elif context.verify_mode != ssl.CERT_NONE:
-            context.load_default_certs(purpose=ssl.Purpose.CLIENT_AUTH)
+    if cafilepath:
+        context.load_verify_locations(cafile=cafilepath,
+                                      capath=None,
+                                      cadata=None)
+    elif context.verify_mode != ssl.CERT_NONE:
+        context.load_default_certs(purpose=ssl.Purpose.CLIENT_AUTH)
 
-        if keypath or certpath:
-            context.load_cert_chain(certfile=certpath, keyfile=keypath)
+    if keypath or certpath:
+        context.load_cert_chain(certfile=certpath, keyfile=keypath)
+
     return context
 
 
