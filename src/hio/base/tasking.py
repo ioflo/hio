@@ -35,7 +35,7 @@ class Tasker():
         Parameters:
 
         """
-        self.cycler = cycler or cycling.Cycler(tyme=0.0)
+        self.cycler = cycler or tasking.Cycler(tyme=0.0)
         self.tick = float(abs(time))  # desired time between runs, 0.0 means asap
         self.status = Sts.stopped  # operational status of tasker
         self.desire = Ctl.stop  # desired control next time Task is iterated
