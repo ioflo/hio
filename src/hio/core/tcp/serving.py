@@ -247,6 +247,7 @@ class Server(Acceptor):
         self.wlog = wlog
         self.ixes = dict()  # ready to rx tx incoming connections, Incomer instances
 
+
     def serviceAxes(self):
         """
         Service axes
@@ -272,11 +273,13 @@ class Server(Acceptor):
                 self.shutdownIx[ca]
             self.ixes[ca] = incomer
 
+
     def serviceConnects(self):
         """
         Service connects is method name to be used
         """
         self.serviceAxes()
+
 
     def shutdownIx(self, ca, how=socket.SHUT_RDWR):
         """
@@ -287,6 +290,7 @@ class Server(Acceptor):
             raise ValueError(emsg)
         self.ixes[ca].shutdown(how=how)
 
+
     def shutdownSendIx(self, ca):
         """
         Shutdown send on incomer given by connection address ca
@@ -295,6 +299,7 @@ class Server(Acceptor):
             emsg = "Invalid connection address '{0}'".format(ca)
             raise ValueError(emsg)
         self.ixes[ca].shutdownSend()
+
 
     def shutdownReceiveIx(self, ca):
         """
@@ -305,6 +310,7 @@ class Server(Acceptor):
             raise ValueError(emsg)
         self.ixes[ca].shutdownReceive()
 
+
     def closeIx(self, ca):
         """
         Shutdown and close incomer given by connection address ca
@@ -314,12 +320,14 @@ class Server(Acceptor):
             raise ValueError(emsg)
         self.ixes[ca].close()
 
+
     def closeAllIx(self):
         """
         Shutdown and close all incomer connections
         """
         for ix in self.ixes.values():
             ix.close()
+
 
     def close(self):
         """
@@ -328,7 +336,8 @@ class Server(Acceptor):
         super(Server, self).close()  #  call super close
         self.closeAllIx()
 
-    closeAll = close  # alias for now remove later
+    # closeAll = close  # alias for now remove later
+
 
     def removeIx(self, ca, shutclose=True):
         """
@@ -341,14 +350,6 @@ class Server(Acceptor):
             self.ixes[ca].close()  # shutdown and close socket
         del self.ixes[ca]
 
-    def catRxbsIx(self, ca):
-        """
-        Return  copy and clear rxbs for incomer given by connection address ca
-        """
-        if ca not in self.ixes:
-            emsg = "Invalid connection address '{0}'".format(ca)
-            raise ValueError(emsg)
-        return (self.ixes[ca].catRxbs())
 
     def serviceReceivesIx(self, ca):
         """
@@ -359,12 +360,14 @@ class Server(Acceptor):
             raise ValueError(emsg)
         self.ixes[ca].serviceReceives()
 
+
     def serviceReceivesAllIx(self):
         """
         Service receives for all incomers in .ixes
         """
         for ix in self.ixes.values():
             ix.serviceReceives()
+
 
     def transmitIx(self, data, ca):
         '''
@@ -375,12 +378,14 @@ class Server(Acceptor):
             raise ValueError(emsg)
         self.ixes[ca].tx(data)
 
+
     def serviceTxesAllIx(self):
         """
         Service transmits for all incomers in .ixes
         """
         for ix in self.ixes.values():
             ix.serviceTxes()
+
 
     def serviceAll(self):
         """
@@ -515,6 +520,7 @@ class ServerTls(Server):
                                          cafilepath=cafilepath
                                         )
 
+
     def serviceAxes(self):
         """
         Service accepteds
@@ -546,6 +552,7 @@ class ServerTls(Server):
 
             self.cxes[ca] = incomer
 
+
     def serviceCxes(self):
         """
         Service handshakes for every incomer in .cxes
@@ -555,6 +562,7 @@ class ServerTls(Server):
             if cx.serviceHandshake():
                 self.ixes[ca] = cx
                 del self.cxes[ca]
+
 
     def serviceConnects(self):
         """
@@ -628,6 +636,7 @@ class Incomer(object):
             except socket.error as ex:
                 pass
 
+
     def shutdownSend(self):
         """
         Shutdown send on connected socket .cs
@@ -637,6 +646,7 @@ class Incomer(object):
                 self.shutdown(how=socket.SHUT_WR)  # shutdown socket
             except socket.error as ex:
                 pass
+
 
     def shutdownReceive(self):
         """
@@ -648,6 +658,7 @@ class Incomer(object):
             except socket.error as ex:
                 pass
 
+
     def close(self):
         """
         Shutdown and close connected socket .cs
@@ -657,11 +668,13 @@ class Incomer(object):
             self.cs.close()  #close socket
             self.cs = None
 
+
     def refresh(self):
         """
         Restart tymer
         """
         self.tymer.restart()
+
 
     def receive(self):
         """
@@ -704,6 +717,7 @@ class Incomer(object):
 
         return data
 
+
     def serviceReceives(self):
         """
         Service receives until no more
@@ -714,6 +728,7 @@ class Incomer(object):
                 break
             self.rxbs.extend(data)
 
+
     def serviceReceiveOnce(self):
         '''
         Retrieve from server only one reception
@@ -723,27 +738,13 @@ class Incomer(object):
             if data:
                 self.rxbs.extend(data)
 
+
     def clearRxbs(self):
         """
         Clear .rxbs
         """
         del self.rxbs[:]
 
-    def catRxbs(self):
-        """
-        Return copy and clear .rxbs
-        """
-        rx = self.rxbs[:]
-        self.clearRxbs()
-        return rx
-
-    def tailRxbs(self, index):
-        """
-        Returns duple of (bytes(self.rxbs[index:]), len(self.rxbs))
-        slices the tail from index to end and converts to bytes
-        also the length of .rxbs to be used to update index
-        """
-        return (bytes(self.rxbs[index:]), len(self.rxbs))
 
     def send(self, data):
         """
@@ -780,11 +781,13 @@ class Incomer(object):
 
         return result
 
+
     def tx(self, data):
         '''
         Queue data onto .txes
         '''
         self.txes.append(data)
+
 
     def serviceTxes(self):
         """
@@ -799,8 +802,6 @@ class Incomer(object):
             if count < len(data):  # put back unsent portion
                 self.txes.appendleft(data[count:])
                 break  # try again later
-
-
 
 
 class IncomerTls(Incomer):
@@ -845,7 +846,8 @@ class IncomerTls(Incomer):
                                   )
         self.wrap()
 
-    def shutclose(self):
+
+    def close(self):
         """
         Shutdown and close connected socket .cs
         """
@@ -855,7 +857,6 @@ class IncomerTls(Incomer):
             self.cs = None
             self.connected = False
 
-    close = shutclose  # alias
 
     def wrap(self):
         """
@@ -864,6 +865,7 @@ class IncomerTls(Incomer):
         self.cs = self.context.wrap_socket(self.cs,
                                            server_side=True,
                                            do_handshake_on_connect=False)
+
 
     def handshake(self):
         """
@@ -894,6 +896,7 @@ class IncomerTls(Incomer):
         self.connected = True
         return True
 
+
     def serviceHandshake(self):
         """
         Service connection and handshake attempt
@@ -905,6 +908,7 @@ class IncomerTls(Incomer):
             self.handshake()
 
         return self.connected
+
 
     def receive(self):
         """
@@ -944,6 +948,7 @@ class IncomerTls(Incomer):
             self.cutoff = True
 
         return data
+
 
     def send(self, data):
         """

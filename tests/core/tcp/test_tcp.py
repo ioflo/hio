@@ -526,8 +526,8 @@ def test_tcp_service():
             beta.serviceTxes()
             server.serviceReceivesAllIx()
             time.sleep(0.05)
-        msgIn, offset = ixBeta.tailRxbs(offset)
-        assert msgIn == msgOut2 + msgOut3
+        msgIn = bytes(ixBeta.rxbs)
+        assert msgIn == msgOut1 + msgOut2 + msgOut3
         ixBeta.clearRxbs()  # clear out the receive buffer
 
         # build message too big to fit in buffer
