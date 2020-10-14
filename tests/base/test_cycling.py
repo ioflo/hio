@@ -14,6 +14,10 @@ def test_cycler():
     cycler = Cycler()
     assert cycler.tyme == 0.0
     assert cycler.tick == 1.0
+    assert cycler.real == False
+    assert cycler.limit == None
+    assert cycler.doers == list()
+
     cycler.turn()
     assert cycler.tyme == 1.0
     cycler.turn(tick=0.75)
@@ -33,6 +37,14 @@ def test_cycler():
     cycler.turn()
     assert cycler.tyme == 3.5
 
+
+    cycler = Cycler(tick=0.01, limit=0.05)
+    cycler.cycle()
+    assert cycler.tyme == 0.0
+
+    cycler = Cycler(tick=0.01, real=True, limit=0.05)
+    cycler.cycle()
+    assert cycler.tyme == 0.0
 
     """End Test """
 
@@ -123,4 +135,4 @@ def test_tymer():
     """End Test """
 
 if __name__ == "__main__":
-    test_tymer()
+    test_cycler()

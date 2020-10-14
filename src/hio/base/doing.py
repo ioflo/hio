@@ -11,133 +11,169 @@ from ..help.timing import MonoTimer
 
 
 
-Ctl = enum.Enum('Control', 'ready enter recur exit abort')
-Sts = enum.Enum('Status', 'readied entered recurring exited aborted')
+Ctl = enum.Enum('Control', 'enter recur exit abort')
+Sts = enum.Enum('Status', 'entered recurring exited aborted')
 
 
-class Tasker():
+class Doer():
     """
     Base class for async coroutines
 
     Attributes:
-        .cycler is Cycler instance that runs tasker
-        .tick is desired time in seconds between runs, non negative, zero means asap
+        .cycler is Cycler instance that provides relative cycle time as .cycler.tyme
+                Ultimately a does at top level of run hierarchy are run by cycler
+
         .status is operational status of tasker
         .desire is desired control asked by this or other taskers
         .done is tasker completion state True or False
-        .doer = generator that runs tasker
+        .do = generator that runs tasker
+
+    Properties:
+        .tock is desired time in seconds between runs or until next run,
+                 non negative, zero means run asap
 
     """
 
-    def __init__(self, cycler=None, tick=0.0):
+    def __init__(self, cycler=None, tock=0.0):
         """
         Initialize instance.
         Parameters:
+           cycler is Cycler instance
+           tock is float seconds initial value of .tock
 
         """
         self.cycler = cycler or cycling.Cycler(tyme=0.0)
-        self.tick = float(abs(time))  # desired time between runs, 0.0 means asap
+        self.tock = tock  # desired tyme interval between runs, 0.0 means asap
+
         self.status = Sts.exited  # operational status of tasker
         self.desire = Ctl.exit  # desired control next time Task is iterated
         self.done = True  # tasker completion state reset on restart
-        self.doer = None  # reference to generator
+        self.do = None  # reference to generator
         self.remake()  # make generator assign to .run and advance to yield
 
-
-    def remake(self):
+    @property
+    def tock(self):
         """
-        Re-make run generator
+        tock property getter, get ._tock
+        .tock is float desired .tyme increment in seconds
+        """
+        return self._tock
+
+
+    @tock.setter
+    def tock(self, tock):
+        """
+        desired cycle tyme interval until next run
+        0.0 means run asap,
+        set ._tock to tock
+        """
+        self._tock= abs(float(tock))
+
+
+    def makedo(self):
+        """
+        Make and assign generator and advance to first yield
         .send(None) same as .next()
         """
-        self.doer = self.makeDoer() # make generator
-        status = self.doer.send(None) # advance to first yield to allow send(cmd) on next iteration
+        self._do = self._doer() # make generator
+        status = self._do.send(None) # run to first yield and accept default status
+        # next .send(control) results in first control being accepted at yield
+
 
     def do(control):
         """
-        Invoke .doer with control
+        Returns status from iteration of generator .do after  send of control
         """
-        self.doer.send(control)
+        return(self._do.send(control))
 
 
-    def makeDoer(self):
+    def _doer(self):
         """
-        Create generator to run this tasker
+        Generator function to run this doer
+        Returns generator
 
         Simplified state machine switch on control not state
         has less code because of defaults that just ignore control
         when it's not applicable to current status
         Status cycles:
-            readied -> entered -> recurring -> exited -> readied -> ...
-            readied -> entered -> recurring -> exited -> aborted -> readied -> ...
+            exited -> entered -> recurring -> exited -> ...
+            exited -> entered -> exited -> ...
+
+            exited -> aborted
+            exited -> entered -> exited -> aborted
+            exited -> entered -> recurring -> exited -> aborted
+
 
         """
         self.desire = Ctl.exit  # default what to do next time, override below
-        self.status = Sts.aborted # operational status of tasker
+        self.status = Sts.exited # operational status of tasker
         self.done = True
 
         try:
             while (True):
-                control = (yield (self.status))  # accept control and yield status
+                # waits after yield of status for .send to accept new control
+                control = (yield (self.status))
 
-                if control == Ctl.recur:
-                    if self.status in (Sts.entered, Sts.recurring):
-                        self.recur()
-                        self.status = Sts.recurring  # stary in recurring
-                        # .recur may change .desire
+                if control == Ctl.recur:  # Want recur and recurring status
+                    if self.status in (Sts.entered, Sts.recurring):  # Want recur
+                        self.recur()  # .recur may change .desire for next run
+                        self.status = Sts.recurring  # stay in recurring
 
-                    elif self.status in (Sts.readied, Sts.exited):
-                        self.desire == Ctl.enter  #  auto enter on run
+                    elif self.status in (Sts.exited):  #  Auto enter on recur in exited
+                        self.done = False   # .done may change in .enter, .recur, or .exit
+                        self.enter()  # may change .desire for next run
+                        self.status = Sts.entered
+                        self.recur()  # may change .desire for next run
+                        self.status = Sts.recurring
 
-                elif control == Ctl.ready:
-                    if self.status in (Sts.exited, Sts.aborted):
-                        self.ready()
-                        self.status = Sts.readied
-                        self.done = False  # done state updated by .run or .stop
+                    else:  # bad status for control
+                        break  # break out of while loop. Forces stopIteration
+
+                elif control == Ctl.enter:  # Want enter and entered status
+                    if self.status in (Sts.exited):  # enter only after exit
+                        self.done = False  # .done may change in .enter, .recur, or .exit
+                        self.enter()  # may change .desire for next run
+                        self.status = Sts.entered
+
+                    elif self.status in  (Sts.entered, Sts.recurring):  # want exit and reenter
+                        # forced reenter without exit so must force exit first
+                        self.exit(forced=True)  # do not set .done. May change .desire
+                        self.status = Sts.exited
+                        self.done = False  # .done may change in .enter, .recur, or .exit
                         self.enter()
                         self.status = Sts.entered
-                        self.recur()
-                        self.status = Sts.recurring
-                        self.desire = Ctl.recur  # auto enter after ready
 
-                elif control == Ctl.enter:
-                    if self.status in (Sts.readied):
-                        self.done = False  # done state updated by .run or .stop
-                        self.enter()
-                        self.status = Sts.entered
-                        self.recur()
-                        self.status = Sts.recurring
-                        self.desire = Ctl.recur  #  auto recur after enter
+                    else:  # bad status for control
+                        break  # break out of while loop. Forces stopIteration
 
-                elif control == Ctl.exit:
+                elif control == Ctl.exit:  # Want exit and exited status
                     if self.status in (Sts.entered, Sts.recurring):
-                        self.exit()
+                        # clean exit so .done set to True
+                        self.exit()  # may change.desire
                         self.status = Sts.exited
                         self.desire = Ctl.exit  #  stay in exited
 
-                elif control == Ctl.abort:  # may abort from any status.
-                    if self.status in (Sts.entered, Sts.recurring):
-                        self.exit(aborted=True)
+                    elif self.status in  (Sts.exited):  # already exited
+                        pass  # redundant
+
+                    else:  # bad status for control
+                        break  # break out of while loop. Forces stopIteration
+
+                else :  # control == Ctl.abort or unknown.  Want aborted status
+                    if self.status in (Sts.entered, Sts.recurring):  # force exit
+                        self.exit(forced=True)  # do not set .done. May change .desire
                         self.status = Sts.exited
-                    self.abort()  # Idempotent
                     self.status = Sts.aborted
                     self.desire = Ctl.abort
+                    break  # break out of while loop. Forces stopIteration
 
-                else: # control == unknown error condition bad control
-                    self.abort()  # Idempotent
-                    self.status = Sts.aborted
-                    self.desire = Ctl.abort
-                    # so not change done because inadvertent abort
-                    break #break out of while loop. this will cause stopIteration
-
-        finally: #in case uncaught exception
+        finally:  # in case uncaught exceptio
+            if self.status in (Sts.entered, Sts.recurring):  # force exit
+                self.exit(forced=True)  # do not set .done. May change .desire
+                self.status = Sts.exited
             self.status = Sts.aborted
             self.desire = Ctl.abort
 
-
-    def ready(self):
-        """
-        Placeholder, Override in sub class
-        """
 
     def enter(self):
         """
@@ -149,16 +185,15 @@ class Tasker():
         Placeholder, Override in sub class
         """
 
-    def exit(self, aborted=False):
+    def exit(self, forced=False):
         """
         Placeholder, Override in sub class
 
-        aborted is boolean. True means stopped on abort, Otherwise false
+        forced is boolean. True means forced exit, Otherwise false.
+            Only set .done to True if not a forced exit
         """
 
-    def abort(self):
-        """
-        Placeholder, Override in sub class
-        Abort must be idempotent
-        """
+        if not forced:  # clean unforced exit sets .done to True
+            self.done = True
+
 

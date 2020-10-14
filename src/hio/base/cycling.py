@@ -28,7 +28,7 @@ class Cycler():
         .tyme is float relative cycle time, tyme is artificial time
 
     """
-    def __init__(self, tyme=0.0, tick=1.0, real=False, taskers=None):
+    def __init__(self, tyme=0.0, tick=1.0, real=False, limit=None, doers=None):
         """
         Initialize instance
         Parameters:
@@ -36,15 +36,17 @@ class Cycler():
             tick is float tick time in seconds
             real is boolean True means run in real time,
                             Otherwise run faster than real
-            taskers is list of Tasker instances which have generators
+            limit is float seconds for max run time of cycler. None means no limit.
+            doers is list of Doers instances with generator methods
         """
         self.tyme = float(tyme)
         self.tick = float(tick)
 
         self.real = True if real else False
+        self.limit = abs(float(limit)) if limit is not None else None
         self.timer = MonoTimer(duration = self.tick)
         # deque of runable generators
-        self.taskers = taskers if taskers is not None else list()
+        self.doers = doers if doers is not None else list()
 
     @property
     def tyme(self):
@@ -87,65 +89,57 @@ class Cycler():
         return self.tyme
 
 
-    def cycle(self, taskers=None):
+    def cycle(self, doers=None):
         """
-        Prepares tasks deque from .taskers
-        Each entry in tasks is duple of (tasker, retyme) where retyme is tyme in
+        Prepares deeds deque from .doers or doers
+        Each entry in deeds is duple of (doer, retyme) where retyme is tyme in
             seconds when next should run may be real or simulated
-        Each cycle runs all generators in tasks deque by calling .send on each one.
-        Generators may have cycler close them with appropriate response to .send
-        Cycler may then remove them from tasks
-        Once tasks is empty .cycle exits.
+        Each cycle runs all generators in deeds deque by calling .do on each one.
+
+        Once deeds is empty .cycle exits.
 
         Keyboard interrupt (cntl-c) also forces exit.
 
         Since finally clause closes generators they must be reinited before then
         can be run again
         """
-        if taskers is not None:
-            self.taskers = taskers
+        if doers is not None:
+            self.doers = doers
 
-        tasks = deque()
-        for tasker in self.taskers:
-            tasker.desire = Ctl.ready
-            tasker.status = Sts.exited
-            tasks.append((tasker, self.tyme))
-
+        deeds = deque()
+        for doer in self.doers:
+            doer.status = Sts.exited
+            doer.desire = Ctl.recur
+            deeds.append((doer, self.tyme))  # all run first time
 
         self.timer.start()
-
         try: #so always clean up resources if exception
             while True:
                 try: #CNTL-C generates keyboardInterrupt to break out of while loop
+                    mores = deque()  # remaining deeds for next pass
 
-                    more = False  # are any taskers running or started
-
-                    for i in range(len(tasks)): #attempt to run each ready tasker
-                        tasker, retyme = tasks.popleft()  # pop it off
+                    while(deeds): #attempt to run each doer once
+                        doer, retyme = deeds.popleft()  # pop it off
 
                         if retyme <= self.tyme:  # run it now
                             try:
-                                status = tasker.runner.send(tasker.desire)
-                                if status != Sts.aborted:  # not aborted
-                                    tasks.append((tasker, retyme + tasker.tick))
-                                    # allows for tick change during run
-
+                                status = doer.do(doer.desire)
+                                # aborted always forces StopIteraction
+                                # reappend for next pass
+                                mores.append((doer, retyme + doer.tock))
+                                # allows for tock change during run
                             except StopIteration:  # returned instead of yielded
                                 pass  # effectively tasker aborted itself
 
-                        else:  # not yet
-                            tasks.append((tasker, retyme))  # reappend it
-                            status = tasker.status
+                        elif doer.status in (Sts.recurring, Sts.entered):  # remains
+                            mores.append((doer, retyme))  # reappend it
 
-                        if status in (Sts.recurring, Sts.entered):
-                            more = True
+                    if mores:  # no remaining doers so done
+                        deeds = mores
+                        mores = deeds  # deeds now empty
 
-                    if not tasks:  # no pending taskers so done
-                        break
-
-                    if not more:  # all taskers stopped or aborted so done
-                        break
-
+                    else:
+                        break  # break out of forever loop
 
                     if self.real:  # wait for real time to expire
                         while not self.timer.expired:
@@ -154,6 +148,8 @@ class Cycler():
 
                     self.turn()  # advance tyme by one tick
 
+                    if self.limit and self.tyme >= self.limit:
+                        break
 
                 except KeyboardInterrupt: # CNTL-C shutdown skedder
                     break
@@ -162,7 +158,6 @@ class Cycler():
                     raise
 
                 except Exception:  # Unknown exception
-                    # Should inform user what exception caused shutdoen
                     raise
 
 
@@ -172,10 +167,10 @@ class Cycler():
             # if last run tasker exited due to exception then try finally clause in
             # its generator is responsible for releasing resources
 
-            for i in range(len(tasks)):  # send abort to each remaining tasker
-                tasker, retime, period = tasks.popleft() #pop it off
+            while(deeds):  # send abort to each remaining doer
+                doer, retime, period = deeds.popleft() #pop it off
                 try:
-                    status = tasker.runner.send(ABORT)
+                    status = doer.do(Ctl.abort)
                 except StopIteration: #generator returned instead of yielded
                     pass
 
