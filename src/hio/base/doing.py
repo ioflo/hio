@@ -2,17 +2,13 @@
 """
 hio.core.doing Module
 """
-
-import enum
 from collections import deque
 
 from ..hioing import ValidationError, VersionError
 from ..help.timing import MonoTimer
+from .basing import Ctl, Sts
+from . import cycling
 
-
-
-Ctl = enum.Enum('Control', 'enter recur exit abort')
-Sts = enum.Enum('Status', 'entered recurring exited aborted')
 
 
 class Doer():
@@ -48,8 +44,8 @@ class Doer():
         self.status = Sts.exited  # operational status of tasker
         self.desire = Ctl.exit  # desired control next time Task is iterated
         self.done = True  # tasker completion state reset on restart
-        self.do = None  # reference to generator
-        self.remake()  # make generator assign to .run and advance to yield
+        self.makedo()  # make generator assign to .run and advance to yield
+
 
     @property
     def tock(self):
@@ -80,7 +76,7 @@ class Doer():
         # next .send(control) results in first control being accepted at yield
 
 
-    def do(control):
+    def do(self, control):
         """
         Returns status from iteration of generator .do after  send of control
         """
@@ -119,7 +115,7 @@ class Doer():
                         self.recur()  # .recur may change .desire for next run
                         self.status = Sts.recurring  # stay in recurring
 
-                    elif self.status in (Sts.exited):  #  Auto enter on recur in exited
+                    elif self.status in (Sts.exited, ):  #  Auto enter on recur in exited
                         self.done = False   # .done may change in .enter, .recur, or .exit
                         self.enter()  # may change .desire for next run
                         self.status = Sts.entered
@@ -130,7 +126,7 @@ class Doer():
                         break  # break out of while loop. Forces stopIteration
 
                 elif control == Ctl.enter:  # Want enter and entered status
-                    if self.status in (Sts.exited):  # enter only after exit
+                    if self.status in (Sts.exited, ):  # enter only after exit
                         self.done = False  # .done may change in .enter, .recur, or .exit
                         self.enter()  # may change .desire for next run
                         self.status = Sts.entered
@@ -153,7 +149,7 @@ class Doer():
                         self.status = Sts.exited
                         self.desire = Ctl.exit  #  stay in exited
 
-                    elif self.status in  (Sts.exited):  # already exited
+                    elif self.status in  (Sts.exited, ):  # already exited
                         pass  # redundant
 
                     else:  # bad status for control

@@ -9,7 +9,8 @@ from collections import deque
 
 from ..hioing import ValidationError, VersionError
 from ..help.timing import MonoTimer
-from .doing import Ctl, Sts
+
+from .basing import Ctl, Sts
 
 
 class Cycler():

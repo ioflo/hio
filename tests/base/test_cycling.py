@@ -37,7 +37,6 @@ def test_cycler():
     cycler.turn()
     assert cycler.tyme == 3.5
 
-
     cycler = Cycler(tick=0.01, limit=0.05)
     cycler.cycle()
     assert cycler.tyme == 0.0
