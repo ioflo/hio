@@ -6,5 +6,5 @@ import enum
 
 
 Ctl = enum.Enum('Control', 'enter recur exit abort')
-Sts = enum.Enum('Status', 'entered recurring exited aborted')
+Stt = enum.Enum('State', 'entered recurring exited aborted')
 

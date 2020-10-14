@@ -10,7 +10,7 @@ from collections import deque
 from ..hioing import ValidationError, VersionError
 from ..help.timing import MonoTimer
 
-from .basing import Ctl, Sts
+from .basing import Ctl, Stt
 
 
 class Cycler():
@@ -109,7 +109,7 @@ class Cycler():
 
         deeds = deque()
         for doer in self.doers:
-            doer.status = Sts.exited
+            doer.state = Stt.exited
             doer.desire = Ctl.recur
             deeds.append((doer, self.tyme))  # all run first time
 
@@ -124,15 +124,15 @@ class Cycler():
 
                         if retyme <= self.tyme:  # run it now
                             try:
-                                status = doer.do(doer.desire)
+                                state = doer.do(doer.desire)
                                 # aborted always forces StopIteraction
                                 # reappend for next pass
                                 mores.append((doer, retyme + doer.tock))
                                 # allows for tock change during run
                             except StopIteration:  # returned instead of yielded
-                                pass  # effectively tasker aborted itself
+                                pass  # effectively doer aborted itself
 
-                        elif doer.status in (Sts.recurring, Sts.entered):  # remains
+                        elif doer.state in (Stt.recurring, Stt.entered):  # remains
                             mores.append((doer, retyme))  # reappend it
 
                     if mores:  # no remaining doers so done
@@ -165,13 +165,13 @@ class Cycler():
         finally: # finally clause always runs regardless of exception or not
             # Abort any running taskers to reclaim resources
             # Stopped or aborted taskers should have already released resources
-            # if last run tasker exited due to exception then try finally clause in
+            # if last run doer exited due to exception then try finally clause in
             # its generator is responsible for releasing resources
 
             while(deeds):  # send abort to each remaining doer
                 doer, retime, period = deeds.popleft() #pop it off
                 try:
-                    status = doer.do(Ctl.abort)
+                    state = doer.do(Ctl.abort)
                 except StopIteration: #generator returned instead of yielded
                     pass
 

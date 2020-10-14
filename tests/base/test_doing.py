@@ -5,7 +5,7 @@ tests.core.test_doing module
 """
 import pytest
 
-from hio.base.basing import Ctl, Sts
+from hio.base.basing import Ctl, Stt
 from hio.base.doing import Doer
 from hio.base import cycling
 
@@ -18,23 +18,23 @@ def test_doer():
     assert doer.cycler.tyme == 0.0
     assert doer.tock == 0.0
     assert doer.desire == Ctl.exit
-    assert doer.status == Sts.exited
+    assert doer.state == Stt.exited
     assert doer.done == True
 
     try:
-        status = doer.do(Ctl.recur)
-        assert status == Sts.recurring
-        assert doer.status == status == Sts.recurring
+        state = doer.do(Ctl.recur)
+        assert state == Stt.recurring
+        assert doer.state == state == Stt.recurring
         assert doer.done == False
         assert doer.desire == Ctl.exit
-        status = doer.do(doer.desire)
-        assert status == Sts.exited
-        assert doer.status == status == Sts.exited
+        state = doer.do(doer.desire)
+        assert state == Stt.exited
+        assert doer.state == state == Stt.exited
         assert doer.done == True
         assert doer.desire == Ctl.exit
-        status = doer.do(doer.desire)
-        assert status == Sts.exited
-        assert doer.status == status == Sts.exited
+        state = doer.do(doer.desire)
+        assert state == Stt.exited
+        assert doer.state == state == Stt.exited
         assert doer.done == True
         assert doer.desire == Ctl.exit
 
