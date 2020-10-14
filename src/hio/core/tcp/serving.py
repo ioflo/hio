@@ -22,7 +22,7 @@ from binascii import hexlify
 
 from contextlib import contextmanager
 
-from ...base import tasking
+from ...base import cycling
 from .. import coring
 
 
@@ -242,7 +242,7 @@ class Server(Acceptor):
         """
         ha = ha or (host, port)
         super(Server, self).__init__(ha=ha, **kwa)
-        self.cycler = cycler or tasking.Cycler()
+        self.cycler = cycler or cycling.Cycler()
         self.timeout = timeout if timeout is not None else self.Timeout
         self.wlog = wlog
         self.ixes = dict()  # ready to rx tx incoming connections, Incomer instances
@@ -613,9 +613,9 @@ class Incomer(object):
         self.cs = cs  # connection socket
         if self.cs:
             self.cs.setblocking(0)  # linux does not preserve blocking from accept
-        self.cycler = cycler or tasking.Cycler()
+        self.cycler = cycler or cycling.Cycler()
         self.timeout = timeout if timeout is not None else self.Timeout
-        self.tymer = tasking.Tymer(cycler=self.cycler, duration=self.timeout)
+        self.tymer = cycling.Tymer(cycler=self.cycler, duration=self.timeout)
 
 
         self.cutoff = False # True when detect connection closed on far side

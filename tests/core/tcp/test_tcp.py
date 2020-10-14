@@ -12,7 +12,7 @@ import socket
 from collections import deque
 import ssl
 
-from hio.base import tasking
+from hio.base import cycling
 from hio.core.tcp.clienting import openClient, Client, ClientTls
 from hio.core.tcp.serving import openServer, Server, Incomer, ServerTls
 
@@ -44,9 +44,9 @@ def test_tcp_basic():
 
     """
     client = Client()
-    assert isinstance(client.cycler, tasking.Cycler)
+    assert isinstance(client.cycler, cycling.Cycler)
     assert client.timeout == 0.0
-    assert isinstance(client.tymer, tasking.Tymer)
+    assert isinstance(client.tymer, cycling.Tymer)
     assert client.tymer.duration == client.timeout
     assert client.tymer.cycler == client.cycler
 
@@ -65,7 +65,7 @@ def test_tcp_basic():
     assert isinstance(client.rxbs, bytearray)
     assert client.wlog == None
 
-    cycler = tasking.Cycler()
+    cycler = cycling.Cycler()
     with openClient(cycler=cycler, timeout=0.5) as client:
         assert client.cycler == cycler
         assert client.timeout == 0.5
@@ -81,7 +81,7 @@ def test_tcp_basic():
     assert client.cutoff == False
 
     server = Server()
-    assert isinstance(server.cycler, tasking.Cycler)
+    assert isinstance(server.cycler, cycling.Cycler)
     assert server.timeout == 1.0
 
     assert server.ha == ('', 56000)
@@ -100,7 +100,7 @@ def test_tcp_basic():
 
     assert server.opened == False
 
-    cycler = tasking.Cycler()
+    cycler = cycling.Cycler()
     with openServer(cycler=cycler, ha=("", 6101)) as server, \
          openClient(cycler=cycler, ha=("127.0.0.1", 6101)) as beta, \
          openClient(cycler=cycler, ha=("127.0.0.1", 6101)) as gamma:
@@ -475,7 +475,7 @@ def test_tcp_service():
     """
     Test Classes tcp service methods
     """
-    cycler = tasking.Cycler()
+    cycler = cycling.Cycler()
     with openServer(cycler=cycler,  ha=("", 6101)) as server, \
          openClient(cycler=cycler,  ha=("127.0.0.1", 6101)) as beta:
 
@@ -580,7 +580,7 @@ def test_client_auto_reconnect():
     """
     Test client auto reconnect when  .reconnectable
     """
-    cycler = tasking.Cycler(tick=0.05)
+    cycler = cycling.Cycler(tick=0.05)
     with openServer(cycler=cycler, ha=("", 6101)) as server, \
          openClient(cycler=cycler, timeout=0.2, reconnectable=True,
                     ha=("127.0.0.1", 6101)) as beta:
@@ -687,7 +687,7 @@ def  test_tcp_tls_default_context():
 
     serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
 
-    cycler = tasking.Cycler()
+    cycler = cycling.Cycler()
     with openServer(cls=ServerTls,
                     cycler=cycler, ha=("", 6101), bs=16192,
                     keypath=serverKeyPath,
@@ -782,7 +782,7 @@ def test_tcp_tls_verify_both():
 
     serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
 
-    cycler = tasking.Cycler()
+    cycler = cycling.Cycler()
     with openServer(cls=ServerTls,
                     cycler=cycler, ha=("", 6101), bs=16192,
                     keypath=serverKeyPath,
@@ -881,7 +881,7 @@ def test_tcp_tls_verify_client():
 
     serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
 
-    cycler = tasking.Cycler()
+    cycler = cycling.Cycler()
     with openServer(cls=ServerTls,
                     cycler=cycler, ha=("", 6101), bs=16192,
                     keypath=serverKeyPath,
@@ -980,7 +980,7 @@ def test_tcp_tls_verify_server():
 
     serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
 
-    cycler = tasking.Cycler()
+    cycler = cycling.Cycler()
     with openServer(cls=ServerTls,
                     cycler=cycler, ha=("", 6101), bs=16192,
                     keypath=serverKeyPath,
@@ -1078,7 +1078,7 @@ def test_tcp_tls_verify_neither():
 
     serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
 
-    cycler = tasking.Cycler()
+    cycler = cycling.Cycler()
     with openServer(cls=ServerTls,
                     cycler=cycler, ha=("", 6101), bs=16192,
                     keypath=serverKeyPath,
@@ -1176,7 +1176,7 @@ def test_tcp_tls_verify_both_tlsv12():
 
     serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
 
-    cycler = tasking.Cycler()
+    cycler = cycling.Cycler()
     with openServer(cls=ServerTls,
                     cycler=cycler, ha=("", 6101), bs=16192,
                     keypath=serverKeyPath,
