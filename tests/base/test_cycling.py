@@ -14,23 +14,23 @@ def test_cycler():
     cycler = Cycler()
     assert cycler.tyme == 0.0
     assert cycler.tick == 1.0
-    cycler.tock()
+    cycler.turn()
     assert cycler.tyme == 1.0
-    cycler.tock(tick=0.75)
+    cycler.turn(tick=0.75)
     assert  cycler.tyme ==  1.75
     cycler.tick = 0.5
-    cycler.tock()
+    cycler.turn()
     assert cycler.tyme == 2.25
 
     cycler = Cycler(tyme=2.0, tick=0.25)
     assert cycler.tyme == 2.0
     assert cycler.tick == 0.25
-    cycler.tock()
+    cycler.turn()
     assert cycler.tyme == 2.25
-    cycler.tock(tick=0.75)
+    cycler.turn(tick=0.75)
     assert  cycler.tyme ==  3.0
     cycler.tick = 0.5
-    cycler.tock()
+    cycler.turn()
     assert cycler.tyme == 3.5
 
 
@@ -57,26 +57,26 @@ def test_tymer():
     assert tymer.remaining == 1.0
     assert tymer.expired == False
 
-    tymer.cycler.tock()
+    tymer.cycler.turn()
     assert tymer.cycler.tyme == 0.25
     assert tymer.elapsed ==  0.25
     assert tymer.remaining == 0.75
     assert tymer.expired == False
 
-    tymer.cycler.tock()
-    tymer.cycler.tock()
+    tymer.cycler.turn()
+    tymer.cycler.turn()
     assert tymer.cycler.tyme == 0.75
     assert tymer.elapsed ==  0.75
     assert tymer.remaining == 0.25
     assert tymer.expired == False
 
-    tymer.cycler.tock()
+    tymer.cycler.turn()
     assert tymer.cycler.tyme == 1.0
     assert tymer.elapsed ==  1.0
     assert tymer.remaining == 0.0
     assert tymer.expired == True
 
-    tymer.cycler.tock()
+    tymer.cycler.turn()
     assert tymer.cycler.tyme == 1.25
     assert tymer.elapsed ==  1.25
     assert tymer.remaining == -0.25
@@ -99,7 +99,7 @@ def test_tymer():
     assert tymer.remaining == 0.25
     assert tymer.expired == False
 
-    tymer.cycler.tock()
+    tymer.cycler.turn()
     assert tymer.elapsed ==  0.25
     assert tymer.remaining == 0.0
     assert tymer.expired == True
@@ -110,12 +110,12 @@ def test_tymer():
     assert tymer.elapsed ==  -0.25
     assert tymer.remaining == 1.25
     assert tymer.expired == False
-    tymer.cycler.tock()
+    tymer.cycler.turn()
     assert tymer.cycler.tyme == 1.0
     assert tymer.elapsed ==  0.75
     assert tymer.remaining == 0.25
     assert tymer.expired == False
-    tymer.cycler.tock()
+    tymer.cycler.turn()
     assert tymer.cycler.tyme == 2.0
     assert tymer.elapsed == 1.75
     assert tymer.remaining == -0.75

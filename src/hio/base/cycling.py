@@ -76,7 +76,7 @@ class Cycler():
         """
         self._tick= float(tick)
 
-    def tock(self, tick=None):
+    def turn(self, tick=None):
         """
         Advance cycle time .tyme by tick seconds when provided othewise by .tick
         and return new .tyme
@@ -85,39 +85,6 @@ class Cycler():
         """
         self.tyme += float(tick if tick is not None else self.tick)
         return self.tyme
-
-    def do(tasks):
-        """
-        Run the cycle as a generator.
-        Allows hierachical cyclers so that scheduling is hierarchical where
-        the ordering of each sub cycler is determined by its super cycler
-
-        Parameters:
-           tasks is deque of duples (tasker, retyme)
-        """
-        more = False #are any taskers RUNNING or STARTED
-
-        for i in range(len(tasks)): #attempt to run each ready tasker
-            tasker, retyme = tasks.popleft()  # pop it off
-
-            if retyme <= self.tyme:  # run it now
-                try:
-                    status = tasker.doer.send(tasker.desire)
-                    if status != ABORTED:  # tasker did not abort itself
-                        tasks.append((tasker, retyme + tasker.tick))
-                        # allows for tick change during run
-
-                except StopIteration:  # returned instead of yielded
-                    pass  # effectively tasker aborted itself
-
-            else:  # not yet
-                tasks.append((tasker, retyme))  # reappend it
-                status = tasker.status
-
-            if status in (Sts.recurring, Sts.entered):
-                more = True
-
-        return (tasks, more)
 
 
     def cycle(self, taskers=None):
@@ -185,7 +152,7 @@ class Cycler():
                             time.sleep(self.timer.remaining)
                         self.timer.restart()  #  no time lost
 
-                    self.tock()  # advance tyme by one tick
+                    self.turn()  # advance tyme by one tick
 
 
                 except KeyboardInterrupt: # CNTL-C shutdown skedder

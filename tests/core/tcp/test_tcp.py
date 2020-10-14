@@ -599,7 +599,7 @@ def test_client_auto_reconnect():
         # attempt to connect beta to serve while server down (closed)
         while beta.cycler.tyme <= 0.25:
             beta.serviceConnect()
-            beta.cycler.tock()
+            beta.cycler.turn()
             time.sleep(0.05)
 
         assert beta.accepted == False
@@ -615,7 +615,7 @@ def test_client_auto_reconnect():
         while not (beta.connected and beta.ca in server.ixes):
             beta.serviceConnect()
             server.serviceConnects()
-            beta.cycler.tock()  # advances clients reconnect retry tymer
+            beta.cycler.turn()  # advances clients reconnect retry tymer
             time.sleep(0.05)
 
         assert beta.accepted == True
