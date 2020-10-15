@@ -154,7 +154,7 @@ class WhoDoer(doing.Doer):
         super(WhoDoer, self).exit(**kwa)
         self.states.append(("exit", self.state.name, self.desire.name, self.done))
 
-def test_cycle():
+def test_cycler_cycle():
     """
     Test Cycler.cycle() with doers in deeds
     """
@@ -235,7 +235,7 @@ def test_cycle():
                             ('exit', 'recurring', 'exit', True)]
     """End Test """
 
-def test_cycle_abort():
+def test_cycler_cycle_abort():
     """
     Test Cycler.cycle() with doers in deeds with abort
     """
@@ -319,5 +319,91 @@ def test_cycle_abort():
     """End Test """
 
 
+def test_cycler_run():
+    """
+    Test Cycler.cycle() with doers in deeds with abort
+    """
+    tick = 0.03125
+    doer0 = WhoDoer(tock=tick)
+    doer1 = WhoDoer(tock=tick*2)
+    doers = [doer0, doer1]
+    assert doer0.state == Stt.exited
+    assert doer1.state == Stt.exited
+    for doer in doers:
+        assert doer.states == []
+
+    cycler = Cycler(tick=tick, doers=doers)
+    assert cycler.tyme == 0.0  # on next cycle
+    assert cycler.tick == tick == 0.03125
+    assert cycler.real == False
+    assert cycler.limit == None
+    assert cycler.doers == doers
+
+    ticks = 8
+    limit = tick * ticks
+    cycler.run(limit=limit)
+    assert cycler.tyme == limit
+    assert doer0.state == Stt.aborted
+    assert doer1.state == Stt.aborted
+    assert len(doer0.states) == ticks +  2
+    assert doer0.states == [('enter', 'exited', 'recur', False),
+                            ('recur', 'entered', 'recur', False),
+                            ('recur', 'recurring', 'recur', False),
+                            ('recur', 'recurring', 'recur', False),
+                            ('recur', 'recurring', 'recur', False),
+                            ('recur', 'recurring', 'recur', False),
+                            ('recur', 'recurring', 'recur', False),
+                            ('recur', 'recurring', 'recur', False),
+                            ('recur', 'recurring', 'recur', False),
+                            ('exit', 'recurring', 'recur', False)]
+    assert len(doer1.states) == ticks / 2 +  2
+    assert doer1.states == [('enter', 'exited', 'recur', False),
+                            ('recur', 'entered', 'recur', False),
+                            ('recur', 'recurring', 'recur', False),
+                            ('recur', 'recurring', 'recur', False),
+                            ('recur', 'recurring', 'recur', False),
+                            ('exit', 'recurring', 'recur', False)]
+
+
+
+    for doer in doers:
+        doer.states = []
+    for doer in doers:
+        assert doer.states == []
+
+    cycler = Cycler(tick=tick, doers=doers, real=True, limit=limit)
+    assert cycler.tyme == 0.0  # on next cycle
+    assert cycler.tick == tick == 0.03125
+    assert cycler.real == True
+    assert cycler.limit == limit == 0.25
+    assert cycler.doers == doers
+
+    cycler.run()
+    assert cycler.tyme == limit
+    assert doer0.state == Stt.aborted
+    assert doer1.state == Stt.aborted
+    assert len(doer0.states) == ticks +  2
+    assert doer0.states == [('enter', 'exited', 'recur', False),
+                            ('recur', 'entered', 'recur', False),
+                            ('recur', 'recurring', 'recur', False),
+                            ('recur', 'recurring', 'recur', False),
+                            ('recur', 'recurring', 'recur', False),
+                            ('recur', 'recurring', 'recur', False),
+                            ('recur', 'recurring', 'recur', False),
+                            ('recur', 'recurring', 'recur', False),
+                            ('recur', 'recurring', 'recur', False),
+                            ('exit', 'recurring', 'recur', False)]
+    assert len(doer1.states) == ticks / 2 +  2
+    assert doer1.states == [('enter', 'exited', 'recur', False),
+                            ('recur', 'entered', 'recur', False),
+                            ('recur', 'recurring', 'recur', False),
+                            ('recur', 'recurring', 'recur', False),
+                            ('recur', 'recurring', 'recur', False),
+                            ('exit', 'recurring', 'recur', False)]
+
+
+    """End Test """
+
+
 if __name__ == "__main__":
-    test_cycle_abort()
+    test_cycler_run()

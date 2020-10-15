@@ -96,6 +96,7 @@ class Cycler():
 
         deeds = deque()
         for doer in self.doers:
+            doer.makedo()  # reinit generator
             doer.state = Stt.exited
             doer.desire = Ctl.recur
             deeds.append((doer, self.tyme))  # all run first time
@@ -130,7 +131,7 @@ class Cycler():
         self.turn()  # advance .tyme by one tick
 
 
-    def run(self, doers=None):
+    def run(self, doers=None, limit=None):
         """
         Prepares deeds deque from .doers or doers and then runs .cycle with deeds
         until completion
@@ -149,6 +150,9 @@ class Cycler():
 
         if doers is not None:
             self.doers = doers
+
+        if limit is not None:
+            self.limit = abs(float(limit))
 
         deeds = deque()
         for doer in self.doers:
@@ -191,7 +195,7 @@ class Cycler():
             # its generator is responsible for releasing resources
 
             while(deeds):  # send abort to each remaining doer
-                doer, retime, period = deeds.popleft() #pop it off
+                doer, retime = deeds.popleft() #pop it off
                 try:
                     state = doer.do(Ctl.abort)
                 except StopIteration: #generator returned instead of yielded
