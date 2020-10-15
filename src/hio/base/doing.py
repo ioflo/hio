@@ -28,6 +28,18 @@ class Doer():
         .tock is desired time in seconds between runs or until next run,
                  non negative, zero means run asap
 
+    Inherited Methods:
+        .do  runs its generator  with control parameter
+        .makedo  makes or remakes its generator
+        .enter perform one time enter actions (open setup initialize etc)
+        .recur perform recurring actions run
+        .exit perform one time exit actions (close clean up tear down etc)
+
+    Hidden:
+       ._tock is hidden attribute for .tock property
+       ._do is hidden attribute for generator
+       ._doer is generator function
+
     """
 
     def __init__(self, cycler=None, tock=0.0):
