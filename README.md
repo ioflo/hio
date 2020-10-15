@@ -21,7 +21,7 @@ and
 
 ## Current Status
 
-As of version 0.0.3
+As of version 0.0.6
 
 This version provides basic usability for hierarchical structured async
 concurrency in general plus support for async io with TCP.

@@ -1,5 +1,9 @@
 # Change Log
 
+## version 0.0.6   2020/10/15
+
+Some refactoring of layout of Doers
+
 ## version 0.0.5   2020/10/15
 
 The TCP IO  client and server classes are implemented. Includes support for TLS
