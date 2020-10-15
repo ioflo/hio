@@ -1,6 +1,6 @@
 # Change Log
 
-## version 0.0.3   2020/10/15
+## version 0.0.5   2020/10/15
 
 The TCP IO  client and server classes are implemented. Includes support for TLS
 The Doer base structured async class is implemented
