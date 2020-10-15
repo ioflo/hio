@@ -28,11 +28,11 @@ class Doer():
                  non negative, zero means run asap
 
     Methods:
-        .do  runs its generator with control parameter
+        .do  runs its generator  with control parameter
         .makedo  makes or remakes its generator
-        .enter perform one time enter actions (open setup initialize etc)
-        .recur perform recurring actions run
-        .exit perform one time exit actions (close clean up tear down etc)
+        .enter perform enter context actions (open setup refresh etc)
+        .recur perform recurring context actions (run, repeat)
+        .exit perform exit context actions (close clean up tear down etc)
 
     Hidden:
        ._tock is hidden attribute for .tock property
