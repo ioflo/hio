@@ -68,15 +68,15 @@ class WhoDoer(Doer):
 
     # override .enter
     def enter(self):
-        self.states.append(("enter", self.state.name, self.desire.name, self.done))
+        self.states.append((self.cycler.tyme, "enter", self.state.name, self.desire.name, self.done))
 
     # override .recur
     def recur(self):
-        self.states.append(("recur", self.state.name, self.desire.name, self.done))
+        self.states.append((self.cycler.tyme, "recur", self.state.name, self.desire.name, self.done))
 
     def exit(self, **kwa):
         super(WhoDoer, self).exit(**kwa)
-        self.states.append(("exit", self.state.name, self.desire.name, self.done))
+        self.states.append((self.cycler.tyme, "exit", self.state.name, self.desire.name, self.done))
 
 
 def test_doer_sub():
@@ -98,65 +98,71 @@ def test_doer_sub():
     assert state == doer.state == Stt.recurring
     assert doer.done == False
     assert doer.desire == Ctl.recur
-    assert doer.states == [('enter', 'exited', 'recur', False),
-                           ('recur', 'entered', 'recur', False)]
+    assert doer.states == [(0.0, 'enter', 'exited', 'recur', False),
+                           (0.0, 'recur', 'entered', 'recur', False)]
+
+    doer.cycler.turn()
     state = doer.do(doer.desire)
     assert state == doer.state == Stt.recurring
     assert doer.done == False
     assert doer.desire == Ctl.recur
-    assert doer.states == [('enter', 'exited', 'recur', False),
-                           ('recur', 'entered', 'recur', False),
-                           ('recur', 'recurring', 'recur', False)]
+    assert doer.states == [(0.0, 'enter', 'exited', 'recur', False),
+                           (0.0, 'recur', 'entered', 'recur', False),
+                           (1.0, 'recur', 'recurring', 'recur', False)]
 
+    doer.cycler.turn()
     doer.desire = Ctl.enter
     state = doer.do(doer.desire)
     assert state == doer.state == Stt.entered
     assert doer.done == False
     assert doer.desire == Ctl.enter
-    assert doer.states == [('enter', 'exited', 'recur', False),
-                           ('recur', 'entered', 'recur', False),
-                           ('recur', 'recurring', 'recur', False),
-                           ('exit', 'recurring', 'enter', False),
-                           ('enter', 'exited', 'enter', False)]
+    assert doer.states == [(0.0, 'enter', 'exited', 'recur', False),
+                           (0.0, 'recur', 'entered', 'recur', False),
+                           (1.0, 'recur', 'recurring', 'recur', False),
+                           (2.0, 'exit', 'recurring', 'enter', False),
+                           (2.0, 'enter', 'exited', 'enter', False)]
 
+    doer.cycler.turn()
     doer.desire = Ctl.recur
     state = doer.do(doer.desire)
     assert state == doer.state == Stt.recurring
     assert doer.done == False
     assert doer.desire == Ctl.recur
-    assert doer.states == [('enter', 'exited', 'recur', False),
-                           ('recur', 'entered', 'recur', False),
-                           ('recur', 'recurring', 'recur', False),
-                           ('exit', 'recurring', 'enter', False),
-                           ('enter', 'exited', 'enter', False),
-                           ('recur', 'entered', 'recur', False)]
+    assert doer.states == [(0.0, 'enter', 'exited', 'recur', False),
+                           (0.0, 'recur', 'entered', 'recur', False),
+                           (1.0, 'recur', 'recurring', 'recur', False),
+                           (2.0, 'exit', 'recurring', 'enter', False),
+                           (2.0, 'enter', 'exited', 'enter', False),
+                           (3.0, 'recur', 'entered', 'recur', False)]
 
+    doer.cycler.turn()
     doer.desire = Ctl.exit
     state = doer.do(doer.desire)
     assert state == doer.state == Stt.exited
     assert doer.done == True
     assert doer.desire == Ctl.exit
-    assert doer.states == [('enter', 'exited', 'recur', False),
-                           ('recur', 'entered', 'recur', False),
-                           ('recur', 'recurring', 'recur', False),
-                           ('exit', 'recurring', 'enter', False),
-                           ('enter', 'exited', 'enter', False),
-                           ('recur', 'entered', 'recur', False),
-                           ('exit', 'recurring', 'exit', True)]
+    assert doer.states == [(0.0, 'enter', 'exited', 'recur', False),
+                           (0.0, 'recur', 'entered', 'recur', False),
+                           (1.0, 'recur', 'recurring', 'recur', False),
+                           (2.0, 'exit', 'recurring', 'enter', False),
+                           (2.0, 'enter', 'exited', 'enter', False),
+                           (3.0, 'recur', 'entered', 'recur', False),
+                           (4.0, 'exit', 'recurring', 'exit', True)]
 
+    doer.cycler.turn()
     with pytest.raises(StopIteration):
         state = doer.do(Ctl.abort)
 
     assert doer.state == Stt.aborted
     assert doer.done == True
     assert doer.desire == Ctl.abort
-    assert doer.states == [('enter', 'exited', 'recur', False),
-                           ('recur', 'entered', 'recur', False),
-                           ('recur', 'recurring', 'recur', False),
-                           ('exit', 'recurring', 'enter', False),
-                           ('enter', 'exited', 'enter', False),
-                           ('recur', 'entered', 'recur', False),
-                           ('exit', 'recurring', 'exit', True)]
+    assert doer.states == [(0.0, 'enter', 'exited', 'recur', False),
+                           (0.0, 'recur', 'entered', 'recur', False),
+                           (1.0, 'recur', 'recurring', 'recur', False),
+                           (2.0, 'exit', 'recurring', 'enter', False),
+                           (2.0, 'enter', 'exited', 'enter', False),
+                           (3.0, 'recur', 'entered', 'recur', False),
+                           (4.0, 'exit', 'recurring', 'exit', True)]
 
     """End Test """
 
