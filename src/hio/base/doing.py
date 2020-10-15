@@ -13,23 +13,22 @@ from . import cycling
 
 class Doer():
     """
-    Base class for async coroutines
+    Base class for hierarchical structured async coroutines.
+    Manages state based generator
 
     Attributes:
         .cycler is Cycler instance that provides relative cycle time as .cycler.tyme
                 Ultimately a does at top level of run hierarchy are run by cycler
-
         .state is operational state of doer
-        .desire is desired control asked by this or other taskers
+        .desire is desired control for future iteration of generator
         .done is doer completion state True or False
-        .do = generator that runs doer
 
     Properties:
         .tock is desired time in seconds between runs or until next run,
                  non negative, zero means run asap
 
-    Inherited Methods:
-        .do  runs its generator  with control parameter
+    Methods:
+        .do  runs its generator with control parameter
         .makedo  makes or remakes its generator
         .enter perform one time enter actions (open setup initialize etc)
         .recur perform recurring actions run
