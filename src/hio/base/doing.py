@@ -92,8 +92,11 @@ class Doer():
         has less code because of defaults that just ignore control
         when it's not applicable to current state
         Status cycles:
-            exited -> entered -> recurring -> exited -> ...
-            exited -> entered -> exited -> ...
+            exited -> entered -> recurring -> exited
+            exited -> entered -> recurring -> ...
+            exited -> entered -> ...
+            exited -> entered -> exited -> entered -> ...
+            exited -> entered -> recurring -> exited -> entered -> ...
 
             exited -> aborted
             exited -> entered -> exited -> aborted
@@ -131,13 +134,16 @@ class Doer():
                         self.enter()  # may change .desire for next run
                         self.state = Stt.entered
 
-                    elif self.state in  (Stt.entered, Stt.recurring):  # want exit and reenter
+                    elif self.state in  (Stt.recurring, ):  # want exit and reenter
                         # forced reenter without exit so must force exit first
                         self.exit(forced=True)  # do not set .done. May change .desire
                         self.state = Stt.exited
                         self.done = False  # .done may change in .enter, .recur, or .exit
                         self.enter()
                         self.state = Stt.entered
+
+                    elif self.state in  (Stt.entered, ):  # already entered
+                        pass  # redundant
 
                     else:  # bad state for control
                         break  # break out of while loop. Forces stopIteration
