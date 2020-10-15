@@ -135,24 +135,7 @@ def test_tymer():
     assert tymer.expired == True
     """End Test """
 
-class WhoDoer(doing.Doer):
 
-    def __init__(self, **kwa):
-
-        super(WhoDoer, self).__init__(**kwa)
-        self.states = list()  # list of triples (states desire,done)
-
-    # override .enter
-    def enter(self):
-        self.states.append((self.cycler.tyme, "enter", self.state.name, self.desire.name, self.done))
-
-    # override .recur
-    def recur(self):
-        self.states.append((self.cycler.tyme, "recur", self.state.name, self.desire.name, self.done))
-
-    def exit(self, **kwa):
-        super(WhoDoer, self).exit(**kwa)
-        self.states.append((self.cycler.tyme, "exit", self.state.name, self.desire.name, self.done))
 
 def test_cycler_cycle():
     """
@@ -165,8 +148,8 @@ def test_cycler_cycle():
     assert cycler.limit == None
     assert cycler.doers == []
 
-    doer0 = WhoDoer(tock=0.25, cycler=cycler)
-    doer1 = WhoDoer(tock=0.5, cycler=cycler)
+    doer0 = doing.WhoDoer(tock=0.25, cycler=cycler)
+    doer1 = doing.WhoDoer(tock=0.5, cycler=cycler)
     doers = [doer0, doer1]
     for doer in doers:
         assert doer.cycler == cycler
@@ -252,8 +235,8 @@ def test_cycler_cycle_abort():
     assert cycler.limit == None
     assert cycler.doers == []
 
-    doer0 = WhoDoer(tock=0.25, cycler=cycler)
-    doer1 = WhoDoer(tock=0.5, cycler=cycler)
+    doer0 = doing.WhoDoer(tock=0.25, cycler=cycler)
+    doer1 = doing.WhoDoer(tock=0.5, cycler=cycler)
     doers = [doer0, doer1]
     for doer in doers:
         assert doer.cycler == cycler
@@ -338,8 +321,8 @@ def test_cycler_run():
     assert cycler.limit == None
     assert cycler.doers == []
 
-    doer0 = WhoDoer(tock=tick, cycler=cycler)
-    doer1 = WhoDoer(tock=tick*2, cycler=cycler)
+    doer0 = doing.WhoDoer(tock=tick, cycler=cycler)
+    doer1 = doing.WhoDoer(tock=tick*2, cycler=cycler)
     assert doer0.tock == tick
     assert doer1.tock == tick *  2
     doers = [doer0, doer1]

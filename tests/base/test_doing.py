@@ -6,14 +6,16 @@ tests.core.test_doing module
 import pytest
 
 from hio.base.basing import Ctl, Stt
-from hio.base.doing import Doer
 from hio.base import cycling
+from hio.base import doing
+from hio.core.tcp import serving, clienting
+
 
 def test_doer():
     """
     Test Doer class
     """
-    doer = Doer()
+    doer = doing.Doer()
     assert isinstance(doer.cycler, cycling.Cycler)
     assert doer.cycler.tyme == 0.0
     assert doer.tock == 0.0
@@ -59,24 +61,6 @@ def test_doer():
 
     """End Test """
 
-class WhoDoer(Doer):
-
-    def __init__(self, **kwa):
-
-        super(WhoDoer, self).__init__(**kwa)
-        self.states = list()  # list of triples (states desire,done)
-
-    # override .enter
-    def enter(self):
-        self.states.append((self.cycler.tyme, "enter", self.state.name, self.desire.name, self.done))
-
-    # override .recur
-    def recur(self):
-        self.states.append((self.cycler.tyme, "recur", self.state.name, self.desire.name, self.done))
-
-    def exit(self, **kwa):
-        super(WhoDoer, self).exit(**kwa)
-        self.states.append((self.cycler.tyme, "exit", self.state.name, self.desire.name, self.done))
 
 
 def test_doer_sub():
@@ -84,7 +68,7 @@ def test_doer_sub():
     Test Doer sub class
     """
 
-    doer = WhoDoer()
+    doer = doing.WhoDoer()
     assert isinstance(doer.cycler, cycling.Cycler)
     assert doer.cycler.tyme == 0.0
     assert doer.tock == 0.0
@@ -165,6 +149,110 @@ def test_doer_sub():
                            (4.0, 'exit', 'recurring', 'exit', True)]
 
     """End Test """
+
+
+def test_server_client():
+    """
+    Test ServerDoer ClientDoer classes
+    """
+    tick = 0.03125
+    ticks = 16
+    limit = ticks *  tick
+    cycler = cycling.Cycler(tick=tick, real=True, limit=limit)
+    assert cycler.tyme == 0.0  # on next cycle
+    assert cycler.tick == tick == 0.03125
+    assert cycler.real == True
+    assert cycler.limit == limit == 0.5
+    assert cycler.doers == []
+
+    port = 6120
+    server = serving.Server(host="", port=port)
+    client = clienting.Client(host="localhost", port=port)
+
+    serdoer = doing.ServerDoer(cycler=cycler, server=server)
+    assert serdoer.server.cycler == serdoer.cycler == cycler
+    assert serdoer.server ==  server
+    clidoer = doing.ClientDoer(cycler=cycler, client=client)
+    assert clidoer.client.cycler == clidoer.cycler == cycler
+    assert clidoer.client == client
+
+    assert serdoer.tock == 0.0  # ASAP
+    assert clidoer.tock == 0.0  # ASAP
+
+    doers = [serdoer, clidoer]
+    for doer in doers:
+        assert doer.cycler == cycler
+        assert doer.state == Stt.exited
+
+
+    msgTx = b"Hello me maties!"
+    clidoer.client.tx(msgTx)
+
+    cycler.run(doers=doers)
+    assert cycler.tyme == limit
+    assert server.opened == False
+    assert client.opened == False
+
+    assert not client.txes
+    ca, ix = list(server.ixes.items())[0]
+    msgRx = bytes(ix.rxbs)
+    assert msgRx == msgTx
+
+    """End Test """
+
+
+def test_echo_server_client():
+    """
+    Test EchoServerDoer ClientDoer classes
+    """
+    tick = 0.03125
+    ticks = 16
+    limit = ticks *  tick
+    cycler = cycling.Cycler(tick=tick, real=True, limit=limit)
+    assert cycler.tyme == 0.0  # on next cycle
+    assert cycler.tick == tick == 0.03125
+    assert cycler.real == True
+    assert cycler.limit == limit == 0.5
+    assert cycler.doers == []
+
+    port = 6120
+    server = serving.Server(host="", port=port)
+    client = clienting.Client(host="localhost", port=port)
+
+    serdoer = doing.EchoServerDoer(cycler=cycler, server=server)
+    assert serdoer.server.cycler == serdoer.cycler == cycler
+    assert serdoer.server ==  server
+    clidoer = doing.ClientDoer(cycler=cycler, client=client)
+    assert clidoer.client.cycler == clidoer.cycler == cycler
+    assert clidoer.client == client
+
+    assert serdoer.tock == 0.0  # ASAP
+    assert clidoer.tock == 0.0  # ASAP
+
+    doers = [serdoer, clidoer]
+    for doer in doers:
+        assert doer.cycler == cycler
+        assert doer.state == Stt.exited
+
+
+    msgTx = b"Hello me maties!"
+    clidoer.client.tx(msgTx)
+
+    cycler.run(doers=doers)
+    assert cycler.tyme == limit
+    assert server.opened == False
+    assert client.opened == False
+
+    assert not client.txes
+    msgEx = bytes(client.rxbs)  # echoed back message
+    assert msgEx == msgTx
+
+    ca, ix = list(server.ixes.items())[0]
+    assert bytes(ix.rxbs) == b""  # empty server rxbs becaue echoed
+
+    """End Test """
+
+
 
 
 if __name__ == "__main__":
