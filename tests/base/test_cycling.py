@@ -144,67 +144,72 @@ class WhoDoer(doing.Doer):
 
     # override .enter
     def enter(self):
-        self.states.append(("enter", self.state.name, self.desire.name, self.done))
+        self.states.append((self.cycler.tyme, "enter", self.state.name, self.desire.name, self.done))
 
     # override .recur
     def recur(self):
-        self.states.append(("recur", self.state.name, self.desire.name, self.done))
+        self.states.append((self.cycler.tyme, "recur", self.state.name, self.desire.name, self.done))
 
     def exit(self, **kwa):
         super(WhoDoer, self).exit(**kwa)
-        self.states.append(("exit", self.state.name, self.desire.name, self.done))
+        self.states.append((self.cycler.tyme, "exit", self.state.name, self.desire.name, self.done))
 
 def test_cycler_cycle():
     """
     Test Cycler.cycle() with doers in deeds
     """
-    doer0 = WhoDoer(tock=0.25)
-    doer1 = WhoDoer(tock=0.5)
-    doers = [doer0, doer1]
-
-    cycler = Cycler(tick=0.25, doers=doers)
+    cycler = Cycler(tick=0.25)
     assert cycler.tyme == 0.0  # on next cycle
     assert cycler.tick == 0.25
     assert cycler.real == False
     assert cycler.limit == None
-    assert cycler.doers == doers
+    assert cycler.doers == []
 
-    deeds = cycler.ready()
+    doer0 = WhoDoer(tock=0.25, cycler=cycler)
+    doer1 = WhoDoer(tock=0.5, cycler=cycler)
+    doers = [doer0, doer1]
+    for doer in doers:
+        assert doer.cycler == cycler
+
+    deeds = cycler.ready(doers=doers)
     assert len(deeds) == 2
     assert [val[1] for val in deeds] == [0.0, 0.0]
-    assert doer0.states == []
-    assert doer1.states == []
+    for doer in doers:
+        assert doer.states == []
+
 
     cycler.cycle(deeds)
     assert cycler.tyme == 0.25  # on next cycle
     assert len(deeds) == 2
     assert [val[1] for val in deeds] == [0.25, 0.5]
-    assert doer0.states == [('enter', 'exited', 'recur', False),
-                            ('recur', 'entered', 'recur', False)]
-    assert doer1.states == [('enter', 'exited', 'recur', False),
-                            ('recur', 'entered', 'recur', False)]
+    assert doer0.states == [(0.0, 'enter', 'exited', 'recur', False),
+                            (0.0, 'recur', 'entered', 'recur', False)]
+    assert doer1.states == [(0.0, 'enter', 'exited', 'recur', False),
+                            (0.0, 'recur', 'entered', 'recur', False)]
 
     cycler.cycle(deeds)
     assert cycler.tyme == 0.5  # on next cycle
     assert len(deeds) == 2
     assert [val[1] for val in deeds] == [0.5, 0.5]
-    assert doer0.states == [('enter', 'exited', 'recur', False),
-                            ('recur', 'entered', 'recur', False),
-                            ('recur', 'recurring', 'recur', False)]
-    assert doer1.states == [('enter', 'exited', 'recur', False),
-                            ('recur', 'entered', 'recur', False)]
+    assert doer0.states == [(0.0, 'enter', 'exited', 'recur', False),
+                            (0.0, 'recur', 'entered', 'recur', False),
+                            (0.25, 'recur', 'recurring', 'recur', False)]
+    assert doer1.states == [(0.0, 'enter', 'exited', 'recur', False),
+                            (0.0, 'recur', 'entered', 'recur', False)]
+
 
     cycler.cycle(deeds)
     assert cycler.tyme == 0.75  # on next cycle
     assert len(deeds) == 2
     assert [val[1] for val in deeds] == [0.75, 1.0]
-    assert doer0.states == [('enter', 'exited', 'recur', False),
-                            ('recur', 'entered', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('recur', 'recurring', 'recur', False)]
-    assert doer1.states == [('enter', 'exited', 'recur', False),
-                            ('recur', 'entered', 'recur', False),
-                            ('recur', 'recurring', 'recur', False)]
+    assert doer0.states == [(0.0, 'enter', 'exited', 'recur', False),
+                            (0.0, 'recur', 'entered', 'recur', False),
+                            (0.25, 'recur', 'recurring', 'recur', False),
+                            (0.5, 'recur', 'recurring', 'recur', False)]
+    assert doer1.states == [(0.0, 'enter', 'exited', 'recur', False),
+                            (0.0, 'recur', 'entered', 'recur', False),
+                            (0.5, 'recur', 'recurring', 'recur', False)]
+
 
     doer0.desire = Ctl.exit
     doer1.desire = Ctl.exit
@@ -212,80 +217,84 @@ def test_cycler_cycle():
     assert cycler.tyme == 1.0  # on next cycle
     assert len(deeds) == 1
     assert [val[1] for val in deeds] == [1.0]
-    assert doer0.states == [('enter', 'exited', 'recur', False),
-                            ('recur', 'entered', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('exit', 'recurring', 'exit', True)]
-    assert doer1.states == [('enter', 'exited', 'recur', False),
-                            ('recur', 'entered', 'recur', False),
-                            ('recur', 'recurring', 'recur', False)]
+    assert doer0.states == [(0.0, 'enter', 'exited', 'recur', False),
+                            (0.0, 'recur', 'entered', 'recur', False),
+                            (0.25, 'recur', 'recurring', 'recur', False),
+                            (0.5, 'recur', 'recurring', 'recur', False),
+                            (0.75, 'exit', 'recurring', 'exit', True)]
+    assert doer1.states == [(0.0, 'enter', 'exited', 'recur', False),
+                            (0.0, 'recur', 'entered', 'recur', False),
+                            (0.5, 'recur', 'recurring', 'recur', False)]
 
     cycler.cycle(deeds)
     assert cycler.tyme == 1.25  # on next cycle
     assert len(deeds) == 0
-    assert doer0.states == [('enter', 'exited', 'recur', False),
-                            ('recur', 'entered', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('exit', 'recurring', 'exit', True)]
-    assert doer1.states == [('enter', 'exited', 'recur', False),
-                            ('recur', 'entered', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('exit', 'recurring', 'exit', True)]
+    assert doer0.states == [(0.0, 'enter', 'exited', 'recur', False),
+                            (0.0, 'recur', 'entered', 'recur', False),
+                            (0.25, 'recur', 'recurring', 'recur', False),
+                            (0.5, 'recur', 'recurring', 'recur', False),
+                            (0.75, 'exit', 'recurring', 'exit', True)]
+    assert doer1.states == [(0.0, 'enter', 'exited', 'recur', False),
+                            (0.0, 'recur', 'entered', 'recur', False),
+                            (0.5, 'recur', 'recurring', 'recur', False),
+                            (1.0, 'exit', 'recurring', 'exit', True)]
+
     """End Test """
 
 def test_cycler_cycle_abort():
     """
     Test Cycler.cycle() with doers in deeds with abort
     """
-    doer0 = WhoDoer(tock=0.25)
-    doer1 = WhoDoer(tock=0.5)
-    doers = [doer0, doer1]
-
-    cycler = Cycler(tick=0.25, doers=doers)
+    cycler = Cycler(tick=0.25)
     assert cycler.tyme == 0.0  # on next cycle
     assert cycler.tick == 0.25
     assert cycler.real == False
     assert cycler.limit == None
-    assert cycler.doers == doers
+    assert cycler.doers == []
 
-    deeds = cycler.ready()
+    doer0 = WhoDoer(tock=0.25, cycler=cycler)
+    doer1 = WhoDoer(tock=0.5, cycler=cycler)
+    doers = [doer0, doer1]
+    for doer in doers:
+        assert doer.cycler == cycler
+
+    deeds = cycler.ready(doers=doers)
     assert len(deeds) == 2
     assert [val[1] for val in deeds] == [0.0, 0.0]
-    assert doer0.states == []
-    assert doer1.states == []
+    for doer in doers:
+        assert doer.states == []
 
     cycler.cycle(deeds)
     assert cycler.tyme == 0.25  # on next cycle
     assert len(deeds) == 2
     assert [val[1] for val in deeds] == [0.25, 0.5]
-    assert doer0.states == [('enter', 'exited', 'recur', False),
-                            ('recur', 'entered', 'recur', False)]
-    assert doer1.states == [('enter', 'exited', 'recur', False),
-                            ('recur', 'entered', 'recur', False)]
+    assert doer0.states == [(0.0, 'enter', 'exited', 'recur', False),
+                            (0.0, 'recur', 'entered', 'recur', False)]
+    assert doer1.states == [(0.0, 'enter', 'exited', 'recur', False),
+                            (0.0, 'recur', 'entered', 'recur', False)]
+
 
     cycler.cycle(deeds)
     assert cycler.tyme == 0.5  # on next cycle
     assert len(deeds) == 2
     assert [val[1] for val in deeds] == [0.5, 0.5]
-    assert doer0.states == [('enter', 'exited', 'recur', False),
-                            ('recur', 'entered', 'recur', False),
-                            ('recur', 'recurring', 'recur', False)]
-    assert doer1.states == [('enter', 'exited', 'recur', False),
-                            ('recur', 'entered', 'recur', False)]
+    assert doer0.states == [(0.0, 'enter', 'exited', 'recur', False),
+                            (0.0, 'recur', 'entered', 'recur', False),
+                            (0.25, 'recur', 'recurring', 'recur', False)]
+    assert doer1.states == [(0.0, 'enter', 'exited', 'recur', False),
+                            (0.0, 'recur', 'entered', 'recur', False)]
 
     cycler.cycle(deeds)
     assert cycler.tyme == 0.75  # on next cycle
     assert len(deeds) == 2
     assert [val[1] for val in deeds] == [0.75, 1.0]
-    assert doer0.states == [('enter', 'exited', 'recur', False),
-                            ('recur', 'entered', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('recur', 'recurring', 'recur', False)]
-    assert doer1.states == [('enter', 'exited', 'recur', False),
-                            ('recur', 'entered', 'recur', False),
-                            ('recur', 'recurring', 'recur', False)]
+    assert doer0.states == [(0.0, 'enter', 'exited', 'recur', False),
+                            (0.0, 'recur', 'entered', 'recur', False),
+                            (0.25, 'recur', 'recurring', 'recur', False),
+                            (0.5, 'recur', 'recurring', 'recur', False)]
+    assert doer1.states == [(0.0, 'enter', 'exited', 'recur', False),
+                            (0.0, 'recur', 'entered', 'recur', False),
+                            (0.5, 'recur', 'recurring', 'recur', False)]
 
     doer0.desire = Ctl.abort
     doer1.desire = Ctl.abort
@@ -293,29 +302,27 @@ def test_cycler_cycle_abort():
     assert cycler.tyme == 1.0  # on next cycle
     assert len(deeds) == 1
     assert [val[1] for val in deeds] == [1.0]
-    assert doer0.states == [('enter', 'exited', 'recur', False),
-                            ('recur', 'entered', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('exit', 'recurring', 'abort', False)]
-    assert doer1.states == [('enter', 'exited', 'recur', False),
-                            ('recur', 'entered', 'recur', False),
-                            ('recur', 'recurring', 'recur', False)]
+    assert doer0.states == [(0.0, 'enter', 'exited', 'recur', False),
+                            (0.0, 'recur', 'entered', 'recur', False),
+                            (0.25, 'recur', 'recurring', 'recur', False),
+                            (0.5, 'recur', 'recurring', 'recur', False),
+                            (0.75, 'exit', 'recurring', 'abort', False)]
+    assert doer1.states == [(0.0, 'enter', 'exited', 'recur', False),
+                            (0.0, 'recur', 'entered', 'recur', False),
+                            (0.5, 'recur', 'recurring', 'recur', False)]
 
     cycler.cycle(deeds)
     assert cycler.tyme == 1.25  # on next cycle
     assert len(deeds) == 0
-    assert doer0.states == [('enter', 'exited', 'recur', False),
-                            ('recur', 'entered', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('exit', 'recurring', 'abort', False)]
-    assert doer1.states == [('enter', 'exited', 'recur', False),
-                            ('recur', 'entered', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('exit', 'recurring', 'abort', False)]
-
-
+    assert doer0.states == [(0.0, 'enter', 'exited', 'recur', False),
+                            (0.0, 'recur', 'entered', 'recur', False),
+                            (0.25, 'recur', 'recurring', 'recur', False),
+                            (0.5, 'recur', 'recurring', 'recur', False),
+                            (0.75, 'exit', 'recurring', 'abort', False)]
+    assert doer1.states == [(0.0, 'enter', 'exited', 'recur', False),
+                            (0.0, 'recur', 'entered', 'recur', False),
+                            (0.5, 'recur', 'recurring', 'recur', False),
+                            (1.0, 'exit', 'recurring', 'abort', False)]
     """End Test """
 
 
@@ -324,83 +331,89 @@ def test_cycler_run():
     Test Cycler.cycle() with doers in deeds with abort
     """
     tick = 0.03125
-    doer0 = WhoDoer(tock=tick)
-    doer1 = WhoDoer(tock=tick*2)
-    doers = [doer0, doer1]
-    assert doer0.state == Stt.exited
-    assert doer1.state == Stt.exited
-    for doer in doers:
-        assert doer.states == []
-
-    cycler = Cycler(tick=tick, doers=doers)
+    cycler = Cycler(tick=tick)
     assert cycler.tyme == 0.0  # on next cycle
     assert cycler.tick == tick == 0.03125
     assert cycler.real == False
     assert cycler.limit == None
-    assert cycler.doers == doers
+    assert cycler.doers == []
+
+    doer0 = WhoDoer(tock=tick, cycler=cycler)
+    doer1 = WhoDoer(tock=tick*2, cycler=cycler)
+    assert doer0.tock == tick
+    assert doer1.tock == tick *  2
+    doers = [doer0, doer1]
+    for doer in doers:
+        assert doer.cycler == cycler
+        assert doer.state == Stt.exited
+        assert doer.states == []
 
     ticks = 8
     limit = tick * ticks
-    cycler.run(limit=limit)
+    cycler.run(doers=doers, limit=limit)
     assert cycler.tyme == limit
     assert doer0.state == Stt.aborted
     assert doer1.state == Stt.aborted
     assert len(doer0.states) == ticks +  2
-    assert doer0.states == [('enter', 'exited', 'recur', False),
-                            ('recur', 'entered', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('exit', 'recurring', 'recur', False)]
+    assert doer0.states == [(0.0, 'enter', 'exited', 'recur', False),
+                            (0.0, 'recur', 'entered', 'recur', False),
+                            (0.03125, 'recur', 'recurring', 'recur', False),
+                            (0.0625, 'recur', 'recurring', 'recur', False),
+                            (0.09375, 'recur', 'recurring', 'recur', False),
+                            (0.125, 'recur', 'recurring', 'recur', False),
+                            (0.15625, 'recur', 'recurring', 'recur', False),
+                            (0.1875, 'recur', 'recurring', 'recur', False),
+                            (0.21875, 'recur', 'recurring', 'recur', False),
+                            (0.25, 'exit', 'recurring', 'recur', False)]
+
     assert len(doer1.states) == ticks / 2 +  2
-    assert doer1.states == [('enter', 'exited', 'recur', False),
-                            ('recur', 'entered', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('exit', 'recurring', 'recur', False)]
+    assert doer1.states == [(0.0, 'enter', 'exited', 'recur', False),
+                            (0.0, 'recur', 'entered', 'recur', False),
+                            (0.0625, 'recur', 'recurring', 'recur', False),
+                            (0.125, 'recur', 'recurring', 'recur', False),
+                            (0.1875, 'recur', 'recurring', 'recur', False),
+                            (0.25, 'exit', 'recurring', 'recur', False)]
 
 
 
-    for doer in doers:
-        doer.states = []
-    for doer in doers:
-        assert doer.states == []
-
-    cycler = Cycler(tick=tick, doers=doers, real=True, limit=limit)
+    cycler = Cycler(tick=tick, real=True, limit=limit)
     assert cycler.tyme == 0.0  # on next cycle
     assert cycler.tick == tick == 0.03125
     assert cycler.real == True
     assert cycler.limit == limit == 0.25
-    assert cycler.doers == doers
+    assert cycler.doers == []
 
-    cycler.run()
+    for doer in doers:
+        doer.states = []
+        doer.cycler = cycler
+
+    for doer in doers:
+        assert doer.cycler == cycler
+        assert doer.state == Stt.aborted
+        assert doer.states == []
+
+    cycler.run(doers=doers)
     assert cycler.tyme == limit
     assert doer0.state == Stt.aborted
     assert doer1.state == Stt.aborted
     assert len(doer0.states) == ticks +  2
-    assert doer0.states == [('enter', 'exited', 'recur', False),
-                            ('recur', 'entered', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('exit', 'recurring', 'recur', False)]
+    assert doer0.states == [(0.0, 'enter', 'exited', 'recur', False),
+                            (0.0, 'recur', 'entered', 'recur', False),
+                            (0.03125, 'recur', 'recurring', 'recur', False),
+                            (0.0625, 'recur', 'recurring', 'recur', False),
+                            (0.09375, 'recur', 'recurring', 'recur', False),
+                            (0.125, 'recur', 'recurring', 'recur', False),
+                            (0.15625, 'recur', 'recurring', 'recur', False),
+                            (0.1875, 'recur', 'recurring', 'recur', False),
+                            (0.21875, 'recur', 'recurring', 'recur', False),
+                            (0.25, 'exit', 'recurring', 'recur', False)]
     assert len(doer1.states) == ticks / 2 +  2
-    assert doer1.states == [('enter', 'exited', 'recur', False),
-                            ('recur', 'entered', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('recur', 'recurring', 'recur', False),
-                            ('exit', 'recurring', 'recur', False)]
-
+    assert doer1.states == [(0.0, 'enter', 'exited', 'recur', False),
+                            (0.0, 'recur', 'entered', 'recur', False),
+                            (0.0625, 'recur', 'recurring', 'recur', False),
+                            (0.125, 'recur', 'recurring', 'recur', False),
+                            (0.1875, 'recur', 'recurring', 'recur', False),
+                            (0.25, 'exit', 'recurring', 'recur', False)]
 
     """End Test """
 

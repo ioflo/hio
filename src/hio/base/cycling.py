@@ -27,7 +27,7 @@ class Cycler():
         .tyme is float relative cycle time, tyme is artificial time
 
     """
-    def __init__(self, tyme=0.0, tick=1.0, real=False, limit=None, doers=None):
+    def __init__(self, tyme=0.0, tick=1.0, real=False, limit=None):
         """
         Initialize instance
         Parameters:
@@ -36,7 +36,6 @@ class Cycler():
             real is boolean True means run in real time,
                             Otherwise run faster than real
             limit is float seconds for max run time of cycler. None means no limit.
-            doers is list of Doers instances with generator methods
         """
         self.tyme = float(tyme)
         self.tick = float(tick)
@@ -45,7 +44,7 @@ class Cycler():
         self.limit = abs(float(limit)) if limit is not None else None
         self.timer = MonoTimer(duration = self.tick)
         # deque of runable generators
-        self.doers = doers if doers is not None else list()
+        self.doers = list()
 
     @property
     def tyme(self):
