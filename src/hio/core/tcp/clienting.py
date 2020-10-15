@@ -598,7 +598,7 @@ class ClientTls(Client):
         """
         self._connected = value
 
-    def shutclose(self):
+    def close(self):
         """
         Shutdown and close connected socket .cs
         """
@@ -610,7 +610,6 @@ class ClientTls(Client):
             self.connected = False
             self.opened = False
 
-    close = shutclose  # alias
 
     def wrap(self):
         """
