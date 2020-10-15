@@ -9,10 +9,10 @@ from ..help.timing import MonoTimer
 from .basing import Ctl, Stt
 from . import cycling
 from . import doing
-from ..core import serving, clienting
+from ..core.tcp import serving, clienting
 
 
-class ServerDoer(Doer):
+class ServerDoer(doing.Doer):
     """
     Basic TCP Server
 
@@ -60,7 +60,7 @@ class ServerDoer(Doer):
         """
         Service .server
         """
-        self.server.serviceAll
+        self.server.serviceAll()
 
     def exit(self, **kwa):
         """
@@ -70,8 +70,40 @@ class ServerDoer(Doer):
         super(ServerDoer, self).exit(**kwa)
 
 
+class EchoServerDoer(ServerDoer):
+    """
+    Echo TCP Server
+    Just echoes back to client whatever it receives from client
 
-class ClientDoer(Doer):
+    Inherited Attributes:
+        .cycler is Cycler instance that provides relative cycle time as .cycler.tyme
+                Ultimately a does at top level of run hierarchy are run by cycler
+
+        .state is operational state of doer
+        .desire is desired control asked by this or other taskers
+        .done is doer completion state True or False
+        .do = generator that runs doer
+        .server is TCP Server instance
+
+    Inherited Properties:
+        .tock is desired time in seconds between runs or until next run,
+                 non negative, zero means run asap
+
+    """
+
+    def recur(self):
+        """
+        Service .server
+        """
+        super(EchoServerDoer, self).recur()
+
+        for ca, ix in self.server.ixes.items():  # echo back
+            if ix.rxbs:
+                ix.tx(bytes(ix.rxbs))
+                ix.clearRxbs()
+
+
+class ClientDoer(doing.Doer):
     """
     Basic TCP Client
 
@@ -119,14 +151,14 @@ class ClientDoer(Doer):
         """
         Service .client
         """
-        self.client.serviceAll
+        self.client.serviceAll()
 
     def exit(self, **kwa):
         """
         Close .client
         """
         self.client.close()
-        super(ServerDoer, self).exit(**kwa)
+        super(ClientDoer, self).exit(**kwa)
 
 
 

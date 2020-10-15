@@ -112,7 +112,6 @@ class Client():
         self.wlog = wlog
 
 
-
     @property
     def host(self):
         """
@@ -424,24 +423,6 @@ class Client():
         del self.rxbs[:]
 
 
-    def catRxbs(self):
-        """
-        Return copy and clear .rxbs
-        """
-        rx = self.rxbs[:]
-        self.clearRxbs()
-        return rx
-
-
-    def tailRxbs(self, index):
-        """
-        Returns duple of (bytes(self.rxbs[index:]), len(self.rxbs))
-        slices the tail from index to end and converts to bytes
-        also the length of .rxbs to be used to update index
-        """
-        return (bytes(self.rxbs[index:]), len(self.rxbs))
-
-
     def send(self, data):
         """
         Perform non blocking send on connected socket .cs.
@@ -495,6 +476,16 @@ class Client():
             if count < len(data):  # put back unsent portion
                 self.txes.appendleft(data[count:])
                 break  # try again later
+
+
+    def serviceAll(self):
+        """
+        Service connect, txes, and receives.
+        """
+        self.serviceConnect()
+        self.serviceTxes()
+        self.serviceReceives()
+
 
 
 class ClientTls(Client):
@@ -740,5 +731,4 @@ class ClientTls(Client):
                 self.wlog.writeTx(self.ha, data[:result])
 
         return result
-
 

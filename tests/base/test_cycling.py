@@ -415,6 +415,83 @@ def test_cycler_run():
                             (0.1875, 'recur', 'recurring', 'recur', False),
                             (0.25, 'exit', 'recurring', 'recur', False)]
 
+
+    cycler = Cycler(tick=tick, real=False, limit=limit)
+    assert cycler.tyme == 0.0  # on next cycle
+    assert cycler.tick == tick == 0.03125
+    assert cycler.real == False
+    assert cycler.limit == limit == 0.25
+    assert cycler.doers == []
+
+    for doer in doers:
+        doer.states = []
+        doer.cycler = cycler
+        doer.tock = 0.0  # run asap
+
+    for doer in doers:
+        assert doer.cycler == cycler
+        assert doer.state == Stt.aborted
+        assert doer.states == []
+        assert doer.tock == 0.0
+
+
+    cycler.run(doers=doers)
+    assert cycler.tyme == limit
+    assert doer0.state == Stt.aborted
+    assert doer1.state == Stt.aborted
+    assert len(doer0.states) == ticks +  2
+    assert doer0.states == [(0.0, 'enter', 'exited', 'recur', False),
+                            (0.0, 'recur', 'entered', 'recur', False),
+                            (0.03125, 'recur', 'recurring', 'recur', False),
+                            (0.0625, 'recur', 'recurring', 'recur', False),
+                            (0.09375, 'recur', 'recurring', 'recur', False),
+                            (0.125, 'recur', 'recurring', 'recur', False),
+                            (0.15625, 'recur', 'recurring', 'recur', False),
+                            (0.1875, 'recur', 'recurring', 'recur', False),
+                            (0.21875, 'recur', 'recurring', 'recur', False),
+                            (0.25, 'exit', 'recurring', 'recur', False)]
+
+    assert doer1.states == doer0.states
+
+
+
+    cycler = Cycler(tick=tick, real=True, limit=limit)
+    assert cycler.tyme == 0.0  # on next cycle
+    assert cycler.tick == tick == 0.03125
+    assert cycler.real == True
+    assert cycler.limit == limit == 0.25
+    assert cycler.doers == []
+
+    for doer in doers:
+        doer.states = []
+        doer.cycler = cycler
+        doer.tock = 0.0  # run asap
+
+    for doer in doers:
+        assert doer.cycler == cycler
+        assert doer.state == Stt.aborted
+        assert doer.states == []
+        assert doer.tock == 0.0
+
+
+    cycler.run(doers=doers)
+    assert cycler.tyme == limit
+    assert doer0.state == Stt.aborted
+    assert doer1.state == Stt.aborted
+    assert len(doer0.states) == ticks +  2
+    assert doer0.states == [(0.0, 'enter', 'exited', 'recur', False),
+                            (0.0, 'recur', 'entered', 'recur', False),
+                            (0.03125, 'recur', 'recurring', 'recur', False),
+                            (0.0625, 'recur', 'recurring', 'recur', False),
+                            (0.09375, 'recur', 'recurring', 'recur', False),
+                            (0.125, 'recur', 'recurring', 'recur', False),
+                            (0.15625, 'recur', 'recurring', 'recur', False),
+                            (0.1875, 'recur', 'recurring', 'recur', False),
+                            (0.21875, 'recur', 'recurring', 'recur', False),
+                            (0.25, 'exit', 'recurring', 'recur', False)]
+
+    assert doer1.states == doer0.states
+
     """End Test """
 
 

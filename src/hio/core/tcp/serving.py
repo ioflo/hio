@@ -336,8 +336,6 @@ class Server(Acceptor):
         super(Server, self).close()  #  call super close
         self.closeAllIx()
 
-    # closeAll = close  # alias for now remove later
-
 
     def removeIx(self, ca, shutclose=True):
         """
