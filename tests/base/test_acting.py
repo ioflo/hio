@@ -15,9 +15,9 @@ def test_doer():
     """
     Test Doer class
     """
-    doer = acting.Doer()
-    assert isinstance(doer.cycler, playing.Player)
-    assert doer.cycler.tyme == 0.0
+    doer = acting.Actor()
+    assert isinstance(doer.player, playing.Player)
+    assert doer.player.tyme == 0.0
     assert doer.tock == 0.0
     assert doer.desire == Ctl.exit
     assert doer.state == Stt.exited
@@ -69,8 +69,8 @@ def test_doer_sub():
     """
 
     doer = acting.WhoDoer()
-    assert isinstance(doer.cycler, playing.Player)
-    assert doer.cycler.tyme == 0.0
+    assert isinstance(doer.player, playing.Player)
+    assert doer.player.tyme == 0.0
     assert doer.tock == 0.0
     assert doer.desire == Ctl.exit
     assert doer.state == Stt.exited
@@ -85,7 +85,7 @@ def test_doer_sub():
     assert doer.states == [(0.0, 'enter', 'exited', 'recur', False),
                            (0.0, 'recur', 'entered', 'recur', False)]
 
-    doer.cycler.turn()
+    doer.player.turn()
     state = doer.do(doer.desire)
     assert state == doer.state == Stt.recurring
     assert doer.done == False
@@ -94,7 +94,7 @@ def test_doer_sub():
                            (0.0, 'recur', 'entered', 'recur', False),
                            (1.0, 'recur', 'recurring', 'recur', False)]
 
-    doer.cycler.turn()
+    doer.player.turn()
     doer.desire = Ctl.enter
     state = doer.do(doer.desire)
     assert state == doer.state == Stt.entered
@@ -106,7 +106,7 @@ def test_doer_sub():
                            (2.0, 'exit', 'recurring', 'enter', False),
                            (2.0, 'enter', 'exited', 'enter', False)]
 
-    doer.cycler.turn()
+    doer.player.turn()
     doer.desire = Ctl.recur
     state = doer.do(doer.desire)
     assert state == doer.state == Stt.recurring
@@ -119,7 +119,7 @@ def test_doer_sub():
                            (2.0, 'enter', 'exited', 'enter', False),
                            (3.0, 'recur', 'entered', 'recur', False)]
 
-    doer.cycler.turn()
+    doer.player.turn()
     doer.desire = Ctl.exit
     state = doer.do(doer.desire)
     assert state == doer.state == Stt.exited
@@ -133,7 +133,7 @@ def test_doer_sub():
                            (3.0, 'recur', 'entered', 'recur', False),
                            (4.0, 'exit', 'recurring', 'exit', True)]
 
-    doer.cycler.turn()
+    doer.player.turn()
     with pytest.raises(StopIteration):
         state = doer.do(Ctl.abort)
 
@@ -158,22 +158,22 @@ def test_server_client():
     tick = 0.03125
     ticks = 16
     limit = ticks *  tick
-    cycler = playing.Player(tick=tick, real=True, limit=limit)
-    assert cycler.tyme == 0.0  # on next cycle
-    assert cycler.tick == tick == 0.03125
-    assert cycler.real == True
-    assert cycler.limit == limit == 0.5
-    assert cycler.doers == []
+    player = playing.Player(tick=tick, real=True, limit=limit)
+    assert player.tyme == 0.0  # on next cycle
+    assert player.tick == tick == 0.03125
+    assert player.real == True
+    assert player.limit == limit == 0.5
+    assert player.doers == []
 
     port = 6120
     server = serving.Server(host="", port=port)
     client = clienting.Client(host="localhost", port=port)
 
-    serdoer = acting.ServerDoer(cycler=cycler, server=server)
-    assert serdoer.server.cycler == serdoer.cycler == cycler
+    serdoer = acting.ServerActor(player=player, server=server)
+    assert serdoer.server.cycler == serdoer.player == player
     assert serdoer.server ==  server
-    clidoer = acting.ClientDoer(cycler=cycler, client=client)
-    assert clidoer.client.cycler == clidoer.cycler == cycler
+    clidoer = acting.ClientActor(player=player, client=client)
+    assert clidoer.client.cycler == clidoer.player == player
     assert clidoer.client == client
 
     assert serdoer.tock == 0.0  # ASAP
@@ -181,15 +181,15 @@ def test_server_client():
 
     doers = [serdoer, clidoer]
     for doer in doers:
-        assert doer.cycler == cycler
+        assert doer.player == player
         assert doer.state == Stt.exited
 
 
     msgTx = b"Hello me maties!"
     clidoer.client.tx(msgTx)
 
-    cycler.run(doers=doers)
-    assert cycler.tyme == limit
+    player.run(doers=doers)
+    assert player.tyme == limit
     assert server.opened == False
     assert client.opened == False
 
@@ -208,22 +208,22 @@ def test_echo_server_client():
     tick = 0.03125
     ticks = 16
     limit = ticks *  tick
-    cycler = playing.Player(tick=tick, real=True, limit=limit)
-    assert cycler.tyme == 0.0  # on next cycle
-    assert cycler.tick == tick == 0.03125
-    assert cycler.real == True
-    assert cycler.limit == limit == 0.5
-    assert cycler.doers == []
+    player = playing.Player(tick=tick, real=True, limit=limit)
+    assert player.tyme == 0.0  # on next cycle
+    assert player.tick == tick == 0.03125
+    assert player.real == True
+    assert player.limit == limit == 0.5
+    assert player.doers == []
 
     port = 6120
     server = serving.Server(host="", port=port)
     client = clienting.Client(host="localhost", port=port)
 
-    serdoer = acting.EchoServerDoer(cycler=cycler, server=server)
-    assert serdoer.server.cycler == serdoer.cycler == cycler
+    serdoer = acting.EchoServerActor(player=player, server=server)
+    assert serdoer.server.cycler == serdoer.player == player
     assert serdoer.server ==  server
-    clidoer = acting.ClientDoer(cycler=cycler, client=client)
-    assert clidoer.client.cycler == clidoer.cycler == cycler
+    clidoer = acting.ClientActor(player=player, client=client)
+    assert clidoer.client.cycler == clidoer.player == player
     assert clidoer.client == client
 
     assert serdoer.tock == 0.0  # ASAP
@@ -231,15 +231,15 @@ def test_echo_server_client():
 
     doers = [serdoer, clidoer]
     for doer in doers:
-        assert doer.cycler == cycler
+        assert doer.player == player
         assert doer.state == Stt.exited
 
 
     msgTx = b"Hello me maties!"
     clidoer.client.tx(msgTx)
 
-    cycler.run(doers=doers)
-    assert cycler.tyme == limit
+    player.run(doers=doers)
+    assert player.tyme == limit
     assert server.opened == False
     assert client.opened == False
 
@@ -256,4 +256,4 @@ def test_echo_server_client():
 
 
 if __name__ == "__main__":
-    test_doer_sub()
+    test_server_client()

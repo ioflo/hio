@@ -9,43 +9,43 @@ from hio.base.basing import Ctl, Stt
 from hio.base import playing
 from hio.base import acting
 
-def test_cycler():
+def test_player():
     """
     Test Cycler class
     """
-    cycler = playing.Player()
-    assert cycler.tyme == 0.0
-    assert cycler.tick == 1.0
-    assert cycler.real == False
-    assert cycler.limit == None
-    assert cycler.doers == list()
+    player = playing.Player()
+    assert player.tyme == 0.0
+    assert player.tick == 1.0
+    assert player.real == False
+    assert player.limit == None
+    assert player.doers == list()
 
-    cycler.turn()
-    assert cycler.tyme == 1.0
-    cycler.turn(tick=0.75)
-    assert  cycler.tyme ==  1.75
-    cycler.tick = 0.5
-    cycler.turn()
-    assert cycler.tyme == 2.25
+    player.turn()
+    assert player.tyme == 1.0
+    player.turn(tick=0.75)
+    assert  player.tyme ==  1.75
+    player.tick = 0.5
+    player.turn()
+    assert player.tyme == 2.25
 
-    cycler = playing.Player(tyme=2.0, tick=0.25)
-    assert cycler.tyme == 2.0
-    assert cycler.tick == 0.25
-    cycler.turn()
-    assert cycler.tyme == 2.25
-    cycler.turn(tick=0.75)
-    assert  cycler.tyme ==  3.0
-    cycler.tick = 0.5
-    cycler.turn()
-    assert cycler.tyme == 3.5
+    player = playing.Player(tyme=2.0, tick=0.25)
+    assert player.tyme == 2.0
+    assert player.tick == 0.25
+    player.turn()
+    assert player.tyme == 2.25
+    player.turn(tick=0.75)
+    assert  player.tyme ==  3.0
+    player.tick = 0.5
+    player.turn()
+    assert player.tyme == 3.5
 
-    cycler = playing.Player(tick=0.01, limit=0.05)
-    cycler.run()
-    assert cycler.tyme == 0.01
+    player = playing.Player(tick=0.01, limit=0.05)
+    player.run()
+    assert player.tyme == 0.01
 
-    cycler = playing.Player(tick=0.01, real=True, limit=0.05)
-    cycler.run()
-    assert cycler.tyme == 0.01
+    player = playing.Player(tick=0.01, real=True, limit=0.05)
+    player.run()
+    assert player.tyme == 0.01
 
     """End Test """
 
@@ -137,32 +137,32 @@ def test_tymer():
 
 
 
-def test_cycler_cycle():
+def test_player_cycle():
     """
     Test Cycler.cycle() with doers in deeds
     """
-    cycler = playing.Player(tick=0.25)
-    assert cycler.tyme == 0.0  # on next cycle
-    assert cycler.tick == 0.25
-    assert cycler.real == False
-    assert cycler.limit == None
-    assert cycler.doers == []
+    player = playing.Player(tick=0.25)
+    assert player.tyme == 0.0  # on next cycle
+    assert player.tick == 0.25
+    assert player.real == False
+    assert player.limit == None
+    assert player.doers == []
 
-    doer0 = acting.WhoDoer(tock=0.25, cycler=cycler)
-    doer1 = acting.WhoDoer(tock=0.5, cycler=cycler)
+    doer0 = acting.WhoDoer(tock=0.25, player=player)
+    doer1 = acting.WhoDoer(tock=0.5, player=player)
     doers = [doer0, doer1]
     for doer in doers:
-        assert doer.cycler == cycler
+        assert doer.player == player
 
-    deeds = cycler.ready(doers=doers)
+    deeds = player.ready(doers=doers)
     assert len(deeds) == 2
     assert [val[1] for val in deeds] == [0.0, 0.0]
     for doer in doers:
         assert doer.states == []
 
 
-    cycler.cycle(deeds)
-    assert cycler.tyme == 0.25  # on next cycle
+    player.cycle(deeds)
+    assert player.tyme == 0.25  # on next cycle
     assert len(deeds) == 2
     assert [val[1] for val in deeds] == [0.25, 0.5]
     assert doer0.states == [(0.0, 'enter', 'exited', 'recur', False),
@@ -170,8 +170,8 @@ def test_cycler_cycle():
     assert doer1.states == [(0.0, 'enter', 'exited', 'recur', False),
                             (0.0, 'recur', 'entered', 'recur', False)]
 
-    cycler.cycle(deeds)
-    assert cycler.tyme == 0.5  # on next cycle
+    player.cycle(deeds)
+    assert player.tyme == 0.5  # on next cycle
     assert len(deeds) == 2
     assert [val[1] for val in deeds] == [0.5, 0.5]
     assert doer0.states == [(0.0, 'enter', 'exited', 'recur', False),
@@ -181,8 +181,8 @@ def test_cycler_cycle():
                             (0.0, 'recur', 'entered', 'recur', False)]
 
 
-    cycler.cycle(deeds)
-    assert cycler.tyme == 0.75  # on next cycle
+    player.cycle(deeds)
+    assert player.tyme == 0.75  # on next cycle
     assert len(deeds) == 2
     assert [val[1] for val in deeds] == [0.75, 1.0]
     assert doer0.states == [(0.0, 'enter', 'exited', 'recur', False),
@@ -196,8 +196,8 @@ def test_cycler_cycle():
 
     doer0.desire = Ctl.exit
     doer1.desire = Ctl.exit
-    cycler.cycle(deeds)
-    assert cycler.tyme == 1.0  # on next cycle
+    player.cycle(deeds)
+    assert player.tyme == 1.0  # on next cycle
     assert len(deeds) == 1
     assert [val[1] for val in deeds] == [1.0]
     assert doer0.states == [(0.0, 'enter', 'exited', 'recur', False),
@@ -209,8 +209,8 @@ def test_cycler_cycle():
                             (0.0, 'recur', 'entered', 'recur', False),
                             (0.5, 'recur', 'recurring', 'recur', False)]
 
-    cycler.cycle(deeds)
-    assert cycler.tyme == 1.25  # on next cycle
+    player.cycle(deeds)
+    assert player.tyme == 1.25  # on next cycle
     assert len(deeds) == 0
     assert doer0.states == [(0.0, 'enter', 'exited', 'recur', False),
                             (0.0, 'recur', 'entered', 'recur', False),
@@ -224,31 +224,31 @@ def test_cycler_cycle():
 
     """End Test """
 
-def test_cycler_cycle_abort():
+def test_player_cycle_abort():
     """
     Test Cycler.cycle() with doers in deeds with abort
     """
-    cycler = playing.Player(tick=0.25)
-    assert cycler.tyme == 0.0  # on next cycle
-    assert cycler.tick == 0.25
-    assert cycler.real == False
-    assert cycler.limit == None
-    assert cycler.doers == []
+    player = playing.Player(tick=0.25)
+    assert player.tyme == 0.0  # on next cycle
+    assert player.tick == 0.25
+    assert player.real == False
+    assert player.limit == None
+    assert player.doers == []
 
-    doer0 = acting.WhoDoer(tock=0.25, cycler=cycler)
-    doer1 = acting.WhoDoer(tock=0.5, cycler=cycler)
+    doer0 = acting.WhoDoer(tock=0.25, player=player)
+    doer1 = acting.WhoDoer(tock=0.5, player=player)
     doers = [doer0, doer1]
     for doer in doers:
-        assert doer.cycler == cycler
+        assert doer.player == player
 
-    deeds = cycler.ready(doers=doers)
+    deeds = player.ready(doers=doers)
     assert len(deeds) == 2
     assert [val[1] for val in deeds] == [0.0, 0.0]
     for doer in doers:
         assert doer.states == []
 
-    cycler.cycle(deeds)
-    assert cycler.tyme == 0.25  # on next cycle
+    player.cycle(deeds)
+    assert player.tyme == 0.25  # on next cycle
     assert len(deeds) == 2
     assert [val[1] for val in deeds] == [0.25, 0.5]
     assert doer0.states == [(0.0, 'enter', 'exited', 'recur', False),
@@ -257,8 +257,8 @@ def test_cycler_cycle_abort():
                             (0.0, 'recur', 'entered', 'recur', False)]
 
 
-    cycler.cycle(deeds)
-    assert cycler.tyme == 0.5  # on next cycle
+    player.cycle(deeds)
+    assert player.tyme == 0.5  # on next cycle
     assert len(deeds) == 2
     assert [val[1] for val in deeds] == [0.5, 0.5]
     assert doer0.states == [(0.0, 'enter', 'exited', 'recur', False),
@@ -267,8 +267,8 @@ def test_cycler_cycle_abort():
     assert doer1.states == [(0.0, 'enter', 'exited', 'recur', False),
                             (0.0, 'recur', 'entered', 'recur', False)]
 
-    cycler.cycle(deeds)
-    assert cycler.tyme == 0.75  # on next cycle
+    player.cycle(deeds)
+    assert player.tyme == 0.75  # on next cycle
     assert len(deeds) == 2
     assert [val[1] for val in deeds] == [0.75, 1.0]
     assert doer0.states == [(0.0, 'enter', 'exited', 'recur', False),
@@ -281,8 +281,8 @@ def test_cycler_cycle_abort():
 
     doer0.desire = Ctl.abort
     doer1.desire = Ctl.abort
-    cycler.cycle(deeds)
-    assert cycler.tyme == 1.0  # on next cycle
+    player.cycle(deeds)
+    assert player.tyme == 1.0  # on next cycle
     assert len(deeds) == 1
     assert [val[1] for val in deeds] == [1.0]
     assert doer0.states == [(0.0, 'enter', 'exited', 'recur', False),
@@ -294,8 +294,8 @@ def test_cycler_cycle_abort():
                             (0.0, 'recur', 'entered', 'recur', False),
                             (0.5, 'recur', 'recurring', 'recur', False)]
 
-    cycler.cycle(deeds)
-    assert cycler.tyme == 1.25  # on next cycle
+    player.cycle(deeds)
+    assert player.tyme == 1.25  # on next cycle
     assert len(deeds) == 0
     assert doer0.states == [(0.0, 'enter', 'exited', 'recur', False),
                             (0.0, 'recur', 'entered', 'recur', False),
@@ -309,32 +309,32 @@ def test_cycler_cycle_abort():
     """End Test """
 
 
-def test_cycler_run():
+def test_player_run():
     """
     Test Cycler.cycle() with doers in deeds with abort
     """
     tick = 0.03125
-    cycler = playing.Player(tick=tick)
-    assert cycler.tyme == 0.0  # on next cycle
-    assert cycler.tick == tick == 0.03125
-    assert cycler.real == False
-    assert cycler.limit == None
-    assert cycler.doers == []
+    player = playing.Player(tick=tick)
+    assert player.tyme == 0.0  # on next cycle
+    assert player.tick == tick == 0.03125
+    assert player.real == False
+    assert player.limit == None
+    assert player.doers == []
 
-    doer0 = acting.WhoDoer(tock=tick, cycler=cycler)
-    doer1 = acting.WhoDoer(tock=tick*2, cycler=cycler)
+    doer0 = acting.WhoDoer(tock=tick, player=player)
+    doer1 = acting.WhoDoer(tock=tick*2, player=player)
     assert doer0.tock == tick
     assert doer1.tock == tick *  2
     doers = [doer0, doer1]
     for doer in doers:
-        assert doer.cycler == cycler
+        assert doer.player == player
         assert doer.state == Stt.exited
         assert doer.states == []
 
     ticks = 8
     limit = tick * ticks
-    cycler.run(doers=doers, limit=limit)
-    assert cycler.tyme == limit
+    player.run(doers=doers, limit=limit)
+    assert player.tyme == limit
     assert doer0.state == Stt.aborted
     assert doer1.state == Stt.aborted
     assert len(doer0.states) == ticks +  2
@@ -359,24 +359,24 @@ def test_cycler_run():
 
 
 
-    cycler = playing.Player(tick=tick, real=True, limit=limit)
-    assert cycler.tyme == 0.0  # on next cycle
-    assert cycler.tick == tick == 0.03125
-    assert cycler.real == True
-    assert cycler.limit == limit == 0.25
-    assert cycler.doers == []
+    player = playing.Player(tick=tick, real=True, limit=limit)
+    assert player.tyme == 0.0  # on next cycle
+    assert player.tick == tick == 0.03125
+    assert player.real == True
+    assert player.limit == limit == 0.25
+    assert player.doers == []
 
     for doer in doers:
         doer.states = []
-        doer.cycler = cycler
+        doer.player = player
 
     for doer in doers:
-        assert doer.cycler == cycler
+        assert doer.player == player
         assert doer.state == Stt.aborted
         assert doer.states == []
 
-    cycler.run(doers=doers)
-    assert cycler.tyme == limit
+    player.run(doers=doers)
+    assert player.tyme == limit
     assert doer0.state == Stt.aborted
     assert doer1.state == Stt.aborted
     assert len(doer0.states) == ticks +  2
@@ -399,27 +399,27 @@ def test_cycler_run():
                             (0.25, 'exit', 'recurring', 'recur', False)]
 
 
-    cycler = playing.Player(tick=tick, real=False, limit=limit)
-    assert cycler.tyme == 0.0  # on next cycle
-    assert cycler.tick == tick == 0.03125
-    assert cycler.real == False
-    assert cycler.limit == limit == 0.25
-    assert cycler.doers == []
+    player = playing.Player(tick=tick, real=False, limit=limit)
+    assert player.tyme == 0.0  # on next cycle
+    assert player.tick == tick == 0.03125
+    assert player.real == False
+    assert player.limit == limit == 0.25
+    assert player.doers == []
 
     for doer in doers:
         doer.states = []
-        doer.cycler = cycler
+        doer.player = player
         doer.tock = 0.0  # run asap
 
     for doer in doers:
-        assert doer.cycler == cycler
+        assert doer.player == player
         assert doer.state == Stt.aborted
         assert doer.states == []
         assert doer.tock == 0.0
 
 
-    cycler.run(doers=doers)
-    assert cycler.tyme == limit
+    player.run(doers=doers)
+    assert player.tyme == limit
     assert doer0.state == Stt.aborted
     assert doer1.state == Stt.aborted
     assert len(doer0.states) == ticks +  2
@@ -438,27 +438,27 @@ def test_cycler_run():
 
 
 
-    cycler = playing.Player(tick=tick, real=True, limit=limit)
-    assert cycler.tyme == 0.0  # on next cycle
-    assert cycler.tick == tick == 0.03125
-    assert cycler.real == True
-    assert cycler.limit == limit == 0.25
-    assert cycler.doers == []
+    player = playing.Player(tick=tick, real=True, limit=limit)
+    assert player.tyme == 0.0  # on next cycle
+    assert player.tick == tick == 0.03125
+    assert player.real == True
+    assert player.limit == limit == 0.25
+    assert player.doers == []
 
     for doer in doers:
         doer.states = []
-        doer.cycler = cycler
+        doer.player = player
         doer.tock = 0.0  # run asap
 
     for doer in doers:
-        assert doer.cycler == cycler
+        assert doer.player == player
         assert doer.state == Stt.aborted
         assert doer.states == []
         assert doer.tock == 0.0
 
 
-    cycler.run(doers=doers)
-    assert cycler.tyme == limit
+    player.run(doers=doers)
+    assert player.tyme == limit
     assert doer0.state == Stt.aborted
     assert doer1.state == Stt.aborted
     assert len(doer0.states) == ticks +  2
@@ -479,4 +479,4 @@ def test_cycler_run():
 
 
 if __name__ == "__main__":
-    test_cycler_run()
+    test_player_run()

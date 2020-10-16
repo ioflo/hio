@@ -11,10 +11,10 @@ from . import playing
 from ..core.tcp import serving, clienting
 
 
-class Doer():
+class Actor():
     """
-    Base class for hierarchical structured async coroutines.
-    Manages state based generator
+    Base class for hierarchical structured async state machine generators.
+    Manages state based generators
 
     Attributes:
         .cycler is Cycler instance that provides relative cycle time as .cycler.tyme
@@ -41,7 +41,7 @@ class Doer():
 
     """
 
-    def __init__(self, cycler=None, tock=0.0):
+    def __init__(self, player=None, tock=0.0):
         """
         Initialize instance.
         Parameters:
@@ -49,7 +49,7 @@ class Doer():
            tock is float seconds initial value of .tock
 
         """
-        self.cycler = cycler or playing.Player(tyme=0.0)
+        self.player = player or playing.Player(tyme=0.0)
         self.tock = tock  # desired tyme interval between runs, 0.0 means asap
 
         self.state = Stt.exited  # operational state of doer
@@ -211,7 +211,7 @@ class Doer():
 
 
 
-class ServerDoer(Doer):
+class ServerActor(Actor):
     """
     Basic TCP Server
 
@@ -244,8 +244,8 @@ class ServerDoer(Doer):
            server is TCP Server instance
 
         """
-        super(ServerDoer, self).__init__(**kwa)
-        server.cycler = self.cycler
+        super(ServerActor, self).__init__(**kwa)
+        server.cycler = self.player
         self.server = server
 
 
@@ -266,10 +266,10 @@ class ServerDoer(Doer):
         Close .server
         """
         self.server.close()
-        super(ServerDoer, self).exit(**kwa)
+        super(ServerActor, self).exit(**kwa)
 
 
-class EchoServerDoer(ServerDoer):
+class EchoServerActor(ServerActor):
     """
     Echo TCP Server
     Just echoes back to client whatever it receives from client
@@ -294,7 +294,7 @@ class EchoServerDoer(ServerDoer):
         """
         Service .server
         """
-        super(EchoServerDoer, self).recur()
+        super(EchoServerActor, self).recur()
 
         for ca, ix in self.server.ixes.items():  # echo back
             if ix.rxbs:
@@ -302,7 +302,7 @@ class EchoServerDoer(ServerDoer):
                 ix.clearRxbs()
 
 
-class ClientDoer(Doer):
+class ClientActor(Actor):
     """
     Basic TCP Client
 
@@ -335,8 +335,8 @@ class ClientDoer(Doer):
            client is TCP Client instance
 
         """
-        super(ClientDoer, self).__init__(**kwa)
-        client.cycler = self.cycler
+        super(ClientActor, self).__init__(**kwa)
+        client.cycler = self.player
         self.client = client
 
 
@@ -357,11 +357,11 @@ class ClientDoer(Doer):
         Close .client
         """
         self.client.close()
-        super(ClientDoer, self).exit(**kwa)
+        super(ClientActor, self).exit(**kwa)
 
 
 
-class WhoDoer(Doer):
+class WhoDoer(Actor):
     """
     For debugging stuff
     """
@@ -371,12 +371,12 @@ class WhoDoer(Doer):
 
     # override .enter
     def enter(self):
-        self.states.append((self.cycler.tyme, "enter", self.state.name, self.desire.name, self.done))
+        self.states.append((self.player.tyme, "enter", self.state.name, self.desire.name, self.done))
 
     # override .recur
     def recur(self):
-        self.states.append((self.cycler.tyme, "recur", self.state.name, self.desire.name, self.done))
+        self.states.append((self.player.tyme, "recur", self.state.name, self.desire.name, self.done))
 
     def exit(self, **kwa):
         super(WhoDoer, self).exit(**kwa)
-        self.states.append((self.cycler.tyme, "exit", self.state.name, self.desire.name, self.done))
+        self.states.append((self.player.tyme, "exit", self.state.name, self.desire.name, self.done))
