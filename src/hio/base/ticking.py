@@ -18,13 +18,14 @@ class Ticker():
     by .tock method.
     .tyme may be artificial time or real time in seconds.
 
-    .cycle method runs generators that are synchronized to cycle time .tyme
-           cycle may run as fast as possbile or run in real time.
-
     Attributes:
 
     Properties:
-        .tyme is float relative cycle time, tyme is artificial time
+        .tyme is float relative cycle time, .tyme is artificial time
+        .tock is float tyme increment of .tick()
+
+    Methods:
+        .tick increments .tyme by one .tock or provided tock
 
     """
     def __init__(self, tyme=0.0, tock=1.0):
