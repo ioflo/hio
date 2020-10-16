@@ -35,7 +35,7 @@ class Plier(ticking.Ticker):
         Parameters:
             real is boolean True means run in real time,
                             Otherwise run faster than real
-            limit is float seconds for max run time of cycler. None means no limit.
+            limit is float seconds for max run time of plier. None means no limit.
         """
         super(Plier, self).__init__(**kwa)
 

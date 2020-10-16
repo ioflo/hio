@@ -54,43 +54,43 @@ def test_tymer():
     Test Tymer class
     """
     tymer = playing.Tymer()
-    assert isinstance(tymer.cycler, playing.Player)
-    assert tymer.cycler.tyme == 0.0
-    assert tymer.cycler.tick == 1.0
+    assert isinstance(tymer.ticker, playing.Player)
+    assert tymer.ticker.tyme == 0.0
+    assert tymer.ticker.tick == 1.0
 
     assert tymer.duration == 0.0
     assert tymer.elapsed == 0.0
     assert tymer.remaining == 0.0
     assert tymer.expired == True
 
-    tymer.cycler.tick = 0.25
+    tymer.ticker.tick = 0.25
     tymer.start(duration = 1.0)
     assert tymer.duration == 1.0
     assert tymer.elapsed ==  0.0
     assert tymer.remaining == 1.0
     assert tymer.expired == False
 
-    tymer.cycler.turn()
-    assert tymer.cycler.tyme == 0.25
+    tymer.ticker.turn()
+    assert tymer.ticker.tyme == 0.25
     assert tymer.elapsed ==  0.25
     assert tymer.remaining == 0.75
     assert tymer.expired == False
 
-    tymer.cycler.turn()
-    tymer.cycler.turn()
-    assert tymer.cycler.tyme == 0.75
+    tymer.ticker.turn()
+    tymer.ticker.turn()
+    assert tymer.ticker.tyme == 0.75
     assert tymer.elapsed ==  0.75
     assert tymer.remaining == 0.25
     assert tymer.expired == False
 
-    tymer.cycler.turn()
-    assert tymer.cycler.tyme == 1.0
+    tymer.ticker.turn()
+    assert tymer.ticker.tyme == 1.0
     assert tymer.elapsed ==  1.0
     assert tymer.remaining == 0.0
     assert tymer.expired == True
 
-    tymer.cycler.turn()
-    assert tymer.cycler.tyme == 1.25
+    tymer.ticker.turn()
+    assert tymer.ticker.tyme == 1.25
     assert tymer.elapsed ==  1.25
     assert tymer.remaining == -0.25
     assert tymer.expired == True
@@ -101,7 +101,7 @@ def test_tymer():
     assert tymer.remaining == 0.75
     assert tymer.expired == False
 
-    tymer.cycler.tyme = 2.0
+    tymer.ticker.tyme = 2.0
     assert tymer.elapsed ==  1.0
     assert tymer.remaining == 0.0
     assert tymer.expired == True
@@ -112,24 +112,24 @@ def test_tymer():
     assert tymer.remaining == 0.25
     assert tymer.expired == False
 
-    tymer.cycler.turn()
+    tymer.ticker.turn()
     assert tymer.elapsed ==  0.25
     assert tymer.remaining == 0.0
     assert tymer.expired == True
 
     tymer = playing.Tymer(duration=1.0, start=0.25)
-    assert tymer.cycler.tyme == 0.0
+    assert tymer.ticker.tyme == 0.0
     assert tymer.duration == 1.0
     assert tymer.elapsed ==  -0.25
     assert tymer.remaining == 1.25
     assert tymer.expired == False
-    tymer.cycler.turn()
-    assert tymer.cycler.tyme == 1.0
+    tymer.ticker.turn()
+    assert tymer.ticker.tyme == 1.0
     assert tymer.elapsed ==  0.75
     assert tymer.remaining == 0.25
     assert tymer.expired == False
-    tymer.cycler.turn()
-    assert tymer.cycler.tyme == 2.0
+    tymer.ticker.turn()
+    assert tymer.ticker.tyme == 2.0
     assert tymer.elapsed == 1.75
     assert tymer.remaining == -0.75
     assert tymer.expired == True
@@ -148,11 +148,11 @@ def test_player_cycle():
     assert player.limit == None
     assert player.doers == []
 
-    doer0 = acting.WhoActor(tock=0.25, player=player)
-    doer1 = acting.WhoActor(tock=0.5, player=player)
+    doer0 = acting.WhoActor(tock=0.25, ticker=player)
+    doer1 = acting.WhoActor(tock=0.5, ticker=player)
     doers = [doer0, doer1]
     for doer in doers:
-        assert doer.player == player
+        assert doer.ticker == player
 
     deeds = player.ready(doers=doers)
     assert len(deeds) == 2
@@ -235,11 +235,11 @@ def test_player_cycle_abort():
     assert player.limit == None
     assert player.doers == []
 
-    doer0 = acting.WhoActor(tock=0.25, player=player)
-    doer1 = acting.WhoActor(tock=0.5, player=player)
+    doer0 = acting.WhoActor(tock=0.25, ticker=player)
+    doer1 = acting.WhoActor(tock=0.5, ticker=player)
     doers = [doer0, doer1]
     for doer in doers:
-        assert doer.player == player
+        assert doer.ticker == player
 
     deeds = player.ready(doers=doers)
     assert len(deeds) == 2
@@ -321,13 +321,13 @@ def test_player_run():
     assert player.limit == None
     assert player.doers == []
 
-    doer0 = acting.WhoActor(tock=tick, player=player)
-    doer1 = acting.WhoActor(tock=tick*2, player=player)
+    doer0 = acting.WhoActor(tock=tick, ticker=player)
+    doer1 = acting.WhoActor(tock=tick*2, ticker=player)
     assert doer0.tock == tick
     assert doer1.tock == tick *  2
     doers = [doer0, doer1]
     for doer in doers:
-        assert doer.player == player
+        assert doer.ticker == player
         assert doer.state == Stt.exited
         assert doer.states == []
 
@@ -368,10 +368,10 @@ def test_player_run():
 
     for doer in doers:
         doer.states = []
-        doer.player = player
+        doer.ticker = player
 
     for doer in doers:
-        assert doer.player == player
+        assert doer.ticker == player
         assert doer.state == Stt.aborted
         assert doer.states == []
 
@@ -408,11 +408,11 @@ def test_player_run():
 
     for doer in doers:
         doer.states = []
-        doer.player = player
+        doer.ticker = player
         doer.tock = 0.0  # run asap
 
     for doer in doers:
-        assert doer.player == player
+        assert doer.ticker == player
         assert doer.state == Stt.aborted
         assert doer.states == []
         assert doer.tock == 0.0
@@ -447,11 +447,11 @@ def test_player_run():
 
     for doer in doers:
         doer.states = []
-        doer.player = player
+        doer.ticker = player
         doer.tock = 0.0  # run asap
 
     for doer in doers:
-        assert doer.player == player
+        assert doer.ticker == player
         assert doer.state == Stt.aborted
         assert doer.states == []
         assert doer.tock == 0.0

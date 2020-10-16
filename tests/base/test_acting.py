@@ -8,6 +8,7 @@ import pytest
 from hio.base.basing import Ctl, Stt
 from hio.base import playing
 from hio.base import acting
+from hio.base import ticking
 from hio.core.tcp import serving, clienting
 
 
@@ -16,8 +17,8 @@ def test_doer():
     Test Doer class
     """
     doer = acting.Actor()
-    assert isinstance(doer.player, playing.Player)
-    assert doer.player.tyme == 0.0
+    assert isinstance(doer.ticker, playing.Player)
+    assert doer.ticker.tyme == 0.0
     assert doer.tock == 0.0
     assert doer.desire == Ctl.exit
     assert doer.state == Stt.exited
@@ -69,8 +70,8 @@ def test_doer_sub():
     """
 
     doer = acting.WhoActor()
-    assert isinstance(doer.player, playing.Player)
-    assert doer.player.tyme == 0.0
+    assert isinstance(doer.ticker, playing.Player)
+    assert doer.ticker.tyme == 0.0
     assert doer.tock == 0.0
     assert doer.desire == Ctl.exit
     assert doer.state == Stt.exited
@@ -85,7 +86,7 @@ def test_doer_sub():
     assert doer.states == [(0.0, 'enter', 'exited', 'recur', False),
                            (0.0, 'recur', 'entered', 'recur', False)]
 
-    doer.player.turn()
+    doer.ticker.turn()
     state = doer.do(doer.desire)
     assert state == doer.state == Stt.recurring
     assert doer.done == False
@@ -94,7 +95,7 @@ def test_doer_sub():
                            (0.0, 'recur', 'entered', 'recur', False),
                            (1.0, 'recur', 'recurring', 'recur', False)]
 
-    doer.player.turn()
+    doer.ticker.turn()
     doer.desire = Ctl.enter
     state = doer.do(doer.desire)
     assert state == doer.state == Stt.entered
@@ -106,7 +107,7 @@ def test_doer_sub():
                            (2.0, 'exit', 'recurring', 'enter', False),
                            (2.0, 'enter', 'exited', 'enter', False)]
 
-    doer.player.turn()
+    doer.ticker.turn()
     doer.desire = Ctl.recur
     state = doer.do(doer.desire)
     assert state == doer.state == Stt.recurring
@@ -119,7 +120,7 @@ def test_doer_sub():
                            (2.0, 'enter', 'exited', 'enter', False),
                            (3.0, 'recur', 'entered', 'recur', False)]
 
-    doer.player.turn()
+    doer.ticker.turn()
     doer.desire = Ctl.exit
     state = doer.do(doer.desire)
     assert state == doer.state == Stt.exited
@@ -133,7 +134,7 @@ def test_doer_sub():
                            (3.0, 'recur', 'entered', 'recur', False),
                            (4.0, 'exit', 'recurring', 'exit', True)]
 
-    doer.player.turn()
+    doer.ticker.turn()
     with pytest.raises(StopIteration):
         state = doer.do(Ctl.abort)
 
@@ -169,11 +170,11 @@ def test_server_client():
     server = serving.Server(host="", port=port)
     client = clienting.Client(host="localhost", port=port)
 
-    serdoer = acting.ServerActor(player=player, server=server)
-    assert serdoer.server.cycler == serdoer.player == player
+    serdoer = acting.ServerActor(ticker=player, server=server)
+    assert serdoer.server.ticker == serdoer.ticker == player
     assert serdoer.server ==  server
-    clidoer = acting.ClientActor(player=player, client=client)
-    assert clidoer.client.cycler == clidoer.player == player
+    clidoer = acting.ClientActor(ticker=player, client=client)
+    assert clidoer.client.ticker == clidoer.ticker == player
     assert clidoer.client == client
 
     assert serdoer.tock == 0.0  # ASAP
@@ -181,7 +182,7 @@ def test_server_client():
 
     doers = [serdoer, clidoer]
     for doer in doers:
-        assert doer.player == player
+        assert doer.ticker == player
         assert doer.state == Stt.exited
 
 
@@ -219,11 +220,11 @@ def test_echo_server_client():
     server = serving.Server(host="", port=port)
     client = clienting.Client(host="localhost", port=port)
 
-    serdoer = acting.EchoServerActor(player=player, server=server)
-    assert serdoer.server.cycler == serdoer.player == player
+    serdoer = acting.EchoServerActor(ticker=player, server=server)
+    assert serdoer.server.ticker == serdoer.ticker == player
     assert serdoer.server ==  server
-    clidoer = acting.ClientActor(player=player, client=client)
-    assert clidoer.client.cycler == clidoer.player == player
+    clidoer = acting.ClientActor(ticker=player, client=client)
+    assert clidoer.client.ticker == clidoer.ticker == player
     assert clidoer.client == client
 
     assert serdoer.tock == 0.0  # ASAP
@@ -231,7 +232,7 @@ def test_echo_server_client():
 
     doers = [serdoer, clidoer]
     for doer in doers:
-        assert doer.player == player
+        assert doer.ticker == player
         assert doer.state == Stt.exited
 
 

@@ -17,8 +17,7 @@ class Doer():
     Manages state based generator
 
     Attributes:
-        .cycler is Cycler instance that provides relative cycle time as .cycler.tyme
-                Ultimately a does at top level of run hierarchy are run by cycler
+        .ticker is Cycler instance that provides relative cycle time as .ticker.tyme
         .state is operational state of doer
         .desire is desired control for future iteration of generator
         .done is doer completion state True or False
@@ -41,15 +40,15 @@ class Doer():
 
     """
 
-    def __init__(self, cycler=None, tock=0.0):
+    def __init__(self, ticker=None, tock=0.0):
         """
         Initialize instance.
         Parameters:
-           cycler is Cycler instance
+           ticker is Cycler instance
            tock is float seconds initial value of .tock
 
         """
-        self.cycler = cycler or ticking.Ticker(tyme=0.0)
+        self.ticker = ticker or ticking.Ticker(tyme=0.0)
         self.tock = tock  # desired tyme interval between runs, 0.0 means asap
 
         self.state = Stt.exited  # operational state of doer
@@ -216,9 +215,7 @@ class ServerDoer(Doer):
     Basic TCP Server
 
     Inherited Attributes:
-        .cycler is Cycler instance that provides relative cycle time as .cycler.tyme
-                Ultimately a does at top level of run hierarchy are run by cycler
-
+        .ticker is Cycler instance that provides relative cycle time as .ticker.tyme
         .state is operational state of doer
         .desire is desired control asked by this or other taskers
         .done is doer completion state True or False
@@ -237,7 +234,7 @@ class ServerDoer(Doer):
         Initialize instance.
 
         Inherited Parameters:
-           cycler is Cycler instance
+           ticker is Ticker instance
            tock is float seconds initial value of .tock
 
         Parameters:
@@ -245,7 +242,7 @@ class ServerDoer(Doer):
 
         """
         super(ServerDoer, self).__init__(**kwa)
-        server.cycler = self.cycler
+        server.ticker = self.ticker
         self.server = server
 
 
@@ -275,9 +272,7 @@ class EchoServerDoer(ServerDoer):
     Just echoes back to client whatever it receives from client
 
     Inherited Attributes:
-        .cycler is Cycler instance that provides relative cycle time as .cycler.tyme
-                Ultimately a does at top level of run hierarchy are run by cycler
-
+        .ticker is Cycler instance that provides relative cycle time as .ticker.tyme
         .state is operational state of doer
         .desire is desired control asked by this or other taskers
         .done is doer completion state True or False
@@ -307,9 +302,7 @@ class ClientDoer(Doer):
     Basic TCP Client
 
     Inherited Attributes:
-        .cycler is Cycler instance that provides relative cycle time as .cycler.tyme
-                Ultimately a does at top level of run hierarchy are run by cycler
-
+        .ticker is Cycler instance that provides relative cycle time as .ticker.tyme
         .state is operational state of doer
         .desire is desired control asked by this or other taskers
         .done is doer completion state True or False
@@ -328,7 +321,7 @@ class ClientDoer(Doer):
         Initialize instance.
 
         Inherited Parameters:
-           cycler is Cycler instance
+           ticker is Ticker instance
            tock is float seconds initial value of .tock
 
         Parameters:
@@ -336,7 +329,7 @@ class ClientDoer(Doer):
 
         """
         super(ClientDoer, self).__init__(**kwa)
-        client.cycler = self.cycler
+        client.ticker = self.ticker
         self.client = client
 
 
@@ -371,12 +364,12 @@ class WhoDoer(Doer):
 
     # override .enter
     def enter(self):
-        self.states.append((self.cycler.tyme, "enter", self.state.name, self.desire.name, self.done))
+        self.states.append((self.ticker.tyme, "enter", self.state.name, self.desire.name, self.done))
 
     # override .recur
     def recur(self):
-        self.states.append((self.cycler.tyme, "recur", self.state.name, self.desire.name, self.done))
+        self.states.append((self.ticker.tyme, "recur", self.state.name, self.desire.name, self.done))
 
     def exit(self, **kwa):
         super(WhoDoer, self).exit(**kwa)
-        self.states.append((self.cycler.tyme, "exit", self.state.name, self.desire.name, self.done))
+        self.states.append((self.ticker.tyme, "exit", self.state.name, self.desire.name, self.done))

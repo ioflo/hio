@@ -30,7 +30,7 @@ class Player(ticking.Ticker):
         Parameters:
             real is boolean True means run in real time,
                             Otherwise run faster than real
-            limit is float seconds for max run time of cycler. None means no limit.
+            limit is float seconds for max run time of player. None means no limit.
         """
         super(Player, self).__init__(**kwa)
 
@@ -168,25 +168,25 @@ class Tymer():
         .duration = tyme duration of tymer in seconds from ._start to ._stop
         .elaspsed = tyme elasped in seconds  since ._start
         .remaining = tyme remaining in seconds  until ._stop
-        .expired = True if expired, False otherwise, i.e. .cycler.tyme >= ._stop
+        .expired = True if expired, False otherwise, i.e. .ticker.tyme >= ._stop
 
     methods:
-        .start() = start tymer at current cycler.tyme
+        .start() = start tymer at current ticker.tyme
         .restart() = restart tymer at last ._stop so no time lost
 
     """
 
-    def __init__(self, cycler=None, duration=0.0, start=None):
+    def __init__(self, ticker=None, duration=0.0, start=None):
         """
         Initialization method for instance.
         Parameters:
-            cycler is reference to Cycler instance. Uses .tyme property
+            ticker is reference to Cycler instance. Uses .tyme property
             duration is float tymer duration in seconds (fractional)
             start is float optional timer start time in seconds. Allows starting
-                before or after current cycler.tyme
+                before or after current ticker.tyme
         """
-        self.cycler = cycler if cycler is not None else Player()
-        start = float(start) if start is not None else self.cycler.tyme
+        self.ticker = ticker if ticker is not None else Player()
+        start = float(start) if start is not None else self.ticker.tyme
         self._start = start # need for default duration
         self._stop = self._start + float(duration)  # need for default duration
         self.start(duration=duration, start=start)
@@ -207,7 +207,7 @@ class Tymer():
         elapsed tyme property getter,
         Returns elapsed tyme in seconds (fractional) since ._start.
         """
-        return (self.cycler.tyme - self._start)
+        return (self.ticker.tyme - self._start)
 
 
     @property
@@ -216,27 +216,27 @@ class Tymer():
         remaining tyme property getter,
         Returns remaining tyme in seconds (fractional) before ._stop.
         """
-        return (self._stop - self.cycler.tyme)
+        return (self._stop - self.ticker.tyme)
 
 
     @property
     def expired(self):
         """
         Returns True if tymer has expired, False otherwise.
-        self.cycler.tyme >= ._stop,
+        self.ticker.tyme >= ._stop,
         """
-        return (self.cycler.tyme >= self._stop)
+        return (self.ticker.tyme >= self._stop)
 
 
     def start(self, duration=None, start=None):
         """
         Starts Tymer of duration secs at start time start secs.
             If duration not provided then uses current duration
-            If start not provided then starts at current .cycler.tyme
+            If start not provided then starts at current .ticker.tyme
         """
         # remember current duration when duration not provided
         duration = float(duration) if duration is not None else self.duration
-        self._start = float(start) if start is not None else self.cycler.tyme
+        self._start = float(start) if start is not None else self.ticker.tyme
         self._stop = self._start + duration
         return self._start
 

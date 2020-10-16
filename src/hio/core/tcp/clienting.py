@@ -62,7 +62,7 @@ class Client():
     Reconnectable = False  # auto reconnect flag
 
     def __init__(self,
-                 cycler=None,
+                 ticker=None,
                  timeout=None,
                  ha=None,
                  host='127.0.0.1',
@@ -76,7 +76,7 @@ class Client():
         Initialization method for instance.
 
         Parameters:
-            cycler = Cycler instance reference
+            ticker = Ticker instance reference
             timeout = auto reconnect retry timeout
 
             ha = host address duple (host, port) of remote server
@@ -88,9 +88,9 @@ class Client():
             rxbs = bytearray of data received
             wlog = WireLog object if any
         """
-        self.cycler = cycler or ticking.Ticker(tyme=0.0)
+        self.ticker = ticker or ticking.Ticker(tyme=0.0)
         self.timeout = timeout if timeout is not None else self.Timeout
-        self.tymer = ticking.Tymer(self.cycler, duration=self.timeout)  # reconnect retry timer
+        self.tymer = ticking.Tymer(self.ticker, duration=self.timeout)  # reconnect retry timer
 
         self.reinitHostPort(ha=ha, hostname=host, port=port)
         self.ha = ha or (host, port)

@@ -17,8 +17,7 @@ class Actor():
     Manages state based generators
 
     Attributes:
-        .cycler is Cycler instance that provides relative cycle time as .cycler.tyme
-                Ultimately a does at top level of run hierarchy are run by cycler
+        .ticker is Cycler instance that provides relative cycle time as .ticker.tyme
         .state is operational state of doer
         .desire is desired control for future iteration of generator
         .done is doer completion state True or False
@@ -41,15 +40,15 @@ class Actor():
 
     """
 
-    def __init__(self, player=None, tock=0.0):
+    def __init__(self, ticker=None, tock=0.0):
         """
         Initialize instance.
         Parameters:
-           cycler is Cycler instance
+           ticker is Cycler instance
            tock is float seconds initial value of .tock
 
         """
-        self.player = player or playing.Player(tyme=0.0)
+        self.ticker = ticker or playing.Player(tyme=0.0)
         self.tock = tock  # desired tyme interval between runs, 0.0 means asap
 
         self.state = Stt.exited  # operational state of doer
@@ -216,8 +215,7 @@ class ServerActor(Actor):
     Basic TCP Server
 
     Inherited Attributes:
-        .cycler is Cycler instance that provides relative cycle time as .cycler.tyme
-                Ultimately a does at top level of run hierarchy are run by cycler
+        .ticker is Cycler instance that provides relative cycle time as .ticker.tyme
 
         .state is operational state of doer
         .desire is desired control asked by this or other taskers
@@ -237,7 +235,7 @@ class ServerActor(Actor):
         Initialize instance.
 
         Inherited Parameters:
-           cycler is Cycler instance
+           ticker is Cycler instance
            tock is float seconds initial value of .tock
 
         Parameters:
@@ -245,7 +243,7 @@ class ServerActor(Actor):
 
         """
         super(ServerActor, self).__init__(**kwa)
-        server.cycler = self.player
+        server.ticker = self.ticker
         self.server = server
 
 
@@ -275,9 +273,7 @@ class EchoServerActor(ServerActor):
     Just echoes back to client whatever it receives from client
 
     Inherited Attributes:
-        .cycler is Cycler instance that provides relative cycle time as .cycler.tyme
-                Ultimately a does at top level of run hierarchy are run by cycler
-
+        .ticker is Cycler instance that provides relative cycle time as .ticker.tyme
         .state is operational state of doer
         .desire is desired control asked by this or other taskers
         .done is doer completion state True or False
@@ -307,9 +303,7 @@ class ClientActor(Actor):
     Basic TCP Client
 
     Inherited Attributes:
-        .cycler is Cycler instance that provides relative cycle time as .cycler.tyme
-                Ultimately a does at top level of run hierarchy are run by cycler
-
+        .ticker is Cycler instance that provides relative cycle time as .ticker.tyme
         .state is operational state of doer
         .desire is desired control asked by this or other taskers
         .done is doer completion state True or False
@@ -328,7 +322,7 @@ class ClientActor(Actor):
         Initialize instance.
 
         Inherited Parameters:
-           cycler is Cycler instance
+           ticker is Cycler instance
            tock is float seconds initial value of .tock
 
         Parameters:
@@ -336,7 +330,7 @@ class ClientActor(Actor):
 
         """
         super(ClientActor, self).__init__(**kwa)
-        client.cycler = self.player
+        client.ticker = self.ticker
         self.client = client
 
 
@@ -371,12 +365,12 @@ class WhoActor(Actor):
 
     # override .enter
     def enter(self):
-        self.states.append((self.player.tyme, "enter", self.state.name, self.desire.name, self.done))
+        self.states.append((self.ticker.tyme, "enter", self.state.name, self.desire.name, self.done))
 
     # override .recur
     def recur(self):
-        self.states.append((self.player.tyme, "recur", self.state.name, self.desire.name, self.done))
+        self.states.append((self.ticker.tyme, "recur", self.state.name, self.desire.name, self.done))
 
     def exit(self, **kwa):
         super(WhoActor, self).exit(**kwa)
-        self.states.append((self.player.tyme, "exit", self.state.name, self.desire.name, self.done))
+        self.states.append((self.ticker.tyme, "exit", self.state.name, self.desire.name, self.done))
