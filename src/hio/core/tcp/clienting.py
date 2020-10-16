@@ -13,7 +13,7 @@ from binascii import hexlify
 
 from contextlib import contextmanager
 
-from ...base import cycling
+from ...base import ticking
 from .. import coring
 
 
@@ -88,9 +88,9 @@ class Client():
             rxbs = bytearray of data received
             wlog = WireLog object if any
         """
-        self.cycler = cycler or cycling.Ticker(tyme=0.0)
+        self.cycler = cycler or ticking.Ticker(tyme=0.0)
         self.timeout = timeout if timeout is not None else self.Timeout
-        self.tymer = cycling.Tymer(self.cycler, duration=self.timeout)  # reconnect retry timer
+        self.tymer = ticking.Tymer(self.cycler, duration=self.timeout)  # reconnect retry timer
 
         self.reinitHostPort(ha=ha, hostname=host, port=port)
         self.ha = ha or (host, port)

@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-hio.core.cycling Module
+hio.core.ticking Module
 """
 import time
 from collections import deque
