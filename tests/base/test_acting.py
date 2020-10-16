@@ -16,7 +16,7 @@ def test_doer():
     Test Doer class
     """
     doer = acting.Doer()
-    assert isinstance(doer.cycler, playing.Cycler)
+    assert isinstance(doer.cycler, playing.Player)
     assert doer.cycler.tyme == 0.0
     assert doer.tock == 0.0
     assert doer.desire == Ctl.exit
@@ -69,7 +69,7 @@ def test_doer_sub():
     """
 
     doer = acting.WhoDoer()
-    assert isinstance(doer.cycler, playing.Cycler)
+    assert isinstance(doer.cycler, playing.Player)
     assert doer.cycler.tyme == 0.0
     assert doer.tock == 0.0
     assert doer.desire == Ctl.exit
@@ -158,7 +158,7 @@ def test_server_client():
     tick = 0.03125
     ticks = 16
     limit = ticks *  tick
-    cycler = playing.Cycler(tick=tick, real=True, limit=limit)
+    cycler = playing.Player(tick=tick, real=True, limit=limit)
     assert cycler.tyme == 0.0  # on next cycle
     assert cycler.tick == tick == 0.03125
     assert cycler.real == True
@@ -208,7 +208,7 @@ def test_echo_server_client():
     tick = 0.03125
     ticks = 16
     limit = ticks *  tick
-    cycler = playing.Cycler(tick=tick, real=True, limit=limit)
+    cycler = playing.Player(tick=tick, real=True, limit=limit)
     assert cycler.tyme == 0.0  # on next cycle
     assert cycler.tick == tick == 0.03125
     assert cycler.real == True

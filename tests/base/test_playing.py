@@ -13,7 +13,7 @@ def test_cycler():
     """
     Test Cycler class
     """
-    cycler = playing.Cycler()
+    cycler = playing.Player()
     assert cycler.tyme == 0.0
     assert cycler.tick == 1.0
     assert cycler.real == False
@@ -28,7 +28,7 @@ def test_cycler():
     cycler.turn()
     assert cycler.tyme == 2.25
 
-    cycler = playing.Cycler(tyme=2.0, tick=0.25)
+    cycler = playing.Player(tyme=2.0, tick=0.25)
     assert cycler.tyme == 2.0
     assert cycler.tick == 0.25
     cycler.turn()
@@ -39,11 +39,11 @@ def test_cycler():
     cycler.turn()
     assert cycler.tyme == 3.5
 
-    cycler = playing.Cycler(tick=0.01, limit=0.05)
+    cycler = playing.Player(tick=0.01, limit=0.05)
     cycler.run()
     assert cycler.tyme == 0.01
 
-    cycler = playing.Cycler(tick=0.01, real=True, limit=0.05)
+    cycler = playing.Player(tick=0.01, real=True, limit=0.05)
     cycler.run()
     assert cycler.tyme == 0.01
 
@@ -54,7 +54,7 @@ def test_tymer():
     Test Tymer class
     """
     tymer = playing.Tymer()
-    assert isinstance(tymer.cycler, playing.Cycler)
+    assert isinstance(tymer.cycler, playing.Player)
     assert tymer.cycler.tyme == 0.0
     assert tymer.cycler.tick == 1.0
 
@@ -141,7 +141,7 @@ def test_cycler_cycle():
     """
     Test Cycler.cycle() with doers in deeds
     """
-    cycler = playing.Cycler(tick=0.25)
+    cycler = playing.Player(tick=0.25)
     assert cycler.tyme == 0.0  # on next cycle
     assert cycler.tick == 0.25
     assert cycler.real == False
@@ -228,7 +228,7 @@ def test_cycler_cycle_abort():
     """
     Test Cycler.cycle() with doers in deeds with abort
     """
-    cycler = playing.Cycler(tick=0.25)
+    cycler = playing.Player(tick=0.25)
     assert cycler.tyme == 0.0  # on next cycle
     assert cycler.tick == 0.25
     assert cycler.real == False
@@ -314,7 +314,7 @@ def test_cycler_run():
     Test Cycler.cycle() with doers in deeds with abort
     """
     tick = 0.03125
-    cycler = playing.Cycler(tick=tick)
+    cycler = playing.Player(tick=tick)
     assert cycler.tyme == 0.0  # on next cycle
     assert cycler.tick == tick == 0.03125
     assert cycler.real == False
@@ -359,7 +359,7 @@ def test_cycler_run():
 
 
 
-    cycler = playing.Cycler(tick=tick, real=True, limit=limit)
+    cycler = playing.Player(tick=tick, real=True, limit=limit)
     assert cycler.tyme == 0.0  # on next cycle
     assert cycler.tick == tick == 0.03125
     assert cycler.real == True
@@ -399,7 +399,7 @@ def test_cycler_run():
                             (0.25, 'exit', 'recurring', 'recur', False)]
 
 
-    cycler = playing.Cycler(tick=tick, real=False, limit=limit)
+    cycler = playing.Player(tick=tick, real=False, limit=limit)
     assert cycler.tyme == 0.0  # on next cycle
     assert cycler.tick == tick == 0.03125
     assert cycler.real == False
@@ -438,7 +438,7 @@ def test_cycler_run():
 
 
 
-    cycler = playing.Cycler(tick=tick, real=True, limit=limit)
+    cycler = playing.Player(tick=tick, real=True, limit=limit)
     assert cycler.tyme == 0.0  # on next cycle
     assert cycler.tick == tick == 0.03125
     assert cycler.real == True

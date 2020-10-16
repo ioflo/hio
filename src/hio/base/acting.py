@@ -49,7 +49,7 @@ class Doer():
            tock is float seconds initial value of .tock
 
         """
-        self.cycler = cycler or playing.Cycler(tyme=0.0)
+        self.cycler = cycler or playing.Player(tyme=0.0)
         self.tock = tock  # desired tyme interval between runs, 0.0 means asap
 
         self.state = Stt.exited  # operational state of doer

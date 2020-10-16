@@ -6,85 +6,39 @@ import time
 from collections import deque
 
 from ..hioing import ValidationError, VersionError
-from ..help.timing import MonoTimer
-
+from ..help import timing
+from . import ticking
 from .basing import Ctl, Stt
 
 
-class Cycler():
+class Player(ticking.Ticker):
     """
-    Cycler is nestable hierarchical time slice cycling object
-    Provides relative cycle time in seconds with .tyme property and advanced
-    by .tock method.
-    .tyme may be artificial time or real time in seconds.
-
-    .cycle method runs generators that are synchronized to cycle time .tyme
-           cycle may run as fast as possbile or run in real time.
+    Player plays nested state machines
 
     Attributes:
 
     Properties:
-        .tyme is float relative cycle time, tyme is artificial time
+
 
     """
-    def __init__(self, tyme=0.0, tick=1.0, real=False, limit=None):
+    def __init__(self, real=False, limit=None, **kwa):
         """
         Initialize instance
-        Parameters:
+        Inherited Parameters:
             tyme is initial value of float cycle time in seconds
             tick is float tick time in seconds
+        Parameters:
             real is boolean True means run in real time,
                             Otherwise run faster than real
             limit is float seconds for max run time of cycler. None means no limit.
         """
-        self.tyme = float(tyme)
-        self.tick = float(tick)
+        super(Player, self).__init__(**kwa)
 
         self.real = True if real else False
         self.limit = abs(float(limit)) if limit is not None else None
-        self.timer = MonoTimer(duration = self.tick)
+        self.timer = timing.MonoTimer(duration = self.tick)
         # deque of runable generators
         self.doers = list()
-
-    @property
-    def tyme(self):
-        """
-        tyme property getter, get ._tyme
-        .tyme is float cycle time in seconds
-        """
-        return self._tyme
-
-    @tyme.setter
-    def tyme(self, tyme):
-        """
-        cycle time property setter, set ._tyme to tyme
-        """
-        self._tyme = float(tyme)
-
-    @property
-    def tick(self):
-        """
-        tick property getter, get ._tick
-        .tick is float cycle time .tyme increment in seconds
-        """
-        return self._tick
-
-    @tick.setter
-    def tick(self, tick):
-        """
-        cycle time increment property setter, set ._tick to tick
-        """
-        self._tick= float(tick)
-
-    def turn(self, tick=None):
-        """
-        Advance cycle time .tyme by tick seconds when provided othewise by .tick
-        and return new .tyme
-        Parameters:
-            tick is float of amount of time in seconds to change .tyme
-        """
-        self.tyme += float(tick if tick is not None else self.tick)
-        return self.tyme
 
     def ready(self, doers=None):
         """
@@ -231,7 +185,7 @@ class Tymer():
             start is float optional timer start time in seconds. Allows starting
                 before or after current cycler.tyme
         """
-        self.cycler = cycler if cycler is not None else Cycler()
+        self.cycler = cycler if cycler is not None else Player()
         start = float(start) if start is not None else self.cycler.tyme
         self._start = start # need for default duration
         self._stop = self._start + float(duration)  # need for default duration
