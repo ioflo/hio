@@ -99,10 +99,80 @@ def test_doer():
 
     with pytest.raises(StopIteration):
         result = do.send("what?")
-
-
-
     """End Test """
+
+def test_dog_function():
+    """
+    Test dog example generator function non-class based
+    """
+    tock = 1.0
+    ticker = ticking.Ticker()
+    do = doing.dog(ticker=ticker)
+    assert inspect.isgenerator(do)
+    result = do.send(None)
+    assert result == 0.0
+    result = do.send("Hello")
+    assert result == 0.0
+    result = do.send("Hi")
+    assert result == 0.0
+    result = do.close()
+    assert result == None
+    with pytest.raises(StopIteration):
+        result = do.send("what?")
+
+    do = doing.dog(ticker=ticker, tock=tock)
+    assert inspect.isgenerator(do)
+    result = do.send(None)
+    assert result == tock == 1.0
+    result = do.send("Hello")
+    assert result == tock == 1.0
+    result = do.send("Hi")
+    assert result == tock == 1.0
+    result = do.close()
+    assert result == None
+    with pytest.raises(StopIteration):
+        result = do.send("what?")
+
+    do = doing.dog(ticker=ticker, tock=tock)
+    assert inspect.isgenerator(do)
+    result = next(do)
+    assert result == tock == 1.0
+    result = next(do)
+    assert result == tock == 1.0
+    result = next(do)
+    assert result == tock == 1.0
+    result = do.close()
+    assert result == None
+    with pytest.raises(StopIteration):
+        result = do.send("what?")
+
+    do = doing.dog(ticker=ticker, tock=tock)
+    assert inspect.isgenerator(do)
+    result = next(do)
+    assert result == tock == 1.0
+    result = next(do)
+    assert result == tock == 1.0
+    result = next(do)
+    assert result == tock == 1.0
+    result = do.close()
+    assert result == None
+    with pytest.raises(StopIteration):
+        result = do.send("what?")
+
+    do = doing.dog(ticker=ticker, tock=tock)
+    assert inspect.isgenerator(do)
+    result = next(do)
+    assert result == tock == 1.0
+    result = next(do)
+    assert result == tock == 1.0
+    result = next(do)
+    assert result == tock == 1.0
+    result = do.close()
+    assert result == None
+    with pytest.raises(StopIteration):
+        result = do.send("what?")
+    """End Test """
+
 
 def test_whodoer_break():
     """
@@ -260,4 +330,4 @@ def test_whodoer_throw():
 
 
 if __name__ == "__main__":
-    test_whodoer_throw()
+    test_dog_function()

@@ -82,8 +82,8 @@ class Doer():
 
     def do(self, ticker=None, tock=None):
         """
-        Generator function to run this doer
-        Calling this function returns generator
+        Generator method to run this doer
+        Calling this method returns generator
         """
         if ticker is not None:
             self.ticker = ticker
@@ -92,7 +92,6 @@ class Doer():
 
         try:
             # enter context
-
 
             while (True):  # recur context
                 feed = (yield (self.tock))  # yields tock then waits for next send
@@ -108,6 +107,33 @@ class Doer():
             pass
 
         return True # return value of yield from, or yield ex.value of StopIteration
+
+
+def dog(ticker, tock=0.0):
+    """
+    Generator function example non-class based generator
+    Calling this function returns generator
+    """
+    feed = "Default"
+    count = 0
+
+    try:
+        # enter context
+
+
+        while (True):  # recur context
+            feed = (yield (tock))  # yields tock then waits for next send
+
+    except GeneratorExit:  # close context, forced exit due to .close
+        pass
+
+    except Exception:  # abort context, forced exit due to uncaught exception
+        raise
+
+    finally:  # exit context,  unforced exit due to normal exit of try
+        pass
+
+    return True # return value of yield from, or yield ex.value of StopIteration
 
 
 
@@ -151,8 +177,8 @@ class WhoDoer(Doer):
 
     def do(self, ticker=None, tock=None):
         """
-        Generator function to run this doer
-        Calling this function returns generator
+        Generator method to run this doer, class based generator
+        Calling this method returns generator
         """
         if ticker is not None:
             self.ticker = ticker
@@ -188,41 +214,39 @@ class WhoDoer(Doer):
         return (True)  # return value of yield from, or yield ex.value of StopIteration
 
 
-def do(self, ticker=None, tock=None):
+
+
+
+def whodog(states, ticker, tock=0.0):
     """
-    Generator function to run this doer
+    Generator function test example non-class based generator.
     Calling this function returns generator
     """
-    if ticker is not None:
-        self.ticker = ticker
-    if tock is not None:
-        self.tock = tock
     feed = "Default"
     count = 0
 
     try:
         # enter context
 
-        self.states.append(State(tyme=self.ticker.tyme, context="enter", feed=feed, count=count))
+        states.append(State(tyme=ticker.tyme, context="enter", feed=feed, count=count))
         while (True):  # recur context
             feed = (yield (count))  # yields tock then waits for next send
             count += 1
-            self.states.append(State(tyme=self.ticker.tyme, context="recur", feed=feed, count = count))
+            states.append(State(tyme=ticker.tyme, context="recur", feed=feed, count = count))
             if count > 3:
                 break  # normal exit
 
-    except GeneratorExit:  # close context close forced exit context
+    except GeneratorExit:  # close context, forced exit due to .close
         count += 1
-        self.states.append(State(tyme=self.ticker.tyme, context='close', feed=feed, count=count))
+        states.append(State(tyme=ticker.tyme, context='close', feed=feed, count=count))
 
-    except Exception:  # abort context uncaught exception forced exit
+    except Exception:  # abort context, forced exit due to uncaught exception
         count += 1
-        self.states.append(State(tyme=self.ticker.tyme, context='abort', feed=feed, count=count))
+        states.append(State(tyme=ticker.tyme, context='abort', feed=feed, count=count))
         raise
 
-    finally: # exit context  break out normal exit
+    finally:  # exit context,  unforced exit due to normal exit of try
         count += 1
-        self.states.append(State(tyme=self.ticker.tyme, context='exit', feed=feed, count=count))
+        states.append(State(tyme=ticker.tyme, context='exit', feed=feed, count=count))
 
     return (True)  # return value of yield from, or yield ex.value of StopIteration
-
