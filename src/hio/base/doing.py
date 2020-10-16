@@ -143,8 +143,7 @@ class WhoDoer(Doer):
     """
     WhoDoer supports testing with methods to record sends and yields
 
-
-    Inhereited Attributes:
+    Inherited Attributes:
         .ticker is Ticker instance that provides relative cycle time as .ticker.tyme
 
     Inherited Properties:
@@ -214,9 +213,6 @@ class WhoDoer(Doer):
         return (True)  # return value of yield from, or yield ex.value of StopIteration
 
 
-
-
-
 def whodog(states, ticker, tock=0.0):
     """
     Generator function test example non-class based generator.
@@ -250,3 +246,202 @@ def whodog(states, ticker, tock=0.0):
         states.append(State(tyme=ticker.tyme, context='exit', feed=feed, count=count))
 
     return (True)  # return value of yield from, or yield ex.value of StopIteration
+
+
+class ServerDoer(Doer):
+    """
+    Basic TCP Server
+
+    Inherited Attributes:
+        .ticker is Ticker instance that provides relative cycle time as .ticker.tyme
+
+    Inherited Properties:
+        .tock is desired time in seconds between runs or until next run,
+                 non negative, zero means run asap
+
+    Inherited Methods:
+        .__call__ makes instance callable return generator
+        .do is generator function returns generator
+
+    Hidden:
+       ._tock is hidden attribute for .tock property
+
+    Attributes:
+       .server is TCP Server instance
+
+    """
+
+    def __init__(self, server, **kwa):
+        """
+        Inherited Parameters:
+           ticker is Ticker instance
+           tock is float seconds initial value of .tock
+
+        Parameters:
+           server is TCP Server instance
+        """
+        super(Doer, self).__init__(**kwa)
+        server.ticker = self.ticker
+        self.server = server
+
+
+    def do(self, ticker=None, tock=None):
+        """
+        Generator method to run this doer, class based generator
+        Calling this method returns generator
+
+        Run Server
+        """
+        if ticker is not None:
+            self.ticker = ticker
+        if tock is not None:
+            self.tock = tock
+
+        try:
+            # enter context
+            self.server.reopen()  #  opens accept socket
+
+            while (True):  # recur context
+                feed = (yield (self.tock))  # yields tock then waits for next send
+                self.server.serviceAll()
+
+        except GeneratorExit:  # close context, forced exit due to .close
+            pass
+
+        except Exception:  # abort context, forced exit due to uncaught exception
+            raise
+
+        finally:  # exit context,  unforced exit due to normal exit of try
+            self.server.close()
+
+        return
+
+
+class EchoServerDoer(ServerDoer):
+    """
+    Echo TCP Server
+    Just echoes back to client whatever it receives from client
+
+    Inherited Attributes:
+        .ticker is Ticker instance that provides relative cycle time as .ticker.tyme
+        .server is TCP Server instance
+
+    Inherited Properties:
+        .tock is desired time in seconds between runs or until next run,
+                 non negative, zero means run asap
+
+    Inherited Methods:
+        .__call__ makes instance callable return generator
+        .do is generator function returns generator
+
+    Hidden:
+       ._tock is hidden attribute for .tock property
+
+    """
+
+    def do(self, ticker=None, tock=None):
+        """
+        Generator method to run this doer, class based generator
+        Calling this method returns generator
+
+        Run Server
+        """
+        if ticker is not None:
+            self.ticker = ticker
+        if tock is not None:
+            self.tock = tock
+
+        try:
+            # enter context
+            self.server.reopen()  #  opens accept socket
+
+            while (True):  # recur context
+                feed = (yield (self.tock))  # yields tock then waits for next send
+                self.server.serviceAll()
+
+                for ca, ix in self.server.ixes.items():  # echo back
+                    if ix.rxbs:
+                        ix.tx(bytes(ix.rxbs))
+                        ix.clearRxbs()
+
+        except GeneratorExit:  # close context, forced exit due to .close
+            pass
+
+        except Exception:  # abort context, forced exit due to uncaught exception
+            raise
+
+        finally:  # exit context,  unforced exit due to normal exit of try
+            self.server.close()
+
+        return
+
+
+class ClientDoer(Doer):
+    """
+    Basic TCP Client
+
+        Inherited Attributes:
+        .ticker is Ticker instance that provides relative cycle time as .ticker.tyme
+
+    Inherited Properties:
+        .tock is desired time in seconds between runs or until next run,
+                 non negative, zero means run asap
+
+    Inherited Methods:
+        .__call__ makes instance callable return generator
+        .do is generator function returns generator
+
+    Hidden:
+       ._tock is hidden attribute for .tock property
+
+    Attributes:
+       .client is TCP Client instance
+
+    """
+
+    def __init__(self, client, **kwa):
+        """
+        Initialize instance.
+        Inherited Parameters:
+           ticker is Ticker instance
+           tock is float seconds initial value of .tock
+
+        Parameters:
+           client is TCP Client instance
+        """
+        super(Doer, self).__init__(**kwa)
+        client.ticker = self.ticker
+        self.client = client
+
+
+    def do(self, ticker=None, tock=None):
+        """
+        Generator method to run this doer, class based generator
+        Calling this method returns generator
+
+        Run Server
+        """
+        if ticker is not None:
+            self.ticker = ticker
+        if tock is not None:
+            self.tock = tock
+
+        try:
+            # enter context
+            self.client.reopen()  #  opens accept socket
+
+            while (True):  # recur context
+                feed = (yield (self.tock))  # yields tock then waits for next send
+                self.client.serviceAll()
+
+        except GeneratorExit:  # close context, forced exit due to .close
+            pass
+
+        except Exception:  # abort context, forced exit due to uncaught exception
+            raise
+
+        finally:  # exit context,  unforced exit due to normal exit of try
+            self.server.close()
+
+        return
+
