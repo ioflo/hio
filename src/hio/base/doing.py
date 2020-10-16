@@ -17,7 +17,7 @@ class Doer():
     Manages state based generator
 
     Attributes:
-        .ticker is Cycler instance that provides relative cycle time as .ticker.tyme
+        .ticker is Ticker instance that provides relative cycle time as .ticker.tyme
         .state is operational state of doer
         .desire is desired control for future iteration of generator
         .done is doer completion state True or False
@@ -44,7 +44,7 @@ class Doer():
         """
         Initialize instance.
         Parameters:
-           ticker is Cycler instance
+           ticker is Ticker instance
            tock is float seconds initial value of .tock
 
         """
@@ -215,7 +215,7 @@ class ServerDoer(Doer):
     Basic TCP Server
 
     Inherited Attributes:
-        .ticker is Cycler instance that provides relative cycle time as .ticker.tyme
+        .ticker is Ticker instance that provides relative cycle time as .ticker.tyme
         .state is operational state of doer
         .desire is desired control asked by this or other taskers
         .done is doer completion state True or False
@@ -272,7 +272,7 @@ class EchoServerDoer(ServerDoer):
     Just echoes back to client whatever it receives from client
 
     Inherited Attributes:
-        .ticker is Cycler instance that provides relative cycle time as .ticker.tyme
+        .ticker is Ticker instance that provides relative cycle time as .ticker.tyme
         .state is operational state of doer
         .desire is desired control asked by this or other taskers
         .done is doer completion state True or False
@@ -302,7 +302,7 @@ class ClientDoer(Doer):
     Basic TCP Client
 
     Inherited Attributes:
-        .ticker is Cycler instance that provides relative cycle time as .ticker.tyme
+        .ticker is Ticker instance that provides relative cycle time as .ticker.tyme
         .state is operational state of doer
         .desire is desired control asked by this or other taskers
         .done is doer completion state True or False

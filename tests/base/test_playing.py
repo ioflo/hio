@@ -11,7 +11,7 @@ from hio.base import acting
 
 def test_player():
     """
-    Test Cycler class
+    Test Player class
     """
     player = playing.Player()
     assert player.tyme == 0.0
@@ -139,7 +139,7 @@ def test_tymer():
 
 def test_player_cycle():
     """
-    Test Cycler.cycle() with doers in deeds
+    Test Player.cycle() with doers in deeds
     """
     player = playing.Player(tick=0.25)
     assert player.tyme == 0.0  # on next cycle
@@ -226,7 +226,7 @@ def test_player_cycle():
 
 def test_player_cycle_abort():
     """
-    Test Cycler.cycle() with doers in deeds with abort
+    Test Player.cycle() with doers in deeds with abort
     """
     player = playing.Player(tick=0.25)
     assert player.tyme == 0.0  # on next cycle
@@ -311,7 +311,7 @@ def test_player_cycle_abort():
 
 def test_player_run():
     """
-    Test Cycler.cycle() with doers in deeds with abort
+    Test Player.cycle() with doers in deeds with abort
     """
     tick = 0.03125
     player = playing.Player(tick=tick)

@@ -13,7 +13,7 @@ from .basing import Ctl, Stt
 
 class Ticker():
     """
-    Cycler is nestable hierarchical time slice cycling object
+    Ticker is simulated time cycling object
     Provides relative cycle time in seconds with .tyme property and advanced
     by .tock method.
     .tyme may be artificial time or real time in seconds.
@@ -80,7 +80,7 @@ class Ticker():
 
 class Tymer():
     """
-    Tymer class to measure cycle time given by .tyme property of Cycler instance.
+    Tymer class to measure cycle time given by .tyme property of Ticker instance.
     tyme is relative cycle time either artificial or real
 
     Attributes:
@@ -103,7 +103,7 @@ class Tymer():
         """
         Initialization method for instance.
         Parameters:
-            ticker is reference to Cycler instance. Uses .tyme property
+            ticker is reference to Ticker instance. Uses .tyme property
             duration is float tymer duration in seconds (fractional)
             start is float optional timer start time in seconds. Allows starting
                 before or after current .ticker.tyme

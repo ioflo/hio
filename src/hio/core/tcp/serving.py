@@ -213,7 +213,7 @@ class Server(Acceptor):
         .opened is boolean, True if listen socket .ss opened. False otherwise
 
     Attributes:
-        .ticker is Cycler instance
+        .ticker is Ticker instance
         .timeout is timeout in seconds for connection refresh
         .wlog is wire log
         .ixes is dict of incoming connections indexed by remote (host, port) duple
@@ -236,7 +236,7 @@ class Server(Acceptor):
             host is default TCP/IP host address for listen socket
                 "" or "0.0.0.0" is listen on all interfaces
             port is default TCP/IP port
-            ticker is Cycler instance if any to pass to incomers for incoming connections
+            ticker is Ticker instance if any to pass to incomers for incoming connections
             timeout is default timeout for to pass to incomers for  incoming connections
             wlog is WireLog object if any
         """
@@ -475,7 +475,7 @@ class ServerTls(Server):
         .ss is server listen socket for incoming accept requests
         .axes is deque of accepte connection duples (ca, cs)
         .opened is boolean, True if listen socket .ss opened. False otherwise
-        .ticker is Cycler instance
+        .ticker is Ticker instance
         .timeout is timeout in seconds for connection refresh
         .wlog is wire log
         .ixes is dict of incoming connections indexed by remote (host, port) duple
@@ -600,7 +600,7 @@ class Incomer(object):
              know how to delete from .ixes when connection closed as .cs loses
              cs.getpeername() after its closed.
         cs = connection socket object
-        ticker = Cycler instance
+        ticker = Ticker instance
         timeout = timeout for .timer
         refreshable = True if tx/rx activity refreshes timer False otherwise
         bs = buffer size

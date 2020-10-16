@@ -17,7 +17,7 @@ class Actor():
     Manages state based generators
 
     Attributes:
-        .ticker is Cycler instance that provides relative cycle time as .ticker.tyme
+        .ticker is Ticker instance that provides relative cycle time as .ticker.tyme
         .state is operational state of doer
         .desire is desired control for future iteration of generator
         .done is doer completion state True or False
@@ -44,7 +44,7 @@ class Actor():
         """
         Initialize instance.
         Parameters:
-           ticker is Cycler instance
+           ticker is Ticker instance
            tock is float seconds initial value of .tock
 
         """
@@ -215,7 +215,7 @@ class ServerActor(Actor):
     Basic TCP Server
 
     Inherited Attributes:
-        .ticker is Cycler instance that provides relative cycle time as .ticker.tyme
+        .ticker is Ticker instance that provides relative cycle time as .ticker.tyme
 
         .state is operational state of doer
         .desire is desired control asked by this or other taskers
@@ -235,7 +235,7 @@ class ServerActor(Actor):
         Initialize instance.
 
         Inherited Parameters:
-           ticker is Cycler instance
+           ticker is Ticker instance
            tock is float seconds initial value of .tock
 
         Parameters:
@@ -273,7 +273,7 @@ class EchoServerActor(ServerActor):
     Just echoes back to client whatever it receives from client
 
     Inherited Attributes:
-        .ticker is Cycler instance that provides relative cycle time as .ticker.tyme
+        .ticker is Ticker instance that provides relative cycle time as .ticker.tyme
         .state is operational state of doer
         .desire is desired control asked by this or other taskers
         .done is doer completion state True or False
@@ -303,7 +303,7 @@ class ClientActor(Actor):
     Basic TCP Client
 
     Inherited Attributes:
-        .ticker is Cycler instance that provides relative cycle time as .ticker.tyme
+        .ticker is Ticker instance that provides relative cycle time as .ticker.tyme
         .state is operational state of doer
         .desire is desired control asked by this or other taskers
         .done is doer completion state True or False
@@ -322,7 +322,7 @@ class ClientActor(Actor):
         Initialize instance.
 
         Inherited Parameters:
-           ticker is Cycler instance
+           ticker is Ticker instance
            tock is float seconds initial value of .tock
 
         Parameters:
