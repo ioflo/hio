@@ -6,7 +6,7 @@ import time
 from collections import deque
 
 from ..hioing import ValidationError, VersionError
-from ..help.timing import MonoTimer
+from ..help import timing
 from . import ticking
 
 
@@ -14,80 +14,88 @@ class Plier(ticking.Ticker):
     """
     Plier is coroutine scheduler
     Provides relative cycle time in seconds with .tyme property and advanced
-    by .tock method.
+    by .tick method of .tock sized increments.
     .tyme may be artificial time or real time in seconds.
 
-    .cycle method runs generators that are synchronized to cycle time .tyme
+    .ply method runs generators once that are synchronized to cycle time .tyme
            cycle may run as fast as possbile or run in real time.
 
-    Attributes:
+    .run method continually runs .ply until generators are complete
 
-    Properties:
-        .tyme is float relative cycle time, tyme is artificial time
+    Inherited Attributes:
+
+    Inherited Properties:
+        .tyme is float relative cycle time, .tyme is artificial time
+        .tock is float tyme increment of .tick()
+
+    Inherited Methods:
+        .tick increments .tyme by one .tock or provided tock
+
+    Attributes:
+        .real is boolean. True means run in real time, Otherwise as fast as possible.
+        .limit is float maximum tyme limit to run then closes all doers
+        .timer is MonoTimer for real time intervals
 
     """
-    def __init__(self, real=False, limit=None, **kwa):
+    def __init__(self, real=False, limit=None, doers=None, **kwa):
         """
         Initialize instance
         Inherited Parameters:
-            tyme is initial value of float cycle time in seconds
+            tyme is float initial value of cycle time in seconds
             tock is float tock time in seconds
+
         Parameters:
             real is boolean True means run in real time,
                             Otherwise run faster than real
             limit is float seconds for max run time of plier. None means no limit.
+            doers is list of doers
         """
         super(Plier, self).__init__(**kwa)
 
         self.real = True if real else False
         self.limit = abs(float(limit)) if limit is not None else None
-        self.timer = MonoTimer(duration = self.tock)
-        # deque of runable generators
-        self.doers = list()
+        self.timer = timing.MonoTimer(duration = self.tock)
+        self.doers = list()  # list of runable generators
 
 
     def ready(self, doers=None):
         """
-        Returns deeds deque readied for cycling using doers list if any else .doers
+        Returns plys deque entered for plying using doers list if any else .doers
         """
         if doers is not None:
             self.doers = doers
 
-        deeds = deque()
+        plys = deque()
         for doer in self.doers:
-            doer.makedo()  # reinit generator
-            doer.state = Stt.exited
-            doer.desire = Ctl.recur
-            deeds.append((doer, self.tyme))  # all run first time
+            do = doer.do(ticker=self)  # make generator
+            plys.append((do, self.tyme))  #  ply is duple of (do, retyme)
+        return plys
 
-        return deeds
 
-    def cycle(self, deeds):
+    def ply(self, plys):
         """
-        Cycle once through deeds deque and update in place
-        deeds is deque of duples of (doer, retyme) where retyme is tyme in
+        Cycle once through plys deque and update in place
+        plys is deque of duples of (do, retyme) where retyme is tyme in
             seconds when next should run may be real or simulated
 
-        Each cycle checks all generators in deeds deque and runs if retyme past.
-        At end of cycle advances .tyme by one .tock by calling .turn()
+        Each cycle checks all generators in plys deque and runs if retyme past.
+        At end of cycle advances .tyme by one .tock by calling .tick()
         """
-        for i in range(len(deeds)):  # iterate once over each deed
-            doer, retyme = deeds.popleft()  # pop it off
+        for i in range(len(plys)):  # iterate once over each deed
+            do, retyme = plys.popleft()  # pop it off
 
             if retyme <= self.tyme:  # run it now
                 try:
-                    state = doer.do(doer.desire)  # abortion forces StopIteraction
-                    if doer.state in (Stt.entered, Stt.recurring ):  # still entered or recurring
-                        deeds.append((doer, retyme + doer.tock))  # reappend for next pass
+                    tock = do.send(None)  #  nothing to send for now
+                    plys.append((do, retyme + tock))  # reappend for next pass
                     # allows for tock change during run
                 except StopIteration:  # returned instead of yielded
-                    pass  # effectively doer aborted itself
+                    pass  # effectively do exited or aborted itself
 
-            elif doer.state in (Stt.entered, Stt.recurring ):
-                # not tyme yet and still entered or recurring
-                deeds.append((doer, retyme))  # reappend for next pass
+            else:  # not retyme yet
+                plys.append((do, retyme))  # reappend for next pass
 
-        self.tick()  # advance .tyme by one tock
+        self.tick()  # advance .tyme by one plier .tock
 
 
     def run(self, doers=None, limit=None):
@@ -105,26 +113,17 @@ class Plier(ticking.Ticker):
         Since finally clause closes generators they must be reinited before then
         can be run again
         """
-        deeds = self.ready(doers=doers)
-
-        if doers is not None:
-            self.doers = doers
-
         if limit is not None:
             self.limit = abs(float(limit))
 
-        deeds = deque()
-        for doer in self.doers:
-            doer.state = Stt.exited
-            doer.desire = Ctl.recur
-            deeds.append((doer, self.tyme))  # all run first time
+        plys = self.ready(doers=doers)
 
         self.timer.start()
         try: #so always clean up resources if exception
             while True:  # until doers complete or exception
                 try:  #CNTL-C generates keyboardInterrupt to break out of while loop
 
-                    self.cycle(deeds)  # increments .tyme
+                    self.ply(plys)  # increments .tyme
 
                     if self.real:  # wait for real time to expire
                         while not self.timer.expired:
@@ -134,7 +133,7 @@ class Plier(ticking.Ticker):
                     if self.limit and self.tyme >= self.limit:
                         break  # use for testing
 
-                    if not deeds:  # no more remaining deeds so done
+                    if not plys:  # no more remaining plys so done
                         break  # break out of forever loop
 
                 except KeyboardInterrupt: # CNTL-C shutdown skedder
@@ -153,10 +152,10 @@ class Plier(ticking.Ticker):
             # if last run doer exited due to exception then try finally clause in
             # its generator is responsible for releasing resources
 
-            while(deeds):  # send abort to each remaining doer
-                doer, retime = deeds.popleft() #pop it off
+            while(plys):  # .close each remaining do in plys
+                do, retime = plys.popleft() #pop it off
                 try:
-                    state = doer.do(Ctl.abort)
-                except StopIteration: #generator returned instead of yielded
+                    tock = do.close()  # force GeneratorExit
+                except StopIteration:  # Hmm? What happened?
                     pass
 
