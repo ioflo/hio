@@ -27,15 +27,15 @@ class Ticker():
         .tyme is float relative cycle time, tyme is artificial time
 
     """
-    def __init__(self, tyme=0.0, tick=1.0):
+    def __init__(self, tyme=0.0, tock=1.0):
         """
         Initialize instance
         Parameters:
             tyme is initial value of float cycle time in seconds
-            tick is float tick time in seconds
+            tock is float tock time in seconds
         """
         self.tyme = float(tyme)
-        self.tick = float(tick)
+        self.tock = float(tock)
 
     @property
     def tyme(self):
@@ -53,28 +53,28 @@ class Ticker():
         self._tyme = float(tyme)
 
     @property
-    def tick(self):
+    def tock(self):
         """
-        tick property getter, get ._tick
-        .tick is float cycle time .tyme increment in seconds
+        tock property getter, get ._tock
+        .tock is float cycle time .tyme increment in seconds
         """
-        return self._tick
+        return self._tock
 
-    @tick.setter
-    def tick(self, tick):
+    @tock.setter
+    def tock(self, tock):
         """
-        cycle time increment property setter, set ._tick to tick
+        cycle time increment property setter, set ._tock to tock
         """
-        self._tick= float(tick)
+        self._tock= float(tock)
 
-    def turn(self, tick=None):
+    def tick(self, tock=None):
         """
-        Advance cycle time .tyme by tick seconds when provided othewise by .tick
+        Advance cycle time .tyme by tock seconds when provided othewise by .tock
         and return new .tyme
         Parameters:
-            tick is float of amount of time in seconds to change .tyme
+            tock is float of amount of time in seconds to change .tyme
         """
-        self.tyme += float(tick if tick is not None else self.tick)
+        self.tyme += float(tock if tock is not None else self.tock)
         return self.tyme
 
 

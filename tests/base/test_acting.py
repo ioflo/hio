@@ -86,7 +86,7 @@ def test_doer_sub():
     assert doer.states == [(0.0, 'enter', 'exited', 'recur', False),
                            (0.0, 'recur', 'entered', 'recur', False)]
 
-    doer.ticker.turn()
+    doer.ticker.tick()
     state = doer.do(doer.desire)
     assert state == doer.state == Stt.recurring
     assert doer.done == False
@@ -95,7 +95,7 @@ def test_doer_sub():
                            (0.0, 'recur', 'entered', 'recur', False),
                            (1.0, 'recur', 'recurring', 'recur', False)]
 
-    doer.ticker.turn()
+    doer.ticker.tick()
     doer.desire = Ctl.enter
     state = doer.do(doer.desire)
     assert state == doer.state == Stt.entered
@@ -107,7 +107,7 @@ def test_doer_sub():
                            (2.0, 'exit', 'recurring', 'enter', False),
                            (2.0, 'enter', 'exited', 'enter', False)]
 
-    doer.ticker.turn()
+    doer.ticker.tick()
     doer.desire = Ctl.recur
     state = doer.do(doer.desire)
     assert state == doer.state == Stt.recurring
@@ -120,7 +120,7 @@ def test_doer_sub():
                            (2.0, 'enter', 'exited', 'enter', False),
                            (3.0, 'recur', 'entered', 'recur', False)]
 
-    doer.ticker.turn()
+    doer.ticker.tick()
     doer.desire = Ctl.exit
     state = doer.do(doer.desire)
     assert state == doer.state == Stt.exited
@@ -134,7 +134,7 @@ def test_doer_sub():
                            (3.0, 'recur', 'entered', 'recur', False),
                            (4.0, 'exit', 'recurring', 'exit', True)]
 
-    doer.ticker.turn()
+    doer.ticker.tick()
     with pytest.raises(StopIteration):
         state = doer.do(Ctl.abort)
 
@@ -156,12 +156,12 @@ def test_server_client():
     """
     Test ServerDoer ClientDoer classes
     """
-    tick = 0.03125
+    tock = 0.03125
     ticks = 16
-    limit = ticks *  tick
-    player = playing.Player(tick=tick, real=True, limit=limit)
+    limit = ticks *  tock
+    player = playing.Player(tock=tock, real=True, limit=limit)
     assert player.tyme == 0.0  # on next cycle
-    assert player.tick == tick == 0.03125
+    assert player.tock == tock == 0.03125
     assert player.real == True
     assert player.limit == limit == 0.5
     assert player.doers == []
@@ -206,12 +206,12 @@ def test_echo_server_client():
     """
     Test EchoServerDoer ClientDoer classes
     """
-    tick = 0.03125
+    tock = 0.03125
     ticks = 16
-    limit = ticks *  tick
-    player = playing.Player(tick=tick, real=True, limit=limit)
+    limit = ticks *  tock
+    player = playing.Player(tock=tock, real=True, limit=limit)
     assert player.tyme == 0.0  # on next cycle
-    assert player.tick == tick == 0.03125
+    assert player.tock == tock == 0.03125
     assert player.real == True
     assert player.limit == limit == 0.5
     assert player.doers == []

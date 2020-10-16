@@ -31,7 +31,7 @@ class Plier(ticking.Ticker):
         Initialize instance
         Inherited Parameters:
             tyme is initial value of float cycle time in seconds
-            tick is float tick time in seconds
+            tock is float tock time in seconds
         Parameters:
             real is boolean True means run in real time,
                             Otherwise run faster than real
@@ -41,7 +41,7 @@ class Plier(ticking.Ticker):
 
         self.real = True if real else False
         self.limit = abs(float(limit)) if limit is not None else None
-        self.timer = MonoTimer(duration = self.tick)
+        self.timer = MonoTimer(duration = self.tock)
         # deque of runable generators
         self.doers = list()
 
@@ -69,7 +69,7 @@ class Plier(ticking.Ticker):
             seconds when next should run may be real or simulated
 
         Each cycle checks all generators in deeds deque and runs if retyme past.
-        At end of cycle advances .tyme by one .tick by calling .turn()
+        At end of cycle advances .tyme by one .tock by calling .turn()
         """
         for i in range(len(deeds)):  # iterate once over each deed
             doer, retyme = deeds.popleft()  # pop it off
@@ -87,7 +87,7 @@ class Plier(ticking.Ticker):
                 # not tyme yet and still entered or recurring
                 deeds.append((doer, retyme))  # reappend for next pass
 
-        self.turn()  # advance .tyme by one tick
+        self.tick()  # advance .tyme by one tock
 
 
     def run(self, doers=None, limit=None):

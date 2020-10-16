@@ -580,7 +580,7 @@ def test_client_auto_reconnect():
     """
     Test client auto reconnect when  .reconnectable
     """
-    ticker = ticking.Ticker(tick=0.05)
+    ticker = ticking.Ticker(tock=0.05)
     with openServer(ticker=ticker, ha=("", 6101)) as server, \
          openClient(ticker=ticker, timeout=0.2, reconnectable=True,
                     ha=("127.0.0.1", 6101)) as beta:
@@ -599,7 +599,7 @@ def test_client_auto_reconnect():
         # attempt to connect beta to serve while server down (closed)
         while beta.ticker.tyme <= 0.25:
             beta.serviceConnect()
-            beta.ticker.turn()
+            beta.ticker.tick()
             time.sleep(0.05)
 
         assert beta.accepted == False
@@ -615,7 +615,7 @@ def test_client_auto_reconnect():
         while not (beta.connected and beta.ca in server.ixes):
             beta.serviceConnect()
             server.serviceConnects()
-            beta.ticker.turn()  # advances clients reconnect retry tymer
+            beta.ticker.tick()  # advances clients reconnect retry tymer
             time.sleep(0.05)
 
         assert beta.accepted == True
