@@ -242,7 +242,7 @@ class Server(Acceptor):
         """
         ha = ha or (host, port)
         super(Server, self).__init__(ha=ha, **kwa)
-        self.cycler = cycler or cycling.Cycler()
+        self.cycler = cycler or cycling.Ticker()
         self.timeout = timeout if timeout is not None else self.Timeout
         self.wlog = wlog
         self.ixes = dict()  # ready to rx tx incoming connections, Incomer instances
@@ -611,7 +611,7 @@ class Incomer(object):
         self.cs = cs  # connection socket
         if self.cs:
             self.cs.setblocking(0)  # linux does not preserve blocking from accept
-        self.cycler = cycler or cycling.Cycler()
+        self.cycler = cycler or cycling.Ticker()
         self.timeout = timeout if timeout is not None else self.Timeout
         self.tymer = cycling.Tymer(cycler=self.cycler, duration=self.timeout)
 

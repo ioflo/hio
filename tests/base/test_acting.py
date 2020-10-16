@@ -6,8 +6,8 @@ tests.core.test_doing module
 import pytest
 
 from hio.base.basing import Ctl, Stt
-from hio.base import cycling
-from hio.base import doing
+from hio.base import playing
+from hio.base import acting
 from hio.core.tcp import serving, clienting
 
 
@@ -15,8 +15,8 @@ def test_doer():
     """
     Test Doer class
     """
-    doer = doing.Doer()
-    assert isinstance(doer.cycler, cycling.Cycler)
+    doer = acting.Doer()
+    assert isinstance(doer.cycler, playing.Cycler)
     assert doer.cycler.tyme == 0.0
     assert doer.tock == 0.0
     assert doer.desire == Ctl.exit
@@ -68,8 +68,8 @@ def test_doer_sub():
     Test Doer sub class
     """
 
-    doer = doing.WhoDoer()
-    assert isinstance(doer.cycler, cycling.Cycler)
+    doer = acting.WhoDoer()
+    assert isinstance(doer.cycler, playing.Cycler)
     assert doer.cycler.tyme == 0.0
     assert doer.tock == 0.0
     assert doer.desire == Ctl.exit
@@ -158,7 +158,7 @@ def test_server_client():
     tick = 0.03125
     ticks = 16
     limit = ticks *  tick
-    cycler = cycling.Cycler(tick=tick, real=True, limit=limit)
+    cycler = playing.Cycler(tick=tick, real=True, limit=limit)
     assert cycler.tyme == 0.0  # on next cycle
     assert cycler.tick == tick == 0.03125
     assert cycler.real == True
@@ -169,10 +169,10 @@ def test_server_client():
     server = serving.Server(host="", port=port)
     client = clienting.Client(host="localhost", port=port)
 
-    serdoer = doing.ServerDoer(cycler=cycler, server=server)
+    serdoer = acting.ServerDoer(cycler=cycler, server=server)
     assert serdoer.server.cycler == serdoer.cycler == cycler
     assert serdoer.server ==  server
-    clidoer = doing.ClientDoer(cycler=cycler, client=client)
+    clidoer = acting.ClientDoer(cycler=cycler, client=client)
     assert clidoer.client.cycler == clidoer.cycler == cycler
     assert clidoer.client == client
 
@@ -208,7 +208,7 @@ def test_echo_server_client():
     tick = 0.03125
     ticks = 16
     limit = ticks *  tick
-    cycler = cycling.Cycler(tick=tick, real=True, limit=limit)
+    cycler = playing.Cycler(tick=tick, real=True, limit=limit)
     assert cycler.tyme == 0.0  # on next cycle
     assert cycler.tick == tick == 0.03125
     assert cycler.real == True
@@ -219,10 +219,10 @@ def test_echo_server_client():
     server = serving.Server(host="", port=port)
     client = clienting.Client(host="localhost", port=port)
 
-    serdoer = doing.EchoServerDoer(cycler=cycler, server=server)
+    serdoer = acting.EchoServerDoer(cycler=cycler, server=server)
     assert serdoer.server.cycler == serdoer.cycler == cycler
     assert serdoer.server ==  server
-    clidoer = doing.ClientDoer(cycler=cycler, client=client)
+    clidoer = acting.ClientDoer(cycler=cycler, client=client)
     assert clidoer.client.cycler == clidoer.cycler == cycler
     assert clidoer.client == client
 

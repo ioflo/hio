@@ -88,7 +88,7 @@ class Client():
             rxbs = bytearray of data received
             wlog = WireLog object if any
         """
-        self.cycler = cycler or cycling.Cycler(tyme=0.0)
+        self.cycler = cycler or cycling.Ticker(tyme=0.0)
         self.timeout = timeout if timeout is not None else self.Timeout
         self.tymer = cycling.Tymer(self.cycler, duration=self.timeout)  # reconnect retry timer
 

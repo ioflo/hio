@@ -6,14 +6,14 @@ tests.core.test_cycling module
 import pytest
 
 from hio.base.basing import Ctl, Stt
-from hio.base.cycling import Cycler, Tymer
-from hio.base import doing
+from hio.base import playing
+from hio.base import acting
 
 def test_cycler():
     """
     Test Cycler class
     """
-    cycler = Cycler()
+    cycler = playing.Cycler()
     assert cycler.tyme == 0.0
     assert cycler.tick == 1.0
     assert cycler.real == False
@@ -28,7 +28,7 @@ def test_cycler():
     cycler.turn()
     assert cycler.tyme == 2.25
 
-    cycler = Cycler(tyme=2.0, tick=0.25)
+    cycler = playing.Cycler(tyme=2.0, tick=0.25)
     assert cycler.tyme == 2.0
     assert cycler.tick == 0.25
     cycler.turn()
@@ -39,11 +39,11 @@ def test_cycler():
     cycler.turn()
     assert cycler.tyme == 3.5
 
-    cycler = Cycler(tick=0.01, limit=0.05)
+    cycler = playing.Cycler(tick=0.01, limit=0.05)
     cycler.run()
     assert cycler.tyme == 0.01
 
-    cycler = Cycler(tick=0.01, real=True, limit=0.05)
+    cycler = playing.Cycler(tick=0.01, real=True, limit=0.05)
     cycler.run()
     assert cycler.tyme == 0.01
 
@@ -53,8 +53,8 @@ def test_tymer():
     """
     Test Tymer class
     """
-    tymer = Tymer()
-    assert isinstance(tymer.cycler, Cycler)
+    tymer = playing.Tymer()
+    assert isinstance(tymer.cycler, playing.Cycler)
     assert tymer.cycler.tyme == 0.0
     assert tymer.cycler.tick == 1.0
 
@@ -117,7 +117,7 @@ def test_tymer():
     assert tymer.remaining == 0.0
     assert tymer.expired == True
 
-    tymer = Tymer(duration=1.0, start=0.25)
+    tymer = playing.Tymer(duration=1.0, start=0.25)
     assert tymer.cycler.tyme == 0.0
     assert tymer.duration == 1.0
     assert tymer.elapsed ==  -0.25
@@ -141,15 +141,15 @@ def test_cycler_cycle():
     """
     Test Cycler.cycle() with doers in deeds
     """
-    cycler = Cycler(tick=0.25)
+    cycler = playing.Cycler(tick=0.25)
     assert cycler.tyme == 0.0  # on next cycle
     assert cycler.tick == 0.25
     assert cycler.real == False
     assert cycler.limit == None
     assert cycler.doers == []
 
-    doer0 = doing.WhoDoer(tock=0.25, cycler=cycler)
-    doer1 = doing.WhoDoer(tock=0.5, cycler=cycler)
+    doer0 = acting.WhoDoer(tock=0.25, cycler=cycler)
+    doer1 = acting.WhoDoer(tock=0.5, cycler=cycler)
     doers = [doer0, doer1]
     for doer in doers:
         assert doer.cycler == cycler
@@ -228,15 +228,15 @@ def test_cycler_cycle_abort():
     """
     Test Cycler.cycle() with doers in deeds with abort
     """
-    cycler = Cycler(tick=0.25)
+    cycler = playing.Cycler(tick=0.25)
     assert cycler.tyme == 0.0  # on next cycle
     assert cycler.tick == 0.25
     assert cycler.real == False
     assert cycler.limit == None
     assert cycler.doers == []
 
-    doer0 = doing.WhoDoer(tock=0.25, cycler=cycler)
-    doer1 = doing.WhoDoer(tock=0.5, cycler=cycler)
+    doer0 = acting.WhoDoer(tock=0.25, cycler=cycler)
+    doer1 = acting.WhoDoer(tock=0.5, cycler=cycler)
     doers = [doer0, doer1]
     for doer in doers:
         assert doer.cycler == cycler
@@ -314,15 +314,15 @@ def test_cycler_run():
     Test Cycler.cycle() with doers in deeds with abort
     """
     tick = 0.03125
-    cycler = Cycler(tick=tick)
+    cycler = playing.Cycler(tick=tick)
     assert cycler.tyme == 0.0  # on next cycle
     assert cycler.tick == tick == 0.03125
     assert cycler.real == False
     assert cycler.limit == None
     assert cycler.doers == []
 
-    doer0 = doing.WhoDoer(tock=tick, cycler=cycler)
-    doer1 = doing.WhoDoer(tock=tick*2, cycler=cycler)
+    doer0 = acting.WhoDoer(tock=tick, cycler=cycler)
+    doer1 = acting.WhoDoer(tock=tick*2, cycler=cycler)
     assert doer0.tock == tick
     assert doer1.tock == tick *  2
     doers = [doer0, doer1]
@@ -359,7 +359,7 @@ def test_cycler_run():
 
 
 
-    cycler = Cycler(tick=tick, real=True, limit=limit)
+    cycler = playing.Cycler(tick=tick, real=True, limit=limit)
     assert cycler.tyme == 0.0  # on next cycle
     assert cycler.tick == tick == 0.03125
     assert cycler.real == True
@@ -399,7 +399,7 @@ def test_cycler_run():
                             (0.25, 'exit', 'recurring', 'recur', False)]
 
 
-    cycler = Cycler(tick=tick, real=False, limit=limit)
+    cycler = playing.Cycler(tick=tick, real=False, limit=limit)
     assert cycler.tyme == 0.0  # on next cycle
     assert cycler.tick == tick == 0.03125
     assert cycler.real == False
@@ -438,7 +438,7 @@ def test_cycler_run():
 
 
 
-    cycler = Cycler(tick=tick, real=True, limit=limit)
+    cycler = playing.Cycler(tick=tick, real=True, limit=limit)
     assert cycler.tyme == 0.0  # on next cycle
     assert cycler.tick == tick == 0.03125
     assert cycler.real == True

@@ -11,7 +11,7 @@ from ..help.timing import MonoTimer
 from .basing import Ctl, Stt
 
 
-class Cycler():
+class Ticker():
     """
     Cycler is nestable hierarchical time slice cycling object
     Provides relative cycle time in seconds with .tyme property and advanced
@@ -231,7 +231,7 @@ class Tymer():
             start is float optional timer start time in seconds. Allows starting
                 before or after current cycler.tyme
         """
-        self.cycler = cycler if cycler is not None else Cycler()
+        self.cycler = cycler if cycler is not None else Ticker()
         start = float(start) if start is not None else self.cycler.tyme
         self._start = start # need for default duration
         self._stop = self._start + float(duration)  # need for default duration
