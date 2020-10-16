@@ -361,12 +361,12 @@ class ClientActor(Actor):
 
 
 
-class WhoDoer(Actor):
+class WhoActor(Actor):
     """
     For debugging stuff
     """
     def __init__(self, **kwa):
-        super(WhoDoer, self).__init__(**kwa)
+        super(WhoActor, self).__init__(**kwa)
         self.states = list()  # list of triples (states desire,done)
 
     # override .enter
@@ -378,5 +378,5 @@ class WhoDoer(Actor):
         self.states.append((self.player.tyme, "recur", self.state.name, self.desire.name, self.done))
 
     def exit(self, **kwa):
-        super(WhoDoer, self).exit(**kwa)
+        super(WhoActor, self).exit(**kwa)
         self.states.append((self.player.tyme, "exit", self.state.name, self.desire.name, self.done))

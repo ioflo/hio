@@ -68,7 +68,7 @@ def test_doer_sub():
     Test Doer sub class
     """
 
-    doer = acting.WhoDoer()
+    doer = acting.WhoActor()
     assert isinstance(doer.player, playing.Player)
     assert doer.player.tyme == 0.0
     assert doer.tock == 0.0

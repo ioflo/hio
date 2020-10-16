@@ -148,8 +148,8 @@ def test_player_cycle():
     assert player.limit == None
     assert player.doers == []
 
-    doer0 = acting.WhoDoer(tock=0.25, player=player)
-    doer1 = acting.WhoDoer(tock=0.5, player=player)
+    doer0 = acting.WhoActor(tock=0.25, player=player)
+    doer1 = acting.WhoActor(tock=0.5, player=player)
     doers = [doer0, doer1]
     for doer in doers:
         assert doer.player == player
@@ -235,8 +235,8 @@ def test_player_cycle_abort():
     assert player.limit == None
     assert player.doers == []
 
-    doer0 = acting.WhoDoer(tock=0.25, player=player)
-    doer1 = acting.WhoDoer(tock=0.5, player=player)
+    doer0 = acting.WhoActor(tock=0.25, player=player)
+    doer1 = acting.WhoActor(tock=0.5, player=player)
     doers = [doer0, doer1]
     for doer in doers:
         assert doer.player == player
@@ -321,8 +321,8 @@ def test_player_run():
     assert player.limit == None
     assert player.doers == []
 
-    doer0 = acting.WhoDoer(tock=tick, player=player)
-    doer1 = acting.WhoDoer(tock=tick*2, player=player)
+    doer0 = acting.WhoActor(tock=tick, player=player)
+    doer1 = acting.WhoActor(tock=tick*2, player=player)
     assert doer0.tock == tick
     assert doer1.tock == tick *  2
     doers = [doer0, doer1]
