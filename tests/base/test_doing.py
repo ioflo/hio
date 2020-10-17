@@ -9,7 +9,6 @@ import inspect
 
 from hio.base import tyming
 from hio.base import doing
-from hio.base import plying
 from hio.base.doing import State
 from hio.core.tcp import serving, clienting
 
@@ -19,17 +18,17 @@ def test_doer():
     """
     tock = 1.0
     doer = doing.Doer()
-    assert isinstance(doer.ticker, tyming.Tymist)
+    assert isinstance(doer._tymist, tyming.Tymist)
     assert doer.tock == 0.0
 
-    ticker = tyming.Tymist()
-    doer = doing.Doer(ticker=ticker, tock=tock)
-    assert doer.ticker == ticker
+    tymist = tyming.Tymist()
+    doer = doing.Doer(tymist=tymist, tock=tock)
+    assert doer._tymist == tymist
     assert doer.tock == tock == 1.0
     doer.tock = 0.0
     assert doer.tock ==  0.0
 
-    do = doer(ticker=doer.ticker, tock=doer.tock)
+    do = doer(tymist=doer._tymist, tock=doer.tock)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == doer.tock == 0.0
@@ -43,7 +42,7 @@ def test_doer():
     with pytest.raises(StopIteration):
         result = do.send("what?")
 
-    do = doer(ticker=doer.ticker, tock=doer.tock)
+    do = doer(tymist=doer._tymist, tock=doer.tock)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == doer.tock == 0.0
@@ -57,7 +56,7 @@ def test_doer():
     with pytest.raises(StopIteration):
         result = do.send("what?")
 
-    do = doer(ticker=doer.ticker, tock=doer.tock)
+    do = doer(tymist=doer._tymist, tock=doer.tock)
     assert inspect.isgenerator(do)
     result = next(do)
     assert result == doer.tock == 0.0
@@ -71,7 +70,7 @@ def test_doer():
     with pytest.raises(StopIteration):
         result = do.send("what?")
 
-    do = doer(ticker=doer.ticker, tock=tock)
+    do = doer(tymist=doer._tymist, tock=tock)
     assert inspect.isgenerator(do)
     result = next(do)
     assert result  == tock == 1.0
@@ -87,7 +86,7 @@ def test_doer():
 
     doer.tock = 0.0
 
-    do = doer(ticker=doer.ticker, tock=tock)
+    do = doer(tymist=doer._tymist, tock=tock)
     assert inspect.isgenerator(do)
     result = next(do)
     assert result == tock == 1.0
@@ -107,8 +106,8 @@ def test_dog_function():
     Test dog example generator function non-class based
     """
     tock = 1.0
-    ticker = tyming.Tymist()
-    do = doing.dog(ticker=ticker)
+    tymist = tyming.Tymist()
+    do = doing.dog(tymist=tymist)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == 0.0
@@ -121,7 +120,7 @@ def test_dog_function():
     with pytest.raises(StopIteration):
         result = do.send("what?")
 
-    do = doing.dog(ticker=ticker, tock=tock)
+    do = doing.dog(tymist=tymist, tock=tock)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == tock == 1.0
@@ -134,7 +133,7 @@ def test_dog_function():
     with pytest.raises(StopIteration):
         result = do.send("what?")
 
-    do = doing.dog(ticker=ticker, tock=tock)
+    do = doing.dog(tymist=tymist, tock=tock)
     assert inspect.isgenerator(do)
     result = next(do)
     assert result == tock == 1.0
@@ -147,7 +146,7 @@ def test_dog_function():
     with pytest.raises(StopIteration):
         result = do.send("what?")
 
-    do = doing.dog(ticker=ticker, tock=tock)
+    do = doing.dog(tymist=tymist, tock=tock)
     assert inspect.isgenerator(do)
     result = next(do)
     assert result == tock == 1.0
@@ -160,7 +159,7 @@ def test_dog_function():
     with pytest.raises(StopIteration):
         result = do.send("what?")
 
-    do = doing.dog(ticker=ticker, tock=tock)
+    do = doing.dog(tymist=tymist, tock=tock)
     assert inspect.isgenerator(do)
     result = next(do)
     assert result == tock == 1.0
@@ -179,15 +178,15 @@ def test_whodoer_break():
     """
     Test WhoDoer testing class with break to normal exit
     """
-    ticker = tyming.Tymist(tock=0.125)
-    doer = doing.TestDoer(ticker=ticker, tock=0.25)
-    assert doer.ticker == ticker
-    assert doer.ticker.tock == 0.125
+    tymist = tyming.Tymist(tock=0.125)
+    doer = doing.TestDoer(tymist=tymist, tock=0.25)
+    assert doer._tymist == tymist
+    assert doer._tymist.tock == 0.125
     assert doer.tock == 0.25
     assert doer.states ==  []
-    assert ticker.tyme == 0.0
+    assert tymist.tyme == 0.0
 
-    do = doer(ticker=doer.ticker, tock=doer.tock)
+    do = doer(tymist=doer._tymist, tock=doer.tock)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == 0
@@ -198,13 +197,13 @@ def test_whodoer_break():
                            State(tyme=0.0, context='recur', feed='Hello', count=1)]
 
 
-    ticker.tick()
+    tymist.tick()
     result = do.send("Hi")
     assert result ==  2
     assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                            State(tyme=0.0, context='recur', feed='Hello', count=1),
                            State(tyme=0.125, context='recur', feed='Hi', count=2)]
-    ticker.tick()
+    tymist.tick()
     result = do.send("Blue")
     assert result == 3
     assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0),
@@ -212,7 +211,7 @@ def test_whodoer_break():
                            State(tyme=0.125, context='recur', feed='Hi', count=2),
                            State(tyme=0.25, context='recur', feed='Blue', count=3)]
 
-    ticker.tick()
+    tymist.tick()
     try:
         result = do.send("Red")
     except StopIteration as ex:
@@ -230,15 +229,15 @@ def test_whodoer_close():
     """
     Test WhoDoer testing class with close to force exit
     """
-    ticker = tyming.Tymist(tock=0.125)
-    doer = doing.TestDoer(ticker=ticker, tock=0.25)
-    assert doer.ticker == ticker
-    assert doer.ticker.tock == 0.125
+    tymist = tyming.Tymist(tock=0.125)
+    doer = doing.TestDoer(tymist=tymist, tock=0.25)
+    assert doer._tymist == tymist
+    assert doer._tymist.tock == 0.125
     assert doer.tock == 0.25
     assert doer.states ==  []
-    assert ticker.tyme == 0.0
+    assert tymist.tyme == 0.0
 
-    do = doer(ticker=doer.ticker, tock=doer.tock)
+    do = doer(tymist=doer._tymist, tock=doer.tock)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == 0
@@ -249,13 +248,13 @@ def test_whodoer_close():
                            State(tyme=0.0, context='recur', feed='Hello', count=1)]
 
 
-    ticker.tick()
+    tymist.tick()
     result = do.send("Hi")
     assert result ==  2
     assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                            State(tyme=0.0, context='recur', feed='Hello', count=1),
                            State(tyme=0.125, context='recur', feed='Hi', count=2)]
-    ticker.tick()
+    tymist.tick()
     result = do.close()
     assert result == None
     assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0),
@@ -264,7 +263,7 @@ def test_whodoer_close():
                            State(tyme=0.25, context='close', feed='Hi', count=3),
                            State(tyme=0.25, context='exit', feed='Hi', count=4)]
 
-    ticker.tick()
+    tymist.tick()
     try:
         result = do.send("what?")
     except StopIteration as ex:
@@ -282,15 +281,15 @@ def test_whodoer_throw():
     """
     Test WhoDoer testing class with throw to force exit
     """
-    ticker = tyming.Tymist(tock=0.125)
-    doer = doing.TestDoer(ticker=ticker, tock=0.25)
-    assert doer.ticker == ticker
-    assert doer.ticker.tock == 0.125
+    tymist = tyming.Tymist(tock=0.125)
+    doer = doing.TestDoer(tymist=tymist, tock=0.25)
+    assert doer._tymist == tymist
+    assert doer._tymist.tock == 0.125
     assert doer.tock == 0.25
     assert doer.states ==  []
-    assert ticker.tyme == 0.0
+    assert tymist.tyme == 0.0
 
-    do = doer(ticker=doer.ticker, tock=doer.tock)
+    do = doer(tymist=doer._tymist, tock=doer.tock)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == 0
@@ -301,13 +300,13 @@ def test_whodoer_throw():
                            State(tyme=0.0, context='recur', feed='Hello', count=1)]
 
 
-    ticker.tick()
+    tymist.tick()
     result = do.send("Hi")
     assert result ==  2
     assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                            State(tyme=0.0, context='recur', feed='Hello', count=1),
                            State(tyme=0.125, context='recur', feed='Hi', count=2)]
-    ticker.tick()
+    tymist.tick()
     try:
         result = do.throw(ValueError, "Bad")
     except ValueError as ex:
@@ -318,7 +317,7 @@ def test_whodoer_throw():
                                 State(tyme=0.25, context='abort', feed='Hi', count=3),
                                 State(tyme=0.25, context='exit', feed='Hi', count=4)]
 
-    ticker.tick()
+    tymist.tick()
     try:
         result = do.send("what?")
     except StopIteration as ex:
@@ -334,11 +333,11 @@ def test_whodog_break():
     """
     Test whodog testing function example with break to normal exit
     """
-    ticker = tyming.Tymist(tock=0.125)
-    assert ticker.tyme == 0.0
+    tymist = tyming.Tymist(tock=0.125)
+    assert tymist.tyme == 0.0
     states = []
 
-    do = doing.testdog(states=states, ticker=ticker, tock=0.25)
+    do = doing.testdog(states=states, tymist=tymist, tock=0.25)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == 0
@@ -347,13 +346,13 @@ def test_whodog_break():
     assert result == 1
     assert states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                            State(tyme=0.0, context='recur', feed='Hello', count=1)]
-    ticker.tick()
+    tymist.tick()
     result = do.send("Hi")
     assert result ==  2
     assert states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                            State(tyme=0.0, context='recur', feed='Hello', count=1),
                            State(tyme=0.125, context='recur', feed='Hi', count=2)]
-    ticker.tick()
+    tymist.tick()
     result = do.send("Blue")
     assert result == 3
     assert states == [State(tyme=0.0, context='enter', feed='Default', count=0),
@@ -361,7 +360,7 @@ def test_whodog_break():
                            State(tyme=0.125, context='recur', feed='Hi', count=2),
                            State(tyme=0.25, context='recur', feed='Blue', count=3)]
 
-    ticker.tick()
+    tymist.tick()
     try:
         result = do.send("Red")
     except StopIteration as ex:
@@ -379,11 +378,11 @@ def test_whodog_close():
     """
     Test whodog testing function example with close to force exit
     """
-    ticker = tyming.Tymist(tock=0.125)
-    assert ticker.tyme == 0.0
+    tymist = tyming.Tymist(tock=0.125)
+    assert tymist.tyme == 0.0
     states = []
 
-    do = doing.testdog(states=states, ticker=ticker, tock=0.25)
+    do = doing.testdog(states=states, tymist=tymist, tock=0.25)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == 0
@@ -394,13 +393,13 @@ def test_whodog_close():
                            State(tyme=0.0, context='recur', feed='Hello', count=1)]
 
 
-    ticker.tick()
+    tymist.tick()
     result = do.send("Hi")
     assert result ==  2
     assert states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                            State(tyme=0.0, context='recur', feed='Hello', count=1),
                            State(tyme=0.125, context='recur', feed='Hi', count=2)]
-    ticker.tick()
+    tymist.tick()
     result = do.close()
     assert result == None
     assert states == [State(tyme=0.0, context='enter', feed='Default', count=0),
@@ -409,7 +408,7 @@ def test_whodog_close():
                            State(tyme=0.25, context='close', feed='Hi', count=3),
                            State(tyme=0.25, context='exit', feed='Hi', count=4)]
 
-    ticker.tick()
+    tymist.tick()
     try:
         result = do.send("what?")
     except StopIteration as ex:
@@ -427,11 +426,11 @@ def test_whodog_throw():
     """
     Test whodog testing function example with throw to force exit
     """
-    ticker = tyming.Tymist(tock=0.125)
-    assert ticker.tyme == 0.0
+    tymist = tyming.Tymist(tock=0.125)
+    assert tymist.tyme == 0.0
     states = []
 
-    do = doing.testdog(states=states, ticker=ticker, tock=0.25)
+    do = doing.testdog(states=states, tymist=tymist, tock=0.25)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == 0
@@ -442,13 +441,13 @@ def test_whodog_throw():
                            State(tyme=0.0, context='recur', feed='Hello', count=1)]
 
 
-    ticker.tick()
+    tymist.tick()
     result = do.send("Hi")
     assert result ==  2
     assert states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                            State(tyme=0.0, context='recur', feed='Hello', count=1),
                            State(tyme=0.125, context='recur', feed='Hi', count=2)]
-    ticker.tick()
+    tymist.tick()
     try:
         result = do.throw(ValueError, "Bad")
     except ValueError as ex:
@@ -459,7 +458,7 @@ def test_whodog_throw():
                                 State(tyme=0.25, context='abort', feed='Hi', count=3),
                                 State(tyme=0.25, context='exit', feed='Hi', count=4)]
 
-    ticker.tick()
+    tymist.tick()
     try:
         result = do.send("what?")
     except StopIteration as ex:
@@ -479,22 +478,22 @@ def test_server_client():
     tock = 0.03125
     ticks = 16
     limit = ticks *  tock
-    plier = plying.Plier(tock=tock, real=True, limit=limit)
-    assert plier.tyme == 0.0  # on next cycle
-    assert plier.tock == tock == 0.03125
-    assert plier.real == True
-    assert plier.limit == limit == 0.5
-    assert plier.doers == []
+    doist = doing.Doist(tock=tock, real=True, limit=limit)
+    assert doist.tyme == 0.0  # on next cycle
+    assert doist.tock == tock == 0.03125
+    assert doist.real == True
+    assert doist.limit == limit == 0.5
+    assert doist.doers == []
 
     port = 6120
     server = serving.Server(host="", port=port)
     client = clienting.Client(host="localhost", port=port)
 
-    serdoer = doing.ServerDoer(ticker=plier, server=server)
-    assert serdoer.server.ticker == serdoer.ticker == plier
+    serdoer = doing.ServerDoer(tymist=doist, server=server)
+    assert serdoer.server.ticker == serdoer._tymist == doist
     assert serdoer.server ==  server
-    clidoer = doing.ClientDoer(ticker=plier, client=client)
-    assert clidoer.client.ticker == clidoer.ticker == plier
+    clidoer = doing.ClientDoer(tymist=doist, client=client)
+    assert clidoer.client.ticker == clidoer._tymist == doist
     assert clidoer.client == client
 
     assert serdoer.tock == 0.0  # ASAP
@@ -502,13 +501,13 @@ def test_server_client():
 
     doers = [serdoer, clidoer]
     for doer in doers:
-        assert doer.ticker == plier
+        assert doer._tymist == doist
 
     msgTx = b"Hello me maties!"
     clidoer.client.tx(msgTx)
 
-    plier.run(doers=doers)
-    assert plier.tyme == limit
+    doist.do(doers=doers)
+    assert doist.tyme == limit
     assert server.opened == False
     assert client.opened == False
 
@@ -526,36 +525,35 @@ def test_echo_server_client():
     tock = 0.03125
     ticks = 16
     limit = ticks *  tock
-    plier = plying.Plier(tock=tock, real=True, limit=limit)
-    assert plier.tyme == 0.0  # on next cycle
-    assert plier.tock == tock == 0.03125
-    assert plier.real == True
-    assert plier.limit == limit == 0.5
-    assert plier.doers == []
+    doist = doing.Doist(tock=tock, real=True, limit=limit)
+    assert doist.tyme == 0.0  # on next cycle
+    assert doist.tock == tock == 0.03125
+    assert doist.real == True
+    assert doist.limit == limit == 0.5
+    assert doist.doers == []
 
     port = 6120
     server = serving.Server(host="", port=port)
     client = clienting.Client(host="localhost", port=port)
 
-    serdoer = doing.EchoServerDoer(ticker=plier, server=server)
-    assert serdoer.server.ticker == serdoer.ticker == plier
+    serdoer = doing.EchoServerDoer(tymist=doist, server=server)
+    assert serdoer.server.ticker == serdoer._tymist == doist
     assert serdoer.server ==  server
-    clidoer = doing.ClientDoer(ticker=plier, client=client)
-    assert clidoer.client.ticker == clidoer.ticker == plier
-    assert clidoer.client == client
+    clidoer = doing.ClientDoer(tymist=doist, client=client)
+    assert clidoer.client.ticker == clidoer._tymist == doist
 
     assert serdoer.tock == 0.0  # ASAP
     assert clidoer.tock == 0.0  # ASAP
 
     doers = [serdoer, clidoer]
     for doer in doers:
-        assert doer.ticker == plier
+        assert doer._tymist == doist
 
     msgTx = b"Hello me maties!"
     clidoer.client.tx(msgTx)
 
-    plier.run(doers=doers)
-    assert plier.tyme == limit
+    doist.do(doers=doers)
+    assert doist.tyme == limit
     assert server.opened == False
     assert client.opened == False
 

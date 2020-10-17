@@ -65,9 +65,9 @@ def test_tcp_basic():
     assert isinstance(client.rxbs, bytearray)
     assert client.wlog == None
 
-    ticker = tyming.Tymist()
-    with openClient(ticker=ticker, timeout=0.5) as client:
-        assert client.ticker == ticker
+    tymist = tyming.Tymist()
+    with openClient(ticker=tymist, timeout=0.5) as client:
+        assert client.ticker == tymist
         assert client.timeout == 0.5
         assert client.ha == ('127.0.0.1', 56000)
         assert client.opened == True
@@ -93,17 +93,17 @@ def test_tcp_basic():
     assert isinstance(server.ixes, dict)
     assert server.wlog == None
 
-    with openServer(ticker=ticker, timeout=1.5) as server:
+    with openServer(ticker=tymist, timeout=1.5) as server:
         assert server.ha == ('0.0.0.0', 56000)
         assert server.eha == ('127.0.0.1', 56000)
         assert server.opened == True
 
     assert server.opened == False
 
-    ticker = tyming.Tymist()
-    with openServer(ticker=ticker, ha=("", 6101)) as server, \
-         openClient(ticker=ticker, ha=("127.0.0.1", 6101)) as beta, \
-         openClient(ticker=ticker, ha=("127.0.0.1", 6101)) as gamma:
+    tymist = tyming.Tymist()
+    with openServer(ticker=tymist, ha=("", 6101)) as server, \
+         openClient(ticker=tymist, ha=("127.0.0.1", 6101)) as beta, \
+         openClient(ticker=tymist, ha=("127.0.0.1", 6101)) as gamma:
 
         assert server.opened == True
         assert beta.opened == True

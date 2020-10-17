@@ -132,10 +132,10 @@ class Tymer(Tymee):
         .duration = tyme duration of tymer in seconds from ._start to ._stop
         .elaspsed = tyme elasped in seconds  since ._start
         .remaining = tyme remaining in seconds  until ._stop
-        .expired = True if expired, False otherwise, i.e. .ticker.tyme >= ._stop
+        .expired = True if expired, False otherwise, i.e. .tyme >= ._stop
 
     methods:
-        .start() = start tymer at current .ticker.tyme
+        .start() = start tymer at current .tyme
         .restart() = restart tymer at last ._stop so no time lost
 
     """
@@ -147,7 +147,7 @@ class Tymer(Tymee):
             tymist is reference to Tymer instance. Uses .tyme property
             duration is float tymer duration in seconds (fractional)
             start is float optional timer start time in seconds. Allows starting
-                before or after current .ticker.tyme
+                before or after current .tyme
         """
         if tymist is None:
             tymist = Tymist()
@@ -189,7 +189,7 @@ class Tymer(Tymee):
     def expired(self):
         """
         Returns True if tymer has expired, False otherwise.
-        .ticker.tyme >= ._stop,
+        .tyme >= ._stop,
         """
         return (self.tyme >= self._stop)
 
@@ -198,7 +198,7 @@ class Tymer(Tymee):
         """
         Starts Tymer of duration secs at start time start secs.
             If duration not provided then uses current duration
-            If start not provided then starts at current .ticker.tyme
+            If start not provided then starts at current .tyme
         """
         # remember current duration when duration not provided
         duration = float(duration) if duration is not None else self.duration
