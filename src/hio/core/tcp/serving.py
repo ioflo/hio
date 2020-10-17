@@ -613,7 +613,7 @@ class Incomer(object):
             self.cs.setblocking(0)  # linux does not preserve blocking from accept
         self.ticker = ticker or tyming.Tymist()
         self.timeout = timeout if timeout is not None else self.Timeout
-        self.tymer = tyming.Tymer(ticker=self.ticker, duration=self.timeout)
+        self.tymer = tyming.Tymer(tymist=self.ticker, duration=self.timeout)
 
 
         self.cutoff = False # True when detect connection closed on far side

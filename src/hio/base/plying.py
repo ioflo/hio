@@ -128,7 +128,7 @@ class Plier(tyming.Tymist):
 
         plys = self.ready(doers=doers)
 
-        tymer = tyming.Tymer(ticker=self, duration=self.limit)
+        tymer = tyming.Tymer(tymist=self, duration=self.limit)
         self.timer.start()
         try: #so always clean up resources if exception
             while True:  # until doers complete or exception

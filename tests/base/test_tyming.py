@@ -8,33 +8,55 @@ import pytest
 from hio.base import tyming
 
 
-def test_ticker():
+def test_tymist():
     """
-    Test Ticker class
+    Test Tymist class
     """
-    ticker = tyming.Tymist()
-    assert ticker.tyme == 0.0
-    assert ticker.tock == 1.0
+    tymist = tyming.Tymist()
+    assert tymist.tyme == 0.0
+    assert tymist.tock == 1.0
 
-    ticker.tick()
-    assert ticker.tyme == 1.0
-    ticker.tick(tock=0.75)
-    assert  ticker.tyme ==  1.75
-    ticker.tock = 0.5
-    ticker.tick()
-    assert ticker.tyme == 2.25
+    tymist.tick()
+    assert tymist.tyme == 1.0
+    tymist.tick(tock=0.75)
+    assert  tymist.tyme ==  1.75
+    tymist.tock = 0.5
+    tymist.tick()
+    assert tymist.tyme == 2.25
 
-    ticker = tyming.Tymist(tyme=2.0, tock=0.25)
-    assert ticker.tyme == 2.0
-    assert ticker.tock == 0.25
-    ticker.tick()
-    assert ticker.tyme == 2.25
-    ticker.tick(tock=0.75)
-    assert  ticker.tyme ==  3.0
-    ticker.tock = 0.5
-    ticker.tick()
-    assert ticker.tyme == 3.5
+    tymist = tyming.Tymist(tyme=2.0, tock=0.25)
+    assert tymist.tyme == 2.0
+    assert tymist.tock == 0.25
+    tymist.tick()
+    assert tymist.tyme == 2.25
+    tymist.tick(tock=0.75)
+    assert  tymist.tyme ==  3.0
+    tymist.tock = 0.5
+    tymist.tick()
+    assert tymist.tyme == 3.5
     """End Test """
+
+
+def test_tymee():
+    """
+    Test Tymee class
+    """
+    tymee = tyming.Tymee()
+    assert isinstance(tymee._tymist, tyming.Tymist)
+    assert tymee.tyme == tymee._tymist.tyme
+
+    tymist = tyming.Tymist(tock=0.5)
+    tymee = tyming.Tymee(tymist=tymist)
+    assert tymee._tymist == tymist
+    assert tymee.tyme == tymist.tyme
+
+    tymist.tick()
+    assert tymee.tyme == tymist.tyme == 0.5
+
+    tymist.tock = 0.25
+    tymist.tick()
+    assert tymee.tyme == tymist.tyme == 0.75
+    """End Test"""
 
 
 def test_tymer():
@@ -42,43 +64,43 @@ def test_tymer():
     Test Tymer class
     """
     tymer = tyming.Tymer()
-    assert isinstance(tymer.ticker, tyming.Tymist)
-    assert tymer.ticker.tyme == 0.0
-    assert tymer.ticker.tock == 1.0
+    assert isinstance(tymer._tymist, tyming.Tymist)
+    assert tymer.tyme == 0.0
+    assert tymer._tymist.tock == 1.0
 
     assert tymer.duration == 0.0
     assert tymer.elapsed == 0.0
     assert tymer.remaining == 0.0
     assert tymer.expired == True
 
-    tymer.ticker.tock = 0.25
+    tymer._tymist.tock = 0.25
     tymer.start(duration = 1.0)
     assert tymer.duration == 1.0
     assert tymer.elapsed ==  0.0
     assert tymer.remaining == 1.0
     assert tymer.expired == False
 
-    tymer.ticker.tick()
-    assert tymer.ticker.tyme == 0.25
+    tymer._tymist.tick()
+    assert tymer.tyme == 0.25
     assert tymer.elapsed ==  0.25
     assert tymer.remaining == 0.75
     assert tymer.expired == False
 
-    tymer.ticker.tick()
-    tymer.ticker.tick()
-    assert tymer.ticker.tyme == 0.75
+    tymer._tymist.tick()
+    tymer._tymist.tick()
+    assert tymer.tyme == 0.75
     assert tymer.elapsed ==  0.75
     assert tymer.remaining == 0.25
     assert tymer.expired == False
 
-    tymer.ticker.tick()
-    assert tymer.ticker.tyme == 1.0
+    tymer._tymist.tick()
+    assert tymer.tyme == 1.0
     assert tymer.elapsed ==  1.0
     assert tymer.remaining == 0.0
     assert tymer.expired == True
 
-    tymer.ticker.tick()
-    assert tymer.ticker.tyme == 1.25
+    tymer._tymist.tick()
+    assert tymer.tyme == 1.25
     assert tymer.elapsed ==  1.25
     assert tymer.remaining == -0.25
     assert tymer.expired == True
@@ -89,7 +111,7 @@ def test_tymer():
     assert tymer.remaining == 0.75
     assert tymer.expired == False
 
-    tymer.ticker.tyme = 2.0
+    tymer._tymist.tyme = 2.0
     assert tymer.elapsed ==  1.0
     assert tymer.remaining == 0.0
     assert tymer.expired == True
@@ -100,24 +122,24 @@ def test_tymer():
     assert tymer.remaining == 0.25
     assert tymer.expired == False
 
-    tymer.ticker.tick()
+    tymer._tymist.tick()
     assert tymer.elapsed ==  0.25
     assert tymer.remaining == 0.0
     assert tymer.expired == True
 
     tymer = tyming.Tymer(duration=1.0, start=0.25)
-    assert tymer.ticker.tyme == 0.0
+    assert tymer.tyme == 0.0
     assert tymer.duration == 1.0
     assert tymer.elapsed ==  -0.25
     assert tymer.remaining == 1.25
     assert tymer.expired == False
-    tymer.ticker.tick()
-    assert tymer.ticker.tyme == 1.0
+    tymer._tymist.tick()
+    assert tymer.tyme == 1.0
     assert tymer.elapsed ==  0.75
     assert tymer.remaining == 0.25
     assert tymer.expired == False
-    tymer.ticker.tick()
-    assert tymer.ticker.tyme == 2.0
+    tymer._tymist.tick()
+    assert tymer.tyme == 2.0
     assert tymer.elapsed == 1.75
     assert tymer.remaining == -0.75
     assert tymer.expired == True
@@ -126,4 +148,4 @@ def test_tymer():
 
 
 if __name__ == "__main__":
-    test_tymer()
+    test_tymee()

@@ -48,7 +48,7 @@ def test_tcp_basic():
     assert client.timeout == 0.0
     assert isinstance(client.tymer, tyming.Tymer)
     assert client.tymer.duration == client.timeout
-    assert client.tymer.ticker == client.ticker
+    assert client.tymer._tymist == client.ticker
 
     assert client.ha == ('127.0.0.1', 56000)
     assert (client.host, client.port) == client.ha

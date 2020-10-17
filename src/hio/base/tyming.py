@@ -13,7 +13,7 @@ from .basing import Ctl, Stt
 
 class Tymist():
     """
-    Ticker keeps artificial or simulated or cycle time, called tyme.
+    Tymist keeps artificial or simulated or cycle time, called tyme.
     Provides relative cycle time, tyme, in seconds with .tyme property
     in incremets of .tock seconds.
     .tyme is advanced one .tock increment with .tick method.
@@ -80,10 +80,49 @@ class Tymist():
         return self.tyme
 
 
-class Tymer():
+class Tymee():
+    """
+    Tymee has .tyme property that returns the artificial or simulated or cycle time
+    from its referenced Tymist instance ._tymist.
+
+    Attributes:
+
+    Properties:
+        .tyme is float relative cycle time, .tyme is artificial time
+
+    Methods:
+
+    Hidden:
+        ._tymist is Tymist instance reference
+
+    """
+    def __init__(self, tymist=None):
+        """
+        Initialize instance
+        Parameters:
+            tymist is reference to Tymist instance
+        """
+        self._tymist = tymist if tymist is not None else Tymist()
+
+    @property
+    def tyme(self):
+        """
+        tyme property getter, get ._tyme
+        .tyme is float cycle time in seconds
+        """
+        return self._tymist.tyme
+
+
+class Tymer(Tymee):
     """
     Tymer class to measure cycle time given by .tyme property of Ticker instance.
     tyme is relative cycle time either artificial or real
+
+    Inherited Properties:
+        .tyme is cycle time of ._tymist
+
+    Inhereited Hidden:
+        ._tymist is Tymist instance reference
 
     Attributes:
         ._start is start tyme in seconds
@@ -101,17 +140,19 @@ class Tymer():
 
     """
 
-    def __init__(self, ticker=None, duration=0.0, start=None):
+    def __init__(self, tymist=None, duration=0.0, start=None):
         """
         Initialization method for instance.
         Parameters:
-            ticker is reference to Ticker instance. Uses .tyme property
+            tymist is reference to Tymer instance. Uses .tyme property
             duration is float tymer duration in seconds (fractional)
             start is float optional timer start time in seconds. Allows starting
                 before or after current .ticker.tyme
         """
-        self.ticker = ticker if ticker is not None else Tymist()
-        start = float(start) if start is not None else self.ticker.tyme
+        if tymist is None:
+            tymist = Tymist()
+        super(Tymer, self).__init__(tymist=tymist)
+        start = float(start) if start is not None else self.tyme
         self._start = start # need for default duration
         self._stop = self._start + float(duration)  # need for default duration
         self.start(duration=duration, start=start)
@@ -132,7 +173,7 @@ class Tymer():
         elapsed tyme property getter,
         Returns elapsed tyme in seconds (fractional) since ._start.
         """
-        return (self.ticker.tyme - self._start)
+        return (self.tyme - self._start)
 
 
     @property
@@ -141,7 +182,7 @@ class Tymer():
         remaining tyme property getter,
         Returns remaining tyme in seconds (fractional) before ._stop.
         """
-        return (self._stop - self.ticker.tyme)
+        return (self._stop - self.tyme)
 
 
     @property
@@ -150,7 +191,7 @@ class Tymer():
         Returns True if tymer has expired, False otherwise.
         .ticker.tyme >= ._stop,
         """
-        return (self.ticker.tyme >= self._stop)
+        return (self.tyme >= self._stop)
 
 
     def start(self, duration=None, start=None):
@@ -161,7 +202,7 @@ class Tymer():
         """
         # remember current duration when duration not provided
         duration = float(duration) if duration is not None else self.duration
-        self._start = float(start) if start is not None else self.ticker.tyme
+        self._start = float(start) if start is not None else self.tyme
         self._stop = self._start + duration
         return self._start
 
