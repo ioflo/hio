@@ -5,14 +5,14 @@ tests.core.test_ticking module
 """
 import pytest
 
-from hio.base import ticking
+from hio.base import tyming
 
 
 def test_ticker():
     """
     Test Ticker class
     """
-    ticker = ticking.Ticker()
+    ticker = tyming.Tymist()
     assert ticker.tyme == 0.0
     assert ticker.tock == 1.0
 
@@ -24,7 +24,7 @@ def test_ticker():
     ticker.tick()
     assert ticker.tyme == 2.25
 
-    ticker = ticking.Ticker(tyme=2.0, tock=0.25)
+    ticker = tyming.Tymist(tyme=2.0, tock=0.25)
     assert ticker.tyme == 2.0
     assert ticker.tock == 0.25
     ticker.tick()
@@ -41,8 +41,8 @@ def test_tymer():
     """
     Test Tymer class
     """
-    tymer = ticking.Tymer()
-    assert isinstance(tymer.ticker, ticking.Ticker)
+    tymer = tyming.Tymer()
+    assert isinstance(tymer.ticker, tyming.Tymist)
     assert tymer.ticker.tyme == 0.0
     assert tymer.ticker.tock == 1.0
 
@@ -105,7 +105,7 @@ def test_tymer():
     assert tymer.remaining == 0.0
     assert tymer.expired == True
 
-    tymer = ticking.Tymer(duration=1.0, start=0.25)
+    tymer = tyming.Tymer(duration=1.0, start=0.25)
     assert tymer.ticker.tyme == 0.0
     assert tymer.duration == 1.0
     assert tymer.elapsed ==  -0.25

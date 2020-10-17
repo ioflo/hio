@@ -22,7 +22,7 @@ from binascii import hexlify
 
 from contextlib import contextmanager
 
-from ...base import ticking
+from ...base import tyming
 from .. import coring
 
 
@@ -242,7 +242,7 @@ class Server(Acceptor):
         """
         ha = ha or (host, port)
         super(Server, self).__init__(ha=ha, **kwa)
-        self.ticker = ticker or ticking.Ticker()
+        self.ticker = ticker or tyming.Tymist()
         self.timeout = timeout if timeout is not None else self.Timeout
         self.wlog = wlog
         self.ixes = dict()  # ready to rx tx incoming connections, Incomer instances
@@ -611,9 +611,9 @@ class Incomer(object):
         self.cs = cs  # connection socket
         if self.cs:
             self.cs.setblocking(0)  # linux does not preserve blocking from accept
-        self.ticker = ticker or ticking.Ticker()
+        self.ticker = ticker or tyming.Tymist()
         self.timeout = timeout if timeout is not None else self.Timeout
-        self.tymer = ticking.Tymer(ticker=self.ticker, duration=self.timeout)
+        self.tymer = tyming.Tymer(ticker=self.ticker, duration=self.timeout)
 
 
         self.cutoff = False # True when detect connection closed on far side

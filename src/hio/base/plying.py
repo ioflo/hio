@@ -7,10 +7,10 @@ from collections import deque
 
 from ..hioing import ValidationError, VersionError
 from ..help import timing
-from . import ticking
+from . import tyming
 
 
-class Plier(ticking.Ticker):
+class Plier(tyming.Tymist):
     """
     Plier is coroutine scheduler
     Provides relative cycle time in seconds with .tyme property and advanced
@@ -128,7 +128,7 @@ class Plier(ticking.Ticker):
 
         plys = self.ready(doers=doers)
 
-        tymer = ticking.Tymer(ticker=self, duration=self.limit)
+        tymer = tyming.Tymer(ticker=self, duration=self.limit)
         self.timer.start()
         try: #so always clean up resources if exception
             while True:  # until doers complete or exception

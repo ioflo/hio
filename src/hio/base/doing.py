@@ -6,7 +6,7 @@ from collections import deque, namedtuple
 
 from ..hioing import ValidationError, VersionError
 from .basing import State
-from . import ticking
+from . import tyming
 from ..core.tcp import serving, clienting
 
 """
@@ -47,7 +47,7 @@ class Doer():
            tock is float seconds initial value of .tock
 
         """
-        self.ticker = ticker or ticking.Ticker(tyme=0.0)
+        self.ticker = ticker or tyming.Tymist(tyme=0.0)
         self.tock = tock  # desired tyme interval between runs, 0.0 means asap
 
 

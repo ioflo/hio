@@ -7,7 +7,7 @@ import pytest
 
 import inspect
 
-from hio.base import ticking
+from hio.base import tyming
 from hio.base import doing
 from hio.base import plying
 from hio.base.doing import State
@@ -19,10 +19,10 @@ def test_doer():
     """
     tock = 1.0
     doer = doing.Doer()
-    assert isinstance(doer.ticker, ticking.Ticker)
+    assert isinstance(doer.ticker, tyming.Tymist)
     assert doer.tock == 0.0
 
-    ticker = ticking.Ticker()
+    ticker = tyming.Tymist()
     doer = doing.Doer(ticker=ticker, tock=tock)
     assert doer.ticker == ticker
     assert doer.tock == tock == 1.0
@@ -107,7 +107,7 @@ def test_dog_function():
     Test dog example generator function non-class based
     """
     tock = 1.0
-    ticker = ticking.Ticker()
+    ticker = tyming.Tymist()
     do = doing.dog(ticker=ticker)
     assert inspect.isgenerator(do)
     result = do.send(None)
@@ -179,7 +179,7 @@ def test_whodoer_break():
     """
     Test WhoDoer testing class with break to normal exit
     """
-    ticker = ticking.Ticker(tock=0.125)
+    ticker = tyming.Tymist(tock=0.125)
     doer = doing.TestDoer(ticker=ticker, tock=0.25)
     assert doer.ticker == ticker
     assert doer.ticker.tock == 0.125
@@ -230,7 +230,7 @@ def test_whodoer_close():
     """
     Test WhoDoer testing class with close to force exit
     """
-    ticker = ticking.Ticker(tock=0.125)
+    ticker = tyming.Tymist(tock=0.125)
     doer = doing.TestDoer(ticker=ticker, tock=0.25)
     assert doer.ticker == ticker
     assert doer.ticker.tock == 0.125
@@ -282,7 +282,7 @@ def test_whodoer_throw():
     """
     Test WhoDoer testing class with throw to force exit
     """
-    ticker = ticking.Ticker(tock=0.125)
+    ticker = tyming.Tymist(tock=0.125)
     doer = doing.TestDoer(ticker=ticker, tock=0.25)
     assert doer.ticker == ticker
     assert doer.ticker.tock == 0.125
@@ -334,7 +334,7 @@ def test_whodog_break():
     """
     Test whodog testing function example with break to normal exit
     """
-    ticker = ticking.Ticker(tock=0.125)
+    ticker = tyming.Tymist(tock=0.125)
     assert ticker.tyme == 0.0
     states = []
 
@@ -379,7 +379,7 @@ def test_whodog_close():
     """
     Test whodog testing function example with close to force exit
     """
-    ticker = ticking.Ticker(tock=0.125)
+    ticker = tyming.Tymist(tock=0.125)
     assert ticker.tyme == 0.0
     states = []
 
@@ -427,7 +427,7 @@ def test_whodog_throw():
     """
     Test whodog testing function example with throw to force exit
     """
-    ticker = ticking.Ticker(tock=0.125)
+    ticker = tyming.Tymist(tock=0.125)
     assert ticker.tyme == 0.0
     states = []
 

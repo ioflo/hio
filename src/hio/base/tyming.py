@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-hio.core.ticking Module
+hio.core.tyming Module
 """
 import time
 from collections import deque
@@ -11,12 +11,13 @@ from ..help.timing import MonoTimer
 from .basing import Ctl, Stt
 
 
-class Ticker():
+class Tymist():
     """
-    Ticker is simulated time cycling object
-    Provides relative cycle time in seconds with .tyme property and advanced
-    by .tock method.
-    .tyme may be artificial time or real time in seconds.
+    Ticker keeps artificial or simulated or cycle time, called tyme.
+    Provides relative cycle time, tyme, in seconds with .tyme property
+    in incremets of .tock seconds.
+    .tyme is advanced one .tock increment with .tick method.
+    .tyme may be synchronized with real time by a .tyme manager
 
     Attributes:
 
@@ -109,7 +110,7 @@ class Tymer():
             start is float optional timer start time in seconds. Allows starting
                 before or after current .ticker.tyme
         """
-        self.ticker = ticker if ticker is not None else Ticker()
+        self.ticker = ticker if ticker is not None else Tymist()
         start = float(start) if start is not None else self.ticker.tyme
         self._start = start # need for default duration
         self._stop = self._start + float(duration)  # need for default duration

@@ -12,7 +12,7 @@ import socket
 from collections import deque
 import ssl
 
-from hio.base import ticking
+from hio.base import tyming
 from hio.core.tcp.clienting import openClient, Client, ClientTls
 from hio.core.tcp.serving import openServer, Server, Incomer, ServerTls
 
@@ -44,9 +44,9 @@ def test_tcp_basic():
 
     """
     client = Client()
-    assert isinstance(client.ticker, ticking.Ticker)
+    assert isinstance(client.ticker, tyming.Tymist)
     assert client.timeout == 0.0
-    assert isinstance(client.tymer, ticking.Tymer)
+    assert isinstance(client.tymer, tyming.Tymer)
     assert client.tymer.duration == client.timeout
     assert client.tymer.ticker == client.ticker
 
@@ -65,7 +65,7 @@ def test_tcp_basic():
     assert isinstance(client.rxbs, bytearray)
     assert client.wlog == None
 
-    ticker = ticking.Ticker()
+    ticker = tyming.Tymist()
     with openClient(ticker=ticker, timeout=0.5) as client:
         assert client.ticker == ticker
         assert client.timeout == 0.5
@@ -81,7 +81,7 @@ def test_tcp_basic():
     assert client.cutoff == False
 
     server = Server()
-    assert isinstance(server.ticker, ticking.Ticker)
+    assert isinstance(server.ticker, tyming.Tymist)
     assert server.timeout == 1.0
 
     assert server.ha == ('', 56000)
@@ -100,7 +100,7 @@ def test_tcp_basic():
 
     assert server.opened == False
 
-    ticker = ticking.Ticker()
+    ticker = tyming.Tymist()
     with openServer(ticker=ticker, ha=("", 6101)) as server, \
          openClient(ticker=ticker, ha=("127.0.0.1", 6101)) as beta, \
          openClient(ticker=ticker, ha=("127.0.0.1", 6101)) as gamma:
@@ -475,7 +475,7 @@ def test_tcp_service():
     """
     Test Classes tcp service methods
     """
-    ticker = ticking.Ticker()
+    ticker = tyming.Tymist()
     with openServer(ticker=ticker,  ha=("", 6101)) as server, \
          openClient(ticker=ticker,  ha=("127.0.0.1", 6101)) as beta:
 
@@ -580,7 +580,7 @@ def test_client_auto_reconnect():
     """
     Test client auto reconnect when  .reconnectable
     """
-    ticker = ticking.Ticker(tock=0.05)
+    ticker = tyming.Tymist(tock=0.05)
     with openServer(ticker=ticker, ha=("", 6101)) as server, \
          openClient(ticker=ticker, timeout=0.2, reconnectable=True,
                     ha=("127.0.0.1", 6101)) as beta:
@@ -687,7 +687,7 @@ def  test_tcp_tls_default_context():
 
     serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
 
-    ticker = ticking.Ticker()
+    ticker = tyming.Tymist()
     with openServer(cls=ServerTls,
                     ticker=ticker, ha=("", 6101), bs=16192,
                     keypath=serverKeyPath,
@@ -782,7 +782,7 @@ def test_tcp_tls_verify_both():
 
     serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
 
-    ticker = ticking.Ticker()
+    ticker = tyming.Tymist()
     with openServer(cls=ServerTls,
                     ticker=ticker, ha=("", 6101), bs=16192,
                     keypath=serverKeyPath,
@@ -881,7 +881,7 @@ def test_tcp_tls_verify_client():
 
     serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
 
-    ticker = ticking.Ticker()
+    ticker = tyming.Tymist()
     with openServer(cls=ServerTls,
                     ticker=ticker, ha=("", 6101), bs=16192,
                     keypath=serverKeyPath,
@@ -980,7 +980,7 @@ def test_tcp_tls_verify_server():
 
     serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
 
-    ticker = ticking.Ticker()
+    ticker = tyming.Tymist()
     with openServer(cls=ServerTls,
                     ticker=ticker, ha=("", 6101), bs=16192,
                     keypath=serverKeyPath,
@@ -1078,7 +1078,7 @@ def test_tcp_tls_verify_neither():
 
     serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
 
-    ticker = ticking.Ticker()
+    ticker = tyming.Tymist()
     with openServer(cls=ServerTls,
                     ticker=ticker, ha=("", 6101), bs=16192,
                     keypath=serverKeyPath,
@@ -1176,7 +1176,7 @@ def test_tcp_tls_verify_both_tlsv12():
 
     serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
 
-    ticker = ticking.Ticker()
+    ticker = tyming.Tymist()
     with openServer(cls=ServerTls,
                     ticker=ticker, ha=("", 6101), bs=16192,
                     keypath=serverKeyPath,
