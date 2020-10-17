@@ -70,7 +70,7 @@ class Plier(ticking.Ticker):
 
         plys = deque()
         for doer in self.doers:
-            dog = doer.do(ticker=self)
+            dog = doer(ticker=self, tock=doer.tock)
             try:
                 next(dog)  # run enter by advancing to first yield
             except StopIteration:

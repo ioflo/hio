@@ -29,7 +29,7 @@ def test_doer():
     doer.tock = 0.0
     assert doer.tock ==  0.0
 
-    do = doer.do()
+    do = doer(ticker=doer.ticker, tock=doer.tock)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == doer.tock == 0.0
@@ -43,7 +43,7 @@ def test_doer():
     with pytest.raises(StopIteration):
         result = do.send("what?")
 
-    do = doer()
+    do = doer(ticker=doer.ticker, tock=doer.tock)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == doer.tock == 0.0
@@ -57,7 +57,7 @@ def test_doer():
     with pytest.raises(StopIteration):
         result = do.send("what?")
 
-    do = doer()
+    do = doer(ticker=doer.ticker, tock=doer.tock)
     assert inspect.isgenerator(do)
     result = next(do)
     assert result == doer.tock == 0.0
@@ -71,14 +71,14 @@ def test_doer():
     with pytest.raises(StopIteration):
         result = do.send("what?")
 
-    do = doer(tock=tock)
+    do = doer(ticker=doer.ticker, tock=tock)
     assert inspect.isgenerator(do)
     result = next(do)
-    assert result == doer.tock == tock == 1.0
+    assert result  == tock == 1.0
     result = next(do)
-    assert result == doer.tock == 1.0
+    assert result == tock == 1.0
     result = next(do)
-    assert result == doer.tock == 1.0
+    assert result == tock == 1.0
     result = do.close()
     assert result == None
 
@@ -87,14 +87,14 @@ def test_doer():
 
     doer.tock = 0.0
 
-    do = doer.do(tock=tock)
+    do = doer(ticker=doer.ticker, tock=tock)
     assert inspect.isgenerator(do)
     result = next(do)
-    assert result == doer.tock == tock == 1.0
+    assert result == tock == 1.0
     result = next(do)
-    assert result == doer.tock == 1.0
+    assert result == 1.0
     result = next(do)
-    assert result == doer.tock == 1.0
+    assert result == 1.0
     result = do.close()
     assert result == None
 
@@ -187,7 +187,7 @@ def test_whodoer_break():
     assert doer.states ==  []
     assert ticker.tyme == 0.0
 
-    do = doer.do()
+    do = doer(ticker=doer.ticker, tock=doer.tock)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == 0
@@ -238,7 +238,7 @@ def test_whodoer_close():
     assert doer.states ==  []
     assert ticker.tyme == 0.0
 
-    do = doer.do()
+    do = doer(ticker=doer.ticker, tock=doer.tock)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == 0
@@ -290,7 +290,7 @@ def test_whodoer_throw():
     assert doer.states ==  []
     assert ticker.tyme == 0.0
 
-    do = doer.do()
+    do = doer(ticker=doer.ticker, tock=doer.tock)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == 0
@@ -572,4 +572,4 @@ def test_echo_server_client():
 
 
 if __name__ == "__main__":
-    test_echo_server_client()
+    test_doer()
