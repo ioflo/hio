@@ -254,16 +254,11 @@ class Doer(tyming.Tymee):
         Generator method to run this doer
         Calling this method returns generator
         """
-        if tymist is not None:
-            self._tymist = tymist
-        if tock is not None:
-            self.tock = tock
-
         try:
             # enter context
 
             while (True):  # recur context
-                feed = (yield (self.tock))  # yields tock then waits for next send
+                feed = (yield (tock))  # yields tock then waits for next send
 
 
         except GeneratorExit:  # close context, forced exit due to .close
@@ -553,24 +548,20 @@ class ServerDoer(Doer):
         self.server = server
 
 
-    def do(self, tymist=None, tock=None):
+    def do(self, tymist, tock=None):
         """
         Generator method to run this doer, class based generator
         Calling this method returns generator
 
         Run Server
         """
-        if tymist is not None:
-            self._tymist = tymist
-        if tock is not None:
-            self.tock = tock
 
         try:
             # enter context
             self.server.reopen()  #  opens accept socket
 
             while (True):  # recur context
-                feed = (yield (self.tock))  # yields tock then waits for next send
+                feed = (yield (tock))  # yields tock then waits for next send
                 self.server.serviceAll()
 
         except GeneratorExit:  # close context, forced exit due to .close
@@ -607,24 +598,21 @@ class EchoServerDoer(ServerDoer):
 
     """
 
-    def do(self, tymist=None, tock=None):
+    def do(self, tymist, tock=None):
         """
         Generator method to run this doer, class based generator
         Calling this method returns generator
 
         Run Server
         """
-        if tymist is not None:
-            self._tymist = tymist
-        if tock is not None:
-            self.tock = tock
+
 
         try:
             # enter context
             self.server.reopen()  #  opens accept socket
 
             while (True):  # recur context
-                feed = (yield (self.tock))  # yields tock then waits for next send
+                feed = (yield (tock))  # yields tock then waits for next send
                 self.server.serviceAll()
 
                 for ca, ix in self.server.ixes.items():  # echo back
@@ -682,24 +670,20 @@ class ClientDoer(Doer):
         self.client = client
 
 
-    def do(self, tymist=None, tock=None):
+    def do(self, tymist, tock=None):
         """
         Generator method to run this doer, class based generator
         Calling this method returns generator
 
         Run Server
         """
-        if tymist is not None:
-            self._tymist = tymist
-        if tock is not None:
-            self.tock = tock
 
         try:
             # enter context
             self.client.reopen()  #  opens accept socket
 
             while (True):  # recur context
-                feed = (yield (self.tock))  # yields tock then waits for next send
+                feed = (yield (tock))  # yields tock then waits for next send
                 self.client.serviceAll()
 
         except GeneratorExit:  # close context, forced exit due to .close
