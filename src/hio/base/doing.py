@@ -209,7 +209,7 @@ class Doer(tyming.Tymee):
         """
         Initialize instance.
         Parameters:
-           tymist is Ticker instance
+           tymist is Tymist instance
            tock is float seconds initial value of .tock
 
         """
@@ -311,7 +311,7 @@ class TestDoer(Doer):
     TestDoer supports testing with methods to record sends and yields
 
     Inherited Attributes:
-        .tymist is Ticker instance that provides relative cycle time as .tymist.tyme
+        .tymist is Tymist instance that provides relative cycle time as .tymist.tyme
 
     Inherited Properties:
         .tock is desired time in seconds between runs or until next run,
@@ -333,7 +333,7 @@ class TestDoer(Doer):
         """
         Initialize instance.
         Parameters:
-           tymist is Ticker instance
+           tymist is Tymist instance
            tock is float seconds initial value of .tock
 
         """
@@ -416,7 +416,7 @@ class WhoDoer(Doer):
     WhoDoer supports inspecption with methods to record sends and yields
 
     Inherited Attributes:
-        .tymist is Ticker instance that provides relative cycle time as .tymist.tyme
+        .tymist is Tymist instance that provides relative cycle time as .tymist.tyme
 
     Inherited Properties:
         .tock is desired time in seconds between runs or until next run,
@@ -438,7 +438,7 @@ class WhoDoer(Doer):
         """
         Initialize instance.
         Parameters:
-           tymist is Ticker instance
+           tymist is Tymist instance
            tock is float seconds initial value of .tock
 
         """
@@ -521,7 +521,7 @@ class ServerDoer(Doer):
     Basic TCP Server
 
     Inherited Attributes:
-        .tymist is Ticker instance that provides relative cycle time as .tymist.tyme
+        .tymist is Tymist instance that provides relative cycle time as .tymist.tyme
 
     Inherited Properties:
         .tock is desired time in seconds between runs or until next run,
@@ -542,14 +542,14 @@ class ServerDoer(Doer):
     def __init__(self, server, **kwa):
         """
         Inherited Parameters:
-           tymist is Ticker instance
+           tymist is Tymist instance
            tock is float seconds initial value of .tock
 
         Parameters:
            server is TCP Server instance
         """
         super(ServerDoer, self).__init__(**kwa)
-        server.ticker = self._tymist
+        server.tymist = self._tymist
         self.server = server
 
 
@@ -591,7 +591,7 @@ class EchoServerDoer(ServerDoer):
     Just echoes back to client whatever it receives from client
 
     Inherited Attributes:
-        .tymist is Ticker instance that provides relative cycle time as .tymist.tyme
+        .tymist is Tymist instance that provides relative cycle time as .tymist.tyme
         .server is TCP Server instance
 
     Inherited Properties:
@@ -649,7 +649,7 @@ class ClientDoer(Doer):
     Basic TCP Client
 
         Inherited Attributes:
-        .tymist is Ticker instance that provides relative cycle time as .tymist.tyme
+        .tymist is Tymist instance that provides relative cycle time as .tymist.tyme
 
     Inherited Properties:
         .tock is desired time in seconds between runs or until next run,
@@ -671,14 +671,14 @@ class ClientDoer(Doer):
         """
         Initialize instance.
         Inherited Parameters:
-           tymist is Ticker instance
+           tymist is Tymist instance
            tock is float seconds initial value of .tock
 
         Parameters:
            client is TCP Client instance
         """
         super(ClientDoer, self).__init__(**kwa)
-        client.ticker = self._tymist
+        client.tymist = self._tymist
         self.client = client
 
 

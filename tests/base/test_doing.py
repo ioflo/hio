@@ -490,10 +490,10 @@ def test_server_client():
     client = clienting.Client(host="localhost", port=port)
 
     serdoer = doing.ServerDoer(tymist=doist, server=server)
-    assert serdoer.server.ticker == serdoer._tymist == doist
+    assert serdoer.server.tymist == serdoer._tymist == doist
     assert serdoer.server ==  server
     clidoer = doing.ClientDoer(tymist=doist, client=client)
-    assert clidoer.client.ticker == clidoer._tymist == doist
+    assert clidoer.client.tymist == clidoer._tymist == doist
     assert clidoer.client == client
 
     assert serdoer.tock == 0.0  # ASAP
@@ -537,10 +537,10 @@ def test_echo_server_client():
     client = clienting.Client(host="localhost", port=port)
 
     serdoer = doing.EchoServerDoer(tymist=doist, server=server)
-    assert serdoer.server.ticker == serdoer._tymist == doist
+    assert serdoer.server.tymist == serdoer._tymist == doist
     assert serdoer.server ==  server
     clidoer = doing.ClientDoer(tymist=doist, client=client)
-    assert clidoer.client.ticker == clidoer._tymist == doist
+    assert clidoer.client.tymist == clidoer._tymist == doist
 
     assert serdoer.tock == 0.0  # ASAP
     assert clidoer.tock == 0.0  # ASAP

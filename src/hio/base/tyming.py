@@ -115,7 +115,7 @@ class Tymee():
 
 class Tymer(Tymee):
     """
-    Tymer class to measure cycle time given by .tyme property of Ticker instance.
+    Tymer class to measure cycle time given by .tyme property of Tymist instance.
     tyme is relative cycle time either artificial or real
 
     Inherited Properties:

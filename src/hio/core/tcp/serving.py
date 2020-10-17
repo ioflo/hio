@@ -213,7 +213,7 @@ class Server(Acceptor):
         .opened is boolean, True if listen socket .ss opened. False otherwise
 
     Attributes:
-        .ticker is Ticker instance
+        .tymist is Tymist instance
         .timeout is timeout in seconds for connection refresh
         .wlog is wire log
         .ixes is dict of incoming connections indexed by remote (host, port) duple
@@ -225,7 +225,7 @@ class Server(Acceptor):
                  ha=None,
                  host="",
                  port=56000,
-                 ticker=None,
+                 tymist=None,
                  timeout=None,
                  wlog=None,
                  **kwa):
@@ -236,13 +236,13 @@ class Server(Acceptor):
             host is default TCP/IP host address for listen socket
                 "" or "0.0.0.0" is listen on all interfaces
             port is default TCP/IP port
-            ticker is Ticker instance if any to pass to incomers for incoming connections
+            tymist is Tymist instance if any to pass to incomers for incoming connections
             timeout is default timeout for to pass to incomers for  incoming connections
             wlog is WireLog object if any
         """
         ha = ha or (host, port)
         super(Server, self).__init__(ha=ha, **kwa)
-        self.ticker = ticker or tyming.Tymist()
+        self.tymist = tymist or tyming.Tymist()
         self.timeout = timeout if timeout is not None else self.Timeout
         self.wlog = wlog
         self.ixes = dict()  # ready to rx tx incoming connections, Incomer instances
@@ -267,7 +267,7 @@ class Server(Acceptor):
                               cs=cs,
                               bs=self.bs,
                               wlog=self.wlog,
-                              ticker=self.ticker,
+                              tymist=self.tymist,
                               timeout=self.timeout)
             if ca in self.ixes and self.ixes[ca] is not incomer:
                 self.shutdownIx[ca]
@@ -475,7 +475,7 @@ class ServerTls(Server):
         .ss is server listen socket for incoming accept requests
         .axes is deque of accepte connection duples (ca, cs)
         .opened is boolean, True if listen socket .ss opened. False otherwise
-        .ticker is Ticker instance
+        .tymist is Tymist instance
         .timeout is timeout in seconds for connection refresh
         .wlog is wire log
         .ixes is dict of incoming connections indexed by remote (host, port) duple
@@ -538,7 +538,7 @@ class ServerTls(Server):
                                  bs=self.bs,
                                  cs=cs,
                                  wlog=self.wlog,
-                                 ticker=self.ticker,
+                                 tymist=self.tymist,
                                  timeout=self.timeout,
                                  context=self.context,
                                  version=self.version,
@@ -585,7 +585,7 @@ class Incomer(object):
                  ha,
                  ca,
                  cs,
-                 ticker=None,
+                 tymist=None,
                  timeout=None,
                  refreshable=True,
                  bs=8096,
@@ -600,7 +600,7 @@ class Incomer(object):
              know how to delete from .ixes when connection closed as .cs loses
              cs.getpeername() after its closed.
         cs = connection socket object
-        ticker = Ticker instance
+        tymist = Tymist instance
         timeout = timeout for .timer
         refreshable = True if tx/rx activity refreshes timer False otherwise
         bs = buffer size
@@ -611,9 +611,9 @@ class Incomer(object):
         self.cs = cs  # connection socket
         if self.cs:
             self.cs.setblocking(0)  # linux does not preserve blocking from accept
-        self.ticker = ticker or tyming.Tymist()
+        self.tymist = tymist or tyming.Tymist()
         self.timeout = timeout if timeout is not None else self.Timeout
-        self.tymer = tyming.Tymer(tymist=self.ticker, duration=self.timeout)
+        self.tymer = tyming.Tymer(tymist=self.tymist, duration=self.timeout)
 
 
         self.cutoff = False # True when detect connection closed on far side

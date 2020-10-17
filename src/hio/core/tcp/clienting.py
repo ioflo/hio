@@ -62,7 +62,7 @@ class Client():
     Reconnectable = False  # auto reconnect flag
 
     def __init__(self,
-                 ticker=None,
+                 tymist=None,
                  timeout=None,
                  ha=None,
                  host='127.0.0.1',
@@ -76,7 +76,7 @@ class Client():
         Initialization method for instance.
 
         Parameters:
-            ticker = Ticker instance reference
+            tymist = Tymist instance reference
             timeout = auto reconnect retry timeout
 
             ha = host address duple (host, port) of remote server
@@ -88,9 +88,9 @@ class Client():
             rxbs = bytearray of data received
             wlog = WireLog object if any
         """
-        self.ticker = ticker or tyming.Tymist(tyme=0.0)
+        self.tymist = tymist or tyming.Tymist(tyme=0.0)
         self.timeout = timeout if timeout is not None else self.Timeout
-        self.tymer = tyming.Tymer(self.ticker, duration=self.timeout)  # reconnect retry timer
+        self.tymer = tyming.Tymer(self.tymist, duration=self.timeout)  # reconnect retry timer
 
         self.reinitHostPort(ha=ha, hostname=host, port=port)
         self.ha = ha or (host, port)
