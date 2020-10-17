@@ -33,11 +33,11 @@ class Plier(ticking.Ticker):
 
     Attributes:
         .real is boolean. True means run in real time, Otherwise as fast as possible.
-        .limit is float maximum tyme limit to run then closes all doers
+        .limit is float maximum run tyme limit then closes all doers
         .timer is MonoTimer for real time intervals
 
     """
-    def __init__(self, real=False, limit=None, doers=None, **kwa):
+    def __init__(self, real=False, limit=None, **kwa):
         """
         Initialize instance
         Inherited Parameters:
@@ -55,58 +55,65 @@ class Plier(ticking.Ticker):
         self.real = True if real else False
         self.limit = abs(float(limit)) if limit is not None else None
         self.timer = timing.MonoTimer(duration = self.tock)
-        self.doers = list()  # list of runable generators
+        self.doers = list()  # list of Doers
 
 
     def ready(self, doers=None):
         """
-        Returns plys deque entered for plying using doers list if any else .doers
+        Returns plys deque entered for plying using dogs list if any else .dogs
+        Runs enter context of each one
+        Parameters:
+
         """
         if doers is not None:
             self.doers = doers
 
         plys = deque()
         for doer in self.doers:
-            do = doer.do(ticker=self)  # make generator
-            plys.append((do, self.tyme))  #  ply is duple of (do, retyme)
+            dog = doer.do(ticker=self)
+            try:
+                next(dog)  # run enter by advancing to first yield
+            except StopIteration:
+                continue  # don't append
+            plys.append((dog, self.tyme))  #  ply is duple of (dog, retyme)
         return plys
 
 
     def ply(self, plys):
         """
         Cycle once through plys deque and update in place
-        plys is deque of duples of (do, retyme) where retyme is tyme in
-            seconds when next should run may be real or simulated
+        plys is deque of duples of (dog, retyme) where dog is generator and
+        retyme is tyme in seconds when next should run may be real or simulated
 
         Each cycle checks all generators in plys deque and runs if retyme past.
         At end of cycle advances .tyme by one .tock by calling .tick()
         """
         for i in range(len(plys)):  # iterate once over each deed
-            do, retyme = plys.popleft()  # pop it off
+            dog, retyme = plys.popleft()  # pop it off
 
             if retyme <= self.tyme:  # run it now
                 try:
-                    tock = do.send(None)  #  nothing to send for now
-                    plys.append((do, retyme + tock))  # reappend for next pass
+                    tock = dog.send(None)  #  nothing to send for now
+                    plys.append((dog, retyme + tock))  # reappend for next pass
                     # allows for tock change during run
                 except StopIteration:  # returned instead of yielded
                     pass  # effectively do exited or aborted itself
 
             else:  # not retyme yet
-                plys.append((do, retyme))  # reappend for next pass
+                plys.append((dog, retyme))  # reappend for next pass
 
         self.tick()  # advance .tyme by one plier .tock
 
 
-    def run(self, doers=None, limit=None):
+    def run(self, doers=None, limit=None, tyme=None):
         """
-        Prepares deeds deque from .doers or doers and then runs .cycle with deeds
+        Readies plys deque from .dogs or dogs if any and then runs .ply with plys
         until completion
-        Each entry in deeds is duple of (doer, retyme) where retyme is tyme in
+        Each entry in plys is duple of (dog, retyme) where retyme is tyme in
             seconds when next should run may be real or simulated
-        Each cycle runs all generators in deeds deque by calling .do on each one.
+        Each cycle runs all generators in plys deque by calling .send on each one.
 
-        Once deeds is empty .cycle exits.
+        Once plsy is empty .run exits.
 
         Keyboard interrupt (cntl-c) also forces exit.
 
@@ -116,8 +123,12 @@ class Plier(ticking.Ticker):
         if limit is not None:
             self.limit = abs(float(limit))
 
+        if tyme is not None:
+            self.tyme = tyme
+
         plys = self.ready(doers=doers)
 
+        tymer = ticking.Tymer(ticker=self, duration=self.limit)
         self.timer.start()
         try: #so always clean up resources if exception
             while True:  # until doers complete or exception
@@ -130,7 +141,7 @@ class Plier(ticking.Ticker):
                             time.sleep(self.timer.remaining)
                         self.timer.restart()  #  no time lost
 
-                    if self.limit and self.tyme >= self.limit:
+                    if self.limit and tymer.expired:
                         break  # use for testing
 
                     if not plys:  # no more remaining plys so done
@@ -153,9 +164,9 @@ class Plier(ticking.Ticker):
             # its generator is responsible for releasing resources
 
             while(plys):  # .close each remaining do in plys
-                do, retime = plys.popleft() #pop it off
+                dog, retime = plys.popleft() #pop it off
                 try:
-                    tock = do.close()  # force GeneratorExit
+                    tock = dog.close()  # force GeneratorExit
                 except StopIteration:  # Hmm? What happened?
                     pass
 
