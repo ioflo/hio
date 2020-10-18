@@ -11,6 +11,7 @@ from ..help.timing import MonoTimer
 from .basing import Ctl, Stt
 
 
+
 class Tymist():
     """
     Tymist keeps artificial or simulated or cycle time, called tyme.
@@ -29,7 +30,9 @@ class Tymist():
         .tick increments .tyme by one .tock or provided tock
 
     """
-    def __init__(self, tyme=0.0, tock=1.0):
+    Tock = 0.03125  # 1/32
+
+    def __init__(self, tyme=0.0, tock=None):
         """
         Initialize instance
         Parameters:
@@ -37,7 +40,7 @@ class Tymist():
             tock is float tock time in seconds
         """
         self.tyme = float(tyme)
-        self.tock = float(tock)
+        self.tock = float(tock) if tock is not None else self.Tock
 
     @property
     def tyme(self):

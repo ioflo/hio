@@ -14,7 +14,8 @@ def test_tymist():
     """
     tymist = tyming.Tymist()
     assert tymist.tyme == 0.0
-    assert tymist.tock == 1.0
+    assert tymist.tock == 0.03125
+    tymist.tock = 1.0
 
     tymist.tick()
     assert tymist.tyme == 1.0
@@ -66,7 +67,7 @@ def test_tymer():
     tymer = tyming.Tymer()
     assert isinstance(tymer._tymist, tyming.Tymist)
     assert tymer.tyme == 0.0
-    assert tymer._tymist.tock == 1.0
+    assert tymer._tymist.tock == 0.03125
 
     assert tymer.duration == 0.0
     assert tymer.elapsed == 0.0
@@ -133,6 +134,7 @@ def test_tymer():
     assert tymer.elapsed ==  -0.25
     assert tymer.remaining == 1.25
     assert tymer.expired == False
+    tymer._tymist.tock = 1.0
     tymer._tymist.tick()
     assert tymer.tyme == 1.0
     assert tymer.elapsed ==  0.75
@@ -148,4 +150,4 @@ def test_tymer():
 
 
 if __name__ == "__main__":
-    test_tymee()
+    test_tymer()
