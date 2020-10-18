@@ -551,7 +551,7 @@ class ServerDoer(Doer):
         self.server = server
 
 
-    def do(self, tymist, tock=None):
+    def do(self, tymist, tock=0.0):
         """
         Generator method to run this doer, class based generator
         Calling this method returns generator
@@ -601,7 +601,7 @@ class EchoServerDoer(ServerDoer):
 
     """
 
-    def do(self, tymist, tock=None):
+    def do(self, tymist, tock=0.0):
         """
         Generator method to run this doer, class based generator
         Calling this method returns generator
@@ -673,7 +673,7 @@ class ClientDoer(Doer):
         self.client = client
 
 
-    def do(self, tymist, tock=None):
+    def do(self, tymist, tock=0.0):
         """
         Generator method to run this doer, class based generator
         Calling this method returns generator
