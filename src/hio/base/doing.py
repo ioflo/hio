@@ -208,8 +208,11 @@ class Doer(tyming.Tymee):
     def __init__(self, tymist=None, tock=0.0):
         """
         Initialize instance.
+
+        Inherited Parameters:
+            tymist is  Tymist instance
+
         Parameters:
-           tymist is Tymist instance
            tock is float seconds initial value of .tock
 
         """
@@ -573,7 +576,7 @@ class ServerDoer(Doer):
         finally:  # exit context,  unforced exit due to normal exit of try
             self.server.close()
 
-        return
+        return True
 
 
 class EchoServerDoer(ServerDoer):
@@ -629,7 +632,7 @@ class EchoServerDoer(ServerDoer):
         finally:  # exit context,  unforced exit due to normal exit of try
             self.server.close()
 
-        return
+        return True
 
 
 class ClientDoer(Doer):
@@ -695,5 +698,5 @@ class ClientDoer(Doer):
         finally:  # exit context,  unforced exit due to normal exit of try
             self.client.close()
 
-        return
+        return True
 
