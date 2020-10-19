@@ -57,6 +57,14 @@ def test_tymee():
     tymist.tock = 0.25
     tymist.tick()
     assert tymee.tyme == tymist.tyme == 0.75
+
+
+    tymist = tyming.Tymist(tyme=5.0, tock=2.0)
+    tymee.wind(tymist)
+    assert tymee.tyme == tymist.tyme == 5.0
+    tymist.tick()
+    assert tymee.tyme == 7.0
+
     """End Test"""
 
 
@@ -145,6 +153,15 @@ def test_tymer():
     assert tymer.elapsed == 1.75
     assert tymer.remaining == -0.75
     assert tymer.expired == True
+
+    tymist = tyming.Tymist(tyme=5.0, tock=0.125)
+    tymer.wind(tymist)
+    assert tymer.tyme == tymist.tyme == 5.0
+    assert tymer.expired == False
+    assert tymer._start == tymer.tyme == 5.0
+    assert tymer._stop == tymer.tyme + tymer.duration == 6.0
+    tymist.tick()
+    assert tymer.tyme == tymer._start + tymist.tock == 5.125
     """End Test """
 
 

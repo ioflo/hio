@@ -118,6 +118,13 @@ class Tymee(hioing.Mixin):
         """
         return self._tymist.tyme
 
+    def wind(self, tymist):
+        """
+        Inject new ._tymist and any other bundled tymee references
+        Update any dependencies on a change in ._tymist
+        """
+        self._tymist = tymist
+
 
 class Tymer(Tymee):
     """
@@ -195,6 +202,16 @@ class Tymer(Tymee):
         .tyme >= ._stop,
         """
         return (self.tyme >= self._stop)
+
+
+    def wind(self, tymist):
+        """
+        Inject new ._tymist and any other bundled tymee references
+        Update any dependencies on a change in ._tymist:
+            starts over itself at new ._tymists time
+        """
+        super(Tymer, self).wind(tymist)
+        self.start()
 
 
     def start(self, duration=None, start=None):

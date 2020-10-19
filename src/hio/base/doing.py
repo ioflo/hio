@@ -99,7 +99,7 @@ class Doist(tyming.Tymist):
 
             if retyme <= self.tyme:  # run it now
                 try:
-                    tock = dog.send(None)  #  nothing to send for now
+                    tock = dog.send(self.tyme)  #  nothing to send for now
                     dogs.append((dog, retyme + tock))  # reappend for next pass
                     # allows for tock change during run
                 except StopIteration:  # returned instead of yielded
@@ -258,9 +258,12 @@ class Doer(tyming.Tymee):
         """
         try:
             # enter context
+            self.wind(tymist)  # change tymist and dependencies
+            self.tock = tock
+            tyme = self.tyme
 
             while (True):  # recur context
-                feed = (yield (tock))  # yields tock then waits for next send
+                tyme = (yield (tock))  # yields tock then waits for next send
 
 
         except GeneratorExit:  # close context, forced exit due to .close
@@ -448,32 +451,33 @@ class WhoDoer(Doer):
         Generator method to run this doer, class based generator
         Calling this method returns generator
         """
-        feed = "_"
-        count = 0
-
         try:
             # enter context
+            count = 0
+            self.wind(tymist)  # change tymist and dependencies
+            self.tock = tock
+            tyme = self.tyme
 
-            self.states.append(State(tyme=tymist.tyme, context="enter", feed=feed, count=count))
+            self.states.append(State(tyme=tymist.tyme, context="enter", feed=tyme, count=count))
             while (True):  # recur context
-                feed = (yield (tock))  # yields tock then waits for next send
+                tyme = (yield (tock))  # yields tock then waits for next send
                 count += 1
-                self.states.append(State(tyme=tymist.tyme, context="recur", feed=feed, count=count))
+                self.states.append(State(tyme=tymist.tyme, context="recur", feed=tyme, count=count))
                 if count > 3:
                     break  # normal exit
 
         except GeneratorExit:  # close context, forced exit due to .close
             count += 1
-            self.states.append(State(tyme=tymist.tyme, context='close', feed=feed, count=count))
+            self.states.append(State(tyme=tymist.tyme, context='close', feed=tyme, count=count))
 
         except Exception:  # abort context, forced exit due to uncaught exception
             count += 1
-            self.states.append(State(tyme=tymist.tyme, context='abort', feed=feed, count=count))
+            self.states.append(State(tyme=tymist.tyme, context='abort', feed=tyme, count=count))
             raise
 
         finally:  # exit context,  unforced exit due to normal exit of try
             count += 1
-            self.states.append(State(tyme=tymist.tyme, context='exit', feed=feed, count=count))
+            self.states.append(State(tyme=tymist.tyme, context='exit', feed=tyme, count=count))
 
         return (True)  # return value of yield from, or yield ex.value of StopIteration
 
@@ -550,6 +554,16 @@ class ServerDoer(Doer):
         self.server = server
 
 
+    def wind(self, tymist):
+        """
+        Inject new ._tymist and any other bundled tymee references
+        Update any dependencies on a change in ._tymist:
+            starts over itself at new ._tymists time
+        """
+        super(ServerDoer, self).wind(tymist)
+        self.server.tymist = self._tymist
+
+
     def do(self, tymist, tock=0.0):
         """
         Generator method to run this doer, class based generator
@@ -560,10 +574,13 @@ class ServerDoer(Doer):
 
         try:
             # enter context
+            self.wind(tymist)
+            self.tock = tock
+            tyme = self.tyme
             self.server.reopen()  #  opens accept socket
 
             while (True):  # recur context
-                feed = (yield (tock))  # yields tock then waits for next send
+                tyme = (yield (tock))  # yields tock then waits for next send
                 self.server.serviceAll()
 
         except GeneratorExit:  # close context, forced exit due to .close
@@ -611,10 +628,13 @@ class EchoServerDoer(ServerDoer):
 
         try:
             # enter context
+            self.wind(tymist)
+            self.tock = tock
+            tyme = self.tyme
             self.server.reopen()  #  opens accept socket
 
             while (True):  # recur context
-                feed = (yield (tock))  # yields tock then waits for next send
+                tyme = (yield (tock))  # yields tock then waits for next send
                 self.server.serviceAll()
 
                 for ca, ix in self.server.ixes.items():  # echo back
@@ -672,6 +692,16 @@ class ClientDoer(Doer):
         self.client = client
 
 
+    def wind(self, tymist):
+        """
+        Inject new ._tymist and any other bundled tymee references
+        Update any dependencies on a change in ._tymist:
+            starts over itself at new ._tymists time
+        """
+        super(ClientDoer, self).wind(tymist)
+        self.client.tymist = self._tymist
+
+
     def do(self, tymist, tock=0.0):
         """
         Generator method to run this doer, class based generator
@@ -682,10 +712,13 @@ class ClientDoer(Doer):
 
         try:
             # enter context
+            self.wind(tymist)
+            self.tock = tock
+            tyme = self.tyme
             self.client.reopen()  #  opens accept socket
 
             while (True):  # recur context
-                feed = (yield (tock))  # yields tock then waits for next send
+                tyme = (yield (tock))  # yields tock then waits for next send
                 self.client.serviceAll()
 
         except GeneratorExit:  # close context, forced exit due to .close
