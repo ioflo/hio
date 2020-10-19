@@ -90,7 +90,7 @@ class Client():
         """
         self.tymist = tymist or tyming.Tymist(tyme=0.0)
         self.timeout = timeout if timeout is not None else self.Timeout
-        self.tymer = tyming.Tymer(self.tymist, duration=self.timeout)  # reconnect retry timer
+        self.tymer = tyming.Tymer(tymist=self.tymist, duration=self.timeout)  # reconnect retry timer
 
         self.reinitHostPort(ha=ha, hostname=host, port=port)
         self.ha = ha or (host, port)

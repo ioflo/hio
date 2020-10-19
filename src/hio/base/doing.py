@@ -205,7 +205,7 @@ class Doer(tyming.Tymee):
 
     """
 
-    def __init__(self, tymist=None, tock=0.0):
+    def __init__(self, tock=0.0, **kwa):
         """
         Initialize instance.
 
@@ -216,9 +216,7 @@ class Doer(tyming.Tymee):
            tock is float seconds initial value of .tock
 
         """
-        if tymist is None:
-            tymist = tyming.Tymist(tyme=0.0)
-        super(Doer, self).__init__(tymist=tymist)
+        super(Doer, self).__init__(**kwa)
         self.tock = tock  # desired tyme interval between runs, 0.0 means asap
 
 

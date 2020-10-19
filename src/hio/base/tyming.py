@@ -105,7 +105,7 @@ class Tymee():
         Parameters:
             tymist is reference to Tymist instance
         """
-        self._tymist = tymist if tymist is not None else Tymist()
+        self._tymist = tymist if tymist is not None else Tymist(tyme=0.0)
 
     @property
     def tyme(self):
@@ -143,18 +143,15 @@ class Tymer(Tymee):
 
     """
 
-    def __init__(self, tymist=None, duration=0.0, start=None):
+    def __init__(self, duration=0.0, start=None, **kwa):
         """
         Initialization method for instance.
         Parameters:
-            tymist is reference to Tymer instance. Uses .tyme property
             duration is float tymer duration in seconds (fractional)
             start is float optional timer start time in seconds. Allows starting
                 before or after current .tyme
         """
-        if tymist is None:
-            tymist = Tymist()
-        super(Tymer, self).__init__(tymist=tymist)
+        super(Tymer, self).__init__(**kwa)
         start = float(start) if start is not None else self.tyme
         self._start = start # need for default duration
         self._stop = self._start + float(duration)  # need for default duration
