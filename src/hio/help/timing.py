@@ -5,9 +5,10 @@ hio.help.timing module
 """
 import time
 
-from ..hioing import HioError
+from .. import hioing
 
-class TimerError(HioError):
+
+class TimerError(hioing.HioError):
     """
     Generic Timer Errors
     Usage:
@@ -22,7 +23,7 @@ class RetroTimerError(TimerError):
     """
 
 
-class Timer():
+class Timer(hioing.Mixin):
     """
     Class to manage real elaspsed time using time module.
     Attributes:
@@ -40,7 +41,7 @@ class Timer():
         .restart() = restart timer at last ._stop so no time lost
     """
 
-    def __init__(self, duration=0.0, start=None):
+    def __init__(self, duration=0.0, start=None, **kwa):
         """
         Initialization method for instance.
         Parameters:
@@ -48,6 +49,7 @@ class Timer():
             start is float optional start time in seconds allows starting before
                or after current time
         """
+        super(Timer, self).__init__(**kwa)  # Mixin for Mult-inheritance MRO
         self._start = float(start) if start is not None else time.time()
         self._stop = self._start + float(duration)  # need for default duration
         self.start(duration=duration, start=start)

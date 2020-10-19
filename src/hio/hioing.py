@@ -17,6 +17,7 @@ SEPARATOR =  "\r\n\r\n"
 SEPARATOR_BYTES = SEPARATOR.encode("utf-8")
 
 
+
 class HioError(Exception):
     """
     Base Class for hio exceptions
@@ -42,12 +43,12 @@ class VersionError(ValidationError):
     """
 
 
-
-class MixIn(object):
+class Mixin():
     """
     Base class to enable consistent MRO for mixin multiple inheritance
-    Allows each subclass to call super(SubClass,self).__init__(**kwa)
-    So propagates to common top of Tree
+    Allows each subclass to call
+    super(MixinSubClass, self).__init__(*pa, **kwa)
+    So the __init__ propagates to common top of Tree
     """
     def __init__(self, *pa, **kwa):
         pass

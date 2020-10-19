@@ -6,13 +6,14 @@ import time
 from collections import deque
 
 from ..hioing import ValidationError, VersionError
+from .. import hioing
 from ..help.timing import MonoTimer
 
 from .basing import Ctl, Stt
 
 
 
-class Tymist():
+class Tymist(hioing.Mixin):
     """
     Tymist keeps artificial or simulated or cycle time, called tyme.
     Provides relative cycle time, tyme, in seconds with .tyme property
@@ -32,13 +33,14 @@ class Tymist():
     """
     Tock = 0.03125  # 1/32
 
-    def __init__(self, tyme=0.0, tock=None):
+    def __init__(self, tyme=0.0, tock=None, **kwa):
         """
         Initialize instance
         Parameters:
             tyme is initial value of float cycle time in seconds
             tock is float tock time in seconds
         """
+        super(Tymist,self).__init__(**kwa)  # Mixin for Mult-inheritance MRO
         self.tyme = float(tyme)
         self.tock = float(tock) if tock is not None else self.Tock
 
@@ -83,7 +85,7 @@ class Tymist():
         return self.tyme
 
 
-class Tymee():
+class Tymee(hioing.Mixin):
     """
     Tymee has .tyme property that returns the artificial or simulated or cycle time
     from its referenced Tymist instance ._tymist.
@@ -99,12 +101,13 @@ class Tymee():
         ._tymist is Tymist instance reference
 
     """
-    def __init__(self, tymist=None):
+    def __init__(self, tymist=None, **kwa):
         """
         Initialize instance
         Parameters:
             tymist is reference to Tymist instance
         """
+        super(Tymee, self).__init__(**kwa)  # Mixin for Mult-inheritance MRO
         self._tymist = tymist if tymist is not None else Tymist(tyme=0.0)
 
     @property

@@ -6,6 +6,7 @@ import time
 from collections import deque, namedtuple
 
 from ..hioing import ValidationError, VersionError
+from .. import hioing
 from .basing import State
 from . import tyming
 from ..core.tcp import serving, clienting
@@ -183,13 +184,13 @@ class Doer(tyming.Tymee):
     Doer is generator creator and has extra methods and attributes that plain
     generator function does not
 
-    Attributes:
+    Inherited Attributes:
 
     Inherited Properties:
         .tyme is float relative cycle time, .tyme is artificial time
 
     Attributes:
-        .tymist is Tymist instance that provides relative cycle time as .tymist.tyme
+
 
     Properties:
         .tock is desired time in seconds between runs or until next run,
