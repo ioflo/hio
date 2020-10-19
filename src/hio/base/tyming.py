@@ -96,7 +96,8 @@ class Tymee(hioing.Mixin):
         .tyme is float relative cycle time, .tyme is artificial time
 
     Methods:
-
+        .wind is injects ._tymist dependency
+        
     Hidden:
         ._tymist is Tymist instance reference
 
@@ -131,25 +132,30 @@ class Tymer(Tymee):
     Tymer class to measure cycle time given by .tyme property of Tymist instance.
     tyme is relative cycle time either artificial or real
 
-    Inherited Properties:
-        .tyme is cycle time of ._tymist
-
-    Inhereited Hidden:
-        ._tymist is Tymist instance reference
+    Inherited Attributes
 
     Attributes:
-        ._start is start tyme in seconds
-        ._stop  is stop tyme in seconds
+        
+    Inherited Properties:
+        .tyme is cycle time of ._tymist
 
     Properties:
         .duration = tyme duration of tymer in seconds from ._start to ._stop
         .elaspsed = tyme elasped in seconds  since ._start
         .remaining = tyme remaining in seconds  until ._stop
         .expired = True if expired, False otherwise, i.e. .tyme >= ._stop
+        
+    Inherited Methods:
+        .wind is injects ._tymist dependency
 
-    methods:
+    Methods:
         .start() = start tymer at current .tyme
         .restart() = restart tymer at last ._stop so no time lost
+        
+    Hidden:
+        ._tymist is Tymist instance reference
+        ._start is start tyme in seconds
+        ._stop  is stop tyme in seconds
 
     """
 
