@@ -144,7 +144,7 @@ class Doist(tyming.Tymist):
 
                     if self.real:  # wait for real time to expire
                         while not self.timer.expired:
-                            time.sleep(self.timer.remaining)
+                            time.sleep(max(0.0, self.timer.remaining))
                         self.timer.restart()  #  no time lost
 
                     if self.limit and tymer.expired:

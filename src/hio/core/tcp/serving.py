@@ -337,14 +337,14 @@ class Server(Acceptor):
         self.closeAllIx()
 
 
-    def removeIx(self, ca, shutclose=True):
+    def removeIx(self, ca, close=True):
         """
         Remove incomer given by connection address ca
         """
         if ca not in self.ixes:
             emsg = "Invalid connection address '{0}'".format(ca)
             raise ValueError(emsg)
-        if shutclose:
+        if close:
             self.ixes[ca].close()  # shutdown and close socket
         del self.ixes[ca]
 
