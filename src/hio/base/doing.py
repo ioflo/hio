@@ -681,43 +681,6 @@ class WhoDoer(Doer):
                                  feed=ex.args[0], count=self.count))
 
 
-
-    #def do(self, tymist, tock=0.0):
-        #"""
-        #Generator method to run this doer, class based generator
-        #Calling this method returns generator
-        #"""
-        #try:
-            ## enter context
-            #count = 0
-            #self.wind(tymist)  # change tymist and dependencies
-            #self.tock = tock
-            #tyme = self.tyme
-
-            #self.states.append(State(tyme=tymist.tyme, context="enter", feed=tyme, count=count))
-            #while (True):  # recur context
-                #tyme = (yield (tock))  # yields tock then waits for next send
-                #count += 1
-                #self.states.append(State(tyme=tymist.tyme, context="recur", feed=tyme, count=count))
-                #if count > 3:
-                    #break  # normal exit
-
-        #except GeneratorExit:  # close context, forced exit due to .close
-            #count += 1
-            #self.states.append(State(tyme=tymist.tyme, context='close', feed=tyme, count=count))
-
-        #except Exception:  # abort context, forced exit due to uncaught exception
-            #count += 1
-            #self.states.append(State(tyme=tymist.tyme, context='abort', feed=tyme, count=count))
-            #raise
-
-        #finally:  # exit context,  unforced exit due to normal exit of try
-            #count += 1
-            #self.states.append(State(tyme=tymist.tyme, context='exit', feed=tyme, count=count))
-
-        #return (True)  # return value of yield from, or yield ex.value of StopIteration
-
-
 def WhoDo(states, tymist, tock=0.0):
     """
     Generator function test example non-class based generator.
