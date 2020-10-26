@@ -12,6 +12,128 @@ from hio.base import doing
 from hio.base.doing import State
 from hio.core.tcp import serving, clienting
 
+#  for testing purposes
+class TryDoer(doing.Doer):
+    """
+    TryDoer supports testing with methods to record sends and yields
+
+    Inherited Attributes:
+        .done is Boolean completion state:
+            True means completed
+            Otherwise incomplete. Incompletion maybe due to close or abort.
+
+    Attributes:
+       .states is list of State namedtuples (tyme, context, feed, count)
+       .count is context count
+
+    Inherited Properties:
+        .tyme is float ._tymist.tyme, relative cycle or artificial time
+        .tock is float, desired time in seconds between runs or until next run,
+                 non negative, zero means run asap
+
+    Properties:
+
+    Methods:
+        .wind  injects ._tymist dependency
+        .__call__ makes instance callable
+            Appears as generator function that returns generator
+        .do is generator method that returns generator
+        .enter is enter context action method
+        .recur is recur context action method or generator method
+        .exit is exit context method
+        .close is close context method
+        .abort is abort context method
+    """
+
+    def __init__(self, **kwa):
+        """
+        Initialize instance.
+        Parameters:
+           tymist is Tymist instance
+           tock is float seconds initial value of .tock
+
+        """
+        super(TryDoer, self).__init__(**kwa)
+        self.states = []
+        self.count = None
+
+    def enter(self):
+        """
+        """
+        feed = "Default"
+        self.count = 0
+        self.states.append(State(tyme=self.tyme, context="enter",
+                                 feed=feed, count=self.count))
+
+    def recur(self, tyme):
+        """
+
+        """
+        self.count += 1
+        self.states.append(State(tyme=self.tyme, context="recur",
+                                 feed=tyme, count=self.count))
+        if self.count > 3:
+            return True  # complete
+        return False  # incomplete
+
+    def exit(self):
+        """
+        """
+        self.count += 1
+        self.states.append(State(tyme=self.tyme, context='exit',
+                                 feed=None, count=self.count))
+
+    def close(self):
+        """
+        """
+        self.count += 1
+        self.states.append(State(tyme=self.tyme, context='close',
+                                 feed=None, count=self.count))
+
+    def abort(self, ex):
+        """
+        """
+        self.count += 1
+        self.states.append(State(tyme=self.tyme, context='abort',
+                                 feed=ex.args[0], count=self.count))
+
+
+def TryDo(states, tymist, tock=0.0):
+    """
+    Generator function test example non-class based generator.
+    Calling this function returns generator
+    """
+    feed = "Default"
+    count = 0
+
+    try:
+        # enter context
+
+        states.append(State(tyme=tymist.tyme, context="enter", feed=feed, count=count))
+        while (True):  # recur context
+            feed = (yield (count))  # yields tock then waits for next send
+            count += 1
+            states.append(State(tyme=tymist.tyme, context="recur", feed=feed, count = count))
+            if count > 3:
+                break  # normal exit
+
+    except GeneratorExit:  # close context, forced exit due to .close
+        count += 1
+        states.append(State(tyme=tymist.tyme, context='close', feed=feed, count=count))
+
+    except Exception:  # abort context, forced exit due to uncaught exception
+        count += 1
+        states.append(State(tyme=tymist.tyme, context='abort', feed=feed, count=count))
+        raise
+
+    finally:  # exit context,  unforced exit due to normal exit of try
+        count += 1
+        states.append(State(tyme=tymist.tyme, context='exit', feed=feed, count=count))
+
+    return (True)  # return value of yield from, or yield ex.value of StopIteration
+
+
+
 def test_doer():
     """
     Test Doer base class
@@ -105,7 +227,7 @@ def test_dog_function():
     """
     tock = 1.0
     tymist = tyming.Tymist()
-    do = doing.dog(tymist=tymist)
+    do = doing.Do(tymist=tymist)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == 0.0
@@ -118,7 +240,7 @@ def test_dog_function():
     with pytest.raises(StopIteration):
         result = do.send("what?")
 
-    do = doing.dog(tymist=tymist, tock=tock)
+    do = doing.Do(tymist=tymist, tock=tock)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == tock == 1.0
@@ -131,7 +253,7 @@ def test_dog_function():
     with pytest.raises(StopIteration):
         result = do.send("what?")
 
-    do = doing.dog(tymist=tymist, tock=tock)
+    do = doing.Do(tymist=tymist, tock=tock)
     assert inspect.isgenerator(do)
     result = next(do)
     assert result == tock == 1.0
@@ -144,7 +266,7 @@ def test_dog_function():
     with pytest.raises(StopIteration):
         result = do.send("what?")
 
-    do = doing.dog(tymist=tymist, tock=tock)
+    do = doing.Do(tymist=tymist, tock=tock)
     assert inspect.isgenerator(do)
     result = next(do)
     assert result == tock == 1.0
@@ -157,7 +279,7 @@ def test_dog_function():
     with pytest.raises(StopIteration):
         result = do.send("what?")
 
-    do = doing.dog(tymist=tymist, tock=tock)
+    do = doing.Do(tymist=tymist, tock=tock)
     assert inspect.isgenerator(do)
     result = next(do)
     assert result == tock == 1.0
@@ -177,7 +299,7 @@ def test_trydoer_break():
     Test WhoDoer testing class with break to normal exit
     """
     tymist = tyming.Tymist(tock=0.125)
-    doer = doing.TryDoer(tymist=tymist, tock=0.25)
+    doer = TryDoer(tymist=tymist, tock=0.25)
     assert doer._tymist == tymist
     assert doer._tymist.tock == 0.125
     assert doer.tock == 0.25
@@ -187,23 +309,23 @@ def test_trydoer_break():
     do = doer(tymist=doer._tymist, tock=doer.tock)
     assert inspect.isgenerator(do)
     result = do.send(None)
-    assert result == 0
+    assert result == 0.25
     assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0)]
     result = do.send("Hello")
-    assert result  == 1
+    assert result  == 0.25
     assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                            State(tyme=0.0, context='recur', feed='Hello', count=1)]
 
 
     tymist.tick()
     result = do.send("Hi")
-    assert result ==  2
+    assert result ==  0.25
     assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                            State(tyme=0.0, context='recur', feed='Hello', count=1),
                            State(tyme=0.125, context='recur', feed='Hi', count=2)]
     tymist.tick()
     result = do.send("Blue")
-    assert result == 3
+    assert result == 0.25
     assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                            State(tyme=0.0, context='recur', feed='Hello', count=1),
                            State(tyme=0.125, context='recur', feed='Hi', count=2),
@@ -219,7 +341,7 @@ def test_trydoer_break():
                                State(tyme=0.125, context='recur', feed='Hi', count=2),
                                State(tyme=0.25, context='recur', feed='Blue', count=3),
                                State(tyme=0.375, context='recur', feed='Red', count=4),
-                               State(tyme=0.375, context='exit', feed='Red', count=5)]
+                               State(tyme=0.375, context='exit', feed=None, count=5)]
 
     # send after break
     tymist.tick()
@@ -232,7 +354,7 @@ def test_trydoer_break():
                                State(tyme=0.125, context='recur', feed='Hi', count=2),
                                State(tyme=0.25, context='recur', feed='Blue', count=3),
                                State(tyme=0.375, context='recur', feed='Red', count=4),
-                               State(tyme=0.375, context='exit', feed='Red', count=5)]
+                               State(tyme=0.375, context='exit', feed=None, count=5)]
     """End Test """
 
 
@@ -241,7 +363,7 @@ def test_trydoer_close():
     Test WhoDoer testing class with close to force exit
     """
     tymist = tyming.Tymist(tock=0.125)
-    doer = doing.TryDoer(tymist=tymist, tock=0.25)
+    doer = TryDoer(tymist=tymist, tock=0.25)
     assert doer._tymist == tymist
     assert doer._tymist.tock == 0.125
     assert doer.tock == 0.25
@@ -251,17 +373,17 @@ def test_trydoer_close():
     do = doer(tymist=doer._tymist, tock=doer.tock)
     assert inspect.isgenerator(do)
     result = do.send(None)
-    assert result == 0
+    assert result == 0.25
     assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0)]
     result = do.send("Hello")
-    assert result  == 1
+    assert result  == 0.25
     assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                            State(tyme=0.0, context='recur', feed='Hello', count=1)]
 
 
     tymist.tick()
     result = do.send("Hi")
-    assert result ==  2
+    assert result ==  0.25
     assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                            State(tyme=0.0, context='recur', feed='Hello', count=1),
                            State(tyme=0.125, context='recur', feed='Hi', count=2)]
@@ -271,8 +393,8 @@ def test_trydoer_close():
     assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                            State(tyme=0.0, context='recur', feed='Hello', count=1),
                            State(tyme=0.125, context='recur', feed='Hi', count=2),
-                           State(tyme=0.25, context='close', feed='Hi', count=3),
-                           State(tyme=0.25, context='exit', feed='Hi', count=4)]
+                           State(tyme=0.25, context='close', feed=None, count=3),
+                           State(tyme=0.25, context='exit', feed=None, count=4)]
 
     # send after close
     tymist.tick()
@@ -283,8 +405,8 @@ def test_trydoer_close():
         assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                                State(tyme=0.0, context='recur', feed='Hello', count=1),
                                State(tyme=0.125, context='recur', feed='Hi', count=2),
-                               State(tyme=0.25, context='close', feed='Hi', count=3),
-                               State(tyme=0.25, context='exit', feed='Hi', count=4)]
+                               State(tyme=0.25, context='close', feed=None, count=3),
+                               State(tyme=0.25, context='exit', feed=None, count=4)]
 
     """End Test """
 
@@ -294,7 +416,7 @@ def test_trydoer_throw():
     Test WhoDoer testing class with throw to force exit
     """
     tymist = tyming.Tymist(tock=0.125)
-    doer = doing.TryDoer(tymist=tymist, tock=0.25)
+    doer = TryDoer(tymist=tymist, tock=0.25)
     assert doer._tymist == tymist
     assert doer._tymist.tock == 0.125
     assert doer.tock == 0.25
@@ -304,17 +426,17 @@ def test_trydoer_throw():
     do = doer(tymist=doer._tymist, tock=doer.tock)
     assert inspect.isgenerator(do)
     result = do.send(None)
-    assert result == 0
+    assert result == 0.25
     assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0)]
     result = do.send("Hello")
-    assert result  == 1
+    assert result  == 0.25
     assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                            State(tyme=0.0, context='recur', feed='Hello', count=1)]
 
 
     tymist.tick()
     result = do.send("Hi")
-    assert result ==  2
+    assert result ==  0.25
     assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                            State(tyme=0.0, context='recur', feed='Hello', count=1),
                            State(tyme=0.125, context='recur', feed='Hi', count=2)]
@@ -326,8 +448,8 @@ def test_trydoer_throw():
         assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                                 State(tyme=0.0, context='recur', feed='Hello', count=1),
                                 State(tyme=0.125, context='recur', feed='Hi', count=2),
-                                State(tyme=0.25, context='abort', feed='Hi', count=3),
-                                State(tyme=0.25, context='exit', feed='Hi', count=4)]
+                                State(tyme=0.25, context='abort', feed='Bad', count=3),
+                                State(tyme=0.25, context='exit', feed=None, count=4)]
 
     # send after throw
     tymist.tick()
@@ -338,11 +460,11 @@ def test_trydoer_throw():
         assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                                 State(tyme=0.0, context='recur', feed='Hello', count=1),
                                 State(tyme=0.125, context='recur', feed='Hi', count=2),
-                                State(tyme=0.25, context='abort', feed='Hi', count=3),
-                                State(tyme=0.25, context='exit', feed='Hi', count=4)]
+                                State(tyme=0.25, context='abort', feed='Bad', count=3),
+                                State(tyme=0.25, context='exit', feed=None, count=4)]
 
 
-def test_trydog_break():
+def test_trydo_break():
     """
     Test trialdog testing function example with break to normal exit
     """
@@ -350,7 +472,7 @@ def test_trydog_break():
     assert tymist.tyme == 0.0
     states = []
 
-    do = doing.trydog(states=states, tymist=tymist, tock=0.25)
+    do = TryDo(states=states, tymist=tymist, tock=0.25)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == 0
@@ -400,7 +522,7 @@ def test_trydog_break():
     """End Test """
 
 
-def test_trydog_close():
+def test_trydo_close():
     """
     Test traildog testing function example with close to force exit
     """
@@ -408,7 +530,7 @@ def test_trydog_close():
     assert tymist.tyme == 0.0
     states = []
 
-    do = doing.trydog(states=states, tymist=tymist, tock=0.25)
+    do = TryDo(states=states, tymist=tymist, tock=0.25)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == 0
@@ -448,7 +570,7 @@ def test_trydog_close():
     """End Test """
 
 
-def test_trydog_throw():
+def test_trydo_throw():
     """
     Test trialdog testing function example with throw to force exit
     """
@@ -456,7 +578,7 @@ def test_trydog_throw():
     assert tymist.tyme == 0.0
     states = []
 
-    do = doing.trydog(states=states, tymist=tymist, tock=0.25)
+    do = TryDo(states=states, tymist=tymist, tock=0.25)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == 0
@@ -596,4 +718,4 @@ def test_echo_server_client():
 
 
 if __name__ == "__main__":
-    test_doer()
+    test_trydoer_throw()
