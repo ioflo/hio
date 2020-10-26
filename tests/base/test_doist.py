@@ -71,7 +71,7 @@ def test_doist_once():
                             State(tyme=0.25, context='recur', feed=0.25, count=2),
                             State(tyme=0.5, context='recur', feed=0.5, count=3),
                             State(tyme=0.75, context='recur', feed=0.75, count=4),
-                            State(tyme=0.75, context='exit', feed=0.75, count=5)]
+                            State(tyme=0.75, context='exit', feed=None, count=5)]
     assert doer1.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.5, context='recur', feed=0.5, count=2)]
@@ -84,7 +84,7 @@ def test_doist_once():
                             State(tyme=0.25, context='recur', feed=0.25, count=2),
                             State(tyme=0.5, context='recur', feed=0.5, count=3),
                             State(tyme=0.75, context='recur', feed=0.75, count=4),
-                            State(tyme=0.75, context='exit', feed=0.75, count=5)]
+                            State(tyme=0.75, context='exit', feed=None, count=5)]
     assert doer1.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.5, context='recur', feed=0.5, count=2),
@@ -98,7 +98,7 @@ def test_doist_once():
                             State(tyme=0.25, context='recur', feed=0.25, count=2),
                             State(tyme=0.5, context='recur', feed=0.5, count=3),
                             State(tyme=0.75, context='recur', feed=0.75, count=4),
-                            State(tyme=0.75, context='exit', feed=0.75, count=5)]
+                            State(tyme=0.75, context='exit', feed=None, count=5)]
     assert doer1.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.5, context='recur', feed=0.5, count=2),
@@ -112,13 +112,13 @@ def test_doist_once():
                             State(tyme=0.25, context='recur', feed=0.25, count=2),
                             State(tyme=0.5, context='recur', feed=0.5, count=3),
                             State(tyme=0.75, context='recur', feed=0.75, count=4),
-                            State(tyme=0.75, context='exit', feed=0.75, count=5)]
+                            State(tyme=0.75, context='exit', feed=None, count=5)]
     assert doer1.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.5, context='recur', feed=0.5, count=2),
                             State(tyme=1.0, context='recur', feed=1.0, count=3),
                             State(tyme=1.5, context='recur', feed=1.5, count=4),
-                            State(tyme=1.5, context='exit', feed=1.5, count=5)]
+                            State(tyme=1.5, context='exit', feed=None, count=5)]
 
     """End Test """
 
@@ -142,6 +142,7 @@ def test_doist_do():
     for doer in doers:
         assert doer._tymist == doist
         assert doer.states == []
+        assert doer.count == None
 
     ticks = 4
     limit = tock * ticks
@@ -152,13 +153,13 @@ def test_doist_do():
                             State(tyme=0.03125, context='recur', feed=0.03125, count=2),
                             State(tyme=0.0625, context='recur', feed=0.0625, count=3),
                             State(tyme=0.09375, context='recur', feed=0.09375, count=4),
-                            State(tyme=0.09375, context='exit', feed=0.09375, count=5)]
+                            State(tyme=0.09375, context='exit', feed=None, count=5)]
 
     assert doer1.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.0625, context='recur', feed=0.0625, count=2),
-                            State(tyme=0.125, context='close', feed=0.0625, count=3),
-                            State(tyme=0.125, context='exit', feed=0.0625, count=4)]
+                            State(tyme=0.125, context='close', feed=None, count=3),
+                            State(tyme=0.125, context='exit', feed=None, count=4)]
 
 
     doist = doing.Doist(tock=tock, real=True, limit=limit)
@@ -181,13 +182,13 @@ def test_doist_do():
                             State(tyme=0.03125, context='recur', feed=0.03125, count=2),
                             State(tyme=0.0625, context='recur', feed=0.0625, count=3),
                             State(tyme=0.09375, context='recur', feed=0.09375, count=4),
-                            State(tyme=0.09375, context='exit', feed=0.09375, count=5)]
+                            State(tyme=0.09375, context='exit', feed=None, count=5)]
 
     assert doer1.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.0625, context='recur', feed=0.0625, count=2),
-                            State(tyme=0.125, context='close', feed=0.0625, count=3),
-                            State(tyme=0.125, context='exit', feed=0.0625, count=4)]
+                            State(tyme=0.125, context='close', feed=None, count=3),
+                            State(tyme=0.125, context='exit', feed=None, count=4)]
 
     #  Run ASAP
     doist = doing.Doist(tock=tock, real=False, limit=limit)
@@ -212,7 +213,7 @@ def test_doist_do():
                             State(tyme=0.03125, context='recur', feed=0.03125, count=2),
                             State(tyme=0.0625, context='recur', feed=0.0625, count=3),
                             State(tyme=0.09375, context='recur', feed=0.09375, count=4),
-                            State(tyme=0.09375, context='exit', feed=0.09375, count=5)]
+                            State(tyme=0.09375, context='exit', feed=None, count=5)]
 
     assert doer1.states == doer0.states
 
@@ -238,7 +239,7 @@ def test_doist_do():
                             State(tyme=0.03125, context='recur', feed=0.03125, count=2),
                             State(tyme=0.0625, context='recur', feed=0.0625, count=3),
                             State(tyme=0.09375, context='recur', feed=0.09375, count=4),
-                            State(tyme=0.09375, context='exit', feed=0.09375, count=5)]
+                            State(tyme=0.09375, context='exit', feed=None, count=5)]
 
     assert doer1.states == doer0.states
 
@@ -265,8 +266,8 @@ def test_doist_do():
     assert doer0.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.03125, context='recur', feed=0.03125, count=2),
-                            State(tyme=0.0625, context='close', feed=0.03125, count=3),
-                            State(tyme=0.0625, context='exit', feed=0.03125, count=4)]
+                            State(tyme=0.0625, context='close', feed=None, count=3),
+                            State(tyme=0.0625, context='exit', feed=None, count=4)]
 
     assert doer1.states == doer0.states
 
@@ -290,8 +291,8 @@ def test_doist_do():
     assert doer0.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.03125, context='recur', feed=0.03125, count=2),
-                            State(tyme=0.0625, context='close', feed=0.03125, count=3),
-                            State(tyme=0.0625, context='exit', feed=0.03125, count=4)]
+                            State(tyme=0.0625, context='close', feed=None, count=3),
+                            State(tyme=0.0625, context='exit', feed=None, count=4)]
 
     assert doer1.states == doer0.states
 
