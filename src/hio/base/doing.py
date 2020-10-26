@@ -328,217 +328,6 @@ def dog(tymist, tock=0.0):
 
 
 
-class TryDoer(Doer):
-    """
-    TestDoer supports testing with methods to record sends and yields
-
-    Inherited Attributes:
-        .tymist is Tymist instance that provides relative cycle time as .tymist.tyme
-
-    Inherited Properties:
-        .tock is desired time in seconds between runs or until next run,
-                 non negative, zero means run asap
-
-    Inherited Methods:
-        .__call__ makes instance callable return generator
-        .do is generator function returns generator
-
-    Hidden:
-       ._tock is hidden attribute for .tock property
-
-    Attributes:
-       .states is list of State namedtuples (tyme, feed, result)
-
-    """
-
-    def __init__(self, **kwa):
-        """
-        Initialize instance.
-        Parameters:
-           tymist is Tymist instance
-           tock is float seconds initial value of .tock
-
-        """
-        super(TryDoer, self).__init__(**kwa)
-        self.states = []
-
-
-    def do(self, tymist, tock=0.0):
-        """
-        Generator method to run this doer, class based generator
-        Calling this method returns generator
-        """
-        feed = "Default"
-        count = 0
-
-        try:
-            # enter context
-
-            self.states.append(State(tyme=tymist.tyme, context="enter", feed=feed, count=count))
-            while (True):  # recur context
-                feed = (yield (count))  # yields tock then waits for next send
-                count += 1
-                self.states.append(State(tyme=tymist.tyme, context="recur", feed=feed, count = count))
-                if count > 3:
-                    break  # normal exit
-
-        except GeneratorExit:  # close context, forced exit due to .close
-            count += 1
-            self.states.append(State(tyme=tymist.tyme, context='close', feed=feed, count=count))
-
-        except Exception:  # abort context, forced exit due to uncaught exception
-            count += 1
-            self.states.append(State(tyme=tymist.tyme, context='abort', feed=feed, count=count))
-            raise
-
-        finally:  # exit context,  unforced exit due to normal exit of try
-            count += 1
-            self.states.append(State(tyme=tymist.tyme, context='exit', feed=feed, count=count))
-
-        return (True)  # return value of yield from, or yield ex.value of StopIteration
-
-
-def trydog(states, tymist, tock=0.0):
-    """
-    Generator function test example non-class based generator.
-    Calling this function returns generator
-    """
-    feed = "Default"
-    count = 0
-
-    try:
-        # enter context
-
-        states.append(State(tyme=tymist.tyme, context="enter", feed=feed, count=count))
-        while (True):  # recur context
-            feed = (yield (count))  # yields tock then waits for next send
-            count += 1
-            states.append(State(tyme=tymist.tyme, context="recur", feed=feed, count = count))
-            if count > 3:
-                break  # normal exit
-
-    except GeneratorExit:  # close context, forced exit due to .close
-        count += 1
-        states.append(State(tyme=tymist.tyme, context='close', feed=feed, count=count))
-
-    except Exception:  # abort context, forced exit due to uncaught exception
-        count += 1
-        states.append(State(tyme=tymist.tyme, context='abort', feed=feed, count=count))
-        raise
-
-    finally:  # exit context,  unforced exit due to normal exit of try
-        count += 1
-        states.append(State(tyme=tymist.tyme, context='exit', feed=feed, count=count))
-
-    return (True)  # return value of yield from, or yield ex.value of StopIteration
-
-
-class WhoDoer(Doer):
-    """
-    WhoDoer supports inspecption with methods to record sends and yields
-
-    Inherited Attributes:
-        .tymist is Tymist instance that provides relative cycle time as .tymist.tyme
-
-    Inherited Properties:
-        .tock is desired time in seconds between runs or until next run,
-                 non negative, zero means run asap
-
-    Inherited Methods:
-        .__call__ makes instance callable return generator
-        .do is generator function returns generator
-
-    Hidden:
-       ._tock is hidden attribute for .tock property
-
-    Attributes:
-       .states is list of State namedtuples (tyme, feed, result)
-
-    """
-
-    def __init__(self, **kwa):
-        """
-        Initialize instance.
-        Parameters:
-           tymist is Tymist instance
-           tock is float seconds initial value of .tock
-
-        """
-        super(WhoDoer, self).__init__(**kwa)
-        self.states = []
-
-
-    def do(self, tymist, tock=0.0):
-        """
-        Generator method to run this doer, class based generator
-        Calling this method returns generator
-        """
-        try:
-            # enter context
-            count = 0
-            self.wind(tymist)  # change tymist and dependencies
-            self.tock = tock
-            tyme = self.tyme
-
-            self.states.append(State(tyme=tymist.tyme, context="enter", feed=tyme, count=count))
-            while (True):  # recur context
-                tyme = (yield (tock))  # yields tock then waits for next send
-                count += 1
-                self.states.append(State(tyme=tymist.tyme, context="recur", feed=tyme, count=count))
-                if count > 3:
-                    break  # normal exit
-
-        except GeneratorExit:  # close context, forced exit due to .close
-            count += 1
-            self.states.append(State(tyme=tymist.tyme, context='close', feed=tyme, count=count))
-
-        except Exception:  # abort context, forced exit due to uncaught exception
-            count += 1
-            self.states.append(State(tyme=tymist.tyme, context='abort', feed=tyme, count=count))
-            raise
-
-        finally:  # exit context,  unforced exit due to normal exit of try
-            count += 1
-            self.states.append(State(tyme=tymist.tyme, context='exit', feed=tyme, count=count))
-
-        return (True)  # return value of yield from, or yield ex.value of StopIteration
-
-
-def whodog(states, tymist, tock=0.0):
-    """
-    Generator function test example non-class based generator.
-    Calling this function returns generator
-    """
-    feed = "Default"
-    count = 0
-
-    try:
-        # enter context
-
-        states.append(State(tyme=tymist.tyme, context="enter", feed=feed, count=count))
-        while (True):  # recur context
-            feed = (yield (tock))  # yields tock then waits for next send
-            count += 1
-            states.append(State(tyme=tymist.tyme, context="recur", feed=feed, count=count))
-            if count > 3:
-                break  # normal exit
-
-    except GeneratorExit:  # close context, forced exit due to .close
-        count += 1
-        states.append(State(tyme=tymist.tyme, context='close', feed=feed, count=count))
-
-    except Exception:  # abort context, forced exit due to uncaught exception
-        count += 1
-        states.append(State(tyme=tymist.tyme, context='abort', feed=feed, count=count))
-        raise
-
-    finally:  # exit context,  unforced exit due to normal exit of try
-        count += 1
-        states.append(State(tyme=tymist.tyme, context='exit', feed=feed, count=count))
-
-    return (True)  # return value of yield from, or yield ex.value of StopIteration
-
-
 class ServerDoer(Doer):
     """
     Basic TCP Server
@@ -753,4 +542,217 @@ class ClientDoer(Doer):
             self.client.close()
 
         return True
+
+
+
+
+class WhoDoer(Doer):
+    """
+    WhoDoer supports introspection with methods to record sends and yields
+
+    Inherited Attributes:
+        .tymist is Tymist instance that provides relative cycle time as .tymist.tyme
+
+    Inherited Properties:
+        .tock is desired time in seconds between runs or until next run,
+                 non negative, zero means run asap
+
+    Inherited Methods:
+        .__call__ makes instance callable return generator
+        .do is generator function returns generator
+
+    Hidden:
+       ._tock is hidden attribute for .tock property
+
+    Attributes:
+       .states is list of State namedtuples (tyme, feed, result)
+
+    """
+
+    def __init__(self, **kwa):
+        """
+        Initialize instance.
+        Parameters:
+           tymist is Tymist instance
+           tock is float seconds initial value of .tock
+
+        """
+        super(WhoDoer, self).__init__(**kwa)
+        self.states = []
+
+
+    def do(self, tymist, tock=0.0):
+        """
+        Generator method to run this doer, class based generator
+        Calling this method returns generator
+        """
+        try:
+            # enter context
+            count = 0
+            self.wind(tymist)  # change tymist and dependencies
+            self.tock = tock
+            tyme = self.tyme
+
+            self.states.append(State(tyme=tymist.tyme, context="enter", feed=tyme, count=count))
+            while (True):  # recur context
+                tyme = (yield (tock))  # yields tock then waits for next send
+                count += 1
+                self.states.append(State(tyme=tymist.tyme, context="recur", feed=tyme, count=count))
+                if count > 3:
+                    break  # normal exit
+
+        except GeneratorExit:  # close context, forced exit due to .close
+            count += 1
+            self.states.append(State(tyme=tymist.tyme, context='close', feed=tyme, count=count))
+
+        except Exception:  # abort context, forced exit due to uncaught exception
+            count += 1
+            self.states.append(State(tyme=tymist.tyme, context='abort', feed=tyme, count=count))
+            raise
+
+        finally:  # exit context,  unforced exit due to normal exit of try
+            count += 1
+            self.states.append(State(tyme=tymist.tyme, context='exit', feed=tyme, count=count))
+
+        return (True)  # return value of yield from, or yield ex.value of StopIteration
+
+
+def whodog(states, tymist, tock=0.0):
+    """
+    Generator function test example non-class based generator.
+    Calling this function returns generator
+    """
+    feed = "Default"
+    count = 0
+
+    try:
+        # enter context
+
+        states.append(State(tyme=tymist.tyme, context="enter", feed=feed, count=count))
+        while (True):  # recur context
+            feed = (yield (tock))  # yields tock then waits for next send
+            count += 1
+            states.append(State(tyme=tymist.tyme, context="recur", feed=feed, count=count))
+            if count > 3:
+                break  # normal exit
+
+    except GeneratorExit:  # close context, forced exit due to .close
+        count += 1
+        states.append(State(tyme=tymist.tyme, context='close', feed=feed, count=count))
+
+    except Exception:  # abort context, forced exit due to uncaught exception
+        count += 1
+        states.append(State(tyme=tymist.tyme, context='abort', feed=feed, count=count))
+        raise
+
+    finally:  # exit context,  unforced exit due to normal exit of try
+        count += 1
+        states.append(State(tyme=tymist.tyme, context='exit', feed=feed, count=count))
+
+    return (True)  # return value of yield from, or yield ex.value of StopIteration
+
+
+class TryDoer(Doer):
+    """
+    TestDoer supports testing with methods to record sends and yields
+
+    Inherited Attributes:
+        .tymist is Tymist instance that provides relative cycle time as .tymist.tyme
+
+    Inherited Properties:
+        .tock is desired time in seconds between runs or until next run,
+                 non negative, zero means run asap
+
+    Inherited Methods:
+        .__call__ makes instance callable return generator
+        .do is generator function returns generator
+
+    Hidden:
+       ._tock is hidden attribute for .tock property
+
+    Attributes:
+       .states is list of State namedtuples (tyme, feed, result)
+
+    """
+
+    def __init__(self, **kwa):
+        """
+        Initialize instance.
+        Parameters:
+           tymist is Tymist instance
+           tock is float seconds initial value of .tock
+
+        """
+        super(TryDoer, self).__init__(**kwa)
+        self.states = []
+
+
+    def do(self, tymist, tock=0.0):
+        """
+        Generator method to run this doer, class based generator
+        Calling this method returns generator
+        """
+        feed = "Default"
+        count = 0
+
+        try:
+            # enter context
+
+            self.states.append(State(tyme=tymist.tyme, context="enter", feed=feed, count=count))
+            while (True):  # recur context
+                feed = (yield (count))  # yields tock then waits for next send
+                count += 1
+                self.states.append(State(tyme=tymist.tyme, context="recur", feed=feed, count = count))
+                if count > 3:
+                    break  # normal exit
+
+        except GeneratorExit:  # close context, forced exit due to .close
+            count += 1
+            self.states.append(State(tyme=tymist.tyme, context='close', feed=feed, count=count))
+
+        except Exception:  # abort context, forced exit due to uncaught exception
+            count += 1
+            self.states.append(State(tyme=tymist.tyme, context='abort', feed=feed, count=count))
+            raise
+
+        finally:  # exit context,  unforced exit due to normal exit of try
+            count += 1
+            self.states.append(State(tyme=tymist.tyme, context='exit', feed=feed, count=count))
+
+        return (True)  # return value of yield from, or yield ex.value of StopIteration
+
+
+def trydog(states, tymist, tock=0.0):
+    """
+    Generator function test example non-class based generator.
+    Calling this function returns generator
+    """
+    feed = "Default"
+    count = 0
+
+    try:
+        # enter context
+
+        states.append(State(tyme=tymist.tyme, context="enter", feed=feed, count=count))
+        while (True):  # recur context
+            feed = (yield (count))  # yields tock then waits for next send
+            count += 1
+            states.append(State(tyme=tymist.tyme, context="recur", feed=feed, count = count))
+            if count > 3:
+                break  # normal exit
+
+    except GeneratorExit:  # close context, forced exit due to .close
+        count += 1
+        states.append(State(tyme=tymist.tyme, context='close', feed=feed, count=count))
+
+    except Exception:  # abort context, forced exit due to uncaught exception
+        count += 1
+        states.append(State(tyme=tymist.tyme, context='abort', feed=feed, count=count))
+        raise
+
+    finally:  # exit context,  unforced exit due to normal exit of try
+        count += 1
+        states.append(State(tyme=tymist.tyme, context='exit', feed=feed, count=count))
+
+    return (True)  # return value of yield from, or yield ex.value of StopIteration
 
