@@ -438,37 +438,6 @@ class ServerDoer(Doer):
         self.server.close()
 
 
-    #def do(self, tymist, tock=0.0):
-        #"""
-        #Generator method to run this doer, class based generator
-        #Calling this method returns generator
-
-        #Run Server
-        #"""
-
-        #try:
-            ## enter context
-            #self.wind(tymist)
-            #self.tock = tock
-            #tyme = self.tyme
-            #self.server.reopen()  #  opens accept socket
-
-            #while (True):  # recur context
-                #tyme = (yield (tock))  # yields tock then waits for next send
-                #self.server.serviceAll()
-
-        #except GeneratorExit:  # close context, forced exit due to .close
-            #pass
-
-        #except Exception:  # abort context, forced exit due to uncaught exception
-            #raise
-
-        #finally:  # exit context,  unforced exit due to normal exit of try
-            #self.server.close()
-
-        #return True
-
-
 class EchoServerDoer(ServerDoer):
     """
     Echo TCP Server
@@ -508,43 +477,6 @@ class EchoServerDoer(ServerDoer):
     def exit(self):
         """"""
         self.server.close()
-
-
-    #def do(self, tymist, tock=0.0):
-        #"""
-        #Generator method to run this doer, class based generator
-        #Calling this method returns generator
-
-        #Run Server
-        #"""
-
-
-        #try:
-            ## enter context
-            #self.wind(tymist)
-            #self.tock = tock
-            #tyme = self.tyme
-            #self.server.reopen()  #  opens accept socket
-
-            #while (True):  # recur context
-                #tyme = (yield (tock))  # yields tock then waits for next send
-                #self.server.serviceAll()
-
-                #for ca, ix in self.server.ixes.items():  # echo back
-                    #if ix.rxbs:
-                        #ix.tx(bytes(ix.rxbs))
-                        #ix.clearRxbs()
-
-        #except GeneratorExit:  # close context, forced exit due to .close
-            #pass
-
-        #except Exception:  # abort context, forced exit due to uncaught exception
-            #raise
-
-        #finally:  # exit context,  unforced exit due to normal exit of try
-            #self.server.close()
-
-        #return True
 
 
 class ClientDoer(Doer):
@@ -608,37 +540,6 @@ class ClientDoer(Doer):
     def exit(self):
         """"""
         self.client.close()
-
-
-    #def do(self, tymist, tock=0.0):
-        #"""
-        #Generator method to run this doer, class based generator
-        #Calling this method returns generator
-
-        #Run Server
-        #"""
-
-        #try:
-            ## enter context
-            #self.wind(tymist)
-            #self.tock = tock
-            #tyme = self.tyme
-            #self.client.reopen()  #  opens accept socket
-
-            #while (True):  # recur context
-                #tyme = (yield (tock))  # yields tock then waits for next send
-                #self.client.serviceAll()
-
-        #except GeneratorExit:  # close context, forced exit due to .close
-            #pass
-
-        #except Exception:  # abort context, forced exit due to uncaught exception
-            #raise
-
-        #finally:  # exit context,  unforced exit due to normal exit of try
-            #self.client.close()
-
-        #return True
 
 
 class WhoDoer(Doer):
