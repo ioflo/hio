@@ -268,6 +268,7 @@ class Doer(tyming.Tymee):
         """
         Generator method to run this doer
         Calling this method returns generator
+        Interface matched generator function for compatibility
         """
         try:
             # enter context
@@ -278,7 +279,7 @@ class Doer(tyming.Tymee):
             self.enter()
 
             while (not self.done):  # recur context
-                tyme = (yield (tock))  # yields tock then waits for next send
+                tyme = (yield (self.tock))  # yields .tock then waits for next send
                 self.done = self.recur(tyme=tyme)
 
         except GeneratorExit:  # close context, forced exit due to .close
