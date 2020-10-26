@@ -150,7 +150,7 @@ class Doist(tyming.Tymist):
                     if self.limit and tymer.expired:
                         break  # use for testing
 
-                    if not dogs:  # no more remaining plys so done
+                    if not dogs:  # no more remaining dogs so done
                         break  # break out of forever loop
 
                 except KeyboardInterrupt: # CNTL-C shutdown skedder

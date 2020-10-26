@@ -24,36 +24,36 @@ def test_doist_once():
     doer1 = doing.WhoDoer(tock=0.5, tymist=doist)
     doers = [doer0, doer1]
 
-    plys = doist.ready(doers=doers)
-    assert len(plys) == 2
-    assert [val[1] for val in plys] == [0.0, 0.0]
+    dogs = doist.ready(doers=doers)
+    assert len(dogs) == 2
+    assert [val[1] for val in dogs] == [0.0, 0.0]
     for doer in doers:
         assert doer._tymist ==  doist
         assert doer.states == [State(tyme=0.0, context='enter', feed=0.0, count=0)]
 
-    doist.once(plys)
+    doist.once(dogs)
     assert doist.tyme == 0.25  # on next cycle
-    assert len(plys) == 2
-    assert [val[1] for val in plys] == [0.25, 0.5]
+    assert len(dogs) == 2
+    assert [val[1] for val in dogs] == [0.25, 0.5]
     assert doer0.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1)]
     assert doer1.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1)]
 
-    doist.once(plys)
+    doist.once(dogs)
     assert doist.tyme == 0.5  # on next cycle
-    assert len(plys) == 2
-    assert [val[1] for val in plys] == [0.5, 0.5]
+    assert len(dogs) == 2
+    assert [val[1] for val in dogs] == [0.5, 0.5]
     assert doer0.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.25, context='recur', feed=0.25, count=2)]
     assert doer1.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1)]
 
-    doist.once(plys)
+    doist.once(dogs)
     assert doist.tyme == 0.75  # on next cycle
-    assert len(plys) == 2
-    assert [val[1] for val in plys] == [0.75, 1.0]
+    assert len(dogs) == 2
+    assert [val[1] for val in dogs] == [0.75, 1.0]
     assert doer0.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.25, context='recur', feed=0.25, count=2),
@@ -62,10 +62,10 @@ def test_doist_once():
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.5, context='recur', feed=0.5, count=2)]
 
-    doist.once(plys)
+    doist.once(dogs)
     assert doist.tyme == 1.0  # on next cycle
-    assert len(plys) == 1
-    assert [val[1] for val in plys] == [1.0]
+    assert len(dogs) == 1
+    assert [val[1] for val in dogs] == [1.0]
     assert doer0.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.25, context='recur', feed=0.25, count=2),
@@ -76,9 +76,9 @@ def test_doist_once():
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.5, context='recur', feed=0.5, count=2)]
 
-    doist.once(plys)
+    doist.once(dogs)
     assert doist.tyme == 1.25  # on next cycle
-    assert len(plys) == 1
+    assert len(dogs) == 1
     assert doer0.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.25, context='recur', feed=0.25, count=2),
@@ -90,9 +90,9 @@ def test_doist_once():
                             State(tyme=0.5, context='recur', feed=0.5, count=2),
                             State(tyme=1.0, context='recur', feed=1.0, count=3)]
 
-    doist.once(plys)
+    doist.once(dogs)
     assert doist.tyme == 1.50  # on next cycle
-    assert len(plys) == 1
+    assert len(dogs) == 1
     assert doer0.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.25, context='recur', feed=0.25, count=2),
@@ -104,9 +104,9 @@ def test_doist_once():
                             State(tyme=0.5, context='recur', feed=0.5, count=2),
                             State(tyme=1.0, context='recur', feed=1.0, count=3)]
 
-    doist.once(plys)
+    doist.once(dogs)
     assert doist.tyme == 1.75  # on next cycle
-    assert len(plys) == 0
+    assert len(dogs) == 0
     assert doer0.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.25, context='recur', feed=0.25, count=2),
@@ -301,4 +301,4 @@ def test_doist_do():
 
 
 if __name__ == "__main__":
-    test_doist_do()
+    test_doist_once()
