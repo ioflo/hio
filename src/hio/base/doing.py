@@ -132,7 +132,7 @@ class Doist(tyming.Tymist):
         if tyme is not None:
             self.tyme = tyme
 
-        dogs = self.ready(doers=doers)
+        dogs = self.ready(doers=doers)  # runs enter context
 
         tymer = tyming.Tymer(tymist=self, duration=self.limit)
         self.timer.start()
@@ -140,7 +140,7 @@ class Doist(tyming.Tymist):
             while True:  # until doers complete or exception
                 try:  #CNTL-C generates keyboardInterrupt to break out of while loop
 
-                    self.once(dogs)  # increments .tyme
+                    self.once(dogs)  # increments .tyme runs recur context
 
                     if self.real:  # wait for real time to expire
                         while not self.timer.expired:
@@ -164,23 +164,26 @@ class Doist(tyming.Tymist):
 
 
         finally: # finally clause always runs regardless of exception or not
-            # Abort any running taskers to reclaim resources
-            # Stopped or aborted taskers should have already released resources
-            # if last run doer exited due to exception then try finally clause in
-            # its generator is responsible for releasing resources
-
+            # exit in each dog is run by try finally clause. Each dogs exit is
+            # responsible for releasing resources
+            # Previously aborted or closed dogs have already exited
+            # Close any running dogs in reverse order to force exit and reclaim
+            # resources. enters and exits are nested pairs in reverse order so
+            # nested resource dependencies are maintained.
+            #  enter A, enter B, enter C, exit C, exit B, exit A
             while(dogs):  # .close each remaining do in dogs in reverse order
                 dog, retime = dogs.pop() #pop it off
                 try:
                     tock = dog.close()  # force GeneratorExit
-                except StopIteration:  # Hmm? What happened?
-                    pass
+                except StopIteration:
+                    pass  # Hmm? Not supposed to happen!
 
 
 class Doer(tyming.Tymee):
     """
     Doer base class for hierarchical structured async coroutine like generators.
-    Doer.__call__ on instance returns generator
+    Doer.__call__ on instance returns generator.
+    Interface for Doist etc is generator function like object.
     Doer is generator creator and has extra methods and attributes that plain
     generator function does not
 
@@ -193,12 +196,13 @@ class Doer(tyming.Tymee):
 
 
     Properties:
-        .tock is desired time in seconds between runs or until next run,
+        .tock is float, desired time in seconds between runs or until next run,
                  non negative, zero means run asap
 
     Methods:
-        .__call__ makes instance callable return generator
-        .do is generator function returns generator
+        .__call__ makes instance callable
+            Appears as generator function that returns generator
+        .do is generator function that returns generator
 
     Hidden:
        ._tymist is Tymist instance reference
@@ -272,10 +276,28 @@ class Doer(tyming.Tymee):
         except Exception:  # abort context, forced exit due to uncaught exception
             raise
 
-        finally:  # exit context,  unforced exit due to normal exit of try
+        finally:  # exit context, exit, unforced if normal exit of try, forced otherwise
             pass
 
         return True # return value of yield from, or yield ex.value of StopIteration
+
+
+    def enter(self):
+        """
+        Do 'enter' context actions. Override in subclass. Not a generator method.
+        """
+
+    def exit(self):
+        """
+        Do 'exit' context actions. Override in subclass. Not a generator method.
+        """
+
+    def recur(self):
+        """
+        Do 'recur' context actions. Override in subclass.
+        Maybe a non-generator method or a generator method.
+        For base class non-generator method runs forever
+        """
 
 
 def dog(tymist, tock=0.0):
@@ -306,7 +328,7 @@ def dog(tymist, tock=0.0):
 
 
 
-class TestDoer(Doer):
+class TryDoer(Doer):
     """
     TestDoer supports testing with methods to record sends and yields
 
@@ -337,7 +359,7 @@ class TestDoer(Doer):
            tock is float seconds initial value of .tock
 
         """
-        super(TestDoer, self).__init__(**kwa)
+        super(TryDoer, self).__init__(**kwa)
         self.states = []
 
 
@@ -376,7 +398,7 @@ class TestDoer(Doer):
         return (True)  # return value of yield from, or yield ex.value of StopIteration
 
 
-def testdog(states, tymist, tock=0.0):
+def trydog(states, tymist, tock=0.0):
     """
     Generator function test example non-class based generator.
     Calling this function returns generator
