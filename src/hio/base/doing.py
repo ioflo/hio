@@ -169,8 +169,8 @@ class Doist(tyming.Tymist):
             # if last run doer exited due to exception then try finally clause in
             # its generator is responsible for releasing resources
 
-            while(dogs):  # .close each remaining do in plys
-                dog, retime = dogs.popleft() #pop it off
+            while(dogs):  # .close each remaining do in dogs in reverse order
+                dog, retime = dogs.pop() #pop it off
                 try:
                     tock = dog.close()  # force GeneratorExit
                 except StopIteration:  # Hmm? What happened?
