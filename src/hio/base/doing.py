@@ -76,7 +76,8 @@ class Doist(tyming.Tymist):
 
         dogs = deque()
         for doer in self.doers:
-            dog = doer(tymist=self, tock=doer.tock)
+            args = doer.args if hasattr(doer, "args") else {}
+            dog = doer(tymist=self, tock=doer.tock, **args)
             try:
                 next(dog)  # run enter by advancing to first yield
             except StopIteration:
@@ -264,11 +265,16 @@ class Doer(tyming.Tymee):
         self._tock= abs(float(tock))
 
 
-    def do(self, tymist, tock=0.0):
+    def do(self, tymist, tock=0.0, **args):
         """
         Generator method to run this doer
         Calling this method returns generator
         Interface matched generator function for compatibility
+
+        Parameters:
+            tymist is injected Tymist instance with tymist.tyme
+            tock is injected initial tock value
+            args is dict of injected optional additional parameters
         """
         try:
             # enter context
@@ -337,7 +343,7 @@ class Doer(tyming.Tymee):
             ex is Exception instance that caused abort.
         """
 
-def Do(tymist, tock=0.0):
+def Do(tymist, tock=0.0, **args):
     """
     Generator function example non-class based generator
     Calling this function returns generator
