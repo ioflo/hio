@@ -190,6 +190,35 @@ def test_doist_do():
                             State(tyme=0.125, context='close', feed=None, count=3),
                             State(tyme=0.125, context='exit', feed=None, count=4)]
 
+    # doers passed to Doist init
+    doist = doing.Doist(tock=tock, real=True, limit=limit, doers=doers)
+    assert doist.tyme == 0.0  # on next cycle
+    assert doist.tock == tock == 0.03125
+    assert doist.real == True
+    assert doist.limit == limit == 0.125
+    assert doist.doers == doers
+
+    for doer in doers:
+        doer.states = []
+        assert doer.states == []
+        doer._tymist = doist
+        assert doer._tymist == doist
+
+    doist.do()
+    assert doist.tyme == limit == 0.125
+    assert doer0.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
+                            State(tyme=0.0, context='recur', feed=0.0, count=1),
+                            State(tyme=0.03125, context='recur', feed=0.03125, count=2),
+                            State(tyme=0.0625, context='recur', feed=0.0625, count=3),
+                            State(tyme=0.09375, context='recur', feed=0.09375, count=4),
+                            State(tyme=0.09375, context='exit', feed=None, count=5)]
+
+    assert doer1.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
+                            State(tyme=0.0, context='recur', feed=0.0, count=1),
+                            State(tyme=0.0625, context='recur', feed=0.0625, count=2),
+                            State(tyme=0.125, context='close', feed=None, count=3),
+                            State(tyme=0.125, context='exit', feed=None, count=4)]
+
     #  Run ASAP
     doist = doing.Doist(tock=tock, real=False, limit=limit)
     assert doist.tyme == 0.0  # on next cycle
@@ -301,4 +330,4 @@ def test_doist_do():
 
 
 if __name__ == "__main__":
-    test_doist_once()
+    test_doist_do()

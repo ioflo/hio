@@ -3,6 +3,7 @@
 hio.core.doing Module
 """
 import time
+from inspect import isgeneratorfunction
 from collections import deque, namedtuple
 
 from ..hioing import ValidationError, VersionError
@@ -41,7 +42,7 @@ class Doist(tyming.Tymist):
         .timer is MonoTimer for real time intervals
 
     """
-    def __init__(self, real=False, limit=None, **kwa):
+    def __init__(self, real=False, limit=None, doers=None, **kwa):
         """
         Initialize instance
         Inherited Parameters:
@@ -58,8 +59,9 @@ class Doist(tyming.Tymist):
 
         self.real = True if real else False
         self.limit = abs(float(limit)) if limit is not None else None
+        self.doers = doers if doers is not None else list()  # list of Doers
         self.timer = timing.MonoTimer(duration = self.tock)
-        self.doers = list()  # list of Doers
+
 
 
     def ready(self, doers=None):
@@ -284,9 +286,13 @@ class Doer(tyming.Tymee):
             self.done = False  # allows enter to override completion state
             self.enter()
 
-            while (not self.done):  # recur context
-                tyme = (yield (self.tock))  # yields .tock then waits for next send
-                self.done = self.recur(tyme=tyme)
+            #recur context
+            if isgeneratorfunction(self.recur):  #  .recur is generator method
+                self.done = yield from self.recur(tyme)  #recur context
+            else:  # .recur is standard method so iterate in while loop
+                while (not self.done):  # recur context
+                    tyme = (yield (self.tock))  # yields .tock then waits for next send
+                    self.done = self.recur(tyme=tyme)
 
         except GeneratorExit:  # close context, forced exit due to .close
             self.close()
@@ -342,6 +348,130 @@ class Doer(tyming.Tymee):
         Parameters:
             ex is Exception instance that caused abort.
         """
+
+
+class ReDoer(Doer):
+    """
+    Example sub class where .recur is generator method not plain method.
+       Doer.do method detects and executes using yield from.
+
+    Inherited Attributes:
+        .done is Boolean completion state:
+            True means completed
+            Otherwise incomplete. Incompletion maybe due to close or abort.
+
+    Attributes:
+
+
+    Inherited Properties:
+        .tyme is float ._tymist.tyme, relative cycle or artificial time
+        .tock is float, desired time in seconds between runs or until next run,
+                 non negative, zero means run asap
+
+    Properties:
+
+    Methods:
+        .wind  injects ._tymist dependency
+        .__call__ makes instance callable
+            Appears as generator function that returns generator
+        .do is generator method that returns generator
+        .enter is enter context action method
+        .recur is recur context action method or generator method
+        .exit is exit context method
+        .close is close context method
+        .abort is abort context method
+
+    Hidden:
+       ._tymist is Tymist instance reference
+       ._tock is hidden attribute for .tock property
+    """
+
+    def recur(self, tyme):
+        """
+        Do 'recur' context actions. Override in subclass.
+        This is example of generator method.
+        yield the current .tock
+        accepts the current tyme
+        returns the .done
+
+        Parameters:
+            tyme is initial output of send fed to do yield, Doist feeds its .tyme
+        Returns completion state of recurrence actions.
+           True means done False means continue
+        Maybe a non-generator method or a generator method.
+        For base class do:
+            non-generator recur method runs until returns (True)
+            generator recur method runs until returns (yield from)
+
+        """
+        count = 0
+        # print("ReDoer recur before yield. tyme = {} count={}\n".format(tyme, count))
+        while (True):  # recur context
+            tyme = yield(self.tock)  # first yield of None
+            count += 1
+            # print("ReDoer recur after yield. tyme = {} count={}\n".format(tyme, count))
+            if count >= 3:
+                break
+
+        # print("ReDoer recur after break tyme = {} count={}\n".format(tyme, count))
+        return True  # done
+
+
+
+class DoDoer(Doer):
+    """
+    DoDoer implements Doist like functionality to allow nesting of Doers.
+    Each DoDoer runs a list of doers like a Doist but using the tyme from its
+       injected tymist
+
+
+    Inherited Attributes:
+        .done is Boolean completion state:
+            True means completed
+            Otherwise incomplete. Incompletion maybe due to close or abort.
+
+    Attributes:
+
+
+    Inherited Properties:
+        .tyme is float ._tymist.tyme, relative cycle or artificial time
+        .tock is float, desired time in seconds between runs or until next run,
+                 non negative, zero means run asap
+
+    Properties:
+
+    Methods:
+        .wind  injects ._tymist dependency
+        .__call__ makes instance callable
+            Appears as generator function that returns generator
+        .do is generator method that returns generator
+        .enter is enter context action method
+        .recur is recur context action method or generator method
+        .exit is exit context method
+        .close is close context method
+        .abort is abort context method
+
+    Hidden:
+       ._tymist is Tymist instance reference
+       ._tock is hidden attribute for .tock property
+    """
+
+    def __init__(self, tock=0.0, **kwa):
+        """
+        Initialize instance.
+
+        Inherited Parameters:
+            tymist is  Tymist instance
+
+        Parameters:
+           tock is float seconds initial value of .tock
+
+        """
+        super(Doer, self).__init__(**kwa)
+        self.tock = tock  # desired tyme interval between runs, 0.0 means asap
+        self.done = False
+
+
 
 def Do(tymist, tock=0.0, **args):
     """
