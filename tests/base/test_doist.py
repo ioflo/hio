@@ -325,9 +325,91 @@ def test_doist_do():
 
     assert doer1.states == doer0.states
 
-
     """End Test """
 
 
+def test_nested_doers():
+    """
+    Test Doist running nested DoDoers and Doers
+    """
+
+    tock = 0.03125
+    doist = doing.Doist(tock=tock)
+    assert doist.tyme == 0.0  # on next cycle
+    assert doist.tock == tock == 0.03125
+    assert doist.real == False
+    assert doist.limit == None
+    assert doist.doers == []
+
+    doer0 = doing.WhoDoer(tock=0.0, tymist=doist)
+    doer1 = doing.WhoDoer(tock=tock*2, tymist=doist)
+    assert doer0.tock == 0.0
+    assert doer1.tock == tock * 2
+    aDoers = [doer0, doer1]
+    for doer in aDoers:
+        assert doer._tymist == doist
+        assert doer.states == []
+        assert doer.count == None
+
+    aDoer = doing.DoDoer(tock=0.0, tymist=doist, doers=aDoers)
+    assert aDoer.doers == aDoers
+    assert aDoer._tymist == doist
+
+
+    doer2 = doing.WhoDoer(tock=0.0, tymist=doist)
+    doer3 = doing.WhoDoer(tock=tock*4, tymist=doist)
+    assert doer2.tock == 0.0
+    assert doer3.tock == tock * 4
+    bDoers = [doer2, doer3]
+    for doer in bDoers:
+        assert doer._tymist == doist
+        assert doer.states == []
+        assert doer.count == None
+
+    bDoer = doing.DoDoer(tock=tock*2, tymist=doist, doers=bDoers)
+    assert bDoer.doers == bDoers
+    assert bDoer._tymist == doist
+
+    doers = [aDoer, bDoer]
+    ticks = 8
+    limit = tock * ticks
+    doist.do(doers=doers, limit=limit)  # run em all
+    assert doist.tyme == limit == 0.25
+
+    assert aDoer.done == True
+    assert bDoer.done == False
+
+
+    assert doer0.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
+                            State(tyme=0.0, context='recur', feed=0.0, count=1),
+                            State(tyme=0.03125, context='recur', feed=0.03125, count=2),
+                            State(tyme=0.0625, context='recur', feed=0.0625, count=3),
+                            State(tyme=0.09375, context='recur', feed=0.09375, count=4),
+                            State(tyme=0.09375, context='exit', feed=None, count=5)]
+
+    assert doer1.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
+                            State(tyme=0.0, context='recur', feed=0.0, count=1),
+                            State(tyme=0.0625, context='recur', feed=0.0625, count=2),
+                            State(tyme=0.125, context='recur', feed=0.125, count=3),
+                            State(tyme=0.1875, context='recur', feed=0.1875, count=4),
+                            State(tyme=0.1875, context='exit', feed=None, count=5)]
+
+    assert doer2.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
+                            State(tyme=0.0, context='recur', feed=0.0, count=1),
+                            State(tyme=0.0625, context='recur', feed=0.0625, count=2),
+                            State(tyme=0.125, context='recur', feed=0.125, count=3),
+                            State(tyme=0.1875, context='recur', feed=0.1875, count=4),
+                            State(tyme=0.1875, context='exit', feed=None, count=5)]
+
+    assert doer3.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
+                            State(tyme=0.0, context='recur', feed=0.0, count=1),
+                            State(tyme=0.125, context='recur', feed=0.125, count=2),
+                            State(tyme=0.25, context='close', feed=None, count=3),
+                            State(tyme=0.25, context='exit', feed=None, count=4)]
+    """End Test """
+
+
+
+
 if __name__ == "__main__":
-    test_doist_do()
+    test_nested_doers()

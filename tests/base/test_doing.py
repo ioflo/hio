@@ -318,6 +318,87 @@ def test_redoer():
 
     """End Test """
 
+def test_dodoer():
+    """
+    Test DoDoer class
+    """
+    tock = 1.0
+    doer = doing.DoDoer()
+    assert isinstance(doer._tymist, tyming.Tymist)
+    assert doer.tock == 0.0
+
+    tymist = tyming.Tymist()
+    doer = doing.DoDoer(tymist=tymist, tock=tock)
+    assert doer._tymist == tymist
+    assert doer.tock == tock == 1.0
+    doer.tock = 0.0
+    assert doer.tock ==  0.0
+
+    # create generator use send and run until normal exit. emulates Doist.ready
+    args = {}
+    dog = doer(tymist=doer._tymist, tock=doer.tock, **args)
+    assert inspect.isgenerator(dog)
+    assert doer.doers == []
+
+
+    result = dog.send(None)
+    assert result == doer.tock == 0.0
+    assert doer.doers == []
+
+    tymist.tick()  # empty doers does list so ends right away
+    with pytest.raises(StopIteration):
+        try:
+            result = dog.send(tymist.tyme)
+        except StopIteration as ex:
+            assert ex.value == True
+            raise
+
+    tymist.tick()
+    with pytest.raises(StopIteration):  # send after break
+        try:
+            result = dog.send(tymist.tyme)
+        except StopIteration as ex:
+            assert ex.value == None
+            raise
+
+
+    # create some doers
+    doer0 = doing.Doer()
+    doer1 = doing.Doer()
+    doer2 = doing.Doer()
+
+    doers = [doer0, doer1, doer2]
+
+    # create generator use send and then explicit close. emulates Doist.ready
+    args = {}
+    dog = doer(tymist=doer._tymist, tock=doer.tock, doers=doers, **args)
+    assert inspect.isgenerator(dog)
+    assert doer.doers == []
+
+    result = dog.send(None)
+    assert result == doer.tock == 0.0
+    assert doer.doers == doers
+
+    tymist.tick()
+    result = dog.send(tymist.tyme)
+    assert result == doer.tock == 0.0
+
+    tymist.tick()
+    result = dog.send(tymist.tyme)
+    assert result == doer.tock == 0.0
+
+    result = dog.close()
+    assert result == None  # no yielded value on close
+
+    tymist.tick()
+    with pytest.raises(StopIteration):  # send after close
+        try:
+            result = dog.send(tymist.tyme)
+        except StopIteration as ex:
+            assert ex.value == None
+            raise
+    """End Test """
+
 def test_dog_function():
     """
     Test dog example generator function non-class based
@@ -815,4 +896,4 @@ def test_echo_server_client():
 
 
 if __name__ == "__main__":
-    test_redoer()
+    test_dodoer()

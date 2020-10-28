@@ -59,7 +59,7 @@ class Doist(tyming.Tymist):
 
         self.real = True if real else False
         self.limit = abs(float(limit)) if limit is not None else None
-        self.doers = doers if doers is not None else list()  # list of Doers
+        self.doers = doers if doers is not None else []  # list of Doers
         self.timer = timing.MonoTimer(duration = self.tock)
 
 
@@ -196,6 +196,7 @@ class Doer(tyming.Tymee):
         .done is Boolean completion state:
             True means completed
             Otherwise incomplete. Incompletion maybe due to close or abort.
+        .args is dict of optional parameters injected into .do
 
     Inherited Properties:
         .tyme is float ._tymist.tyme, relative cycle or artificial time
@@ -235,6 +236,7 @@ class Doer(tyming.Tymee):
         super(Doer, self).__init__(**kwa)
         self.tock = tock  # desired tyme interval between runs, 0.0 means asap
         self.done = False
+        self.args = {}  # used for injection
 
 
     def __call__(self, **kwa):
@@ -359,6 +361,7 @@ class ReDoer(Doer):
         .done is Boolean completion state:
             True means completed
             Otherwise incomplete. Incompletion maybe due to close or abort.
+        .args is dict of optional parameters injected into .do
 
     Attributes:
 
@@ -429,8 +432,10 @@ class DoDoer(Doer):
         .done is Boolean completion state:
             True means completed
             Otherwise incomplete. Incompletion maybe due to close or abort.
+        .args is dict of optional parameters injected into .do
 
     Attributes:
+        .doers is list of Doers or Doer like generator functions
 
 
     Inherited Properties:
@@ -456,7 +461,7 @@ class DoDoer(Doer):
        ._tock is hidden attribute for .tock property
     """
 
-    def __init__(self, tock=0.0, **kwa):
+    def __init__(self, doers=None, **kwa):
         """
         Initialize instance.
 
@@ -467,9 +472,123 @@ class DoDoer(Doer):
            tock is float seconds initial value of .tock
 
         """
-        super(Doer, self).__init__(**kwa)
-        self.tock = tock  # desired tyme interval between runs, 0.0 means asap
-        self.done = False
+        super(DoDoer, self).__init__(**kwa)
+        self.doers = doers if doers is not None else []
+
+
+    def do(self, tymist, tock=0.0, doers=None, **args):
+        """
+        Generator method to run this doer
+        Calling this method returns generator
+        Interface matched generator function for compatibility
+
+        Parameters:
+            tymist is injected Tymist instance with tymist.tyme
+            tock is injected initial tock value
+            args is dict of injected optional additional parameters
+        """
+        try:
+            # enter context
+            self.wind(tymist)  # change tymist and dependencies
+            self.tock = tock  #  set tock to parameter
+            tyme = self.tyme
+            self.done = False  # allows enter to override completion state
+
+            dogs = self.enter(doers=doers)
+
+            #recur context
+            while (not self.done):  # recur context
+                tyme = (yield (self.tock))  # yields .tock then waits for next send
+                self.done = self.recur(tyme=tyme, dogs=dogs)
+
+        except GeneratorExit:  # close context, forced exit due to .close
+            self.close()
+
+        except Exception as ex:  # abort context, forced exit due to uncaught exception
+            self.abort(ex=ex)
+            raise
+
+        finally:  # exit context, exit, unforced if normal exit of try, forced otherwise
+            self.exit(dogs=dogs)
+
+        # return value of yield from or StopIteration.value indicates completion
+        return self.done  # Only returns done state if normal return not close or abort raise
+
+
+    def enter(self, doers=None):
+        """
+        Do 'enter' context actions.
+
+        Returns dogs deque of duples (dog, retyme).
+        Runs each generator callable (function or method) in .doers
+        to create each do generator dog.
+        Runs enter context of each dog by calling next(dog)
+
+        Parameters:
+            doers is list of Doers or doer like generator functions
+
+        """
+        if doers is not None:
+            self.doers = doers
+
+        dogs = deque()
+        for doer in self.doers:
+            args = doer.args if hasattr(doer, "args") else {}
+            dog = doer(tymist=self._tymist, tock=doer.tock, **args)
+            try:
+                next(dog)  # run enter by advancing to first yield
+            except StopIteration:
+                continue  # don't append
+            dogs.append((dog, self.tyme))  #  ply is duple of (dog, retyme)
+        return dogs
+
+
+    def recur(self, tyme, dogs):
+        """
+        Do 'recur' context actions.
+
+        Parameters:
+            tyme is output of send fed to do yield, Doist feeds its .tyme
+        Returns completion state of recurrence actions.
+           True means done False means continue
+
+
+        Cycle once through dogs deque and update in place
+        dogs is deque of duples of (dog, retyme) where dog is generator and
+        retyme is tyme in seconds when next should run may be real or simulated
+
+        Each cycle checks all generators in dogs deque and runs if retyme past.
+        """
+        for i in range(len(dogs)):  # iterate once over each deed
+            dog, retyme = dogs.popleft()  # pop it off
+
+            if retyme <= self.tyme:  # run it now
+                try:
+                    tock = dog.send(self.tyme)  #  nothing to send for now
+                    dogs.append((dog, retyme + tock))  # reappend for next pass
+                    # allows for tock change during run
+                except StopIteration:  # returned instead of yielded
+                    pass  # effectively do exited or aborted itself
+
+            else:  # not retyme yet
+                dogs.append((dog, retyme))  # reappend for next pass
+
+        return (not dogs)  # True if dogs empty
+
+
+    def exit(self, dogs):
+        """
+        Do 'exit' context actions.
+
+        Parameters:
+            dogs is deque of duples (dog, retyme)
+        """
+        while(dogs):  # .close each remaining do in dogs in reverse order
+            dog, retime = dogs.pop() #pop it off
+            try:
+                tock = dog.close()  # force GeneratorExit
+            except StopIteration:
+                pass  # Hmm? Not supposed to happen!
 
 
 
@@ -509,6 +628,7 @@ class ServerDoer(Doer):
         .done is Boolean completion state:
             True means completed
             Otherwise incomplete. Incompletion maybe due to close or abort.
+        .args is dict of optional parameters injected into .do
 
     Attributes:
        .server is TCP Server instance
@@ -684,10 +804,10 @@ class WhoDoer(Doer):
     WhoDoer supports introspection with methods to record sends and yields
 
     Inherited Attributes:
-        .tymist is Tymist instance that provides relative cycle time as .tymist.tyme
         .done is Boolean completion state:
             True means completed
             Otherwise incomplete. Incompletion maybe due to close or abort.
+        .args is dict of optional parameters injected into .do
 
     Attributes:
        .states is list of State namedtuples (tyme, context, feed, count)
