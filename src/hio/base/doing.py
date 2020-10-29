@@ -902,14 +902,14 @@ class WhoDoer(Doer):
                                  feed=ex.args[0], count=self.count))
 
 
-def whoDo(states, tymist, tock=0.0, **opts):
+def whoDo(tymist, tock=0.0, states=None, **opts):
     """
     Generator function test example non-class based generator.
     Calling this function returns generator
     """
     tyme = tymist.tyme
     count = 0
-    states = opt["states"] if "states" in opts else []
+    states = states if states is not None else []
 
     try:
         # enter context
@@ -938,14 +938,14 @@ def whoDo(states, tymist, tock=0.0, **opts):
 
 
 @doize(tock=0, states=None)
-def exDo(tymist, tock=0.0, **opts):
+def exDo(tymist, tock=0.0, states=None, **opts):
     """
     Generator function example non-class based generator
     Calling this function returns generator
     """
     tyme = tymist.tyme
     count = 0
-    states = opts["states"] if "states" in opts and opts["states"] is not None else []
+    states = states if states is not None else []
 
     try:
         # enter context

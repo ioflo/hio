@@ -4,6 +4,7 @@ tests.core.test_cycling module
 
 """
 import pytest
+import inspect
 
 from hio.base import doing
 from hio.base import doing
@@ -122,7 +123,7 @@ def test_doist_once():
 
     """End Test """
 
-def test_doist_do():
+def test_doist_doers():
     """
     Test doist.do with .close of .dogs
     """
@@ -300,6 +301,7 @@ def test_doist_do():
 
     assert doer1.states == doer0.states
 
+    #  low limit force close real time
     doist = doing.Doist(tock=tock, real=True, limit=limit)
     assert doist.tyme == 0.0  # on next cycle
     assert doist.tock == tock == 0.03125
@@ -408,8 +410,152 @@ def test_nested_doers():
                             State(tyme=0.25, context='exit', feed=None, count=4)]
     """End Test """
 
+def test_doist_dos():
+    """
+    Test doist.do with dos generator functions not generator methods
+    """
+    tock = 0.03125
+    doist = doing.Doist(tock=tock)
+    assert doist.tyme == 0.0  # on next cycle
+    assert doist.tock == tock == 0.03125
+    assert doist.real == False
+    assert doist.limit == None
+    assert doist.doers == []
+
+
+    doer0 = doing.doify(doing.whoDo, name='gf0', tock=tock, states=None)
+    assert inspect.isgeneratorfunction(doer0)
+    assert doer0.opts["states"] == None
+    doer0.opts['states'] = []
+    assert doer0.tock == tock
+
+    doer1 = doing.doify(doing.whoDo, name='gf1', tock=tock*2)
+    assert inspect.isgeneratorfunction(doer1)
+    assert not doer1.opts
+    doer1.opts['states'] = []
+    assert doer1.tock == tock * 2
+
+    assert doer0 is not doer1
+
+    doer2 = doing.exDo
+    assert inspect.isgeneratorfunction(doer2)
+    assert doer2.opts["states"] == None
+    doer2.opts["states"] = []
+    doer2.tock = tock * 2
+
+    doers = [doer0, doer1, doer2]
+    for doer in doers:
+        assert doer.opts['states'] == []
+
+
+    ticks = 4
+    limit = tock * ticks
+    doist.do(doers=doers, limit=limit)
+    assert doist.tyme == limit == 0.125
+    assert doer0.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
+                            State(tyme=0.0, context='recur', feed=0.0, count=1),
+                            State(tyme=0.03125, context='recur', feed=0.03125, count=2),
+                            State(tyme=0.0625, context='recur', feed=0.0625, count=3),
+                            State(tyme=0.09375, context='recur', feed=0.09375, count=4),
+                            State(tyme=0.09375, context='exit', feed=None, count=5)]
+
+    assert doer1.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
+                            State(tyme=0.0, context='recur', feed=0.0, count=1),
+                            State(tyme=0.0625, context='recur', feed=0.0625, count=2),
+                            State(tyme=0.125, context='close', feed=None, count=3),
+                            State(tyme=0.125, context='exit', feed=None, count=4)]
+
+    assert doer2.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
+                            State(tyme=0.0, context='recur', feed=0.0, count=1),
+                            State(tyme=0.0625, context='recur', feed=0.0625, count=2),
+                            State(tyme=0.125, context='close', feed=None, count=3),
+                            State(tyme=0.125, context='exit', feed=None, count=4)]
+
+    #  repeat but real time
+    doist = doing.Doist(tock=tock, real=True, limit=limit)
+    assert doist.tyme == 0.0  # on next cycle
+    assert doist.tock == tock == 0.03125
+    assert doist.real == True
+    assert doist.limit == limit == 0.125
+    assert doist.doers == []
+
+    for doer in doers:
+        doer.opts['states'] = []
+        assert doer.opts['states'] == []
+
+    doist.do(doers=doers)
+    assert doist.tyme == limit == 0.125
+    assert doer0.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
+                            State(tyme=0.0, context='recur', feed=0.0, count=1),
+                            State(tyme=0.03125, context='recur', feed=0.03125, count=2),
+                            State(tyme=0.0625, context='recur', feed=0.0625, count=3),
+                            State(tyme=0.09375, context='recur', feed=0.09375, count=4),
+                            State(tyme=0.09375, context='exit', feed=None, count=5)]
+
+    assert doer1.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
+                            State(tyme=0.0, context='recur', feed=0.0, count=1),
+                            State(tyme=0.0625, context='recur', feed=0.0625, count=2),
+                            State(tyme=0.125, context='close', feed=None, count=3),
+                            State(tyme=0.125, context='exit', feed=None, count=4)]
+
+    assert doer2.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
+                            State(tyme=0.0, context='recur', feed=0.0, count=1),
+                            State(tyme=0.0625, context='recur', feed=0.0625, count=2),
+                            State(tyme=0.125, context='close', feed=None, count=3),
+                            State(tyme=0.125, context='exit', feed=None, count=4)]
+
+
+    #  Low limit force close
+    ticks = 2
+    limit = tock * ticks
+    doist = doing.Doist(tock=tock, real=False, limit=limit)
+    assert doist.tyme == 0.0  # on next cycle
+    assert doist.tock == tock == 0.03125
+    assert doist.real == False
+    assert doist.limit == limit == 0.0625
+    assert doist.doers == []
+
+    for doer in doers:
+        doer.opts['states'] = []
+        assert doer.opts['states'] == []
+        doer.tock = 0.0  # run asap
+
+    doist.do(doers=doers)
+    assert doist.tyme == limit
+    assert doer0.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
+                            State(tyme=0.0, context='recur', feed=0.0, count=1),
+                            State(tyme=0.03125, context='recur', feed=0.03125, count=2),
+                            State(tyme=0.0625, context='close', feed=None, count=3),
+                            State(tyme=0.0625, context='exit', feed=None, count=4)]
+
+    assert doer0.opts["states"] == doer1.opts["states"] == doer2.opts["states"]
+
+    # low limit force close real time
+    doist = doing.Doist(tock=tock, real=True, limit=limit)
+    assert doist.tyme == 0.0  # on next cycle
+    assert doist.tock == tock == 0.03125
+    assert doist.real == True
+    assert doist.limit == limit == 0.0625
+    assert doist.doers == []
+
+    for doer in doers:
+        doer.opts['states'] = []
+        assert doer.opts['states'] == []
+        doer.tock = 0.0  # run asap
+
+    doist.do(doers=doers)
+    assert doist.tyme == limit
+    assert doer0.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
+                            State(tyme=0.0, context='recur', feed=0.0, count=1),
+                            State(tyme=0.03125, context='recur', feed=0.03125, count=2),
+                            State(tyme=0.0625, context='close', feed=None, count=3),
+                            State(tyme=0.0625, context='exit', feed=None, count=4)]
+
+    assert doer0.opts["states"] == doer1.opts["states"] == doer2.opts["states"]
+
+    """End Test """
 
 
 
 if __name__ == "__main__":
-    test_nested_doers()
+    test_doist_dos()
