@@ -155,6 +155,8 @@ def test_doify():
     assert gf1.__name__ == 'gf1'
     assert gf0.tock == 0.25
     assert gf1.tock == 0.125
+    assert gf0.done == None
+    assert gf1.done == None
     assert gf0.opts == dict()
     assert gf1.opts == dict()
 
@@ -178,6 +180,7 @@ def test_doize():
 
     assert inspect.isgeneratorfunction(genfun)
     assert genfun.tock == 0.25
+    assert genfun.done == None
     assert genfun.opts == dict()
 
     tymist = tyming.Tymist()

@@ -68,50 +68,59 @@ class Doist(tyming.Tymist):
 
     def ready(self, doers=None):
         """
-        Returns dogs deque of duples (dog, retyme).
-        Runs each generator callable (function or method) in .doers
-        to create each do generator dog.
-        Runs enter context of each dog by calling next(dog)
-        Parameters:
+        Returns dogs deque of triples (dog, retyme, index)  where:
+            dog is generator
+            retyme is tyme in seconds when next should run may be real or simulated
+            index is position of associated doer in .doers list
 
+        Calls each generator callable (function or method) in .doers to create
+        each generator dog.
+
+        Runs enter context of each dog by calling next(dog)
+
+        Parameters:
+            doers is list of generator method or function callables with attributes
+                tock, done, and opts dict()
         """
         if doers is not None:
             self.doers = doers
 
         dogs = deque()
-        for doer in self.doers:
+        for index, doer in enumerate(self.doers):
             opts = doer.opts if hasattr(doer, "opts") else {}
             dog = doer(tymist=self, tock=doer.tock, **opts)
             try:
                 next(dog)  # run enter by advancing to first yield
             except StopIteration:
                 continue  # don't append
-            dogs.append((dog, self.tyme))  #  ply is duple of (dog, retyme)
+            dogs.append((dog, self.tyme, index))
         return dogs
 
 
     def once(self, dogs):
         """
         Cycle once through dogs deque and update in place
-        dogs is deque of duples of (dog, retyme) where dog is generator and
-        retyme is tyme in seconds when next should run may be real or simulated
+        dogs is deque of triples of (dog, retyme, index) where:
+            dog is generator
+            retyme is tyme in seconds when next should run may be real or simulated
+            index is position of associated doer in .doers list
 
         Each cycle checks all generators in dogs deque and runs if retyme past.
         At end of cycle advances .tyme by one .tock by calling .tick()
         """
         for i in range(len(dogs)):  # iterate once over each deed
-            dog, retyme = dogs.popleft()  # pop it off
+            dog, retyme, index = dogs.popleft()  # pop it off
 
             if retyme <= self.tyme:  # run it now
                 try:
                     tock = dog.send(self.tyme)  #  nothing to send for now
-                    dogs.append((dog, retyme + tock))  # reappend for next pass
-                    # allows for tock change during run
+
                 except StopIteration:  # returned instead of yielded
                     pass  # effectively do exited or aborted itself
-
+                else:  # reappend for next pass
+                    dogs.append((dog, retyme + tock, index))  # tock may change during run
             else:  # not retyme yet
-                dogs.append((dog, retyme))  # reappend for next pass
+                dogs.append((dog, retyme, index))  # reappend for next pass
 
         self.tick()  # advance .tyme by one doist .tock
 
@@ -177,7 +186,7 @@ class Doist(tyming.Tymist):
             # nested resource dependencies are maintained.
             #  enter A, enter B, enter C, exit C, exit B, exit A
             while(dogs):  # .close each remaining do in dogs in reverse order
-                dog, retime = dogs.pop() #pop it off
+                dog, retime, index = dogs.pop() #pop it off
                 try:
                     tock = dog.close()  # force GeneratorExit
                 except StopIteration:
@@ -204,6 +213,7 @@ def doify(f, name=None, tock=0.0, **opts):
     """
     g = helping.copy_func(f, name=name)
     g.tock = tock  # default tock attributes
+    g.done = None  # default done state
     g.opts = dict(opts)  #  default opts attribute
     return g
 
@@ -227,6 +237,7 @@ def doize(tock=0.0, **opts):
         # result of decoration
         g = helping.copy_func(f)
         g.tock = tock  # default tock attributes
+        g.done = None  # default done state
         g.opts = dict(opts)  # default opts attribute
         return g
     return decorator
@@ -569,27 +580,33 @@ class DoDoer(Doer):
         """
         Do 'enter' context actions.
 
-        Returns dogs deque of duples (dog, retyme).
-        Runs each generator callable (function or method) in .doers
-        to create each do generator dog.
+         Returns dogs deque of triples (dog, retyme, index)  where:
+            dog is generator
+            retyme is tyme in seconds when next should run may be real or simulated
+            index is position of associated doer in .doers list
+
+        Calls each generator callable (function or method) in .doers to create
+        each generator dog.
+
         Runs enter context of each dog by calling next(dog)
 
         Parameters:
-            doers is list of Doers or doer like generator functions
+            doers is list of generator method or function callables with attributes
+                tock, done, and opts dict()
 
         """
         if doers is not None:
             self.doers = doers
 
         dogs = deque()
-        for doer in self.doers:
+        for index, doer in enumerate(self.doers):
             args = doer.opts if hasattr(doer, "args") else {}
             dog = doer(tymist=self._tymist, tock=doer.tock, **args)
             try:
                 next(dog)  # run enter by advancing to first yield
             except StopIteration:
                 continue  # don't append
-            dogs.append((dog, self.tyme))  #  ply is duple of (dog, retyme)
+            dogs.append((dog, self.tyme, index))
         return dogs
 
 
@@ -599,29 +616,31 @@ class DoDoer(Doer):
 
         Parameters:
             tyme is output of send fed to do yield, Doist feeds its .tyme
+
         Returns completion state of recurrence actions.
            True means done False means continue
 
-
         Cycle once through dogs deque and update in place
-        dogs is deque of duples of (dog, retyme) where dog is generator and
-        retyme is tyme in seconds when next should run may be real or simulated
+        dogs is deque of triples of (dog, retyme, index) where:
+            dog is generator
+            retyme is tyme in seconds when next should run may be real or simulated
+            index is position of associated doer in .doers list
 
         Each cycle checks all generators in dogs deque and runs if retyme past.
         """
         for i in range(len(dogs)):  # iterate once over each deed
-            dog, retyme = dogs.popleft()  # pop it off
+            dog, retyme,index = dogs.popleft()  # pop it off
 
             if retyme <= self.tyme:  # run it now
                 try:
                     tock = dog.send(self.tyme)  #  nothing to send for now
-                    dogs.append((dog, retyme + tock))  # reappend for next pass
-                    # allows for tock change during run
                 except StopIteration:  # returned instead of yielded
                     pass  # effectively do exited or aborted itself
+                else:  # reappend for next pass
+                    dogs.append((dog, retyme + tock, index))  # tock may change during run
 
             else:  # not retyme yet
-                dogs.append((dog, retyme))  # reappend for next pass
+                dogs.append((dog, retyme, index))  # reappend for next pass
 
         return (not dogs)  # True if dogs empty
 
@@ -634,11 +653,12 @@ class DoDoer(Doer):
             dogs is deque of duples (dog, retyme)
         """
         while(dogs):  # .close each remaining do in dogs in reverse order
-            dog, retime = dogs.pop() #pop it off
+            dog, retime, index = dogs.pop() #pop it off
             try:
                 tock = dog.close()  # force GeneratorExit
             except StopIteration:
                 pass  # Hmm? Not supposed to happen!
+
 
 
 class ServerDoer(Doer):
