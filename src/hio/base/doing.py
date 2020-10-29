@@ -3,6 +3,7 @@
 hio.core.doing Module
 """
 import time
+import functools
 from inspect import isgeneratorfunction
 from collections import deque, namedtuple
 
@@ -11,7 +12,8 @@ from .. import hioing
 from .basing import State
 from . import tyming
 from ..core.tcp import serving, clienting
-from ..help import timing
+from ..help import timing, helping
+
 
 
 
@@ -78,8 +80,8 @@ class Doist(tyming.Tymist):
 
         dogs = deque()
         for doer in self.doers:
-            args = doer.args if hasattr(doer, "args") else {}
-            dog = doer(tymist=self, tock=doer.tock, **args)
+            opts = doer.opts if hasattr(doer, "opts") else {}
+            dog = doer(tymist=self, tock=doer.tock, **opts)
             try:
                 next(dog)  # run enter by advancing to first yield
             except StopIteration:
@@ -182,6 +184,54 @@ class Doist(tyming.Tymist):
                     pass  # Hmm? Not supposed to happen!
 
 
+def doify(f, name=None, tock=0.0, **opts):
+    """
+    Converts generator function f into Doist compatible copy, g, and returns g.
+    Each invoction of doify(f) returns a unique copy of doified function f.
+
+    Usage:
+    def f():
+       pass
+
+    c = doify(f, name='c')
+
+    Parameters:
+        f is generator function
+        name is new name for returned doified copy g
+        tock is default tock attribute of doified copy g
+        opts is dictionary of remaining parameters that becomes .opts attribute
+            of doified copy g
+    """
+    g = helping.copy_func(f, name=name)
+    g.tock = tock  # default tock attributes
+    g.opts = dict(opts)  #  default opts attribute
+    return g
+
+
+def doize(tock=0.0, **opts):
+    """
+    Decorator that returns Doist compatible decorated generator function.
+
+    Usage:
+    @doize
+    def f():
+       pass
+
+    Parameters:
+        tock is default tock attribute of doized f
+        opts is dictionary of remaining parameters that becomes .opts attribute
+            of doized f
+    """
+    def decorator(f):
+        # must create copy not wrapper so inspect.isgeneratorfunction works
+        # result of decoration
+        g = helping.copy_func(f)
+        g.tock = tock  # default tock attributes
+        g.opts = dict(opts)  # default opts attribute
+        return g
+    return decorator
+
+
 class Doer(tyming.Tymee):
     """
     Doer base class for hierarchical structured async coroutine like generators.
@@ -236,7 +286,7 @@ class Doer(tyming.Tymee):
         super(Doer, self).__init__(**kwa)
         self.tock = tock  # desired tyme interval between runs, 0.0 means asap
         self.done = False
-        self.args = {}  # used for injection
+        self.opts = {}  # used for injection
 
 
     def __call__(self, **kwa):
@@ -269,7 +319,7 @@ class Doer(tyming.Tymee):
         self._tock= abs(float(tock))
 
 
-    def do(self, tymist, tock=0.0, **args):
+    def do(self, tymist, tock=0.0, **opts):
         """
         Generator method to run this doer
         Calling this method returns generator
@@ -476,7 +526,7 @@ class DoDoer(Doer):
         self.doers = doers if doers is not None else []
 
 
-    def do(self, tymist, tock=0.0, doers=None, **args):
+    def do(self, tymist, tock=0.0, doers=None, **opts):
         """
         Generator method to run this doer
         Calling this method returns generator
@@ -533,7 +583,7 @@ class DoDoer(Doer):
 
         dogs = deque()
         for doer in self.doers:
-            args = doer.args if hasattr(doer, "args") else {}
+            args = doer.opts if hasattr(doer, "args") else {}
             dog = doer(tymist=self._tymist, tock=doer.tock, **args)
             try:
                 next(dog)  # run enter by advancing to first yield
@@ -589,35 +639,6 @@ class DoDoer(Doer):
                 tock = dog.close()  # force GeneratorExit
             except StopIteration:
                 pass  # Hmm? Not supposed to happen!
-
-
-
-def Do(tymist, tock=0.0, **args):
-    """
-    Generator function example non-class based generator
-    Calling this function returns generator
-    """
-    feed = "Default"
-    count = 0
-
-    try:
-        # enter context
-
-
-        while (True):  # recur context
-            feed = (yield (tock))  # yields tock then waits for next send
-
-    except GeneratorExit:  # close context, forced exit due to .close
-        pass
-
-    except Exception:  # abort context, forced exit due to uncaught exception
-        raise
-
-    finally:  # exit context,  unforced exit due to normal exit of try
-        pass
-
-    return True # return value of yield from, or yield ex.value of StopIteration
-
 
 
 class ServerDoer(Doer):
@@ -848,17 +869,13 @@ class WhoDoer(Doer):
 
 
     def enter(self):
-        """
-        """
-        feed = "Default"
+        """"""
         self.count = 0
         self.states.append(State(tyme=self.tyme, context="enter",
                                  feed=self.tyme, count=self.count))
 
     def recur(self, tyme):
-        """
-
-        """
+        """"""
         self.count += 1
         self.states.append(State(tyme=self.tyme, context="recur",
                                  feed=self.tyme, count=self.count))
@@ -867,58 +884,90 @@ class WhoDoer(Doer):
         return False  # incomplete
 
     def exit(self):
-        """
-        """
+        """"""
         self.count += 1
         self.states.append(State(tyme=self.tyme, context='exit',
                                  feed=None, count=self.count))
 
     def close(self):
-        """
-        """
+        """"""
         self.count += 1
         self.states.append(State(tyme=self.tyme, context='close',
                                  feed=None, count=self.count))
 
     def abort(self, ex):
-        """
-        """
+        """"""
         self.count += 1
         self.states.append(State(tyme=self.tyme, context='abort',
                                  feed=ex.args[0], count=self.count))
 
 
-def WhoDo(states, tymist, tock=0.0):
+def whoDo(states, tymist, tock=0.0, **opts):
     """
     Generator function test example non-class based generator.
     Calling this function returns generator
     """
-    feed = "Default"
+    tyme = tymist.tyme
     count = 0
+    states = opt["states"] if "states" in opts else []
 
     try:
         # enter context
-
-        states.append(State(tyme=tymist.tyme, context="enter", feed=feed, count=count))
+        states.append(State(tyme=tymist.tyme, context="enter", feed=tyme, count=count))
         while (True):  # recur context
-            feed = (yield (tock))  # yields tock then waits for next send
+            tyme = (yield (tock))  # yields tock then waits for next send
             count += 1
-            states.append(State(tyme=tymist.tyme, context="recur", feed=feed, count=count))
+            states.append(State(tyme=tymist.tyme, context="recur", feed=tyme, count=count))
             if count > 3:
                 break  # normal exit
 
     except GeneratorExit:  # close context, forced exit due to .close
         count += 1
-        states.append(State(tyme=tymist.tyme, context='close', feed=feed, count=count))
+        states.append(State(tyme=tymist.tyme, context='close', feed=None, count=count))
 
-    except Exception:  # abort context, forced exit due to uncaught exception
+    except Exception as ex:  # abort context, forced exit due to uncaught exception
         count += 1
-        states.append(State(tyme=tymist.tyme, context='abort', feed=feed, count=count))
-        raise
+        states.append(State(tyme=tymist.tyme, context='abort', feed=ex.args[0], count=count))
+        raise ex
 
     finally:  # exit context,  unforced exit due to normal exit of try
         count += 1
-        states.append(State(tyme=tymist.tyme, context='exit', feed=feed, count=count))
+        states.append(State(tyme=tymist.tyme, context='exit', feed=None, count=count))
 
     return (True)  # return value of yield from, or yield ex.value of StopIteration
 
+
+@doize(tock=0, states=None)
+def exDo(tymist, tock=0.0, **opts):
+    """
+    Generator function example non-class based generator
+    Calling this function returns generator
+    """
+    tyme = tymist.tyme
+    count = 0
+    states = opts["states"] if "states" in opts and opts["states"] is not None else []
+
+    try:
+        # enter context
+        states.append(State(tyme=tymist.tyme, context="enter", feed=tyme, count=count))
+        while (True):  # recur context
+            tyme = (yield (tock))  # yields tock then waits for next send
+            count += 1
+            states.append(State(tyme=tymist.tyme, context="recur", feed=tyme, count=count))
+            if count > 3:
+                break  # normal exit
+
+    except GeneratorExit:  # close context, forced exit due to .close
+        count += 1
+        states.append(State(tyme=tymist.tyme, context='close', feed=None, count=count))
+
+    except Exception as ex:  # abort context, forced exit due to uncaught exception
+        count += 1
+        states.append(State(tyme=tymist.tyme, context='abort', feed=ex.args[0], count=count))
+        raise ex
+
+    finally:  # exit context,  unforced exit due to normal exit of try
+        count += 1
+        states.append(State(tyme=tymist.tyme, context='exit', feed=None, count=count))
+
+    return (True)  # return value of yield from, or yield ex.value of StopIteration

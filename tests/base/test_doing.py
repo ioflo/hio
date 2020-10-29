@@ -98,7 +98,9 @@ class TryDoer(doing.Doer):
                                  feed=ex.args[0], count=self.count))
 
 
-def TryDo(states, tymist, tock=0.0):
+
+@doing.doize()
+def tryDo(states, tymist, tock=0.0,  **opts):
     """
     Generator function test example non-class based generator.
     Calling this function returns generator
@@ -133,6 +135,57 @@ def TryDo(states, tymist, tock=0.0):
     return (True)  # return value of yield from, or yield ex.value of StopIteration
 
 
+def test_doify():
+    """
+    Test wrapper function doify()
+    """
+    def genfun(tymist=None, tock=0.0, **opts):
+        tyme = yield(tock)
+
+    assert inspect.isgeneratorfunction(genfun)
+
+    gf0 = doing.doify(genfun, name='gf0', tock=0.25)
+    gf1 = doing.doify(genfun, name='gf1', tock=0.125)
+
+    assert inspect.isgeneratorfunction(gf0)
+    assert inspect.isgeneratorfunction(gf1)
+    assert id(gf0) != id(gf1)
+
+    assert gf0.__name__ == 'gf0'
+    assert gf1.__name__ == 'gf1'
+    assert gf0.tock == 0.25
+    assert gf1.tock == 0.125
+    assert gf0.opts == dict()
+    assert gf1.opts == dict()
+
+    tymist = tyming.Tymist()
+
+    g0 = gf0(tymist=tymist, tock=gf0.tock, **gf0.opts)
+    assert inspect.isgenerator(g0)
+    g1 = gf0(tymist=tymist, tock=gf1.tock, **gf1.opts)
+    assert inspect.isgenerator(g1)
+
+    assert id(g0) != id(g1)
+    """End Test"""
+
+def test_doize():
+    """
+    Test decorator @doize
+    """
+    @doing.doize(tock=0.25)
+    def genfun(tymist=None, tock=0.0, **opts):
+        tyme = yield(tock)
+
+    assert inspect.isgeneratorfunction(genfun)
+    assert genfun.tock == 0.25
+    assert genfun.opts == dict()
+
+    tymist = tyming.Tymist()
+
+    gen = genfun(tymist=tymist, tock=genfun.tock, **genfun.opts)
+    assert inspect.isgenerator(gen)
+
+    """End Test"""
 
 def test_doer():
     """
@@ -399,76 +452,77 @@ def test_dodoer():
             raise
     """End Test """
 
-def test_dog_function():
+def test_exampleDo():
     """
-    Test dog example generator function non-class based
+    Test exampleDo generator function non-class based
     """
-    tock = 1.0
+    exDo = doing.exDo
+    assert inspect.isgeneratorfunction(exDo)
+    assert hasattr(exDo, "tock")
+    assert hasattr(exDo, "opts")
+    assert "states" in  exDo.opts
+    assert exDo.opts["states"] == None
+    exDo.opts["states"] = []
+
     tymist = tyming.Tymist()
-    do = doing.Do(tymist=tymist)
-    assert inspect.isgenerator(do)
-    result = do.send(None)
-    assert result == 0.0
-    result = do.send("Hello")
-    assert result == 0.0
-    result = do.send("Hi")
-    assert result == 0.0
-    result = do.close()
-    assert result == None
-    with pytest.raises(StopIteration):
-        result = do.send("what?")
 
-    do = doing.Do(tymist=tymist, tock=tock)
-    assert inspect.isgenerator(do)
-    result = do.send(None)
-    assert result == tock == 1.0
-    result = do.send("Hello")
-    assert result == tock == 1.0
-    result = do.send("Hi")
-    assert result == tock == 1.0
-    result = do.close()
-    assert result == None
+    dog = exDo(tymist=tymist, tock=exDo.tock, **exDo.opts)
+    assert inspect.isgenerator(dog)
+    tock = dog.send(None)
+    assert tock == 0.0
+    tock = dog.send("Hello")
+    assert tock == 0.0
+    tock = dog.send("Hi")
+    assert tock == 0.0
+    tock = dog.close()
+    assert tock == None
     with pytest.raises(StopIteration):
-        result = do.send("what?")
+        tock = dog.send("what?")
+    assert exDo.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
+                                   State(tyme=0.0, context='recur', feed='Hello', count=1),
+                                   State(tyme=0.0, context='recur', feed='Hi', count=2),
+                                   State(tyme=0.0, context='close', feed=None, count=3),
+                                   State(tyme=0.0, context='exit', feed=None, count=4)]
 
-    do = doing.Do(tymist=tymist, tock=tock)
-    assert inspect.isgenerator(do)
-    result = next(do)
-    assert result == tock == 1.0
-    result = next(do)
-    assert result == tock == 1.0
-    result = next(do)
-    assert result == tock == 1.0
-    result = do.close()
-    assert result == None
+    exDo.opts["states"] = []
+    dog = exDo(tymist=tymist, tock=1.0, **exDo.opts)
+    assert inspect.isgenerator(dog)
+    tock = dog.send(None)
+    assert tock == 1.0
+    tock = dog.send("Hello")
+    assert tock == 1.0
+    tock = dog.send("Hi")
+    assert tock == 1.0
+    tock = dog.close()
+    assert tock == None
     with pytest.raises(StopIteration):
-        result = do.send("what?")
+        tock = dog.send("what?")
+    assert exDo.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
+                                   State(tyme=0.0, context='recur', feed='Hello', count=1),
+                                   State(tyme=0.0, context='recur', feed='Hi', count=2),
+                                   State(tyme=0.0, context='close', feed=None, count=3),
+                                   State(tyme=0.0, context='exit', feed=None, count=4)]
 
-    do = doing.Do(tymist=tymist, tock=tock)
-    assert inspect.isgenerator(do)
-    result = next(do)
-    assert result == tock == 1.0
-    result = next(do)
-    assert result == tock == 1.0
-    result = next(do)
-    assert result == tock == 1.0
-    result = do.close()
-    assert result == None
-    with pytest.raises(StopIteration):
-        result = do.send("what?")
 
-    do = doing.Do(tymist=tymist, tock=tock)
-    assert inspect.isgenerator(do)
-    result = next(do)
-    assert result == tock == 1.0
-    result = next(do)
-    assert result == tock == 1.0
-    result = next(do)
-    assert result == tock == 1.0
-    result = do.close()
-    assert result == None
+    exDo.opts["states"] = []
+    dog = exDo(tymist=tymist, tock=1.0, **exDo.opts)
+    assert inspect.isgenerator(dog)
+    tock = next(dog)
+    assert tock == 1.0
+    tock = next(dog)
+    assert tock == 1.0
+    tock = next(dog)
+    assert tock == 1.0
+    tock = dog.close()
+    assert tock == None
     with pytest.raises(StopIteration):
-        result = do.send("what?")
+        tock = dog.send("what?")
+    assert exDo.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
+                                   State(tyme=0.0, context='recur', feed=None, count=1),
+                                   State(tyme=0.0, context='recur', feed=None, count=2),
+                                   State(tyme=0.0, context='close', feed=None, count=3),
+                                   State(tyme=0.0, context='exit', feed=None, count=4)]
+
     """End Test """
 
 
@@ -646,11 +700,15 @@ def test_trydo_break():
     """
     Test trialdog testing function example with break to normal exit
     """
+    assert inspect.isgeneratorfunction(tryDo)
+    assert hasattr(tryDo, "tock")
+    assert hasattr(tryDo, "opts")
+
     tymist = tyming.Tymist(tock=0.125)
     assert tymist.tyme == 0.0
     states = []
 
-    do = TryDo(states=states, tymist=tymist, tock=0.25)
+    do = tryDo(states=states, tymist=tymist, tock=0.25)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == 0
@@ -708,7 +766,7 @@ def test_trydo_close():
     assert tymist.tyme == 0.0
     states = []
 
-    do = TryDo(states=states, tymist=tymist, tock=0.25)
+    do = tryDo(states=states, tymist=tymist, tock=0.25)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == 0
@@ -756,7 +814,7 @@ def test_trydo_throw():
     assert tymist.tyme == 0.0
     states = []
 
-    do = TryDo(states=states, tymist=tymist, tock=0.25)
+    do = tryDo(states=states, tymist=tymist, tock=0.25)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == 0
@@ -896,4 +954,4 @@ def test_echo_server_client():
 
 
 if __name__ == "__main__":
-    test_dodoer()
+    test_exampleDo()
