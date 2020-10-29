@@ -87,6 +87,7 @@ class Doist(tyming.Tymist):
 
         dogs = deque()
         for index, doer in enumerate(self.doers):
+            doer.done = None  #  None before enter. enter may set to False
             opts = doer.opts if hasattr(doer, "opts") else {}
             dog = doer(tymist=self, tock=doer.tock, **opts)
             try:
@@ -114,9 +115,8 @@ class Doist(tyming.Tymist):
             if retyme <= self.tyme:  # run it now
                 try:
                     tock = dog.send(self.tyme)  #  nothing to send for now
-
-                except StopIteration:  # returned instead of yielded
-                    pass  # effectively do exited or aborted itself
+                except StopIteration as ex:  # returned instead of yielded
+                    self.doers[index].done = ex.value if ex.value else False  # assign done state
                 else:  # reappend for next pass
                     dogs.append((dog, retyme + tock, index))  # tock may change during run
             else:  # not retyme yet
@@ -191,6 +191,8 @@ class Doist(tyming.Tymist):
                     tock = dog.close()  # force GeneratorExit
                 except StopIteration:
                     pass  # Hmm? Not supposed to happen!
+                else:  # set done state
+                    self.doers[index].done = False  # forced close
 
 
 def doify(f, name=None, tock=0.0, **opts):
@@ -296,7 +298,7 @@ class Doer(tyming.Tymee):
         """
         super(Doer, self).__init__(**kwa)
         self.tock = tock  # desired tyme interval between runs, 0.0 means asap
-        self.done = False
+        self.done = None  #  default completion state
         self.opts = {}  # used for injection
 
 
@@ -600,8 +602,9 @@ class DoDoer(Doer):
 
         dogs = deque()
         for index, doer in enumerate(self.doers):
-            args = doer.opts if hasattr(doer, "args") else {}
-            dog = doer(tymist=self._tymist, tock=doer.tock, **args)
+            doer.done = None  #  None before enter. enter may set to False
+            opts = doer.opts if hasattr(doer, "opts") else {}
+            dog = doer(tymist=self._tymist, tock=doer.tock, **opts)
             try:
                 next(dog)  # run enter by advancing to first yield
             except StopIteration:
@@ -634,11 +637,10 @@ class DoDoer(Doer):
             if retyme <= self.tyme:  # run it now
                 try:
                     tock = dog.send(self.tyme)  #  nothing to send for now
-                except StopIteration:  # returned instead of yielded
-                    pass  # effectively do exited or aborted itself
+                except StopIteration as ex:  # returned instead of yielded
+                    self.doers[index].done = ex.value if ex.value else False  # assign done state
                 else:  # reappend for next pass
                     dogs.append((dog, retyme + tock, index))  # tock may change during run
-
             else:  # not retyme yet
                 dogs.append((dog, retyme, index))  # reappend for next pass
 
@@ -658,6 +660,8 @@ class DoDoer(Doer):
                 tock = dog.close()  # force GeneratorExit
             except StopIteration:
                 pass  # Hmm? Not supposed to happen!
+            else:  # set done state
+                self.doers[index].done = False  # forced close
 
 
 
