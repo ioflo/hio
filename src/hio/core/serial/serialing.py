@@ -85,12 +85,13 @@ class Console():
 
     def getLine(self, bs=80):
         """
-        Gets nonblocking line from console up to bs characters including newline.
+        Gets nonblocking line of bytes from console up to bs characters
+        including newline.
 
         Returns empty string if no characters available else returns line.
         In canonical mode no chars available until newline is entered.
         """
-        line = ''
+        line = b''
         try:
             line = os.read(self.fd, bs)
         except OSError as ex1:  #if no chars available generates exception
@@ -107,9 +108,9 @@ class Console():
         return line
 
 
-    def put(self, data = '\n'):
+    def put(self, data = b'\n'):
         """
-        Writes data string to console.
+        Writes data bytes to console.
         """
         return (os.write(self.fd, data))
 
