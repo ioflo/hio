@@ -112,7 +112,7 @@ class Console():
         """
         Writes data bytes to console.
         """
-        return (os.write(self.fd, data))
+        return (os.write(self.fd, data))  # returns number of bytes written
 
 
 

@@ -844,6 +844,93 @@ class ClientDoer(Doer):
         self.client.close()
 
 
+class EchoConsoleDoer(Doer):
+    """
+    Basic Terminal Console IO to buffers. Echos input back to output
+
+    To test in WingIde must configure Debug i/O to use external console
+
+        Inherited Attributes:
+        .tymist is Tymist instance that provides relative cycle time as .tymist.tyme
+
+    Inherited Properties:
+        .tock is desired time in seconds between runs or until next run,
+                 non negative, zero means run asap
+
+    Inherited Methods:
+        .__call__ makes instance callable return generator
+        .do is generator function returns generator
+
+    Hidden:
+       ._tock is hidden attribute for .tock property
+
+    Attributes:
+       .console is serial Console instance
+
+    """
+
+    def __init__(self, console, lines=None, txbs=None, **kwa):
+        """
+        Initialize instance.
+        Inherited Parameters:
+           tymist is Tymist instance
+           tock is float seconds initial value of .tock
+
+        Parameters:
+           console is serial Console instance
+           lines is deque of input bytes bytearrays of each line from console
+           txbs is ouput bytes bytearray to send to console
+
+        """
+        super(ConsoleDoer, self).__init__(**kwa)
+        self.console = console
+        self.lines = lines if lines is not None else deque()
+        self.txbs = txbs if txbs is not None else bytearray()
+
+
+    def enter(self):
+        """"""
+        self.console.reopen()
+        self.txbs.extend(b"Cmds: q=quit, h=help otherwise echoes.\n")
+        self.txbs.extend(b"Type cmd & \n: ")
+
+
+    def recur(self, tyme):
+        """"""
+        line = self.console.getLine()  #  read
+        if line:
+            self.lines.append(line)
+
+        if self.txbs:
+            count =  self.console.put(self.txbs)  #  write
+            del self.txbs[:count]
+
+        prompt = False
+        while self.lines:
+            line = self.lines.popLeft()
+            #process line here
+            if line == b'q':
+                self.txbs.append(b"Goodbye\n.")
+                return True  #  all done so indicate exit
+
+            elif line == b'h':
+                self.txbs.append(b"Type q to quit.\n")
+
+            else:
+                self.txbs.append(b"Echo: %s\n" % line )
+
+            prompt = True
+
+        if prompt:
+            self.txbs.extend(b"Type cmd & \n: ")
+
+        return False  # keep going
+
+    def exit(self):
+        """"""
+        self.console.close()
+
+
 class WhoDoer(Doer):
     """
     WhoDoer supports introspection with methods to record sends and yields
