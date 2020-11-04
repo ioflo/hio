@@ -5,12 +5,15 @@ tests.core.test_doing module
 """
 import pytest
 
+import os
 import inspect
 
 from hio.base import tyming
 from hio.base import doing
 from hio.base.doing import State
 from hio.core.tcp import serving, clienting
+from hio.core.serial import serialing
+
 
 #  for testing purposes
 class TryDoer(doing.Doer):
@@ -954,7 +957,47 @@ def test_echo_server_client():
     """End Test """
 
 
+def test_echo_console():
+    """
+    Test EchoConsoleDoer class
+
+    Must run in WindIDE with Debug I/O configured as external console
+    """
+    port = os.ctermid()  # default to console
+
+    try:  # check to see if running in external console
+        fd = os.open(port, os.O_NONBLOCK | os.O_RDWR | os.O_NOCTTY)
+    except OSError as ex:
+        # maybe complain here
+        return  # not in external console
+    else:
+        os.close(fd)  #  cleanup
+
+
+    tock = 0.03125
+    ticks = 16
+    # limit = 0.0
+    limit = ticks *  tock
+    doist = doing.Doist(tock=tock, real=True, limit=limit)
+    assert doist.tyme == 0.0  # on next cycle
+    assert doist.tock == tock == 0.03125
+    assert doist.real == True
+    # assert not doist.limit
+    assert doist.limit == limit == 0.5
+    assert doist.doers == []
+
+
+    console = serialing.Console()
+    echoer = doing.EchoConsoleDoer(console=console)
+
+    doers = [echoer]
+    doist.do(doers=doers)
+    assert doist.tyme == limit
+    assert console.opened == False
+
+
+    """End Test """
 
 
 if __name__ == "__main__":
-    test_exampleDo()
+    test_echo_console()

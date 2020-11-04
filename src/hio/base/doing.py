@@ -882,7 +882,7 @@ class EchoConsoleDoer(Doer):
            txbs is ouput bytes bytearray to send to console
 
         """
-        super(ConsoleDoer, self).__init__(**kwa)
+        super(EchoConsoleDoer, self).__init__(**kwa)
         self.console = console
         self.lines = lines if lines is not None else deque()
         self.txbs = txbs if txbs is not None else bytearray()
@@ -907,17 +907,17 @@ class EchoConsoleDoer(Doer):
 
         prompt = False
         while self.lines:
-            line = self.lines.popLeft()
+            line = self.lines.popleft()
             #process line here
-            if line == b'q':
-                self.txbs.append(b"Goodbye\n.")
+            if line == b'q\n':
+                self.txbs.extend(b"Goodbye\n.")
                 return True  #  all done so indicate exit
 
-            elif line == b'h':
-                self.txbs.append(b"Type q to quit.\n")
+            elif line == b'h\n':
+                self.txbs.extend(b"Help: type q to quit or h for help.\n")
 
             else:
-                self.txbs.append(b"Echo: %s\n" % line )
+                self.txbs.extend(b"Echo: %s\n" % line )
 
             prompt = True
 
