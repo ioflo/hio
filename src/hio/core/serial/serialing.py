@@ -83,7 +83,7 @@ class Console():
         self.opened = False
 
 
-    def getLine(self, bs=80):
+    def getLine(self, bs=256):
         """
         Gets nonblocking line of bytes from console
         of up to bs characters with ending newline if in bs characters
