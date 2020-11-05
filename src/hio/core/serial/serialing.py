@@ -9,35 +9,61 @@ import os
 import errno
 from collections import deque
 
+from ... hioing import HioError
+
+
+class LineError(HioError):
+    """
+    Serial line error. Too big for buffer.
+
+    Usage:
+        raise LineError("error message")
+    """
 
 class Console():
     """
-    Class to manage non blocking io on serial console.
+    Class to manage non blocking io on serial console in canonical mode.
 
     Opens non blocking read file descriptor on console
     Use instance method .close to close file descriptor
     Use instance methods .getline & .put to read & write to console
     Needs os module
+
+    Attributes:
+        .bs is max buffer size for each read
+        .fd  is file descriptor for console
+        .opened is Boolean that indicates open state of .fd
+
+    Methods:
+        .reopen  closes and reopens .fd, sets .opened
+        .close   closes .fd unsets .opened
+        .getLine  gets one newline terminated line or bs characters
+        .put  puts characters
+
+    Hidden:
+        ._line is bytearray of line buffer
+
     """
+    MaxBufSize = 256
 
-    def __init__(self):
-        """Initialization method for instance.
-
+    def __init__(self, bs=None):
         """
+        Initialization method for instance.
+        Creates attributes.
+        """
+        self.bs = bs if bs is not None else self.MaxBufSize
         self.fd = None  # console file descriptor needs to be opened
         self.opened =  False
+        self._line = bytearray()
 
 
-    def reopen(self, port='', canonical=True):
+    def reopen(self, port=''):
         """
         Opens fd on terminal console in non blocking mode.
 
         port is the serial port device path name
         or if '' then use os.ctermid() which
         returns path name of console usually '/dev/tty'
-
-        canonical sets the mode for the port. Canonical means no characters
-        available until a newline
 
         os.O_NONBLOCK makes non blocking io
         os.O_RDWR allows both read and write.
@@ -47,11 +73,9 @@ class Console():
 
         Don't use print at same time since it will mess up non blocking reads.
 
-        Default is canonical mode so no characters available until newline
-        need to add code to enable  non canonical mode
-
-        It appears that canonical mode only applies to the console. For other
-        serial ports the characters are available immediately
+        Input mode assumes Canonical means no characters available until a newline
+        It appears that canonical mode only applies to the console os.ctermid().
+        For other serial ports the characters are available immediately.
 
         os.isatty(fd)
         Return True if the file descriptor fd is open and connected to a
@@ -80,42 +104,113 @@ class Console():
         if self.fd:
             os.close(self.fd)
             self.fd = None
+        del self._line[:]
         self.opened = False
 
 
-    def getLine(self, bs=256):
+    def put(self, data = b'\n'):
+        """
+        Writes data bytes to console and return number of bytes from data written.
+        """
+        return (os.write(self.fd, data))  # returns number of bytes written
+
+
+    def getLine(self, bs=None):
         """
         Gets nonblocking line of bytes from console
-        of up to bs characters with ending newline if in bs characters
-
+        of up to bs characters with eol newline if in bs characters
 
         Returns empty string if no characters available else returns line.
-        In canonical mode no chars available until newline is entered and newline
-        is included in the available characters.
+        Assumes canonical mode where no chars available to read until eol newline
+        is entered and eol is included in the read characters.
+
+        Strips eol newline before returning line.
         """
-        line = b''
+        bs = bs if bs is not None else self.bs
+        line = bytearray()
         try:
-            line = os.read(self.fd, bs)
+            self._line.extend(os.read(self.fd, bs))
         except OSError as ex1:  #if no chars available generates exception
-            try: #need to catch correct exception
+            try:  # need to catch correct exception
                 errno = ex1.args[0]  # if args not sequence get TypeError
                 if errno == 35:
                     pass  # No characters available
                 else:
                     raise  # re raise exception ex1
 
-            except TypeError as ex2:  #catch args[0] mismatch above
+            except TypeError as ex2:  # catch args[0] mismatch above
                 raise ex1  # ignore TypeError, re-raise exception ex1
+        else:
+            if self._line[-1] == ord(b'\n'):  # got full line so return it
+                del self._line[-1]  # delete eol newline
+                line.extend(self._line)
+                del self._line[:]
 
         return line
 
 
-    def put(self, data = b'\n'):
-        """
-        Writes data bytes to console.
-        """
-        return (os.write(self.fd, data))  # returns number of bytes written
+class ConsoleServer(Console):
+    """
+    Class that extends Console with service interface.
 
+
+    Inherited Attributes:
+        .bs is max buffer size for each read
+        .fd  is file descriptor for console
+        .opened is Boolean that indicates open state of .fd
+
+    Attributes:
+        .puts is bytearray of bytes to put on serial port
+        .lines is deque of lines of bytes gotten from serial port
+                  each line has newline stripped.
+
+    Methods:
+        .reopen  closes and reopens .fd, sets .opened
+        .close   closes .fd unsets .opened
+        .getLine  gets one newline terminated line or bs characters
+        .put  puts characters
+
+        .servicePuts
+        .serviceLines
+        .serviceAll
+
+    Hidden:
+        Hidden:
+        ._line is bytearray of line buffer
+    """
+
+    def __init__(self, puts=None, lines=None, **kwa):
+        """
+        Initialization method for instance.
+        Creates attributes.
+        """
+        super(ConsoleServer, self).__init__(**kwa)
+        self.puts = puts if puts is not None else bytearray()
+        self.lines = lines if lines is not None else deque()
+
+
+    def servicePuts(self):
+        """
+        Service .puts by putting to serial port
+        """
+        count = self.put(data=self.puts)
+        del self.puts[:count]
+
+
+    def serviceLines(self):
+        """
+        Service .lines by getting line from serial port
+        """
+        if (line := self.getLine()):
+            self.lines.append(line)
+
+
+    def serviceAll(self):
+        """
+        Service puts and lines
+        """
+        self.servicePuts()
+        self.serviceLines()
 
 
 class Device():
@@ -159,19 +254,22 @@ class Device():
 
         Don't use print and console at same time since it will mess up non blocking reads.
 
+        The input mode, canonical or noncanonical, is controlled by the
+        ICANON flag see termios module.
+
         Raw mode
 
         def setraw(fd, when=TCSAFLUSH):
-        Put terminal into a raw mode.
-        mode = tcgetattr(fd)
-        mode[IFLAG] = mode[IFLAG] & ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON)
-        mode[OFLAG] = mode[OFLAG] & ~(OPOST)
-        mode[CFLAG] = mode[CFLAG] & ~(CSIZE | PARENB)
-        mode[CFLAG] = mode[CFLAG] | CS8
-        mode[LFLAG] = mode[LFLAG] & ~(ECHO | ICANON | IEXTEN | ISIG)
-        mode[CC][VMIN] = 1
-        mode[CC][VTIME] = 0
-        tcsetattr(fd, when, mode)
+            Put terminal into a raw mode.
+            mode = tcgetattr(fd)
+            mode[IFLAG] = mode[IFLAG] & ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON)
+            mode[OFLAG] = mode[OFLAG] & ~(OPOST)
+            mode[CFLAG] = mode[CFLAG] & ~(CSIZE | PARENB)
+            mode[CFLAG] = mode[CFLAG] | CS8
+            mode[LFLAG] = mode[LFLAG] & ~(ECHO | ICANON | IEXTEN | ISIG)
+            mode[CC][VMIN] = 1
+            mode[CC][VTIME] = 0
+            tcsetattr(fd, when, mode)
 
 
         # set up raw mode / no echo / binary
@@ -203,7 +301,7 @@ class Device():
 
         system = platform.system()
 
-        if (system == 'Darwin') or (system == 'Linux'): #use termios to set values
+        if (system == 'Darwin') or (system == 'Linux'):  # use termios to set values
             import termios
 
             iflag, oflag, cflag, lflag, ispeed, ospeed, cc = range(7)

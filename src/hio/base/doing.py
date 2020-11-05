@@ -897,23 +897,17 @@ class EchoConsoleDoer(Doer):
 
     def recur(self, tyme):
         """"""
-        line = self.console.getLine()  #  read
-        if line:
-            self.lines.append(line)
-
-        if self.txbs:
-            count =  self.console.put(self.txbs)  #  write
-            del self.txbs[:count]
-
+        done = False
         prompt = False
         while self.lines:
             line = self.lines.popleft()
             #process line here
-            if line == b'q\n':
+            if line == b'q':
                 self.txbs.extend(b"Goodbye\n.")
-                return True  #  all done so indicate exit
+                done = True  #  all done so indicate exit
+                break
 
-            elif line == b'h\n':
+            elif line == b'h':
                 self.txbs.extend(b"Help: type q to quit or h for help.\n")
 
             else:
@@ -924,7 +918,17 @@ class EchoConsoleDoer(Doer):
         if prompt:
             self.txbs.extend(b"Type cmd & \n: ")
 
-        return False  # keep going
+
+        if self.txbs:
+            count =  self.console.put(self.txbs)  #  write
+            del self.txbs[:count]
+
+        line = self.console.getLine()  #  read
+        if line:
+            self.lines.append(line)
+
+
+        return done  # keep going if done == False else ends
 
     def exit(self):
         """"""

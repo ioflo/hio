@@ -976,23 +976,22 @@ def test_echo_console():
 
     tock = 0.03125
     ticks = 16
-    # limit = 0.0
-    limit = ticks *  tock
+    limit = 0.0
+    # limit = ticks *  tock
     doist = doing.Doist(tock=tock, real=True, limit=limit)
     assert doist.tyme == 0.0  # on next cycle
     assert doist.tock == tock == 0.03125
     assert doist.real == True
-    # assert not doist.limit
-    assert doist.limit == limit == 0.5
+    assert doist.limit == 0.0
+    # assert doist.limit == limit == 0.5
     assert doist.doers == []
-
 
     console = serialing.Console()
     echoer = doing.EchoConsoleDoer(console=console)
 
     doers = [echoer]
     doist.do(doers=doers)
-    assert doist.tyme == limit
+    # assert doist.tyme == limit
     assert console.opened == False
 
 
