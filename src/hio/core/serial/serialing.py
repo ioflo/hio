@@ -85,11 +85,13 @@ class Console():
 
     def getLine(self, bs=80):
         """
-        Gets nonblocking line of bytes from console up to bs characters
-        including newline.
+        Gets nonblocking line of bytes from console
+        of up to bs characters with ending newline if in bs characters
+
 
         Returns empty string if no characters available else returns line.
-        In canonical mode no chars available until newline is entered.
+        In canonical mode no chars available until newline is entered and newline
+        is included in the available characters.
         """
         line = b''
         try:
