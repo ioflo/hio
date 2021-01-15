@@ -39,7 +39,7 @@ setup(
                       " asynchrounous IO modules."),
     author='Samuel M. Smith',
     author_email='smith.samuel.m@gmail.com',
-    url='https://github.com/ProSapien/hio',
+    url='https://github.com/ioflo/hio',
     packages=find_packages('src'),
     package_dir={'': 'src'},
     py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
