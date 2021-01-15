@@ -19,7 +19,7 @@ from ..help import timing, helping
 
 class Doist(tyming.Tymist):
     """
-    Doist is coroutine scheduler
+    Doist is the root coroutine scheduler
     Provides relative cycle time in seconds with .tyme property and advanced
     by .tick method of .tock sized increments.
     .tyme may be artificial time or real time in seconds.
