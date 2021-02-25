@@ -9,7 +9,7 @@ from ..hioing import ValidationError, VersionError
 from .. import hioing
 from ..help.timing import MonoTimer
 
-from .basing import Ctl, Stt
+# from .basing import Ctl, Stt
 
 
 

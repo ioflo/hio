@@ -8,6 +8,6 @@ from collections import  namedtuple
 
 State = namedtuple("State", "tyme context feed count")
 
-Ctl = enum.Enum('Control', 'enter recur exit abort')
-Stt = enum.Enum('State', 'entered recurring exited aborted')
+# Ctl = enum.Enum('Control', 'enter recur exit abort')
+# Stt = enum.Enum('State', 'entered recurring exited aborted')
 
