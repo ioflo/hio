@@ -81,13 +81,13 @@ class Doist(tyming.Tymist):
         self.timer = timing.MonoTimer(duration = self.tock)
 
 
-
     def ready(self, doers=None):
         """
         Returns dogs deque of triples (dog, retyme, index)  where:
             dog is generator
-            retyme is tyme in seconds when next should run may be real or simulated
-            index is position of associated doer in .doers list
+            retyme is tyme (real or simulated) in seconds when dog should run next
+            index is position of associated doer in .doers list used to assign
+                .done state to associated doer for dog
 
         Calls each generator callable (function or method) in .doers to create
         each generator dog.
@@ -96,7 +96,9 @@ class Doist(tyming.Tymist):
 
         Parameters:
             doers is list of generator method or function callables with attributes
-                tock, done, and opts dict()
+                .tock is tyme increment in seconds
+                .done is Boolean completion state
+                .opts is dict() of optional parameters
         """
         if doers is not None:
             self.doers = doers
@@ -119,8 +121,9 @@ class Doist(tyming.Tymist):
         Cycle once through dogs deque and update in place
         dogs is deque of triples of (dog, retyme, index) where:
             dog is generator
-            retyme is tyme in seconds when next should run may be real or simulated
-            index is position of associated doer in .doers list
+            retyme is tyme (real or simulated) in seconds when dog should run next
+            index is position of associated doer in .doers list used to assign
+                .done state to associated doer for dog
 
         Each cycle checks all generators in dogs deque and runs if retyme past.
         At end of cycle advances .tyme by one .tock by calling .tick()
@@ -130,7 +133,7 @@ class Doist(tyming.Tymist):
 
             if retyme <= self.tyme:  # run it now
                 try:
-                    tock = dog.send(self.tyme)  #  nothing to send for now
+                    tock = dog.send(self.tyme)  # send tyme
                 except StopIteration as ex:  # returned instead of yielded
                     self.doers[index].done = ex.value if ex.value else False  # assign done state
                 else:  # reappend for next pass
@@ -145,31 +148,32 @@ class Doist(tyming.Tymist):
         """
         Readies dogs deque from .doers or doers if any and then runs .once with
         dogs until completion
-        Each entry in dogs is duple of (dog, retyme) where retyme is tyme in
-            seconds when next should run may be real or simulated
-        Each cycle runs all generators in dogs deque by calling .send on each one.
+        Each entry in dogs is triples (dog, retyme, index)  where:
+            dog is generator
+            retyme is tyme (real or simulated) in seconds when dog should run next
+            index is position of associated doer in .doers list used to assign
+                .done state to associated doer for dog
 
         If interrupted by exception call .close on each dog to force  exit context.
 
         Keyboard interrupt (cntl-c) forces exit.
 
-        Since finally clause closes generators they must be reinited before then
-        can be run again
+        Once finally clause closes a generator it must be reinited
+        before it can be run again
         """
-        if limit is not None:
+        if limit is not None:  # time limt for running if any. useful in test
             self.limit = abs(float(limit))
 
-        if tyme is not None:
+        if tyme is not None:  # initialize starting tyme
             self.tyme = tyme
 
-        dogs = self.ready(doers=doers)  # runs enter context
+        dogs = self.ready(doers=doers)  # runs enter context on each doer
 
         tymer = tyming.Tymer(tymist=self, duration=self.limit)
         self.timer.start()
-        try: #so always clean up resources if exception
-            while True:  # until doers complete or exception
-                try:  #CNTL-C generates keyboardInterrupt to break out of while loop
-
+        try:  # always clean up resources upon exception
+            while True:  # until doers complete or exception or keyboardInterrupt
+                try:
                     self.once(dogs)  # increments .tyme runs recur context
 
                     if self.real:  # wait for real time to expire
@@ -178,12 +182,12 @@ class Doist(tyming.Tymist):
                         self.timer.restart()  #  no time lost
 
                     if self.limit and tymer.expired:
-                        break  # use for testing
+                        break  # break out of forever loop
 
                     if not dogs:  # no more remaining dogs so done
                         break  # break out of forever loop
 
-                except KeyboardInterrupt: # CNTL-C shutdown skedder
+                except KeyboardInterrupt:  # use CNTL-C to shutdown from shell
                     break
 
                 except SystemExit: # Forced shutdown of process
@@ -204,7 +208,7 @@ class Doist(tyming.Tymist):
             while(dogs):  # .close each remaining do in dogs in reverse order
                 dog, retime, index = dogs.pop() #pop it off
                 try:
-                    tock = dog.close()  # force GeneratorExit
+                    tock = dog.close()  # force GeneratorExit. Maybe log exit tock tyme
                 except StopIteration:
                     pass  # Hmm? Not supposed to happen!
                 else:  # set done state
@@ -215,6 +219,7 @@ def doify(f, name=None, tock=0.0, **opts):
     """
     Converts generator function f into Doist compatible copy, g, and returns g.
     Each invoction of doify(f) returns a unique copy of doified function f.
+    Allows multiple instances of generator function each with unique attributes.
     Imbues converted generator function with attributes used by Doist.ready().
 
     Usage:
@@ -241,6 +246,7 @@ def doize(tock=0.0, **opts):
     """
     Returns decorator that returns Doist compatible decorated generator function.
     Imbues decorated generator function with attributes used by Doist.ready().
+    Only allows one instance of decorated function with shared attributes.
 
     Usage:
     @doize
@@ -275,8 +281,7 @@ class Doer(tyming.Tymee):
         .done is Boolean completion state:
             True means completed
             Otherwise incomplete. Incompletion maybe due to close or abort.
-        .args is dict of optional parameters injected into .do
-        .opts is dict of injected options for generator
+        .opts is dict of injected options into its .do generator by scheduler
 
     Inherited Properties:
         .tyme is float ._tymist.tyme, relative cycle or artificial time
@@ -284,8 +289,6 @@ class Doer(tyming.Tymee):
     Properties:
         .tock is float, desired time in seconds between runs or until next run,
                  non negative, zero means run asap
-        .done is Boolean completion state
-
 
     Inherited Methods:
         .wind  injects ._tymist dependency
@@ -320,7 +323,7 @@ class Doer(tyming.Tymee):
         super(Doer, self).__init__(**kwa)
         self.tock = tock  # desired tyme interval between runs, 0.0 means asap
         self.done = None  #  default completion state
-        self.opts = {}  # used for injection
+        self.opts = {}  # used for injection of options into .do by scheduler
 
 
     def __call__(self, **kwa):
@@ -355,9 +358,11 @@ class Doer(tyming.Tymee):
 
     def do(self, tymist, tock=0.0, **opts):
         """
-        Generator method to run this doer
-        Calling this method returns generator
-        Interface matched generator function for compatibility
+        Generator method to run this doer.
+        Calling this method returns generator.
+        Interface matches generator function for compatibility.
+        To customize create subclasses and override the lifecycle methods:
+            .enter, .recur, .exit, .close, .abort
 
         Parameters:
             tymist is injected Tymist instance with tymist.tyme
@@ -397,20 +402,31 @@ class Doer(tyming.Tymee):
     def enter(self):
         """
         Do 'enter' context actions. Override in subclass. Not a generator method.
+        Set up resources. Comparable to context manager enter.
         """
 
 
     def recur(self, tyme):
         """
         Do 'recur' context actions. Override in subclass.
-        Parameters:
-            tyme is output of send fed to do yield, Doist feeds its .tyme
+        Regular method that perform repetitive actions once per invocation.
+        Assumes resource setup in .enter() and resource takedown in .exit()
+        (see ReDoer for example of .recur that is a generator method)
+
         Returns completion state of recurrence actions.
            True means done False means continue
-        Maybe a non-generator method or a generator method.
-        For base class do:
-            non-generator recur method runs until returns (True)
-            generator recur method runs until returns (yield from)
+
+        Parameters:
+            Doist feeds its .tyme through .send to .do yield which passes it here.
+
+
+        .recur maybe implemented by a subclass either as a non-generator method
+        or a generator method. This stub here is as a non-generator method.
+        The base class .do detects which type:
+            If non-generator .do method runs .recur method once per iteration
+                until .recur returns (True)
+            If generator .do method runs .recur with (yield from) until .recur
+                returns (see ReDoer for example of generator .recur)
 
         """
         return (False)
@@ -419,12 +435,17 @@ class Doer(tyming.Tymee):
     def exit(self):
         """
         Do 'exit' context actions. Override in subclass. Not a generator method.
+        Clean up resources. Comparable to context manager exit.
+        Called by finally after normal return, close, or abort.
+        After .exit() do returns resulting in StopIteration.
         """
 
 
     def close(self):
         """
         Do 'close' context actions. Override in subclass. Not a generator method.
+        Forced close by thrown generator .close() method causing GeneratorExit.
+        .exit() is finally called after .close().
         """
 
 
@@ -433,6 +454,8 @@ class Doer(tyming.Tymee):
         Do 'abort' context actions. Override in subclass. Not a generator method.
         Parameters:
             ex is Exception instance that caused abort.
+        Unexpected exception that results in generator exiting but not GeneratorExit.
+        .exit() is finally called after .abort().
         """
 
 
@@ -446,15 +469,12 @@ class ReDoer(Doer):
         .done is Boolean completion state:
             True means completed
             Otherwise incomplete. Incompletion maybe due to close or abort.
-        .args is dict of optional parameters injected into .do
-        .opts is dict of injected options for generator
+        .opts is dict of injected options into its .do generator by scheduler
 
     Inherited Properties:
         .tyme is float ._tymist.tyme, relative cycle or artificial time
         .tock is float, desired time in seconds between runs or until next run,
                  non negative, zero means run asap
-        .done is Boolean completion state
-
 
     Inherited Methods:
         .wind  injects ._tymist dependency
@@ -478,8 +498,10 @@ class ReDoer(Doer):
 
     def recur(self, tyme):
         """
-        Do 'recur' context actions. Override in subclass.
-        This is example of generator method.
+        Do 'recur' context actions as a generator method. Override in subclass.
+        Assumes resource setup in .enter() and resource takedown in .exit()
+        (see Doer for example of .recur that is a regular method)
+
         yield the current .tock
         accepts the current tyme
         returns the .done
@@ -512,14 +534,15 @@ class DoDoer(Doer):
     """
     DoDoer implements Doist like functionality to allow nested scheduling of Doers.
     Each DoDoer runs a list of doers like a Doist but using the tyme from its
-       injected tymist
+       injected tymist as injected by its parent DoDoer or Doist.
+
+    Scheduling hierarchy: Doist->DoDoer...->DoDoer->Doers
 
     Inherited Attributes:
         .done is Boolean completion state:
             True means completed
             Otherwise incomplete. Incompletion maybe due to close or abort.
-        .args is dict of optional parameters injected into .do
-        .opts is dict of injected options for generator
+        .opts is dict of injected options for its generator .do
 
     Attributes:
         .doers is list of Doers or Doer like generator functions
@@ -528,7 +551,6 @@ class DoDoer(Doer):
         .tyme is float ._tymist.tyme, relative cycle or artificial time
         .tock is float, desired time in seconds between runs or until next run,
                  non negative, zero means run asap
-        .done is Boolean completion state
 
     Inherited Methods:
         .wind  injects ._tymist dependency
@@ -577,7 +599,7 @@ class DoDoer(Doer):
         Parameters:
             tymist is injected Tymist instance with tymist.tyme
             tock is injected initial tock value
-            args is dict of injected optional additional parameters
+            opts is dict of injected optional additional parameters
         """
         try:
             # enter context
@@ -702,7 +724,7 @@ class ServerDoer(Doer):
         .done is Boolean completion state:
             True means completed
             Otherwise incomplete. Incompletion maybe due to close or abort.
-        .args is dict of optional parameters injected into .do
+        .opts is dict of injected options into its .do generator by scheduler
 
     Attributes:
        .server is TCP Server instance
@@ -972,7 +994,7 @@ class WhoDoer(Doer):
         .done is Boolean completion state:
             True means completed
             Otherwise incomplete. Incompletion maybe due to close or abort.
-        .args is dict of optional parameters injected into .do
+        .opts is dict of injected options into its .do generator by scheduler
 
     Attributes:
        .states is list of State namedtuples (tyme, context, feed, count)

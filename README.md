@@ -83,7 +83,7 @@ Methods:
     .ready prepare doer generators (dogs)
     .once  run through dogs one time
     .do repeadedly call .once until all dogs are complete or times out
-    
+
 ### Async Coroutines
 
 The async coroutines in hio are instances or subclasses of the Doer class in hio.base.doing.Doer
@@ -99,7 +99,7 @@ Attributes:
     .done is Boolean completion state:
         True means completed
         Otherwise incomplete. Incompletion maybe due to close or abort.
-    .args is dict of optional parameters injected into .do
+    .opts is dict of injected options into its .do generator by scheduler
 
 Inherited Properties:
     .tyme is float ._tymist.tyme, relative cycle or artificial time
@@ -107,8 +107,7 @@ Inherited Properties:
 Properties:
     .tock is float, desired time in seconds between runs or until next run,
              non negative, zero means run asap
-    .done is Boolean completion state
-     .opts is dict of injected options for generator
+
 
 Inherited Methods:
     .wind  injects ._tymist dependency
@@ -142,7 +141,6 @@ Inherited Attributes:
     .done is Boolean completion state:
         True means completed
         Otherwise incomplete. Incompletion maybe due to close or abort.
-    .args is dict of optional parameters injected into .do
     .opts is dict of injected options for generator
 
 Attributes:
@@ -152,7 +150,6 @@ Inherited Properties:
     .tyme is float ._tymist.tyme, relative cycle or artificial time
     .tock is float, desired time in seconds between runs or until next run,
              non negative, zero means run asap
-    .done is Boolean completion state
 
 Inherited Methods:
     .wind  injects ._tymist dependency
@@ -174,11 +171,11 @@ Overidden Methods:
 Hidden:
    ._tymist is Tymist instance reference
    ._tock is hidden attribute for .tock property
-   
+
 #### Example Subclasses
 
 The hio.base.doing module also includes example subclasses of Doer that show how to build different
-Doers.  
+Doers.
 
 The ReDoer is an example sub class whose .recur is a generator method not a plain method.
 Its .do method detects that its .recur is a generator method and executes it
@@ -188,15 +185,12 @@ Inherited Attributes:
     .done is Boolean completion state:
         True means completed
         Otherwise incomplete. Incompletion maybe due to close or abort.
-    .args is dict of optional parameters injected into .do
     .opts is dict of injected options for generator
 
 Inherited Properties:
     .tyme is float ._tymist.tyme, relative cycle or artificial time
     .tock is float, desired time in seconds between runs or until next run,
              non negative, zero means run asap
-    .done is Boolean completion state
-
 
 Inherited Methods:
     .wind  injects ._tymist dependency
