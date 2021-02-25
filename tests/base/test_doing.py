@@ -459,9 +459,10 @@ def test_dodoer():
             raise
     """End Test """
 
-def test_exampleDo():
+
+def test_exDo():
     """
-    Test exampleDo generator function non-class based
+    Test exDo generator function non-class based
     """
     exDo = doing.exDo
     assert inspect.isgeneratorfunction(exDo)
@@ -535,7 +536,7 @@ def test_exampleDo():
 
 def test_trydoer_break():
     """
-    Test WhoDoer testing class with break to normal exit
+    Test TryDoer testing class with break to normal exit
     """
     tymist = tyming.Tymist(tock=0.125)
     doer = TryDoer(tymist=tymist, tock=0.25)
@@ -599,7 +600,7 @@ def test_trydoer_break():
 
 def test_trydoer_close():
     """
-    Test WhoDoer testing class with close to force exit
+    Test TryDoer testing class with close to force exit
     """
     tymist = tyming.Tymist(tock=0.125)
     doer = TryDoer(tymist=tymist, tock=0.25)
@@ -652,7 +653,7 @@ def test_trydoer_close():
 
 def test_trydoer_throw():
     """
-    Test WhoDoer testing class with throw to force exit
+    Test TryDoer testing class with throw to force exit
     """
     tymist = tyming.Tymist(tock=0.125)
     doer = TryDoer(tymist=tymist, tock=0.25)
@@ -705,7 +706,7 @@ def test_trydoer_throw():
 
 def test_trydo_break():
     """
-    Test trialdog testing function example with break to normal exit
+    Test trydo testing function example with break to normal exit
     """
     assert inspect.isgeneratorfunction(tryDo)
     assert hasattr(tryDo, "tock")
@@ -767,7 +768,7 @@ def test_trydo_break():
 
 def test_trydo_close():
     """
-    Test traildog testing function example with close to force exit
+    Test trydo testing function example with close to force exit
     """
     tymist = tyming.Tymist(tock=0.125)
     assert tymist.tyme == 0.0
@@ -815,7 +816,7 @@ def test_trydo_close():
 
 def test_trydo_throw():
     """
-    Test trialdog testing function example with throw to force exit
+    Test trydo testing function example with throw to force exit
     """
     tymist = tyming.Tymist(tock=0.125)
     assert tymist.tyme == 0.0

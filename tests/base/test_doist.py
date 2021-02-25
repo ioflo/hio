@@ -10,6 +10,7 @@ from hio.base import doing
 from hio.base import doing
 from hio.base.basing import State
 
+
 def test_doist_once():
     """
     Test doist.once with dogs
@@ -125,6 +126,7 @@ def test_doist_once():
     assert doer1.done == True
 
     """End Test """
+
 
 def test_doist_doers():
     """
@@ -427,6 +429,7 @@ def test_nested_doers():
                             State(tyme=0.25, context='exit', feed=None, count=4)]
     assert doer3.done == False
     """End Test """
+
 
 def test_doist_dos():
     """

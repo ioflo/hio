@@ -220,7 +220,7 @@ def doify(f, name=None, tock=0.0, **opts):
     Returns Doist compatible copy, g, of converted generator function f.
     Each invoction of doify(f) returns a unique copy of doified function f.
     Imbues copy, g, of converted generator function, f, with attributes used by
-    Doist.ready() or DoDoer.ready().
+    Doist.ready() or DoDoer.enter().
     Allows multiple instances of copy, g, of generator function, f, each with
     unique attributes.
 
@@ -249,7 +249,7 @@ def doize(tock=0.0, **opts):
     """
     Returns decorator that makes decorated generator function Doist compatible.
     Imbues decorated generator function with attributes used by Doist.ready() or
-    DoDoer.ready().
+    DoDoer.enter().
     Only one instance of decorated function with shared attributes is allowed.
 
     Usage:
@@ -1075,7 +1075,8 @@ class WhoDoer(Doer):
 def whoDo(tymist, tock=0.0, states=None, **opts):
     """
     Generator function test example non-class based generator.
-    Calling this function returns generator
+    Calling this function returns generator.
+    Wrapping this function with doify returns copy with unique attributes
     """
     tyme = tymist.tyme
     count = 0
@@ -1110,7 +1111,7 @@ def whoDo(tymist, tock=0.0, states=None, **opts):
 @doize(tock=0, states=None)
 def exDo(tymist, tock=0.0, states=None, **opts):
     """
-    Generator function example non-class based generator
+    Decorated generator function example non-class based generator
     Calling this function returns generator
     """
     tyme = tymist.tyme

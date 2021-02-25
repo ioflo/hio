@@ -232,7 +232,7 @@ Parameters:
 
 
 Returns Doist compatible copy, g, of converted generator function f. Each invoction of doify(f) returns a unique copy of doified function f. Imbues copy, g, of converted generator function, f, with attributes used by
-Doist.ready() or DoDoer.ready(). Allows multiple instances of copy, g, of generator function, f, each with unique attributes.
+Doist.ready() or DoDoer.enter(). Allows multiple instances of copy, g, of generator function, f, each with unique attributes.
 
 
 Usage:
@@ -254,12 +254,12 @@ def doize(tock=0.0, **opts):
 
 Parameters:
 
-    tock is default tock attribute of doized f 
-    opts is dictionary of remaining parameters that becomes .opts attribute of doized f  
+    tock is default tock attribute of doized f
+    opts is dictionary of remaining parameters that becomes .opts attribute of doized f
 
 
 
-Returns decorator that makes decorated generator function Doist compatible. Imbues decorated generator function with attributes used by Doist.ready() or DoDoer.ready().
+Returns decorator that makes decorated generator function Doist compatible. Imbues decorated generator function with attributes used by Doist.ready() or DoDoer.enter().
 Only one instance of decorated function with shared attributes is allowed.
 
 Usage:
