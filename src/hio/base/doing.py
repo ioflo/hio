@@ -217,10 +217,12 @@ class Doist(tyming.Tymist):
 
 def doify(f, name=None, tock=0.0, **opts):
     """
-    Converts generator function f into Doist compatible copy, g, and returns g.
+    Returns Doist compatible copy, g, of converted generator function f.
     Each invoction of doify(f) returns a unique copy of doified function f.
-    Allows multiple instances of generator function each with unique attributes.
-    Imbues converted generator function with attributes used by Doist.ready().
+    Imbues copy, g, of converted generator function, f, with attributes used by
+    Doist.ready() or DoDoer.ready().
+    Allows multiple instances of copy, g, of generator function, f, each with
+    unique attributes.
 
     Usage:
     def f():
@@ -230,7 +232,8 @@ def doify(f, name=None, tock=0.0, **opts):
 
     Parameters:
         f is generator function
-        name is new name for returned doified copy g
+        name is new function name for returned doified copy g. Default is to copy
+            f.__name__
         tock is default tock attribute of doified copy g
         opts is dictionary of remaining parameters that becomes .opts attribute
             of doified copy g
@@ -244,9 +247,10 @@ def doify(f, name=None, tock=0.0, **opts):
 
 def doize(tock=0.0, **opts):
     """
-    Returns decorator that returns Doist compatible decorated generator function.
-    Imbues decorated generator function with attributes used by Doist.ready().
-    Only allows one instance of decorated function with shared attributes.
+    Returns decorator that makes decorated generator function Doist compatible.
+    Imbues decorated generator function with attributes used by Doist.ready() or
+    DoDoer.ready().
+    Only one instance of decorated function with shared attributes is allowed.
 
     Usage:
     @doize

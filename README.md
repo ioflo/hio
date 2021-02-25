@@ -210,9 +210,66 @@ Hidden:
    ._tymist is Tymist instance reference
    ._tock is hidden attribute for .tock property
 
+### Utility Functions
+
+Doist and DoDoer schedule coroutine generators as either object instances that provide generator methods via .__call__ or generator functions. In order that these may be scheduled in the rich context the generator method or function must support a given interface with a couple of attributes.
+
+Doer subclasses support the required interface. Generator methods can be wrapped or decorated to support the required interface. There are two utility functions that respectively wrap or decorate a generator function.
+
+#### doify wrapper
 
 
-#### Usage
+```python
+def doify(f, name=None, tock=0.0, **opts):
+```
+
+Parameters:
+
+    f is generator function
+    name is new function name for returned doified copy g. Default is to copy f.__name__
+    tock is default tock attribute of doified copy g
+    opts is dictionary of remaining parameters that becomes eventually inject .opts attribute of doified copy g
+
+
+Returns Doist compatible copy, g, of converted generator function f. Each invoction of doify(f) returns a unique copy of doified function f. Imbues copy, g, of converted generator function, f, with attributes used by
+Doist.ready() or DoDoer.ready(). Allows multiple instances of copy, g, of generator function, f, each with unique attributes.
+
+
+Usage:
+
+```python
+def f():
+   pass
+
+c = doify(f, name='c')
+```
+
+
+
+#### Doize Decorator
+
+```python
+def doize(tock=0.0, **opts):
+```
+
+Parameters:
+
+    tock is default tock attribute of doized f 
+    opts is dictionary of remaining parameters that becomes .opts attribute of doized f  
+
+
+
+Returns decorator that makes decorated generator function Doist compatible. Imbues decorated generator function with attributes used by Doist.ready() or DoDoer.ready().
+Only one instance of decorated function with shared attributes is allowed.
+
+Usage:
+```python
+@doize
+def f():
+    pass
+```
+
+## Scheduler Usage
 
 ```python
 
