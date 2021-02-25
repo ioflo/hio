@@ -21,6 +21,9 @@ class Tymist(hioing.Mixin):
     .tyme is advanced one .tock increment with .tick method.
     .tyme may be synchronized with real time by a .tyme manager
 
+    Class Attributes:
+        .Tock is default .tock
+
     Attributes:
 
     Properties:

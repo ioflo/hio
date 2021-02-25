@@ -12,7 +12,7 @@ as asynchronous and linked by asynchronous buffers. FPB naturally lends itself
 to a much lighter weight async structure based on a hierachical scheduling approach.
 
 This is even lighter weight and more performant than non-hierarchical structured
-concurrency approaches.
+concurrency approaches such as trio or curio.
 
 ## Structured Concurrency with Asynchronous IO
 
@@ -25,6 +25,208 @@ See here for why it matters ...
 and
 [here](https://vorpus.org/blog/companion-post-for-my-pycon-2018-talk-on-async-concurrency-using-trio/)
 
+The main difference between hio and curio or trio is that hio uses extremely
+lightweight asynchronous hierarchical co-routine scheduling. The scheduler only
+does one thing, that is, time slice sub coroutines or sub coroutine schedulers.
+
+The coroutines are responsible for managing the asynchrounous IO not the scheduler.
+This is compatible with a flow based programming (FBP) approach where Async IO only services
+buffers. All interaction with other system components happens through those buffers
+not some other mechanism. And certainly not a mechanism provided by the async
+scheduler.  This makes the architecture as flat as possible. All async IO is
+accessed via a buffer. Back pressure is naturally exhibited via the buffer state.
+This approach merges the best of FBP and a bare bones coroutine based async.
+
+
+## Components
+
+### Root Scheduler
+
+The root scheduler is an instance of the Doist class in hio.base.doing.Doist
+
+Doist is the root coroutine scheduler
+Provides relative cycle time in seconds with .tyme property to doers it runs
+The relative cycle time is advanced in .tock size increments by the  by  the
+.tick method.
+The doist may treat .tyme as artificial time or synchonize it to real time.
+
+.ready method prepares dogs (doer generators) by calling generator functions
+    or generator methods and assigning to dogs list of tuples.
+
+.once method runs its dogs (doer generators) once per invocation.
+    This synchronizes their cycle time .tyme to the Doist's tyme.
+
+
+.do method repeatedly runs .once until generators are complete
+   it may either repeat as fast as possbile or repeat at real time increments.
+
+Inherited Class Attributes:
+    .Tock is default .tock
+
+Attributes:
+    .real is boolean. True means run in real time, Otherwise as fast as possible.
+    .limit is float maximum run tyme limit then closes all doers
+    .timer is MonoTimer for real time intervals
+
+Inherited Properties:
+    .tyme is float relative cycle time, .tyme is artificial time
+    .tock is float tyme increment of .tick()
+
+Properties:
+    .tyme is float relative cycle time, .tyme is artificial time
+    .tock is float tyme increment of .tick()
+
+Inherited Methods:
+    .tick increments .tyme by one .tock or provided tock
+
+Methods:
+    .ready prepare doer generators (dogs)
+    .once  run through dogs one time
+    .do repeadedly call .once until all dogs are complete or times out
+    
+### Async Coroutines
+
+The async coroutines in hio are instances or subclasses of the Doer class in hio.base.doing.Doer
+
+Doer base class for hierarchical structured async coroutine like generators.
+
+Doer.__call__ on instance returns generator.
+Doers provide generator function like object that a Doist or DoDoer can schedule directly.
+Doer is generator creator and has extra methods and attributes that a plain
+generator function does not.
+
+Attributes:
+    .done is Boolean completion state:
+        True means completed
+        Otherwise incomplete. Incompletion maybe due to close or abort.
+    .args is dict of optional parameters injected into .do
+
+Inherited Properties:
+    .tyme is float ._tymist.tyme, relative cycle or artificial time
+
+Properties:
+    .tock is float, desired time in seconds between runs or until next run,
+             non negative, zero means run asap
+    .done is Boolean completion state
+     .opts is dict of injected options for generator
+
+Inherited Methods:
+    .wind  injects ._tymist dependency
+
+Methods:
+    .__call__ makes instance callable
+        Appears as generator function that returns generator
+    .do is generator method that returns generator
+    .enter is enter context action method
+    .recur is recur context action method or generator method
+    .exit is exit context method
+    .close is close context method
+    .abort is abort context method
+
+Hidden:
+   ._tymist is Tymist instance reference
+   ._tock is hidden attribute for .tock property
+
+A doer is executed in a life cycle that leverages the exiting python generator interface. The lifecycle methods are .enter, .recur, .exit, .close, and .abort. The lifecycle methods provides rich
+context management.
+
+#### DoDoer Subclass
+
+One subclass of Doer is DoDoer in hio.base.doing.DoDoer
+
+DoDoer implements Doist like functionality to allow nested scheduling of Doers.
+Each DoDoer runs a list of doers like a Doist but using the tyme from its
+   injected tymist
+
+Inherited Attributes:
+    .done is Boolean completion state:
+        True means completed
+        Otherwise incomplete. Incompletion maybe due to close or abort.
+    .args is dict of optional parameters injected into .do
+    .opts is dict of injected options for generator
+
+Attributes:
+    .doers is list of Doers or Doer like generator functions
+
+Inherited Properties:
+    .tyme is float ._tymist.tyme, relative cycle or artificial time
+    .tock is float, desired time in seconds between runs or until next run,
+             non negative, zero means run asap
+    .done is Boolean completion state
+
+Inherited Methods:
+    .wind  injects ._tymist dependency
+    .__call__ makes instance callable
+        Appears as generator function that returns generator
+    .do is generator method that returns generator
+    .enter is enter context action method
+    .recur is recur context action method or generator method
+    .exit is exit context method
+    .close is close context method
+    .abort is abort context method
+
+Overidden Methods:
+    .do
+    .enter
+    .recur
+    .exit
+
+Hidden:
+   ._tymist is Tymist instance reference
+   ._tock is hidden attribute for .tock property
+   
+#### Example Subclasses
+
+The hio.base.doing module also includes example subclasses of Doer that show how to build different
+Doers.  
+
+The ReDoer is an example sub class whose .recur is a generator method not a plain method.
+Its .do method detects that its .recur is a generator method and executes it
+   using yield from instead of just calling the method.
+
+Inherited Attributes:
+    .done is Boolean completion state:
+        True means completed
+        Otherwise incomplete. Incompletion maybe due to close or abort.
+    .args is dict of optional parameters injected into .do
+    .opts is dict of injected options for generator
+
+Inherited Properties:
+    .tyme is float ._tymist.tyme, relative cycle or artificial time
+    .tock is float, desired time in seconds between runs or until next run,
+             non negative, zero means run asap
+    .done is Boolean completion state
+
+
+Inherited Methods:
+    .wind  injects ._tymist dependency
+    .__call__ makes instance callable
+        Appears as generator function that returns generator
+    .do is generator method that returns generator
+    .enter is enter context action method
+    .recur is recur context action method or generator method
+    .exit is exit context method
+    .close is close context method
+    .abort is abort context method
+
+Overidden Methods:
+    .recur
+
+Hidden:
+   ._tymist is Tymist instance reference
+   ._tock is hidden attribute for .tock property
+
+
+
+#### Usage
+
+```python
+
+doers =[doing.Doer(), doing.Doer()]
+doist = doing.Doist(tock=tock, real=True, limit=limit)
+doist.do(doers=doers)
+
+```
 
 ## Current Status
 

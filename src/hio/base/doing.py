@@ -20,28 +20,44 @@ from ..help import timing, helping
 class Doist(tyming.Tymist):
     """
     Doist is the root coroutine scheduler
-    Provides relative cycle time in seconds with .tyme property and advanced
-    by .tick method of .tock sized increments.
-    .tyme may be artificial time or real time in seconds.
+    Provides relative cycle time in seconds with .tyme property to doers it runs
+    The relative cycle time is advanced in .tock size increments by the  by  the
+    .tick method.
+    The doist may treat .tyme as artificial time or synchonize it to real time.
 
-    .ply method runs generators once that are synchronized to cycle time .tyme
-           cycle may run as fast as possbile or run in real time.
+    .ready method prepares dogs (doer generators) by calling generator functions
+        or generator methods and assigning to dogs list of tuples.
 
-    .run method continually runs .ply until generators are complete
+    .once method runs its dogs (doer generators) once per invocation.
+        This synchronizes their cycle time .tyme to the Doist's tyme.
 
-    Inherited Attributes:
+
+    .do method repeatedly runs .once until generators are complete
+       it may either repeat as fast as possbile or repeat at real time increments.
+
+    Inherited Class Attributes:
+        .Tock is default .tock
+
+    Attributes:
+        .real is boolean. True means run in real time, Otherwise as fast as possible.
+        .limit is float maximum run tyme limit then closes all doers
+        .timer is MonoTimer for real time intervals
 
     Inherited Properties:
+        .tyme is float relative cycle time, .tyme is artificial time
+        .tock is float tyme increment of .tick()
+
+    Properties:
         .tyme is float relative cycle time, .tyme is artificial time
         .tock is float tyme increment of .tick()
 
     Inherited Methods:
         .tick increments .tyme by one .tock or provided tock
 
-    Attributes:
-        .real is boolean. True means run in real time, Otherwise as fast as possible.
-        .limit is float maximum run tyme limit then closes all doers
-        .timer is MonoTimer for real time intervals
+    Methods:
+        .ready prepare doer generators (dogs)
+        .once  run through dogs one time
+        .do repeadedly call .once until all dogs are complete or times out
 
     """
     def __init__(self, real=False, limit=None, doers=None, **kwa):
@@ -199,6 +215,7 @@ def doify(f, name=None, tock=0.0, **opts):
     """
     Converts generator function f into Doist compatible copy, g, and returns g.
     Each invoction of doify(f) returns a unique copy of doified function f.
+    Imbues converted generator function with attributes used by Doist.ready().
 
     Usage:
     def f():
@@ -222,7 +239,8 @@ def doify(f, name=None, tock=0.0, **opts):
 
 def doize(tock=0.0, **opts):
     """
-    Decorator that returns Doist compatible decorated generator function.
+    Returns decorator that returns Doist compatible decorated generator function.
+    Imbues decorated generator function with attributes used by Doist.ready().
 
     Usage:
     @doize
@@ -253,13 +271,12 @@ class Doer(tyming.Tymee):
     Doer is generator creator and has extra methods and attributes that plain
     generator function does not
 
-    Inherited Attributes:
-
     Attributes:
         .done is Boolean completion state:
             True means completed
             Otherwise incomplete. Incompletion maybe due to close or abort.
         .args is dict of optional parameters injected into .do
+        .opts is dict of injected options for generator
 
     Inherited Properties:
         .tyme is float ._tymist.tyme, relative cycle or artificial time
@@ -267,9 +284,13 @@ class Doer(tyming.Tymee):
     Properties:
         .tock is float, desired time in seconds between runs or until next run,
                  non negative, zero means run asap
+        .done is Boolean completion state
+
+
+    Inherited Methods:
+        .wind  injects ._tymist dependency
 
     Methods:
-        .wind  injects ._tymist dependency
         .__call__ makes instance callable
             Appears as generator function that returns generator
         .do is generator method that returns generator
@@ -417,26 +438,25 @@ class Doer(tyming.Tymee):
 
 class ReDoer(Doer):
     """
-    Example sub class where .recur is generator method not plain method.
-       Doer.do method detects and executes using yield from.
+    ReDoer is an example sub class whose .recur is a generator method not a
+    plain method. Its .do method detects that its .recur is a generator method
+    and executes it using yield from instead of just calling the method.
 
     Inherited Attributes:
         .done is Boolean completion state:
             True means completed
             Otherwise incomplete. Incompletion maybe due to close or abort.
         .args is dict of optional parameters injected into .do
-
-    Attributes:
-
+        .opts is dict of injected options for generator
 
     Inherited Properties:
         .tyme is float ._tymist.tyme, relative cycle or artificial time
         .tock is float, desired time in seconds between runs or until next run,
                  non negative, zero means run asap
+        .done is Boolean completion state
 
-    Properties:
 
-    Methods:
+    Inherited Methods:
         .wind  injects ._tymist dependency
         .__call__ makes instance callable
             Appears as generator function that returns generator
@@ -447,9 +467,13 @@ class ReDoer(Doer):
         .close is close context method
         .abort is abort context method
 
+    Overidden Methods:
+        .recur
+
     Hidden:
        ._tymist is Tymist instance reference
        ._tock is hidden attribute for .tock property
+
     """
 
     def recur(self, tyme):
@@ -486,29 +510,27 @@ class ReDoer(Doer):
 
 class DoDoer(Doer):
     """
-    DoDoer implements Doist like functionality to allow nesting of Doers.
+    DoDoer implements Doist like functionality to allow nested scheduling of Doers.
     Each DoDoer runs a list of doers like a Doist but using the tyme from its
        injected tymist
-
 
     Inherited Attributes:
         .done is Boolean completion state:
             True means completed
             Otherwise incomplete. Incompletion maybe due to close or abort.
         .args is dict of optional parameters injected into .do
+        .opts is dict of injected options for generator
 
     Attributes:
         .doers is list of Doers or Doer like generator functions
-
 
     Inherited Properties:
         .tyme is float ._tymist.tyme, relative cycle or artificial time
         .tock is float, desired time in seconds between runs or until next run,
                  non negative, zero means run asap
+        .done is Boolean completion state
 
-    Properties:
-
-    Methods:
+    Inherited Methods:
         .wind  injects ._tymist dependency
         .__call__ makes instance callable
             Appears as generator function that returns generator
@@ -519,9 +541,16 @@ class DoDoer(Doer):
         .close is close context method
         .abort is abort context method
 
+    Overidden Methods:
+        .do
+        .enter
+        .recur
+        .exit
+
     Hidden:
        ._tymist is Tymist instance reference
        ._tock is hidden attribute for .tock property
+
     """
 
     def __init__(self, doers=None, **kwa):
