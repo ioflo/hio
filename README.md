@@ -212,9 +212,14 @@ Hidden:
 
 ### Utility Functions
 
-Doist and DoDoer schedule coroutine generators as either object instances that provide generator methods via .__call__ or generator functions. In order that these may be scheduled in the rich context the generator method or function must support a given interface with a couple of attributes.
+Doist and DoDoer schedule coroutine generators as either object instances that
+provide generator methods via .__call__ or generator functions. In order that
+these may be scheduled in the rich context the generator method or function must
+support a given interface with a couple of attributes.
 
-Doer subclasses support the required interface. Generator methods can be wrapped or decorated to support the required interface. There are two utility functions that respectively wrap or decorate a generator function.
+Doer subclasses support the required interface. Generator methods can be wrapped
+or decorated to support the required interface. There are two utility functions
+that respectively wrap or decorate a generator function.
 
 #### doify wrapper
 
@@ -226,13 +231,18 @@ def doify(f, name=None, tock=0.0, **opts):
 Parameters:
 
     f is generator function
-    name is new function name for returned doified copy g. Default is to copy f.__name__
+    name is new function name for returned doified copy g. Default is to
+    copy f.__name__
     tock is default tock attribute of doified copy g
-    opts is dictionary of remaining parameters that becomes eventually inject .opts attribute of doified copy g
+    opts is dictionary of remaining parameters that becomes eventually inject
+    .opts attribute of doified copy g
 
 
-Returns Doist compatible copy, g, of converted generator function f. Each invoction of doify(f) returns a unique copy of doified function f. Imbues copy, g, of converted generator function, f, with attributes used by
-Doist.ready() or DoDoer.enter(). Allows multiple instances of copy, g, of generator function, f, each with unique attributes.
+Returns Doist compatible copy, g, of converted generator function f. Each
+invoction of doify(f) returns a unique copy of doified function f. Imbues
+copy, g, of converted generator function, f, with attributes used by
+Doist.ready() or DoDoer.enter(). Allows multiple instances of copy, g, of
+generator function, f, each with unique attributes.
 
 
 Usage:
@@ -259,7 +269,9 @@ Parameters:
 
 
 
-Returns decorator that makes decorated generator function Doist compatible. Imbues decorated generator function with attributes used by Doist.ready() or DoDoer.enter().
+Returns decorator that makes decorated generator function Doist compatible.
+Imbues decorated generator function with attributes used by Doist.ready() or
+DoDoer.enter().
 Only one instance of decorated function with shared attributes is allowed.
 
 Usage:

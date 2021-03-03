@@ -5,8 +5,10 @@ hio.help.ogling module
 Provides python stdlib logging module support
 
 """
+import sys
 import os
 import logging
+import logging.handlers
 import tempfile
 import shutil
 
@@ -88,19 +90,26 @@ class Ogler():
         self.headDirPath = headDirPath if headDirPath is not None else self.HeadDirPath
         self.tailDirPath = os.path.join(self.prefix, self.TailDirPath)
         self.altTailDirPath = os.path.join(".{}".format(self.prefix), self.TailDirPath)
+        self.dirPath = None
         self.path = None
         self.opened = False
 
         #create formatters
-        self.baseFormatter = logging.Formatter('%(message)s')  # basic format
-        self.failFormatter = logging.Formatter('***Fail: %(message)s')  # failure format
+        fmt = "{}: %(message)s".format(self.prefix)
+        self.baseFormatter = logging.Formatter(fmt)  # basic format
 
         #create console handlers and assign formatters
         self.baseConsoleHandler = logging.StreamHandler()  # sys.stderr
         self.baseConsoleHandler.setFormatter(self.baseFormatter)
-        self.failConsoleHandler = logging.StreamHandler()  # sys.stderr
-        self.failConsoleHandler.setFormatter(self.failFormatter)
-
+        if sys.platform == 'darwin':
+            address = '/var/run/syslog'
+        else:
+            address = '/dev/log'
+        self.baseSysLogHandler = logging.handlers.SysLogHandler(address=address)
+        self.baseSysLogHandler.setFormatter(self.baseFormatter)
+        # SysLogHandler only appears to log a ERROR level despite the set level
+        #self.baseSysLogHandler.encodePriority(self.baseSysLogHandler.LOG_USER,
+                                              #self.baseSysLogHandler.LOG_DEBUG)
         if reopen:
             self.reopen(headDirPath=self.headDirPath, clear=clear)
 
@@ -139,11 +148,10 @@ class Ogler():
             headDirPath = None  # don't need to recreate path because of headDirPath change
 
         # always recreates if path is empty or if path part has changed
-        if (not self.path or
+        if (not self.dirPath or
             temp is not None or
             headDirPath is not None or
-            name is not None):  # need to recreate self.path
-
+            name is not None):  # need to recreate self.dirPath, self.path, self.trPath
 
             if temp is not None:
                 self.temp = True if temp else False
@@ -157,45 +165,44 @@ class Ogler():
                 headDirPath = tempfile.mkdtemp(prefix=prefix,
                                                suffix=self.TempSuffix,
                                                dir="/tmp")
-                self.path = os.path.abspath(
+                self.dirPath = os.path.abspath(
                                     os.path.join(headDirPath,
                                                  self.tailDirPath))
-                os.makedirs(self.path)
+                os.makedirs(self.dirPath)
 
             else:
-                self.path = os.path.abspath(
+                self.dirPath = os.path.abspath(
                                     os.path.expanduser(
                                         os.path.join(self.headDirPath,
                                                      self.tailDirPath)))
 
-                if not os.path.exists(self.path):
+                if not os.path.exists(self.dirPath):
                     try:
-                        os.makedirs(self.path)
+                        os.makedirs(self.dirPath)
                     except OSError as ex:
                         headDirPath = self.AltHeadDirPath
-                        self.path = os.path.abspath(
+                        self.dirPath = os.path.abspath(
                                             os.path.expanduser(
                                                 os.path.join(self.AltHeadDirPath,
                                                              self.altTailDirPath)))
-                        if not os.path.exists(self.path):
-                            os.makedirs(self.path)
+                        if not os.path.exists(self.dirPath):
+                            os.makedirs(self.dirPath)
                 else:
-                    if not os.access(self.path, os.R_OK | os.W_OK):
-                        self.path = os.path.abspath(
+                    if not os.access(self.dirPath, os.R_OK | os.W_OK):
+                        self.dirPath = os.path.abspath(
                                             os.path.expanduser(
                                                 os.path.join(self.AltHeadDirPath,
                                                              self.altTailDirPath)))
-                        if not os.path.exists(self.path):
-                            os.makedirs(self.path)
+                        if not os.path.exists(self.dirPath):
+                            os.makedirs(self.dirPath)
 
             fileName = "{}.log".format(self.name)
-            self.path = os.path.join(self.path, fileName)
+            self.path = os.path.join(self.dirPath, fileName)
 
             #create file handlers and assign formatters
-            self.baseFileHandler = logging.FileHandler(self.path)
+            self.baseFileHandler = logging.handlers.TimedRotatingFileHandler(
+                self.path, when='H', interval=1, backupCount=48)
             self.baseFileHandler.setFormatter(self.baseFormatter)
-            self.failFileHandler = logging.FileHandler(self.path)
-            self.failFileHandler.setFormatter(self.failFormatter)
 
         self.opened = True
 
@@ -213,10 +220,10 @@ class Ogler():
 
     def clearDirPath(self):
         """
-        Remove logfile directory at .path
+        Remove logfile directory at .dirPath
         """
-        if os.path.exists(self.path):
-            shutil.rmtree(os.path.dirname(self.path))
+        if os.path.exists(self.dirPath):
+            shutil.rmtree(self.dirPath)
 
 
     def resetLevels(self, name=__name__, level=None):
@@ -225,52 +232,24 @@ class Ogler():
         use .level
         """
         level = level if level is not None else self.level
-        blogger = logging.getLogger(name)
-        blogger.setLevel(level)
-        flogger = logging.getLogger("%s.%s" % (name, 'fail'))
-        flogger.setLevel(max(level, logging.ERROR))
+        logger = logging.getLogger(name)
+        logger.setLevel(level)
 
-    def getBlogger(self, name=__name__, level=None):
+
+    def getLogger(self, name=__name__, level=None):
         """
         Returns Basic Logger
         default is to name logger after module
         """
-        blogger = logging.getLogger(name)
-        blogger.propagate = False  # disable propagation of events
+        logger = logging.getLogger(name)
+        logger.propagate = False  # disable propagation of events
         level = level if level is not None else self.level
-        blogger.setLevel(level)
-        for handler in list(blogger.handlers):  # remove so no duplicate handlers
-            blogger.removeHandler(handler)
-        blogger.addHandler(self.baseConsoleHandler)
+        logger.setLevel(level)
+        for handler in list(logger.handlers):  # remove so no duplicate handlers
+            logger.removeHandler(handler)
+        logger.addHandler(self.baseConsoleHandler)
+        logger.addHandler(self.baseSysLogHandler)
         if self.opened:
-            blogger.addHandler(self.baseFileHandler)
-        return blogger
-
-
-    def getFlogger(self, name=__name__, level=None):
-        """
-        Returns Failure Logger
-        Since loggers are singletons by name we have to use unique name if
-            we want to use different log format so we append .fail to base name
-        Only logs at level logging.Error or higher
-        """
-        # Since loggers are singletons by name we have to change name if we
-        # want to use different log format
-        flogger = logging.getLogger("%s.%s" % (name, 'fail'))
-        flogger.propagate = False  # disable propagation of events
-        level = level if level is not None else self.level
-        flogger.setLevel(max(level, logging.ERROR))
-        for handler in list(flogger.handlers):  # remove so no duplicate handlers
-            flogger.removeHandler(handler)
-        flogger.addHandler(self.failConsoleHandler)  # output to console
-        if self.opened:
-            flogger.addHandler(self.failFileHandler)  # output to file
-        return flogger
-
-
-    def getLoggers(self, name=__name__):
-        """
-        Returns duple (blogger, flogger) of basic and failure loggers
-        """
-        return (self.getBlogger(name), self.getFlogger(name))
+            logger.addHandler(self.baseFileHandler)
+        return logger
 
