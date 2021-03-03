@@ -10,23 +10,28 @@ import logging
 import tempfile
 import shutil
 
-ogler = None  # module global ogler instance used by all for keri console logging
-
 
 def initOgler(level=logging.CRITICAL, **kwa):
     """
     Initialize the ogler global instance once
+    Usage:
+       # At top level of module in project
+       # assign ogler as module global instance availabe at modulename.ogler
+       ogler = hio.help.ogling.initOgler()
+
+       # module is mypackage.help  then ogler at mypackage.help.ogler
+
     Critical is most severe to restrict logging by default
 
+    Parameters:
+        force is Boolean True is to force reinit even if global ogler is not None
+        level is default logging level
+
     This should be called in package .__init__ to insure that global ogler is
-    define by default. Users and then reset level and reopen log file if need be
+    defined by default. Users may then reset level and reopen log file if need be
     before calling ogler.getLoggers()
     """
-    global ogler
-    if ogler is None:
-        ogler = Ogler(level=level, **kwa)
-
-    return ogler
+    return Ogler(level=level, **kwa)
 
 
 class Ogler():
@@ -42,13 +47,16 @@ class Ogler():
         .level is logging severity level
         .logFilePath is path to log file
     """
+    Prefix = "hio"
     HeadDirPath = "/usr/local/var"  # default in /usr/local/var
-    TailDirPath = "hio/log"
+    TailDirPath = "log"
     AltHeadDirPath = "~"  #  put in ~ as fallback when desired dir not permitted
-    AltTailDirPath = ".hio/log"
+    TempHeadDir = "/tmp"
+    TempMidfix = "log_"
+    TempSuffix = "_test"
 
     def __init__(self, name='main', level=logging.ERROR, temp=False,
-                 headDirPath=None, reopen=False, clear=False):
+                 prefix=None, headDirPath=None, reopen=False, clear=False):
         """
         Init Loggery factory instance
 
@@ -73,10 +81,13 @@ class Ogler():
             headDirPath is str for custom headDirPath for log file
             clear is Boolean True means clear .path when closing in reopen
         """
-        self.name = name if name else 'main'
+        self.name = name if name else 'main'  # for file name
         self.level = level  # basic logger level
         self.temp = True if temp else False
-        self.headDirPath = headDirPath
+        self.prefix = prefix if prefix is not None else self.Prefix
+        self.headDirPath = headDirPath if headDirPath is not None else self.HeadDirPath
+        self.tailDirPath = os.path.join(self.prefix, self.TailDirPath)
+        self.altTailDirPath = os.path.join(".{}".format(self.prefix), self.TailDirPath)
         self.path = None
         self.opened = False
 
@@ -94,11 +105,11 @@ class Ogler():
             self.reopen(headDirPath=self.headDirPath, clear=clear)
 
 
-
     def reopen(self, name=None, temp=None, headDirPath=None, clear=False):
         """
-        Use or Create if not preexistent, directory path for lmdb at .path
-        Open lmdb and assign to .env
+        Use or Create if not preexistent, directory path for file .path
+        First closes .path if already opened. If clear is True then also clears
+        .path before reopening
 
         Parameters:
             name is optional name
@@ -107,8 +118,8 @@ class Ogler():
             temp is optional boolean:
                 If None ignore Otherwise
                     Assign to .temp
-                    If True then open temporary directory, clear on close
-                    If False then open persistent directory, do not clear on close
+                    If True then open temporary directory,
+                    If False then open persistent directory
             headDirPath is optional str head directory pathname of main database
                 if None or unchanged then ignore otherwise recreate path
                    When recreating path, If not provided use default .HeadDirpath
@@ -117,41 +128,45 @@ class Ogler():
         if self.opened:
             self.close(clear=clear)
 
-        if not name or name == self.name:
+        # check for changes in path parts if need to recreate
+        if name is not None and name == self.name:
             name = None  # don't need to recreate path because of name change
 
-        if temp is None or temp == self.temp:
-            temp = None
+        if temp is not None and temp == self.temp:
+            temp = None  # don't need to recreate path because of temp change
 
-        if not headDirPath or headDirPath == self.headDirPath:
-            headDirPath = None
+        if headDirPath is not None and headDirPath == self.headDirPath:
+            headDirPath = None  # don't need to recreate path because of headDirPath change
 
-        if not self.path or name is not None or temp is not None or headDirPath is not None:
-            # need to recreate self.path
-            if name is not None:
-                self.name = name
+        # always recreates if path is empty or if path part has changed
+        if (not self.path or
+            temp is not None or
+            headDirPath is not None or
+            name is not None):  # need to recreate self.path
+
 
             if temp is not None:
                 self.temp = True if temp else False
-
-            if headDirPath is None:
-                headDirPath = self.headDirPath
+            if headDirPath is not None:
+                self.headDirpath = headDirPath
+            if name is not None:  # used below for filename
+                self.name = name
 
             if self.temp:
-                headDirPath = tempfile.mkdtemp(prefix="keri_log_", suffix="_test", dir="/tmp")
+                prefix = "{}_{}".format(self.prefix, self.TempMidfix)
+                headDirPath = tempfile.mkdtemp(prefix=prefix,
+                                               suffix=self.TempSuffix,
+                                               dir="/tmp")
                 self.path = os.path.abspath(
                                     os.path.join(headDirPath,
-                                                 self.TailDirPath))
+                                                 self.tailDirPath))
                 os.makedirs(self.path)
 
             else:
-                if not headDirPath:
-                    headDirPath = self.HeadDirPath
-
                 self.path = os.path.abspath(
                                     os.path.expanduser(
-                                        os.path.join(headDirPath,
-                                                     self.TailDirPath)))
+                                        os.path.join(self.headDirPath,
+                                                     self.tailDirPath)))
 
                 if not os.path.exists(self.path):
                     try:
@@ -160,17 +175,16 @@ class Ogler():
                         headDirPath = self.AltHeadDirPath
                         self.path = os.path.abspath(
                                             os.path.expanduser(
-                                                os.path.join(headDirPath,
-                                                             self.AltTailDirPath)))
+                                                os.path.join(self.AltHeadDirPath,
+                                                             self.altTailDirPath)))
                         if not os.path.exists(self.path):
                             os.makedirs(self.path)
                 else:
                     if not os.access(self.path, os.R_OK | os.W_OK):
-                        headDirPath = self.AltHeadDirPath
                         self.path = os.path.abspath(
                                             os.path.expanduser(
-                                                os.path.join(headDirPath,
-                                                             self.AltTailDirPath)))
+                                                os.path.join(self.AltHeadDirPath,
+                                                             self.altTailDirPath)))
                         if not os.path.exists(self.path):
                             os.makedirs(self.path)
 
@@ -196,6 +210,7 @@ class Ogler():
         if clear:
             self.clearDirPath()
 
+
     def clearDirPath(self):
         """
         Remove logfile directory at .path
@@ -203,6 +218,17 @@ class Ogler():
         if os.path.exists(self.path):
             shutil.rmtree(os.path.dirname(self.path))
 
+
+    def resetLevels(self, name=__name__, level=None):
+        """
+        Resets the level of preexisting loggers to level. If level is None then
+        use .level
+        """
+        level = level if level is not None else self.level
+        blogger = logging.getLogger(name)
+        blogger.setLevel(level)
+        flogger = logging.getLogger("%s.%s" % (name, 'fail'))
+        flogger.setLevel(max(level, logging.ERROR))
 
     def getBlogger(self, name=__name__, level=None):
         """
@@ -213,18 +239,20 @@ class Ogler():
         blogger.propagate = False  # disable propagation of events
         level = level if level is not None else self.level
         blogger.setLevel(level)
-        for handler in blogger.handlers:  # remove so no duplicate handlers
+        for handler in list(blogger.handlers):  # remove so no duplicate handlers
             blogger.removeHandler(handler)
         blogger.addHandler(self.baseConsoleHandler)
         if self.opened:
             blogger.addHandler(self.baseFileHandler)
         return blogger
 
+
     def getFlogger(self, name=__name__, level=None):
         """
         Returns Failure Logger
         Since loggers are singletons by name we have to use unique name if
             we want to use different log format so we append .fail to base name
+        Only logs at level logging.Error or higher
         """
         # Since loggers are singletons by name we have to change name if we
         # want to use different log format
@@ -232,12 +260,13 @@ class Ogler():
         flogger.propagate = False  # disable propagation of events
         level = level if level is not None else self.level
         flogger.setLevel(max(level, logging.ERROR))
-        for handler in flogger.handlers:  # remove so no duplicate handlers
+        for handler in list(flogger.handlers):  # remove so no duplicate handlers
             flogger.removeHandler(handler)
         flogger.addHandler(self.failConsoleHandler)  # output to console
         if self.opened:
             flogger.addHandler(self.failFileHandler)  # output to file
         return flogger
+
 
     def getLoggers(self, name=__name__):
         """
