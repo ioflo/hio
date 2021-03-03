@@ -61,7 +61,8 @@ def test_tcp_basic():
     assert client.opened == False
 
     assert client.bs == 8096
-    assert isinstance(client.txes, deque)
+    # assert isinstance(client.txes, deque)
+    assert isinstance(client.txes, bytearray)
     assert isinstance(client.rxbs, bytearray)
     assert client.wlog == None
 
@@ -184,12 +185,16 @@ def test_tcp_basic():
         assert len(msgOut) >= size * 4
 
         msgIn = bytearray()
+        txbs = bytearray(msgOut)  # make copy
         size = 0
         while len(msgIn) < len(msgOut):
-            if size < len(msgOut):
-                size += beta.send(msgOut[size:])
+            #if size < len(msgOut):
+                #size += beta.send(msgOut[size:])
+            count = beta.send(txbs)
+            del txbs[:count]
+            size += count
             time.sleep(0.05)
-            msgIn.extend( ixBeta.receive())
+            msgIn.extend(ixBeta.receive())
         assert size == len(msgOut)
         assert msgOut == msgIn
 
@@ -1253,4 +1258,4 @@ def test_tcp_tls_verify_both_tlsv12():
     """Done Test"""
 
 if __name__ == "__main__":
-    test_tcp_tls_verify_both_tlsv12()
+    test_client_auto_reconnect()

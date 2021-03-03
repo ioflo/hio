@@ -70,6 +70,7 @@ class Client():
                  reconnectable=None,
                  bs=8096,
                  txes=None,
+                 txbs=None,
                  rxbs=None,
                  wlog=None):
         """
@@ -107,7 +108,11 @@ class Client():
         self.opened = False
 
         self.bs = bs
-        self.txes = txes if txes is not None else deque()  # deque of data to send
+        # self.txes = txes if txes is not None else deque()  # deque of data to send
+        self.txes = txes if txes is not None else bytearray()  # byte array of data to send
+        if not isinstance(self.txes, bytearray):
+            raise TypeError("Wrong type for self.txes={}".format(self.txes))
+        self.txbs = txbs if txbs is not None else bytearray()  # byte array of data to send
         self.rxbs = rxbs if rxbs is not None else bytearray()  # byte array of data recieved
         self.wlog = wlog
 
@@ -460,7 +465,8 @@ class Client():
         '''
         Queue data onto .txes
         '''
-        self.txes.append(data)
+        self.txes.extend(data)
+        # self.txes.append(data)
 
 
     def serviceTxes(self):
@@ -471,11 +477,16 @@ class Client():
         If partial send reattach and return
         """
         while self.txes and self.connected and not self.cutoff:
-            data = self.txes.popleft()
-            count = self.send(data)
-            if count < len(data):  # put back unsent portion
-                self.txes.appendleft(data[count:])
-                break  # try again later
+            count = self.send(self.txes)
+            del self.txes[:count]
+            break  # try again later
+
+        #while self.txes and self.connected and not self.cutoff:
+            #data = self.txes.popleft()
+            #count = self.send(data)
+            #if count < len(data):  # put back unsent portion
+                #self.txes.appendleft(data[count:])
+                #break  # try again later
 
 
     def serviceAll(self):
