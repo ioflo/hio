@@ -69,7 +69,6 @@ class Client():
                  port=56000,
                  reconnectable=None,
                  bs=8096,
-                 txes=None,
                  txbs=None,
                  rxbs=None,
                  wlog=None):
@@ -109,9 +108,6 @@ class Client():
 
         self.bs = bs
         # self.txes = txes if txes is not None else deque()  # deque of data to send
-        self.txes = txes if txes is not None else bytearray()  # byte array of data to send
-        if not isinstance(self.txes, bytearray):
-            raise TypeError("Wrong type for self.txes={}".format(self.txes))
         self.txbs = txbs if txbs is not None else bytearray()  # byte array of data to send
         self.rxbs = rxbs if rxbs is not None else bytearray()  # byte array of data recieved
         self.wlog = wlog
@@ -463,30 +459,22 @@ class Client():
 
     def tx(self, data):
         '''
-        Queue data onto .txes
+        Queue data onto .txbs
         '''
-        self.txes.extend(data)
-        # self.txes.append(data)
+        self.txbs.extend(data)
 
 
-    def serviceTxes(self):
+    def serviceTxbs(self):
         """
         Service transmits
         For each tx if all bytes sent then keep sending until partial send
         or no more to send
         If partial send reattach and return
         """
-        while self.txes and self.connected and not self.cutoff:
-            count = self.send(self.txes)
-            del self.txes[:count]
+        while self.txbs and self.connected and not self.cutoff:
+            count = self.send(self.txbs)
+            del self.txbs[:count]
             break  # try again later
-
-        #while self.txes and self.connected and not self.cutoff:
-            #data = self.txes.popleft()
-            #count = self.send(data)
-            #if count < len(data):  # put back unsent portion
-                #self.txes.appendleft(data[count:])
-                #break  # try again later
 
 
     def serviceAll(self):
@@ -494,7 +482,7 @@ class Client():
         Service connect, txes, and receives.
         """
         self.serviceConnect()
-        self.serviceTxes()
+        self.serviceTxbs()
         self.serviceReceives()
 
 

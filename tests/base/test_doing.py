@@ -903,7 +903,7 @@ def test_server_client():
     assert server.opened == False
     assert client.opened == False
 
-    assert not client.txes
+    assert not client.txbs
     ca, ix = list(server.ixes.items())[0]
     msgRx = bytes(ix.rxbs)
     assert msgRx == msgTx
@@ -949,7 +949,7 @@ def test_echo_server_client():
     assert server.opened == False
     assert client.opened == False
 
-    assert not client.txes
+    assert not client.txbs
     msgEx = bytes(client.rxbs)  # echoed back message
     assert msgEx == msgTx
 

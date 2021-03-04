@@ -377,12 +377,12 @@ class Server(Acceptor):
         self.ixes[ca].tx(data)
 
 
-    def serviceTxesAllIx(self):
+    def serviceTxbsAllIx(self):
         """
         Service transmits for all incomers in .ixes
         """
         for ix in self.ixes.values():
-            ix.serviceTxes()
+            ix.serviceTxbs()
 
 
     def serviceAll(self):
@@ -391,7 +391,7 @@ class Server(Acceptor):
         """
         self.serviceConnects()
         self.serviceReceivesAllIx()
-        self.serviceTxesAllIx()
+        self.serviceTxbsAllIx()
 
 
 
@@ -619,7 +619,7 @@ class Incomer(object):
         self.cutoff = False # True when detect connection closed on far side
         self.refreshable = refreshable
         self.bs = bs
-        self.txes = deque()  # deque of data to send
+        self.txbs = bytearray()  # bytearray of data to send
         self.rxbs = bytearray()  # bytearray of data received
         self.wlog = wlog
 
@@ -784,22 +784,27 @@ class Incomer(object):
         '''
         Queue data onto .txes
         '''
-        self.txes.append(data)
+        self.txbs.extend(data)
 
 
-    def serviceTxes(self):
+    def serviceTxbs(self):
         """
         Service transmits
         For each tx if all bytes sent then keep sending until partial send
         or no more to send
         If partial send reattach and return
         """
-        while self.txes and not self.cutoff:
-            data = self.txes.popleft()
-            count = self.send(data)
-            if count < len(data):  # put back unsent portion
-                self.txes.appendleft(data[count:])
-                break  # try again later
+        while self.txbs and not self.cutoff:
+            count = self.send(self.txbs)
+            del self.txbs[:count]
+            break  # try again later
+
+        #while self.txbs and not self.cutoff:
+            #data = self.txbs.popleft()
+            #count = self.send(data)
+            #if count < len(data):  # put back unsent portion
+                #self.txbs.appendleft(data[count:])
+                #break  # try again later
 
 
 class IncomerTls(Incomer):
