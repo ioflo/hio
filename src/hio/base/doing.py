@@ -787,7 +787,7 @@ class ServerDoer(Doer):
 
     def recur(self, tyme):
         """"""
-        self.server.serviceAll()
+        self.server.service()
 
 
     def exit(self):
@@ -824,7 +824,7 @@ class EchoServerDoer(ServerDoer):
 
     def recur(self, tyme):
         """"""
-        self.server.serviceAll()
+        self.server.service()
         for ca, ix in self.server.ixes.items():  # echo back
             if ix.rxbs:
                 ix.tx(bytes(ix.rxbs))
@@ -891,7 +891,7 @@ class ClientDoer(Doer):
 
     def recur(self, tyme):
         """"""
-        self.client.serviceAll()
+        self.client.service()
 
 
     def exit(self):

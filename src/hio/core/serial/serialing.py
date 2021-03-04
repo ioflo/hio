@@ -172,7 +172,7 @@ class ConsoleServer(Console):
 
         .servicePuts
         .serviceLines
-        .serviceAll
+        .service
 
     Hidden:
         Hidden:
@@ -205,7 +205,7 @@ class ConsoleServer(Console):
             self.lines.append(line)
 
 
-    def serviceAll(self):
+    def service(self):
         """
         Service puts and lines
         """
@@ -595,7 +595,7 @@ class Driver():
             break  # try again later
 
 
-    def serviceAll(self):
+    def service(self):
         """
         Sevice receives and sends
         """

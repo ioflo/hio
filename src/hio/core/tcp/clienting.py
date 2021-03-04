@@ -476,7 +476,7 @@ class Client():
             break  # try again later
 
 
-    def serviceAll(self):
+    def service(self):
         """
         Service connect, txbs, and receives.
         """

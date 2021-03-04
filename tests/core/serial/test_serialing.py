@@ -89,7 +89,7 @@ def test_consoleserver():
     server.puts.extend(b"Enter 'hello' and hit return: ")
 
     while not server.lines:
-        server.serviceAll()
+        server.service()
 
     line = server.lines.popleft()
     assert  line ==  b'hello'
@@ -97,7 +97,7 @@ def test_consoleserver():
 
     server.puts.extend(b"Enter 'the lazy fox' and hit return: ")
     while not server.lines:
-        server.serviceAll()
+        server.service()
 
     line = server.lines.popleft()
     assert line ==  b'the lazy fox'

@@ -385,7 +385,7 @@ class Server(Acceptor):
             ix.serviceSends()
 
 
-    def serviceAll(self):
+    def service(self):
         """
         Service connects and service receives and sends for all ix.
         """
