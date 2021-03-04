@@ -4,11 +4,11 @@ hio.core.tcp.serving Module
 
 Accepter listens and accepts incoming TCP socket connections
 Server is subclass of Acceptor
-Server creates Incomers
-Incomer is accepted incoming socket connection
+Server creates Remoters
+Remoter is accepted incoming socket connection
 
 ServerTls is subclass of Server
-IncomerTls is subclass of Incomer
+RemoterTls is subclass of Remoter
 
 """
 
@@ -199,7 +199,7 @@ class Acceptor(object):
 class Server(Acceptor):
     """
     Nonblocking TCP Socket Server Class.
-    Listen socket for incoming TCP connections that generates Incomer sockets
+    Listen socket for incoming TCP connections that generates Remoter sockets
     for accepted connections
 
     Inherited Attributes:
@@ -236,8 +236,8 @@ class Server(Acceptor):
             host is default TCP/IP host address for listen socket
                 "" or "0.0.0.0" is listen on all interfaces
             port is default TCP/IP port
-            tymist is Tymist instance if any to pass to incomers for incoming connections
-            timeout is default timeout for to pass to incomers for  incoming connections
+            tymist is Tymist instance if any to pass to remoters for incoming connections
+            timeout is default timeout for to pass to remoters for  incoming connections
             wlog is WireLog object if any
         """
         ha = ha or (host, port)
@@ -245,14 +245,14 @@ class Server(Acceptor):
         self.tymist = tymist or tyming.Tymist()
         self.timeout = timeout if timeout is not None else self.Timeout
         self.wlog = wlog
-        self.ixes = dict()  # ready to rx tx incoming connections, Incomer instances
+        self.ixes = dict()  # ready to rx tx incoming connections, Remoter instances
 
 
     def serviceAxes(self):
         """
         Service axes
 
-        For each newly accepted connection in .axes create Incomer
+        For each newly accepted connection in .axes create Remoter
         and add to .ixes keyed by ca
         """
         self.serviceAccepts()  # populate .axes
@@ -262,16 +262,16 @@ class Server(Acceptor):
                 raise ValueError("Accepted socket host addresses malformed for "
                                  "peer. eha {0} != {1}, ca {2} != {3}\n".format(
                                      self.eha, cs.getsockname(), ca, cs.getpeername()))
-            incomer = Incomer(ha=cs.getsockname(),
+            remoter = Remoter(ha=cs.getsockname(),
                               ca=ca,
                               cs=cs,
                               bs=self.bs,
                               wlog=self.wlog,
                               tymist=self.tymist,
                               timeout=self.timeout)
-            if ca in self.ixes and self.ixes[ca] is not incomer:
+            if ca in self.ixes and self.ixes[ca] is not remoter:
                 self.shutdownIx[ca]
-            self.ixes[ca] = incomer
+            self.ixes[ca] = remoter
 
 
     def serviceConnects(self):
@@ -283,7 +283,7 @@ class Server(Acceptor):
 
     def shutdownIx(self, ca, how=socket.SHUT_RDWR):
         """
-        Shutdown incomer given by connection address ca
+        Shutdown remoter given by connection address ca
         """
         if ca not in self.ixes:
             emsg = "Invalid connection address '{0}'".format(ca)
@@ -293,7 +293,7 @@ class Server(Acceptor):
 
     def shutdownSendIx(self, ca):
         """
-        Shutdown send on incomer given by connection address ca
+        Shutdown send on remoter given by connection address ca
         """
         if ca not in self.ixes:
             emsg = "Invalid connection address '{0}'".format(ca)
@@ -303,7 +303,7 @@ class Server(Acceptor):
 
     def shutdownReceiveIx(self, ca):
         """
-        Shutdown send on incomer given by connection address ca
+        Shutdown send on remoter given by connection address ca
         """
         if ca not in self.ixes:
             emsg = "Invalid connection address '{0}'".format(ca)
@@ -313,7 +313,7 @@ class Server(Acceptor):
 
     def closeIx(self, ca):
         """
-        Shutdown and close incomer given by connection address ca
+        Shutdown and close remoter given by connection address ca
         """
         if ca not in self.ixes:
             emsg = "Invalid connection address '{0}'".format(ca)
@@ -323,7 +323,7 @@ class Server(Acceptor):
 
     def closeAllIx(self):
         """
-        Shutdown and close all incomer connections
+        Shutdown and close all remoter connections
         """
         for ix in self.ixes.values():
             ix.close()
@@ -339,7 +339,7 @@ class Server(Acceptor):
 
     def removeIx(self, ca, close=True):
         """
-        Remove incomer given by connection address ca
+        Remove remoter given by connection address ca
         """
         if ca not in self.ixes:
             emsg = "Invalid connection address '{0}'".format(ca)
@@ -351,7 +351,7 @@ class Server(Acceptor):
 
     def serviceReceivesIx(self, ca):
         """
-        Service receives for incomer by connection address ca
+        Service receives for remoter by connection address ca
         """
         if ca not in self.ixes:
             emsg = "Invalid connection address '{0}'".format(ca)
@@ -361,7 +361,7 @@ class Server(Acceptor):
 
     def serviceReceivesAllIx(self):
         """
-        Service receives for all incomers in .ixes
+        Service receives for all remoters in .ixes
         """
         for ix in self.ixes.values():
             ix.serviceReceives()
@@ -369,7 +369,7 @@ class Server(Acceptor):
 
     def transmitIx(self, data, ca):
         '''
-        Queue data onto .txes for incomer given by connection address ca
+        Queue data onto .txbs for remoter given by connection address ca
         '''
         if ca not in self.ixes:
             emsg = "Invalid connection address '{0}'".format(ca)
@@ -379,7 +379,7 @@ class Server(Acceptor):
 
     def serviceSendsAllIx(self):
         """
-        Service transmits for all incomers in .ixes
+        Service transmits for all remoters in .ixes
         """
         for ix in self.ixes.values():
             ix.serviceSends()
@@ -387,7 +387,7 @@ class Server(Acceptor):
 
     def serviceAll(self):
         """
-        Service connects and service receives and txes for all ix.
+        Service connects and service receives and sends for all ix.
         """
         self.serviceConnects()
         self.serviceReceivesAllIx()
@@ -464,7 +464,7 @@ class ServerTls(Server):
     Server with Nonblocking TLS/SSL support
     Nonblocking TCP Socket Server Class.
     Listen socket for incoming TCP connections
-    IncomerTLS sockets for accepted connections
+    RemoterTLS sockets for accepted connections
 
     Inherited Attributes:
         .ha is (host,port) duple (two tuple)
@@ -501,7 +501,7 @@ class ServerTls(Server):
         """
         super(ServerTls, self).__init__(**kwa)
 
-        self.cxes = dict()  # accepted incoming connections, IncomerTLS instances
+        self.cxes = dict()  # accepted incoming connections, RemoterTLS instances
 
         self.context = context
         self.version = version
@@ -523,7 +523,7 @@ class ServerTls(Server):
         """
         Service accepteds
 
-        For each new accepted connection create IncomerTLS and add to .cxes
+        For each new accepted connection create RemoterTLS and add to .cxes
         Not Handshaked
         """
         self.serviceAccepts()  # populate .axes
@@ -533,7 +533,7 @@ class ServerTls(Server):
                 raise ValueError("Accepted socket host addresses malformed for "
                                  "peer ha {0} != {1}, ca {2} != {3}\n".format(
                                      self.ha, cs.getsockname(), ca, cs.getpeername()))
-            incomer = IncomerTls(ha=cs.getsockname(),
+            remoter = RemoterTls(ha=cs.getsockname(),
                                  ca=ca,
                                  bs=self.bs,
                                  cs=cs,
@@ -548,12 +548,12 @@ class ServerTls(Server):
                                  cafilepath=self.cafilepath,
                                 )
 
-            self.cxes[ca] = incomer
+            self.cxes[ca] = remoter
 
 
     def serviceCxes(self):
         """
-        Service handshakes for every incomer in .cxes
+        Service handshakes for every remoter in .cxes
         If successful move to .ixes
         """
         for ca, cx in list(self.cxes.items()):
@@ -574,9 +574,9 @@ class ServerTls(Server):
         self.serviceCxes()
 
 
-class Incomer(object):
+class Remoter(object):
     """
-    Class to service incoming nonblocking TCP connections from remote client.
+    Class to service an incoming nonblocking TCP connection from a remote client.
     Should only be used from Acceptor subclass
     """
     Timeout = 0.0  # timeout in seconds
@@ -614,8 +614,6 @@ class Incomer(object):
         self.tymist = tymist or tyming.Tymist()
         self.timeout = timeout if timeout is not None else self.Timeout
         self.tymer = tyming.Tymer(tymist=self.tymist, duration=self.timeout)
-
-
         self.cutoff = False # True when detect connection closed on far side
         self.refreshable = refreshable
         self.bs = bs
@@ -782,7 +780,7 @@ class Incomer(object):
 
     def tx(self, data):
         '''
-        Queue data onto .txes
+        Queue data onto .txbs
         '''
         self.txbs.extend(data)
 
@@ -799,18 +797,12 @@ class Incomer(object):
             del self.txbs[:count]
             break  # try again later
 
-        #while self.txbs and not self.cutoff:
-            #data = self.txbs.popleft()
-            #count = self.send(data)
-            #if count < len(data):  # put back unsent portion
-                #self.txbs.appendleft(data[count:])
-                #break  # try again later
 
-
-class IncomerTls(Incomer):
+class RemoterTls(Remoter):
     """
-    Incomer with Nonblocking TLS/SSL support
-    Manager class for incoming nonblocking TCP connections.
+    Class to service an incoming nonblocking TCP/TLS connection from a remote client.
+    Should only be used from Acceptor subclass
+    Provides nonblocking TLS/SSL support
     """
     def __init__(self,
                  context=None,
@@ -836,7 +828,7 @@ class IncomerTls(Incomer):
         cafilepath = Cert Authority file path to use to verify client cert
                   If given apply to context
         """
-        super(IncomerTls, self).__init__(**kwa)
+        super(RemoterTls, self).__init__(**kwa)
 
         self.connected = False  # True once ssl handshake completed
 

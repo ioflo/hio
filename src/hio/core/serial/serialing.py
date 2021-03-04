@@ -587,7 +587,7 @@ class Driver():
 
     def serviceSends(self):
         """
-        Service txes data
+        Service .txbs
         """
         while self.txbs and self.server.opened:
             count = self.send(self.txbs)

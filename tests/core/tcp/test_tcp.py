@@ -14,7 +14,7 @@ import ssl
 
 from hio.base import tyming
 from hio.core.tcp.clienting import openClient, Client, ClientTls
-from hio.core.tcp.serving import openServer, Server, Incomer, ServerTls
+from hio.core.tcp.serving import openServer, Server, Remoter, ServerTls
 
 def test_tcp_basic():
     """
