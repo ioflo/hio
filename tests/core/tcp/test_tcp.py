@@ -61,7 +61,6 @@ def test_tcp_basic():
     assert client.opened == False
 
     assert client.bs == 8096
-    # assert isinstance(client.txes, deque)
     assert isinstance(client.txbs, bytearray)
     assert isinstance(client.rxbs, bytearray)
     assert client.wlog == None
@@ -514,7 +513,7 @@ def test_tcp_service():
         msgOut1 = b"Beta sends to Server first"
         beta.tx(msgOut1)
         while not ixBeta.rxbs and beta.txbs:
-            beta.serviceTxbs()
+            beta.serviceSends()
             time.sleep(0.05)
             server.serviceReceivesAllIx()
             time.sleep(0.05)
@@ -528,7 +527,7 @@ def test_tcp_service():
         msgOut3 = b"Beta sends to Server third"
         beta.tx(msgOut3)
         while len(ixBeta.rxbs) < len(msgOut1) + len(msgOut2) + len(msgOut3):
-            beta.serviceTxbs()
+            beta.serviceSends()
             server.serviceReceivesAllIx()
             time.sleep(0.05)
         msgIn = bytes(ixBeta.rxbs)
@@ -546,7 +545,7 @@ def test_tcp_service():
 
         beta.tx(msgOutBig)
         while len(ixBeta.rxbs) < len(msgOutBig):
-            beta.serviceTxbs()
+            beta.serviceSends()
             time.sleep(0.05)
             server.serviceReceivesAllIx()
             time.sleep(0.05)
@@ -558,7 +557,7 @@ def test_tcp_service():
         msgOut = b"Server sends to Beta"
         ixBeta.tx(msgOut)
         while len(beta.rxbs) < len(msgOut):
-            server.serviceTxbsAllIx()
+            server.serviceSendsAllIx()
             beta.serviceReceives()
             time.sleep(0.05)
         msgIn = bytes(beta.rxbs)
@@ -568,7 +567,7 @@ def test_tcp_service():
         # send big from server to beta
         ixBeta.tx(msgOutBig)
         while len(beta.rxbs) < len(msgOutBig):
-            server.serviceTxbsAllIx()
+            server.serviceSendsAllIx()
             time.sleep(0.05)
             beta.serviceReceives()
             time.sleep(0.05)
@@ -639,7 +638,7 @@ def test_client_auto_reconnect():
         msgOut = b"Beta sends to Server on reconnect"
         beta.tx(msgOut)
         while not ixBeta.rxbs and beta.txbs:
-            beta.serviceTxbs()
+            beta.serviceSends()
             time.sleep(0.05)
             server.serviceReceivesAllIx()
             time.sleep(0.05)
@@ -735,7 +734,7 @@ def  test_tcp_tls_default_context():
         msgOut = b"Beta sends to Server\n"
         beta.tx(msgOut)
         while not( not beta.txbs and ixBeta.rxbs):
-            beta.serviceTxbs()
+            beta.serviceSends()
             server.serviceReceivesAllIx()
             time.sleep(0.01)
 
@@ -749,7 +748,7 @@ def  test_tcp_tls_default_context():
         msgOut = b'Server sends to Beta\n'
         ixBeta.tx(msgOut)
         while not (not ixBeta.txbs and beta.rxbs):
-            server.serviceTxbsAllIx()
+            server.serviceSendsAllIx()
             beta.serviceReceives()
             time.sleep(0.01)
 
@@ -835,7 +834,7 @@ def test_tcp_tls_verify_both():
         msgOut = b"Beta sends to Server\n"
         beta.tx(msgOut)
         while not( not beta.txbs and ixBeta.rxbs):
-            beta.serviceTxbs()
+            beta.serviceSends()
             server.serviceReceivesAllIx()
             time.sleep(0.01)
 
@@ -849,7 +848,7 @@ def test_tcp_tls_verify_both():
         msgOut = b'Server sends to Beta\n'
         ixBeta.tx(msgOut)
         while not (not ixBeta.txbs and beta.rxbs):
-            server.serviceTxbsAllIx()
+            server.serviceSendsAllIx()
             beta.serviceReceives()
             time.sleep(0.01)
 
@@ -933,7 +932,7 @@ def test_tcp_tls_verify_client():
         msgOut = b"Beta sends to Server\n"
         beta.tx(msgOut)
         while not( not beta.txbs and ixBeta.rxbs):
-            beta.serviceTxbs()
+            beta.serviceSends()
             server.serviceReceivesAllIx()
             time.sleep(0.01)
 
@@ -947,7 +946,7 @@ def test_tcp_tls_verify_client():
         msgOut = b'Server sends to Beta\n'
         ixBeta.tx(msgOut)
         while not (not ixBeta.txbs and beta.rxbs):
-            server.serviceTxbsAllIx()
+            server.serviceSendsAllIx()
             beta.serviceReceives()
             time.sleep(0.01)
 
@@ -1032,7 +1031,7 @@ def test_tcp_tls_verify_server():
         msgOut = b"Beta sends to Server\n"
         beta.tx(msgOut)
         while not( not beta.txbs and ixBeta.rxbs):
-            beta.serviceTxbs()
+            beta.serviceSends()
             server.serviceReceivesAllIx()
             time.sleep(0.01)
 
@@ -1046,7 +1045,7 @@ def test_tcp_tls_verify_server():
         msgOut = b'Server sends to Beta\n'
         ixBeta.tx(msgOut)
         while not (not ixBeta.txbs and beta.rxbs):
-            server.serviceTxbsAllIx()
+            server.serviceSendsAllIx()
             beta.serviceReceives()
             time.sleep(0.01)
 
@@ -1130,7 +1129,7 @@ def test_tcp_tls_verify_neither():
         msgOut = b"Beta sends to Server\n"
         beta.tx(msgOut)
         while not( not beta.txbs and ixBeta.rxbs):
-            beta.serviceTxbs()
+            beta.serviceSends()
             server.serviceReceivesAllIx()
             time.sleep(0.01)
 
@@ -1144,7 +1143,7 @@ def test_tcp_tls_verify_neither():
         msgOut = b'Server sends to Beta\n'
         ixBeta.tx(msgOut)
         while not (not ixBeta.txbs and beta.rxbs):
-            server.serviceTxbsAllIx()
+            server.serviceSendsAllIx()
             beta.serviceReceives()
             time.sleep(0.01)
 
@@ -1231,7 +1230,7 @@ def test_tcp_tls_verify_both_tlsv12():
         msgOut = b"Beta sends to Server\n"
         beta.tx(msgOut)
         while not( not beta.txbs and ixBeta.rxbs):
-            beta.serviceTxbs()
+            beta.serviceSends()
             server.serviceReceivesAllIx()
             time.sleep(0.01)
 
@@ -1245,7 +1244,7 @@ def test_tcp_tls_verify_both_tlsv12():
         msgOut = b'Server sends to Beta\n'
         ixBeta.tx(msgOut)
         while not (not ixBeta.txbs and beta.rxbs):
-            server.serviceTxbsAllIx()
+            server.serviceSendsAllIx()
             beta.serviceReceives()
             time.sleep(0.01)
 

@@ -377,12 +377,12 @@ class Server(Acceptor):
         self.ixes[ca].tx(data)
 
 
-    def serviceTxbsAllIx(self):
+    def serviceSendsAllIx(self):
         """
         Service transmits for all incomers in .ixes
         """
         for ix in self.ixes.values():
-            ix.serviceTxbs()
+            ix.serviceSends()
 
 
     def serviceAll(self):
@@ -391,7 +391,7 @@ class Server(Acceptor):
         """
         self.serviceConnects()
         self.serviceReceivesAllIx()
-        self.serviceTxbsAllIx()
+        self.serviceSendsAllIx()
 
 
 
@@ -787,7 +787,7 @@ class Incomer(object):
         self.txbs.extend(data)
 
 
-    def serviceTxbs(self):
+    def serviceSends(self):
         """
         Service transmits
         For each tx if all bytes sent then keep sending until partial send

@@ -512,7 +512,7 @@ class Driver():
            name = user friendly name for driver
            uid = unique identifier for driver
            server = serial device server nonblocking
-           txes = deque of data bytes to send
+           txbs = bytearray of data bytes to send
            rxbs = bytearray of data bytes received
 
         """

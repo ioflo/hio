@@ -84,7 +84,7 @@ class Client():
             port = socket port
             reconnectable = Boolean retry auto reconnect if timed out
             bs = buffer size
-            txes = deque of data to send
+            txbs = bytearray of data to send
             rxbs = bytearray of data received
             wlog = WireLog object if any
         """
@@ -107,7 +107,6 @@ class Client():
         self.opened = False
 
         self.bs = bs
-        # self.txes = txes if txes is not None else deque()  # deque of data to send
         self.txbs = txbs if txbs is not None else bytearray()  # byte array of data to send
         self.rxbs = rxbs if rxbs is not None else bytearray()  # byte array of data recieved
         self.wlog = wlog
@@ -464,7 +463,7 @@ class Client():
         self.txbs.extend(data)
 
 
-    def serviceTxbs(self):
+    def serviceSends(self):
         """
         Service transmits
         For each tx if all bytes sent then keep sending until partial send
@@ -479,10 +478,10 @@ class Client():
 
     def serviceAll(self):
         """
-        Service connect, txes, and receives.
+        Service connect, txbs, and receives.
         """
         self.serviceConnect()
-        self.serviceTxbs()
+        self.serviceSends()
         self.serviceReceives()
 
 
