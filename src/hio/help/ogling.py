@@ -234,7 +234,7 @@ class Ogler():
         level = level if level is not None else self.level
         if globally:
             self.level = level
-        logger = logging.getLogger(name)
+        logger = logging.getLogger(name)  # singleton
         logger.setLevel(level)
 
 
