@@ -752,11 +752,11 @@ class Incomer(object):
         data is string in python2 and bytes in python3
         """
         try:
-            result = self.cs.send(data) #result is number of bytes sent
+            count = self.cs.send(data) #result is number of bytes sent
         except socket.error as ex:
             # ex.args[0] is always ex.errno for better compat
             if ex.args[0] in (errno.EAGAIN, errno.EWOULDBLOCK):
-                result = 0  # blocked try again
+                count = 0  # blocked try again
             elif ex.args[0] in (errno.ECONNRESET,
                                 errno.ENETRESET,
                                 errno.ENETUNREACH,
@@ -766,18 +766,18 @@ class Incomer(object):
                                 errno.ETIMEDOUT,
                                 errno.ECONNREFUSED):
                 self.cutoff = True  # this signals need to close/reopen connection
-                result = 0
+                count = 0
             else:
                 raise
 
-        if result:
+        if count:
             if self.wlog:
-                self.wlog.writeTx(self.ca, data[:result])
+                self.wlog.writeTx(self.ca, data[:count])
 
             if self.refreshable:
                 self.refresh()
 
-        return result
+        return count
 
 
     def tx(self, data):

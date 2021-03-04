@@ -237,6 +237,7 @@ class Device():
         self.bs = bs or 1024
         self.opened = False
 
+
     def reopen(self, port=None, speed=None, bs=None):
         """
         Idempotently open serial device port
@@ -411,6 +412,7 @@ class Serial():
         self.bs = bs or 1024
         self.opened = False
 
+
     def reopen(self, port=None, speed=None, bs=None):
         """
         Opens fd on serial port in non blocking mode.
@@ -522,20 +524,21 @@ class Driver():
         if not server:
             try:
                 import serial
-                self.server = SerialNb(port=port,
+                self.server = Serial(port=port,
                                        speed=speed,
                                        bs=bs)
 
             except ImportError as  ex:
                 console.terse("Error: importing pyserial\n{0}\n".format(ex))
-                self.server = DeviceNb(port=port,
+                self.server = Device(port=port,
                                        speed=speed,
                                        bs=bs)
         else:
             self.server = server
 
-        self.txes = deque()  # deque of data to send
-        self.rxbs = bytearray()  # byte array of data received
+        self.txbs = bytearray()  # bytearray of data to send
+        self.rxbs = bytearray()  # bytearray of data received
+
 
     def serviceReceives(self):
         """
@@ -547,20 +550,13 @@ class Driver():
                 break
             self.rxbs.extend(data)
 
-    def serviceReceiveOnce(self):
-        '''
-        Retrieve from server only one reception
-        '''
-        if self.server.opened:
-            data = self.server.receive()
-            if data:
-                self.rxbs.extend(data)
 
     def clearRxbs(self):
         """
         Clear .rxbs
         """
         del self.rxbs[:]
+
 
     def scan(self, start):
         """
@@ -573,40 +569,37 @@ class Driver():
             return None
         return offset
 
-    def tx(self, data):
-        '''
-        Queue data onto .txes
-        '''
-        self.txes.append(data)
 
-    def _serviceOneTx(self):
+    def send(self, data):
         """
         Handle one tx data
         """
-        data = self.txes.popleft()
         count = self.server.send(data)
-        if count < len(data):  # put back unsent portion
-            self.txes.appendleft(data[count:])
-            return False  # blocked
-        console.profuse("{0}: Sent: {1}\n".format(self.name, data))
-        return True  # send more
+        return count
 
 
-    def serviceTxes(self):
+    def tx(self, data):
+        """
+        Queue data onto .txbs
+        """
+        self.txbs.extend(data)
+
+
+    def serviceSends(self):
         """
         Service txes data
         """
-        while self.txes and self.server.opened:
-            again = self._serviceOneTx()
-            if not again:
-                break  # blocked try again later
+        while self.txbs and self.server.opened:
+            count = self.send(self.txbs)
+            del self.txbs[:count]
+            break  # try again later
 
 
-    def serviceTxOnce(self):
-        '''
-        Service one data on the .txes deque to send through device
-        '''
-        if self.txes and self.server.opened:
-            self._serviceOneTx()
+    def serviceAll(self):
+        """
+        Sevice receives and sends
+        """
+        self.serviceReceives()
+        self.serviceSends()
 
 
