@@ -200,8 +200,8 @@ def test_set_levels():
     logger.info("Test logger at info level")
     logger.error("Test logger at error level")
 
-    help.ogler.level = logging.DEBUG
-    help.ogler.resetLevels()  # test reset levels without recreating logger
+    # test reset levels without recreating logger
+    help.ogler.resetLevel(level=logging.DEBUG, globally=True)
 
     # logger console: All should log  because level DEBUG
     # logger file: Nothing should log because .path not created

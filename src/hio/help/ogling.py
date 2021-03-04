@@ -226,12 +226,14 @@ class Ogler():
             shutil.rmtree(self.dirPath)
 
 
-    def resetLevels(self, name=__name__, level=None):
+    def resetLevel(self, name=__name__, level=None, globally=False):
         """
         Resets the level of preexisting loggers to level. If level is None then
         use .level
         """
         level = level if level is not None else self.level
+        if globally:
+            self.level = level
         logger = logging.getLogger(name)
         logger.setLevel(level)
 
