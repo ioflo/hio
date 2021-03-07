@@ -11,6 +11,7 @@ import logging
 import logging.handlers
 import tempfile
 import shutil
+from contextlib import contextmanager
 
 
 def initOgler(level=logging.CRITICAL, **kwa):
@@ -36,6 +37,38 @@ def initOgler(level=logging.CRITICAL, **kwa):
     return Ogler(level=level, **kwa)
 
 
+@contextmanager
+def openOgler(cls=None, name="test", temp=True, **kwa):
+    """
+    Context manager wrapper Ogler instances.
+    Defaults to temporary file logs.
+    Context 'with' statements call .close on exit of 'with' block
+
+    Parameters:
+        cls is Class instance of subclass instance
+        name is str name of ogler instance for filename so can have multiple oglers
+             at different paths thar each use different log file directories
+        temp is Boolean, True means open in temporary directory, clear on close
+                Otherwise open in persistent directory, do not clear on close
+
+    Usage:
+
+    with openOgler(name="bob") as ogler:
+        logger = ogler.getLogger()  ....
+
+    with openOgler(name="eve", cls=SubclassedOgler)
+
+    """
+    if cls is None:
+        cls = Ogler
+    try:
+        ogler = cls(name=name, temp=temp, reopen=True, **kwa)
+        yield ogler
+
+    finally:
+        ogler.close()  # if .temp also clears
+
+
 class Ogler():
     """
     Olgery instances retreive and configure loggers from global logging facility
@@ -46,8 +79,16 @@ class Ogler():
     will always return a reference to the same Logger object.
 
     Attributes:
+        .name is str used in file name
         .level is logging severity level
-        .logFilePath is path to log file
+        .temp is Boolean True means use /tmp directory
+        .prefix is str used as part of path prefix and formating
+        .headDirPath is str used as head of path
+        .tailDirpath is str used as tail of path
+        .altTailDirPath is str used a alternate tail of path
+        .dirPath is full directory path
+        .path is full file path
+        .opened is Boolean, True means file is opened Otherwise False
     """
     Prefix = "hio"
     HeadDirPath = "/usr/local/var"  # default in /usr/local/var
@@ -77,11 +118,12 @@ class Ogler():
                 DEBUG    10
                 NOTSET    0
 
-            file is Boolean True means create logfile Otherwise not
-            temp is Boolean If file then True means use temp direction
-                                         Otherwise use  headDirpath
+            temp is Boolean True means use /tmp directory If .filed and clear on close
+                            False means use  headDirpath If .filed
+            prefix is str to include in path and logging template
             headDirPath is str for custom headDirPath for log file
-            clear is Boolean True means clear .path when closing in reopen
+            reopen is Booblean True means reopen path if anything changed
+            clear is Boolean True means clear .dirPath when closing in reopen
         """
         self.name = name if name else 'main'  # for file name
         self.level = level  # basic logger level
@@ -209,12 +251,12 @@ class Ogler():
 
     def close(self, clear=False):
         """
-        Close lmdb at .env and if clear or .temp then remove lmdb directory at .path
+        Close lmdb at .env and if clear or self.temp then remove directory at .path
         Parameters:
-           clear is boolean, True means clear lmdb directory
+           clear is boolean, True means clear directory
         """
         self.opened = False
-        if clear:
+        if clear or self.temp:
             self.clearDirPath()
 
 
@@ -222,7 +264,7 @@ class Ogler():
         """
         Remove logfile directory at .dirPath
         """
-        if os.path.exists(self.dirPath):
+        if self.dirPath and os.path.exists(self.dirPath):
             shutil.rmtree(self.dirPath)
 
 

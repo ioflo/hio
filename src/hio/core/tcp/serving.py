@@ -18,8 +18,6 @@ import errno
 import socket
 import ssl
 from collections import deque
-from binascii import hexlify
-
 from contextlib import contextmanager
 
 from ...base import tyming

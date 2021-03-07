@@ -8,8 +8,6 @@ import os
 import errno
 import socket
 import ssl
-from collections import deque
-from binascii import hexlify
 
 from contextlib import contextmanager
 
@@ -457,18 +455,16 @@ class Client():
 
 
     def tx(self, data):
-        '''
-        Queue data onto .txbs
-        '''
+        """
+        Copy data onto .txbs, .extend copies data.
+        """
         self.txbs.extend(data)
 
 
     def serviceSends(self):
         """
-        Service transmits
-        For each tx if all bytes sent then keep sending until partial send
-        or no more to send
-        If partial send reattach and return
+        Service sends (transmits) of data in .txbs bytearray
+        Attempt to send all of .txbs. Delete what is actually sent.
         """
         while self.txbs and self.connected and not self.cutoff:
             count = self.send(self.txbs)
