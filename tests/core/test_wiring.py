@@ -234,7 +234,7 @@ def test_openWL():
     assert not wl.opened
 
     # test filed but not temp
-    with wiring.openWL(temp=False, filed=True, clear=True) as wl:
+    with wiring.openWL(temp=False, filed=True) as wl:
         assert isinstance(wl, wiring.WireLog)
         assert wl.rxed is True
         assert wl.txed is True
@@ -279,12 +279,19 @@ def test_openWL():
                                b'\ntx eve:\n789012\n'
                                b'\ntx bob:\n321098\n')
 
+        rxlpath = wl.rxl.name
+        txlpath = wl.txl.name
+
     assert wl.rxl.closed
     assert wl.txl.closed
     assert os.path.exists(wl.dirPath)
     assert not wl.opened
-    wl.clearDirPath()
-    assert not os.path.exists(wl.dirPath)
+    assert os.path.exists(rxlpath)
+    os.remove(rxlpath)
+    assert not os.path.exists(rxlpath)
+    assert os.path.exists(txlpath)
+    os.remove(txlpath)
+    assert not os.path.exists(txlpath)
 
     # test filed but not temp and samed
     with wiring.openWL(temp=False, samed=True, filed=True, clear=True) as wl:
@@ -345,12 +352,15 @@ def test_openWL():
                                b'\nrx bob:\nTSRWPO\n'
                                b'\ntx bob:\n321098\n')
 
+        lpath = wl.rxl.name
+
     assert wl.rxl.closed
     assert wl.txl.closed
     assert os.path.exists(wl.dirPath)
     assert not wl.opened
-    wl.clearDirPath()
-    assert not os.path.exists(wl.dirPath)
+    assert os.path.exists(lpath)
+    os.remove(lpath)
+    assert not os.path.exists(lpath)
     """ End Test """
 
 

@@ -95,8 +95,8 @@ class Ogler():
     TailDirPath = "log"
     AltHeadDirPath = "~"  #  put in ~ as fallback when desired dir not permitted
     TempHeadDir = "/tmp"
-    TempMidfix = "log_"
-    TempSuffix = "_test"
+    TempPrefix = "test_"
+    TempSuffix = "_temp"
 
     def __init__(self, name='main', level=logging.ERROR, temp=False,
                  prefix=None, headDirPath=None, reopen=False, clear=False):
@@ -130,8 +130,6 @@ class Ogler():
         self.temp = True if temp else False
         self.prefix = prefix if prefix is not None else self.Prefix
         self.headDirPath = headDirPath if headDirPath is not None else self.HeadDirPath
-        self.tailDirPath = os.path.join(self.prefix, self.TailDirPath)
-        self.altTailDirPath = os.path.join(".{}".format(self.prefix), self.TailDirPath)
         self.dirPath = None
         self.path = None
         self.opened = False
@@ -203,38 +201,46 @@ class Ogler():
                 self.name = name
 
             if self.temp:
-                prefix = "{}_{}".format(self.prefix, self.TempMidfix)
-                headDirPath = tempfile.mkdtemp(prefix=prefix,
-                                               suffix=self.TempSuffix,
-                                               dir="/tmp")
-                self.dirPath = os.path.abspath(
-                                    os.path.join(headDirPath,
-                                                 self.tailDirPath))
-                os.makedirs(self.dirPath)
+                dirPath = os.path.abspath(
+                                        os.path.join(self.TempHeadDir,
+                                                    self.prefix,
+                                                    self.TailDirPath))
+                if not os.path.exists(dirPath):
+                    os.makedirs(dirPath)  # mkdtemp only makes last dir
+                self.dirPath = tempfile.mkdtemp(prefix=self.TempPrefix,
+                                                suffix=self.TempSuffix,
+                                                dir=dirPath)
 
             else:
                 self.dirPath = os.path.abspath(
-                                    os.path.expanduser(
-                                        os.path.join(self.headDirPath,
-                                                     self.tailDirPath)))
+                        os.path.expanduser(
+                                            os.path.join(self.headDirPath,
+                                                         self.prefix,
+                                                         self.TailDirPath)))
 
                 if not os.path.exists(self.dirPath):
                     try:
                         os.makedirs(self.dirPath)
-                    except OSError as ex:
-                        headDirPath = self.AltHeadDirPath
+                    except OSError as ex:  # can't make dir
+                        # use alt=user's directory instead
+                        prefix = ".{}".format(self.prefix)  # hide it
                         self.dirPath = os.path.abspath(
-                                            os.path.expanduser(
-                                                os.path.join(self.AltHeadDirPath,
-                                                             self.altTailDirPath)))
+                                                os.path.expanduser(
+                                                                os.path.join(self.AltHeadDirPath,
+                                                                             prefix,
+                                                                            self.TailDirPath)))
                         if not os.path.exists(self.dirPath):
                             os.makedirs(self.dirPath)
-                else:
+                else:  # path exists
                     if not os.access(self.dirPath, os.R_OK | os.W_OK):
+                        # but can't access it
+                        # use alt=user's directory instead
+                        prefix = ".{}".format(self.prefix)  # hide it
                         self.dirPath = os.path.abspath(
-                                            os.path.expanduser(
-                                                os.path.join(self.AltHeadDirPath,
-                                                             self.altTailDirPath)))
+                                                os.path.expanduser(
+                                                                os.path.join(self.AltHeadDirPath,
+                                                                             prefix,
+                                                                             self.TailDirPath)))
                         if not os.path.exists(self.dirPath):
                             os.makedirs(self.dirPath)
 
