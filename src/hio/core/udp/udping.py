@@ -26,7 +26,7 @@ class SocketUdpNb(object):
                  host='',
                  port=55000,
                  bufsize=1024,
-                 wlog=None,
+                 wl=None,
                  bcast=False):
         """
         Initialization method for instance.
@@ -36,12 +36,12 @@ class SocketUdpNb(object):
         port = socket port
         bs = buffer size
         path = path to log file directory
-        wlog = WireLog reference for debug logging or over the wire tx and rx
+        wl = WireLog instance ref for debug logging or over the wire tx and rx
         bcast = Flag if True enables sending to broadcast addresses on socket
         """
         self.ha = ha or (host, port)  # ha = host address duple (host, port)
         self.bs = bufsize
-        self.wlog = wlog
+        self.wl = wl
         self.bcast = bcast
 
         self.ss = None #server's socket needs to be opened
@@ -137,8 +137,8 @@ class SocketUdpNb(object):
                        "{2}\n\n".format(self.ha, sa, load))
             console.profuse(cmsg)
 
-        if self.wlog:  # log over the wire rx
-            self.wlog.writeRx(sa, data)
+        if self.wl:  # log over the wire rx
+            self.wl.writeRx(data, who=sa)
 
         return (data, sa)
 
@@ -166,8 +166,8 @@ class SocketUdpNb(object):
                     "{3}\n\n".format(self.ha, result, da, load))
             console.profuse(cmsg)
 
-        if self.wlog:
-            self.wlog.writeTx(da, data[:result])
+        if self.wl:
+            self.wl.writeTx(data[:result], who=da)
 
         return result
 

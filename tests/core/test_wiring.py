@@ -24,7 +24,7 @@ def test_openWL():
         assert wl.txed is True
         assert wl.samed is False
         assert wl.filed is False
-        assert wl.fmt == wl.Format == b'\n%(dx)s %(who)s:\n%(data)s\n'
+        assert wl.fmt == wl.Format == b'\n%(dx)b %(who)b:\n%(data)b\n'
         assert wl.name == "test"
         assert wl.temp == True
         assert wl.prefix == 'hio'
@@ -69,7 +69,7 @@ def test_openWL():
         assert wl.txed is True
         assert wl.samed is True
         assert wl.filed is False
-        assert wl.fmt == wl.Format == b'\n%(dx)s %(who)s:\n%(data)s\n'
+        assert wl.fmt == wl.Format == b'\n%(dx)b %(who)b:\n%(data)b\n'
         assert wl.name == "test"
         assert wl.temp == True
         assert wl.prefix == 'hio'
@@ -127,7 +127,7 @@ def test_openWL():
         assert wl.txed is True
         assert wl.samed is False
         assert wl.filed is True
-        assert wl.fmt == wl.Format == b'\n%(dx)s %(who)s:\n%(data)s\n'
+        assert wl.fmt == wl.Format == b'\n%(dx)b %(who)b:\n%(data)b\n'
         assert wl.name == "test"
         assert wl.temp == True
         assert wl.prefix == 'hio'
@@ -177,7 +177,7 @@ def test_openWL():
         assert wl.txed is True
         assert wl.samed is True
         assert wl.filed is True
-        assert wl.fmt == wl.Format == b'\n%(dx)s %(who)s:\n%(data)s\n'
+        assert wl.fmt == wl.Format == b'\n%(dx)b %(who)b:\n%(data)b\n'
         assert wl.name == "test"
         assert wl.temp == True
         assert wl.prefix == 'hio'
@@ -240,7 +240,7 @@ def test_openWL():
         assert wl.txed is True
         assert wl.samed is False
         assert wl.filed is True
-        assert wl.fmt == wl.Format == b'\n%(dx)s %(who)s:\n%(data)s\n'
+        assert wl.fmt == wl.Format == b'\n%(dx)b %(who)b:\n%(data)b\n'
         assert wl.name == "test"
         assert wl.temp == False
         assert wl.prefix == 'hio'
@@ -300,7 +300,7 @@ def test_openWL():
         assert wl.txed is True
         assert wl.samed is True
         assert wl.filed is True
-        assert wl.fmt == wl.Format == b'\n%(dx)s %(who)s:\n%(data)s\n'
+        assert wl.fmt == wl.Format == b'\n%(dx)b %(who)b:\n%(data)b\n'
         assert wl.name == "test"
         assert wl.temp == False
         assert wl.prefix == 'hio'

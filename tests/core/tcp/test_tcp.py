@@ -63,7 +63,7 @@ def test_tcp_basic():
     assert client.bs == 8096
     assert isinstance(client.txbs, bytearray)
     assert isinstance(client.rxbs, bytearray)
-    assert client.wlog == None
+    assert client.wl == None
 
     tymist = tyming.Tymist()
     with openClient(tymist=tymist, timeout=0.5) as client:
@@ -91,7 +91,7 @@ def test_tcp_basic():
     assert server.bs == 8096
     assert isinstance(server.axes, deque)
     assert isinstance(server.ixes, dict)
-    assert server.wlog == None
+    assert server.wl == None
 
     with openServer(tymist=tymist, timeout=1.5) as server:
         assert server.ha == ('0.0.0.0', 56000)

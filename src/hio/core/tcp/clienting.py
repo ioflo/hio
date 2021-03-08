@@ -69,7 +69,7 @@ class Client():
                  bs=8096,
                  txbs=None,
                  rxbs=None,
-                 wlog=None):
+                 wl=None):
         """
         Initialization method for instance.
 
@@ -84,7 +84,7 @@ class Client():
             bs = buffer size
             txbs = bytearray of data to send
             rxbs = bytearray of data received
-            wlog = WireLog object if any
+            wl = WireLog object if any
         """
         self.tymist = tymist or tyming.Tymist(tyme=0.0)
         self.timeout = timeout if timeout is not None else self.Timeout
@@ -107,7 +107,7 @@ class Client():
         self.bs = bs
         self.txbs = txbs if txbs is not None else bytearray()  # byte array of data to send
         self.rxbs = rxbs if rxbs is not None else bytearray()  # byte array of data recieved
-        self.wlog = wlog
+        self.wl = wl
 
 
     @property
@@ -385,8 +385,8 @@ class Client():
                 raise  # re-raise
 
         if data:  # connection open
-            if self.wlog:  # log over the wire rx
-                self.wlog.writeRx(self.ha, data)
+            if self.wl:  # log over the wire rx
+                self.wl.writeRx(data, self.ha)
         else:  # data empty so connection closed on other end, whereas see above for blocked
             self.cutoff = True
 
@@ -448,8 +448,8 @@ class Client():
                 raise
 
         if count:
-            if self.wlog:
-                self.wlog.writeTx(self.ha, data[:count])
+            if self.wl:
+                self.wl.writeTx(data[:count], b"%s" & self.ha)
 
         return count
 
@@ -686,8 +686,8 @@ class ClientTls(Client):
 
         if data:  # connection open
 
-            if self.wlog:  # log over the wire rx
-                self.wlog.writeRx(self.ha, data)
+            if self.wl:  # log over the wire rx
+                self.wl.writeRx(data, self.ha)
         else:  # data empty so connection closed on other end
             self.cutoff = True
 
@@ -721,8 +721,8 @@ class ClientTls(Client):
                 raise
 
         if result:
-            if self.wlog:
-                self.wlog.writeTx(self.ha, data[:result])
+            if self.wl:
+                self.wl.writeTx(data[:result], self.ha)
 
         return result
 

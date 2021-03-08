@@ -11,6 +11,7 @@ import tempfile
 import shutil
 from contextlib import contextmanager
 
+from ..base import doing
 
 @contextmanager
 def openWL(cls=None, name="test", temp=True, **kwa):
@@ -55,11 +56,11 @@ class WireLog():
         .samed is Boolean True means log both rx and tx to same file or buffer
         .filed is Boolean True means log to file False means log to memory buffer
         .fmt is io write bytes printf style format string
-            Default is b'\n%(dx)s %(who)s:\n%(data)s\n' where:
+            Default is b'\n%(dx)b %(who)b:\n%(data)b\n' where:
                 who is src or dst for rx tx respectively
                 dx is the io direction and will be set to either b'tx' or b'rx' and
                 data is the actual io data as bytes
-            to write io data without direction who or line feeds use fmt= b'%(data)s'
+            to write io data without direction who or line feeds use fmt= b'%(data)b'
         .name is str used in file name
         .temp is Boolean True means use /tmp directory
         .prefix is str used as part of path prefix and formating
@@ -79,7 +80,7 @@ class WireLog():
     TempHeadDir = "/tmp"
     TempPrefix = "test_"
     TempSuffix = "_temp"
-    Format = b'\n%(dx)s %(who)s:\n%(data)s\n'  # default format string as bytes
+    Format = b'\n%(dx)b %(who)b:\n%(data)b\n'  # default format string as bytes
 
 
     def __init__(self, rxed=True, txed=True, samed=False, filed=False,
@@ -366,6 +367,8 @@ class WireLog():
         Write bytes data received from source host port address tuple,
         """
         if self.rxed and self.rxl:
+            if not isinstance(who, (bytes, bytearray, str)):
+                who = str(who)
             if hasattr(who, 'encode'):
                 who = who.encode("utf-8")
             if hasattr(data, 'encode'):
@@ -378,6 +381,8 @@ class WireLog():
         Write bytes data transmitted to destination address da,
         """
         if self.txed and self.txl:
+            if not isinstance(who, (bytes, bytearray, str)):
+                who = str(who)
             if hasattr(who, 'encode'):
                 who = who.encode("utf-8")
             if hasattr(data, 'encode'):
@@ -385,3 +390,61 @@ class WireLog():
             self.txl.write(self.fmt % {b'dx': b'tx', b'who': who, b'data': data})
 
 
+
+class WireLogDoer(doing.Doer):
+    """
+    Basic WireLog Doer
+
+    Inherited Attributes:
+        .done is Boolean completion state:
+            True means completed
+            Otherwise incomplete. Incompletion maybe due to close or abort.
+
+    Attributes:
+        .wl is WireLog subclass
+
+    Inherited Properties:
+        .tyme is float ._tymist.tyme, relative cycle or artificial time
+        .tock is float, desired time in seconds between runs or until next run,
+                 non negative, zero means run asap
+
+    Properties:
+
+    Methods:
+        .wind  injects ._tymist dependency
+        .__call__ makes instance callable
+            Appears as generator function that returns generator
+        .do is generator method that returns generator
+        .enter is enter context action method
+        .recur is recur context action method or generator method
+        .exit is exit context method
+        .close is close context method
+        .abort is abort context method
+
+    Hidden:
+       ._tymist is Tymist instance reference
+       ._tock is hidden attribute for .tock property
+    """
+
+    def __init__(self, wl, **kwa):
+        """
+        Inherited Parameters:
+           tymist is Tymist instance
+           tock is float seconds initial value of .tock
+
+        Parameters:
+           keeper is Keeper instance
+        """
+        super(WireLogDoer, self).__init__(**kwa)
+        self.wl = wl
+
+
+    def enter(self):
+        """"""
+        if not self.wl.opened:
+            self.wl.reopen()
+
+
+    def exit(self):
+        """"""
+        self.wl.close()

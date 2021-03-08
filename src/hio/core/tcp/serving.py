@@ -213,7 +213,7 @@ class Server(Acceptor):
     Attributes:
         .tymist is Tymist instance
         .timeout is timeout in seconds for connection refresh
-        .wlog is wire log
+        .wl is WireLog instance if any
         .ixes is dict of incoming connections indexed by remote (host, port) duple
     """
 
@@ -225,7 +225,7 @@ class Server(Acceptor):
                  port=56000,
                  tymist=None,
                  timeout=None,
-                 wlog=None,
+                 wl=None,
                  **kwa):
         """
         Initialization method for instance.
@@ -236,13 +236,13 @@ class Server(Acceptor):
             port is default TCP/IP port
             tymist is Tymist instance if any to pass to remoters for incoming connections
             timeout is default timeout for to pass to remoters for  incoming connections
-            wlog is WireLog object if any
+            wl is WireLog instance if any
         """
         ha = ha or (host, port)
         super(Server, self).__init__(ha=ha, **kwa)
         self.tymist = tymist or tyming.Tymist()
         self.timeout = timeout if timeout is not None else self.Timeout
-        self.wlog = wlog
+        self.wl = wl
         self.ixes = dict()  # ready to rx tx incoming connections, Remoter instances
 
 
@@ -264,7 +264,7 @@ class Server(Acceptor):
                               ca=ca,
                               cs=cs,
                               bs=self.bs,
-                              wlog=self.wlog,
+                              wl=self.wl,
                               tymist=self.tymist,
                               timeout=self.timeout)
             if ca in self.ixes and self.ixes[ca] is not remoter:
@@ -475,7 +475,7 @@ class ServerTls(Server):
         .opened is boolean, True if listen socket .ss opened. False otherwise
         .tymist is Tymist instance
         .timeout is timeout in seconds for connection refresh
-        .wlog is wire log
+        .wl is WireLog instance if any
         .ixes is dict of incoming connections indexed by remote (host, port) duple
 
     Attributes:
@@ -535,7 +535,7 @@ class ServerTls(Server):
                                  ca=ca,
                                  bs=self.bs,
                                  cs=cs,
-                                 wlog=self.wlog,
+                                 wl=self.wl,
                                  tymist=self.tymist,
                                  timeout=self.timeout,
                                  context=self.context,
@@ -587,7 +587,7 @@ class Remoter(object):
                  timeout=None,
                  refreshable=True,
                  bs=8096,
-                 wlog=None
+                 wl=None
                 ):
 
         """
@@ -602,7 +602,7 @@ class Remoter(object):
         timeout = timeout for .timer
         refreshable = True if tx/rx activity refreshes timer False otherwise
         bs = buffer size
-        wlog = WireLog object if any
+        wl = WireLog object if any
         """
         self.ha = ha  # connection address of server
         self.ca = ca  # connection address of peer used to index in server.ixes
@@ -617,7 +617,7 @@ class Remoter(object):
         self.bs = bs
         self.txbs = bytearray()  # bytearray of data to send
         self.rxbs = bytearray()  # bytearray of data received
-        self.wlog = wlog
+        self.wl = wl
 
 
     def shutdown(self, how=socket.SHUT_RDWR):
@@ -700,8 +700,8 @@ class Remoter(object):
                 raise  # re-raise
 
         if data:  # connection open
-            if self.wlog:  # log over the wire rx
-                self.wlog.writeRx(self.ca, data)
+            if self.wl:  # log over the wire rx
+                self.wl.writeRx(data, self.ca)
 
             if self.refreshable:
                 self.refresh()
@@ -767,8 +767,8 @@ class Remoter(object):
                 raise
 
         if count:
-            if self.wlog:
-                self.wlog.writeTx(self.ca, data[:count])
+            if self.wl:
+                self.wl.writeTx(data[:count], self.ca)
 
             if self.refreshable:
                 self.refresh()
@@ -934,8 +934,8 @@ class RemoterTls(Remoter):
                 raise  # re-raise
 
         if data:  # connection open
-            if self.wlog:  # log over the wire rx
-                self.wlog.writeRx(self.cs.getpeername(), data)
+            if self.wl:  # log over the wire rx
+                self.wl.writeRx(data, who=self.cs.getpeername())
 
         else:  # data empty so connection closed on other end
             self.cutoff = True
@@ -971,7 +971,7 @@ class RemoterTls(Remoter):
                 raise
 
         if result:
-            if self.wlog:
-                self.wlog.writeTx(self.cs.getpeername(), data[:result])
+            if self.wl:
+                self.wl.writeTx(data[:result], who=self.cs.getpeername())
 
         return result
