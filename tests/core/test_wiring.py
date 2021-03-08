@@ -198,6 +198,8 @@ def test_openWL():
         wl.writeRx(data=b'ZYXWVU', who=b"eve")
         wl.writeTx(data=b'987654', who=b"eve")
 
+        wl.flush()  #  just to test
+
         assert wl.readRx() == (b'\nRx bob:\nABCDEFG\n'
                                b'\nTx bob:\n0123456\n'
                                b'\nRx eve:\nZYXWVU\n'
@@ -261,6 +263,8 @@ def test_openWL():
         wl.writeRx(data=b'ZYXWVU', who=b"eve")
         wl.writeTx(data=b'987654', who=b"eve")
 
+        wl.flush()
+
         assert wl.readRx() == (b'\nRx bob:\nABCDEFG\n'
                                b'\nRx eve:\nZYXWVU\n')
         assert wl.readTx() == (b'\nTx bob:\n0123456\n'
@@ -321,6 +325,8 @@ def test_openWL():
         wl.writeTx(data=b'0123456', who=b"bob")
         wl.writeRx(data=b'ZYXWVU', who=b"eve")
         wl.writeTx(data=b'987654', who=b"eve")
+
+        wl.flush()  #  just to test
 
         assert wl.readRx() == (b'\nRx bob:\nABCDEFG\n'
                                b'\nTx bob:\n0123456\n'

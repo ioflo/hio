@@ -317,6 +317,21 @@ class WireLog():
         return self.opened
 
 
+    def flush(self):
+        """
+        flush files if any and opened.
+        A file flush only moves from program buffer to operating system buffer.
+        A file fsync moves from operating system buffer to disk.
+        """
+        if self.filed:
+            if not self.rxl.closed:
+                self.rxl.flush()
+                os.fsync(self.rxl.fileno())
+            if not self.txl.closed and not self.samed:
+                self.txl.flush()
+                os.fsync(self.txl.fileno())
+
+
     def close(self, clear=False):
         """
         Close io logs. If clear or self.temp then remove directory at .dirPath
