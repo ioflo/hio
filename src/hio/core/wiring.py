@@ -338,6 +338,7 @@ class WireLog():
         Parameters:
            clear is boolean, True means clear directory at .dirPath if any
         """
+        self.flush()
         self.opened = False
         if self.txl and not self.txl.closed:
             self.txl.close()
