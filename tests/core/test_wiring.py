@@ -10,6 +10,7 @@ import shutil
 
 import pytest
 
+from hio.base import doing
 from hio.core import wiring
 
 
@@ -39,24 +40,24 @@ def test_openWL():
         wl.writeRx(data=b'ZYXWVU', who=b"eve")
         wl.writeTx(data=b'987654', who=b"eve")
 
-        assert wl.readRx() == (b'\nrx bob:\nABCDEFG\n'
-                               b'\nrx eve:\nZYXWVU\n')
-        assert wl.readTx() == (b'\ntx bob:\n0123456\n'
-                               b'\ntx eve:\n987654\n')
+        assert wl.readRx() == (b'\nRx bob:\nABCDEFG\n'
+                               b'\nRx eve:\nZYXWVU\n')
+        assert wl.readTx() == (b'\nTx bob:\n0123456\n'
+                               b'\nTx eve:\n987654\n')
 
         wl.writeRx(data=b'HIJKLM', who=b"eve")
         wl.writeTx(data=b'789012', who=b"eve")
         wl.writeRx(data=b'TSRWPO', who=b"bob")
         wl.writeTx(data=b'321098', who=b"bob")
 
-        assert wl.readRx() == (b'\nrx bob:\nABCDEFG\n'
-                             b'\nrx eve:\nZYXWVU\n'
-                             b'\nrx eve:\nHIJKLM\n'
-                             b'\nrx bob:\nTSRWPO\n')
-        assert wl.readTx() == (b'\ntx bob:\n0123456\n'
-                               b'\ntx eve:\n987654\n'
-                               b'\ntx eve:\n789012\n'
-                               b'\ntx bob:\n321098\n')
+        assert wl.readRx() == (b'\nRx bob:\nABCDEFG\n'
+                             b'\nRx eve:\nZYXWVU\n'
+                             b'\nRx eve:\nHIJKLM\n'
+                             b'\nRx bob:\nTSRWPO\n')
+        assert wl.readTx() == (b'\nTx bob:\n0123456\n'
+                               b'\nTx eve:\n987654\n'
+                               b'\nTx eve:\n789012\n'
+                               b'\nTx bob:\n321098\n')
 
     assert wl.rxl.closed
     assert wl.txl.closed
@@ -85,36 +86,36 @@ def test_openWL():
         wl.writeRx(data=b'ZYXWVU', who=b"eve")
         wl.writeTx(data=b'987654', who=b"eve")
 
-        assert wl.readRx() == (b'\nrx bob:\nABCDEFG\n'
-                               b'\ntx bob:\n0123456\n'
-                               b'\nrx eve:\nZYXWVU\n'
-                               b'\ntx eve:\n987654\n')
-        assert wl.readTx() == (b'\nrx bob:\nABCDEFG\n'
-                               b'\ntx bob:\n0123456\n'
-                               b'\nrx eve:\nZYXWVU\n'
-                               b'\ntx eve:\n987654\n')
+        assert wl.readRx() == (b'\nRx bob:\nABCDEFG\n'
+                               b'\nTx bob:\n0123456\n'
+                               b'\nRx eve:\nZYXWVU\n'
+                               b'\nTx eve:\n987654\n')
+        assert wl.readTx() == (b'\nRx bob:\nABCDEFG\n'
+                               b'\nTx bob:\n0123456\n'
+                               b'\nRx eve:\nZYXWVU\n'
+                               b'\nTx eve:\n987654\n')
 
         wl.writeRx(data=b'HIJKLM', who=b"eve")
         wl.writeTx(data=b'789012', who=b"eve")
         wl.writeRx(data=b'TSRWPO', who=b"bob")
         wl.writeTx(data=b'321098', who=b"bob")
 
-        assert wl.readRx() == (b'\nrx bob:\nABCDEFG\n'
-                               b'\ntx bob:\n0123456\n'
-                               b'\nrx eve:\nZYXWVU\n'
-                               b'\ntx eve:\n987654\n'
-                               b'\nrx eve:\nHIJKLM\n'
-                               b'\ntx eve:\n789012\n'
-                               b'\nrx bob:\nTSRWPO\n'
-                               b'\ntx bob:\n321098\n')
-        assert wl.readTx() == (b'\nrx bob:\nABCDEFG\n'
-                               b'\ntx bob:\n0123456\n'
-                               b'\nrx eve:\nZYXWVU\n'
-                               b'\ntx eve:\n987654\n'
-                               b'\nrx eve:\nHIJKLM\n'
-                               b'\ntx eve:\n789012\n'
-                               b'\nrx bob:\nTSRWPO\n'
-                               b'\ntx bob:\n321098\n')
+        assert wl.readRx() == (b'\nRx bob:\nABCDEFG\n'
+                               b'\nTx bob:\n0123456\n'
+                               b'\nRx eve:\nZYXWVU\n'
+                               b'\nTx eve:\n987654\n'
+                               b'\nRx eve:\nHIJKLM\n'
+                               b'\nTx eve:\n789012\n'
+                               b'\nRx bob:\nTSRWPO\n'
+                               b'\nTx bob:\n321098\n')
+        assert wl.readTx() == (b'\nRx bob:\nABCDEFG\n'
+                               b'\nTx bob:\n0123456\n'
+                               b'\nRx eve:\nZYXWVU\n'
+                               b'\nTx eve:\n987654\n'
+                               b'\nRx eve:\nHIJKLM\n'
+                               b'\nTx eve:\n789012\n'
+                               b'\nRx bob:\nTSRWPO\n'
+                               b'\nTx bob:\n321098\n')
 
     assert wl.rxl.closed
     assert wl.txl.closed
@@ -146,24 +147,24 @@ def test_openWL():
         wl.writeRx(data=b'ZYXWVU', who=b"eve")
         wl.writeTx(data=b'987654', who=b"eve")
 
-        assert wl.readRx() == (b'\nrx bob:\nABCDEFG\n'
-                               b'\nrx eve:\nZYXWVU\n')
-        assert wl.readTx() == (b'\ntx bob:\n0123456\n'
-                               b'\ntx eve:\n987654\n')
+        assert wl.readRx() == (b'\nRx bob:\nABCDEFG\n'
+                               b'\nRx eve:\nZYXWVU\n')
+        assert wl.readTx() == (b'\nTx bob:\n0123456\n'
+                               b'\nTx eve:\n987654\n')
 
         wl.writeRx(data=b'HIJKLM', who=b"eve")
         wl.writeTx(data=b'789012', who=b"eve")
         wl.writeRx(data=b'TSRWPO', who=b"bob")
         wl.writeTx(data=b'321098', who=b"bob")
 
-        assert wl.readRx() == (b'\nrx bob:\nABCDEFG\n'
-                             b'\nrx eve:\nZYXWVU\n'
-                             b'\nrx eve:\nHIJKLM\n'
-                             b'\nrx bob:\nTSRWPO\n')
-        assert wl.readTx() == (b'\ntx bob:\n0123456\n'
-                               b'\ntx eve:\n987654\n'
-                               b'\ntx eve:\n789012\n'
-                               b'\ntx bob:\n321098\n')
+        assert wl.readRx() == (b'\nRx bob:\nABCDEFG\n'
+                             b'\nRx eve:\nZYXWVU\n'
+                             b'\nRx eve:\nHIJKLM\n'
+                             b'\nRx bob:\nTSRWPO\n')
+        assert wl.readTx() == (b'\nTx bob:\n0123456\n'
+                               b'\nTx eve:\n987654\n'
+                               b'\nTx eve:\n789012\n'
+                               b'\nTx bob:\n321098\n')
 
     assert wl.rxl.closed
     assert wl.txl.closed
@@ -197,36 +198,36 @@ def test_openWL():
         wl.writeRx(data=b'ZYXWVU', who=b"eve")
         wl.writeTx(data=b'987654', who=b"eve")
 
-        assert wl.readRx() == (b'\nrx bob:\nABCDEFG\n'
-                               b'\ntx bob:\n0123456\n'
-                               b'\nrx eve:\nZYXWVU\n'
-                               b'\ntx eve:\n987654\n')
-        assert wl.readTx() == (b'\nrx bob:\nABCDEFG\n'
-                               b'\ntx bob:\n0123456\n'
-                               b'\nrx eve:\nZYXWVU\n'
-                               b'\ntx eve:\n987654\n')
+        assert wl.readRx() == (b'\nRx bob:\nABCDEFG\n'
+                               b'\nTx bob:\n0123456\n'
+                               b'\nRx eve:\nZYXWVU\n'
+                               b'\nTx eve:\n987654\n')
+        assert wl.readTx() == (b'\nRx bob:\nABCDEFG\n'
+                               b'\nTx bob:\n0123456\n'
+                               b'\nRx eve:\nZYXWVU\n'
+                               b'\nTx eve:\n987654\n')
 
         wl.writeRx(data=b'HIJKLM', who=b"eve")
         wl.writeTx(data=b'789012', who=b"eve")
         wl.writeRx(data=b'TSRWPO', who=b"bob")
         wl.writeTx(data=b'321098', who=b"bob")
 
-        assert wl.readRx() == (b'\nrx bob:\nABCDEFG\n'
-                               b'\ntx bob:\n0123456\n'
-                               b'\nrx eve:\nZYXWVU\n'
-                               b'\ntx eve:\n987654\n'
-                               b'\nrx eve:\nHIJKLM\n'
-                               b'\ntx eve:\n789012\n'
-                               b'\nrx bob:\nTSRWPO\n'
-                               b'\ntx bob:\n321098\n')
-        assert wl.readTx() == (b'\nrx bob:\nABCDEFG\n'
-                               b'\ntx bob:\n0123456\n'
-                               b'\nrx eve:\nZYXWVU\n'
-                               b'\ntx eve:\n987654\n'
-                               b'\nrx eve:\nHIJKLM\n'
-                               b'\ntx eve:\n789012\n'
-                               b'\nrx bob:\nTSRWPO\n'
-                               b'\ntx bob:\n321098\n')
+        assert wl.readRx() == (b'\nRx bob:\nABCDEFG\n'
+                               b'\nTx bob:\n0123456\n'
+                               b'\nRx eve:\nZYXWVU\n'
+                               b'\nTx eve:\n987654\n'
+                               b'\nRx eve:\nHIJKLM\n'
+                               b'\nTx eve:\n789012\n'
+                               b'\nRx bob:\nTSRWPO\n'
+                               b'\nTx bob:\n321098\n')
+        assert wl.readTx() == (b'\nRx bob:\nABCDEFG\n'
+                               b'\nTx bob:\n0123456\n'
+                               b'\nRx eve:\nZYXWVU\n'
+                               b'\nTx eve:\n987654\n'
+                               b'\nRx eve:\nHIJKLM\n'
+                               b'\nTx eve:\n789012\n'
+                               b'\nRx bob:\nTSRWPO\n'
+                               b'\nTx bob:\n321098\n')
 
     assert wl.rxl.closed
     assert wl.txl.closed
@@ -260,24 +261,24 @@ def test_openWL():
         wl.writeRx(data=b'ZYXWVU', who=b"eve")
         wl.writeTx(data=b'987654', who=b"eve")
 
-        assert wl.readRx() == (b'\nrx bob:\nABCDEFG\n'
-                               b'\nrx eve:\nZYXWVU\n')
-        assert wl.readTx() == (b'\ntx bob:\n0123456\n'
-                               b'\ntx eve:\n987654\n')
+        assert wl.readRx() == (b'\nRx bob:\nABCDEFG\n'
+                               b'\nRx eve:\nZYXWVU\n')
+        assert wl.readTx() == (b'\nTx bob:\n0123456\n'
+                               b'\nTx eve:\n987654\n')
 
         wl.writeRx(data=b'HIJKLM', who=b"eve")
         wl.writeTx(data=b'789012', who=b"eve")
         wl.writeRx(data=b'TSRWPO', who=b"bob")
         wl.writeTx(data=b'321098', who=b"bob")
 
-        assert wl.readRx() == (b'\nrx bob:\nABCDEFG\n'
-                             b'\nrx eve:\nZYXWVU\n'
-                             b'\nrx eve:\nHIJKLM\n'
-                             b'\nrx bob:\nTSRWPO\n')
-        assert wl.readTx() == (b'\ntx bob:\n0123456\n'
-                               b'\ntx eve:\n987654\n'
-                               b'\ntx eve:\n789012\n'
-                               b'\ntx bob:\n321098\n')
+        assert wl.readRx() == (b'\nRx bob:\nABCDEFG\n'
+                             b'\nRx eve:\nZYXWVU\n'
+                             b'\nRx eve:\nHIJKLM\n'
+                             b'\nRx bob:\nTSRWPO\n')
+        assert wl.readTx() == (b'\nTx bob:\n0123456\n'
+                               b'\nTx eve:\n987654\n'
+                               b'\nTx eve:\n789012\n'
+                               b'\nTx bob:\n321098\n')
 
         rxlpath = wl.rxl.name
         txlpath = wl.txl.name
@@ -321,36 +322,36 @@ def test_openWL():
         wl.writeRx(data=b'ZYXWVU', who=b"eve")
         wl.writeTx(data=b'987654', who=b"eve")
 
-        assert wl.readRx() == (b'\nrx bob:\nABCDEFG\n'
-                               b'\ntx bob:\n0123456\n'
-                               b'\nrx eve:\nZYXWVU\n'
-                               b'\ntx eve:\n987654\n')
-        assert wl.readTx() == (b'\nrx bob:\nABCDEFG\n'
-                               b'\ntx bob:\n0123456\n'
-                               b'\nrx eve:\nZYXWVU\n'
-                               b'\ntx eve:\n987654\n')
+        assert wl.readRx() == (b'\nRx bob:\nABCDEFG\n'
+                               b'\nTx bob:\n0123456\n'
+                               b'\nRx eve:\nZYXWVU\n'
+                               b'\nTx eve:\n987654\n')
+        assert wl.readTx() == (b'\nRx bob:\nABCDEFG\n'
+                               b'\nTx bob:\n0123456\n'
+                               b'\nRx eve:\nZYXWVU\n'
+                               b'\nTx eve:\n987654\n')
 
         wl.writeRx(data=b'HIJKLM', who=b"eve")
         wl.writeTx(data=b'789012', who=b"eve")
         wl.writeRx(data=b'TSRWPO', who=b"bob")
         wl.writeTx(data=b'321098', who=b"bob")
 
-        assert wl.readRx() == (b'\nrx bob:\nABCDEFG\n'
-                               b'\ntx bob:\n0123456\n'
-                               b'\nrx eve:\nZYXWVU\n'
-                               b'\ntx eve:\n987654\n'
-                               b'\nrx eve:\nHIJKLM\n'
-                               b'\ntx eve:\n789012\n'
-                               b'\nrx bob:\nTSRWPO\n'
-                               b'\ntx bob:\n321098\n')
-        assert wl.readTx() == (b'\nrx bob:\nABCDEFG\n'
-                               b'\ntx bob:\n0123456\n'
-                               b'\nrx eve:\nZYXWVU\n'
-                               b'\ntx eve:\n987654\n'
-                               b'\nrx eve:\nHIJKLM\n'
-                               b'\ntx eve:\n789012\n'
-                               b'\nrx bob:\nTSRWPO\n'
-                               b'\ntx bob:\n321098\n')
+        assert wl.readRx() == (b'\nRx bob:\nABCDEFG\n'
+                               b'\nTx bob:\n0123456\n'
+                               b'\nRx eve:\nZYXWVU\n'
+                               b'\nTx eve:\n987654\n'
+                               b'\nRx eve:\nHIJKLM\n'
+                               b'\nTx eve:\n789012\n'
+                               b'\nRx bob:\nTSRWPO\n'
+                               b'\nTx bob:\n321098\n')
+        assert wl.readTx() == (b'\nRx bob:\nABCDEFG\n'
+                               b'\nTx bob:\n0123456\n'
+                               b'\nRx eve:\nZYXWVU\n'
+                               b'\nTx eve:\n987654\n'
+                               b'\nRx eve:\nHIJKLM\n'
+                               b'\nTx eve:\n789012\n'
+                               b'\nRx bob:\nTSRWPO\n'
+                               b'\nTx bob:\n321098\n')
 
         lpath = wl.rxl.name
 
@@ -364,7 +365,38 @@ def test_openWL():
     """ End Test """
 
 
+def test_wirelog_doer():
+    """
+    Test WireLogDoer class
+    """
+    tock = 0.03125
+    ticks = 4
+    limit = ticks *  tock
+    doist = doing.Doist(tock=tock, real=True, limit=limit)
+    assert doist.tyme == 0.0  # on next cycle
+    assert doist.tock == tock == 0.03125
+    assert doist.real == True
+    assert doist.limit == limit == 0.125
+    assert doist.doers == []
+
+    wl = wiring.WireLog(samed=True, temp=True)
+
+    wiredoer = wiring.WireLogDoer(tymist=doist, wl=wl)
+    assert wiredoer.wl == wl
+    assert wiredoer._tymist == doist
+    assert wiredoer.tock == 0.0  # ASAP
+
+    doers = [wiredoer]
+    for doer in doers:
+        assert doer._tymist == doist
+
+
+    doist.do(doers=doers)
+    assert doist.tyme == limit
+    assert wiredoer.wl.opened == False
+
+    """End Test """
 
 
 if __name__ == "__main__":
-    test_openWL()
+    test_wirelog_doer()

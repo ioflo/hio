@@ -97,6 +97,7 @@ class Tymee(hioing.Mixin):
 
     Properties:
         .tyme is float relative cycle time, .tyme is artificial time
+        .tymist is Tymist instance
 
     Methods:
         .wind  injects ._tymist dependency
@@ -114,6 +115,7 @@ class Tymee(hioing.Mixin):
         super(Tymee, self).__init__(**kwa)  # Mixin for Mult-inheritance MRO
         self._tymist = tymist if tymist is not None else Tymist(tyme=0.0)
 
+
     @property
     def tyme(self):
         """
@@ -121,6 +123,16 @@ class Tymee(hioing.Mixin):
         .tyme is float cycle time in seconds
         """
         return self._tymist.tyme
+
+
+    @property
+    def tymist(self):
+        """
+        tymist property getter, get ._tymist
+        returns own Tymist instance
+        """
+        return self._tymist
+
 
     def wind(self, tymist):
         """

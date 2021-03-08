@@ -449,7 +449,7 @@ class Client():
 
         if count:
             if self.wl:
-                self.wl.writeTx(data[:count], b"%s" & self.ha)
+                self.wl.writeTx(data[:count], self.ha)
 
         return count
 

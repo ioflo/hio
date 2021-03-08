@@ -373,7 +373,7 @@ class WireLog():
                 who = who.encode("utf-8")
             if hasattr(data, 'encode'):
                 data = data.encode("utf-8")
-            self.rxl.write(self.fmt % {b'dx': b'rx', b'who': who, b'data': data})
+            self.rxl.write(self.fmt % {b'dx': b'Rx', b'who': who, b'data': data})
 
 
     def writeTx(self, data, who=b''):
@@ -387,7 +387,7 @@ class WireLog():
                 who = who.encode("utf-8")
             if hasattr(data, 'encode'):
                 data = data.encode("utf-8")
-            self.txl.write(self.fmt % {b'dx': b'tx', b'who': who, b'data': data})
+            self.txl.write(self.fmt % {b'dx': b'Tx', b'who': who, b'data': data})
 
 
 

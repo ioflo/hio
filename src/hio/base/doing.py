@@ -289,6 +289,7 @@ class Doer(tyming.Tymee):
 
     Inherited Properties:
         .tyme is float ._tymist.tyme, relative cycle or artificial time
+        .tymist is Tymist instance
 
     Properties:
         .tock is float, desired time in seconds between runs or until next run,
@@ -477,6 +478,7 @@ class ReDoer(Doer):
 
     Inherited Properties:
         .tyme is float ._tymist.tyme, relative cycle or artificial time
+        .tymist is Tymist instance
         .tock is float, desired time in seconds between runs or until next run,
                  non negative, zero means run asap
 
@@ -553,6 +555,7 @@ class DoDoer(Doer):
 
     Inherited Properties:
         .tyme is float ._tymist.tyme, relative cycle or artificial time
+        .tymist is Tymist instance
         .tock is float, desired time in seconds between runs or until next run,
                  non negative, zero means run asap
 
@@ -735,6 +738,7 @@ class ServerDoer(Doer):
 
     Inherited Properties:
         .tyme is float ._tymist.tyme, relative cycle or artificial time
+        .tymist is Tymist instance
         .tock is float, desired time in seconds between runs or until next run,
                  non negative, zero means run asap
 
@@ -801,11 +805,12 @@ class EchoServerDoer(ServerDoer):
     Just echoes back to client whatever it receives from client
 
     Inherited Attributes:
-        .tymist is Tymist instance that provides relative cycle time as .tymist.tyme
         .server is TCP Server instance
 
     Inherited Properties:
-        .tock is desired time in seconds between runs or until next run,
+        .tyme is float ._tymist.tyme, relative cycle or artificial time
+        .tymist is Tymist instance
+        .tock is float, desired time in seconds between runs or until next run,
                  non negative, zero means run asap
 
     Inherited Methods:
@@ -840,11 +845,10 @@ class ClientDoer(Doer):
     """
     Basic TCP Client
 
-        Inherited Attributes:
-        .tymist is Tymist instance that provides relative cycle time as .tymist.tyme
-
     Inherited Properties:
-        .tock is desired time in seconds between runs or until next run,
+        .tyme is float ._tymist.tyme, relative cycle or artificial time
+        .tymist is Tymist instance
+        .tock is float, desired time in seconds between runs or until next run,
                  non negative, zero means run asap
 
     Inherited Methods:
@@ -905,11 +909,10 @@ class EchoConsoleDoer(Doer):
 
     To test in WingIde must configure Debug i/O to use external console
 
-        Inherited Attributes:
-        .tymist is Tymist instance that provides relative cycle time as .tymist.tyme
-
     Inherited Properties:
-        .tock is desired time in seconds between runs or until next run,
+        .tyme is float ._tymist.tyme, relative cycle or artificial time
+        .tymist is Tymist instance
+        .tock is float, desired time in seconds between runs or until next run,
                  non negative, zero means run asap
 
     Inherited Methods:
@@ -1006,7 +1009,8 @@ class WhoDoer(Doer):
 
     Inherited Properties:
         .tyme is float ._tymist.tyme, relative cycle or artificial time
-        .tock is desired time in seconds between runs or until next run,
+        .tymist is Tymist instance
+        .tock is float, desired time in seconds between runs or until next run,
                  non negative, zero means run asap
 
     Methods:

@@ -45,6 +45,7 @@ def test_tymee():
     tymee = tyming.Tymee()
     assert isinstance(tymee._tymist, tyming.Tymist)
     assert tymee.tyme == tymee._tymist.tyme
+    assert tymee.tymist == tymee._tymist
 
     tymist = tyming.Tymist(tock=0.5)
     tymee = tyming.Tymee(tymist=tymist)
