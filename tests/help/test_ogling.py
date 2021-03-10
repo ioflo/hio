@@ -27,7 +27,7 @@ def test_openogler():
         assert ogler.temp == True
         assert ogler.prefix == 'hio'
         assert ogler.headDirPath == ogler.HeadDirPath == "/usr/local/var"
-        assert ogler.dirPath.startswith("/tmp/hio/log/test_")
+        assert ogler.dirPath.startswith("/tmp/hio/logs/test_")
         assert ogler.dirPath.endswith("_temp")
         assert ogler.path.endswith("/test.log")
         assert ogler.opened
@@ -76,8 +76,8 @@ def test_openogler():
         assert ogler.temp == False
         assert ogler.prefix == 'hio'
         assert ogler.headDirPath == ogler.HeadDirPath == "/usr/local/var"
-        assert ogler.dirPath == "/usr/local/var/hio/log"
-        assert ogler.path == '/usr/local/var/hio/log/mine.log'
+        assert ogler.dirPath == "/usr/local/var/hio/logs"
+        assert ogler.path == '/usr/local/var/hio/logs/mine.log'
         assert ogler.opened
 
         # logger console: All should log  because level DEBUG
@@ -155,7 +155,7 @@ def test_ogler():
     ogler = ogling.Ogler(name="test", level=logging.DEBUG, temp=True,
                          reopen=True, clear=True)
     assert ogler.level == logging.DEBUG
-    assert ogler.dirPath.startswith("/tmp/hio/log/test_")
+    assert ogler.dirPath.startswith("/tmp/hio/logs/test_")
     assert ogler.dirPath.endswith("_temp")
     assert ogler.path.endswith("/test.log")
     assert ogler.opened == True
@@ -185,7 +185,7 @@ def test_ogler():
 
     # Test reopen but not clear so file still there
     ogler.reopen(temp=True)
-    assert ogler.dirPath.startswith("/tmp/hio/log/test_")
+    assert ogler.dirPath.startswith("/tmp/hio/logs/test_")
     assert ogler.dirPath.endswith("_temp")
     assert ogler.path.endswith("/test.log")
     assert ogler.opened == True
@@ -253,7 +253,7 @@ def test_init_ogler():
     help.ogler.reopen(temp=True, clear=True)
     assert help.ogler.opened
     assert help.ogler.level == logging.DEBUG
-    assert help.ogler.dirPath.startswith("/tmp/hio/log/test_")
+    assert help.ogler.dirPath.startswith("/tmp/hio/logs/test_")
     assert help.ogler.dirPath.endswith("_temp")
     assert help.ogler.path.endswith("/main.log")
     logger = help.ogler.getLogger()
@@ -272,7 +272,7 @@ def test_init_ogler():
                                           temp=True, reopen=True, clear=True)
     assert ogler.opened
     assert ogler.level == logging.DEBUG
-    assert ogler.dirPath.startswith("/tmp/hio/log/test_")
+    assert ogler.dirPath.startswith("/tmp/hio/logs/test_")
     assert ogler.dirPath.endswith("_temp")
     assert ogler.path.endswith("/test.log")
     with open(ogler.path, 'r') as logfile:
@@ -330,7 +330,7 @@ def test_set_levels():
     help.ogler.reopen(temp=True, clear=True)
     assert help.ogler.opened
     assert help.ogler.level == logging.DEBUG
-    assert help.ogler.dirPath.startswith("/tmp/hio/log/test_")
+    assert help.ogler.dirPath.startswith("/tmp/hio/logs/test_")
     assert help.ogler.dirPath.endswith("_temp")
     assert help.ogler.path.endswith("/main.log")
     # recreate loggers to pick up file handler
@@ -355,7 +355,7 @@ def test_set_levels():
                                           temp=True, reopen=True, clear=True)
     assert ogler.opened
     assert ogler.level == logging.DEBUG
-    assert ogler.dirPath.startswith("/tmp/hio/log/test_")
+    assert ogler.dirPath.startswith("/tmp/hio/logs/test_")
     assert ogler.dirPath.endswith("_temp")
     assert ogler.path.endswith("/test.log")
     # Still have 3 handlers

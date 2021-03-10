@@ -75,7 +75,7 @@ class WireLog():
     """
     Prefix = "hio"
     HeadDirPath = "/usr/local/var"  # default in /usr/local/var
-    TailDirPath = "wire/log"
+    TailDirPath = "wirelogs"
     AltHeadDirPath = "~"  #  put in ~ as fallback when desired dir not permitted
     TempHeadDir = "/tmp"
     TempPrefix = "test_"

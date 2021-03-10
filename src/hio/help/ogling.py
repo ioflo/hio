@@ -92,7 +92,7 @@ class Ogler():
     """
     Prefix = "hio"
     HeadDirPath = "/usr/local/var"  # default in /usr/local/var
-    TailDirPath = "log"
+    TailDirPath = "logs"
     AltHeadDirPath = "~"  #  put in ~ as fallback when desired dir not permitted
     TempHeadDir = "/tmp"
     TempPrefix = "test_"

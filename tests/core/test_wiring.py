@@ -134,7 +134,7 @@ def test_openWL():
         assert wl.prefix == 'hio'
         assert wl.headDirPath == wl.HeadDirPath == "/usr/local/var"
         assert os.path.exists(wl.dirPath)
-        assert wl.dirPath.startswith("/tmp/hio/wire/log/test_")
+        assert wl.dirPath.startswith("/tmp/hio/wirelogs/test_")
         assert wl.dirPath.endswith("_temp")
         assert not wl.rxl.closed
         assert wl.rxl.name.endswith(".rx.log")
@@ -184,7 +184,7 @@ def test_openWL():
         assert wl.prefix == 'hio'
         assert wl.headDirPath == wl.HeadDirPath == "/usr/local/var"
         assert os.path.exists(wl.dirPath)
-        assert wl.dirPath.startswith("/tmp/hio/wire/log/test_")
+        assert wl.dirPath.startswith("/tmp/hio/wirelogs/test_")
         assert wl.dirPath.endswith("_temp")
         assert wl.rxl is wl.txl
         assert not wl.rxl.closed
@@ -249,12 +249,12 @@ def test_openWL():
         assert wl.prefix == 'hio'
         assert wl.headDirPath == wl.HeadDirPath == "/usr/local/var"
         assert os.path.exists(wl.dirPath)
-        assert wl.dirPath == '/usr/local/var/hio/wire/log'
+        assert wl.dirPath == '/usr/local/var/hio/wirelogs'
         assert not wl.rxl.closed
-        assert wl.rxl.name.startswith('/usr/local/var/hio/wire/log/test.')
+        assert wl.rxl.name.startswith('/usr/local/var/hio/wirelogs/test.')
         assert wl.rxl.name.endswith('.rx.log')
         assert not wl.txl.closed
-        assert wl.txl.name.startswith('/usr/local/var/hio/wire/log/test.')
+        assert wl.txl.name.startswith('/usr/local/var/hio/wirelogs/test.')
         assert wl.txl.name.endswith('.tx.log')
         assert wl.opened
 
@@ -311,13 +311,13 @@ def test_openWL():
         assert wl.prefix == 'hio'
         assert wl.headDirPath == wl.HeadDirPath == "/usr/local/var"
         assert os.path.exists(wl.dirPath)
-        assert wl.dirPath == '/usr/local/var/hio/wire/log'
+        assert wl.dirPath == '/usr/local/var/hio/wirelogs'
         assert wl.rxl is wl.txl
         assert not wl.rxl.closed
-        assert wl.rxl.name.startswith('/usr/local/var/hio/wire/log/test.')
+        assert wl.rxl.name.startswith('/usr/local/var/hio/wirelogs/test.')
         assert wl.rxl.name.endswith('.log')
         assert not wl.txl.closed
-        assert wl.txl.name.startswith('/usr/local/var/hio/wire/log/test.')
+        assert wl.txl.name.startswith('/usr/local/var/hio/wirelogs/test.')
         assert wl.txl.name.endswith('.log')
         assert wl.opened
 
