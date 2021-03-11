@@ -2,7 +2,7 @@
 
 ## Rich Flow Based Programming Hierarchical Structured Concurrency with Asynchronous IO
 
-This builds on very early work on hierarchical structured concurrency with
+Hio builds on very early work on hierarchical structured concurrency with
 lifecycle contexts from [ioflo](https://ioflo.com),
 [ioflo github](https://github.com/ioflo/ioflo), and
 [ioflo manuals](https://github.com/ioflo/ioflo_manuals).
@@ -13,6 +13,19 @@ to a much lighter weight async structure based on a hierachical scheduling appro
 
 This is even lighter weight and more performant than non-hierarchical structured
 concurrency approaches such as trio or curio.
+
+ approach also is informed by and supports coorperative concurrent
+discrete event simulation (DES). One important feature of concurrent
+discrete event simultion is reproducability. This requires tight control over
+scheduling order as in completely deterministic control of sheduling.
+In order to have high fidelity reproduction or replay, all coroutines used in
+a discrete event simulation must be scheduled exactly in the same relative order.
+An asyncio event loop does not have such tight control over scheduling order. But
+Hio does and therefore can be used for discrete event simulations with
+high fidelity replay. One can always add noise and uncertaintly to a Hio replay
+as neededup, but due to its underlying deterministic scheduling even the addition
+of noise can be done in a pretermined reproducable way.
+
 
 ## Structured Concurrency with Asynchronous IO
 
@@ -44,9 +57,9 @@ This approach merges the best of FBP and a bare bones coroutine based async.
 
 The root scheduler is an instance of the Doist class in hio.base.doing.Doist
 
-Doist is the root coroutine scheduler
-Provides relative cycle time in seconds with .tyme property to doers it runs
-The relative cycle time is advanced in .tock size increments by the  by  the
+Doist is the root coroutine scheduler.
+It provides relative cycle time in seconds with .tyme property to doers it runs
+The relative cycle time is advanced in .tock size increments by the
 .tick method.
 The doist may treat .tyme as artificial time or synchonize it to real time.
 
