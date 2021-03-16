@@ -278,8 +278,18 @@ class Doer(tyming.Tymee):
     Doer base class for hierarchical structured async coroutine like generators.
     Doer.__call__ on instance returns generator.
     Interface for Doist etc is generator function like object.
-    Doer is generator creator and has extra methods and attributes that plain
-    generator function does not
+    Doer is generator method instance creator and has extra methods and
+    attributes that a plain generator function does not
+
+    The .do method executes other methods each corresponding to one of the
+    six econtexts:
+        enter, recur, clean, exit, (unforced) close, abort (forced)
+
+    Actual context order may be one of:
+        enter, recur, clean, exit
+        enter, recur, close, exit
+        enter, recur, abort, exit
+        enter, abort, exit
 
     Attributes:
         .done is Boolean completion state:
@@ -304,6 +314,7 @@ class Doer(tyming.Tymee):
         .do is generator method that returns generator
         .enter is enter context action method
         .recur is recur context action method or generator method
+        .clean is clean context action method
         .exit is exit context method
         .close is close context method
         .abort is abort context method
@@ -397,6 +408,9 @@ class Doer(tyming.Tymee):
             self.abort(ex=ex)
             raise
 
+        else:  # clean context
+            self.clean()
+
         finally:  # exit context, exit, unforced if normal exit of try, forced otherwise
             self.exit()
 
@@ -416,7 +430,7 @@ class Doer(tyming.Tymee):
         Do 'recur' context actions. Override in subclass.
         Regular method that perform repetitive actions once per invocation.
         Assumes resource setup in .enter() and resource takedown in .exit()
-        (see ReDoer for example of .recur that is a generator method)
+        (see ReDoer below for example of .recur that is a generator method)
 
         Returns completion state of recurrence actions.
            True means done False means continue
@@ -436,6 +450,13 @@ class Doer(tyming.Tymee):
         """
         return (False)
 
+
+    def clean(self):
+        """
+        Do 'clean' context actions. Override in subclass. Not a generator method.
+        Clean up resources that are unique to a clean exit.
+        Called by else after normal return.
+        """
 
     def exit(self):
         """
@@ -566,6 +587,7 @@ class DoDoer(Doer):
         .do is generator method that returns generator
         .enter is enter context action method
         .recur is recur context action method or generator method
+        .clean is clean context action method
         .exit is exit context method
         .close is close context method
         .abort is abort context method
@@ -628,6 +650,9 @@ class DoDoer(Doer):
         except Exception as ex:  # abort context, forced exit due to uncaught exception
             self.abort(ex=ex)
             raise
+
+        else:  # clean context
+            self.clean()
 
         finally:  # exit context, exit, unforced if normal exit of try, forced otherwise
             self.exit(dogs=dogs)
@@ -993,9 +1018,60 @@ class EchoConsoleDoer(Doer):
         self.console.close()
 
 
-class WhoDoer(Doer):
+def bareDo(tymist, tock=0.0, **opts):
     """
-    WhoDoer supports introspection with methods to record sends and yields
+    Bare bones generator function template as example of generator function
+    suitable for use with either doify wrapper or doize decorator.
+    Make copy and rename for given application.
+    Calling copied renamed function returns basic generator.
+    Wrapping copied renamed function with doify returns yet unique wrapped copy
+    with unique values of injected parameters and further renamed by wrapper.
+    Decorating copied renamed function with doize returns singleton with injected
+    parameter values.
+
+    Parameters:
+        tymist is injected Tymist instance with tymist.tyme
+        tock is injected initial tock value
+        opts is dict of injected optional additional parameters
+
+    The function comments show where the 6 equivalent contexts are performed
+    enter, recur, clean, exit, (unforced) close, abort (forced)
+    So context order may be:
+    enter, recur, clean, exit
+    enter, recur, close, exit
+    enter, recur, abort, exit
+    enter, abort, exit
+    """
+    try:
+        # enter context
+        tyme = tymist.tyme
+        done = False
+
+        while not done:  # recur context
+            tyme = (yield (tock))  # yields tock then waits for next send
+            #  do stuff repeately in while loop
+            done = True  # means ready to exit while loop
+
+    except GeneratorExit:  # close context upon Doist thrown .close to force early exit.
+        pass  # do forced close clean up here
+
+    except Exception as ex:  # abort context, forced exit due to uncaught exception
+        pass  # do unexpected exception clean up here
+        raise ex  # always re-raise exception after any exception specific actions
+
+    else:  # clean context, clean exit processing when not (close or abort)
+        pass  # do clean exit only clean up here
+
+    finally:  # exit context,  all exits both forced and unforced come through here
+        pass  # manditory clean up here
+
+    return (done)  # returned value on final yield from, or yielded ex.value of StopIteration
+
+
+class ExDoer(Doer):
+    """
+    ExDoer is example Doer for testing and demonstration
+    Supports introspection with methods to record sends and yields
 
     Inherited Attributes:
         .done is Boolean completion state:
@@ -1037,7 +1113,7 @@ class WhoDoer(Doer):
            tock is float seconds initial value of .tock
 
         """
-        super(WhoDoer, self).__init__(**kwa)
+        super(ExDoer, self).__init__(**kwa)
         self.states = []
         self.count = None
 
@@ -1076,9 +1152,12 @@ class WhoDoer(Doer):
                                  feed=ex.args[0], count=self.count))
 
 
-def whoDo(tymist, tock=0.0, states=None, **opts):
+
+
+def doifyExDo(tymist, tock=0.0, states=None, **opts):
     """
-    Generator function test example non-class based generator.
+    Example generator function for testing and demonstration.
+    Example non-class based generator for use with doify wrapper.
     Calling this function returns generator.
     Wrapping this function with doify returns copy with unique attributes
     """
@@ -1113,9 +1192,10 @@ def whoDo(tymist, tock=0.0, states=None, **opts):
 
 
 @doize(tock=0, states=None)
-def exDo(tymist, tock=0.0, states=None, **opts):
+def doizeExDo(tymist, tock=0.0, states=None, **opts):
     """
-    Decorated generator function example non-class based generator
+    Example decorated generator function for use with doize decorator.
+    Example non-class based generator
     Calling this function returns generator
     """
     tyme = tymist.tyme

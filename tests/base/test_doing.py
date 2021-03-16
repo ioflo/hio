@@ -464,17 +464,17 @@ def test_exDo():
     """
     Test exDo generator function non-class based
     """
-    exDo = doing.exDo
-    assert inspect.isgeneratorfunction(exDo)
-    assert hasattr(exDo, "tock")
-    assert hasattr(exDo, "opts")
-    assert "states" in  exDo.opts
-    assert exDo.opts["states"] == None
-    exDo.opts["states"] = []
+    doizeExDo = doing.doizeExDo
+    assert inspect.isgeneratorfunction(doizeExDo)
+    assert hasattr(doizeExDo, "tock")
+    assert hasattr(doizeExDo, "opts")
+    assert "states" in  doizeExDo.opts
+    assert doizeExDo.opts["states"] == None
+    doizeExDo.opts["states"] = []
 
     tymist = tyming.Tymist()
 
-    dog = exDo(tymist=tymist, tock=exDo.tock, **exDo.opts)
+    dog = doizeExDo(tymist=tymist, tock=doizeExDo.tock, **doizeExDo.opts)
     assert inspect.isgenerator(dog)
     tock = dog.send(None)
     assert tock == 0.0
@@ -486,14 +486,14 @@ def test_exDo():
     assert tock == None
     with pytest.raises(StopIteration):
         tock = dog.send("what?")
-    assert exDo.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
+    assert doizeExDo.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                                    State(tyme=0.0, context='recur', feed='Hello', count=1),
                                    State(tyme=0.0, context='recur', feed='Hi', count=2),
                                    State(tyme=0.0, context='close', feed=None, count=3),
                                    State(tyme=0.0, context='exit', feed=None, count=4)]
 
-    exDo.opts["states"] = []
-    dog = exDo(tymist=tymist, tock=1.0, **exDo.opts)
+    doizeExDo.opts["states"] = []
+    dog = doizeExDo(tymist=tymist, tock=1.0, **doizeExDo.opts)
     assert inspect.isgenerator(dog)
     tock = dog.send(None)
     assert tock == 1.0
@@ -505,15 +505,15 @@ def test_exDo():
     assert tock == None
     with pytest.raises(StopIteration):
         tock = dog.send("what?")
-    assert exDo.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
+    assert doizeExDo.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                                    State(tyme=0.0, context='recur', feed='Hello', count=1),
                                    State(tyme=0.0, context='recur', feed='Hi', count=2),
                                    State(tyme=0.0, context='close', feed=None, count=3),
                                    State(tyme=0.0, context='exit', feed=None, count=4)]
 
 
-    exDo.opts["states"] = []
-    dog = exDo(tymist=tymist, tock=1.0, **exDo.opts)
+    doizeExDo.opts["states"] = []
+    dog = doizeExDo(tymist=tymist, tock=1.0, **doizeExDo.opts)
     assert inspect.isgenerator(dog)
     tock = next(dog)
     assert tock == 1.0
@@ -525,7 +525,7 @@ def test_exDo():
     assert tock == None
     with pytest.raises(StopIteration):
         tock = dog.send("what?")
-    assert exDo.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
+    assert doizeExDo.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                                    State(tyme=0.0, context='recur', feed=None, count=1),
                                    State(tyme=0.0, context='recur', feed=None, count=2),
                                    State(tyme=0.0, context='close', feed=None, count=3),

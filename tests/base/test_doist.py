@@ -22,8 +22,8 @@ def test_doist_once():
     assert doist.limit == None
     assert doist.doers == []
 
-    doer0 = doing.WhoDoer(tock=0.25, tymist=doist)
-    doer1 = doing.WhoDoer(tock=0.5, tymist=doist)
+    doer0 = doing.ExDoer(tock=0.25, tymist=doist)
+    doer1 = doing.ExDoer(tock=0.5, tymist=doist)
     doers = [doer0, doer1]
 
     dogs = doist.ready(doers=doers)
@@ -140,8 +140,8 @@ def test_doist_doers():
     assert doist.limit == None
     assert doist.doers == []
 
-    doer0 = doing.WhoDoer(tock=tock, tymist=doist)
-    doer1 = doing.WhoDoer(tock=tock*2, tymist=doist)
+    doer0 = doing.ExDoer(tock=tock, tymist=doist)
+    doer1 = doing.ExDoer(tock=tock*2, tymist=doist)
     assert doer0.tock == tock
     assert doer1.tock == tock * 2
     doers = [doer0, doer1]
@@ -355,8 +355,8 @@ def test_nested_doers():
     assert doist.limit == None
     assert doist.doers == []
 
-    doer0 = doing.WhoDoer(tock=0.0, tymist=doist)
-    doer1 = doing.WhoDoer(tock=tock*2, tymist=doist)
+    doer0 = doing.ExDoer(tock=0.0, tymist=doist)
+    doer1 = doing.ExDoer(tock=tock*2, tymist=doist)
     assert doer0.tock == 0.0
     assert doer1.tock == tock * 2
     aDoers = [doer0, doer1]
@@ -372,8 +372,8 @@ def test_nested_doers():
     assert aDoer.done == None
 
 
-    doer2 = doing.WhoDoer(tock=0.0, tymist=doist)
-    doer3 = doing.WhoDoer(tock=tock*4, tymist=doist)
+    doer2 = doing.ExDoer(tock=0.0, tymist=doist)
+    doer3 = doing.ExDoer(tock=tock*4, tymist=doist)
     assert doer2.tock == 0.0
     assert doer3.tock == tock * 4
     bDoers = [doer2, doer3]
@@ -444,14 +444,14 @@ def test_doist_dos():
     assert doist.doers == []
 
 
-    doer0 = doing.doify(doing.whoDo, name='gf0', tock=tock, states=None)
+    doer0 = doing.doify(doing.doifyExDo, name='gf0', tock=tock, states=None)
     assert inspect.isgeneratorfunction(doer0)
     assert doer0.opts["states"] == None
     doer0.opts['states'] = []
     assert doer0.tock == tock
     assert doer0.done == None
 
-    doer1 = doing.doify(doing.whoDo, name='gf1', tock=tock*2)
+    doer1 = doing.doify(doing.doifyExDo, name='gf1', tock=tock*2)
     assert inspect.isgeneratorfunction(doer1)
     assert not doer1.opts
     doer1.opts['states'] = []
@@ -460,7 +460,7 @@ def test_doist_dos():
 
     assert doer0 is not doer1
 
-    doer2 = doing.exDo
+    doer2 = doing.doizeExDo
     assert inspect.isgeneratorfunction(doer2)
     assert doer2.opts["states"] == None
     doer2.opts["states"] = []
