@@ -10,6 +10,22 @@ from hio.base import doing
 from hio.base import doing
 from hio.base.basing import State
 
+def test_doist():
+    """
+    Test basic doist
+    """
+    doist = doing.Doist()
+    assert doist.tyme == 0.0  # on next cycle
+    assert doist.tock == 0.03125
+    assert doist.real == False
+    assert doist.limit == None
+    assert doist.doers == []
+    assert doist.timer.duration == doist.tock
+
+    doist.do()
+
+    """End Test """
+
 
 def test_doist_once():
     """
@@ -586,4 +602,4 @@ def test_doist_dos():
 
 
 if __name__ == "__main__":
-    test_doist_dos()
+    test_doist()

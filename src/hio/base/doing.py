@@ -41,6 +41,7 @@ class Doist(tyming.Tymist):
     Attributes:
         .real is boolean. True means run in real time, Otherwise as fast as possible.
         .limit is float maximum run tyme limit then closes all doers
+        .doers is list of doers
         .timer is MonoTimer for real time intervals
 
     Inherited Properties:
@@ -48,8 +49,6 @@ class Doist(tyming.Tymist):
         .tock is float tyme increment of .tick()
 
     Properties:
-        .tyme is float relative cycle time, .tyme is artificial time
-        .tock is float tyme increment of .tick()
 
     Inherited Methods:
         .tick increments .tyme by one .tock or provided tock
@@ -164,7 +163,7 @@ class Doist(tyming.Tymist):
         if limit is not None:  # time limt for running if any. useful in test
             self.limit = abs(float(limit))
 
-        if tyme is not None:  # initialize starting tyme
+        if tyme is not None:  # re-initialize starting tyme
             self.tyme = tyme
 
         dogs = self.ready(doers=doers)  # runs enter context on each doer
