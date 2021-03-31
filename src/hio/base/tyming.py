@@ -173,7 +173,7 @@ class Tymer(Tymee):
         ._stop  is stop tyme in seconds
 
     """
-    Duration = 0.0
+    Duration = 0.0  # default duration when not provided
 
     def __init__(self, duration=None, start=None, **kwa):
         """
@@ -184,7 +184,7 @@ class Tymer(Tymee):
                 before or after current .tyme
         """
         super(Tymer, self).__init__(**kwa)
-        duration = duration if duration is not None else self.Duration
+        duration = float(duration) if duration is not None else self.Duration
         start = float(start) if start is not None else self.tyme
         self._start = start  # needed so default .duration
         self._stop = self._start + float(duration)  # needed so default .duration

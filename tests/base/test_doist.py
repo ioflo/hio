@@ -22,7 +22,7 @@ def test_doist():
     assert doist.doers == []
     assert doist.timer.duration == doist.tock
 
-    doist.do()
+    doist.do()  # defaults make sure no exceptions
 
     """End Test """
 
