@@ -394,7 +394,7 @@ class Doer(tyming.Tymee):
 
             #recur context
             if isgeneratorfunction(self.recur):  #  .recur is generator method
-                self.done = yield from self.recur(tyme)  #recur context
+                self.done = yield from self.recur(tyme)  # recur context
             else:  # .recur is standard method so iterate in while loop
                 while (not self.done):  # recur context
                     tyme = (yield (self.tock))  # yields .tock then waits for next send
