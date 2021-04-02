@@ -3,8 +3,7 @@
 hio.core.doing Module
 """
 import time
-import functools
-from inspect import isgeneratorfunction
+from inspect import isgeneratorfunction, ismethod
 from collections import deque, namedtuple
 
 from ..hioing import ValidationError, VersionError
@@ -98,13 +97,19 @@ class Doist(tyming.Tymist):
                 .tock is tyme increment in seconds
                 .done is Boolean completion state
                 .opts is dict() of optional parameters
+
+        See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
+        For setting attributes on bound methods.
         """
         if doers is not None:
             self.doers = doers
 
         dogs = deque()
         for index, doer in enumerate(self.doers):
-            doer.done = None  #  None before enter. enter may set to False
+            if ismethod(doer):  # when using bound method for generator function
+                doer.__func__.done = None  # None before enter. enter may set to False
+            else:
+                doer.done = None  #  None before enter. enter may set to False
             opts = doer.opts if hasattr(doer, "opts") else {}
             dog = doer(tymist=self, tock=doer.tock, **opts)
             try:
@@ -132,10 +137,12 @@ class Doist(tyming.Tymist):
 
             if retyme <= self.tyme:  # run it now
                 try:
-                    tock = dog.send(self.tyme)  # send tyme
+                    tock = dog.send(self.tyme)  # send tyme. yield tock
                 except StopIteration as ex:  # returned instead of yielded
                     self.doers[index].done = ex.value if ex.value else False  # assign done state
                 else:  # reappend for next pass
+                    if tock is None:  # bare yield returns None
+                        tock = 0.0  # rerun asap when tock == 0.0
                     dogs.append((dog, retyme + tock, index))  # tock may change during run
             else:  # not retyme yet
                 dogs.append((dog, retyme, index))  # reappend for next pass
@@ -159,6 +166,9 @@ class Doist(tyming.Tymist):
 
         Once finally clause closes a generator it must be reinited
         before it can be run again
+
+        See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
+        For setting attributes on bound methods.
         """
         if limit is not None:  # time limt for running if any. useful in test
             self.limit = abs(float(limit))
@@ -211,7 +221,11 @@ class Doist(tyming.Tymist):
                 except StopIteration:
                     pass  # Hmm? Not supposed to happen!
                 else:  # set done state
-                    self.doers[index].done = False  # forced close
+                    doer = self.doers[index]
+                    if ismethod(doer):  # when using bound method for generator function
+                        doer.__func__.done = False  # forced close
+                    else:
+                        doer.done = False  # forced close
 
 
 def doify(f, name=None, tock=0.0, **opts):
@@ -629,13 +643,13 @@ class DoDoer(Doer):
             tock is injected initial tock value
             opts is dict of injected optional additional parameters
         """
+        dogs = deque()
         try:
             # enter context
             self.wind(tymist)  # change tymist and dependencies
             self.tock = tock  #  set tock to parameter
             tyme = self.tyme
             self.done = False  # allows enter to override completion state
-
             dogs = self.enter(doers=doers)
 
             #recur context
@@ -662,7 +676,7 @@ class DoDoer(Doer):
 
     def enter(self, doers=None):
         """
-        Do 'enter' context actions.
+        Do 'enter' context actions. Equivalent of Doist.ready()
 
          Returns dogs deque of triples (dog, retyme, index)  where:
             dog is generator
@@ -678,13 +692,18 @@ class DoDoer(Doer):
             doers is list of generator method or function callables with attributes
                 tock, done, and opts dict()
 
+        See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
+        For setting attributes on bound methods.
         """
         if doers is not None:
             self.doers = doers
 
         dogs = deque()
         for index, doer in enumerate(self.doers):
-            doer.done = None  #  None before enter. enter may set to False
+            if ismethod(doer):  # when using bound method for generator function
+                doer.__func__.done = None  # None before enter. enter may set to False
+            else:
+                doer.done = None  # None before enter. enter may set to False
             opts = doer.opts if hasattr(doer, "opts") else {}
             dog = doer(tymist=self._tymist, tock=doer.tock, **opts)
             try:
@@ -714,14 +733,16 @@ class DoDoer(Doer):
         Each cycle checks all generators in dogs deque and runs if retyme past.
         """
         for i in range(len(dogs)):  # iterate once over each deed
-            dog, retyme,index = dogs.popleft()  # pop it off
+            dog, retyme, index = dogs.popleft()  # pop it off
 
             if retyme <= self.tyme:  # run it now
-                try:
-                    tock = dog.send(self.tyme)  #  nothing to send for now
+                try:  # tock == 0.0 means re-run asap
+                    tock = dog.send(self.tyme)  # send tyme. yield tock
                 except StopIteration as ex:  # returned instead of yielded
                     self.doers[index].done = ex.value if ex.value else False  # assign done state
                 else:  # reappend for next pass
+                    if tock is None:  # bare yield results None
+                        tock = 0.0  # # rerun asap when tock == 0.0
                     dogs.append((dog, retyme + tock, index))  # tock may change during run
             else:  # not retyme yet
                 dogs.append((dog, retyme, index))  # reappend for next pass
@@ -735,6 +756,9 @@ class DoDoer(Doer):
 
         Parameters:
             dogs is deque of duples (dog, retyme)
+
+        See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
+        For setting attributes on bound methods.
         """
         while(dogs):  # .close each remaining do in dogs in reverse order
             dog, retime, index = dogs.pop() #pop it off
@@ -743,7 +767,11 @@ class DoDoer(Doer):
             except StopIteration:
                 pass  # Hmm? Not supposed to happen!
             else:  # set done state
-                self.doers[index].done = False  # forced close
+                doer = self.doers[index]
+                if ismethod(doer):  # when using bound method for generator function
+                    doer.__func__.done = False  # forced close
+                else:
+                    doer.done = False  # forced close
 
 
 
