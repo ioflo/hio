@@ -3,5 +3,5 @@
 hio package
 """
 
-__version__ = '0.2.4'  # also change in setup.py
+__version__ = '0.2.5'  # also change in setup.py
 
