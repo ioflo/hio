@@ -371,7 +371,7 @@ class Doer(tyming.Tymee):
         self._tock= abs(float(tock))
 
 
-    def do(self, tymist, tock=0.0, **opts):
+    def do(self, tymist=None, tock=0.0, **opts):
         """
         Generator method to run this doer.
         Calling this method returns generator.
@@ -618,7 +618,7 @@ class DoDoer(Doer):
         self.doers = doers if doers is not None else []
 
 
-    def do(self, tymist, tock=0.0, doers=None, **opts):
+    def do(self, tymist=None, tock=0.0, doers=None, **opts):
         """
         Generator method to run this doer
         Calling this method returns generator
@@ -1017,16 +1017,22 @@ class EchoConsoleDoer(Doer):
         self.console.close()
 
 
-def bareDo(tymist, tock=0.0, **opts):
+def bareDo(tymist=None, tock=0.0, **opts):
     """
     Bare bones generator function template as example of generator function
     suitable for use with either doify wrapper or doize decorator.
     Make copy and rename for given application.
     Calling copied renamed function returns basic generator.
     Wrapping copied renamed function with doify returns yet unique wrapped copy
-    with unique values of injected parameters and further renamed by wrapper.
+    with unique values of injected attributes and  parameters and further
+    renamed by wrapper.
     Decorating copied renamed function with doize returns singleton with injected
     parameter values.
+
+    Injected Attributes:
+        g.tock = tock  # default tock attributes
+        g.done = None  # default done state
+        g.opts
 
     Parameters:
         tymist is injected Tymist instance with tymist.tyme
@@ -1153,7 +1159,7 @@ class ExDoer(Doer):
 
 
 
-def doifyExDo(tymist, tock=0.0, states=None, **opts):
+def doifyExDo(tymist=None, tock=0.0, states=None, **opts):
     """
     Example generator function for testing and demonstration.
     Example non-class based generator for use with doify wrapper.
@@ -1191,7 +1197,7 @@ def doifyExDo(tymist, tock=0.0, states=None, **opts):
 
 
 @doize(tock=0, states=None)
-def doizeExDo(tymist, tock=0.0, states=None, **opts):
+def doizeExDo(tymist=None, tock=0.0, states=None, **opts):
     """
     Example decorated generator function for use with doize decorator.
     Example non-class based generator
