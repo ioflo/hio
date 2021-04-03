@@ -24,10 +24,12 @@ class Doist(tyming.Tymist):
     .tick method.
     The doist may treat .tyme as artificial time or synchonize it to real time.
 
-    .ready method prepares dogs (doer generators) by calling generator functions
-        or generator methods and assigning to dogs list of tuples.
+    .ready method prepares deeds deque of triples (dog, retyme, index) where
+        dog is a doer generator returned by calling doer generator instances,
+        functions, or methods.
 
-    .once method runs its dogs (doer generators) once per invocation.
+    .once method runs its deeds deque of triples (dog, retyme, index) once per
+        invocation.
         This synchronizes their cycle time .tyme to the Doist's tyme.
 
 
@@ -53,9 +55,10 @@ class Doist(tyming.Tymist):
         .tick increments .tyme by one .tock or provided tock
 
     Methods:
-        .ready prepare doer generators (dogs)
-        .once  run through dogs one time
-        .do repeadedly call .once until all dogs are complete or times out
+        .ready prepare deeds, deque of triples (dog, retyme, index)
+        .once  run through all deeds once
+        .do repeadedly call .once until all dogs in deeds are complete or
+            times out do to reaching time limit
 
     """
     def __init__(self, real=False, limit=None, doers=None, **kwa):
@@ -81,14 +84,14 @@ class Doist(tyming.Tymist):
 
     def ready(self, doers=None):
         """
-        Returns dogs deque of triples (dog, retyme, index)  where:
+        Returns deeds deque of triples (dog, retyme, index)  where:
             dog is generator
             retyme is tyme (real or simulated) in seconds when dog should run next
             index is position of associated doer in .doers list used to assign
                 .done state to associated doer for dog
 
-        Calls each generator callable (function or method) in .doers to create
-        each generator dog.
+        Calls each generator callable (instance or function or method) in .doers
+        to create each generator dog.
 
         Runs enter context of each dog by calling next(dog)
 
@@ -104,7 +107,7 @@ class Doist(tyming.Tymist):
         if doers is not None:
             self.doers = doers
 
-        dogs = deque()
+        deeds = deque()
         for index, doer in enumerate(self.doers):
             if ismethod(doer):  # when using bound method for generator function
                 doer.__func__.done = None  # None before enter. enter may set to False
@@ -116,24 +119,24 @@ class Doist(tyming.Tymist):
                 next(dog)  # run enter by advancing to first yield
             except StopIteration:
                 continue  # don't append
-            dogs.append((dog, self.tyme, index))
-        return dogs
+            deeds.append((dog, self.tyme, index))
+        return deeds
 
 
-    def once(self, dogs):
+    def once(self, deeds):
         """
-        Cycle once through dogs deque and update in place
-        dogs is deque of triples of (dog, retyme, index) where:
+        Cycle once through deeds deque of triples and update in place
+        deeds is deque of triples of (dog, retyme, index) where:
             dog is generator
             retyme is tyme (real or simulated) in seconds when dog should run next
             index is position of associated doer in .doers list used to assign
                 .done state to associated doer for dog
 
-        Each cycle checks all generators in dogs deque and runs if retyme past.
+        Each cycle checks all generators in deeds deque and runs if retyme past.
         At end of cycle advances .tyme by one .tock by calling .tick()
         """
-        for i in range(len(dogs)):  # iterate once over each deed
-            dog, retyme, index = dogs.popleft()  # pop it off
+        for i in range(len(deeds)):  # iterate once over each deed
+            dog, retyme, index = deeds.popleft()  # pop it off
 
             if retyme <= self.tyme:  # run it now
                 try:
@@ -143,24 +146,24 @@ class Doist(tyming.Tymist):
                 else:  # reappend for next pass
                     if tock is None:  # bare yield returns None
                         tock = 0.0  # rerun asap when tock == 0.0
-                    dogs.append((dog, retyme + tock, index))  # tock may change during run
+                    deeds.append((dog, retyme + tock, index))  # tock may change during run
             else:  # not retyme yet
-                dogs.append((dog, retyme, index))  # reappend for next pass
+                deeds.append((dog, retyme, index))  # reappend for next pass
 
         self.tick()  # advance .tyme by one doist .tock
 
 
     def do(self, doers=None, limit=None, tyme=None):
         """
-        Readies dogs deque from .doers or doers if any and then runs .once with
-        dogs until completion
-        Each entry in dogs is triples (dog, retyme, index)  where:
+        Readies deeds deque from .doers or doers if any and then iteratively
+        runs .once over deeds deque until completion of all deeds.
+        Each entry in deeds is a triple (dog, retyme, index)  where:
             dog is generator
             retyme is tyme (real or simulated) in seconds when dog should run next
             index is position of associated doer in .doers list used to assign
                 .done state to associated doer for dog
 
-        If interrupted by exception call .close on each dog to force  exit context.
+        If interrupted by exception call .close on each dog to force exit context.
 
         Keyboard interrupt (cntl-c) forces exit.
 
@@ -176,14 +179,14 @@ class Doist(tyming.Tymist):
         if tyme is not None:  # re-initialize starting tyme
             self.tyme = tyme
 
-        dogs = self.ready(doers=doers)  # runs enter context on each doer
+        deeds = self.ready(doers=doers)  # runs enter context on each doer
 
         tymer = tyming.Tymer(tymist=self, duration=self.limit)
         self.timer.start()
         try:  # always clean up resources upon exception
             while True:  # until doers complete or exception or keyboardInterrupt
                 try:
-                    self.once(dogs)  # increments .tyme runs recur context
+                    self.once(deeds)  # increments .tyme runs recur context
 
                     if self.real:  # wait for real time to expire
                         while not self.timer.expired:
@@ -193,7 +196,7 @@ class Doist(tyming.Tymist):
                     if self.limit and tymer.expired:
                         break  # break out of forever loop
 
-                    if not dogs:  # no more remaining dogs so done
+                    if not deeds:  # no more remaining deeds so done
                         break  # break out of forever loop
 
                 except KeyboardInterrupt:  # use CNTL-C to shutdown from shell
@@ -214,8 +217,8 @@ class Doist(tyming.Tymist):
             # resources. enters and exits are nested pairs in reverse order so
             # nested resource dependencies are maintained.
             #  enter A, enter B, enter C, exit C, exit B, exit A
-            while(dogs):  # .close each remaining do in dogs in reverse order
-                dog, retime, index = dogs.pop() #pop it off
+            while(deeds):  # .close each remaining dog in deeds in reverse order
+                dog, retime, index = deeds.pop() #pop it off
                 try:
                     tock = dog.close()  # force GeneratorExit. Maybe log exit tock tyme
                 except StopIteration:
@@ -594,9 +597,9 @@ class DoDoer(Doer):
                  non negative, zero means run asap
 
     Properties:
-        .always is Boolean, True means keep running even when all dogs are
-                complete. Enables dynamically managing extending or removing
-                doers while running.
+        .always is Boolean, True means keep running even when all dogs in deeds
+            are complete. Enables dynamically managing extending or removing
+            doers and associated deeds while running.
 
     Inherited Methods:
         .wind  injects ._tymist dependency
@@ -633,9 +636,9 @@ class DoDoer(Doer):
 
         Parameters:
            doers is list of doer compatible generator functions
-           always is Boolean, True means keep running even when all dogs are
-                complete. Enables dynamically managing extending or removing
-                doers while running.
+           always is Boolean, True means keep running even when all dogs in deeds
+            are complete. Enables dynamically managing extending or removing
+            doers and associated deeds while running.
 
         """
         super(DoDoer, self).__init__(**kwa)
@@ -647,9 +650,9 @@ class DoDoer(Doer):
     def always(self):
         """
         always property getter, get ._always
-        .always is Boolean, True means keep running even when all dogs are
-                complete. Enables dynamically managing extending or removing
-                doers while running.
+        .always is Boolean, True means keep running even when all dogs in deeds
+            are complete. Enables dynamically managing extending or removing
+            doers and associated deeds while running.
         """
         return self._always
 
@@ -674,11 +677,12 @@ class DoDoer(Doer):
             tock is injected initial tock value
             opts is dict of injected optional additional parameters
             doers is list of doers (generator functions)
-            always is Boolean. True means keep running even when all dogs are
-                complete. Enables dynamically managing extending or removing
-                doers while running. When not provided use .always.
+            always is Boolean. True means keep running even when all dogs in deeds
+                are complete. Enables dynamically managing extending or removing
+                doers and associated deeds while running.
+                When not provided use .always.
         """
-        dogs = deque()
+        deeds = deque()
         always = always if always is not None else self.always
         try:
             # enter context
@@ -686,12 +690,12 @@ class DoDoer(Doer):
             self.tock = tock  #  set tock to parameter
             tyme = self.tyme
             self.done = False  # allows enter to override completion state
-            dogs = self.enter(doers=doers)  # doist.ready equivalent
+            deeds = self.enter(doers=doers)  # doist.ready equivalent
 
             #recur context
             while (not self.done or always):  # recur context
                 tyme = (yield (self.tock))  # yields .tock then waits for next send
-                self.done = self.recur(tyme=tyme, dogs=dogs)  # equv of doist.once
+                self.done = self.recur(tyme=tyme, deeds=deeds)  # equv of doist.once
 
         except GeneratorExit:  # close context, forced exit due to .close
             self.close()
@@ -704,7 +708,7 @@ class DoDoer(Doer):
             self.clean()
 
         finally:  # exit context, exit, unforced if normal exit of try, forced otherwise
-            self.exit(dogs=dogs)  # equiv of doist.do finally clause
+            self.exit(deeds=deeds)  # equiv of doist.do finally clause
 
         # return value of yield from or StopIteration.value indicates completion
         return self.done  # Only returns done state if normal return not close or abort raise
@@ -714,7 +718,7 @@ class DoDoer(Doer):
         """
         Do 'enter' context actions. Equivalent of Doist.ready()
 
-         Returns dogs deque of triples (dog, retyme, index)  where:
+         Returns deeds deque of triples (dog, retyme, index)  where:
             dog is generator
             retyme is tyme in seconds when next should run may be real or simulated
             index is position of associated doer in .doers list
@@ -734,7 +738,7 @@ class DoDoer(Doer):
         if doers is not None:
             self.doers = doers
 
-        dogs = deque()
+        deeds = deque()
         for index, doer in enumerate(self.doers):
             if ismethod(doer):  # when using bound method for generator function
                 doer.__func__.done = None  # None before enter. enter may set to False
@@ -746,30 +750,30 @@ class DoDoer(Doer):
                 next(dog)  # run enter by advancing to first yield
             except StopIteration:
                 continue  # don't append
-            dogs.append((dog, self.tyme, index))
-        return dogs
+            deeds.append((dog, self.tyme, index))
+        return deeds
 
 
-    def recur(self, tyme, dogs):
+    def recur(self, tyme, deeds):
         """
         Do 'recur' context actions. Equivalent of Doist.once
 
         Parameters:
             tyme is output of send fed to do yield, Doist feeds its .tyme
+            deeds is deque of triples of (dog, retyme, index) where:
+                dog is generator
+                retyme is tyme in seconds when next should run may be real or simulated
+                index is position of associated doer in .doers list
 
         Returns completion state of recurrence actions.
            True means done False means continue
 
-        Cycle once through dogs deque and update in place
-        dogs is deque of triples of (dog, retyme, index) where:
-            dog is generator
-            retyme is tyme in seconds when next should run may be real or simulated
-            index is position of associated doer in .doers list
+        Cycle once through deeds deque and update in place
 
-        Each cycle checks all generators in dogs deque and runs if retyme past.
+        Each cycle checks all generators dogs in deeds deque and runs if retyme past.
         """
-        for i in range(len(dogs)):  # iterate once over each deed
-            dog, retyme, index = dogs.popleft()  # pop it off
+        for i in range(len(deeds)):  # iterate once over each deed
+            dog, retyme, index = deeds.popleft()  # pop it off
 
             if retyme <= self.tyme:  # run it now
                 try:  # tock == 0.0 means re-run asap
@@ -779,25 +783,25 @@ class DoDoer(Doer):
                 else:  # reappend for next pass
                     if tock is None:  # bare yield results None
                         tock = 0.0  # # rerun asap when tock == 0.0
-                    dogs.append((dog, retyme + tock, index))  # tock may change during run
+                    deeds.append((dog, retyme + tock, index))  # tock may change during run
             else:  # not retyme yet
-                dogs.append((dog, retyme, index))  # reappend for next pass
+                deeds.append((dog, retyme, index))  # reappend for next pass
 
-        return (not dogs)  # True if dogs empty
+        return (not deeds)  # True if deeds deque is empty
 
 
-    def exit(self, dogs):
+    def exit(self, deeds):
         """
         Do 'exit' context actions.
 
         Parameters:
-            dogs is deque of duples (dog, retyme)
+            deeds is deque of triples (dog, retyme,index)
 
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
         For setting attributes on bound methods.
         """
-        while(dogs):  # .close each remaining do in dogs in reverse order
-            dog, retime, index = dogs.pop() #pop it off
+        while(deeds):  # .close each remaining dog in deeds in reverse order
+            dog, retime, index = deeds.pop()  # pop it off in reverse (right side)
             try:
                 tock = dog.close()  # force GeneratorExit
             except StopIteration:
@@ -808,6 +812,28 @@ class DoDoer(Doer):
                     doer.__func__.done = False  # forced close
                 else:
                     doer.done = False  # forced close
+
+
+    def extend(self, doers):
+        """
+        Extend .doers list with doers. Ready deeds from doers and extend .doers
+        and .deeds.
+
+        Parameters:
+            doers is list of additional doers
+
+        """
+        deeds = self.enter(doers=doers)
+        offset = len(self.doers)  # get offset of index for extending dogs
+        for i in range(len(deeds)):  # iterate once over each deed
+            dog, retyme, index  = deeds.popleft()
+            index += offset
+            deeds.append((dog, retyme, index))
+
+        self.doers.extend(doers)
+
+
+
 
 
 
