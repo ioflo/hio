@@ -474,7 +474,7 @@ def test_dodoer_always():
 
     doers = [doer0, doer1, doer2]
     tock = 1.0
-    dodoer = doing.DoDoer(tock=tock, doers=doers)
+    dodoer = doing.DoDoer(tock=tock, doers=list(doers))
     assert dodoer.tock == tock == 1.0
     assert dodoer.doers == doers
     for doer in dodoer.doers:
@@ -545,6 +545,28 @@ def test_dodoer_always():
     assert not doer1.done
     assert not doer2.done
     assert len(dodoer.deeds) == 2  # deeds still there
+
+    # now extend deeds
+    doer3 = TryDoer(stop=1)
+    doer4 = TryDoer(stop=2)
+    moredoers =  [doer3, doer4]
+    dodoer.extend(doers=list(moredoers))
+    assert dodoer.doers == doers + moredoers
+    assert len(dodoer.deeds) == 4
+    indices = [index for dog, retyme, index in dodoer.deeds]
+    assert indices == [1, 2, 3, 4]
+    doist.once(deeds)
+    doist.once(deeds)
+    assert doist.tyme == 17.0
+    assert not dodoer.done  # dodoer not done
+    assert dodoer.always == True
+    assert doer0.done
+    assert doer1.done
+    assert doer2.done
+    assert doer3.done
+    assert not doer4.done
+    assert len(dodoer.deeds) == 1  # deeds still there
+
 
     """End Test """
 

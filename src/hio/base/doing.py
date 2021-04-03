@@ -696,7 +696,8 @@ class DoDoer(Doer):
         Interface matched generator function for compatibility
 
         Parameters:
-            tymist is injected Tymist instance with tymist.tyme
+            tymist is injected Tymist instance with tymist.tyme. So tymist
+                same as doist or dodoer that is doing this dodoer.
             tock is injected initial tock value
             opts is dict of injected optional additional parameters
             doers is list of doers (generator functions)
@@ -706,13 +707,15 @@ class DoDoer(Doer):
                 When not provided use .always.
         """
         always = always if always is not None else self.always
+        if doers is not None:
+            self.doers = doers
         try:
             # enter context
             self.wind(tymist)  # change tymist and dependencies
             self.tock = tock  #  set tock to parameter
-            tyme = self.tyme
+            # tyme = self.tyme
             self.done = False  # allows enter to override completion state
-            self.deeds = self.enter(doers=doers)  # doist.ready equivalent
+            self.deeds = self.enter(doers=self.doers)  # doist.ready equivalent
 
             #recur context
             while (not self.done or always):  # recur context
@@ -730,7 +733,7 @@ class DoDoer(Doer):
             self.clean()
 
         finally:  # exit context, exit, unforced if normal exit of try, forced otherwise
-            self.exit(deeds=self.deeds)  # equiv of doist.do finally clause
+            self.exit(deeds=self.deeds, doers=self.doers)  # equiv of doist.do finally clause
 
         # return value of yield from or StopIteration.value indicates completion
         return self.done  # Only returns done state if normal return not close or abort raise
@@ -740,7 +743,7 @@ class DoDoer(Doer):
         """
         Do 'enter' context actions. Equivalent of Doist.ready()
 
-         Returns deeds deque of triples (dog, retyme, index)  where:
+        Returns deeds deque of triples (dog, retyme, index)  where:
             dog is generator
             retyme is tyme in seconds when next should run may be real or simulated
             index is position of associated doer in .doers list
@@ -757,11 +760,11 @@ class DoDoer(Doer):
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
         For setting attributes on bound methods.
         """
-        if doers is not None:
-            self.doers = doers
+        if doers is None:
+            doers = self.doers
 
         deeds = deque()
-        for index, doer in enumerate(self.doers):
+        for index, doer in enumerate(doers):
             if ismethod(doer):  # when using bound method for generator function
                 doer.__func__.done = None  # None before enter. enter may set to False
             else:
@@ -776,12 +779,14 @@ class DoDoer(Doer):
         return deeds
 
 
-    def recur(self, tyme, deeds):
+    def recur(self, tyme, deeds=None):
         """
         Do 'recur' context actions. Equivalent of Doist.once
 
         Parameters:
             tyme is output of send fed to do yield, Doist feeds its .tyme
+                because tymist is injected by doist or dodoer doing this dodoer
+                self.tyme is same as tyme.
             deeds is deque of triples of (dog, retyme, index) where:
                 dog is generator
                 retyme is tyme in seconds when next should run may be real or simulated
@@ -794,12 +799,15 @@ class DoDoer(Doer):
 
         Each cycle checks all generators dogs in deeds deque and runs if retyme past.
         """
+        if deeds is None:
+            deeds = self.deeds
+
         for i in range(len(deeds)):  # iterate once over each deed
             dog, retyme, index = deeds.popleft()  # pop it off
 
-            if retyme <= self.tyme:  # run it now
+            if retyme <= tyme:  # run it now
                 try:  # tock == 0.0 means re-run asap
-                    tock = dog.send(self.tyme)  # send tyme. yield tock
+                    tock = dog.send(tyme)  # send tyme. yield tock
                 except StopIteration as ex:  # returned instead of yielded
                     self.doers[index].done = ex.value if ex.value else False  # assign done state
                 else:  # reappend for next pass
@@ -812,16 +820,22 @@ class DoDoer(Doer):
         return (not deeds)  # True if deeds deque is empty
 
 
-    def exit(self, deeds):
+    def exit(self, deeds=None, doers=None):
         """
         Do 'exit' context actions.
 
         Parameters:
             deeds is deque of triples (dog, retyme,index)
+            doers is list of doers from which deeds was generated
 
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
         For setting attributes on bound methods.
         """
+        if deeds is None:
+            deeds = self.deeds
+        if doers is None:
+            doers = self.doers
+
         while(deeds):  # .close each remaining dog in deeds in reverse order
             dog, retime, index = deeds.pop()  # pop it off in reverse (right side)
             try:
@@ -829,7 +843,7 @@ class DoDoer(Doer):
             except StopIteration:
                 pass  # Hmm? Not supposed to happen!
             else:  # set done state
-                doer = self.doers[index]
+                doer = doers[index]
                 if ismethod(doer):  # when using bound method for generator function
                     doer.__func__.done = False  # forced close
                 else:
