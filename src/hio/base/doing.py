@@ -104,8 +104,8 @@ class Doist(tyming.Tymist):
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
         For setting attributes on bound methods.
         """
-        if doers is not None:
-            self.doers = doers
+        if doers is None:
+            doers = self.doers
 
         deeds = deque()
         for index, doer in enumerate(self.doers):
@@ -173,6 +173,9 @@ class Doist(tyming.Tymist):
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
         For setting attributes on bound methods.
         """
+        if doers is not None:
+            self.doers = doers
+
         if limit is not None:  # time limt for running if any. useful in test
             self.limit = abs(float(limit))
 
@@ -209,26 +212,41 @@ class Doist(tyming.Tymist):
                     raise
 
 
-        finally: # finally clause always runs regardless of exception or not
-            # exit in each dog is run by try finally clause. Each dogs exit is
-            # responsible for releasing resources
-            # Previously aborted or closed dogs have already exited
-            # Close any running dogs in reverse order to force exit and reclaim
-            # resources. enters and exits are nested pairs in reverse order so
-            # nested resource dependencies are maintained.
-            #  enter A, enter B, enter C, exit C, exit B, exit A
-            while(deeds):  # .close each remaining dog in deeds in reverse order
-                dog, retime, index = deeds.pop() #pop it off
-                try:
-                    tock = dog.close()  # force GeneratorExit. Maybe log exit tock tyme
-                except StopIteration:
-                    pass  # Hmm? Not supposed to happen!
-                else:  # set done state
-                    doer = self.doers[index]
-                    if ismethod(doer):  # when using bound method for generator function
-                        doer.__func__.done = False  # forced close
-                    else:
-                        doer.done = False  # forced close
+        finally: # finally clause always runs regardless of exception or not.
+            self.close(deeds)  # force close remaining deeds throws GeneratorExit
+
+
+    def close(self, deeds):
+        """
+        Force exit each still opened deed calling .close on the dog generator
+        which throws a GeneratorExit to the generator.
+        This executes the close context (GeneratorExit) which then excecutes
+        the exit context in the finally caluse. Each dogs exit is responsible
+        for releasing resources
+        Previously aborted or closed dogs have already exited
+        Close any running dogs in reverse order so that enters and exits are
+        nested pairs so that the corresponding exits appear in reverse order
+        to their entes. This preserves nested resource dependencies.
+        For example:
+            enter A,
+                enter B,
+                    enter C,
+                    exit C,
+                exit B,
+            exit A
+        """
+        while(deeds):  # .close each remaining dog in deeds in reverse order
+            dog, retime, index = deeds.pop() #pop it off
+            try:
+                tock = dog.close()  # force GeneratorExit. Maybe log exit tock tyme
+            except StopIteration:
+                pass  # Hmm? Not supposed to happen!
+            else:  # set done state
+                doer = self.doers[index]
+                if ismethod(doer):  # when using bound method for generator function
+                    doer.__func__.done = False  # forced close
+                else:
+                    doer.done = False  # forced close
 
 
 def doify(f, name=None, tock=0.0, **opts):
@@ -739,7 +757,7 @@ class DoDoer(Doer):
         return self.done  # Only returns done state if normal return not close or abort raise
 
 
-    def enter(self, doers=None):
+    def enter(self, doers=None, deeds=None):
         """
         Do 'enter' context actions. Equivalent of Doist.ready()
 
@@ -755,15 +773,18 @@ class DoDoer(Doer):
 
         Parameters:
             doers is list of generator method or function callables with attributes
-                tock, done, and opts dict()
+                tock, done, and opts dict(). Use .doers if not provided
+            deeds is deque of deed triples of form (dog, retyme, index).
+                Use .deeds if not provided
 
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
         For setting attributes on bound methods.
         """
         if doers is None:
             doers = self.doers
+        if deeds is None:
+            deeds = self.deeds
 
-        deeds = deque()
         for index, doer in enumerate(doers):
             if ismethod(doer):  # when using bound method for generator function
                 doer.__func__.done = None  # None before enter. enter may set to False
@@ -825,8 +846,9 @@ class DoDoer(Doer):
         Do 'exit' context actions.
 
         Parameters:
-            deeds is deque of triples (dog, retyme,index)
-            doers is list of doers from which deeds was generated
+            deeds is deque of triples (dog, retyme, index)
+            doers is list of doers used to generate deeds, i.e. index
+                for a given deed triple must match index in doers list
 
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
         For setting attributes on bound methods.
@@ -853,21 +875,59 @@ class DoDoer(Doer):
     def extend(self, doers):
         """
         Extend .doers list with doers. Ready deeds from doers and extend .doers
-        and .deeds.
+        and .deeds.  Edit deeds in place so not replace deque.
 
         Parameters:
-            doers is list of additional doers
+            doers is list of doers to add as extension.
 
         """
-        deeds = self.enter(doers=doers)
+        deeds = self.enter(doers=doers, deeds=deque())  # provide fresh deeds
         offset = len(self.doers)  # get offset of index for extending dogs
         for i in range(len(deeds)):  # iterate once over each deed
-            dog, retyme, index  = deeds.popleft()
+            dog, retyme, index = deeds.popleft()
             index += offset
             deeds.append((dog, retyme, index))
 
         self.doers.extend(doers)
         self.deeds.extend(deeds)
+
+
+    def remove(self, doers):
+        """
+        Remove doers from .doers list and any associated deeds from .deeds deque.
+        Force close removed deeds.
+
+        Parameters:
+            doers is list of doers to remove.
+
+        """
+        rdoers = list(doers)  # doers to remove, make copy since destructive
+        indices = {}  # map indices for each doer as appears in .doers to rdoers
+        j = 0  # index in remove list
+        for doer in list(rdoers):  # make copy since inplace filter of rdoers
+            try:
+                i = self.doers.index(doer)  # make sure a member of .doers
+            except ValueError:
+                rdoers.remove(doer)  # not in .doers so ignore remove from rdoers
+            else:
+                indices[i] = j
+                j += 1
+
+
+        rdeeds = deque()  # fresh deque for deeds to remove
+        deeds = self.deeds  # edit update self.deeds in place
+        for i in range(len(deeds)):  # iterate once over each deed
+            dog, retyme, index = deeds.popleft()
+            if index in indices:  # found deed to remove and close
+                rdeeds.append((dog, retyme, indices[index]))  # add to removal deque
+            else:  # keep deed do not remove and close
+                deeds.append((dog, retyme, index))  # reappend
+
+        for doer in rdoers:  # update .doers to remove rdoers
+            self.doers.remove(doer)
+
+        self.exit(deeds=rdeeds, doers=rdoers)
+
 
 
 

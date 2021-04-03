@@ -42,7 +42,8 @@ def test_doist_once():
     doer1 = doing.ExDoer(tock=0.5, tymist=doist)
     doers = [doer0, doer1]
 
-    deeds = doist.ready(doers=doers)
+    doist.doers = doers
+    deeds = doist.ready()
     assert len(deeds) == 2
     assert [val[1] for val in deeds] == [0.0, 0.0]
     for doer in doers:

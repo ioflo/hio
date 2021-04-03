@@ -566,6 +566,56 @@ def test_dodoer_always():
     assert doer3.done
     assert not doer4.done
     assert len(dodoer.deeds) == 1  # deeds still there
+    doist.close(deeds)
+    assert dodoer.done == False  # forced close so not done
+    assert doer0.done
+    assert doer1.done
+    assert doer2.done
+    assert doer3.done
+    assert not doer4.done  # forced close so not done
+    assert not deeds
+
+
+    # start over with full set to test remove
+    doer0 = TryDoer(stop=1)
+    doer1 = TryDoer(stop=2)
+    doer2 = TryDoer(stop=3)
+    doer3 = TryDoer(stop=2)
+    doer4 = TryDoer(stop=3)
+    doers = [doer0, doer1, doer2, doer3, doer4]
+    dodoer = doing.DoDoer(tock=tock, doers=list(doers), always=True)
+    assert dodoer.tock == tock == 1.0
+    assert dodoer.doers ==doers
+    for doer in dodoer.doers:
+        assert doer.done == None
+    assert dodoer.always == True
+
+    limit = 5.0
+    doist = doing.Doist(tock=tock, limit=limit, doers=[dodoer])
+    assert doist.tock == tock ==  1.0
+    assert doist.limit == limit == 5.0
+    assert doist.doers == [dodoer]
+
+    assert dodoer.done == None
+    assert dodoer.always == True
+    assert not dodoer.deeds
+
+    deeds = doist.ready(doers=[dodoer])
+    assert not dodoer.done
+    doist.once(deeds)
+    doist.once(deeds)
+    assert doist.tyme == 2.0
+    assert not dodoer.done  # dodoer not done
+    assert dodoer.always == True
+    assert doer0.done
+    assert not doer1.done
+    assert not doer2.done
+    assert not doer3.done
+    assert not doer4.done
+    assert len(dodoer.deeds) == 4  # deeds still there
+    dodoer.remove(doers=[doer0, doer1, doer3])
+    assert dodoer.doers == [doer2, doer4]
+    assert len(dodoer.deeds) == 2
 
 
     """End Test """
