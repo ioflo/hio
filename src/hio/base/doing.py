@@ -382,7 +382,7 @@ class Doer(tyming.Tymee):
         0.0 means run asap,
         set ._tock to tock
         """
-        self._tock= abs(float(tock))
+        self._tock = abs(float(tock))
 
 
     def do(self, tymist=None, tock=0.0, **opts):
@@ -586,15 +586,17 @@ class DoDoer(Doer):
 
     Attributes:
         .doers is list of Doers or Doer like generator functions
-        .always is Boolean, True means keep running even when all dogs are
-                complete. Enables dynamically managing extending or removing
-                doers while running.
 
     Inherited Properties:
         .tyme is float ._tymist.tyme, relative cycle or artificial time
         .tymist is Tymist instance
         .tock is float, desired time in seconds between runs or until next run,
                  non negative, zero means run asap
+
+    Properties:
+        .always is Boolean, True means keep running even when all dogs are
+                complete. Enables dynamically managing extending or removing
+                doers while running.
 
     Inherited Methods:
         .wind  injects ._tymist dependency
@@ -617,6 +619,7 @@ class DoDoer(Doer):
     Hidden:
        ._tymist is Tymist instance reference
        ._tock is hidden attribute for .tock property
+       ._always is hidden attribute for .always propery
 
     """
 
@@ -637,7 +640,27 @@ class DoDoer(Doer):
         """
         super(DoDoer, self).__init__(**kwa)
         self.doers = doers if doers is not None else []
-        self.always = True if always else False
+        self.always = always
+
+
+    @property
+    def always(self):
+        """
+        always property getter, get ._always
+        .always is Boolean, True means keep running even when all dogs are
+                complete. Enables dynamically managing extending or removing
+                doers while running.
+        """
+        return self._always
+
+
+    @always.setter
+    def always(self, always):
+        """
+
+        set ._always to always
+        """
+        self._always = True if always else False
 
 
     def do(self, tymist=None, tock=0.0, doers=None, always=None, **opts):
