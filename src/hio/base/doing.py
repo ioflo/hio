@@ -586,6 +586,9 @@ class DoDoer(Doer):
 
     Attributes:
         .doers is list of Doers or Doer like generator functions
+        .always is Boolean, True means keep running even when all dogs are
+                complete. Enables dynamically managing extending or removing
+                doers while running.
 
     Inherited Properties:
         .tyme is float ._tymist.tyme, relative cycle or artificial time
@@ -617,24 +620,29 @@ class DoDoer(Doer):
 
     """
 
-    def __init__(self, doers=None, **kwa):
+    def __init__(self, doers=None, always=False, **kwa):
         """
         Initialize instance.
 
         Inherited Parameters:
             tymist is  Tymist instance
+            tock is float seconds initial value of .tock
 
         Parameters:
-           tock is float seconds initial value of .tock
+           doers is list of doer compatible generator functions
+           always is Boolean, True means keep running even when all dogs are
+                complete. Enables dynamically managing extending or removing
+                doers while running.
 
         """
         super(DoDoer, self).__init__(**kwa)
         self.doers = doers if doers is not None else []
+        self.always = True if always else False
 
 
-    def do(self, tymist=None, tock=0.0, doers=None, **opts):
+    def do(self, tymist=None, tock=0.0, doers=None, always=None, **opts):
         """
-        Generator method to run this doer
+        Generator method to run this doer. Equivalent of doist.do
         Calling this method returns generator
         Interface matched generator function for compatibility
 
@@ -642,20 +650,25 @@ class DoDoer(Doer):
             tymist is injected Tymist instance with tymist.tyme
             tock is injected initial tock value
             opts is dict of injected optional additional parameters
+            doers is list of doers (generator functions)
+            always is Boolean. True means keep running even when all dogs are
+                complete. Enables dynamically managing extending or removing
+                doers while running. When not provided use .always.
         """
         dogs = deque()
+        always = always if always is not None else self.always
         try:
             # enter context
             self.wind(tymist)  # change tymist and dependencies
             self.tock = tock  #  set tock to parameter
             tyme = self.tyme
             self.done = False  # allows enter to override completion state
-            dogs = self.enter(doers=doers)
+            dogs = self.enter(doers=doers)  # doist.ready equivalent
 
             #recur context
-            while (not self.done):  # recur context
+            while (not self.done or always):  # recur context
                 tyme = (yield (self.tock))  # yields .tock then waits for next send
-                self.done = self.recur(tyme=tyme, dogs=dogs)
+                self.done = self.recur(tyme=tyme, dogs=dogs)  # equv of doist.once
 
         except GeneratorExit:  # close context, forced exit due to .close
             self.close()
@@ -668,7 +681,7 @@ class DoDoer(Doer):
             self.clean()
 
         finally:  # exit context, exit, unforced if normal exit of try, forced otherwise
-            self.exit(dogs=dogs)
+            self.exit(dogs=dogs)  # equiv of doist.do finally clause
 
         # return value of yield from or StopIteration.value indicates completion
         return self.done  # Only returns done state if normal return not close or abort raise
@@ -716,7 +729,7 @@ class DoDoer(Doer):
 
     def recur(self, tyme, dogs):
         """
-        Do 'recur' context actions.
+        Do 'recur' context actions. Equivalent of Doist.once
 
         Parameters:
             tyme is output of send fed to do yield, Doist feeds its .tyme

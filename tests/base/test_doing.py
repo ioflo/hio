@@ -29,6 +29,7 @@ class TryDoer(doing.Doer):
     Attributes:
        .states is list of State namedtuples (tyme, context, feed, count)
        .count is context count
+       .stop is stop count where doer completes
 
     Inherited Properties:
         .tyme is float ._tymist.tyme, relative cycle or artificial time
@@ -49,17 +50,20 @@ class TryDoer(doing.Doer):
         .abort is abort context method
     """
 
-    def __init__(self, **kwa):
+    def __init__(self, stop=3, **kwa):
         """
         Initialize instance.
-        Parameters:
+        Inherited Parameters:
            tymist is Tymist instance
            tock is float seconds initial value of .tock
+        Parameters:
+           stop is count when complete
 
         """
         super(TryDoer, self).__init__(**kwa)
         self.states = []
         self.count = None
+        self.stop = stop
 
     def enter(self):
         """
@@ -76,7 +80,7 @@ class TryDoer(doing.Doer):
         self.count += 1
         self.states.append(State(tyme=self.tyme, context="recur",
                                  feed=tyme, count=self.count))
-        if self.count > 3:
+        if self.count > self.stop:
             return True  # complete
         return False  # incomplete
 
@@ -400,7 +404,6 @@ def test_dodoer():
     assert inspect.isgenerator(dog)
     assert doer.doers == []
 
-
     result = dog.send(None)
     assert result == doer.tock == 0.0
     assert doer.doers == []
@@ -457,6 +460,64 @@ def test_dodoer():
         except StopIteration as ex:
             assert ex.value == None
             raise
+
+    """End Test """
+
+def test_dodoer_always():
+    """
+    Test DoDoer class with tryDoer and always
+    """
+    # create some TryDoers for doers
+    doer0 = TryDoer(stop=1)
+    doer1 = TryDoer(stop=2)
+    doer2 = TryDoer(stop=3)
+
+    doers = [doer0, doer1, doer2]
+    tock = 1.0
+    dodoer = doing.DoDoer(tock=tock, doers=doers)
+    assert dodoer.tock == tock == 1.0
+    assert dodoer.doers == doers
+    for doer in dodoer.doers:
+        assert doer.done == None
+    assert dodoer.always == False
+
+    limit = 5.0
+    doist = doing.Doist(tock=tock, limit=limit, doers=[dodoer])
+    assert doist.tock == tock ==  1.0
+    assert doist.limit == limit == 5.0
+    assert doist.doers == [dodoer]
+    assert dodoer.done == None
+    assert dodoer.always == False
+
+    # limit = 5 is long enough that all TryDoers complete
+    doist.do()
+    assert doist.tyme == 4.0
+    assert dodoer.done
+    assert dodoer.always == False
+    for doer in dodoer.doers:
+        assert doer.done
+
+    # redo but with limit == so not all complete
+    doist.do(limit=2)
+    assert doist.tyme == 6.0
+    assert not dodoer.done
+    assert dodoer.always == False
+    assert doer0.done
+    assert not doer1.done
+    assert not doer2.done
+
+    # redo but with ddoer.always == True
+    dodoer.always = True
+    assert dodoer.always == True
+    doist.do(limit=5)
+    assert doist.tyme == 11.0
+    assert not dodoer.done  # dodoer not done
+    assert dodoer.always == True
+    for doer in dodoer.doers:   #  but all its doers are done
+        assert doer.done
+
+
+
     """End Test """
 
 
@@ -1002,4 +1063,4 @@ def test_echo_console():
 
 
 if __name__ == "__main__":
-    test_echo_console()
+    test_dodoer_always()
