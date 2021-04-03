@@ -597,6 +597,10 @@ class DoDoer(Doer):
                  non negative, zero means run asap
 
     Properties:
+        .deeds is deque of triples (dog, retyme, index)  where:
+            dog is generator
+            retyme is tyme in seconds when next should run may be real or simulated
+            index is position of associated doer in .doers list
         .always is Boolean, True means keep running even when all dogs in deeds
             are complete. Enables dynamically managing extending or removing
             doers and associated deeds while running.
@@ -644,6 +648,26 @@ class DoDoer(Doer):
         super(DoDoer, self).__init__(**kwa)
         self.doers = doers if doers is not None else []
         self.always = always
+        self.deeds = deque()
+
+
+    @property
+    def deeds(self):
+        """
+        deeds property getter, get ._deeds
+        .deeds is deque of triples, each of form (dog, retyme, index)
+        """
+        return self._deeds
+
+
+    @deeds.setter
+    def deeds(self, deeds):
+        """
+        set ._deeds to deeds deque
+        """
+        if not isinstance(deeds, deque):
+            raise TypeError("Expected deque, got {}.".format(type(deeds)))
+        self._deeds = deeds
 
 
     @property
@@ -660,7 +684,6 @@ class DoDoer(Doer):
     @always.setter
     def always(self, always):
         """
-
         set ._always to always
         """
         self._always = True if always else False
@@ -682,7 +705,6 @@ class DoDoer(Doer):
                 doers and associated deeds while running.
                 When not provided use .always.
         """
-        deeds = deque()
         always = always if always is not None else self.always
         try:
             # enter context
@@ -690,12 +712,12 @@ class DoDoer(Doer):
             self.tock = tock  #  set tock to parameter
             tyme = self.tyme
             self.done = False  # allows enter to override completion state
-            deeds = self.enter(doers=doers)  # doist.ready equivalent
+            self.deeds = self.enter(doers=doers)  # doist.ready equivalent
 
             #recur context
             while (not self.done or always):  # recur context
                 tyme = (yield (self.tock))  # yields .tock then waits for next send
-                self.done = self.recur(tyme=tyme, deeds=deeds)  # equv of doist.once
+                self.done = self.recur(tyme=tyme, deeds=self.deeds)  # equv of doist.once
 
         except GeneratorExit:  # close context, forced exit due to .close
             self.close()
@@ -708,7 +730,7 @@ class DoDoer(Doer):
             self.clean()
 
         finally:  # exit context, exit, unforced if normal exit of try, forced otherwise
-            self.exit(deeds=deeds)  # equiv of doist.do finally clause
+            self.exit(deeds=self.deeds)  # equiv of doist.do finally clause
 
         # return value of yield from or StopIteration.value indicates completion
         return self.done  # Only returns done state if normal return not close or abort raise
@@ -831,6 +853,7 @@ class DoDoer(Doer):
             deeds.append((dog, retyme, index))
 
         self.doers.extend(doers)
+        self.deeds.extend(deeds)
 
 
 

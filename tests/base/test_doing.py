@@ -488,6 +488,7 @@ def test_dodoer_always():
     assert doist.doers == [dodoer]
     assert dodoer.done == None
     assert dodoer.always == False
+    assert not dodoer.deeds
 
     # limit = 5 is long enough that all TryDoers complete
     doist.do()
@@ -496,6 +497,7 @@ def test_dodoer_always():
     assert dodoer.always == False
     for doer in dodoer.doers:
         assert doer.done
+    assert not dodoer.deeds
 
     # redo but with limit == so not all complete
     doist.do(limit=2)
@@ -505,8 +507,9 @@ def test_dodoer_always():
     assert doer0.done
     assert not doer1.done
     assert not doer2.done
+    assert not dodoer.deeds
 
-    # redo but with ddoer.always == True
+    # redo but with ddoer.always == True but limit enough to complete
     dodoer.always = True
     assert dodoer.always == True
     doist.do(limit=5)
@@ -515,8 +518,33 @@ def test_dodoer_always():
     assert dodoer.always == True
     for doer in dodoer.doers:   #  but all its doers are done
         assert doer.done
+    assert not dodoer.deeds
 
+    # redo but with ddoer.always == True but limit not enought to complete
+    assert dodoer.always == True
+    doist.do(limit=2)
+    assert doist.tyme == 13.0
+    assert not dodoer.done  # dodoer not done
+    assert dodoer.always == True
+    assert doer0.done
+    assert not doer1.done
+    assert not doer2.done
+    assert not dodoer.deeds
 
+    # redo but with ddoer.always == True but manual run doist so does not
+    # force complete doers
+    assert dodoer.always == True
+    assert doist.tyme == 13.0
+    deeds = doist.ready(doers=[dodoer])
+    doist.once(deeds)
+    doist.once(deeds)
+    assert doist.tyme == 15.0
+    assert not dodoer.done  # dodoer not done
+    assert dodoer.always == True
+    assert doer0.done
+    assert not doer1.done
+    assert not doer2.done
+    assert len(dodoer.deeds) == 2  # deeds still there
 
     """End Test """
 
