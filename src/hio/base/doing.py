@@ -733,7 +733,7 @@ class DoDoer(Doer):
             self.tock = tock  #  set tock to parameter
             # tyme = self.tyme
             self.done = False  # allows enter to override completion state
-            self.deeds = self.enter(doers=self.doers)  # doist.ready equivalent
+            self.enter()  # doist.ready equivalent
 
             #recur context
             while (not self.done or always):  # recur context
@@ -751,7 +751,7 @@ class DoDoer(Doer):
             self.clean()
 
         finally:  # exit context, exit, unforced if normal exit of try, forced otherwise
-            self.exit(deeds=self.deeds, doers=self.doers)  # equiv of doist.do finally clause
+            self.exit()  # equiv of doist.do finally clause
 
         # return value of yield from or StopIteration.value indicates completion
         return self.done  # Only returns done state if normal return not close or abort raise
