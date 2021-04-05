@@ -217,10 +217,11 @@ class Tymer(Tymee):
         """
         super(Tymer, self).__init__(**kwa)
         duration = float(duration) if duration is not None else self.Duration
-        start = float(start) if start is not None else self.tyme
-        self._start = start  # needed so default .duration
+        if start is None and not self.tymth:  # needed so default .duration works
+            start = 0.0
+        self._start = float(start) if start is not None else self.tyme
         self._stop = self._start + float(duration)  # needed so default .duration
-        self.start(duration=duration, start=start)
+        self.start(duration=duration, start=self._start)
 
 
     @property
@@ -259,13 +260,13 @@ class Tymer(Tymee):
         return (self.tyme >= self._stop)
 
 
-    def wind(self, tymist):
+    def wind(self, tymth):
         """
         Inject new ._tymist and any other bundled tymee references
         Update any dependencies on a change in ._tymist:
             starts over itself at new ._tymists time
         """
-        super(Tymer, self).wind(tymist)
+        super(Tymer, self).wind(tymth)
         self.start()
 
 

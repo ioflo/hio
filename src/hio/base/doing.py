@@ -356,9 +356,9 @@ class Doer(tyming.Tymee):
         .abort is abort context method
 
     Hidden:
-       ._tymth is injected function wrapper closure returned by .tymen() of
+        ._tymth is injected function wrapper closure returned by .tymen() of
             associated Tymist instance that returns Tymist .tyme. when called.
-       ._tock is hidden attribute for .tock property
+        ._tock is hidden attribute for .tock property
 
     """
 
@@ -615,7 +615,7 @@ class DoDoer(Doer):
         .opts is dict of injected options for its generator .do
 
     Attributes:
-        .doers is list of Doers or Doer like generator functions
+
 
     Inherited Properties:
         .tyme is float relative cycle time of associated Tymist .tyme obtained
@@ -623,11 +623,12 @@ class DoDoer(Doer):
         .tymth is function wrapper closure returned by Tymist .tymeth() method.
             When .tymth is called it returns associated Tymist .tyme.
             .tymth provides injected dependency on Tymist tyme base.
-
         .tock is float, desired time in seconds between runs or until next run,
                  non negative, zero means run asap
 
     Properties:
+        .doers is list of Doers or Doist compatible generator instances,
+            functions, or methods.
         .deeds is deque of triples (dog, retyme, index)  where:
             dog is generator
             retyme is tyme in seconds when next should run may be real or simulated
@@ -662,7 +663,7 @@ class DoDoer(Doer):
 
     """
 
-    def __init__(self, doers=None, always=False, **kwa):
+    def __init__(self, doers=None, deeds=None, always=False, **kwa):
         """
         Initialize instance.
 
@@ -672,7 +673,9 @@ class DoDoer(Doer):
             tock is float seconds initial value of .tock
 
         Parameters:
-           doers is list of doer compatible generator functions
+           doers is list of doist compatible generator instances, functions, or
+               methods
+           deeds is deque to hold deeds
            always is Boolean, True means keep running even when all dogs in deeds
             are complete. Enables dynamically managing extending or removing
             doers and associated deeds while running.
@@ -680,8 +683,28 @@ class DoDoer(Doer):
         """
         super(DoDoer, self).__init__(**kwa)
         self.doers = doers if doers is not None else []
+        self.deeds = deeds if deeds is not None else deque()
         self.always = always
-        self.deeds = deque()
+
+
+    @property
+    def doers(self):
+        """
+        doers property getter, get ._doers
+        .doers is list of doist compatible generator instances, functions, or
+            methods
+        """
+        return self._doers
+
+
+    @doers.setter
+    def doers(self, doers):
+        """
+        set ._doers to doers list
+        """
+        if not isinstance(doers, list):
+            raise TypeError("Expected list, got {}.".format(type(doers)))
+        self._doers = doers
 
 
     @property
@@ -722,7 +745,7 @@ class DoDoer(Doer):
         self._always = True if always else False
 
 
-    def do(self, tymth, tock=0.0, doers=None, always=None, **opts):
+    def do(self, tymth, tock=0.0, doers=None, deeds=None, always=None, **opts):
         """
         Generator method to run this doer. Equivalent of doist.do
         Calling this method returns generator
@@ -742,6 +765,9 @@ class DoDoer(Doer):
         always = always if always is not None else self.always
         if doers is not None:
             self.doers = doers
+        if deeds is not None:
+            self.deeds = deeds
+
         try:
             # enter context
             self.wind(tymth)  # change tymist dependencies
@@ -930,7 +956,6 @@ class DoDoer(Doer):
                 indices[i] = j
                 j += 1
 
-
         rdeeds = deque()  # fresh deque for deeds to remove
         deeds = self.deeds  # edit update self.deeds in place
         for i in range(len(deeds)):  # iterate once over each deed
@@ -968,7 +993,8 @@ class ServerDoer(Doer):
         """
         super(ServerDoer, self).__init__(**kwa)
         self.server = server
-        self.server.wind(self.tymth)
+        if self.tymth:
+            self.server.wind(self.tymth)
 
 
     def wind(self, tymth):
@@ -1047,7 +1073,8 @@ class ClientDoer(Doer):
         """
         super(ClientDoer, self).__init__(**kwa)
         self.client = client
-        self.client.wind(self.tymth)
+        if self.tymth:
+            self.client.wind(self.tymth)
 
 
     def wind(self, tymth):

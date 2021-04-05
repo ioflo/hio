@@ -92,8 +92,10 @@ def test_tymer():
     """
     Test Tymer class
     """
-    with pytest.raises(TypeError):
-        tymer = tyming.Tymer()  # calls .tyme which calls .tymth which is None
+    tymer = tyming.Tymer()  # uses start=0.0 if not .tymth
+    tymist = tyming.Tymist()
+    tymer.wind(tymth=tymist.tymen())
+    assert tymer.tyme == tymist.tyme
 
     tymist = tyming.Tymist()
     assert tymist.tock == 0.03125

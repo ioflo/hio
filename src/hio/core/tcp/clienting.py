@@ -111,15 +111,6 @@ class Client(tyming.Tymee):
         self.wl = wl
 
 
-    def wind(self, tymth):
-        """
-        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
-        Updates winds .tymer .tymth
-        """
-        super(Client, self).wind(tymth)
-        self.tymer.wind(tymth)
-
-
     @property
     def host(self):
         """
@@ -183,6 +174,15 @@ class Client(tyming.Tymee):
         setter for connected property
         """
         self.accepted = value
+
+
+    def wind(self, tymth):
+        """
+        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+        Updates winds .tymer .tymth
+        """
+        super(Client, self).wind(tymth)
+        self.tymer.wind(tymth)
 
 
     def reinitHostPort(self, ha=None, hostname=u'127.0.0.1', port=56000):
