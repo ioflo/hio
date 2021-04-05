@@ -53,13 +53,13 @@ def openServer(cls=None, **kwa):
         server.close()
 
 
-
-
-class Acceptor(object):
+class Acceptor(tyming.Tymee):
     """
     Acceptor Base Class for Server.
     Nonblocking TCP Socket Acceptor Class.
     Listen socket for incoming TCP connections
+
+    See tyming.Tymee for inherited attributes, properties, and methods
 
     Attributes:
         .ha is (host,port) duple (two tuple)
@@ -72,10 +72,7 @@ class Acceptor(object):
         .opened is boolean, True if listen socket .ss opened. False otherwise
     """
 
-    def __init__(self,
-                 ha=None,
-                 bs=8096,
-                 ):
+    def __init__(self, ha=None, bs=8096, **kwa):
         """
         Initialization method for instance.
         ha is host address duple (host, port) listen interfaces
@@ -83,6 +80,7 @@ class Acceptor(object):
         bs = buffer size
 
         """
+        super(Acceptor, self).__init__(**kwa)
         self.ha = ha or (host, port)  # ha = host address
         eha = self.ha
         host, port = eha  # expand so can normalize host
@@ -200,6 +198,8 @@ class Server(Acceptor):
     Listen socket for incoming TCP connections that generates Remoter sockets
     for accepted connections
 
+    See tyming.Tymee for inherited attributes, properties, and methods
+
     Inherited Attributes:
         .ha is (host,port) duple (two tuple)
                host = "" or "0.0.0.0" means listen on all interfaces
@@ -211,7 +211,6 @@ class Server(Acceptor):
         .opened is boolean, True if listen socket .ss opened. False otherwise
 
     Attributes:
-        .tymist is Tymist instance
         .timeout is timeout in seconds for connection refresh
         .wl is WireLog instance if any
         .ixes is dict of incoming connections indexed by remote (host, port) duple
@@ -223,7 +222,6 @@ class Server(Acceptor):
                  ha=None,
                  host="",
                  port=56000,
-                 tymist=None,
                  timeout=None,
                  wl=None,
                  **kwa):
@@ -234,16 +232,24 @@ class Server(Acceptor):
             host is default TCP/IP host address for listen socket
                 "" or "0.0.0.0" is listen on all interfaces
             port is default TCP/IP port
-            tymist is Tymist instance if any to pass to remoters for incoming connections
             timeout is default timeout for to pass to remoters for  incoming connections
             wl is WireLog instance if any
         """
         ha = ha or (host, port)
         super(Server, self).__init__(ha=ha, **kwa)
-        self.tymist = tymist or tyming.Tymist()
         self.timeout = timeout if timeout is not None else self.Timeout
         self.wl = wl
         self.ixes = dict()  # ready to rx tx incoming connections, Remoter instances
+
+
+    def wind(self, tymth):
+        """
+        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+        Updates winds .tymer .tymth
+        """
+        super(Server, self).wind(tymth)
+        for rm in self.ixes.values():  # remotoer
+            rm.wind(tymth)
 
 
     def serviceAxes(self):
@@ -260,12 +266,12 @@ class Server(Acceptor):
                 raise ValueError("Accepted socket host addresses malformed for "
                                  "peer. eha {0} != {1}, ca {2} != {3}\n".format(
                                      self.eha, cs.getsockname(), ca, cs.getpeername()))
-            remoter = Remoter(ha=cs.getsockname(),
+            remoter = Remoter(tymth=self.tymth,
+                              ha=cs.getsockname(),
                               ca=ca,
                               cs=cs,
                               bs=self.bs,
                               wl=self.wl,
-                              tymist=self.tymist,
                               timeout=self.timeout)
             if ca in self.ixes and self.ixes[ca] is not remoter:
                 self.shutdownIx[ca]
@@ -323,8 +329,8 @@ class Server(Acceptor):
         """
         Shutdown and close all remoter connections
         """
-        for ix in self.ixes.values():
-            ix.close()
+        for rm in self.ixes.values():  # remoter
+            rm.close()
 
 
     def close(self):
@@ -379,8 +385,8 @@ class Server(Acceptor):
         """
         Service transmits for all remoters in .ixes
         """
-        for ix in self.ixes.values():
-            ix.serviceSends()
+        for rm in self.ixes.values():  # remoter
+            rm.serviceSends()
 
 
     def service(self):
@@ -464,6 +470,8 @@ class ServerTls(Server):
     Listen socket for incoming TCP connections
     RemoterTLS sockets for accepted connections
 
+    See tyming.Tymee for inherited attributes, properties, and methods
+
     Inherited Attributes:
         .ha is (host,port) duple (two tuple)
                host = "" or "0.0.0.0" means listen on all interfaces
@@ -473,7 +481,6 @@ class ServerTls(Server):
         .ss is server listen socket for incoming accept requests
         .axes is deque of accepte connection duples (ca, cs)
         .opened is boolean, True if listen socket .ss opened. False otherwise
-        .tymist is Tymist instance
         .timeout is timeout in seconds for connection refresh
         .wl is WireLog instance if any
         .ixes is dict of incoming connections indexed by remote (host, port) duple
@@ -531,12 +538,12 @@ class ServerTls(Server):
                 raise ValueError("Accepted socket host addresses malformed for "
                                  "peer ha {0} != {1}, ca {2} != {3}\n".format(
                                      self.ha, cs.getsockname(), ca, cs.getpeername()))
-            remoter = RemoterTls(ha=cs.getsockname(),
+            remoter = RemoterTls(tymth=self.tymth,
+                                 ha=cs.getsockname(),
                                  ca=ca,
                                  bs=self.bs,
                                  cs=cs,
                                  wl=self.wl,
-                                 tymist=self.tymist,
                                  timeout=self.timeout,
                                  context=self.context,
                                  version=self.version,
@@ -572,7 +579,7 @@ class ServerTls(Server):
         self.serviceCxes()
 
 
-class Remoter(object):
+class Remoter(tyming.Tymee):
     """
     Class to service an incoming nonblocking TCP connection from a remote client.
     Should only be used from Acceptor subclass
@@ -583,11 +590,11 @@ class Remoter(object):
                  ha,
                  ca,
                  cs,
-                 tymist=None,
                  timeout=None,
                  refreshable=True,
                  bs=8096,
-                 wl=None
+                 wl=None,
+                 **kwa
                 ):
 
         """
@@ -598,26 +605,34 @@ class Remoter(object):
              know how to delete from .ixes when connection closed as .cs loses
              cs.getpeername() after its closed.
         cs = connection socket object
-        tymist = Tymist instance
         timeout = timeout for .timer
         refreshable = True if tx/rx activity refreshes timer False otherwise
         bs = buffer size
         wl = WireLog object if any
         """
+        super(Remoter, self).__init__(**kwa)
         self.ha = ha  # connection address of server
         self.ca = ca  # connection address of peer used to index in server.ixes
         self.cs = cs  # connection socket
         if self.cs:
             self.cs.setblocking(0)  # linux does not preserve blocking from accept
-        self.tymist = tymist or tyming.Tymist()
         self.timeout = timeout if timeout is not None else self.Timeout
-        self.tymer = tyming.Tymer(tymist=self.tymist, duration=self.timeout)
+        self.tymer = tyming.Tymer(tymth=self.tymth, duration=self.timeout)
         self.cutoff = False # True when detect connection closed on far side
         self.refreshable = refreshable
         self.bs = bs
         self.txbs = bytearray()  # bytearray of data to send
         self.rxbs = bytearray()  # bytearray of data received
         self.wl = wl
+
+
+    def wind(self, tymth):
+        """
+        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+        Updates winds .tymer .tymth
+        """
+        super(Remoter, self).wind(tymth)
+        self.tymer.wind(tymth)
 
 
     def shutdown(self, how=socket.SHUT_RDWR):

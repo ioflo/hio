@@ -25,8 +25,8 @@ def test_tcp_service_wired():
     # wire log everything to same file filed not buffered
     tymist = tyming.Tymist()
     with wiring.openWL(samed=True, filed=True) as wl, \
-         openServer(tymist=tymist,  ha=("", 6101), wl=wl) as server, \
-         openClient(tymist=tymist,  ha=("127.0.0.1", 6101), wl=wl) as beta:
+         openServer(tymth=tymist.tymen(),  ha=("", 6101), wl=wl) as server, \
+         openClient(tymth=tymist.tymen(),  ha=("127.0.0.1", 6101), wl=wl) as beta:
 
         assert isinstance(wl, wiring.WireLog)
         assert wl.rxed is True
@@ -119,8 +119,8 @@ def test_tcp_service_wired():
     # wire log everything to same buffer not filed
     tymist = tyming.Tymist()
     with wiring.openWL(samed=True) as wl, \
-         openServer(tymist=tymist,  ha=("", 6101), wl=wl) as server, \
-         openClient(tymist=tymist,  ha=("127.0.0.1", 6101), wl=wl) as beta:
+         openServer(tymth=tymist.tymen(),  ha=("", 6101), wl=wl) as server, \
+         openClient(tymth=tymist.tymen(),  ha=("127.0.0.1", 6101), wl=wl) as beta:
 
         assert isinstance(wl, wiring.WireLog)
         assert wl.rxed is True

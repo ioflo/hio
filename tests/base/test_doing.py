@@ -32,14 +32,18 @@ class TryDoer(doing.Doer):
        .stop is stop count where doer completes
 
     Inherited Properties:
-        .tyme is float ._tymist.tyme, relative cycle or artificial time
+        .tyme is float relative cycle time of associated Tymist .tyme obtained
+            via injected .tymth function wrapper closure.
+        .tymth is function wrapper closure returned by Tymist .tymeth() method.
+            When .tymth is called it returns associated Tymist .tyme.
+            .tymth provides injected dependency on Tymist tyme base.
         .tock is float, desired time in seconds between runs or until next run,
                  non negative, zero means run asap
 
     Properties:
 
     Methods:
-        .wind  injects ._tymist dependency
+        .wind  injects ._tymth dependency from associated Tymist to get its .tyme
         .__call__ makes instance callable
             Appears as generator function that returns generator
         .do is generator method that returns generator
@@ -108,7 +112,7 @@ class TryDoer(doing.Doer):
 
 
 @doing.doize()
-def tryDo(states, tymist, tock=0.0,  **opts):
+def tryDo(states, tymth, tock=0.0,  **opts):
     """
     Generator function test example non-class based generator.
     Calling this function returns generator
@@ -119,26 +123,26 @@ def tryDo(states, tymist, tock=0.0,  **opts):
     try:
         # enter context
 
-        states.append(State(tyme=tymist.tyme, context="enter", feed=feed, count=count))
+        states.append(State(tyme=tymth(), context="enter", feed=feed, count=count))
         while (True):  # recur context
             feed = (yield (count))  # yields tock then waits for next send
             count += 1
-            states.append(State(tyme=tymist.tyme, context="recur", feed=feed, count = count))
+            states.append(State(tyme=tymth(), context="recur", feed=feed, count = count))
             if count > 3:
                 break  # normal exit
 
     except GeneratorExit:  # close context, forced exit due to .close
         count += 1
-        states.append(State(tyme=tymist.tyme, context='close', feed=feed, count=count))
+        states.append(State(tyme=tymth(), context='close', feed=feed, count=count))
 
     except Exception:  # abort context, forced exit due to uncaught exception
         count += 1
-        states.append(State(tyme=tymist.tyme, context='abort', feed=feed, count=count))
+        states.append(State(tyme=tymth(), context='abort', feed=feed, count=count))
         raise
 
     finally:  # exit context,  unforced exit due to normal exit of try
         count += 1
-        states.append(State(tyme=tymist.tyme, context='exit', feed=feed, count=count))
+        states.append(State(tyme=tymth(), context='exit', feed=feed, count=count))
 
     return (True)  # return value of yield from, or yield ex.value of StopIteration
 
@@ -147,7 +151,7 @@ def test_doify():
     """
     Test wrapper function doify()
     """
-    def genfun(tymist=None, tock=0.0, **opts):
+    def genfun(tymth, tock=0.0, **opts):
         tyme = yield(tock)
 
     assert inspect.isgeneratorfunction(genfun)
@@ -170,9 +174,9 @@ def test_doify():
 
     tymist = tyming.Tymist()
 
-    g0 = gf0(tymist=tymist, tock=gf0.tock, **gf0.opts)
+    g0 = gf0(tymth=tymist.tymen(), tock=gf0.tock, **gf0.opts)
     assert inspect.isgenerator(g0)
-    g1 = gf0(tymist=tymist, tock=gf1.tock, **gf1.opts)
+    g1 = gf0(tymth=tymist.tymen(), tock=gf1.tock, **gf1.opts)
     assert inspect.isgenerator(g1)
 
     assert id(g0) != id(g1)
@@ -183,7 +187,7 @@ def test_doize():
     Test decorator @doize
     """
     @doing.doize(tock=0.25)
-    def genfun(tymist=None, tock=0.0, **opts):
+    def genfun(tymth, tock=0.0, **opts):
         tyme = yield(tock)
 
     assert inspect.isgeneratorfunction(genfun)
@@ -193,10 +197,10 @@ def test_doize():
 
     tymist = tyming.Tymist()
 
-    gen = genfun(tymist=tymist, tock=genfun.tock, **genfun.opts)
+    gen = genfun(tymth=tymist.tymen(), tock=genfun.tock, **genfun.opts)
     assert inspect.isgenerator(gen)
-
     """End Test"""
+
 
 def test_doer():
     """
@@ -204,19 +208,18 @@ def test_doer():
     """
     tock = 1.0
     doer = doing.Doer()
-    assert isinstance(doer._tymist, tyming.Tymist)
     assert doer.tock == 0.0
+    assert doer.tymth == None
 
     tymist = tyming.Tymist()
-    doer = doing.Doer(tymist=tymist, tock=tock)
-    assert doer._tymist == tymist
+    doer = doing.Doer(tymth=tymist.tymen(), tock=tock)
     assert doer.tock == tock == 1.0
     doer.tock = 0.0
     assert doer.tock ==  0.0
 
     # create generator use send and explicit close
     args = {}
-    dog = doer(tymist=doer._tymist, tock=doer.tock, **args)
+    dog = doer(tymth=doer.tymth, tock=doer.tock, **args)
     assert inspect.isgenerator(dog)
     result = dog.send(None)
     assert result == doer.tock == 0.0
@@ -234,7 +237,7 @@ def test_doer():
             raise
 
     # use next instead of send
-    dog = doer(tymist=doer._tymist, tock=doer.tock)
+    dog = doer(tymth=doer.tymth, tock=doer.tock)
     assert inspect.isgenerator(dog)
     result = next(dog)
     assert result == doer.tock == 0.0
@@ -252,7 +255,7 @@ def test_doer():
             raise
 
     #  use different tock
-    dog = doer(tymist=doer._tymist, tock=tock)
+    dog = doer(tymth=doer.tymth, tock=tock)
     assert inspect.isgenerator(dog)
     result = next(dog)
     assert result  == tock == 1.0
@@ -268,7 +271,7 @@ def test_doer():
 
     doer.tock = 0.0
 
-    dog = doer(tymist=doer._tymist, tock=tock)
+    dog = doer(tymth=doer.tymth, tock=tock)
     assert inspect.isgenerator(dog)
     result = next(dog)
     assert result == tock == 1.0
@@ -286,37 +289,36 @@ def test_doer():
             raise
     """End Test """
 
+
 def test_redoer():
     """
     Test ReDoer base class
     """
     tock = 1.0
-    doer = doing.ReDoer()
-    assert isinstance(doer._tymist, tyming.Tymist)
-    assert doer.tock == 0.0
+    redoer = doing.ReDoer()
+    assert redoer.tock == 0.0
 
     tymist = tyming.Tymist()
-    doer = doing.ReDoer(tymist=tymist, tock=tock)
-    assert doer._tymist == tymist
-    assert doer.tock == tock == 1.0
-    doer.tock = 0.0
-    assert doer.tock ==  0.0
+    redoer = doing.ReDoer(tymth=tymist.tymen(), tock=tock)
+    assert redoer.tock == tock == 1.0
+    redoer.tock = 0.0
+    assert redoer.tock ==  0.0
 
     # create generator use send and run until normal exit. emulates Doist.ready
     args = {}
-    dog = doer(tymist=doer._tymist, tock=doer.tock, **args)
+    dog = redoer(tymth=redoer.tymth, tock=redoer.tock, **args)
     assert inspect.isgenerator(dog)
 
     result = dog.send(None)
-    assert result == doer.tock == 0.0
+    assert result == redoer.tock == 0.0
 
     tymist.tick()
     result = dog.send(tymist.tyme)
-    assert result == doer.tock == 0.0
+    assert result == redoer.tock == 0.0
 
     tymist.tick()
     result = dog.send(tymist.tyme)
-    assert result == doer.tock == 0.0
+    assert result == redoer.tock == 0.0
 
     tymist.tick()
     with pytest.raises(StopIteration):
@@ -336,15 +338,15 @@ def test_redoer():
 
     # create generator use send and then explicit close. emulates Doist.ready
     args = {}
-    dog = doer(tymist=doer._tymist, tock=doer.tock, **args)
+    dog = redoer(tymth=redoer.tymth, tock=redoer.tock, **args)
     assert inspect.isgenerator(dog)
 
     result = dog.send(None)
-    assert result == doer.tock == 0.0
+    assert result == redoer.tock == 0.0
 
     tymist.tick()
     result = dog.send(tymist.tyme)
-    assert result == doer.tock == 0.0
+    assert result == redoer.tock == 0.0
 
     result = dog.close()
     assert result == None  # no yielded value on close
@@ -360,14 +362,14 @@ def test_redoer():
 
     # use next instead of send
     args = {}
-    dog = doer(tymist=doer._tymist, tock=doer.tock, **args)
+    dog = redoer(tymth=redoer.tymth, tock=redoer.tock, **args)
     assert inspect.isgenerator(dog)
 
     result = next(dog)
-    assert result == doer.tock == 0.0
+    assert result == redoer.tock == 0.0
 
     result = next(dog)
-    assert result == doer.tock == 0.0
+    assert result == redoer.tock == 0.0
 
     result = dog.close()
     assert result == None  # no yielded value on close
@@ -387,26 +389,24 @@ def test_dodoer():
     Test DoDoer class
     """
     tock = 1.0
-    doer = doing.DoDoer()
-    assert isinstance(doer._tymist, tyming.Tymist)
-    assert doer.tock == 0.0
+    dodoer = doing.DoDoer()
+    assert dodoer.tock == 0.0
 
     tymist = tyming.Tymist()
-    doer = doing.DoDoer(tymist=tymist, tock=tock)
-    assert doer._tymist == tymist
-    assert doer.tock == tock == 1.0
-    doer.tock = 0.0
-    assert doer.tock ==  0.0
+    dodoer = doing.DoDoer(tymth=tymist.tymen(), tock=tock)
+    assert dodoer.tock == tock == 1.0
+    dodoer.tock = 0.0
+    assert dodoer.tock ==  0.0
 
     # create generator use send and run until normal exit. emulates Doist.ready
     args = {}
-    dog = doer(tymist=doer._tymist, tock=doer.tock, **args)
+    dog = dodoer(tymth=dodoer.tymth, tock=dodoer.tock, **args)
     assert inspect.isgenerator(dog)
-    assert doer.doers == []
+    assert dodoer.doers == []
 
     result = dog.send(None)
-    assert result == doer.tock == 0.0
-    assert doer.doers == []
+    assert result == dodoer.tock == 0.0
+    assert dodoer.doers == []
 
     tymist.tick()  # empty doers does list so ends right away
     with pytest.raises(StopIteration):
@@ -424,7 +424,6 @@ def test_dodoer():
             assert ex.value == None
             raise
 
-
     # create some doers
     doer0 = doing.Doer()
     doer1 = doing.Doer()
@@ -434,21 +433,21 @@ def test_dodoer():
 
     # create generator use send and then explicit close. emulates Doist.ready
     args = {}
-    dog = doer(tymist=doer._tymist, tock=doer.tock, doers=doers, **args)
+    dog = dodoer(tymth=dodoer.tymth, tock=dodoer.tock, doers=doers, **args)
     assert inspect.isgenerator(dog)
-    assert doer.doers == []
+    assert dodoer.doers == []
 
     result = dog.send(None)
-    assert result == doer.tock == 0.0
-    assert doer.doers == doers
+    assert result == dodoer.tock == 0.0
+    assert dodoer.doers == doers
 
     tymist.tick()
     result = dog.send(tymist.tyme)
-    assert result == doer.tock == 0.0
+    assert result == dodoer.tock == 0.0
 
     tymist.tick()
     result = dog.send(tymist.tyme)
-    assert result == doer.tock == 0.0
+    assert result == dodoer.tock == 0.0
 
     result = dog.close()
     assert result == None  # no yielded value on close
@@ -494,9 +493,11 @@ def test_dodoer_always():
     doist.do()
     assert doist.tyme == 4.0
     assert dodoer.done
+    assert dodoer.tyme == doist.tyme
     assert dodoer.always == False
     for doer in dodoer.doers:
         assert doer.done
+        assert doer.tyme == dodoer.tyme == doist.tyme
     assert not dodoer.deeds
 
     # redo but with limit == so not all complete
@@ -635,7 +636,7 @@ def test_exDo():
 
     tymist = tyming.Tymist()
 
-    dog = doizeExDo(tymist=tymist, tock=doizeExDo.tock, **doizeExDo.opts)
+    dog = doizeExDo(tymth=tymist.tymen(), tock=doizeExDo.tock, **doizeExDo.opts)
     assert inspect.isgenerator(dog)
     tock = dog.send(None)
     assert tock == 0.0
@@ -654,7 +655,7 @@ def test_exDo():
                                    State(tyme=0.0, context='exit', feed=None, count=4)]
 
     doizeExDo.opts["states"] = []
-    dog = doizeExDo(tymist=tymist, tock=1.0, **doizeExDo.opts)
+    dog = doizeExDo(tymth=tymist.tymen(), tock=1.0, **doizeExDo.opts)
     assert inspect.isgenerator(dog)
     tock = dog.send(None)
     assert tock == 1.0
@@ -674,7 +675,7 @@ def test_exDo():
 
 
     doizeExDo.opts["states"] = []
-    dog = doizeExDo(tymist=tymist, tock=1.0, **doizeExDo.opts)
+    dog = doizeExDo(tymth=tymist.tymen(), tock=1.0, **doizeExDo.opts)
     assert inspect.isgenerator(dog)
     tock = next(dog)
     assert tock == 1.0
@@ -700,14 +701,12 @@ def test_trydoer_break():
     Test TryDoer testing class with break to normal exit
     """
     tymist = tyming.Tymist(tock=0.125)
-    doer = TryDoer(tymist=tymist, tock=0.25)
-    assert doer._tymist == tymist
-    assert doer._tymist.tock == 0.125
+    doer = TryDoer(tymth=tymist.tymen(), tock=0.25)
     assert doer.tock == 0.25
     assert doer.states ==  []
     assert tymist.tyme == 0.0
 
-    do = doer(tymist=doer._tymist, tock=doer.tock)
+    do = doer(tymth=doer.tymth, tock=doer.tock)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == 0.25
@@ -764,14 +763,12 @@ def test_trydoer_close():
     Test TryDoer testing class with close to force exit
     """
     tymist = tyming.Tymist(tock=0.125)
-    doer = TryDoer(tymist=tymist, tock=0.25)
-    assert doer._tymist == tymist
-    assert doer._tymist.tock == 0.125
+    doer = TryDoer(tymth=tymist.tymen(), tock=0.25)
     assert doer.tock == 0.25
     assert doer.states ==  []
     assert tymist.tyme == 0.0
 
-    do = doer(tymist=doer._tymist, tock=doer.tock)
+    do = doer(tymth=doer.tymth, tock=doer.tock)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == 0.25
@@ -817,14 +814,12 @@ def test_trydoer_throw():
     Test TryDoer testing class with throw to force exit
     """
     tymist = tyming.Tymist(tock=0.125)
-    doer = TryDoer(tymist=tymist, tock=0.25)
-    assert doer._tymist == tymist
-    assert doer._tymist.tock == 0.125
+    doer = TryDoer(tymth=tymist.tymen(), tock=0.25)
     assert doer.tock == 0.25
     assert doer.states ==  []
     assert tymist.tyme == 0.0
 
-    do = doer(tymist=doer._tymist, tock=doer.tock)
+    do = doer(tymth=doer.tymth, tock=doer.tock)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == 0.25
@@ -877,7 +872,7 @@ def test_trydo_break():
     assert tymist.tyme == 0.0
     states = []
 
-    do = tryDo(states=states, tymist=tymist, tock=0.25)
+    do = tryDo(tymth=tymist.tymen(), states=states, tock=0.25)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == 0
@@ -935,7 +930,7 @@ def test_trydo_close():
     assert tymist.tyme == 0.0
     states = []
 
-    do = tryDo(states=states, tymist=tymist, tock=0.25)
+    do = tryDo(tymth=tymist.tymen(), states=states, tock=0.25)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == 0
@@ -983,7 +978,7 @@ def test_trydo_throw():
     assert tymist.tyme == 0.0
     states = []
 
-    do = tryDo(states=states, tymist=tymist, tock=0.25)
+    do = tryDo(tymth=tymist.tymen(), states=states, tock=0.25)
     assert inspect.isgenerator(do)
     result = do.send(None)
     assert result == 0
@@ -1040,21 +1035,21 @@ def test_server_client():
 
     port = 6120
     server = serving.Server(host="", port=port)
-    client = clienting.Client(host="localhost", port=port)
+    # client needs tymth in order to init its .tymer
+    client = clienting.Client(tymth=doist.tymen(), host="localhost", port=port)
+    assert client.tyme == doist.tyme
 
-    serdoer = doing.ServerDoer(tymist=doist, server=server)
-    assert serdoer.server.tymist == serdoer._tymist == doist
+    serdoer = doing.ServerDoer(tymth=doist.tymen(), server=server)
     assert serdoer.server ==  server
-    clidoer = doing.ClientDoer(tymist=doist, client=client)
-    assert clidoer.client.tymist == clidoer._tymist == doist
+    assert serdoer.tyme ==  serdoer.server.tyme == doist.tyme
+    clidoer = doing.ClientDoer(tymth=doist.tymen(), client=client)
     assert clidoer.client == client
+    assert clidoer.tyme == clidoer.client.tyme == doist.tyme
 
     assert serdoer.tock == 0.0  # ASAP
     assert clidoer.tock == 0.0  # ASAP
 
     doers = [serdoer, clidoer]
-    for doer in doers:
-        assert doer._tymist == doist
 
     msgTx = b"Hello me maties!"
     clidoer.client.tx(msgTx)
@@ -1088,20 +1083,19 @@ def test_echo_server_client():
 
     port = 6120
     server = serving.Server(host="", port=port)
-    client = clienting.Client(host="localhost", port=port)
+    client = clienting.Client(tymth=doist.tymen(), host="localhost", port=port)
 
-    serdoer = doing.EchoServerDoer(tymist=doist, server=server)
-    assert serdoer.server.tymist == serdoer._tymist == doist
-    assert serdoer.server ==  server
-    clidoer = doing.ClientDoer(tymist=doist, client=client)
-    assert clidoer.client.tymist == clidoer._tymist == doist
+    serdoer = doing.EchoServerDoer(tymth=doist.tymen(), server=server)
+    assert serdoer.server == server
+    assert serdoer.tyme ==  serdoer.server.tyme == doist.tyme
+    clidoer = doing.ClientDoer(tymth=doist.tymen(), client=client)
+    assert clidoer.client == client
+    assert clidoer.tyme == clidoer.client.tyme == doist.tyme
 
     assert serdoer.tock == 0.0  # ASAP
     assert clidoer.tock == 0.0  # ASAP
 
     doers = [serdoer, clidoer]
-    for doer in doers:
-        assert doer._tymist == doist
 
     msgTx = b"Hello me maties!"
     clidoer.client.tx(msgTx)
@@ -1163,4 +1157,4 @@ def test_echo_console():
 
 
 if __name__ == "__main__":
-    test_dodoer_always()
+    test_echo_server_client()

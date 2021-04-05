@@ -87,6 +87,17 @@ class Tymist(hioing.Mixin):
         self.tyme += float(tock if tock is not None else self.tock)
         return self.tyme
 
+    def tymen(self):
+        """
+        Returns function wrapper closure tymth that when called returns .tyme.
+        This enables read only injection of .tyme into any object that wants to
+        be on or access this Tymist's tyme base.
+        """
+        def tymth():
+            return self.tyme
+        return tymth
+
+
 
 class Tymee(hioing.Mixin):
     """
@@ -96,24 +107,29 @@ class Tymee(hioing.Mixin):
     Attributes:
 
     Properties:
-        .tyme is float relative cycle time, .tyme is artificial time
-        .tymist is Tymist instance
+        .tyme is float relative cycle time of associated Tymist .tyme obtained
+            via injected .tymth function wrapper closure.
+        .tymth is function wrapper closure returned by Tymist .tymeth() method.
+            When .tymth is called it returns associated Tymist .tyme.
+            .tymth provides injected dependency on Tymist tyme base.
 
     Methods:
-        .wind  injects ._tymist dependency
+        .wind  injects ._tymth dependency from associated Tymist to get its .tyme
 
     Hidden:
-        ._tymist is Tymist instance reference
+        ._tymth is injected function wrapper closure returned by .tymen() of
+            associated Tymist instance that returns Tymist .tyme. when called.
 
     """
-    def __init__(self, tymist=None, **kwa):
+    def __init__(self, tymth=None, **kwa):
         """
         Initialize instance
         Parameters:
-            tymist is reference to Tymist instance
+            tymth is injected function wrapper closure returned by .tymen() of
+                Tymist instance. Calling tymth() returns associated Tymist .tyme.
         """
         super(Tymee, self).__init__(**kwa)  # Mixin for Mult-inheritance MRO
-        self._tymist = tymist if tymist is not None else Tymist(tyme=0.0)
+        self._tymth = tymth
 
 
     @property
@@ -122,24 +138,35 @@ class Tymee(hioing.Mixin):
         tyme property getter, get ._tyme
         .tyme is float cycle time in seconds
         """
-        return self._tymist.tyme
+        return self._tymth()
 
 
     @property
-    def tymist(self):
+    def tymth(self):
         """
-        tymist property getter, get ._tymist
-        returns own Tymist instance
+        tymth property getter, get ._tymth
+        returns own copy of tymist.tynth function wrapper closure for subsequent
+        injection into related objects that want to be on same tymist tyme base.
         """
-        return self._tymist
+        return self._tymth
 
 
-    def wind(self, tymist):
+    @tymth.setter
+    def tymth(self, tymth):
         """
-        Inject new ._tymist and any other bundled tymee references
-        Update any dependencies on a change in ._tymist
+        tymth property setter, sets ._tymth to tymth.
+        tymth is function wrapper closure that returns tymist.tyme
         """
-        self._tymist = tymist
+        self._tymth = tymth
+
+
+    def wind(self, tymth):
+        """
+        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+        Override in subclasses to update any dependencies on a change in
+        tymist.tymth base
+        """
+        self.tymth = tymth
 
 
 class Tymer(Tymee):
@@ -152,7 +179,11 @@ class Tymer(Tymee):
     Attributes:
 
     Inherited Properties:
-        .tyme is cycle time of ._tymist
+        .tyme is float relative cycle time of associated Tymist .tyme obtained
+            via injected .tymth function wrapper closure.
+        .tymth is function wrapper closure returned by Tymist .tymeth() method.
+            When .tymth is called it returns associated Tymist .tyme.
+            .tymth provides injected dependency on Tymist tyme base.
 
     Properties:
         .duration = tyme duration of tymer in seconds from ._start to ._stop
@@ -161,14 +192,15 @@ class Tymer(Tymee):
         .expired = True if expired, False otherwise, i.e. .tyme >= ._stop
 
     Inherited Methods:
-        .wind is injects ._tymist dependency
+        .wind is injects ._tymth dependency
 
     Methods:
         .start() = start tymer at current .tyme
         .restart() = restart tymer at last ._stop so no time lost
 
     Hidden:
-        ._tymist is Tymist instance reference
+        ._tymth is injected function wrapper closure returned by .tymen() of
+            associated Tymist instance that returns Tymist .tyme. when called.
         ._start is start tyme in seconds
         ._stop  is stop tyme in seconds
 

@@ -43,12 +43,11 @@ def test_tcp_basic():
 
 
     """
-    client = Client()
-    assert isinstance(client.tymist, tyming.Tymist)
+    tymist = tyming.Tymist()
+    client = Client(tymth=tymist.tymen())
     assert client.timeout == 0.0
     assert isinstance(client.tymer, tyming.Tymer)
     assert client.tymer.duration == client.timeout
-    assert client.tymer._tymist == client.tymist
 
     assert client.ha == ('127.0.0.1', 56000)
     assert (client.host, client.port) == client.ha
@@ -66,8 +65,7 @@ def test_tcp_basic():
     assert client.wl == None
 
     tymist = tyming.Tymist()
-    with openClient(tymist=tymist, timeout=0.5) as client:
-        assert client.tymist == tymist
+    with openClient(tymth=tymist.tymen(), timeout=0.5) as client:
         assert client.timeout == 0.5
         assert client.ha == ('127.0.0.1', 56000)
         assert client.opened == True
@@ -81,7 +79,6 @@ def test_tcp_basic():
     assert client.cutoff == False
 
     server = Server()
-    assert isinstance(server.tymist, tyming.Tymist)
     assert server.timeout == 1.0
 
     assert server.ha == ('', 56000)
@@ -93,7 +90,7 @@ def test_tcp_basic():
     assert isinstance(server.ixes, dict)
     assert server.wl == None
 
-    with openServer(tymist=tymist, timeout=1.5) as server:
+    with openServer(tymth=tymist.tymen(), timeout=1.5) as server:
         assert server.ha == ('0.0.0.0', 56000)
         assert server.eha == ('127.0.0.1', 56000)
         assert server.opened == True
@@ -101,9 +98,9 @@ def test_tcp_basic():
     assert server.opened == False
 
     tymist = tyming.Tymist()
-    with openServer(tymist=tymist, ha=("", 6101)) as server, \
-         openClient(tymist=tymist, ha=("127.0.0.1", 6101)) as beta, \
-         openClient(tymist=tymist, ha=("127.0.0.1", 6101)) as gamma:
+    with openServer(tymth=tymist.tymen(), ha=("", 6101)) as server, \
+         openClient(tymth=tymist.tymen(), ha=("127.0.0.1", 6101)) as beta, \
+         openClient(tymth=tymist.tymen(), ha=("127.0.0.1", 6101)) as gamma:
 
         assert server.opened == True
         assert beta.opened == True
@@ -480,8 +477,8 @@ def test_tcp_service():
     Test Classes tcp service methods
     """
     tymist = tyming.Tymist()
-    with openServer(tymist=tymist,  ha=("", 6101)) as server, \
-         openClient(tymist=tymist,  ha=("127.0.0.1", 6101)) as beta:
+    with openServer(tymth=tymist.tymen(),  ha=("", 6101)) as server, \
+         openClient(tymth=tymist.tymen(),  ha=("127.0.0.1", 6101)) as beta:
 
         assert server.opened == True
         assert server.ha == ('0.0.0.0', 6101)
@@ -585,8 +582,8 @@ def test_client_auto_reconnect():
     Test client auto reconnect when  .reconnectable
     """
     tymist = tyming.Tymist(tock=0.05)
-    with openServer(tymist=tymist, ha=("", 6101)) as server, \
-         openClient(tymist=tymist, timeout=0.2, reconnectable=True,
+    with openServer(tymth=tymist.tymen(), ha=("", 6101)) as server, \
+         openClient(tymth=tymist.tymen(), timeout=0.2, reconnectable=True,
                     ha=("127.0.0.1", 6101)) as beta:
 
         # close server
@@ -597,13 +594,12 @@ def test_client_auto_reconnect():
         assert beta.accepted == False
         assert beta.connected == False
         assert beta.cutoff == False
-        assert beta.tymist == tymist
         assert beta.reconnectable == True
 
         # attempt to connect beta to serve while server down (closed)
-        while beta.tymist.tyme <= 0.25:
+        while tymist.tyme <= 0.25:
             beta.serviceConnect()
-            beta.tymist.tick()
+            tymist.tick()
             time.sleep(0.05)
 
         assert beta.accepted == False
@@ -619,7 +615,7 @@ def test_client_auto_reconnect():
         while not (beta.connected and beta.ca in server.ixes):
             beta.serviceConnect()
             server.serviceConnects()
-            beta.tymist.tick()  # advances clients reconnect retry tymer
+            tymist.tick()  # advances clients reconnect retry tymer
             time.sleep(0.05)
 
         assert beta.accepted == True
@@ -693,12 +689,16 @@ def  test_tcp_tls_default_context():
 
     tymist = tyming.Tymist()
     with openServer(cls=ServerTls,
-                    tymist=tymist, ha=("", 6101), bs=16192,
+                    tymth=tymist.tymen(),
+                    ha=("", 6101),
+                    bs=16192,
                     keypath=serverKeyPath,
                     certpath=serverCertPath,
                     cafilepath=clientCaPath) as server, \
          openClient(cls=ClientTls,
-                    tymist=tymist, ha=("127.0.0.1", 6101), bs=16192,
+                    tymth=tymist.tymen(),
+                    ha=("127.0.0.1", 6101),
+                    bs=16192,
                     certedhost=serverCertCommonName,
                     keypath=clientKeyPath,
                     certpath=clientCertPath,
@@ -788,13 +788,17 @@ def test_tcp_tls_verify_both():
 
     tymist = tyming.Tymist()
     with openServer(cls=ServerTls,
-                    tymist=tymist, ha=("", 6101), bs=16192,
+                    tymth=tymist.tymen(),
+                    ha=("", 6101),
+                    bs=16192,
                     keypath=serverKeyPath,
                     certpath=serverCertPath,
                     cafilepath=clientCaPath,
                     certify=ssl.CERT_REQUIRED,) as server, \
          openClient(cls=ClientTls,
-                    tymist=tymist, ha=("127.0.0.1", 6101), bs=16192,
+                    tymth=tymist.tymen(),
+                    ha=("127.0.0.1", 6101),
+                    bs=16192,
                     certedhost=serverCertCommonName,
                     keypath=clientKeyPath,
                     certpath=clientCertPath,
@@ -860,6 +864,7 @@ def test_tcp_tls_verify_both():
     assert server.opened == False
     """Done Test"""
 
+
 def test_tcp_tls_verify_client():
     """
     Test TCP TLS client server connection with verify certs for client not server
@@ -887,13 +892,16 @@ def test_tcp_tls_verify_client():
 
     tymist = tyming.Tymist()
     with openServer(cls=ServerTls,
-                    tymist=tymist, ha=("", 6101), bs=16192,
+                    tymth=tymist.tymen(),
+                    ha=("", 6101),
+                    bs=16192,
                     keypath=serverKeyPath,
                     certpath=serverCertPath,
                     cafilepath=clientCaPath,
                     certify=ssl.CERT_REQUIRED,) as server, \
          openClient(cls=ClientTls,
-                    tymist=tymist, ha=("127.0.0.1", 6101), bs=16192,
+                    tymth=tymist.tymen(),
+                    ha=("127.0.0.1", 6101), bs=16192,
                     certedhost=serverCertCommonName,
                     keypath=clientKeyPath,
                     certpath=clientCertPath,
@@ -986,13 +994,17 @@ def test_tcp_tls_verify_server():
 
     tymist = tyming.Tymist()
     with openServer(cls=ServerTls,
-                    tymist=tymist, ha=("", 6101), bs=16192,
+                    tymth=tymist.tymen(),
+                    ha=("", 6101),
+                    bs=16192,
                     keypath=serverKeyPath,
                     certpath=serverCertPath,
                     cafilepath=clientCaPath,
                     certify=ssl.CERT_NONE ,) as server, \
          openClient(cls=ClientTls,
-                    tymist=tymist, ha=("127.0.0.1", 6101), bs=16192,
+                    tymth=tymist.tymen(),
+                    ha=("127.0.0.1", 6101),
+                    bs=16192,
                     certedhost=serverCertCommonName,
                     keypath=clientKeyPath,
                     certpath=clientCertPath,
@@ -1057,6 +1069,7 @@ def test_tcp_tls_verify_server():
     assert server.opened == False
     """Done Test"""
 
+
 def test_tcp_tls_verify_neither():
     """
     Test TCP TLS client server connection with verify certs for neither server nor client
@@ -1084,13 +1097,17 @@ def test_tcp_tls_verify_neither():
 
     tymist = tyming.Tymist()
     with openServer(cls=ServerTls,
-                    tymist=tymist, ha=("", 6101), bs=16192,
+                    tymth=tymist.tymen(),
+                    ha=("", 6101),
+                    bs=16192,
                     keypath=serverKeyPath,
                     certpath=serverCertPath,
                     cafilepath=clientCaPath,
                     certify=ssl.CERT_NONE ,) as server, \
          openClient(cls=ClientTls,
-                    tymist=tymist, ha=("127.0.0.1", 6101), bs=16192,
+                    tymth=tymist.tymen(),
+                    ha=("127.0.0.1", 6101),
+                    bs=16192,
                     certedhost=serverCertCommonName,
                     keypath=clientKeyPath,
                     certpath=clientCertPath,
@@ -1155,6 +1172,7 @@ def test_tcp_tls_verify_neither():
     assert server.opened == False
     """Done Test"""
 
+
 def test_tcp_tls_verify_both_tlsv12():
     """
     Test TCP TLS client server connection with verify certs for both client and server
@@ -1182,14 +1200,18 @@ def test_tcp_tls_verify_both_tlsv12():
 
     tymist = tyming.Tymist()
     with openServer(cls=ServerTls,
-                    tymist=tymist, ha=("", 6101), bs=16192,
+                    tymth=tymist.tymen(),
+                    ha=("", 6101),
+                    bs=16192,
                     keypath=serverKeyPath,
                     certpath=serverCertPath,
                     cafilepath=clientCaPath,
                     certify=ssl.CERT_REQUIRED,
                     version=ssl.PROTOCOL_TLSv1_2,) as server, \
          openClient(cls=ClientTls,
-                    tymist=tymist, ha=("127.0.0.1", 6101), bs=16192,
+                    tymth=tymist.tymen(),
+                    ha=("127.0.0.1", 6101),
+                    bs=16192,
                     certedhost=serverCertCommonName,
                     keypath=clientKeyPath,
                     certpath=clientCertPath,
@@ -1255,6 +1277,7 @@ def test_tcp_tls_verify_both_tlsv12():
     assert beta.opened == False
     assert server.opened == False
     """Done Test"""
+
 
 if __name__ == "__main__":
     test_client_auto_reconnect()

@@ -387,16 +387,11 @@ def test_wirelog_doer():
 
     wl = wiring.WireLog(samed=True, temp=True)
 
-    wiredoer = wiring.WireLogDoer(tymist=doist, wl=wl)
+    wiredoer = wiring.WireLogDoer(tymth=doist.tymen(), wl=wl)
     assert wiredoer.wl == wl
-    assert wiredoer._tymist == doist
     assert wiredoer.tock == 0.0  # ASAP
 
     doers = [wiredoer]
-    for doer in doers:
-        assert doer._tymist == doist
-
-
     doist.do(doers=doers)
     assert doist.tyme == limit
     assert wiredoer.wl.opened == False

@@ -38,8 +38,8 @@ def test_doist_once():
     assert doist.limit == None
     assert doist.doers == []
 
-    doer0 = doing.ExDoer(tock=0.25, tymist=doist)
-    doer1 = doing.ExDoer(tock=0.5, tymist=doist)
+    doer0 = doing.ExDoer(tock=0.25, tymth=doist.tymen())
+    doer1 = doing.ExDoer(tock=0.5, tymth=doist.tymen())
     doers = [doer0, doer1]
 
     doist.doers = doers
@@ -47,7 +47,6 @@ def test_doist_once():
     assert len(deeds) == 2
     assert [val[1] for val in deeds] == [0.0, 0.0]
     for doer in doers:
-        assert doer._tymist ==  doist
         assert doer.states == [State(tyme=0.0, context='enter', feed=0.0, count=0)]
         assert doer.done == False
 
@@ -157,13 +156,12 @@ def test_doist_doers():
     assert doist.limit == None
     assert doist.doers == []
 
-    doer0 = doing.ExDoer(tock=tock, tymist=doist)
-    doer1 = doing.ExDoer(tock=tock*2, tymist=doist)
+    doer0 = doing.ExDoer(tock=tock, tymth=doist.tymen())
+    doer1 = doing.ExDoer(tock=tock*2, tymth=doist.tymen())
     assert doer0.tock == tock
     assert doer1.tock == tock * 2
     doers = [doer0, doer1]
     for doer in doers:
-        assert doer._tymist == doist
         assert doer.states == []
         assert doer.count == None
         assert doer.done == None
@@ -197,8 +195,6 @@ def test_doist_doers():
     for doer in doers:
         doer.states = []
         assert doer.states == []
-        doer._tymist = doist
-        assert doer._tymist == doist
 
     doist.do(doers=doers)
     assert doist.tyme == limit == 0.125
@@ -228,8 +224,6 @@ def test_doist_doers():
     for doer in doers:
         doer.states = []
         assert doer.states == []
-        doer._tymist = doist
-        assert doer._tymist == doist
 
     doist.do()
     assert doist.tyme == limit == 0.125
@@ -259,8 +253,6 @@ def test_doist_doers():
     for doer in doers:
         doer.states = []
         assert doer.states == []
-        doer._tymist = doist
-        assert doer._tymist == doist
         doer.tock = 0.0  # run asap
         assert doer.tock == 0.0
 
@@ -285,8 +277,6 @@ def test_doist_doers():
     for doer in doers:
         doer.states = []
         assert doer.states == []
-        doer._tymist = doist
-        assert doer._tymist == doist
         doer.tock = 0.0  # run asap
         assert doer.tock == 0.0
 
@@ -314,8 +304,6 @@ def test_doist_doers():
     for doer in doers:
         doer.states = []
         assert doer.states == []
-        doer._tymist = doist
-        assert doer._tymist == doist
         doer.tock = 0.0  # run asap
         assert doer.tock == 0.0
 
@@ -341,8 +329,6 @@ def test_doist_doers():
     for doer in doers:
         doer.states = []
         assert doer.states == []
-        doer._tymist = doist
-        assert doer._tymist == doist
         doer.tock = 0.0  # run asap
         assert doer.tock == 0.0
 
@@ -372,37 +358,33 @@ def test_nested_doers():
     assert doist.limit == None
     assert doist.doers == []
 
-    doer0 = doing.ExDoer(tock=0.0, tymist=doist)
-    doer1 = doing.ExDoer(tock=tock*2, tymist=doist)
+    doer0 = doing.ExDoer(tock=0.0, tymth=doist.tymen())
+    doer1 = doing.ExDoer(tock=tock*2, tymth=doist.tymen())
     assert doer0.tock == 0.0
     assert doer1.tock == tock * 2
     aDoers = [doer0, doer1]
     for doer in aDoers:
-        assert doer._tymist == doist
         assert doer.states == []
         assert doer.count == None
         assert doer.done == None
 
-    aDoer = doing.DoDoer(tock=0.0, tymist=doist, doers=aDoers)
+    aDoer = doing.DoDoer(tock=0.0, tymth=doist.tymen(), doers=aDoers)
     assert aDoer.doers == aDoers
-    assert aDoer._tymist == doist
     assert aDoer.done == None
 
 
-    doer2 = doing.ExDoer(tock=0.0, tymist=doist)
-    doer3 = doing.ExDoer(tock=tock*4, tymist=doist)
+    doer2 = doing.ExDoer(tock=0.0, tymth=doist.tymen())
+    doer3 = doing.ExDoer(tock=tock*4, tymth=doist.tymen())
     assert doer2.tock == 0.0
     assert doer3.tock == tock * 4
     bDoers = [doer2, doer3]
     for doer in bDoers:
-        assert doer._tymist == doist
         assert doer.states == []
         assert doer.count == None
         assert doer.done == None
 
-    bDoer = doing.DoDoer(tock=tock*2, tymist=doist, doers=bDoers)
+    bDoer = doing.DoDoer(tock=tock*2, tymth=doist.tymen(), doers=bDoers)
     assert bDoer.doers == bDoers
-    assert bDoer._tymist == doist
     assert bDoer.done == None
 
     doers = [aDoer, bDoer]
@@ -603,4 +585,4 @@ def test_doist_dos():
 
 
 if __name__ == "__main__":
-    test_doist()
+    test_doist_doers()

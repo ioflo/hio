@@ -45,9 +45,11 @@ def openClient(cls=None, **kwa):
         client.close()
 
 
-class Client():
+class Client(tyming.Tymee):
     """
     Nonblocking TCP Socket Client Class.
+
+    See tyming.Tymee for inherited attributes, properties, and methods
 
     Attributes:
 
@@ -60,7 +62,6 @@ class Client():
     Reconnectable = False  # auto reconnect flag
 
     def __init__(self,
-                 tymist=None,
                  timeout=None,
                  ha=None,
                  host='127.0.0.1',
@@ -69,14 +70,15 @@ class Client():
                  bs=8096,
                  txbs=None,
                  rxbs=None,
-                 wl=None):
+                 wl=None,
+                 **kwa):
         """
         Initialization method for instance.
 
         Parameters:
-            tymist = Tymist instance reference
+            tymth is injected function wrapper closure returned by .tymen() of
+                Tymist instance. Calling tymth() returns associated Tymist .tyme.
             timeout = auto reconnect retry timeout
-
             ha = host address duple (host, port) of remote server
             host = host address or tcp server to connect to
             port = socket port
@@ -86,10 +88,9 @@ class Client():
             rxbs = bytearray of data received
             wl = WireLog object if any
         """
-        self.tymist = tymist or tyming.Tymist(tyme=0.0)
+        super(Client, self).__init__(**kwa)
         self.timeout = timeout if timeout is not None else self.Timeout
-        self.tymer = tyming.Tymer(tymist=self.tymist, duration=self.timeout)  # reconnect retry timer
-
+        self.tymer = tyming.Tymer(tymth=self.tymth, duration=self.timeout)  # reconnect retry timer
         self.reinitHostPort(ha=ha, hostname=host, port=port)
         self.ha = ha or (host, port)
         host, port = self.ha
@@ -108,6 +109,15 @@ class Client():
         self.txbs = txbs if txbs is not None else bytearray()  # byte array of data to send
         self.rxbs = rxbs if rxbs is not None else bytearray()  # byte array of data recieved
         self.wl = wl
+
+
+    def wind(self, tymth):
+        """
+        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+        Updates winds .tymer .tymth
+        """
+        super(Client, self).wind(tymth)
+        self.tymer.wind(tymth)
 
 
     @property
@@ -496,6 +506,7 @@ class ClientTls(Client):
     Methods:
     """
     def __init__(self,
+                 tymth,
                  context=None,
                  version=None,
                  certify=None,
@@ -529,7 +540,7 @@ class ClientTls(Client):
             hostify = verify server hostName If None use default
             certedhost = server's certificate common name (hostname) to check against
         """
-        super(ClientTls, self).__init__(**kwa)
+        super(ClientTls, self).__init__(tymth=tymth, **kwa)
 
         self._connected = False  # attributed supporting connected property
 
