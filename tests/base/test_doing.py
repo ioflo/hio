@@ -202,6 +202,26 @@ def test_doize():
     """End Test"""
 
 
+def test_doize_with_bound_method():
+    """
+    Test decorator @doize with bound method returning generator
+    """
+    #@doing.doize(tock=0.25)
+    #def genfun(tymth, tock=0.0, **opts):
+        #tyme = yield(tock)
+
+    #assert inspect.isgeneratorfunction(genfun)
+    #assert genfun.tock == 0.25
+    #assert genfun.done == None
+    #assert genfun.opts == dict()
+
+    #tymist = tyming.Tymist()
+
+    #gen = genfun(tymth=tymist.tymen(), tock=genfun.tock, **genfun.opts)
+    #assert inspect.isgenerator(gen)
+    """End Test"""
+
+
 def test_doer():
     """
     Test Doer base class
