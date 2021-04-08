@@ -202,23 +202,56 @@ def test_doize():
     """End Test"""
 
 
-def test_doize_with_bound_method():
+def test_doize_dodoer_with_bound_method():
     """
     Test decorator @doize with bound method returning generator
     """
-    #@doing.doize(tock=0.25)
-    #def genfun(tymth, tock=0.0, **opts):
-        #tyme = yield(tock)
+    class A():
+        def __init__(self):
+            self.x = 1
 
-    #assert inspect.isgeneratorfunction(genfun)
-    #assert genfun.tock == 0.25
-    #assert genfun.done == None
-    #assert genfun.opts == dict()
+        @doing.doize(tock=0.25)
+        def myDo(self, tymth=None, tock=0.0, **opts):
+            while self.x <= 3:
+                tyme = yield(tock)
+                self.x += 1
 
-    #tymist = tyming.Tymist()
+            return True
 
-    #gen = genfun(tymth=tymist.tymen(), tock=genfun.tock, **genfun.opts)
-    #assert inspect.isgenerator(gen)
+    a = A()
+    assert a.x == 1
+
+    assert inspect.ismethod(a.myDo)
+    assert inspect.isgeneratorfunction(a.myDo)
+    # read of bound method attribute is allowed
+    assert a.myDo.__func__.tock == a.myDo.tock == 0.25
+    assert a.myDo.__func__.done == a.myDo.done == None
+    assert a.myDo.__func__.opts == a.myDo.opts == dict()
+
+    with pytest.raises(AttributeError):
+        a.myDo.tock = 0.2  # can't write to bound method attribute
+
+    a.myDo.__func__.tock = 0.2  # can write to bound method.__func__ attribute
+    assert a.myDo.tock == 0.2
+
+    doist = doing.Doist(limit=1.0)
+
+    myGen = a.myDo(tymth=doist.tymen(), tock=a.myDo.tock, **a.myDo.opts)
+    assert inspect.isgenerator(myGen)
+
+    doist.do(doers=[a.myDo])
+    assert a.myDo.done
+    assert a.x == 4
+
+    a.x =  1
+    assert a.x == 1
+    doist.tyme = 0.0
+
+    dodoer = doing.DoDoer(doers=[a.myDo])
+
+    doist.do(doers=[dodoer])
+    assert a.myDo.done
+    assert a.x == 4
     """End Test"""
 
 
@@ -1177,4 +1210,4 @@ def test_echo_console():
 
 
 if __name__ == "__main__":
-    test_echo_server_client()
+    test_doize_dodoer_with_bound_method()

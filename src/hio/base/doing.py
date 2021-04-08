@@ -141,7 +141,11 @@ class Doist(tyming.Tymist):
                 try:
                     tock = dog.send(self.tyme)  # send tyme. yield tock
                 except StopIteration as ex:  # returned instead of yielded
-                    self.doers[index].done = ex.value if ex.value else False  # assign done state
+                    doer = self.doers[index]
+                    if ismethod(doer):  # when using bound method for generator function
+                        doer.__func__.done = ex.value if ex.value else False  # assign done state
+                    else:
+                        doer.done = ex.value if ex.value else False  # assign done state
                 else:  # reappend for next pass
                     if tock is None:  # bare yield returns None
                         tock = 0.0  # rerun asap when tock == 0.0
@@ -873,7 +877,11 @@ class DoDoer(Doer):
                 try:  # tock == 0.0 means re-run asap
                     tock = dog.send(tyme)  # send tyme. yield tock
                 except StopIteration as ex:  # returned instead of yielded
-                    doers[index].done = ex.value if ex.value else False  # assign done state
+                    doer = doers[index]
+                    if ismethod(doer):  # when using bound method for generator function
+                        doer.__func__.done = ex.value if ex.value else False  # assign done state
+                    else:
+                        doer.done = ex.value if ex.value else False  # assign done state
                 else:  # reappend for next pass
                     if tock is None:  # bare yield results None
                         tock = 0.0  # # rerun asap when tock == 0.0
