@@ -108,10 +108,11 @@ class Doist(tyming.Tymist):
 
         deeds = deque()
         for index, doer in enumerate(self.doers):
-            if ismethod(doer):  # when using bound method for generator function
-                doer.__func__.done = None  # None before enter. enter may set to False
-            else:
+            try:
                 doer.done = None  #  None before enter. enter may set to False
+            except AttributeError:  # when using bound method for generator function
+                doer.__func__.done = None  # None before enter. enter may set to False
+
             opts = doer.opts if hasattr(doer, "opts") else {}
             dog = doer(tymth=self.tymen(), tock=doer.tock, **opts)
             try:
@@ -142,10 +143,10 @@ class Doist(tyming.Tymist):
                     tock = dog.send(self.tyme)  # send tyme. yield tock
                 except StopIteration as ex:  # returned instead of yielded
                     doer = self.doers[index]
-                    if ismethod(doer):  # when using bound method for generator function
-                        doer.__func__.done = ex.value if ex.value else False  # assign done state
-                    else:
+                    try:
                         doer.done = ex.value if ex.value else False  # assign done state
+                    except AttributeError:   # when using bound method for generator function
+                        doer.__func__.done = ex.value if ex.value else False  # assign done state
                 else:  # reappend for next pass
                     if tock is None:  # bare yield returns None
                         tock = 0.0  # rerun asap when tock == 0.0
@@ -246,10 +247,10 @@ class Doist(tyming.Tymist):
                 pass  # Hmm? Not supposed to happen!
             else:  # set done state
                 doer = self.doers[index]
-                if ismethod(doer):  # when using bound method for generator function
-                    doer.__func__.done = False  # forced close
-                else:
+                try:
                     doer.done = False  # forced close
+                except AttributeError:  # when using bound method for generator function
+                    doer.__func__.done = False  # forced close
 
 
 def doify(f, name=None, tock=0.0, **opts):
@@ -831,10 +832,10 @@ class DoDoer(Doer):
             deeds = self.deeds
 
         for index, doer in enumerate(doers):
-            if ismethod(doer):  # when using bound method for generator function
-                doer.__func__.done = None  # None before enter. enter may set to False
-            else:
+            try:
                 doer.done = None  # None before enter. enter may set to False
+            except AttributeError:   # when using bound method for generator function
+                doer.__func__.done = None  # None before enter. enter may set to False
             opts = doer.opts if hasattr(doer, "opts") else {}
             dog = doer(tymth=self.tymth, tock=doer.tock, **opts)
             try:
@@ -878,10 +879,10 @@ class DoDoer(Doer):
                     tock = dog.send(tyme)  # send tyme. yield tock
                 except StopIteration as ex:  # returned instead of yielded
                     doer = doers[index]
-                    if ismethod(doer):  # when using bound method for generator function
-                        doer.__func__.done = ex.value if ex.value else False  # assign done state
-                    else:
+                    try:
                         doer.done = ex.value if ex.value else False  # assign done state
+                    except AttributeError:
+                        doer.__func__.done = ex.value if ex.value else False  # assign done state
                 else:  # reappend for next pass
                     if tock is None:  # bare yield results None
                         tock = 0.0  # # rerun asap when tock == 0.0
@@ -917,10 +918,10 @@ class DoDoer(Doer):
                 pass  # Hmm? Not supposed to happen!
             else:  # set done state
                 doer = doers[index]
-                if ismethod(doer):  # when using bound method for generator function
-                    doer.__func__.done = False  # forced close
-                else:
+                try:
                     doer.done = False  # forced close
+                except AttributeError:  # when using bound method for generator function
+                    doer.__func__.done = False  # forced close
 
 
     def extend(self, doers):

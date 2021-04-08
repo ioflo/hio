@@ -206,6 +206,7 @@ def test_doize_dodoer_with_bound_method():
     """
     Test decorator @doize with bound method returning generator
     """
+    # run until complete normal exit so done==True
     class A():
         def __init__(self):
             self.x = 1
@@ -252,6 +253,54 @@ def test_doize_dodoer_with_bound_method():
     doist.do(doers=[dodoer])
     assert a.myDo.done
     assert a.x == 4
+
+    # run forever so forced complete done == False
+    class B():
+        def __init__(self):
+            self.x = 1
+
+        @doing.doize(tock=0.25)
+        def myDo(self, tymth=None, tock=0.0, **opts):
+            while True:
+                tyme = yield(tock)
+                self.x += 1
+            return True
+
+    b = B()
+    assert b.x == 1
+
+    assert inspect.ismethod(b.myDo)
+    assert inspect.isgeneratorfunction(b.myDo)
+    # read of bound method attribute is allowed
+    assert b.myDo.__func__.tock == b.myDo.tock == 0.25
+    assert b.myDo.__func__.done == b.myDo.done == None
+    assert b.myDo.__func__.opts == b.myDo.opts == dict()
+
+    with pytest.raises(AttributeError):
+        b.myDo.tock = 0.2  # can't write to bound method attribute
+
+    b.myDo.__func__.tock = 0.2  # can write to bound method.__func__ attribute
+    assert b.myDo.tock == 0.2
+
+    doist = doing.Doist(limit=1.0)
+
+    myGen = b.myDo(tymth=doist.tymen(), tock=b.myDo.tock, **b.myDo.opts)
+    assert inspect.isgenerator(myGen)
+
+    doist.do(doers=[b.myDo])
+    assert b.myDo.done == False
+    assert b.x == 6
+
+    b.x =  1
+    assert b.x == 1
+    doist.tyme = 0.0
+
+    dodoer = doing.DoDoer(doers=[b.myDo])
+
+    doist.do(doers=[dodoer])
+    assert b.myDo.done == False
+    assert b.x == 6
+
     """End Test"""
 
 
