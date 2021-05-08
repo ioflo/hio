@@ -14,6 +14,8 @@ from ..core.tcp import serving, clienting
 from ..help import timing, helping
 
 
+Deed = namedtuple("Deed", "dog retyme index")
+
 class Doist(tyming.Tymist):
     """
     Doist is the root coroutine scheduler
@@ -40,8 +42,13 @@ class Doist(tyming.Tymist):
     Attributes:
         .real is boolean. True means run in real time, Otherwise as fast as possible.
         .limit is float maximum run tyme limit then closes all doers
+        .done is Boolean, True means completed due to limit or all deeds completed
+                False is forced complete due to error
         .doers is list of doers
         .timer is MonoTimer for real time intervals
+        .always is Boolean, True means keep running even when all dogs in deeds
+                are complete. Enables dynamically managing extending or removing
+                doers and associated deeds while running.
 
     Inherited Properties:
         .tyme is float relative cycle time, .tyme is artificial time
@@ -59,7 +66,8 @@ class Doist(tyming.Tymist):
             times out do to reaching time limit
 
     """
-    def __init__(self, real=False, limit=None, doers=None, **kwa):
+    def __init__(self, real=False, limit=None, doers=None, deeds=None,
+                 always=False, **kwa):
         """
         Initialize instance
         Inherited Parameters:
@@ -70,17 +78,122 @@ class Doist(tyming.Tymist):
             real is boolean True means run in real time,
                             Otherwise run faster than real
             limit is float seconds for max run time of doist. None means no limit.
-            doers is list of doers
+            doers is list of Doer class instances, generator methods or
+                function callables with attributes tock, done, and opts dict()
+                used to initialize .doers.
+                The .doers attribute is used throughout the execution lifecycle.
+                Parameterization elsewhere of doers enables some special cases.
+                The normal case is to initialize here or in .do().
+            deeds is deque of deed tuplels triples of form (dog, retyme, index)
+                that initializes .deeds. If not provided .deeds is new empty deque.
+                The .deeds attribute is used to update the throughout the
+                execution lifecycle. The Parameterization elsewhere of deeds enables
+                some special cases. The normal case is use the default empty
+                initialization performed here and update in .ready().
+            always is Boolean, True means keep running even when all dogs in deeds
+                are complete. Enables dynamically managing extending or removing
+                doers and associated deeds while running.
         """
         super(Doist, self).__init__(**kwa)
 
         self.real = True if real else False
         self.limit = abs(float(limit)) if limit is not None else None
+        self.done = None
         self.doers = doers if doers is not None else []  # list of Doers
         self.timer = timing.MonoTimer(duration = self.tock)
+        self.deeds = deeds if deeds is not None else deque()  # deque of deeds
+        self.always = always
 
 
-    def ready(self, doers=None):
+    def do(self, doers=None, deeds=None, limit=None, tyme=None, always=None):
+        """
+        Readies deeds deque from .doers or doers if any and then iteratively
+        runs .once over deeds deque until completion of all deeds.
+        Each entry in deeds is a triple (dog, retyme, index)  where:
+            dog is generator
+            retyme is tyme (real or simulated) in seconds when dog should run next
+            index is position of associated doer in .doers list used to assign
+                .done state to associated doer for dog
+
+        If interrupted by exception call .close on each dog to force exit context.
+
+        Keyboard interrupt (cntl-c) forces exit.
+
+        Once finally clause closes a generator it must be reinited
+        before it can be run again
+
+        Parameters:
+            doers is list of generator method or function callables with attributes
+                tock, done, and opts dict(). This may be used to update the .doers
+                attribute which is used throughout the execution lifecycle.
+                If not provided uses .doers.
+                Parameterization here of doers enables some special cases.
+                The normal case is to initialize in .__init__ or here.
+            deeds is deque of deed triples of form (dog, retyme, index).
+                This may be used to update the .deeds attribute which is used
+                throughout the execution lifecycle. If not provided uses .deeds.
+                Parameterization here of deeds enables some special cases.
+                The normal case default empty in .__init__ and update in .ready().
+            limit is real time limit on execution. Forces close of all dogs.
+            tyme is optional starting tyme. Resets .tyme to tyme whe provided.
+               If not provided uses current .tyme
+            always is Boolean, True means keep running even when all dogs in deeds
+                are complete. Enables dynamically managing extending or removing
+                doers and associated deeds while running.
+
+        See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
+        For setting attributes on bound methods.
+        """
+        always = always if always is not None else self.always
+        self.done = False
+        if doers is not None:
+            self.doers = doers
+        if deeds is not None:
+            self.deeds = deeds
+
+        if limit is not None:  # time limt for running if any. useful in test
+            self.limit = abs(float(limit))
+
+        if tyme is not None:  # re-initialize starting tyme
+            self.tyme = tyme
+
+        deeds = self.ready(doers=doers)  # runs enter context on each doer
+
+        tymer = tyming.Tymer(tymth=self.tymen(), duration=self.limit)
+        self.timer.start()
+        try:  # always clean up resources upon exception
+            while True:  # until doers complete or exception or keyboardInterrupt
+                try:
+                    self.once(deeds=deeds)  # increments .tyme runs recur context
+
+                    if self.real:  # wait for real time to expire
+                        while not self.timer.expired:
+                            time.sleep(max(0.0, self.timer.remaining))
+                        self.timer.restart()  #  no time lost
+
+                    self.done = not deeds  # resets if extend or remove
+
+                    if self.limit and tymer.expired:  # reached time limit
+                        break  # break out of forever loop
+
+                    if not deeds and not always:  # no deeds and not always
+                        break  # break out of forever loop
+
+                except KeyboardInterrupt:  # use CNTL-C to shutdown from shell
+                    break
+
+                except SystemExit: # Forced shutdown of process
+                    raise
+
+                except Exception:  # Unknown exception
+                    raise
+
+
+        finally: # finally clause always runs regardless of exception or not.
+            self.close(deeds=deeds)  # force close remaining deeds throws GeneratorExit
+
+
+    def ready(self, doers=None, deeds=None):
         """
         Returns deeds deque of triples (dog, retyme, index)  where:
             dog is generator
@@ -99,15 +212,24 @@ class Doist(tyming.Tymist):
                 .tock is tyme increment in seconds
                 .done is Boolean completion state
                 .opts is dict() of optional parameters
+                If not provided uses .doers.
+                The normal case is to initialize in .__init__. or .do().
+            deeds is deque of deed triples of form (dog, retyme, index).
+                If not provided uses .deeds. This may be used to update the
+                .deeds attribute which is used throughout the execution lifecycle.
+                Parameterization here of deeds enables some special cases.
+                The normal case is the default empty initialization in .__init__
+                and then update here.
 
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
         For setting attributes on bound methods.
         """
         if doers is None:
             doers = self.doers
+        if deeds is None:
+            deeds = self.deeds
 
-        deeds = deque()
-        for index, doer in enumerate(self.doers):
+        for index, doer in enumerate(doers):
             try:
                 doer.done = None  #  None before enter. enter may set to False
             except AttributeError:  # when using bound method for generator function
@@ -123,7 +245,7 @@ class Doist(tyming.Tymist):
         return deeds
 
 
-    def once(self, deeds):
+    def once(self, doers=None, deeds=None):
         """
         Cycle once through deeds deque of triples and update in place
         deeds is deque of triples of (dog, retyme, index) where:
@@ -134,7 +256,23 @@ class Doist(tyming.Tymist):
 
         Each cycle checks all generators in deeds deque and runs if retyme past.
         At end of cycle advances .tyme by one .tock by calling .tick()
+
+        Parameters:
+            doers is list of generator method or function callables with attributes
+                tock, done, and opts dict(). If not provided uses .doers.
+                Parameterization here of doers enables some special cases.
+                The normal case is to initialize in .__init__. or .do()
+            deeds is deque of deed triples of form (dog, retyme, index).
+                If not provided uses .deeds.
+                Parameterization here of deeds enables some special cases.
+                The normal case is use empty initialize in .__init__. and
+                then update in .ready()
         """
+        if doers is None:
+            doers = self.doers
+        if deeds is None:
+            deeds = self.deeds
+
         for i in range(len(deeds)):  # iterate once over each deed
             dog, retyme, index = deeds.popleft()  # pop it off
 
@@ -142,7 +280,7 @@ class Doist(tyming.Tymist):
                 try:
                     tock = dog.send(self.tyme)  # send tyme. yield tock
                 except StopIteration as ex:  # returned instead of yielded
-                    doer = self.doers[index]
+                    doer = doers[index]
                     try:
                         doer.done = ex.value if ex.value else False  # assign done state
                     except AttributeError:   # when using bound method for generator function
@@ -157,70 +295,7 @@ class Doist(tyming.Tymist):
         self.tick()  # advance .tyme by one doist .tock
 
 
-    def do(self, doers=None, limit=None, tyme=None):
-        """
-        Readies deeds deque from .doers or doers if any and then iteratively
-        runs .once over deeds deque until completion of all deeds.
-        Each entry in deeds is a triple (dog, retyme, index)  where:
-            dog is generator
-            retyme is tyme (real or simulated) in seconds when dog should run next
-            index is position of associated doer in .doers list used to assign
-                .done state to associated doer for dog
-
-        If interrupted by exception call .close on each dog to force exit context.
-
-        Keyboard interrupt (cntl-c) forces exit.
-
-        Once finally clause closes a generator it must be reinited
-        before it can be run again
-
-        See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
-        For setting attributes on bound methods.
-        """
-        if doers is not None:
-            self.doers = doers
-
-        if limit is not None:  # time limt for running if any. useful in test
-            self.limit = abs(float(limit))
-
-        if tyme is not None:  # re-initialize starting tyme
-            self.tyme = tyme
-
-        deeds = self.ready(doers=doers)  # runs enter context on each doer
-
-        tymer = tyming.Tymer(tymth=self.tymen(), duration=self.limit)
-        self.timer.start()
-        try:  # always clean up resources upon exception
-            while True:  # until doers complete or exception or keyboardInterrupt
-                try:
-                    self.once(deeds)  # increments .tyme runs recur context
-
-                    if self.real:  # wait for real time to expire
-                        while not self.timer.expired:
-                            time.sleep(max(0.0, self.timer.remaining))
-                        self.timer.restart()  #  no time lost
-
-                    if self.limit and tymer.expired:
-                        break  # break out of forever loop
-
-                    if not deeds:  # no more remaining deeds so done
-                        break  # break out of forever loop
-
-                except KeyboardInterrupt:  # use CNTL-C to shutdown from shell
-                    break
-
-                except SystemExit: # Forced shutdown of process
-                    raise
-
-                except Exception:  # Unknown exception
-                    raise
-
-
-        finally: # finally clause always runs regardless of exception or not.
-            self.close(deeds)  # force close remaining deeds throws GeneratorExit
-
-
-    def close(self, deeds):
+    def close(self, doers=None, deeds=None):
         """
         Force exit each still opened deed calling .close on the dog generator
         which throws a GeneratorExit to the generator.
@@ -238,7 +313,23 @@ class Doist(tyming.Tymist):
                     exit C,
                 exit B,
             exit A
+
+        parameters:
+            doers is list of generator method or function callables with attributes
+                tock, done, and opts dict(). If not provided uses .doers.
+                Parameterization here of doers enables some special cases.
+                The normal case is to initialize in .__init__. or .do()
+            deeds is deque of deed triples of form (dog, retyme, index).
+                If not provided uses .deeds.
+                Parameterization here of deeds enables some special cases.
+                The normal case is use empty initialize in .__init__. and
+                then update in .ready()
         """
+        if doers is None:
+            doers = self.doers
+        if deeds is None:
+            deeds = self.deeds
+
         while(deeds):  # .close each remaining dog in deeds in reverse order
             dog, retime, index = deeds.pop() #pop it off
             try:
@@ -246,11 +337,70 @@ class Doist(tyming.Tymist):
             except StopIteration:
                 pass  # Hmm? Not supposed to happen!
             else:  # set done state
-                doer = self.doers[index]
+                doer = doers[index]
                 try:
                     doer.done = False  # forced close
                 except AttributeError:  # when using bound method for generator function
                     doer.__func__.done = False  # forced close
+
+
+    def extend(self, doers):
+        """
+        Extend .doers list with doers. Ready deeds from doers and extend .doers
+        and .deeds.  Edit deeds in place so not replace deque.
+
+        Parameters:
+            doers is list of doers to add as extension.
+
+        """
+        deeds = self.ready(doers=doers, deeds=deque())  # provide fresh deeds
+        offset = len(self.doers)  # get offset of index for extending dogs
+        for i in range(len(deeds)):  # iterate once over each deed
+            dog, retyme, index = deeds.popleft()
+            index += offset
+            deeds.append((dog, retyme, index))
+
+        self.doers.extend(doers)
+        self.deeds.extend(deeds)
+
+
+    def remove(self, doers):
+        """
+        Remove doers from .doers list and any associated deeds from .deeds deque.
+        Force close removed deeds.
+
+        Parameters:
+            doers is list of doers to remove.
+
+        """
+        rdoers = list(doers)  # doers to remove, make copy since destructive
+        indices = {}  # map indices for each doer as appears in .doers to rdoers
+        j = 0  # index in remove list
+        for doer in list(rdoers):  # make copy since inplace filter of rdoers
+            try:
+                i = self.doers.index(doer)  # make sure a member of .doers
+            except ValueError:
+                rdoers.remove(doer)  # not in .doers so ignore remove from rdoers
+            else:
+                indices[i] = j
+                j += 1
+
+        rdeeds = deque()  # fresh deque for deeds to remove
+        deeds = self.deeds  # edit update self.deeds in place
+        k = 0  # reappended index of remaining (not removed) deed
+        for i in range(len(deeds)):  # iterate once over each deed
+            dog, retyme, index = deeds.popleft()
+            if index in indices:  # found deed to remove and close
+                rdeeds.append((dog, retyme, indices[index]))  # add to removal deque
+            else:  # keep deed do not remove and close
+                deeds.append((dog, retyme, k))  # reappend
+                k += 1
+
+        for doer in rdoers:  # update .doers to remove rdoers
+            self.doers.remove(doer)
+
+        self.close(doers=rdoers, deeds=rdeeds)
+
 
 
 def doify(f, name=None, tock=0.0, **opts):
@@ -621,7 +771,6 @@ class DoDoer(Doer):
 
     Attributes:
 
-
     Inherited Properties:
         .tyme is float relative cycle time of associated Tymist .tyme obtained
             via injected .tymth function wrapper closure.
@@ -664,7 +813,9 @@ class DoDoer(Doer):
        ._tymth is injected function wrapper closure returned by .tymen() of
             associated Tymist instance that returns Tymist .tyme. when called.
        ._tock is hidden attribute for .tock property
-       ._always is hidden attribute for .always propery
+       ._always is hidden attribute for .always property
+       ._doers is hidden attribute for .doers property
+       ._deeds is hidden attribute for .deeds property
 
     """
 
@@ -678,12 +829,23 @@ class DoDoer(Doer):
             tock is float seconds initial value of .tock
 
         Parameters:
-           doers is list of doist compatible generator instances, functions, or
-               methods
-           deeds is deque to hold deeds
-           always is Boolean, True means keep running even when all dogs in deeds
-            are complete. Enables dynamically managing extending or removing
-            doers and associated deeds while running.
+            doers is list of Doer class instances, generator methods or function
+                callables with attributes tock, done, and opts dict() used to
+                initialize .doers.
+                The .doers attribute is used throughout the execution lifecycle.
+                Parameterization elsewhere of doers enables some special cases.
+                The normal case is to initialize here.
+            deeds is deque of deed triples of form (dog, retyme, index) that
+                initializes .deeds. If not provided creates empty .deeds.
+                The .deeds attribute is used to update the throughout the
+                execution lifecycle. The Parameterization elsewhere of deeds enables
+                some special cases. The normal case is use the default empty
+                initialization performed here.
+            always is Boolean, True means keep running even when all dogs in deeds
+                are complete. Enables dynamically managing extending or removing
+                doers and associated deeds while running.
+
+        In each deed the index must match offset of the doer in the doers list.
 
         """
         super(DoDoer, self).__init__(**kwa)
@@ -760,12 +922,24 @@ class DoDoer(Doer):
             tymth is injected function wrapper closure returned by .tymen() of
                 Tymist instance. Calling tymth() returns associated Tymist .tyme.
             tock is injected initial tock value
-            opts is dict of injected optional additional parameters
-            doers is list of doers (generator functions)
+            doers is list of generator method or function callables with attributes
+                tock, done, and opts dict(). This may be used to update the .doers
+                attribute which is used throughout the execution lifecycle.
+                If not provided uses .doers.
+                Parameterization here of doers enables some special cases.
+                The normal case is to initialize in .__init__.
+            deeds is deque of deed triples of form (dog, retyme, index).
+                This may be used to update the .deeds attribute which is used
+                throughout the execution lifecycle. If not provided uses .deeds.
+                Parameterization here of deeds enables some special cases.
+                The normal case is to initialize in .__init__.
             always is Boolean. True means keep running even when all dogs in deeds
                 are complete. Enables dynamically managing extending or removing
                 doers and associated deeds while running.
                 When not provided use .always.
+            opts is dict of injected optional additional parameters
+
+        In each deed the index must match offset of the doer in the doers list.
         """
         always = always if always is not None else self.always
         if doers is not None:
@@ -819,9 +993,16 @@ class DoDoer(Doer):
 
         Parameters:
             doers is list of generator method or function callables with attributes
-                tock, done, and opts dict(). Use .doers if not provided
+                tock, done, and opts dict(). If not provided uses .doers.
+                Parameterization here of doers enables some special cases.
+                The normal case is to initialize in .__init__.
+
             deeds is deque of deed triples of form (dog, retyme, index).
-                Use .deeds if not provided
+                If not provided uses .deeds.
+                Parameterization here of deeds enables some special cases.
+                The normal case is to initialize in .__init__.
+
+        In each deed the index must match offset of the doer in the doers list.
 
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
         For setting attributes on bound methods.
@@ -854,10 +1035,14 @@ class DoDoer(Doer):
             tyme is output of send fed to do yield, Doist feeds its .tyme
                 because tymist is injected by doist or dodoer doing this dodoer
                 self.tyme is same as tyme.
-            deeds is deque of triples of (dog, retyme, index) where:
-                dog is generator
-                retyme is tyme in seconds when next should run may be real or simulated
-                index is position of associated doer in .doers list
+            doers is list of generator method or function callables with attributes
+                tock, done, and opts dict(). If not provided uses .doers.
+                Parameterization here of doers enables some special cases.
+                The normal case is to initialize in .__init__.
+            deeds is deque of deed triples of form (dog, retyme, index).
+                If not provided uses .deeds.
+                Parameterization here of deeds enables some special cases.
+                The normal case is to initialize in .__init__.
 
         Returns completion state of recurrence actions.
            True means done False means continue
@@ -898,9 +1083,16 @@ class DoDoer(Doer):
         Do 'exit' context actions.
 
         Parameters:
-            deeds is deque of triples (dog, retyme, index)
-            doers is list of doers used to generate deeds, i.e. index
-                for a given deed triple must match index in doers list
+            doers is list of generator method or function callables with attributes
+                tock, done, and opts dict(). If not provided uses .doers.
+                Parameterization here of doers enables some special cases.
+                The normal case is to initialize in .__init__.
+            deeds is deque of deed triples of form (dog, retyme, index).
+                If not provided uses .deeds.
+                Parameterization here of deeds enables some special cases.
+                The normal case is to initialize in .__init__.
+
+        In each deed the index must match offset of the doer in the doers list.
 
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
         For setting attributes on bound methods.
@@ -967,12 +1159,14 @@ class DoDoer(Doer):
 
         rdeeds = deque()  # fresh deque for deeds to remove
         deeds = self.deeds  # edit update self.deeds in place
+        k = 0  # reappended index of remaining (not removed) deed
         for i in range(len(deeds)):  # iterate once over each deed
             dog, retyme, index = deeds.popleft()
             if index in indices:  # found deed to remove and close
                 rdeeds.append((dog, retyme, indices[index]))  # add to removal deque
             else:  # keep deed do not remove and close
-                deeds.append((dog, retyme, index))  # reappend
+                deeds.append((dog, retyme, k))  # reappend
+                k += 1
 
         for doer in rdoers:  # update .doers to remove rdoers
             self.doers.remove(doer)
@@ -1386,5 +1580,138 @@ def doizeExDo(tymth, tock=0.0, states=None, **opts):
     finally:  # exit context,  unforced exit due to normal exit of try
         count += 1
         states.append(State(tyme=tymth(), context='exit', feed=None, count=count))
+
+    return (True)  # return value of yield from, or yield ex.value of StopIteration
+
+
+
+
+#  for testing purposes
+class TryDoer(Doer):
+    """
+    TryDoer supports testing with methods to record sends and yields
+
+    Inherited Attributes:
+        .done is Boolean completion state:
+            True means completed
+            Otherwise incomplete. Incompletion maybe due to close or abort.
+
+    Attributes:
+       .states is list of State namedtuples (tyme, context, feed, count)
+       .count is context count
+       .stop is stop count where doer completes
+
+    Inherited Properties:
+        .tyme is float relative cycle time of associated Tymist .tyme obtained
+            via injected .tymth function wrapper closure.
+        .tymth is function wrapper closure returned by Tymist .tymeth() method.
+            When .tymth is called it returns associated Tymist .tyme.
+            .tymth provides injected dependency on Tymist tyme base.
+        .tock is float, desired time in seconds between runs or until next run,
+                 non negative, zero means run asap
+
+    Properties:
+
+    Methods:
+        .wind  injects ._tymth dependency from associated Tymist to get its .tyme
+        .__call__ makes instance callable
+            Appears as generator function that returns generator
+        .do is generator method that returns generator
+        .enter is enter context action method
+        .recur is recur context action method or generator method
+        .exit is exit context method
+        .close is close context method
+        .abort is abort context method
+    """
+
+    def __init__(self, stop=3, **kwa):
+        """
+        Initialize instance.
+        Inherited Parameters:
+           tymist is Tymist instance
+           tock is float seconds initial value of .tock
+        Parameters:
+           stop is count when complete
+
+        """
+        super(TryDoer, self).__init__(**kwa)
+        self.states = []
+        self.count = None
+        self.stop = stop
+
+    def enter(self):
+        """
+        """
+        feed = "Default"
+        self.count = 0
+        self.states.append(State(tyme=self.tyme, context="enter",
+                                 feed=feed, count=self.count))
+
+    def recur(self, tyme):
+        """
+
+        """
+        self.count += 1
+        self.states.append(State(tyme=self.tyme, context="recur",
+                                 feed=tyme, count=self.count))
+        if self.count > self.stop:
+            return True  # complete
+        return False  # incomplete
+
+    def exit(self):
+        """
+        """
+        self.count += 1
+        self.states.append(State(tyme=self.tyme, context='exit',
+                                 feed=None, count=self.count))
+
+    def close(self):
+        """
+        """
+        self.count += 1
+        self.states.append(State(tyme=self.tyme, context='close',
+                                 feed=None, count=self.count))
+
+    def abort(self, ex):
+        """
+        """
+        self.count += 1
+        self.states.append(State(tyme=self.tyme, context='abort',
+                                 feed=ex.args[0], count=self.count))
+
+
+#  for testing purposes
+@doize()
+def tryDo(states, tymth, tock=0.0,  **opts):
+    """
+    Generator function test example non-class based generator.
+    Calling this function returns generator
+    """
+    feed = "Default"
+    count = 0
+
+    try:
+        # enter context
+
+        states.append(State(tyme=tymth(), context="enter", feed=feed, count=count))
+        while (True):  # recur context
+            feed = (yield (count))  # yields tock then waits for next send
+            count += 1
+            states.append(State(tyme=tymth(), context="recur", feed=feed, count = count))
+            if count > 3:
+                break  # normal exit
+
+    except GeneratorExit:  # close context, forced exit due to .close
+        count += 1
+        states.append(State(tyme=tymth(), context='close', feed=feed, count=count))
+
+    except Exception:  # abort context, forced exit due to uncaught exception
+        count += 1
+        states.append(State(tyme=tymth(), context='abort', feed=feed, count=count))
+        raise
+
+    finally:  # exit context,  unforced exit due to normal exit of try
+        count += 1
+        states.append(State(tyme=tymth(), context='exit', feed=feed, count=count))
 
     return (True)  # return value of yield from, or yield ex.value of StopIteration

@@ -10,141 +10,20 @@ import inspect
 
 from hio.base import tyming
 from hio.base import doing
-from hio.base.doing import State
+from hio.base.basing import State
+from hio.base.doing import TryDoer, tryDo
 from hio.core.tcp import serving, clienting
 from hio.core.serial import serialing
 
 
-
-#  for testing purposes
-class TryDoer(doing.Doer):
+def test_deed():
     """
-    TryDoer supports testing with methods to record sends and yields
-
-    Inherited Attributes:
-        .done is Boolean completion state:
-            True means completed
-            Otherwise incomplete. Incompletion maybe due to close or abort.
-
-    Attributes:
-       .states is list of State namedtuples (tyme, context, feed, count)
-       .count is context count
-       .stop is stop count where doer completes
-
-    Inherited Properties:
-        .tyme is float relative cycle time of associated Tymist .tyme obtained
-            via injected .tymth function wrapper closure.
-        .tymth is function wrapper closure returned by Tymist .tymeth() method.
-            When .tymth is called it returns associated Tymist .tyme.
-            .tymth provides injected dependency on Tymist tyme base.
-        .tock is float, desired time in seconds between runs or until next run,
-                 non negative, zero means run asap
-
-    Properties:
-
-    Methods:
-        .wind  injects ._tymth dependency from associated Tymist to get its .tyme
-        .__call__ makes instance callable
-            Appears as generator function that returns generator
-        .do is generator method that returns generator
-        .enter is enter context action method
-        .recur is recur context action method or generator method
-        .exit is exit context method
-        .close is close context method
-        .abort is abort context method
+    Test Deed named tuple
     """
-
-    def __init__(self, stop=3, **kwa):
-        """
-        Initialize instance.
-        Inherited Parameters:
-           tymist is Tymist instance
-           tock is float seconds initial value of .tock
-        Parameters:
-           stop is count when complete
-
-        """
-        super(TryDoer, self).__init__(**kwa)
-        self.states = []
-        self.count = None
-        self.stop = stop
-
-    def enter(self):
-        """
-        """
-        feed = "Default"
-        self.count = 0
-        self.states.append(State(tyme=self.tyme, context="enter",
-                                 feed=feed, count=self.count))
-
-    def recur(self, tyme):
-        """
-
-        """
-        self.count += 1
-        self.states.append(State(tyme=self.tyme, context="recur",
-                                 feed=tyme, count=self.count))
-        if self.count > self.stop:
-            return True  # complete
-        return False  # incomplete
-
-    def exit(self):
-        """
-        """
-        self.count += 1
-        self.states.append(State(tyme=self.tyme, context='exit',
-                                 feed=None, count=self.count))
-
-    def close(self):
-        """
-        """
-        self.count += 1
-        self.states.append(State(tyme=self.tyme, context='close',
-                                 feed=None, count=self.count))
-
-    def abort(self, ex):
-        """
-        """
-        self.count += 1
-        self.states.append(State(tyme=self.tyme, context='abort',
-                                 feed=ex.args[0], count=self.count))
-
-
-
-@doing.doize()
-def tryDo(states, tymth, tock=0.0,  **opts):
-    """
-    Generator function test example non-class based generator.
-    Calling this function returns generator
-    """
-    feed = "Default"
-    count = 0
-
-    try:
-        # enter context
-
-        states.append(State(tyme=tymth(), context="enter", feed=feed, count=count))
-        while (True):  # recur context
-            feed = (yield (count))  # yields tock then waits for next send
-            count += 1
-            states.append(State(tyme=tymth(), context="recur", feed=feed, count = count))
-            if count > 3:
-                break  # normal exit
-
-    except GeneratorExit:  # close context, forced exit due to .close
-        count += 1
-        states.append(State(tyme=tymth(), context='close', feed=feed, count=count))
-
-    except Exception:  # abort context, forced exit due to uncaught exception
-        count += 1
-        states.append(State(tyme=tymth(), context='abort', feed=feed, count=count))
-        raise
-
-    finally:  # exit context,  unforced exit due to normal exit of try
-        count += 1
-        states.append(State(tyme=tymth(), context='exit', feed=feed, count=count))
-
-    return (True)  # return value of yield from, or yield ex.value of StopIteration
+    deed = doing.Deed(dog="dog", retyme=2.0, index=1)
+    assert deed.dog == "dog"
+    assert deed.retyme == 2.0
+    assert deed.index == 1
 
 
 def test_doify():
@@ -575,7 +454,7 @@ def test_dodoer_always():
 
     doers = [doer0, doer1, doer2]
     tock = 1.0
-    dodoer = doing.DoDoer(tock=tock, doers=list(doers))
+    dodoer = doing.DoDoer(tock=tock, doers=list(doers))  # make copy
     assert dodoer.tock == tock == 1.0
     assert dodoer.doers == doers
     for doer in dodoer.doers:
@@ -639,8 +518,8 @@ def test_dodoer_always():
     assert dodoer.always == True
     assert doist.tyme == 13.0
     deeds = doist.ready(doers=[dodoer])
-    doist.once(deeds)
-    doist.once(deeds)
+    doist.once(deeds=deeds)
+    doist.once(deeds=deeds)
     assert doist.tyme == 15.0
     assert not dodoer.done  # dodoer not done
     assert dodoer.always == True
@@ -649,7 +528,8 @@ def test_dodoer_always():
     assert not doer2.done
     assert len(dodoer.deeds) == 2  # deeds still there
 
-    # now extend deeds
+    # Test extend and remove Doers
+    # now extend Doers
     doer3 = TryDoer(stop=1)
     doer4 = TryDoer(stop=2)
     moredoers =  [doer3, doer4]
@@ -658,8 +538,8 @@ def test_dodoer_always():
     assert len(dodoer.deeds) == 4
     indices = [index for dog, retyme, index in dodoer.deeds]
     assert indices == [1, 2, 3, 4]
-    doist.once(deeds)
-    doist.once(deeds)
+    doist.once(deeds=deeds)
+    doist.once(deeds=deeds)
     assert doist.tyme == 17.0
     assert not dodoer.done  # dodoer not done
     assert dodoer.always == True
@@ -669,7 +549,7 @@ def test_dodoer_always():
     assert doer3.done
     assert not doer4.done
     assert len(dodoer.deeds) == 1  # deeds still there
-    doist.close(deeds)
+    doist.close(deeds=deeds)
     assert dodoer.done == False  # forced close so not done
     assert doer0.done
     assert doer1.done
@@ -695,6 +575,7 @@ def test_dodoer_always():
 
     limit = 5.0
     doist = doing.Doist(tock=tock, limit=limit, doers=[dodoer])
+    assert doist.tyme == 0.0
     assert doist.tock == tock ==  1.0
     assert doist.limit == limit == 5.0
     assert doist.doers == [dodoer]
@@ -703,10 +584,10 @@ def test_dodoer_always():
     assert dodoer.always == True
     assert not dodoer.deeds
 
-    deeds = doist.ready(doers=[dodoer])
+    doist.ready()
     assert not dodoer.done
-    doist.once(deeds)
-    doist.once(deeds)
+    doist.once()
+    doist.once()
     assert doist.tyme == 2.0
     assert not dodoer.done  # dodoer not done
     assert dodoer.always == True
@@ -716,9 +597,37 @@ def test_dodoer_always():
     assert not doer3.done
     assert not doer4.done
     assert len(dodoer.deeds) == 4  # deeds still there
+    indices = [index for dog, retyme, index in dodoer.deeds]
+    assert indices == [1, 2, 3, 4]  # doer0 is done
+    for deed in dodoer.deeds:
+        assert not dodoer.doers[deed[2]].done
+    for i, doer in enumerate(dodoer.doers):
+        assert doer.done == (i not  in indices)
+
     dodoer.remove(doers=[doer0, doer1, doer3])
     assert dodoer.doers == [doer2, doer4]
     assert len(dodoer.deeds) == 2
+    indices = [index for dog, retyme, index in dodoer.deeds]
+    assert indices == [0, 1]  # doer0 is done
+    for deed in dodoer.deeds:
+        assert not dodoer.doers[deed[2]].done
+    for i, doer in enumerate(dodoer.doers):
+        assert doer.done == (i not  in indices)
+    doist.once()
+    doist.once()
+    assert doist.tyme == 4.0
+    assert doist.done == None  # never called .do
+    assert dodoer.done == True  # all its doers completed
+    assert len(dodoer.deeds) == 0  # all done
+    indices = [index for dog, retyme, index in dodoer.deeds]
+    assert indices == []  # all done
+    for deed in dodoer.deeds:
+        assert not dodoer.doers[deed[2]].done
+    for i, doer in enumerate(doist.doers):
+        assert doer.done == (i not in indices)
+    doist.once()
+    doist.once()  # does not complete because dodoer not done its always == True
+    """ Done Test"""
 
 
     """End Test """
@@ -1259,4 +1168,4 @@ def test_echo_console():
 
 
 if __name__ == "__main__":
-    test_doize_dodoer_with_bound_method()
+    test_dodoer_always()
