@@ -12,13 +12,13 @@
 #
 import os
 import sys
-# sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('../..'))
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'Hio'
-copyright = '2020, 2021, Samuel M. Smith'
+project = 'hio'
+copyright = '2020-2021, Samuel M. Smith'
 author = 'Samuel M. Smith'
 
 # The full version, including alpha/beta/rc tags
@@ -42,8 +42,6 @@ pygments_style = 'trac'
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
-
-
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
@@ -55,18 +53,16 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-
-# on_rtd is whether we are on readthedocs.org
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 if not on_rtd:  # only set the theme if we're building docs locally
     html_theme = 'alabaster'
 
-
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
 
 html_short_title = '%s-%s' % (project, version)
 

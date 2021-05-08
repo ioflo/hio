@@ -81,7 +81,7 @@ setup(
         'blake3>=0.1.8',
         'msgpack>=1.0.2',
         'simplejson>=3.17.2',
-        'cbor2>=5.2.0',
+        'cbor2>=5.2.0'
     ],
     extras_require={
         # eg:
