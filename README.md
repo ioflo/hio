@@ -1,5 +1,8 @@
-hio  Hierarchical Asynchonous Concurrency and I/O
-***************************************************
+Introduction to HIO
+*********************
+
+Hierarchical Asynchonous Concurrency and I/O
+
 
 # hio is a Hierarchically Structured Concurrency with Asynchronous IO Library in Python
 
