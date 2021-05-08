@@ -12,6 +12,7 @@ Welcome to hio's documentation!
 
    readme
    modules
+   test
 
 
 Indices and tables
