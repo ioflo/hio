@@ -40,19 +40,19 @@ class Doist(tyming.Tymist):
         .Tock is default .tock
 
     Attributes:
-        .real is boolean. True means run in real time, Otherwise as fast as possible.
-        .limit is float maximum run tyme limit then closes all doers
-        .done is Boolean, True means completed due to limit or all deeds completed
+        real (boolean): True means run in real time, Otherwise as fast as possible.
+        limit (float):  maximum run tyme limit then closes all doers
+        done (boolean): True means completed due to limit or all deeds completed
                 False is forced complete due to error
-        .doers is list of doers
-        .timer is MonoTimer for real time intervals
-        .always is Boolean, True means keep running even when all dogs in deeds
+        doers (list): is list of doers
+        timer (MonoTimer): for real time intervals
+        always (boolean): True means keep running even when all dogs in deeds
                 are complete. Enables dynamically managing extending or removing
                 doers and associated deeds while running.
 
     Inherited Properties:
-        .tyme is float relative cycle time, .tyme is artificial time
-        .tock is float tyme increment of .tick()
+        tyme: is float relative cycle time, .tyme is artificial time
+        : is float tyme increment of .tick()
 
     Properties:
 
@@ -69,12 +69,14 @@ class Doist(tyming.Tymist):
     def __init__(self, real=False, limit=None, doers=None, deeds=None,
                  always=False, **kwa):
         """
-        Initialize instance
-        Inherited Parameters:
+        Returns:
+            instance
+
+        Args: (Inherited)
             tyme is float initial value of cycle time in seconds
             tock is float tock time in seconds
 
-        Parameters:
+        Args:
             real is boolean True means run in real time,
                             Otherwise run faster than real
             limit is float seconds for max run time of doist. None means no limit.
@@ -122,24 +124,27 @@ class Doist(tyming.Tymist):
         Once finally clause closes a generator it must be reinited
         before it can be run again
 
-        Parameters:
-            doers is list of generator method or function callables with attributes
+        Args:
+            doers (list): generator method or function callables with attributes
                 tock, done, and opts dict(). This may be used to update the .doers
                 attribute which is used throughout the execution lifecycle.
                 If not provided uses .doers.
                 Parameterization here of doers enables some special cases.
                 The normal case is to initialize in .__init__ or here.
-            deeds is deque of deed triples of form (dog, retyme, index).
+            deeds (deque): deed triples of form (dog, retyme, index).
                 This may be used to update the .deeds attribute which is used
                 throughout the execution lifecycle. If not provided uses .deeds.
                 Parameterization here of deeds enables some special cases.
                 The normal case default empty in .__init__ and update in .ready().
-            limit is real time limit on execution. Forces close of all dogs.
-            tyme is optional starting tyme. Resets .tyme to tyme whe provided.
+            limit (float): is real time limit on execution. Forces close of all dogs.
+            tyme  (float): is optional starting tyme. Resets .tyme to tyme whe provided.
                If not provided uses current .tyme
-            always is Boolean, True means keep running even when all dogs in deeds
+            always (Boolean): True means keep running even when all dogs in deeds
                 are complete. Enables dynamically managing extending or removing
                 doers and associated deeds while running.
+
+        Returns:
+            None
 
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
         For setting attributes on bound methods.
