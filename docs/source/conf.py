@@ -33,11 +33,11 @@ version = release
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+              'myst_parser',
               'sphinx.ext.autodoc',
               'sphinx.ext.autosummary',
               'sphinx.ext.viewcode',
               'sphinx.ext.napoleon',
-              'myst_parser',
               'autoapi.extension',
               "sphinx_rtd_theme",
               ]

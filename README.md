@@ -1,12 +1,9 @@
 Introduction to HIO
-*********************
+***********************
 
-Hierarchical Asynchonous Concurrency and I/O
+Weghtless hierarchical ssynchonous coroutines and I/O in Python.
 
-
-# hio is a Hierarchically Structured Concurrency with Asynchronous IO Library in Python
-
-## Rich Flow Based Programming Hierarchical Structured Concurrency with Asynchronous IO
+Rich Flow Based Programming Hierarchical Structured Concurrency with Asynchronous IO
 
 Hio builds on very early work on hierarchical structured concurrency with
 lifecycle contexts from [ioflo](https://ioflo.com),
@@ -33,7 +30,8 @@ as neededup, but due to its underlying deterministic scheduling even the additio
 of noise can be done in a pretermined reproducable way.
 
 
-## Structured Concurrency with Asynchronous IO
+Structured Concurrency with Asynchronous IO
+=============================================
 
 More recently the [curio](https://curio.readthedocs.io/en/latest/) and
 [trio](https://trio.readthedocs.io/en/stable/) libraries have popularized
@@ -58,8 +56,8 @@ This approach merges the best of FBP and a bare bones coroutine based async.
 
 
 
-
-## Current Status
+Current Status
+================
 
 Version 0.3.4
    The async scheduler features should be pretty stable going forward.

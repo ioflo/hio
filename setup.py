@@ -15,7 +15,7 @@ $ twine upload dist/hio-0.0.1.tar.gz
 
 Update sphinx /docs
 $ cd /docs
-$ sphinx-build -b html source build
+$ sphinx-build -b html source build/html
 
 
 Best practices for setup.py and requirements.txt
