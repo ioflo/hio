@@ -13,10 +13,14 @@ $ python3 setup.py sdist
 $ twine upload dist/hio-0.0.1.tar.gz
 
 
+Update sphinx /docs
+$ cd /docs
+$ sphinx-apidoc -f -o source/ ../src/
+$ make html
+
+
 Best practices for setup.py and requirements.txt
 https://caremad.io/posts/2013/07/setup-vs-requirement/
-
-
 """
 
 
