@@ -72,29 +72,28 @@ class Doist(tyming.Tymist):
         Returns:
             instance
 
-        Args: (Inherited)
-            tyme is float initial value of cycle time in seconds
-            tock is float tock time in seconds
-
-        Args:
-            real is boolean True means run in real time,
+        Parameters:
+            tyme (float): initial value of cycle time in seconds (inherited)
+            tock (float): tock time in seconds  (inherited)
+            real (boolean): True means run in real time,
                             Otherwise run faster than real
-            limit is float seconds for max run time of doist. None means no limit.
-            doers is list of Doer class instances, generator methods or
+            limit (float): seconds for max run time of doist. None means no limit.
+            doers (list): Doer class instances, generator methods or
                 function callables with attributes tock, done, and opts dict()
                 used to initialize .doers.
                 The .doers attribute is used throughout the execution lifecycle.
                 Parameterization elsewhere of doers enables some special cases.
                 The normal case is to initialize here or in .do().
-            deeds is deque of deed tuplels triples of form (dog, retyme, index)
+            deeds (deque): deed tuples triples of form (dog, retyme, index)
                 that initializes .deeds. If not provided .deeds is new empty deque.
                 The .deeds attribute is used to update the throughout the
                 execution lifecycle. The Parameterization elsewhere of deeds enables
                 some special cases. The normal case is use the default empty
                 initialization performed here and update in .ready().
-            always is Boolean, True means keep running even when all dogs in deeds
+            always (Boolean): True means keep running even when all dogs in deeds
                 are complete. Enables dynamically managing extending or removing
                 doers and associated deeds while running.
+
         """
         super(Doist, self).__init__(**kwa)
 
@@ -124,7 +123,7 @@ class Doist(tyming.Tymist):
         Once finally clause closes a generator it must be reinited
         before it can be run again
 
-        Args:
+        Parameters:
             doers (list): generator method or function callables with attributes
                 tock, done, and opts dict(). This may be used to update the .doers
                 attribute which is used throughout the execution lifecycle.

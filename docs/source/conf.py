@@ -34,13 +34,15 @@ version = release
 # ones.
 extensions = [
               'myst_parser',
-              'sphinx.ext.autodoc',
-              'sphinx.ext.autosummary',
-              'sphinx.ext.viewcode',
               'sphinx.ext.napoleon',
+              'sphinx.ext.viewcode',
+              'sphinx.ext.autosummary',
+              'sphinx.ext.autodoc',
               'autoapi.extension',
               "sphinx_rtd_theme",
               ]
+
+napoleon_include_init_with_doc = True
 
 autoapi_dirs = ['./../../src/']
 
