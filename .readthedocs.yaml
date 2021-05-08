@@ -8,6 +8,7 @@ version: 2
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
    configuration: docs/source/conf.py
+   bulder: html
 
 # Optionally build your docs in additional formats such as PDF
 formats:
@@ -18,3 +19,6 @@ python:
    version: 3.8
    install:
    - requirements: docs/source/requirements.txt
+   
+submodules:
+  include: all
