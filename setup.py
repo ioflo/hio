@@ -15,7 +15,7 @@ $ twine upload dist/hio-0.0.1.tar.gz
 
 Update sphinx /docs
 $ cd /docs
-$ sphinx-apidoc -f -o source/ ../src/hio/
+$ sphinx-apidoc -f -o source/ ../src/
 $ make html
 
 
