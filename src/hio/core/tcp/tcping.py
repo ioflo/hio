@@ -2,8 +2,9 @@
 """
 hio.core.tcping Module
 """
+from . import serving
 
-class Peer(Server):
+class Peer(serving.Server):
     """
     Nonblocking TCP Socket Peer Class.
     Supports both incoming and outgoing connections.
