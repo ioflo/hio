@@ -15,7 +15,7 @@ $ twine upload dist/hio-0.0.1.tar.gz
 
 Update sphinx /docs
 $ cd /docs
-$ sphinx-build -b html source api
+$ sphinx-build -b html source build/html
 or
 $ sphinx-apidoc -f -o source/ ../src/
 $ make html
@@ -36,7 +36,7 @@ from setuptools import setup
 
 setup(
     name='hio',
-    version='0.3.5',  #  also change in src/hio/__init__.py
+    version='0.3.6',  #  also change in src/hio/__init__.py
     license='Apache Software License 2.0',
     description='Hierarchical Concurrency with Async IO',
     long_description=("HIO Hierarchical Concurrency and Asynchronous IO Library. "
