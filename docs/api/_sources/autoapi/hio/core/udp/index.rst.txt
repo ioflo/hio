@@ -1,0 +1,20 @@
+:mod:`hio.core.udp`
+===================
+
+.. py:module:: hio.core.udp
+
+.. autoapi-nested-parse::
+
+   hio.core.udp Package
+
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   udping/index.rst
+
+

@@ -1,0 +1,503 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>hio.base.tyming &mdash; hio 0.3.4 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> hio
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Introduction to HIO</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">src</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">hio</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../../hio.html">hio</a> &raquo;</li>
+        
+      <li>hio.base.tyming</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for hio.base.tyming</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- encoding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">hio.core.tyming Module</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">deque</span>
+
+<span class="kn">from</span> <span class="nn">..hioing</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">VersionError</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">hioing</span>
+<span class="kn">from</span> <span class="nn">..help.timing</span> <span class="kn">import</span> <span class="n">MonoTimer</span>
+
+<span class="c1"># from .basing import Ctl, Stt</span>
+
+
+
+<div class="viewcode-block" id="Tymist"><a class="viewcode-back" href="../../../hio.base.html#hio.base.tyming.Tymist">[docs]</a><span class="k">class</span> <span class="nc">Tymist</span><span class="p">(</span><span class="n">hioing</span><span class="o">.</span><span class="n">Mixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Tymist keeps artificial or simulated or cycle time, called tyme.</span>
+<span class="sd">    Provides relative cycle time, tyme, in seconds with .tyme property</span>
+<span class="sd">    in incremets of .tock seconds.</span>
+<span class="sd">    .tyme is advanced one .tock increment with .tick method.</span>
+<span class="sd">    .tyme may be synchronized with real time by a .tyme manager</span>
+
+<span class="sd">    Class Attributes:</span>
+<span class="sd">        .Tock is default .tock</span>
+
+<span class="sd">    Attributes:</span>
+
+<span class="sd">    Properties:</span>
+<span class="sd">        .tyme is float relative cycle time, .tyme is artificial time</span>
+<span class="sd">        .tock is float tyme increment of .tick()</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        .tick increments .tyme by one .tock or provided tock</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Tymist.Tock"><a class="viewcode-back" href="../../../hio.base.html#hio.base.tyming.Tymist.Tock">[docs]</a>    <span class="n">Tock</span> <span class="o">=</span> <span class="mf">0.03125</span>  <span class="c1"># 1/32</span></div>
+
+<div class="viewcode-block" id="Tymist.__init__"><a class="viewcode-back" href="../../../hio.base.html#hio.base.tyming.Tymist.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tyme</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">tock</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwa</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize instance</span>
+<span class="sd">        Parameters:</span>
+<span class="sd">            tyme is initial value of float cycle time in seconds</span>
+<span class="sd">            tock is float tock time in seconds</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Tymist</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwa</span><span class="p">)</span>  <span class="c1"># Mixin for Mult-inheritance MRO</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tyme</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">tyme</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tock</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">tock</span><span class="p">)</span> <span class="k">if</span> <span class="n">tock</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">Tock</span></div>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Tymist.tyme"><a class="viewcode-back" href="../../../hio.base.html#hio.base.tyming.Tymist.tyme">[docs]</a>    <span class="k">def</span> <span class="nf">tyme</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        tyme property getter, get ._tyme</span>
+<span class="sd">        .tyme is float cycle time in seconds</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tyme</span></div>
+
+    <span class="nd">@tyme</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">tyme</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tyme</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        cycle time property setter, set ._tyme to tyme</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tyme</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">tyme</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Tymist.tock"><a class="viewcode-back" href="../../../hio.base.html#hio.base.tyming.Tymist.tock">[docs]</a>    <span class="k">def</span> <span class="nf">tock</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        tock property getter, get ._tock</span>
+<span class="sd">        .tock is float cycle time .tyme increment in seconds</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tock</span></div>
+
+    <span class="nd">@tock</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">tock</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tock</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        cycle time increment property setter, set ._tock to tock</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tock</span><span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">tock</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Tymist.tick"><a class="viewcode-back" href="../../../hio.base.html#hio.base.tyming.Tymist.tick">[docs]</a>    <span class="k">def</span> <span class="nf">tick</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tock</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Advance cycle time .tyme by tock seconds when provided othewise by .tock</span>
+<span class="sd">        and return new .tyme</span>
+<span class="sd">        Parameters:</span>
+<span class="sd">            tock is float of amount of time in seconds to change .tyme</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tyme</span> <span class="o">+=</span> <span class="nb">float</span><span class="p">(</span><span class="n">tock</span> <span class="k">if</span> <span class="n">tock</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">tock</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tyme</span></div>
+
+<div class="viewcode-block" id="Tymist.tymen"><a class="viewcode-back" href="../../../hio.base.html#hio.base.tyming.Tymist.tymen">[docs]</a>    <span class="k">def</span> <span class="nf">tymen</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns function wrapper closure tymth that when called returns .tyme.</span>
+<span class="sd">        This enables read only injection of .tyme into any object that wants to</span>
+<span class="sd">        be on or access this Tymist&#39;s tyme base.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">tymth</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tyme</span>
+        <span class="k">return</span> <span class="n">tymth</span></div></div>
+
+
+
+<div class="viewcode-block" id="Tymee"><a class="viewcode-back" href="../../../hio.base.html#hio.base.tyming.Tymee">[docs]</a><span class="k">class</span> <span class="nc">Tymee</span><span class="p">(</span><span class="n">hioing</span><span class="o">.</span><span class="n">Mixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Tymee has .tyme property that returns the artificial or simulated or cycle time</span>
+<span class="sd">    from its referenced Tymist instance ._tymist.</span>
+
+<span class="sd">    Attributes:</span>
+
+<span class="sd">    Properties:</span>
+<span class="sd">        .tyme is float relative cycle time of associated Tymist .tyme obtained</span>
+<span class="sd">            via injected .tymth function wrapper closure.</span>
+<span class="sd">        .tymth is function wrapper closure returned by Tymist .tymeth() method.</span>
+<span class="sd">            When .tymth is called it returns associated Tymist .tyme.</span>
+<span class="sd">            .tymth provides injected dependency on Tymist tyme base.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        .wind  injects ._tymth dependency from associated Tymist to get its .tyme</span>
+
+<span class="sd">    Hidden:</span>
+<span class="sd">        ._tymth is injected function wrapper closure returned by .tymen() of</span>
+<span class="sd">            associated Tymist instance that returns Tymist .tyme. when called.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Tymee.__init__"><a class="viewcode-back" href="../../../hio.base.html#hio.base.tyming.Tymee.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tymth</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwa</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize instance</span>
+<span class="sd">        Parameters:</span>
+<span class="sd">            tymth is injected function wrapper closure returned by .tymen() of</span>
+<span class="sd">                Tymist instance. Calling tymth() returns associated Tymist .tyme.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Tymee</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwa</span><span class="p">)</span>  <span class="c1"># Mixin for Mult-inheritance MRO</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tymth</span> <span class="o">=</span> <span class="n">tymth</span></div>
+
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Tymee.tyme"><a class="viewcode-back" href="../../../hio.base.html#hio.base.tyming.Tymee.tyme">[docs]</a>    <span class="k">def</span> <span class="nf">tyme</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        tyme property getter, get ._tyme</span>
+<span class="sd">        .tyme is float cycle time in seconds</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tymth</span><span class="p">()</span></div>
+
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Tymee.tymth"><a class="viewcode-back" href="../../../hio.base.html#hio.base.tyming.Tymee.tymth">[docs]</a>    <span class="k">def</span> <span class="nf">tymth</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        tymth property getter, get ._tymth</span>
+<span class="sd">        returns own copy of tymist.tynth function wrapper closure for subsequent</span>
+<span class="sd">        injection into related objects that want to be on same tymist tyme base.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tymth</span></div>
+
+
+    <span class="nd">@tymth</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">tymth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tymth</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        tymth property setter, sets ._tymth to tymth.</span>
+<span class="sd">        tymth is function wrapper closure that returns tymist.tyme</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tymth</span> <span class="o">=</span> <span class="n">tymth</span>
+
+
+<div class="viewcode-block" id="Tymee.wind"><a class="viewcode-back" href="../../../hio.base.html#hio.base.tyming.Tymee.wind">[docs]</a>    <span class="k">def</span> <span class="nf">wind</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tymth</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.</span>
+<span class="sd">        Override in subclasses to update any dependencies on a change in</span>
+<span class="sd">        tymist.tymth base</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tymth</span> <span class="o">=</span> <span class="n">tymth</span></div></div>
+
+
+<div class="viewcode-block" id="Tymer"><a class="viewcode-back" href="../../../hio.base.html#hio.base.tyming.Tymer">[docs]</a><span class="k">class</span> <span class="nc">Tymer</span><span class="p">(</span><span class="n">Tymee</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Tymer class to measure cycle time given by .tyme property of Tymist instance.</span>
+<span class="sd">    tyme is relative cycle time either artificial or real</span>
+
+<span class="sd">    Inherited Attributes</span>
+
+<span class="sd">    Attributes:</span>
+
+<span class="sd">    Inherited Properties:</span>
+<span class="sd">        .tyme is float relative cycle time of associated Tymist .tyme obtained</span>
+<span class="sd">            via injected .tymth function wrapper closure.</span>
+<span class="sd">        .tymth is function wrapper closure returned by Tymist .tymeth() method.</span>
+<span class="sd">            When .tymth is called it returns associated Tymist .tyme.</span>
+<span class="sd">            .tymth provides injected dependency on Tymist tyme base.</span>
+
+<span class="sd">    Properties:</span>
+<span class="sd">        .duration = tyme duration of tymer in seconds from ._start to ._stop</span>
+<span class="sd">        .elaspsed = tyme elasped in seconds  since ._start</span>
+<span class="sd">        .remaining = tyme remaining in seconds  until ._stop</span>
+<span class="sd">        .expired = True if expired, False otherwise, i.e. .tyme &gt;= ._stop</span>
+
+<span class="sd">    Inherited Methods:</span>
+<span class="sd">        .wind is injects ._tymth dependency</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        .start() = start tymer at current .tyme</span>
+<span class="sd">        .restart() = restart tymer at last ._stop so no time lost</span>
+
+<span class="sd">    Hidden:</span>
+<span class="sd">        ._tymth is injected function wrapper closure returned by .tymen() of</span>
+<span class="sd">            associated Tymist instance that returns Tymist .tyme. when called.</span>
+<span class="sd">        ._start is start tyme in seconds</span>
+<span class="sd">        ._stop  is stop tyme in seconds</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Tymer.Duration"><a class="viewcode-back" href="../../../hio.base.html#hio.base.tyming.Tymer.Duration">[docs]</a>    <span class="n">Duration</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># default duration when not provided</span></div>
+
+<div class="viewcode-block" id="Tymer.__init__"><a class="viewcode-back" href="../../../hio.base.html#hio.base.tyming.Tymer.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwa</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialization method for instance.</span>
+<span class="sd">        Parameters:</span>
+<span class="sd">            duration is float tymer duration in seconds (fractional)</span>
+<span class="sd">            start is float optional timer start time in seconds. Allows starting</span>
+<span class="sd">                before or after current .tyme</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Tymer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwa</span><span class="p">)</span>
+        <span class="n">duration</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">duration</span><span class="p">)</span> <span class="k">if</span> <span class="n">duration</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">Duration</span>
+        <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">tymth</span><span class="p">:</span>  <span class="c1"># needed so default .duration works</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">start</span><span class="p">)</span> <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">tyme</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">duration</span><span class="p">)</span>  <span class="c1"># needed so default .duration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_start</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Tymer.duration"><a class="viewcode-back" href="../../../hio.base.html#hio.base.tyming.Tymer.duration">[docs]</a>    <span class="k">def</span> <span class="nf">duration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        duration property getter,  .duration = ._stop - ._start</span>
+<span class="sd">        .duration is float duration tyme</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stop</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Tymer.elapsed"><a class="viewcode-back" href="../../../hio.base.html#hio.base.tyming.Tymer.elapsed">[docs]</a>    <span class="k">def</span> <span class="nf">elapsed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        elapsed tyme property getter,</span>
+<span class="sd">        Returns elapsed tyme in seconds (fractional) since ._start.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tyme</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Tymer.remaining"><a class="viewcode-back" href="../../../hio.base.html#hio.base.tyming.Tymer.remaining">[docs]</a>    <span class="k">def</span> <span class="nf">remaining</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        remaining tyme property getter,</span>
+<span class="sd">        Returns remaining tyme in seconds (fractional) before ._stop.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stop</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">tyme</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Tymer.expired"><a class="viewcode-back" href="../../../hio.base.html#hio.base.tyming.Tymer.expired">[docs]</a>    <span class="k">def</span> <span class="nf">expired</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns True if tymer has expired, False otherwise.</span>
+<span class="sd">        .tyme &gt;= ._stop,</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tyme</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Tymer.wind"><a class="viewcode-back" href="../../../hio.base.html#hio.base.tyming.Tymer.wind">[docs]</a>    <span class="k">def</span> <span class="nf">wind</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tymth</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Inject new ._tymist and any other bundled tymee references</span>
+<span class="sd">        Update any dependencies on a change in ._tymist:</span>
+<span class="sd">            starts over itself at new ._tymists time</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Tymer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">wind</span><span class="p">(</span><span class="n">tymth</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Tymer.start"><a class="viewcode-back" href="../../../hio.base.html#hio.base.tyming.Tymer.start">[docs]</a>    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Starts Tymer of duration secs at start time start secs.</span>
+<span class="sd">            If duration not provided then uses current duration</span>
+<span class="sd">            If start not provided then starts at current .tyme</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># remember current duration when duration not provided</span>
+        <span class="n">duration</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">duration</span><span class="p">)</span> <span class="k">if</span> <span class="n">duration</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">start</span><span class="p">)</span> <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">tyme</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start</span> <span class="o">+</span> <span class="n">duration</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start</span></div>
+
+
+<div class="viewcode-block" id="Tymer.restart"><a class="viewcode-back" href="../../../hio.base.html#hio.base.tyming.Tymer.restart">[docs]</a>    <span class="k">def</span> <span class="nf">restart</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Lossless restart of Tymer at .tyme = ._stop for duration if provided,</span>
+<span class="sd">        current duration otherwise</span>
+<span class="sd">        No time lost. Useful to extend Tymer so no time lost</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_stop</span><span class="p">)</span></div></div>
+
+
+
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2020-2021, Samuel M. Smith.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,515 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>hio.help.ogling &mdash; hio 0.3.4 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> hio
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Introduction to HIO</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">src</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">hio</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../../hio.html">hio</a> &raquo;</li>
+        
+          <li><a href="../help.html">hio.help</a> &raquo;</li>
+        
+      <li>hio.help.ogling</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for hio.help.ogling</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- encoding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">hio.help.ogling module</span>
+
+<span class="sd">Provides python stdlib logging module support</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">logging.handlers</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span>
+
+
+<div class="viewcode-block" id="initOgler"><a class="viewcode-back" href="../../../hio.help.html#hio.help.ogling.initOgler">[docs]</a><span class="k">def</span> <span class="nf">initOgler</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">CRITICAL</span><span class="p">,</span> <span class="o">**</span><span class="n">kwa</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Initialize the ogler global instance once</span>
+<span class="sd">    Usage:</span>
+<span class="sd">       # At top level of module in project</span>
+<span class="sd">       # assign ogler as module global instance availabe at modulename.ogler</span>
+<span class="sd">       ogler = hio.help.ogling.initOgler()</span>
+
+<span class="sd">       # module is mypackage.help  then ogler at mypackage.help.ogler</span>
+
+<span class="sd">    Critical is most severe to restrict logging by default</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        force is Boolean True is to force reinit even if global ogler is not None</span>
+<span class="sd">        level is default logging level</span>
+
+<span class="sd">    This should be called in package .__init__ to insure that global ogler is</span>
+<span class="sd">    defined by default. Users may then reset level and reopen log file if need be</span>
+<span class="sd">    before calling ogler.getLoggers()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">Ogler</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">level</span><span class="p">,</span> <span class="o">**</span><span class="n">kwa</span><span class="p">)</span></div>
+
+
+<span class="nd">@contextmanager</span>
+<div class="viewcode-block" id="openOgler"><a class="viewcode-back" href="../../../hio.help.html#hio.help.ogling.openOgler">[docs]</a><span class="k">def</span> <span class="nf">openOgler</span><span class="p">(</span><span class="bp">cls</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;test&quot;</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwa</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Context manager wrapper Ogler instances.</span>
+<span class="sd">    Defaults to temporary file logs.</span>
+<span class="sd">    Context &#39;with&#39; statements call .close on exit of &#39;with&#39; block</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        cls is Class instance of subclass instance</span>
+<span class="sd">        name is str name of ogler instance for filename so can have multiple oglers</span>
+<span class="sd">             at different paths thar each use different log file directories</span>
+<span class="sd">        temp is Boolean, True means open in temporary directory, clear on close</span>
+<span class="sd">                Otherwise open in persistent directory, do not clear on close</span>
+
+<span class="sd">    Usage:</span>
+
+<span class="sd">    with openOgler(name=&quot;bob&quot;) as ogler:</span>
+<span class="sd">        logger = ogler.getLogger()  ....</span>
+
+<span class="sd">    with openOgler(name=&quot;eve&quot;, cls=SubclassedOgler)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="bp">cls</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">cls</span> <span class="o">=</span> <span class="n">Ogler</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">ogler</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span> <span class="n">reopen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwa</span><span class="p">)</span>
+        <span class="k">yield</span> <span class="n">ogler</span>
+
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">ogler</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>  <span class="c1"># if .temp also clears</span></div>
+
+
+<div class="viewcode-block" id="Ogler"><a class="viewcode-back" href="../../../hio.help.html#hio.help.ogling.Ogler">[docs]</a><span class="k">class</span> <span class="nc">Ogler</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Olgery instances retreive and configure loggers from global logging facility</span>
+<span class="sd">    Only need one Ogler per application</span>
+
+<span class="sd">    Uses python stdlib logging module, logging.getLogger(name).</span>
+<span class="sd">    Multiple calls to .getLogger() with the same name</span>
+<span class="sd">    will always return a reference to the same Logger object.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        .name is str used in file name</span>
+<span class="sd">        .level is logging severity level</span>
+<span class="sd">        .temp is Boolean True means use /tmp directory</span>
+<span class="sd">        .prefix is str used as part of path prefix and formating</span>
+<span class="sd">        .headDirPath is str used as head of path</span>
+<span class="sd">        .tailDirpath is str used as tail of path</span>
+<span class="sd">        .altTailDirPath is str used a alternate tail of path</span>
+<span class="sd">        .dirPath is full directory path</span>
+<span class="sd">        .path is full file path</span>
+<span class="sd">        .opened is Boolean, True means file is opened Otherwise False</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Ogler.Prefix"><a class="viewcode-back" href="../../../hio.help.html#hio.help.ogling.Ogler.Prefix">[docs]</a>    <span class="n">Prefix</span> <span class="o">=</span> <span class="s2">&quot;hio&quot;</span></div>
+<div class="viewcode-block" id="Ogler.HeadDirPath"><a class="viewcode-back" href="../../../hio.help.html#hio.help.ogling.Ogler.HeadDirPath">[docs]</a>    <span class="n">HeadDirPath</span> <span class="o">=</span> <span class="s2">&quot;/usr/local/var&quot;</span>  <span class="c1"># default in /usr/local/var</span></div>
+<div class="viewcode-block" id="Ogler.TailDirPath"><a class="viewcode-back" href="../../../hio.help.html#hio.help.ogling.Ogler.TailDirPath">[docs]</a>    <span class="n">TailDirPath</span> <span class="o">=</span> <span class="s2">&quot;logs&quot;</span></div>
+<div class="viewcode-block" id="Ogler.AltHeadDirPath"><a class="viewcode-back" href="../../../hio.help.html#hio.help.ogling.Ogler.AltHeadDirPath">[docs]</a>    <span class="n">AltHeadDirPath</span> <span class="o">=</span> <span class="s2">&quot;~&quot;</span>  <span class="c1">#  put in ~ as fallback when desired dir not permitted</span></div>
+<div class="viewcode-block" id="Ogler.TempHeadDir"><a class="viewcode-back" href="../../../hio.help.html#hio.help.ogling.Ogler.TempHeadDir">[docs]</a>    <span class="n">TempHeadDir</span> <span class="o">=</span> <span class="s2">&quot;/tmp&quot;</span></div>
+<div class="viewcode-block" id="Ogler.TempPrefix"><a class="viewcode-back" href="../../../hio.help.html#hio.help.ogling.Ogler.TempPrefix">[docs]</a>    <span class="n">TempPrefix</span> <span class="o">=</span> <span class="s2">&quot;test_&quot;</span></div>
+<div class="viewcode-block" id="Ogler.TempSuffix"><a class="viewcode-back" href="../../../hio.help.html#hio.help.ogling.Ogler.TempSuffix">[docs]</a>    <span class="n">TempSuffix</span> <span class="o">=</span> <span class="s2">&quot;_temp&quot;</span></div>
+
+<div class="viewcode-block" id="Ogler.__init__"><a class="viewcode-back" href="../../../hio.help.html#hio.help.ogling.Ogler.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;main&#39;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">headDirPath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reopen</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">clear</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Init Loggery factory instance</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            name is application specific log file name</span>
+<span class="sd">            level is int logging level from logging. Higher is more restrictive.</span>
+<span class="sd">                This sets the minimum level of the baseLogger and failLogger</span>
+<span class="sd">                relative to the global level.</span>
+<span class="sd">                Logs will output if action level is at or above set level.</span>
+
+<span class="sd">                Level    Numeric value</span>
+<span class="sd">                CRITICAL 50</span>
+<span class="sd">                ERROR    40</span>
+<span class="sd">                WARNING  30</span>
+<span class="sd">                INFO     20</span>
+<span class="sd">                DEBUG    10</span>
+<span class="sd">                NOTSET    0</span>
+
+<span class="sd">            temp is Boolean True means use /tmp directory If .filed and clear on close</span>
+<span class="sd">                            False means use  headDirpath If .filed</span>
+<span class="sd">            prefix is str to include in path and logging template</span>
+<span class="sd">            headDirPath is str for custom headDirPath for log file</span>
+<span class="sd">            reopen is Booblean True means reopen path if anything changed</span>
+<span class="sd">            clear is Boolean True means clear .dirPath when closing in reopen</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="k">if</span> <span class="n">name</span> <span class="k">else</span> <span class="s1">&#39;main&#39;</span>  <span class="c1"># for file name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">=</span> <span class="n">level</span>  <span class="c1"># basic logger level</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">temp</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">temp</span> <span class="k">else</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">=</span> <span class="n">prefix</span> <span class="k">if</span> <span class="n">prefix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">Prefix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">headDirPath</span> <span class="o">=</span> <span class="n">headDirPath</span> <span class="k">if</span> <span class="n">headDirPath</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">HeadDirPath</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opened</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1">#create formatters</span>
+        <span class="n">fmt</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">: </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">baseFormatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="n">fmt</span><span class="p">)</span>  <span class="c1"># basic format</span>
+
+        <span class="c1">#create console handlers and assign formatters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">baseConsoleHandler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">()</span>  <span class="c1"># sys.stderr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">baseConsoleHandler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">baseFormatter</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span> <span class="o">==</span> <span class="s1">&#39;darwin&#39;</span><span class="p">:</span>
+            <span class="n">address</span> <span class="o">=</span> <span class="s1">&#39;/var/run/syslog&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">address</span> <span class="o">=</span> <span class="s1">&#39;/dev/log&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">baseSysLogHandler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">handlers</span><span class="o">.</span><span class="n">SysLogHandler</span><span class="p">(</span><span class="n">address</span><span class="o">=</span><span class="n">address</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">baseSysLogHandler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">baseFormatter</span><span class="p">)</span>
+        <span class="c1"># SysLogHandler only appears to log a ERROR level despite the set level</span>
+        <span class="c1">#self.baseSysLogHandler.encodePriority(self.baseSysLogHandler.LOG_USER,</span>
+                                              <span class="c1">#self.baseSysLogHandler.LOG_DEBUG)</span>
+        <span class="k">if</span> <span class="n">reopen</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reopen</span><span class="p">(</span><span class="n">headDirPath</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">headDirPath</span><span class="p">,</span> <span class="n">clear</span><span class="o">=</span><span class="n">clear</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Ogler.reopen"><a class="viewcode-back" href="../../../hio.help.html#hio.help.ogling.Ogler.reopen">[docs]</a>    <span class="k">def</span> <span class="nf">reopen</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">headDirPath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">clear</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Use or Create if not preexistent, directory path for file .path</span>
+<span class="sd">        First closes .path if already opened. If clear is True then also clears</span>
+<span class="sd">        .path before reopening</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            name is optional name</span>
+<span class="sd">                if None or unchanged then ignore otherwise recreate path</span>
+<span class="sd">                    When recreating path, If not provided use .name</span>
+<span class="sd">            temp is optional boolean:</span>
+<span class="sd">                If None ignore Otherwise</span>
+<span class="sd">                    Assign to .temp</span>
+<span class="sd">                    If True then open temporary directory,</span>
+<span class="sd">                    If False then open persistent directory</span>
+<span class="sd">            headDirPath is optional str head directory pathname of main database</span>
+<span class="sd">                if None or unchanged then ignore otherwise recreate path</span>
+<span class="sd">                   When recreating path, If not provided use default .HeadDirpath</span>
+<span class="sd">            clear is Boolean True means clear .path when closing</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opened</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">clear</span><span class="o">=</span><span class="n">clear</span><span class="p">)</span>
+
+        <span class="c1"># check for changes in path parts if need to recreate</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">name</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># don&#39;t need to recreate path because of name change</span>
+
+        <span class="k">if</span> <span class="n">temp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">temp</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
+            <span class="n">temp</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># don&#39;t need to recreate path because of temp change</span>
+
+        <span class="k">if</span> <span class="n">headDirPath</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">headDirPath</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">headDirPath</span><span class="p">:</span>
+            <span class="n">headDirPath</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># don&#39;t need to recreate path because of headDirPath change</span>
+
+        <span class="c1"># always recreates if path is empty or if path part has changed</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span> <span class="ow">or</span>
+            <span class="n">temp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span>
+            <span class="n">headDirPath</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span>
+            <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>  <span class="c1"># need to recreate self.dirPath, self.path, self.trPath</span>
+
+            <span class="k">if</span> <span class="n">temp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">temp</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">temp</span> <span class="k">else</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="n">headDirPath</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">headDirpath</span> <span class="o">=</span> <span class="n">headDirPath</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># used below for filename</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
+                <span class="n">dirPath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span>
+                                        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TempHeadDir</span><span class="p">,</span>
+                                                    <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="p">,</span>
+                                                    <span class="bp">self</span><span class="o">.</span><span class="n">TailDirPath</span><span class="p">))</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">dirPath</span><span class="p">):</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">dirPath</span><span class="p">)</span>  <span class="c1"># mkdtemp only makes last dir</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">TempPrefix</span><span class="p">,</span>
+                                                <span class="n">suffix</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">TempSuffix</span><span class="p">,</span>
+                                                <span class="nb">dir</span><span class="o">=</span><span class="n">dirPath</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span>
+                        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span>
+                                            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">headDirPath</span><span class="p">,</span>
+                                                         <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="p">,</span>
+                                                         <span class="bp">self</span><span class="o">.</span><span class="n">TailDirPath</span><span class="p">)))</span>
+
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span><span class="p">):</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>  <span class="c1"># can&#39;t make dir</span>
+                        <span class="c1"># use alt=user&#39;s directory instead</span>
+                        <span class="n">prefix</span> <span class="o">=</span> <span class="s2">&quot;.</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="p">)</span>  <span class="c1"># hide it</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span>
+                                                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span>
+                                                                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">AltHeadDirPath</span><span class="p">,</span>
+                                                                             <span class="n">prefix</span><span class="p">,</span>
+                                                                            <span class="bp">self</span><span class="o">.</span><span class="n">TailDirPath</span><span class="p">)))</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span><span class="p">):</span>
+                            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>  <span class="c1"># path exists</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">R_OK</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">W_OK</span><span class="p">):</span>
+                        <span class="c1"># but can&#39;t access it</span>
+                        <span class="c1"># use alt=user&#39;s directory instead</span>
+                        <span class="n">prefix</span> <span class="o">=</span> <span class="s2">&quot;.</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="p">)</span>  <span class="c1"># hide it</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span>
+                                                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span>
+                                                                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">AltHeadDirPath</span><span class="p">,</span>
+                                                                             <span class="n">prefix</span><span class="p">,</span>
+                                                                             <span class="bp">self</span><span class="o">.</span><span class="n">TailDirPath</span><span class="p">)))</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span><span class="p">):</span>
+                            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span><span class="p">)</span>
+
+            <span class="n">fileName</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">.log&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span><span class="p">,</span> <span class="n">fileName</span><span class="p">)</span>
+
+            <span class="c1">#create file handlers and assign formatters</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">baseFileHandler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">handlers</span><span class="o">.</span><span class="n">TimedRotatingFileHandler</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">when</span><span class="o">=</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">backupCount</span><span class="o">=</span><span class="mi">48</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">baseFileHandler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">baseFormatter</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">opened</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="Ogler.close"><a class="viewcode-back" href="../../../hio.help.html#hio.help.ogling.Ogler.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clear</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Close lmdb at .env and if clear or self.temp then remove directory at .path</span>
+<span class="sd">        Parameters:</span>
+<span class="sd">           clear is boolean, True means clear directory</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opened</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">clear</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">clearDirPath</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Ogler.clearDirPath"><a class="viewcode-back" href="../../../hio.help.html#hio.help.ogling.Ogler.clearDirPath">[docs]</a>    <span class="k">def</span> <span class="nf">clearDirPath</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove logfile directory at .dirPath</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span><span class="p">):</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Ogler.resetLevel"><a class="viewcode-back" href="../../../hio.help.html#hio.help.ogling.Ogler.resetLevel">[docs]</a>    <span class="k">def</span> <span class="nf">resetLevel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">globally</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resets the level of preexisting loggers to level. If level is None then</span>
+<span class="sd">        use .level</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">level</span> <span class="o">=</span> <span class="n">level</span> <span class="k">if</span> <span class="n">level</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">level</span>
+        <span class="k">if</span> <span class="n">globally</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">=</span> <span class="n">level</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>  <span class="c1"># singleton</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">level</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Ogler.getLogger"><a class="viewcode-back" href="../../../hio.help.html#hio.help.ogling.Ogler.getLogger">[docs]</a>    <span class="k">def</span> <span class="nf">getLogger</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns Basic Logger</span>
+<span class="sd">        default is to name logger after module</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">propagate</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># disable propagation of events</span>
+        <span class="n">level</span> <span class="o">=</span> <span class="n">level</span> <span class="k">if</span> <span class="n">level</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">level</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">level</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">handler</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">logger</span><span class="o">.</span><span class="n">handlers</span><span class="p">):</span>  <span class="c1"># remove so no duplicate handlers</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">removeHandler</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">baseConsoleHandler</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">baseSysLogHandler</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opened</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">baseFileHandler</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">logger</span></div></div>
+
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2020-2021, Samuel M. Smith.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

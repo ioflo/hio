@@ -1,0 +1,33 @@
+:mod:`hio.core.tcp.tcping`
+==========================
+
+.. py:module:: hio.core.tcp.tcping
+
+.. autoapi-nested-parse::
+
+   hio.core.tcping Module
+
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   hio.core.tcp.tcping.Peer
+
+
+
+
+.. class:: Peer(**kwa)
+
+
+   Bases: :py:obj:`hio.core.tcp.serving.Server`
+
+   Nonblocking TCP Socket Peer Class.
+   Supports both incoming and outgoing connections.
+
+

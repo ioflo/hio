@@ -1,0 +1,621 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>hio package &mdash; hio 0.3.4 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="hio.base package" href="hio.base.html" />
+    <link rel="prev" title="src" href="modules.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> hio
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme.html">Introduction to HIO</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">src</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">hio package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#subpackages">Subpackages</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html">hio.base package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.html">hio.core package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.demo.html">hio.demo package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html">hio.help package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-hio.cli">hio.cli module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-hio.daemon">hio.daemon module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-hio.hioing">hio.hioing module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-hio">Module contents</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#hio.cli.main">main</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#hio.daemon.main">main</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#hio.hioing.HioError">HioError</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#hio.hioing.Mixin">Mixin</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#hio.hioing.ValidationError">ValidationError</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#hio.hioing.VersionError">VersionError</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#hio.hioing.Versionage">Versionage</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="autoapi/index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">hio</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="modules.html">src</a> &raquo;</li>
+        
+      <li>hio package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/hio.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="hio-package">
+<h1>hio package<a class="headerlink" href="#hio-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="hio.base.html">hio.base package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="hio.base.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hio.base.html#module-hio.base.basing">hio.base.basing module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hio.base.html#module-hio.base.doing">hio.base.doing module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hio.base.html#module-hio.base.tyming">hio.base.tyming module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hio.base.html#module-hio.base">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="hio.base.html#hio.base.basing.State">State</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.basing.State.context">context</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.basing.State.count">count</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.basing.State.feed">feed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.basing.State.tyme">tyme</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hio.base.html#hio.base.doing.ClientDoer">ClientDoer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.ClientDoer.__init__">__init__</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.ClientDoer.enter">enter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.ClientDoer.exit">exit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.ClientDoer.recur">recur</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.ClientDoer.wind">wind</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hio.base.html#hio.base.doing.Deed">Deed</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.Deed.dog">dog</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.Deed.index">index</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.Deed.retyme">retyme</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hio.base.html#hio.base.doing.DoDoer">DoDoer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.DoDoer.__init__">__init__</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.DoDoer.always">always</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.DoDoer.deeds">deeds</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.DoDoer.do">do</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.DoDoer.doers">doers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.DoDoer.enter">enter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.DoDoer.exit">exit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.DoDoer.extend">extend</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.DoDoer.recur">recur</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.DoDoer.remove">remove</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hio.base.html#hio.base.doing.Doer">Doer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.Doer.__init__">__init__</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.Doer.abort">abort</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.Doer.clean">clean</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.Doer.close">close</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.Doer.do">do</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.Doer.enter">enter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.Doer.exit">exit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.Doer.recur">recur</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.Doer.tock">tock</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hio.base.html#hio.base.doing.Doist">Doist</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.Doist.real">real</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.Doist.limit">limit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.Doist.done">done</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.Doist.doers">doers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.Doist.timer">timer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.Doist.always">always</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.Doist.__init__">__init__</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.Doist.close">close</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.Doist.do">do</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.Doist.extend">extend</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.Doist.once">once</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.Doist.ready">ready</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.Doist.remove">remove</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hio.base.html#hio.base.doing.EchoConsoleDoer">EchoConsoleDoer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.EchoConsoleDoer.__init__">__init__</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.EchoConsoleDoer.enter">enter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.EchoConsoleDoer.exit">exit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.EchoConsoleDoer.recur">recur</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hio.base.html#hio.base.doing.EchoServerDoer">EchoServerDoer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.EchoServerDoer.enter">enter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.EchoServerDoer.exit">exit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.EchoServerDoer.recur">recur</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hio.base.html#hio.base.doing.ExDoer">ExDoer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.ExDoer.__init__">__init__</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.ExDoer.abort">abort</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.ExDoer.close">close</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.ExDoer.enter">enter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.ExDoer.exit">exit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.ExDoer.recur">recur</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hio.base.html#hio.base.doing.ReDoer">ReDoer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.ReDoer.recur">recur</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hio.base.html#hio.base.doing.ServerDoer">ServerDoer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.ServerDoer.__init__">__init__</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.ServerDoer.enter">enter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.ServerDoer.exit">exit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.ServerDoer.recur">recur</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.ServerDoer.wind">wind</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hio.base.html#hio.base.doing.TryDoer">TryDoer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.TryDoer.__init__">__init__</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.TryDoer.abort">abort</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.TryDoer.close">close</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.TryDoer.enter">enter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.TryDoer.exit">exit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.doing.TryDoer.recur">recur</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hio.base.html#hio.base.doing.bareDo">bareDo</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hio.base.html#hio.base.doing.doify">doify</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hio.base.html#hio.base.doing.doifyExDo">doifyExDo</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hio.base.html#hio.base.doing.doize">doize</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hio.base.html#hio.base.doing.doizeExDo">doizeExDo</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hio.base.html#hio.base.doing.tryDo">tryDo</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hio.base.html#hio.base.tyming.Tymee">Tymee</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.tyming.Tymee.__init__">__init__</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.tyming.Tymee.tyme">tyme</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.tyming.Tymee.tymth">tymth</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.tyming.Tymee.wind">wind</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hio.base.html#hio.base.tyming.Tymer">Tymer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.tyming.Tymer.Duration">Duration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.tyming.Tymer.__init__">__init__</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.tyming.Tymer.duration">duration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.tyming.Tymer.elapsed">elapsed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.tyming.Tymer.expired">expired</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.tyming.Tymer.remaining">remaining</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.tyming.Tymer.restart">restart</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.tyming.Tymer.start">start</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.tyming.Tymer.wind">wind</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hio.base.html#hio.base.tyming.Tymist">Tymist</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.tyming.Tymist.Tock">Tock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.tyming.Tymist.__init__">__init__</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.tyming.Tymist.tick">tick</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.tyming.Tymist.tock">tock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.tyming.Tymist.tyme">tyme</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html#hio.base.tyming.Tymist.tymen">tymen</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="hio.core.html">hio.core package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="hio.core.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="hio.core.serial.html">hio.core.serial package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.serial.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.serial.html#module-hio.core.serial.serialing">hio.core.serial.serialing module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.serial.html#module-hio.core.serial">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hio.core.tcp.html">hio.core.tcp package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.tcp.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.tcp.html#module-hio.core.tcp.clienting">hio.core.tcp.clienting module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.tcp.html#module-hio.core.tcp.serving">hio.core.tcp.serving module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.tcp.html#module-hio.core.tcp.tcping">hio.core.tcp.tcping module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.tcp.html#module-hio.core.tcp">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hio.core.udp.html">hio.core.udp package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.udp.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.udp.html#module-hio.core.udp.udping">hio.core.udp.udping module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.udp.html#module-hio.core.udp">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="hio.core.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hio.core.html#module-hio.core.coring">hio.core.coring module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hio.core.html#module-hio.core.wiring">hio.core.wiring module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hio.core.html#module-hio.core">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="hio.core.html#hio.core.coring.arpCreate">arpCreate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hio.core.html#hio.core.coring.arpDelete">arpDelete</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hio.core.html#hio.core.coring.getDefaultBroadcast">getDefaultBroadcast</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hio.core.html#hio.core.coring.getDefaultHost">getDefaultHost</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hio.core.html#hio.core.coring.normalizeHost">normalizeHost</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hio.core.html#hio.core.wiring.WireLog">WireLog</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.html#hio.core.wiring.WireLog.AltHeadDirPath">AltHeadDirPath</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.html#hio.core.wiring.WireLog.Format">Format</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.html#hio.core.wiring.WireLog.HeadDirPath">HeadDirPath</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.html#hio.core.wiring.WireLog.Prefix">Prefix</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.html#hio.core.wiring.WireLog.TailDirPath">TailDirPath</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.html#hio.core.wiring.WireLog.TempHeadDir">TempHeadDir</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.html#hio.core.wiring.WireLog.TempPrefix">TempPrefix</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.html#hio.core.wiring.WireLog.TempSuffix">TempSuffix</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.html#hio.core.wiring.WireLog.__init__">__init__</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.html#hio.core.wiring.WireLog.clearDirPath">clearDirPath</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.html#hio.core.wiring.WireLog.close">close</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.html#hio.core.wiring.WireLog.flush">flush</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.html#hio.core.wiring.WireLog.readRx">readRx</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.html#hio.core.wiring.WireLog.readTx">readTx</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.html#hio.core.wiring.WireLog.reopen">reopen</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.html#hio.core.wiring.WireLog.writeRx">writeRx</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.html#hio.core.wiring.WireLog.writeTx">writeTx</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hio.core.html#hio.core.wiring.WireLogDoer">WireLogDoer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.html#hio.core.wiring.WireLogDoer.__init__">__init__</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.html#hio.core.wiring.WireLogDoer.enter">enter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.core.html#hio.core.wiring.WireLogDoer.exit">exit</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hio.core.html#hio.core.wiring.openWL">openWL</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="hio.demo.html">hio.demo package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="hio.demo.html#module-hio.demo">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="hio.help.html">hio.help package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="hio.help.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hio.help.html#module-hio.help.helping">hio.help.helping module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hio.help.html#module-hio.help.ogling">hio.help.ogling module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hio.help.html#module-hio.help.timing">hio.help.timing module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hio.help.html#module-hio.help">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="hio.help.html#hio.help.helping.copy_func">copy_func</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hio.help.html#hio.help.ogling.Ogler">Ogler</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html#hio.help.ogling.Ogler.AltHeadDirPath">AltHeadDirPath</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html#hio.help.ogling.Ogler.HeadDirPath">HeadDirPath</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html#hio.help.ogling.Ogler.Prefix">Prefix</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html#hio.help.ogling.Ogler.TailDirPath">TailDirPath</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html#hio.help.ogling.Ogler.TempHeadDir">TempHeadDir</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html#hio.help.ogling.Ogler.TempPrefix">TempPrefix</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html#hio.help.ogling.Ogler.TempSuffix">TempSuffix</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html#hio.help.ogling.Ogler.__init__">__init__</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html#hio.help.ogling.Ogler.clearDirPath">clearDirPath</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html#hio.help.ogling.Ogler.close">close</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html#hio.help.ogling.Ogler.getLogger">getLogger</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html#hio.help.ogling.Ogler.reopen">reopen</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html#hio.help.ogling.Ogler.resetLevel">resetLevel</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hio.help.html#hio.help.ogling.initOgler">initOgler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hio.help.html#hio.help.ogling.openOgler">openOgler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hio.help.html#hio.help.timing.MonoTimer">MonoTimer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html#hio.help.timing.MonoTimer.__init__">__init__</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html#hio.help.timing.MonoTimer.elapsed">elapsed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html#hio.help.timing.MonoTimer.expired">expired</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html#hio.help.timing.MonoTimer.latest">latest</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html#hio.help.timing.MonoTimer.remaining">remaining</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hio.help.html#hio.help.timing.RetroTimerError">RetroTimerError</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hio.help.html#hio.help.timing.Timer">Timer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html#hio.help.timing.Timer.__init__">__init__</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html#hio.help.timing.Timer.duration">duration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html#hio.help.timing.Timer.elapsed">elapsed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html#hio.help.timing.Timer.expired">expired</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html#hio.help.timing.Timer.remaining">remaining</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html#hio.help.timing.Timer.restart">restart</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html#hio.help.timing.Timer.start">start</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hio.help.html#hio.help.timing.TimerError">TimerError</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-hio.cli">
+<span id="hio-cli-module"></span><h2>hio.cli module<a class="headerlink" href="#module-hio.cli" title="Permalink to this headline">¶</a></h2>
+<p>hio command line</p>
+<p>Module that contains the command line app.</p>
+<p>Why does this file exist, and why not put this in __main__?</p>
+<blockquote>
+<div><p>You might be tempted to import things from __main__ later, but that will cause
+problems: the code will get executed twice:</p>
+<ul class="simple">
+<li><p>When you run <cite>python -m keri</cite> python will execute
+<code class="docutils literal notranslate"><span class="pre">__main__.py</span></code> as a script. That means there won’t be any
+<code class="docutils literal notranslate"><span class="pre">hio.__main__</span></code> in <code class="docutils literal notranslate"><span class="pre">sys.modules</span></code>.</p></li>
+<li><p>When you import __main__ it will get executed again (as a module) because
+there’s no <code class="docutils literal notranslate"><span class="pre">hio.__main__</span></code> in <code class="docutils literal notranslate"><span class="pre">sys.modules</span></code>.</p></li>
+</ul>
+<p>Also see (1) from <a class="reference external" href="http://click.pocoo.org/5/setuptools/#setuptools-integration">http://click.pocoo.org/5/setuptools/#setuptools-integration</a></p>
+</div></blockquote>
+<dl class="py function">
+<dt id="hio.cli.main">
+<code class="sig-prename descclassname"><span class="pre">hio.cli.</span></code><code class="sig-name descname"><span class="pre">main</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/cli.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.cli.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-hio.daemon">
+<span id="hio-daemon-module"></span><h2>hio.daemon module<a class="headerlink" href="#module-hio.daemon" title="Permalink to this headline">¶</a></h2>
+<p>hio daemon</p>
+<p>Background Server Daemon for keri</p>
+<dl class="py function">
+<dt id="hio.daemon.main">
+<code class="sig-prename descclassname"><span class="pre">hio.daemon.</span></code><code class="sig-name descname"><span class="pre">main</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/daemon.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.daemon.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-hio.hioing">
+<span id="hio-hioing-module"></span><h2>hio.hioing module<a class="headerlink" href="#module-hio.hioing" title="Permalink to this headline">¶</a></h2>
+<p>hio.hioing module</p>
+<p>Generic Constants and Classes
+Exception Classes</p>
+<dl class="py exception">
+<dt id="hio.hioing.HioError">
+<em class="property"><span class="pre">exception</span> </em><code class="sig-prename descclassname"><span class="pre">hio.hioing.</span></code><code class="sig-name descname"><span class="pre">HioError</span></code><a class="reference internal" href="_modules/hio/hioing.html#HioError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.hioing.HioError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>Base Class for hio exceptions</p>
+<p>To use   raise HioError(“Error: message”)</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="hio.hioing.Mixin">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">hio.hioing.</span></code><code class="sig-name descname"><span class="pre">Mixin</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">pa</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwa</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/hioing.html#Mixin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.hioing.Mixin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Base class to enable consistent MRO for mixin multiple inheritance
+Allows each subclass to call
+super(MixinSubClass, self).__init__(<a href="#id1"><span class="problematic" id="id2">*</span></a>pa, <a href="#id3"><span class="problematic" id="id4">**</span></a>kwa)
+So the __init__ propagates to common top of Tree</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt id="hio.hioing.ValidationError">
+<em class="property"><span class="pre">exception</span> </em><code class="sig-prename descclassname"><span class="pre">hio.hioing.</span></code><code class="sig-name descname"><span class="pre">ValidationError</span></code><a class="reference internal" href="_modules/hio/hioing.html#ValidationError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.hioing.ValidationError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#hio.hioing.HioError" title="hio.hioing.HioError"><code class="xref py py-class docutils literal notranslate"><span class="pre">hio.hioing.HioError</span></code></a></p>
+<p>Validation related errors
+Usage:</p>
+<blockquote>
+<div><p>raise ValidationError(“error message”)</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py exception">
+<dt id="hio.hioing.VersionError">
+<em class="property"><span class="pre">exception</span> </em><code class="sig-prename descclassname"><span class="pre">hio.hioing.</span></code><code class="sig-name descname"><span class="pre">VersionError</span></code><a class="reference internal" href="_modules/hio/hioing.html#VersionError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.hioing.VersionError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#hio.hioing.ValidationError" title="hio.hioing.ValidationError"><code class="xref py py-class docutils literal notranslate"><span class="pre">hio.hioing.ValidationError</span></code></a></p>
+<p>Bad or Unsupported Version</p>
+<dl class="simple">
+<dt>Usage:</dt><dd><p>raise VersionError(“error message”)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="hio.hioing.Versionage">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">hio.hioing.</span></code><code class="sig-name descname"><span class="pre">Versionage</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">major</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/hioing.html#Versionage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.hioing.Versionage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<dl class="py attribute">
+<dt id="hio.hioing.Versionage.major">
+<code class="sig-name descname"><span class="pre">major</span></code><a class="headerlink" href="#hio.hioing.Versionage.major" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="hio.hioing.Versionage.minor">
+<code class="sig-name descname"><span class="pre">minor</span></code><a class="headerlink" href="#hio.hioing.Versionage.minor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-hio">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-hio" title="Permalink to this headline">¶</a></h2>
+<p>hio package</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="hio.base.html" class="btn btn-neutral float-right" title="hio.base package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="modules.html" class="btn btn-neutral float-left" title="src" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2020-2021, Samuel M. Smith.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

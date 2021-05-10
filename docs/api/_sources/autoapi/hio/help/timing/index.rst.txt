@@ -1,0 +1,192 @@
+:mod:`hio.help.timing`
+======================
+
+.. py:module:: hio.help.timing
+
+.. autoapi-nested-parse::
+
+   hio.help.timing module
+
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   hio.help.timing.Timer
+   hio.help.timing.MonoTimer
+
+
+
+
+.. exception:: TimerError
+
+
+   Bases: :py:obj:`hio.hioing.HioError`
+
+   Generic Timer Errors
+   Usage:
+       raise TimerError("error message")
+
+
+.. exception:: RetroTimerError
+
+
+   Bases: :py:obj:`TimerError`
+
+   Error due to real time being retrograded before start time of timer
+   Usage:
+       raise RetroTimerError("error message")
+
+
+.. class:: Timer(duration=0.0, start=None, **kwa)
+
+
+   Bases: :py:obj:`hio.hioing.Mixin`
+
+   Class to manage real elaspsed time using time module.
+   .. attribute:: ._start is start tyme in seconds
+
+      
+
+   .. attribute:: ._stop  is stop tyme in seconds
+
+      
+
+   Properties:
+       .duration is float time duration in seconds of timer from ._start to ._stop
+       .elaspsed is float time elasped in seconds since ._start
+       .remaining is float time remaining in seconds until ._stop
+       .expired is boolean, True if expired, False otherwise, i.e. time >= ._stop
+
+   .. method:: .start()  start timer at current time
+
+      
+
+   .. method:: .restart() = restart timer at last ._stop so no time lost
+
+      
+      
+
+   .. method:: duration(self)
+      :property:
+
+      duration property getter,  .duration = ._stop - ._start
+      .duration is float duration tyme
+
+
+   .. method:: elapsed(self)
+      :property:
+
+      elapsed time property getter,
+      Returns elapsed time in seconds (fractional) since ._start.
+
+
+   .. method:: remaining(self)
+      :property:
+
+      remaining time property getter,
+      Returns remaining time in seconds (fractional) before ._stop.
+
+
+   .. method:: expired(self)
+      :property:
+
+      Returns True if timer has expired, False otherwise.
+      time.time() >= ._stop,
+
+
+   .. method:: start(self, duration=None, start=None)
+
+      Starts Timer of duration secs at start time start secs.
+      If duration not provided then uses current duration
+      If start not provided then starts at current time.time()
+
+
+   .. method:: restart(self, duration=None)
+
+      Lossless restart of Timer at start = ._stop for duration if provided,
+      Otherwise current duration.
+      No time lost. Useful to extend Timer so no time lost
+
+
+
+.. class:: MonoTimer(duration=0.0, start=None, retro=True)
+
+
+   Bases: :py:obj:`Timer`
+
+   Class to manage real elaspsed time using time module but with monotonically
+   increating time guarantee in spite of system time being retrograded.
+
+   If the system clock is retrograded (moved back in time) while the timer is
+   running then time.time() could move to before the start time.
+   MonoTimer detects this retrograde and if retro is True then
+   retrogrades the start and stop times back Otherwise it raises a TimerRetroError.
+   MonoTimer is not able to detect a prograded clock (moved forward in time)
+
+   .. attribute:: ._start is start time in seconds
+
+      
+
+   .. attribute:: ._stop  is stop time in seconds
+
+      
+
+   .. attribute:: ._last is last measured time in seconds with retrograde handling
+
+      
+
+   .. attribute:: .retro is boolean If True retrograde ._start and ._stop when time is retrograded.
+
+      
+
+   Properties:
+       .duration is float time duration in seconds of timer from ._start to ._stop
+       .elaspsed is float time elasped in seconds since ._start
+       .remaining is float time remaining in seconds until ._stop
+       .expired is boolean True if expired, False otherwise, i.e. time >= ._stop
+       .latest is float latest measured time in seconds with retrograte handling
+
+   .. method:: .start() = start timer at current time returns start time
+
+      
+
+   .. method:: .restart() = restart timer at last ._stop so no time lost, returns start time
+
+      
+      
+
+   .. method:: elapsed(self)
+      :property:
+
+      elapsed time property getter,
+      Returns elapsed time in seconds (fractional) since ._start.
+
+
+   .. method:: remaining(self)
+      :property:
+
+      remaining time property getter,
+      Returns remaining time in seconds (fractional) before ._stop.
+
+
+   .. method:: expired(self)
+      :property:
+
+      Returns True if timer has expired, False otherwise.
+      .latest >= ._stop,
+
+
+   .. method:: latest(self)
+      :property:
+
+      latest measured time property getter,
+      Returns latest measured time in seconds adjusted for retrograded system time.
+
+
+

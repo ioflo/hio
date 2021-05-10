@@ -1,0 +1,366 @@
+:mod:`hio.core.serial.serialing`
+================================
+
+.. py:module:: hio.core.serial.serialing
+
+.. autoapi-nested-parse::
+
+   Asynchronous (nonblocking) serial io
+
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   hio.core.serial.serialing.Console
+   hio.core.serial.serialing.ConsoleServer
+   hio.core.serial.serialing.Device
+   hio.core.serial.serialing.Serial
+   hio.core.serial.serialing.Driver
+
+
+
+
+.. exception:: LineError
+
+
+   Bases: :py:obj:`hio.hioing.HioError`
+
+   Serial line error. Too big for buffer.
+
+   Usage:
+       raise LineError("error message")
+
+
+.. class:: Console(bs=None)
+
+
+   Class to manage non blocking io on serial console in canonical mode.
+
+   Opens non blocking read file descriptor on console
+   Use instance method .close to close file descriptor
+   Use instance methods .getline & .put to read & write to console
+   Needs os module
+
+   .. attribute:: .bs is max buffer size for each read
+
+      
+
+   .. attribute:: .fd  is file descriptor for console
+
+      
+
+   .. attribute:: .opened is Boolean that indicates open state of .fd
+
+      
+
+   .. method:: .reopen  closes and reopens .fd, sets .opened
+
+      
+
+   .. method:: .close   closes .fd unsets .opened
+
+      
+
+   .. method:: .getLine  gets one newline terminated line or bs characters
+
+      
+
+   .. method:: .put  puts characters
+
+      
+      
+
+   Hidden:
+       ._line is bytearray of line buffer
+
+   .. attribute:: MaxBufSize
+      :annotation: = 256
+
+      
+
+   .. method:: reopen(self, port='')
+
+      Opens fd on terminal console in non blocking mode.
+
+      port is the serial port device path name
+      or if '' then use os.ctermid() which
+      returns path name of console usually '/dev/tty'
+
+      os.O_NONBLOCK makes non blocking io
+      os.O_RDWR allows both read and write.
+      os.O_NOCTTY don't make this the controlling terminal of the process
+      O_NOCTTY is only for cross platform portability BSD never makes it the
+      controlling terminal
+
+      Don't use print at same time since it will mess up non blocking reads.
+
+      Input mode assumes Canonical means no characters available until a newline
+      It appears that canonical mode only applies to the console os.ctermid().
+      For other serial ports the characters are available immediately.
+
+      os.isatty(fd)
+      Return True if the file descriptor fd is open and connected to a
+      tty(-like) device, else False.
+
+
+   .. method:: close(self)
+
+      Closes fd.
+
+
+   .. method:: put(self, data=b'\n')
+
+      Writes data bytes to console and return number of bytes from data written.
+
+
+   .. method:: getLine(self, bs=None)
+
+      Gets nonblocking line of bytes from console
+      of up to bs characters with eol newline if in bs characters
+
+      Returns empty string if no characters available else returns line.
+      Assumes canonical mode where no chars available to read until eol newline
+      is entered and eol is included in the read characters.
+
+      Strips eol newline before returning line.
+
+
+
+.. class:: ConsoleServer(puts=None, lines=None, **kwa)
+
+
+   Bases: :py:obj:`Console`
+
+   Class that extends Console with service interface.
+
+
+   Inherited Attributes:
+       .bs is max buffer size for each read
+       .fd  is file descriptor for console
+       .opened is Boolean that indicates open state of .fd
+
+   .. attribute:: .puts is bytearray of bytes to put on serial port
+
+      
+
+   .. attribute:: .lines is deque of lines of bytes gotten from serial port
+
+      each line has newline stripped.
+
+   .. method:: .reopen  closes and reopens .fd, sets .opened
+
+      
+
+   .. method:: .close   closes .fd unsets .opened
+
+      
+
+   .. method:: .getLine  gets one newline terminated line or bs characters
+
+      
+
+   .. method:: .put  puts characters
+
+      
+      
+
+   .. method:: .servicePuts
+
+      
+
+   .. method:: .serviceLines
+
+      
+
+   .. method:: .service
+
+      
+      
+
+   Hidden:
+       Hidden:
+       ._line is bytearray of line buffer
+
+   .. method:: servicePuts(self)
+
+      Service .puts by putting to serial port
+
+
+   .. method:: serviceLines(self)
+
+      Service .lines by getting line from serial port
+
+
+   .. method:: service(self)
+
+      Service puts and lines
+
+
+
+.. class:: Device(port=None, speed=9600, bs=1024)
+
+
+   Class to manage non blocking IO on serial device port.
+
+   Opens non blocking read file descriptor on serial port
+   Use instance method close to close file descriptor
+   Use instance methods get & put to read & write to serial device
+   Needs os module
+
+   .. method:: reopen(self, port=None, speed=None, bs=None)
+
+      Idempotently open serial device port
+      Opens fd on serial port in non blocking mode.
+
+      port is the serial port device path name or
+      if '' then use os.ctermid() which
+      returns path name of console usually '/dev/tty'
+
+      os.O_NONBLOCK makes non blocking io
+      os.O_RDWR allows both read and write.
+      os.O_NOCTTY don't make this the controlling terminal of the process
+      O_NOCTTY is only for cross platform portability BSD never makes it the
+      controlling terminal
+
+      Don't use print and console at same time since it will mess up non blocking reads.
+
+      The input mode, canonical or noncanonical, is controlled by the
+      ICANON flag see termios module.
+
+      Raw mode
+
+      def setraw(fd, when=TCSAFLUSH):
+          Put terminal into a raw mode.
+          mode = tcgetattr(fd)
+          mode[IFLAG] = mode[IFLAG] & ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON)
+          mode[OFLAG] = mode[OFLAG] & ~(OPOST)
+          mode[CFLAG] = mode[CFLAG] & ~(CSIZE | PARENB)
+          mode[CFLAG] = mode[CFLAG] | CS8
+          mode[LFLAG] = mode[LFLAG] & ~(ECHO | ICANON | IEXTEN | ISIG)
+          mode[CC][VMIN] = 1
+          mode[CC][VTIME] = 0
+          tcsetattr(fd, when, mode)
+
+
+      # set up raw mode / no echo / binary
+      cflag |=  (TERMIOS.CLOCAL|TERMIOS.CREAD)
+      lflag &= ~(TERMIOS.ICANON|TERMIOS.ECHO|TERMIOS.ECHOE|TERMIOS.ECHOK|TERMIOS.ECHONL|
+                   TERMIOS.ISIG|TERMIOS.IEXTEN) #|TERMIOS.ECHOPRT
+      for flag in ('ECHOCTL', 'ECHOKE'): # netbsd workaround for Erk
+          if hasattr(TERMIOS, flag):
+              lflag &= ~getattr(TERMIOS, flag)
+
+      oflag &= ~(TERMIOS.OPOST)
+      iflag &= ~(TERMIOS.INLCR|TERMIOS.IGNCR|TERMIOS.ICRNL|TERMIOS.IGNBRK)
+      if hasattr(TERMIOS, 'IUCLC'):
+          iflag &= ~TERMIOS.IUCLC
+      if hasattr(TERMIOS, 'PARMRK'):
+          iflag &= ~TERMIOS.PARMRK
+
+
+   .. method:: close(self)
+
+      Closes fd.
+
+
+   .. method:: receive(self)
+
+      Reads nonblocking characters from serial device up to bs characters
+      Returns empty bytes if no characters available else returns all available.
+      In canonical mode no chars are available until newline is entered.
+
+
+   .. method:: send(self, data=b'\n')
+
+      Writes data bytes to serial device port.
+      Returns number of bytes sent
+
+
+
+.. class:: Serial(port=None, speed=9600, bs=1024)
+
+
+   Class to manage non blocking IO on serial device port using pyserial
+
+   Opens non blocking read file descriptor on serial port
+   Use instance method close to close file descriptor
+   Use instance methods get & put to read & write to serial device
+   Needs os module
+
+   .. method:: reopen(self, port=None, speed=None, bs=None)
+
+      Opens fd on serial port in non blocking mode.
+
+      port is the serial port device path name or
+      if None then use os.ctermid() which returns path name of console
+      usually '/dev/tty'
+
+
+   .. method:: close(self)
+
+      Closes .serial
+
+
+   .. method:: receive(self)
+
+      Reads nonblocking characters from serial device up to bs characters
+      Returns empty bytes if no characters available else returns all available.
+      In canonical mode no chars are available until newline is entered.
+
+
+   .. method:: send(self, data=b'\n')
+
+      Writes data bytes to serial device port.
+      Returns number of bytes sent
+
+
+
+.. class:: Driver(name='', uid=0, port=None, speed=9600, bs=1024, server=None)
+
+
+   Nonblocking Serial Device Port Driver
+
+   .. method:: serviceReceives(self)
+
+      Service receives until no more
+
+
+   .. method:: clearRxbs(self)
+
+      Clear .rxbs
+
+
+   .. method:: scan(self, start)
+
+      Returns offset of given start byte in self.rxbs
+      Returns None if start is not given or not found
+      If strip then remove any bytes before offset
+
+
+   .. method:: send(self, data)
+
+      Handle one tx data
+
+
+   .. method:: tx(self, data)
+
+      Queue data onto .txbs
+
+
+   .. method:: serviceSends(self)
+
+      Service .txbs
+
+
+   .. method:: service(self)
+
+      Sevice receives and sends
+
+
+

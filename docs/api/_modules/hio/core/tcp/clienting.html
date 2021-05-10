@@ -1,0 +1,947 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>hio.core.tcp.clienting &mdash; hio 0.3.4 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> hio
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../readme.html">Introduction to HIO</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">src</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">hio</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../../../hio.html">hio</a> &raquo;</li>
+        
+      <li>hio.core.tcp.clienting</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for hio.core.tcp.clienting</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- encoding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">hio.core.tcp.clienting Module</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">errno</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">ssl</span>
+
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span>
+
+<span class="kn">from</span> <span class="nn">...base</span> <span class="kn">import</span> <span class="n">tyming</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">coring</span>
+
+
+
+<span class="nd">@contextmanager</span>
+<div class="viewcode-block" id="openClient"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.openClient">[docs]</a><span class="k">def</span> <span class="nf">openClient</span><span class="p">(</span><span class="bp">cls</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwa</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper to create and open Client instances</span>
+<span class="sd">    When used in with statement block, calls .close() on exit of with block</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        cls is Class instance of subclass instance</span>
+
+<span class="sd">    Usage:</span>
+<span class="sd">        with openClient() as client0:</span>
+<span class="sd">            client0.accept()</span>
+
+<span class="sd">        with openClient(cls=ClientTls) as client0:</span>
+<span class="sd">            client0.accept()</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="bp">cls</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">cls</span> <span class="o">=</span> <span class="n">Client</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">client</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">kwa</span><span class="p">)</span>
+        <span class="n">client</span><span class="o">.</span><span class="n">reopen</span><span class="p">()</span>
+
+        <span class="k">yield</span> <span class="n">client</span>
+
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">client</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Client"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client">[docs]</a><span class="k">class</span> <span class="nc">Client</span><span class="p">(</span><span class="n">tyming</span><span class="o">.</span><span class="n">Tymee</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Nonblocking TCP Socket Client Class.</span>
+
+<span class="sd">    See tyming.Tymee for inherited attributes, properties, and methods</span>
+
+<span class="sd">    Attributes:</span>
+
+<span class="sd">    Properties:</span>
+
+<span class="sd">    Methods:</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Client.Timeout"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.Timeout">[docs]</a>    <span class="n">Timeout</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># timeout in seconds, timeout of 0.0 means ignore timeout</span></div>
+<div class="viewcode-block" id="Client.Reconnectable"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.Reconnectable">[docs]</a>    <span class="n">Reconnectable</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># auto reconnect flag</span></div>
+
+<div class="viewcode-block" id="Client.__init__"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">ha</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">host</span><span class="o">=</span><span class="s1">&#39;127.0.0.1&#39;</span><span class="p">,</span>
+                 <span class="n">port</span><span class="o">=</span><span class="mi">56000</span><span class="p">,</span>
+                 <span class="n">reconnectable</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">bs</span><span class="o">=</span><span class="mi">8096</span><span class="p">,</span>
+                 <span class="n">txbs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">rxbs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">wl</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwa</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialization method for instance.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            tymth is injected function wrapper closure returned by .tymen() of</span>
+<span class="sd">                Tymist instance. Calling tymth() returns associated Tymist .tyme.</span>
+<span class="sd">            timeout = auto reconnect retry timeout</span>
+<span class="sd">            ha = host address duple (host, port) of remote server</span>
+<span class="sd">            host = host address or tcp server to connect to</span>
+<span class="sd">            port = socket port</span>
+<span class="sd">            reconnectable = Boolean retry auto reconnect if timed out</span>
+<span class="sd">            bs = buffer size</span>
+<span class="sd">            txbs = bytearray of data to send</span>
+<span class="sd">            rxbs = bytearray of data received</span>
+<span class="sd">            wl = WireLog object if any</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Client</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwa</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span> <span class="k">if</span> <span class="n">timeout</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">Timeout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tymer</span> <span class="o">=</span> <span class="n">tyming</span><span class="o">.</span><span class="n">Tymer</span><span class="p">(</span><span class="n">tymth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tymth</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">timeout</span><span class="p">)</span>  <span class="c1"># reconnect retry timer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reinitHostPort</span><span class="p">(</span><span class="n">ha</span><span class="o">=</span><span class="n">ha</span><span class="p">,</span> <span class="n">hostname</span><span class="o">=</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ha</span> <span class="o">=</span> <span class="n">ha</span> <span class="ow">or</span> <span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+        <span class="n">host</span><span class="p">,</span> <span class="n">port</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ha</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hostname</span> <span class="o">=</span> <span class="n">host</span>  <span class="c1"># host domain name</span>
+        <span class="n">host</span> <span class="o">=</span> <span class="n">coring</span><span class="o">.</span><span class="n">normalizeHost</span><span class="p">(</span><span class="n">host</span><span class="p">)</span>  <span class="c1"># ip host address</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ha</span> <span class="o">=</span> <span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cs</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># connection socket</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ca</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>  <span class="c1"># host address of local connection</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_accepted</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># attribute to support accepted property</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># True when detect connection closed on far side</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reconnectable</span> <span class="o">=</span> <span class="n">reconnectable</span> <span class="k">if</span> <span class="n">reconnectable</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">Reconnectable</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opened</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">bs</span> <span class="o">=</span> <span class="n">bs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">txbs</span> <span class="o">=</span> <span class="n">txbs</span> <span class="k">if</span> <span class="n">txbs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">bytearray</span><span class="p">()</span>  <span class="c1"># byte array of data to send</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rxbs</span> <span class="o">=</span> <span class="n">rxbs</span> <span class="k">if</span> <span class="n">rxbs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">bytearray</span><span class="p">()</span>  <span class="c1"># byte array of data recieved</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wl</span> <span class="o">=</span> <span class="n">wl</span></div>
+
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Client.host"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.host">[docs]</a>    <span class="k">def</span> <span class="nf">host</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Property that returns host in .ha duple</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ha</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+    <span class="nd">@host</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">host</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        setter for host property</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ha</span> <span class="o">=</span> <span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">port</span><span class="p">)</span>
+
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Client.port"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.port">[docs]</a>    <span class="k">def</span> <span class="nf">port</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Property that returns port in .ha duple</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ha</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span></div>
+
+
+    <span class="nd">@port</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">port</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        setter for port property</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ha</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">host</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Client.accepted"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.accepted">[docs]</a>    <span class="k">def</span> <span class="nf">accepted</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Property that returns accepted state of TCP socket</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_accepted</span></div>
+
+
+    <span class="nd">@accepted</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">accepted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        setter for accepted property</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_accepted</span> <span class="o">=</span> <span class="n">value</span>
+
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Client.connected"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.connected">[docs]</a>    <span class="k">def</span> <span class="nf">connected</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Property that returns connected state of TCP socket</span>
+<span class="sd">        Non-tls tcp is connected when accepted</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">accepted</span></div>
+
+
+    <span class="nd">@connected</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">connected</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        setter for connected property</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accepted</span> <span class="o">=</span> <span class="n">value</span>
+
+
+<div class="viewcode-block" id="Client.wind"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.wind">[docs]</a>    <span class="k">def</span> <span class="nf">wind</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tymth</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.</span>
+<span class="sd">        Updates winds .tymer .tymth</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Client</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">wind</span><span class="p">(</span><span class="n">tymth</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tymer</span><span class="o">.</span><span class="n">wind</span><span class="p">(</span><span class="n">tymth</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Client.reinitHostPort"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.reinitHostPort">[docs]</a>    <span class="k">def</span> <span class="nf">reinitHostPort</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hostname</span><span class="o">=</span><span class="sa">u</span><span class="s1">&#39;127.0.0.1&#39;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">56000</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reinit self.ha and self.hostname from ha = (host, port) or hostname port</span>
+<span class="sd">        self.ha is of form (host, port) where host is either dns name or ip address</span>
+<span class="sd">        self.hostname is hostname as dns name</span>
+<span class="sd">        host eventually is host ip address output from normalizeHost()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ha</span> <span class="o">=</span> <span class="n">ha</span> <span class="ow">or</span> <span class="p">(</span><span class="n">hostname</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+        <span class="n">hostname</span><span class="p">,</span> <span class="n">port</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ha</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hostname</span> <span class="o">=</span> <span class="n">hostname</span>  <span class="c1"># host domain name</span>
+        <span class="n">host</span> <span class="o">=</span> <span class="n">coring</span><span class="o">.</span><span class="n">normalizeHost</span><span class="p">(</span><span class="n">hostname</span><span class="p">)</span>  <span class="c1"># ip host address</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ha</span> <span class="o">=</span> <span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Client.actualBufSizes"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.actualBufSizes">[docs]</a>    <span class="k">def</span> <span class="nf">actualBufSizes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns duple of the the actual socket send and receive buffer size</span>
+<span class="sd">        (send, receive)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="o">.</span><span class="n">getsockopt</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">SOL_SOCKET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SO_SNDBUF</span><span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="o">.</span><span class="n">getsockopt</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">SOL_SOCKET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SO_RCVBUF</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="Client.open"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Opens connection socket in non blocking mode.</span>
+
+<span class="sd">        if socket not closed properly, binding socket gets error</span>
+<span class="sd">          socket.error: (48, &#39;Address already in use&#39;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accepted</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connected</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1">#create connection socket</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cs</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+
+        <span class="c1"># make socket address reusable.</span>
+        <span class="c1"># the SO_REUSEADDR flag tells the kernel to reuse a local socket in</span>
+        <span class="c1"># TIME_WAIT state, without waiting for its natural timeout to expire.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="o">.</span><span class="n">setsockopt</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">SOL_SOCKET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SO_REUSEADDR</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Linux TCP allocates twice the requested size</span>
+        <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;linux&#39;</span><span class="p">):</span>
+            <span class="n">bs</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">bs</span>  <span class="c1"># get size is twice the set size</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">bs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bs</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="o">.</span><span class="n">getsockopt</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">SOL_SOCKET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SO_SNDBUF</span><span class="p">)</span> <span class="o">&lt;</span>  <span class="n">bs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="o">.</span><span class="n">setsockopt</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">SOL_SOCKET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SO_SNDBUF</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="o">.</span><span class="n">getsockopt</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">SOL_SOCKET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SO_RCVBUF</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">bs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="o">.</span><span class="n">setsockopt</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">SOL_SOCKET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SO_RCVBUF</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="o">.</span><span class="n">setblocking</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="c1">#non blocking socket</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opened</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="Client.reopen"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.reopen">[docs]</a>    <span class="k">def</span> <span class="nf">reopen</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Idempotently opens socket</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">open</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Client.shutdown"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.shutdown">[docs]</a>    <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="n">socket</span><span class="o">.</span><span class="n">SHUT_RDWR</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Shutdown connected socket .cs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">how</span><span class="p">)</span>  <span class="c1"># shutdown socket</span>
+            <span class="k">except</span> <span class="n">socket</span><span class="o">.</span><span class="n">error</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+                <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="Client.shutdownSend"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.shutdownSend">[docs]</a>    <span class="k">def</span> <span class="nf">shutdownSend</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Shutdown send on connected socket .cs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">how</span><span class="o">=</span><span class="n">socket</span><span class="o">.</span><span class="n">SHUT_WR</span><span class="p">)</span>  <span class="c1"># shutdown socket</span>
+            <span class="k">except</span> <span class="n">socket</span><span class="o">.</span><span class="n">error</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+                <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="Client.shutdownReceive"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.shutdownReceive">[docs]</a>    <span class="k">def</span> <span class="nf">shutdownReceive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Shutdown receive on connected socket .cs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">how</span><span class="o">=</span><span class="n">socket</span><span class="o">.</span><span class="n">SHUT_RD</span><span class="p">)</span>  <span class="c1"># shutdown socket</span>
+            <span class="k">except</span> <span class="n">socket</span><span class="o">.</span><span class="n">error</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+                <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="Client.close"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Shutdown and close connected socket .cs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>  <span class="c1">#close socket</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cs</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">accepted</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connected</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">opened</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="Client.refresh"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Restart timer</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tymer</span><span class="o">.</span><span class="n">restart</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Client.accept"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.accept">[docs]</a>    <span class="k">def</span> <span class="nf">accept</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Attempt nonblocking acceptance connect to .ha</span>
+<span class="sd">        Returns True if successful</span>
+<span class="sd">        Returns False if not so try again later</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reopen</span><span class="p">()</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="o">.</span><span class="n">connect_ex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ha</span><span class="p">)</span>  <span class="c1"># async connect</span>
+        <span class="k">except</span> <span class="n">socket</span><span class="o">.</span><span class="n">error</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="n">console</span><span class="o">.</span><span class="n">terse</span><span class="p">(</span><span class="s2">&quot;socket.error = </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
+            <span class="k">raise</span>
+
+        <span class="k">if</span> <span class="n">result</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">errno</span><span class="o">.</span><span class="n">EISCONN</span><span class="p">]:</span>  <span class="c1"># not connected</span>
+            <span class="k">if</span> <span class="n">result</span> <span class="ow">in</span> <span class="p">(</span><span class="n">errno</span><span class="o">.</span><span class="n">EINVAL</span><span class="p">,</span> <span class="n">errno</span><span class="o">.</span><span class="n">ECONNREFUSED</span><span class="p">):</span>  <span class="c1"># server not listening so must reopen</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">reopen</span><span class="p">()</span>
+            <span class="k">return</span> <span class="kc">False</span>  <span class="c1"># try again later</span>
+
+        <span class="c1"># now self.cs has new virtual port see self.cs.getsockname()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ca</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="o">.</span><span class="n">getsockname</span><span class="p">()</span>  <span class="c1"># resolved local connection address</span>
+        <span class="c1"># self.cs.getpeername() is self.ha</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="o">.</span><span class="n">getpeername</span><span class="p">()</span>  <span class="c1"># resolved remote connection address</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">accepted</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># also sets .connected == True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="Client.connect"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.connect">[docs]</a>    <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Attempt nonblocking connect to .ha</span>
+<span class="sd">        Returns True if successful</span>
+<span class="sd">        Returns False if not so try again later</span>
+<span class="sd">        For non-TLS tcp connect is done when accepted</span>
+<span class="sd">        This is placeholder for subclass Tls</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Client.serviceConnect"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.serviceConnect">[docs]</a>    <span class="k">def</span> <span class="nf">serviceConnect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Service connection attempt</span>
+<span class="sd">        If not already connected make a nonblocking attempt</span>
+<span class="sd">        Returns .connected</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">connected</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>  <span class="c1"># if successful sets .accepted .connected to True</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">connected</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">reconnectable</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">&gt;</span> <span class="mf">0.0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">tymer</span><span class="o">.</span><span class="n">expired</span><span class="p">:</span>  <span class="c1"># timed out</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">reopen</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tymer</span><span class="o">.</span><span class="n">restart</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">connected</span></div>
+
+
+<div class="viewcode-block" id="Client.receive"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.receive">[docs]</a>    <span class="k">def</span> <span class="nf">receive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform non blocking receive from connected socket .cs</span>
+
+<span class="sd">        If no data then returns None</span>
+<span class="sd">        If connection closed then returns empty</span>
+<span class="sd">        Otherwise returns data</span>
+<span class="sd">        data is string in python2 and bytes in python3</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">socket</span><span class="o">.</span><span class="n">error</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="c1"># ex.args[0] is always ex.errno for better compat</span>
+            <span class="k">if</span>  <span class="n">ex</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="n">errno</span><span class="o">.</span><span class="n">EAGAIN</span><span class="p">,</span> <span class="n">errno</span><span class="o">.</span><span class="n">EWOULDBLOCK</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">None</span>  <span class="c1"># blocked waiting for data</span>
+            <span class="k">elif</span> <span class="n">ex</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="n">errno</span><span class="o">.</span><span class="n">ECONNRESET</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">ENETRESET</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">ENETUNREACH</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">EHOSTUNREACH</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">ENETDOWN</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">EHOSTDOWN</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">ETIMEDOUT</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">ECONNREFUSED</span><span class="p">):</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># this signals need to close/reopen connection</span>
+                <span class="k">return</span> <span class="nb">bytes</span><span class="p">()</span>  <span class="c1"># data empty</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span>  <span class="c1"># re-raise</span>
+
+        <span class="k">if</span> <span class="n">data</span><span class="p">:</span>  <span class="c1"># connection open</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">:</span>  <span class="c1"># log over the wire rx</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="o">.</span><span class="n">writeRx</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ha</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># data empty so connection closed on other end, whereas see above for blocked</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="n">data</span></div>
+
+
+<div class="viewcode-block" id="Client.serviceReceives"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.serviceReceives">[docs]</a>    <span class="k">def</span> <span class="nf">serviceReceives</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Service receives until no more</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">connected</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">receive</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rxbs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Client.serviceReceiveOnce"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.serviceReceiveOnce">[docs]</a>    <span class="k">def</span> <span class="nf">serviceReceiveOnce</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Retrieve from server only one reception</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">connected</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">receive</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">data</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rxbs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Client.clearRxbs"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.clearRxbs">[docs]</a>    <span class="k">def</span> <span class="nf">clearRxbs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Clear .rxbs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxbs</span><span class="p">[:]</span></div>
+
+
+<div class="viewcode-block" id="Client.send"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.send">[docs]</a>    <span class="k">def</span> <span class="nf">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform non blocking send on connected socket .cs.</span>
+<span class="sd">        Return number of bytes sent</span>
+<span class="sd">        data is string in python2 and bytes in python3</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>  <span class="c1"># result is number of bytes sent</span>
+        <span class="k">except</span> <span class="n">socket</span><span class="o">.</span><span class="n">error</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="c1"># ex.args[0] is always ex.errno for better compat</span>
+            <span class="k">if</span> <span class="n">ex</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="n">errno</span><span class="o">.</span><span class="n">EAGAIN</span><span class="p">,</span> <span class="n">errno</span><span class="o">.</span><span class="n">EWOULDBLOCK</span><span class="p">):</span>
+                <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># blocked try again</span>
+            <span class="k">elif</span> <span class="n">ex</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="n">errno</span><span class="o">.</span><span class="n">ECONNRESET</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">ENETRESET</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">ENETUNREACH</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">EHOSTUNREACH</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">ENETDOWN</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">EHOSTDOWN</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">ETIMEDOUT</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">ECONNREFUSED</span><span class="p">):</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># this signals need to close/reopen connection</span>
+                <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span>
+
+        <span class="k">if</span> <span class="n">count</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="o">.</span><span class="n">writeTx</span><span class="p">(</span><span class="n">data</span><span class="p">[:</span><span class="n">count</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">ha</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">count</span></div>
+
+
+<div class="viewcode-block" id="Client.tx"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.tx">[docs]</a>    <span class="k">def</span> <span class="nf">tx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Copy data onto .txbs, .extend copies data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">txbs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Client.serviceSends"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.serviceSends">[docs]</a>    <span class="k">def</span> <span class="nf">serviceSends</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Service sends (transmits) of data in .txbs bytearray</span>
+<span class="sd">        Attempt to send all of .txbs. Delete what is actually sent.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">txbs</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">connected</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="p">:</span>
+            <span class="n">count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">txbs</span><span class="p">)</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">txbs</span><span class="p">[:</span><span class="n">count</span><span class="p">]</span>
+            <span class="k">break</span>  <span class="c1"># try again later</span></div>
+
+
+<div class="viewcode-block" id="Client.service"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.Client.service">[docs]</a>    <span class="k">def</span> <span class="nf">service</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Service connect, txbs, and receives.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">serviceConnect</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">serviceSends</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">serviceReceives</span><span class="p">()</span></div></div>
+
+
+
+<div class="viewcode-block" id="ClientTls"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.ClientTls">[docs]</a><span class="k">class</span> <span class="nc">ClientTls</span><span class="p">(</span><span class="n">Client</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Outgoer with Nonblocking TLS/SSL support</span>
+<span class="sd">    Nonblocking TCP Socket Client Class.</span>
+
+<span class="sd">    Attributes:</span>
+
+
+<span class="sd">    Properties:</span>
+
+
+<span class="sd">    Methods:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="ClientTls.__init__"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.ClientTls.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">tymth</span><span class="p">,</span>
+                 <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">version</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">certify</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">hostify</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">certedhost</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+                 <span class="n">keypath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">certpath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">cafilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwa</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialization method for instance.</span>
+
+<span class="sd">        IF no context THEN create one</span>
+<span class="sd">        IF no version THEN create using library default</span>
+<span class="sd">        IF certify is not None then use certify else use default</span>
+<span class="sd">        IF hostify is not none the use hostify else use default</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            context = context object for tls/ssl If None use default</span>
+<span class="sd">            version = ssl version If None use default</span>
+<span class="sd">            certify = cert requirement If None use default</span>
+<span class="sd">                      ssl.CERT_NONE = 0</span>
+<span class="sd">                      ssl.CERT_OPTIONAL = 1</span>
+<span class="sd">                      ssl.CERT_REQUIRED = 2</span>
+<span class="sd">            keypath = pathname of local client side PKI private key file path</span>
+<span class="sd">                      If given apply to context</span>
+<span class="sd">            certpath = pathname of local client side PKI public cert file path</span>
+<span class="sd">                      If given apply to context</span>
+<span class="sd">            cafilepath = Cert Authority file path to use to verify server cert</span>
+<span class="sd">                      If given apply to context</span>
+<span class="sd">            hostify = verify server hostName If None use default</span>
+<span class="sd">            certedhost = server&#39;s certificate common name (hostname) to check against</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ClientTls</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">tymth</span><span class="o">=</span><span class="n">tymth</span><span class="p">,</span> <span class="o">**</span><span class="n">kwa</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_connected</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># attributed supporting connected property</span>
+
+        <span class="k">if</span> <span class="n">context</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># create context</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">version</span><span class="p">:</span>  <span class="c1"># use default context</span>
+                <span class="n">context</span> <span class="o">=</span> <span class="n">ssl</span><span class="o">.</span><span class="n">create_default_context</span><span class="p">(</span><span class="n">purpose</span><span class="o">=</span><span class="n">ssl</span><span class="o">.</span><span class="n">Purpose</span><span class="o">.</span><span class="n">SERVER_AUTH</span><span class="p">)</span>
+                <span class="n">hostify</span> <span class="o">=</span> <span class="n">hostify</span> <span class="k">if</span> <span class="n">hostify</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">context</span><span class="o">.</span><span class="n">check_hostname</span>
+                <span class="n">context</span><span class="o">.</span><span class="n">check_hostname</span> <span class="o">=</span> <span class="n">hostify</span>
+                <span class="n">certify</span> <span class="o">=</span> <span class="n">certify</span> <span class="k">if</span> <span class="n">certify</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">context</span><span class="o">.</span><span class="n">verify_mode</span>
+                <span class="n">context</span><span class="o">.</span><span class="n">verify_mode</span> <span class="o">=</span> <span class="n">certify</span>
+
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># create context with specified protocol version</span>
+                <span class="n">context</span> <span class="o">=</span> <span class="n">ssl</span><span class="o">.</span><span class="n">SSLContext</span><span class="p">(</span><span class="n">version</span><span class="p">)</span>
+                <span class="c1"># disable bad protocols versions</span>
+                <span class="n">context</span><span class="o">.</span><span class="n">options</span> <span class="o">|=</span> <span class="n">ssl</span><span class="o">.</span><span class="n">OP_NO_SSLv2</span>
+                <span class="n">context</span><span class="o">.</span><span class="n">options</span> <span class="o">|=</span> <span class="n">ssl</span><span class="o">.</span><span class="n">OP_NO_SSLv3</span>
+                <span class="c1"># disable compression to prevent CRIME attacks (OpenSSL 1.0+)</span>
+                <span class="n">context</span><span class="o">.</span><span class="n">options</span> <span class="o">|=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ssl</span><span class="o">.</span><span class="n">_ssl</span><span class="p">,</span> <span class="s2">&quot;OP_NO_COMPRESSION&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">context</span><span class="o">.</span><span class="n">verify_mode</span> <span class="o">=</span> <span class="n">certify</span> <span class="o">=</span> <span class="n">ssl</span><span class="o">.</span><span class="n">CERT_REQUIRED</span> <span class="k">if</span> <span class="n">certify</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">certify</span>
+                <span class="n">context</span><span class="o">.</span><span class="n">check_hostname</span> <span class="o">=</span> <span class="n">hostify</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">hostify</span> <span class="k">else</span> <span class="kc">False</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">context</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">certedhost</span> <span class="o">=</span> <span class="n">certedhost</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">hostname</span>
+
+        <span class="k">if</span> <span class="n">cafilepath</span><span class="p">:</span>
+            <span class="n">context</span><span class="o">.</span><span class="n">load_verify_locations</span><span class="p">(</span><span class="n">cafile</span><span class="o">=</span><span class="n">cafilepath</span><span class="p">,</span>
+                                          <span class="n">capath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                          <span class="n">cadata</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">context</span><span class="o">.</span><span class="n">verify_mode</span> <span class="o">!=</span> <span class="n">ssl</span><span class="o">.</span><span class="n">CERT_NONE</span><span class="p">:</span>
+            <span class="n">context</span><span class="o">.</span><span class="n">load_default_certs</span><span class="p">(</span><span class="n">purpose</span><span class="o">=</span><span class="n">ssl</span><span class="o">.</span><span class="n">Purpose</span><span class="o">.</span><span class="n">SERVER_AUTH</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">keypath</span> <span class="ow">or</span> <span class="n">certpath</span><span class="p">:</span>
+            <span class="n">context</span><span class="o">.</span><span class="n">load_cert_chain</span><span class="p">(</span><span class="n">certfile</span><span class="o">=</span><span class="n">certpath</span><span class="p">,</span> <span class="n">keyfile</span><span class="o">=</span><span class="n">keypath</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">hostify</span> <span class="ow">and</span> <span class="n">certify</span> <span class="o">==</span> <span class="n">ssl</span><span class="o">.</span><span class="n">CERT_NONE</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Check Hostname needs a SSL context with &quot;</span></div>
+                             <span class="s2">&quot;either CERT_OPTIONAL or CERT_REQUIRED&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="ClientTls.connected"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.ClientTls.connected">[docs]</a>    <span class="k">def</span> <span class="nf">connected</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Property that returns connected state of TCP socket</span>
+<span class="sd">        TLS tcp is connected when accepted and handshake completed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connected</span></div>
+
+    <span class="nd">@connected</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">connected</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        setter for connected property</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_connected</span> <span class="o">=</span> <span class="n">value</span>
+
+<div class="viewcode-block" id="ClientTls.close"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.ClientTls.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Shutdown and close connected socket .cs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>  <span class="c1">#close socket</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cs</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">accepted</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connected</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">opened</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="ClientTls.wrap"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.ClientTls.wrap">[docs]</a>    <span class="k">def</span> <span class="nf">wrap</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Wrap socket .cs in ssl context</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">wrap_socket</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="p">,</span>
+                                           <span class="n">server_side</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                           <span class="n">do_handshake_on_connect</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                           <span class="n">server_hostname</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">certedhost</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ClientTls.handshake"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.ClientTls.handshake">[docs]</a>    <span class="k">def</span> <span class="nf">handshake</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Attempt nonblocking ssl handshake to .ha</span>
+<span class="sd">        Returns True if successful</span>
+<span class="sd">        Returns False if not so try again later</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="o">.</span><span class="n">do_handshake</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">ssl</span><span class="o">.</span><span class="n">SSLError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ex</span><span class="o">.</span><span class="n">errno</span> <span class="ow">in</span> <span class="p">(</span><span class="n">ssl</span><span class="o">.</span><span class="n">SSL_ERROR_WANT_READ</span><span class="p">,</span> <span class="n">ssl</span><span class="o">.</span><span class="n">SSL_ERROR_WANT_WRITE</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">elif</span> <span class="n">ex</span><span class="o">.</span><span class="n">errno</span> <span class="ow">in</span> <span class="p">(</span><span class="n">ssl</span><span class="o">.</span><span class="n">SSL_ERROR_EOF</span><span class="p">,</span> <span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">shutclose</span><span class="p">()</span>
+                <span class="k">raise</span>   <span class="c1"># should give up here nicely</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">shutclose</span><span class="p">()</span>
+                <span class="k">raise</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shutclose</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">ex</span><span class="o">.</span><span class="n">errno</span> <span class="ow">in</span> <span class="p">(</span><span class="n">errno</span><span class="o">.</span><span class="n">ECONNABORTED</span><span class="p">,</span> <span class="p">):</span>
+                <span class="k">raise</span>  <span class="c1"># should give up here nicely</span>
+            <span class="k">raise</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shutclose</span><span class="p">()</span>
+            <span class="k">raise</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">connected</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="ClientTls.connect"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.ClientTls.connect">[docs]</a>    <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Attempt nonblocking connect to .ha</span>
+<span class="sd">        Returns True if successful</span>
+<span class="sd">        Returns False if not so try again later</span>
+<span class="sd">        Connected when both accepted connection and TLS handshake complete</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">accepted</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accepted</span><span class="p">:</span>  <span class="c1"># only do this once immediately after accepted</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">certedhost</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">certedhost</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ha</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">wrap</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accepted</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">connected</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">handshake</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">connected</span></div>
+
+<div class="viewcode-block" id="ClientTls.receive"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.ClientTls.receive">[docs]</a>    <span class="k">def</span> <span class="nf">receive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform non blocking receive from connected socket .cs</span>
+
+<span class="sd">        If no data then returns None</span>
+<span class="sd">        If connection closed then returns &#39;&#39;</span>
+<span class="sd">        Otherwise returns data</span>
+<span class="sd">        data is string in python2 and bytes in python3</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">socket</span><span class="o">.</span><span class="n">error</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>  <span class="c1"># ssl.SSLError is a subtype of socket.error</span>
+            <span class="c1"># ex.args[0] is always ex.errno for better compat</span>
+            <span class="k">if</span> <span class="n">ex</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="n">ssl</span><span class="o">.</span><span class="n">SSL_ERROR_WANT_READ</span><span class="p">,</span> <span class="n">ssl</span><span class="o">.</span><span class="n">SSL_ERROR_WANT_WRITE</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">elif</span> <span class="n">ex</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="n">errno</span><span class="o">.</span><span class="n">ECONNRESET</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">ENETRESET</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">ENETUNREACH</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">EHOSTUNREACH</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">ENETDOWN</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">EHOSTDOWN</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">ETIMEDOUT</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">ECONNREFUSED</span><span class="p">,</span>
+                                <span class="n">ssl</span><span class="o">.</span><span class="n">SSLEOFError</span><span class="p">):</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># this signals need to close/reopen connection</span>
+                <span class="k">return</span> <span class="nb">bytes</span><span class="p">()</span>  <span class="c1"># data empty</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span>  <span class="c1"># re-raise</span>
+
+        <span class="k">if</span> <span class="n">data</span><span class="p">:</span>  <span class="c1"># connection open</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">:</span>  <span class="c1"># log over the wire rx</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="o">.</span><span class="n">writeRx</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ha</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># data empty so connection closed on other end</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="n">data</span></div>
+
+<div class="viewcode-block" id="ClientTls.send"><a class="viewcode-back" href="../../../../hio.core.tcp.html#hio.core.tcp.clienting.ClientTls.send">[docs]</a>    <span class="k">def</span> <span class="nf">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform non blocking send on connected socket .cs.</span>
+<span class="sd">        Return number of bytes sent</span>
+<span class="sd">        data is string in python2 and bytes in python3</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cs</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="c1">#result is number of bytes sent</span>
+        <span class="k">except</span> <span class="n">socket</span><span class="o">.</span><span class="n">error</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>  <span class="c1"># ssl.SSLError is a subtype of socket.error</span>
+            <span class="c1"># ex.args[0] is always ex.errno for better compat</span>
+            <span class="k">if</span> <span class="n">ex</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="n">ssl</span><span class="o">.</span><span class="n">SSL_ERROR_WANT_READ</span><span class="p">,</span> <span class="n">ssl</span><span class="o">.</span><span class="n">SSL_ERROR_WANT_WRITE</span><span class="p">):</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">elif</span> <span class="n">ex</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="n">errno</span><span class="o">.</span><span class="n">ECONNRESET</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">ENETRESET</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">ENETUNREACH</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">EHOSTUNREACH</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">ENETDOWN</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">EHOSTDOWN</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">ETIMEDOUT</span><span class="p">,</span>
+                                <span class="n">errno</span><span class="o">.</span><span class="n">ECONNREFUSED</span><span class="p">,</span>
+                                <span class="n">ssl</span><span class="o">.</span><span class="n">SSLEOFError</span><span class="p">):</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># this signals need to close/reopen connection</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span>
+
+        <span class="k">if</span> <span class="n">result</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="o">.</span><span class="n">writeTx</span><span class="p">(</span><span class="n">data</span><span class="p">[:</span><span class="n">result</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">ha</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">result</span></div></div>
+
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2020-2021, Samuel M. Smith.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

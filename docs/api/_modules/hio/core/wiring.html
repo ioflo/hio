@@ -1,0 +1,674 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>hio.core.wiring &mdash; hio 0.3.4 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> hio
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Introduction to HIO</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">src</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">hio</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../../hio.html">hio</a> &raquo;</li>
+        
+      <li>hio.core.wiring</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for hio.core.wiring</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- encoding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">hio.help.wiring module</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span>
+
+<span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">doing</span>
+
+<span class="nd">@contextmanager</span>
+<div class="viewcode-block" id="openWL"><a class="viewcode-back" href="../../../hio.core.html#hio.core.wiring.openWL">[docs]</a><span class="k">def</span> <span class="nf">openWL</span><span class="p">(</span><span class="bp">cls</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;test&quot;</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwa</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Context manager wrapper WireLog instances.</span>
+<span class="sd">    Defaults to temporary wire logs.</span>
+<span class="sd">    Context &#39;with&#39; statements call .close on exit of &#39;with&#39; block</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        cls is Class instance of subclass instance</span>
+<span class="sd">        name is str name of wirelog instance for filename so can have multiple wirelogs</span>
+<span class="sd">             at different paths thar each use different file name</span>
+<span class="sd">        temp is Boolean, True means open in temporary directory, clear on close</span>
+<span class="sd">                Otherwise open in persistent directory, do not clear on close</span>
+
+<span class="sd">    Usage:</span>
+
+<span class="sd">    with openWL(name=&quot;bob&quot;) as wl:</span>
+<span class="sd">        wl.writeRx  ....</span>
+
+<span class="sd">    with openWL(name=&quot;eve&quot;, cls=SubclassedWireLog)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="bp">cls</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">cls</span> <span class="o">=</span> <span class="n">WireLog</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">wl</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="n">temp</span><span class="p">,</span> <span class="n">reopen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwa</span><span class="p">)</span>
+        <span class="k">yield</span> <span class="n">wl</span>
+
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">wl</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>  <span class="c1"># if .temp also clears</span></div>
+
+
+<div class="viewcode-block" id="WireLog"><a class="viewcode-back" href="../../../hio.core.html#hio.core.wiring.WireLog">[docs]</a><span class="k">class</span> <span class="nc">WireLog</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    For debugging of non-blocking transports, provides log files or in memory</span>
+<span class="sd">    buffers for logging &#39;over the wire&#39; network tx and rx packets as bytes</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        .rxed is Boolean True means log rx</span>
+<span class="sd">        .txed is Boolean True means log tx</span>
+<span class="sd">        .samed is Boolean True means log both rx and tx to same file or buffer</span>
+<span class="sd">        .filed is Boolean True means log to file False means log to memory buffer</span>
+<span class="sd">        .fmt is io write bytes printf style format string</span>
+<span class="sd">            Default is b&#39;\n%(dx)b %(who)b:\n%(data)b\n&#39; where:</span>
+<span class="sd">                who is src or dst for rx tx respectively</span>
+<span class="sd">                dx is the io direction and will be set to either b&#39;tx&#39; or b&#39;rx&#39; and</span>
+<span class="sd">                data is the actual io data as bytes</span>
+<span class="sd">            to write io data without direction who or line feeds use fmt= b&#39;%(data)b&#39;</span>
+<span class="sd">        .name is str used in file name</span>
+<span class="sd">        .temp is Boolean True means use /tmp directory</span>
+<span class="sd">        .prefix is str used as part of path prefix and formating</span>
+<span class="sd">        .headDirPath is str used as head of path</span>
+<span class="sd">        .tailDirpath is str used as tail of path</span>
+<span class="sd">        .altTailDirPath is str used a alternate tail of path</span>
+<span class="sd">        .dirPath is full directory path</span>
+<span class="sd">        .rxl is rx log io file or io buffer</span>
+<span class="sd">        .txl is tx log io file or io buffer</span>
+<span class="sd">        .opened is Boolean, True means file is opened Otherwise False</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="WireLog.Prefix"><a class="viewcode-back" href="../../../hio.core.html#hio.core.wiring.WireLog.Prefix">[docs]</a>    <span class="n">Prefix</span> <span class="o">=</span> <span class="s2">&quot;hio&quot;</span></div>
+<div class="viewcode-block" id="WireLog.HeadDirPath"><a class="viewcode-back" href="../../../hio.core.html#hio.core.wiring.WireLog.HeadDirPath">[docs]</a>    <span class="n">HeadDirPath</span> <span class="o">=</span> <span class="s2">&quot;/usr/local/var&quot;</span>  <span class="c1"># default in /usr/local/var</span></div>
+<div class="viewcode-block" id="WireLog.TailDirPath"><a class="viewcode-back" href="../../../hio.core.html#hio.core.wiring.WireLog.TailDirPath">[docs]</a>    <span class="n">TailDirPath</span> <span class="o">=</span> <span class="s2">&quot;wirelogs&quot;</span></div>
+<div class="viewcode-block" id="WireLog.AltHeadDirPath"><a class="viewcode-back" href="../../../hio.core.html#hio.core.wiring.WireLog.AltHeadDirPath">[docs]</a>    <span class="n">AltHeadDirPath</span> <span class="o">=</span> <span class="s2">&quot;~&quot;</span>  <span class="c1">#  put in ~ as fallback when desired dir not permitted</span></div>
+<div class="viewcode-block" id="WireLog.TempHeadDir"><a class="viewcode-back" href="../../../hio.core.html#hio.core.wiring.WireLog.TempHeadDir">[docs]</a>    <span class="n">TempHeadDir</span> <span class="o">=</span> <span class="s2">&quot;/tmp&quot;</span></div>
+<div class="viewcode-block" id="WireLog.TempPrefix"><a class="viewcode-back" href="../../../hio.core.html#hio.core.wiring.WireLog.TempPrefix">[docs]</a>    <span class="n">TempPrefix</span> <span class="o">=</span> <span class="s2">&quot;test_&quot;</span></div>
+<div class="viewcode-block" id="WireLog.TempSuffix"><a class="viewcode-back" href="../../../hio.core.html#hio.core.wiring.WireLog.TempSuffix">[docs]</a>    <span class="n">TempSuffix</span> <span class="o">=</span> <span class="s2">&quot;_temp&quot;</span></div>
+<div class="viewcode-block" id="WireLog.Format"><a class="viewcode-back" href="../../../hio.core.html#hio.core.wiring.WireLog.Format">[docs]</a>    <span class="n">Format</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">%(dx)b %(who)b:</span><span class="se">\n</span><span class="s1">%(data)b</span><span class="se">\n</span><span class="s1">&#39;</span>  <span class="c1"># default format string as bytes</span></div>
+
+
+<div class="viewcode-block" id="WireLog.__init__"><a class="viewcode-back" href="../../../hio.core.html#hio.core.wiring.WireLog.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rxed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">txed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">samed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">filed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">fmt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;main&#39;</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">headDirPath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reopen</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">clear</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Init Loggery factory instance</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            rxed is Boolean True means log rx received bytes</span>
+<span class="sd">            txed is Boolean True means log tx transmitted bytes</span>
+<span class="sd">            samed is Boolean True means log both rx and tx to same file or buffer</span>
+<span class="sd">            filed is Boolean True means log file False means log to memory buffer</span>
+<span class="sd">            fmt is printf style format str or bytes converted based on .byted</span>
+<span class="sd">            name is application specific log file name</span>
+<span class="sd">            temp is Boolean True means use /tmp directory If .filed and clear on close</span>
+<span class="sd">                    False means use  headDirpath If .filed</span>
+<span class="sd">            prefix is str to include in path and logging template</span>
+<span class="sd">            headDirPath is str for custom headDirPath for log file</span>
+<span class="sd">            reopen is Booblean True means reopen path if anything changed</span>
+<span class="sd">            clear is Boolean True means clear .dirPath when closing in reopen</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rxed</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">rxed</span> <span class="k">else</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">txed</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">txed</span> <span class="k">else</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">samed</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">samed</span> <span class="k">else</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filed</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">filed</span> <span class="k">else</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fmt</span> <span class="o">=</span> <span class="n">fmt</span> <span class="k">if</span> <span class="n">fmt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">Format</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fmt</span><span class="p">,</span> <span class="s2">&quot;encode&quot;</span><span class="p">):</span>   <span class="c1"># ensure bytes</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fmt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fmt</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="k">if</span> <span class="n">name</span> <span class="k">else</span> <span class="s1">&#39;main&#39;</span>  <span class="c1"># for file name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">temp</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">temp</span> <span class="k">else</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">=</span> <span class="n">prefix</span> <span class="k">if</span> <span class="n">prefix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">Prefix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">headDirPath</span> <span class="o">=</span> <span class="n">headDirPath</span> <span class="k">if</span> <span class="n">headDirPath</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">HeadDirPath</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rxl</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># receive log iofile or iobuffer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">txl</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># transmit log iofile or iobuffer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opened</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="n">reopen</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reopen</span><span class="p">(</span><span class="n">headDirPath</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">headDirPath</span><span class="p">,</span> <span class="n">clear</span><span class="o">=</span><span class="n">clear</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="WireLog.reopen"><a class="viewcode-back" href="../../../hio.core.html#hio.core.wiring.WireLog.reopen">[docs]</a>    <span class="k">def</span> <span class="nf">reopen</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rxed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">txed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">samed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">filed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">headDirPath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">clear</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Use or Create if not preexistent, directory path for file .path</span>
+<span class="sd">        First closes .path if already opened. If clear is True then also clears</span>
+<span class="sd">        .path before reopening</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            rxed is optional Boolean If None or unchanged then ignore.</span>
+<span class="sd">                Otherwise when creating io use .rxed if not provided</span>
+<span class="sd">            txed is optional Boolean If None or unchanged then ignore.</span>
+<span class="sd">                Otherwise when creating io use .txed if not provided</span>
+<span class="sd">            samed is optional Boolean If None or unchanged then ignore.</span>
+<span class="sd">                Otherwise when creating io use .same if not provided</span>
+<span class="sd">            filed is optional Boolean If None or unchanged then ignore.</span>
+<span class="sd">                Otherwise when creating io use .filed if not provided</span>
+<span class="sd">            fmt is optional bytes printf format If None or unchanged then ignore.</span>
+<span class="sd">                Otherwise when creating io use .fmt if not provided</span>
+<span class="sd">            name is optional name</span>
+<span class="sd">                if None or unchanged then ignore otherwise recreate path</span>
+<span class="sd">                    When recreating path, If not provided use .name</span>
+<span class="sd">            temp is optional boolean:</span>
+<span class="sd">                If None ignore Otherwise</span>
+<span class="sd">                    Assign to .temp</span>
+<span class="sd">                    If True then open in temporary directory and clear on close,</span>
+<span class="sd">                    If False then open persistent directory</span>
+<span class="sd">            headDirPath is optional str head directory pathname of main database</span>
+<span class="sd">                if None or unchanged then ignore otherwise recreate path</span>
+<span class="sd">                   When recreating path, If not provided use default .HeadDirpath</span>
+<span class="sd">            clear is Boolean True means clear .path when closing</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opened</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">clear</span><span class="o">=</span><span class="n">clear</span><span class="p">)</span>
+
+        <span class="c1"># check for changes in creation parameters if need to recreate</span>
+        <span class="k">if</span> <span class="n">rxed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">rxed</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxed</span><span class="p">:</span>
+            <span class="n">rxed</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># don&#39;t need to recreate  because of rxed change</span>
+        <span class="k">if</span> <span class="n">txed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">txed</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">txed</span><span class="p">:</span>
+            <span class="n">txed</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># don&#39;t need to recreate  because of txed change</span>
+        <span class="k">if</span> <span class="n">samed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">samed</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">samed</span><span class="p">:</span>
+            <span class="n">samed</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># don&#39;t need to recreate  because of samed change</span>
+        <span class="k">if</span> <span class="n">filed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">filed</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">filed</span><span class="p">:</span>
+            <span class="n">filed</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># don&#39;t need to recreate  because of filed change</span>
+        <span class="k">if</span> <span class="n">fmt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">fmt</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">fmt</span><span class="p">:</span>
+            <span class="n">fmt</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">name</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># don&#39;t need to recreate path because of name change</span>
+        <span class="k">if</span> <span class="n">temp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">temp</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
+            <span class="n">temp</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># don&#39;t need to recreate path because of temp change</span>
+        <span class="k">if</span> <span class="n">headDirPath</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">headDirPath</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">headDirPath</span><span class="p">:</span>
+            <span class="n">headDirPath</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># don&#39;t need to recreate path because of headDirPath change</span>
+
+        <span class="c1"># always recreates if dirPath is empty or if some creation parameter has changed</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span> <span class="ow">or</span>
+            <span class="n">rxed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span>
+            <span class="n">txed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span>
+            <span class="n">samed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span>
+            <span class="n">filed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span>
+            <span class="n">fmt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span>
+            <span class="n">temp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span>
+            <span class="n">headDirPath</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span>
+            <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>  <span class="c1"># need to recreate self.dirPath etc</span>
+
+            <span class="k">if</span> <span class="n">rxed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rxed</span> <span class="o">=</span> <span class="n">rxed</span>
+            <span class="k">if</span> <span class="n">txed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">txed</span> <span class="o">=</span> <span class="n">txed</span>
+            <span class="k">if</span> <span class="n">samed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">samed</span> <span class="o">=</span> <span class="n">samed</span>
+            <span class="k">if</span> <span class="n">filed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">filed</span> <span class="o">=</span> <span class="n">filed</span>
+            <span class="k">if</span> <span class="n">fmt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fmt</span> <span class="o">=</span> <span class="n">fmt</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fmt</span><span class="p">,</span> <span class="s2">&quot;encode&quot;</span><span class="p">):</span>   <span class="c1"># ensure bytes</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">fmt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fmt</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxed</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">txed</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">filed</span><span class="p">:</span>  <span class="c1"># use io files</span>
+                    <span class="k">if</span> <span class="n">temp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">temp</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">temp</span> <span class="k">else</span> <span class="kc">False</span>
+                    <span class="k">if</span> <span class="n">headDirPath</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">headDirpath</span> <span class="o">=</span> <span class="n">headDirPath</span>
+                    <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># used below for filename</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
+                        <span class="n">dirPath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span>
+                                            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TempHeadDir</span><span class="p">,</span>
+                                                         <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="p">,</span>
+                                                         <span class="bp">self</span><span class="o">.</span><span class="n">TailDirPath</span><span class="p">))</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">dirPath</span><span class="p">):</span>
+                            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">dirPath</span><span class="p">)</span>  <span class="c1"># mkdtemp only makes last dir</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">TempPrefix</span><span class="p">,</span>
+                                                        <span class="n">suffix</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">TempSuffix</span><span class="p">,</span>
+                                                        <span class="nb">dir</span><span class="o">=</span><span class="n">dirPath</span><span class="p">)</span>
+
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span>
+                                            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span>
+                                                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">headDirPath</span><span class="p">,</span>
+                                                             <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="p">,</span>
+                                                             <span class="bp">self</span><span class="o">.</span><span class="n">TailDirPath</span><span class="p">)))</span>
+
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span><span class="p">):</span>
+                            <span class="k">try</span><span class="p">:</span>
+                                <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span><span class="p">)</span>
+                            <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>  <span class="c1"># can&#39;t make dir</span>
+                                <span class="c1"># use alt=user&#39;s directory instead</span>
+                                <span class="n">prefix</span> <span class="o">=</span> <span class="s2">&quot;.</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="p">)</span>  <span class="c1"># hide it</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span>
+                                                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span>
+                                                    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">AltHeadDirPath</span><span class="p">,</span>
+                                                                <span class="n">prefix</span><span class="p">,</span>
+                                                                <span class="bp">self</span><span class="o">.</span><span class="n">TailDirPath</span><span class="p">)))</span>
+                                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span><span class="p">):</span>
+                                    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>  <span class="c1"># path exists</span>
+                            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">R_OK</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">W_OK</span><span class="p">):</span>
+                                <span class="c1"># but can&#39;t access it</span>
+                                <span class="c1"># use alt=user&#39;s directory instead</span>
+                                <span class="n">prefix</span> <span class="o">=</span> <span class="s2">&quot;.</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="p">)</span>  <span class="c1"># hide it</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span>
+                                                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span>
+                                                    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">AltHeadDirPath</span><span class="p">,</span>
+                                                                 <span class="n">prefix</span><span class="p">,</span>
+                                                                 <span class="bp">self</span><span class="o">.</span><span class="n">TailDirPath</span><span class="p">)))</span>
+                                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span><span class="p">):</span>
+                                    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span><span class="p">)</span>
+
+                    <span class="n">mode</span> <span class="o">=</span> <span class="s1">&#39;wb+&#39;</span>  <span class="c1"># bytes io</span>
+                    <span class="n">dts</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span>
+                                                         <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">_%H-%M-%S_</span><span class="si">%f</span><span class="s1">&#39;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">samed</span><span class="p">:</span>
+                        <span class="n">fileName</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">.</span><span class="si">{}</span><span class="s2">.log&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">dts</span><span class="p">)</span>
+                        <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span><span class="p">,</span> <span class="n">fileName</span><span class="p">)</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="n">log</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxed</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">rxl</span> <span class="o">=</span> <span class="n">log</span>
+                            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">txed</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">txl</span> <span class="o">=</span> <span class="n">log</span>
+                        <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">rxl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">txl</span> <span class="o">=</span> <span class="kc">None</span>
+                            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">opened</span>
+
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxed</span><span class="p">:</span>
+                            <span class="n">fileName</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">.</span><span class="si">{}</span><span class="s2">.rx.log&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">dts</span><span class="p">)</span>
+                            <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span><span class="p">,</span> <span class="n">fileName</span><span class="p">)</span>
+                            <span class="k">try</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">rxl</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span>
+                            <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">rxl</span> <span class="o">=</span> <span class="kc">None</span>
+                                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">opened</span>
+
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">txed</span><span class="p">:</span>
+                            <span class="n">fileName</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">.</span><span class="si">{}</span><span class="s2">.tx.log&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">dts</span><span class="p">)</span>
+                            <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span><span class="p">,</span> <span class="n">fileName</span><span class="p">)</span>
+                            <span class="k">try</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">txl</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span>
+                            <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">txl</span> <span class="o">=</span> <span class="kc">None</span>
+                                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">opened</span>
+
+                <span class="k">else</span><span class="p">:</span>  <span class="c1"># use io memory buffers</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">samed</span><span class="p">:</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="n">log</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">()</span>
+                            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxed</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">rxl</span> <span class="o">=</span> <span class="n">log</span>
+                            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">txed</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">txl</span> <span class="o">=</span> <span class="n">log</span>
+                        <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">rxl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">txl</span> <span class="o">=</span> <span class="kc">None</span>
+                            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">opened</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxed</span><span class="p">:</span>
+                            <span class="k">try</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">rxl</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">()</span>
+                            <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">rxl</span> <span class="o">=</span> <span class="kc">None</span>
+                                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">opened</span>
+
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">txed</span><span class="p">:</span>
+                            <span class="k">try</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">txl</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">()</span>
+                            <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">txl</span> <span class="o">=</span> <span class="kc">None</span>
+                                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">opened</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">opened</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">opened</span></div>
+
+
+<div class="viewcode-block" id="WireLog.flush"><a class="viewcode-back" href="../../../hio.core.html#hio.core.wiring.WireLog.flush">[docs]</a>    <span class="k">def</span> <span class="nf">flush</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        flush files if any and opened.</span>
+<span class="sd">        A file flush only moves from program buffer to operating system buffer.</span>
+<span class="sd">        A file fsync moves from operating system buffer to disk.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">filed</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxl</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rxl</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">fsync</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rxl</span><span class="o">.</span><span class="n">fileno</span><span class="p">())</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">txl</span><span class="o">.</span><span class="n">closed</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">samed</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">txl</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">fsync</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">txl</span><span class="o">.</span><span class="n">fileno</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="WireLog.close"><a class="viewcode-back" href="../../../hio.core.html#hio.core.wiring.WireLog.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clear</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Close io logs. If clear or self.temp then remove directory at .dirPath</span>
+<span class="sd">        Parameters:</span>
+<span class="sd">           clear is boolean, True means clear directory at .dirPath if any</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opened</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">txl</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">txl</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">txl</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxl</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxl</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rxl</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">clear</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">temp</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">clearDirPath</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="WireLog.clearDirPath"><a class="viewcode-back" href="../../../hio.core.html#hio.core.wiring.WireLog.clearDirPath">[docs]</a>    <span class="k">def</span> <span class="nf">clearDirPath</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove logfile directory at .dirPath</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span><span class="p">):</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirPath</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="WireLog.readRx"><a class="viewcode-back" href="../../../hio.core.html#hio.core.wiring.WireLog.readRx">[docs]</a>    <span class="k">def</span> <span class="nf">readRx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns rx string buffer value if .buffify else None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxl</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxl</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rxl</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rxl</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">io</span><span class="o">.</span><span class="n">SEEK_SET</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rxl</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="WireLog.readTx"><a class="viewcode-back" href="../../../hio.core.html#hio.core.wiring.WireLog.readTx">[docs]</a>    <span class="k">def</span> <span class="nf">readTx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns tx string buffer value if .buffify else None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">txl</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">txl</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">txl</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">txl</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">io</span><span class="o">.</span><span class="n">SEEK_SET</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">txl</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="WireLog.writeRx"><a class="viewcode-back" href="../../../hio.core.html#hio.core.wiring.WireLog.writeRx">[docs]</a>    <span class="k">def</span> <span class="nf">writeRx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Write bytes data received from source host port address tuple,</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxed</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">rxl</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">who</span><span class="p">,</span> <span class="p">(</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">bytearray</span><span class="p">,</span> <span class="nb">str</span><span class="p">)):</span>
+                <span class="n">who</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">who</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">who</span><span class="p">,</span> <span class="s1">&#39;encode&#39;</span><span class="p">):</span>
+                <span class="n">who</span> <span class="o">=</span> <span class="n">who</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s1">&#39;encode&#39;</span><span class="p">):</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rxl</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fmt</span> <span class="o">%</span> <span class="p">{</span><span class="sa">b</span><span class="s1">&#39;dx&#39;</span><span class="p">:</span> <span class="sa">b</span><span class="s1">&#39;Rx&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;who&#39;</span><span class="p">:</span> <span class="n">who</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="WireLog.writeTx"><a class="viewcode-back" href="../../../hio.core.html#hio.core.wiring.WireLog.writeTx">[docs]</a>    <span class="k">def</span> <span class="nf">writeTx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">who</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Write bytes data transmitted to destination address da,</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">txed</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">txl</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">who</span><span class="p">,</span> <span class="p">(</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">bytearray</span><span class="p">,</span> <span class="nb">str</span><span class="p">)):</span>
+                <span class="n">who</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">who</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">who</span><span class="p">,</span> <span class="s1">&#39;encode&#39;</span><span class="p">):</span>
+                <span class="n">who</span> <span class="o">=</span> <span class="n">who</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s1">&#39;encode&#39;</span><span class="p">):</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">txl</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fmt</span> <span class="o">%</span> <span class="p">{</span><span class="sa">b</span><span class="s1">&#39;dx&#39;</span><span class="p">:</span> <span class="sa">b</span><span class="s1">&#39;Tx&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;who&#39;</span><span class="p">:</span> <span class="n">who</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">})</span></div></div>
+
+
+
+<div class="viewcode-block" id="WireLogDoer"><a class="viewcode-back" href="../../../hio.core.html#hio.core.wiring.WireLogDoer">[docs]</a><span class="k">class</span> <span class="nc">WireLogDoer</span><span class="p">(</span><span class="n">doing</span><span class="o">.</span><span class="n">Doer</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Basic WireLog Doer</span>
+
+<span class="sd">    Inherited Attributes:</span>
+<span class="sd">        .done is Boolean completion state:</span>
+<span class="sd">            True means completed</span>
+<span class="sd">            Otherwise incomplete. Incompletion maybe due to close or abort.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        .wl is WireLog subclass</span>
+
+<span class="sd">    Inherited Properties:</span>
+<span class="sd">        .tyme is float ._tymist.tyme, relative cycle or artificial time</span>
+<span class="sd">        .tock is float, desired time in seconds between runs or until next run,</span>
+<span class="sd">                 non negative, zero means run asap</span>
+
+<span class="sd">    Properties:</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        .wind  injects ._tymist dependency</span>
+<span class="sd">        .__call__ makes instance callable</span>
+<span class="sd">            Appears as generator function that returns generator</span>
+<span class="sd">        .do is generator method that returns generator</span>
+<span class="sd">        .enter is enter context action method</span>
+<span class="sd">        .recur is recur context action method or generator method</span>
+<span class="sd">        .exit is exit context method</span>
+<span class="sd">        .close is close context method</span>
+<span class="sd">        .abort is abort context method</span>
+
+<span class="sd">    Hidden:</span>
+<span class="sd">       ._tymist is Tymist instance reference</span>
+<span class="sd">       ._tock is hidden attribute for .tock property</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="WireLogDoer.__init__"><a class="viewcode-back" href="../../../hio.core.html#hio.core.wiring.WireLogDoer.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wl</span><span class="p">,</span> <span class="o">**</span><span class="n">kwa</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Inherited Parameters:</span>
+<span class="sd">           tymist is Tymist instance</span>
+<span class="sd">           tock is float seconds initial value of .tock</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">           keeper is Keeper instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">WireLogDoer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwa</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wl</span> <span class="o">=</span> <span class="n">wl</span></div>
+
+
+<div class="viewcode-block" id="WireLogDoer.enter"><a class="viewcode-back" href="../../../hio.core.html#hio.core.wiring.WireLogDoer.enter">[docs]</a>    <span class="k">def</span> <span class="nf">enter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="o">.</span><span class="n">opened</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="o">.</span><span class="n">reopen</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="WireLogDoer.exit"><a class="viewcode-back" href="../../../hio.core.html#hio.core.wiring.WireLogDoer.exit">[docs]</a>    <span class="k">def</span> <span class="nf">exit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2020-2021, Samuel M. Smith.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

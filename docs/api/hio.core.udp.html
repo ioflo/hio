@@ -1,0 +1,322 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>hio.core.udp package &mdash; hio 0.3.4 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="hio.demo package" href="hio.demo.html" />
+    <link rel="prev" title="hio.core.tcp package" href="hio.core.tcp.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> hio
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme.html">Introduction to HIO</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">src</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="hio.html">hio package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="hio.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html">hio.base package</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="hio.core.html">hio.core package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.demo.html">hio.demo package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html">hio.help package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hio.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hio.html#module-hio.cli">hio.cli module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hio.html#module-hio.daemon">hio.daemon module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hio.html#module-hio.hioing">hio.hioing module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hio.html#module-hio">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="autoapi/index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">hio</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="modules.html">src</a> &raquo;</li>
+        
+          <li><a href="hio.html">hio package</a> &raquo;</li>
+        
+          <li><a href="hio.core.html">hio.core package</a> &raquo;</li>
+        
+      <li>hio.core.udp package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/hio.core.udp.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="hio-core-udp-package">
+<h1>hio.core.udp package<a class="headerlink" href="#hio-core-udp-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-hio.core.udp.udping">
+<span id="hio-core-udp-udping-module"></span><h2>hio.core.udp.udping module<a class="headerlink" href="#module-hio.core.udp.udping" title="Permalink to this headline">¶</a></h2>
+<p>hio.core.udping Module</p>
+<dl class="py attribute">
+<dt id="hio.core.udp.udping.PeerUdp">
+<code class="sig-prename descclassname"><span class="pre">hio.core.udp.udping.</span></code><code class="sig-name descname"><span class="pre">PeerUdp</span></code><a class="reference internal" href="_modules/hio/core/udp/udping.html#PeerUdp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.udp.udping.PeerUdp" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#hio.core.udp.udping.SocketUdpNb" title="hio.core.udp.udping.SocketUdpNb"><code class="xref py py-class docutils literal notranslate"><span class="pre">hio.core.udp.udping.SocketUdpNb</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="hio.core.udp.udping.SocketUdpNb">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">hio.core.udp.udping.</span></code><code class="sig-name descname"><span class="pre">SocketUdpNb</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">host</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">55000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bufsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wl</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bcast</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/udp/udping.html#SocketUdpNb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.udp.udping.SocketUdpNb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class to manage non blocking I/O on UDP socket.</p>
+<dl class="py method">
+<dt id="hio.core.udp.udping.SocketUdpNb.__init__">
+<code class="sig-name descname"><span class="pre">__init__</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">host</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">55000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bufsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wl</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bcast</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/udp/udping.html#SocketUdpNb.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.udp.udping.SocketUdpNb.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialization method for instance.</p>
+<p>ha = host address duple (host, port)
+host = ‘’ equivalant to any interface on host
+port = socket port
+bs = buffer size
+path = path to log file directory
+wl = WireLog instance ref for debug logging or over the wire tx and rx
+bcast = Flag if True enables sending to broadcast addresses on socket</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.udp.udping.SocketUdpNb.actualBufSizes">
+<code class="sig-name descname"><span class="pre">actualBufSizes</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/udp/udping.html#SocketUdpNb.actualBufSizes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.udp.udping.SocketUdpNb.actualBufSizes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns duple of the the actual socket send and receive buffer size
+(send, receive)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.udp.udping.SocketUdpNb.close">
+<code class="sig-name descname"><span class="pre">close</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/udp/udping.html#SocketUdpNb.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.udp.udping.SocketUdpNb.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Closes  socket and logs if any</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.udp.udping.SocketUdpNb.open">
+<code class="sig-name descname"><span class="pre">open</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/udp/udping.html#SocketUdpNb.open"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.udp.udping.SocketUdpNb.open" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens socket in non blocking mode.</p>
+<dl class="simple">
+<dt>if socket not closed properly, binding socket gets error</dt><dd><p>socket.error: (48, ‘Address already in use’)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.udp.udping.SocketUdpNb.receive">
+<code class="sig-name descname"><span class="pre">receive</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/udp/udping.html#SocketUdpNb.receive"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.udp.udping.SocketUdpNb.receive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform non blocking read on  socket.</p>
+<p>returns tuple of form (data, sa)
+if no data then returns (b’’,None)
+but always returns a tuple with two elements</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.udp.udping.SocketUdpNb.reopen">
+<code class="sig-name descname"><span class="pre">reopen</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/udp/udping.html#SocketUdpNb.reopen"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.udp.udping.SocketUdpNb.reopen" title="Permalink to this definition">¶</a></dt>
+<dd><p>Idempotently open socket</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.udp.udping.SocketUdpNb.send">
+<code class="sig-name descname"><span class="pre">send</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">da</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/udp/udping.html#SocketUdpNb.send"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.udp.udping.SocketUdpNb.send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform non blocking send on  socket.</p>
+<p>data is string in python2 and bytes in python3
+da is destination address tuple (destHost, destPort)</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-hio.core.udp">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-hio.core.udp" title="Permalink to this headline">¶</a></h2>
+<p>hio.core.udp Package</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="hio.demo.html" class="btn btn-neutral float-right" title="hio.demo package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="hio.core.tcp.html" class="btn btn-neutral float-left" title="hio.core.tcp package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2020-2021, Samuel M. Smith.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,71 @@
+:mod:`hio.core.coring`
+======================
+
+.. py:module:: hio.core.coring
+
+.. autoapi-nested-parse::
+
+   hio.core.coring Module
+
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   hio.core.coring.normalizeHost
+   hio.core.coring.getDefaultHost
+   hio.core.coring.getDefaultBroadcast
+   hio.core.coring.arpCreate
+   hio.core.coring.arpDelete
+
+
+
+.. function:: normalizeHost(host)
+
+   Returns ip address host string in normalized dotted form or empty string
+   converts host parameter which may be the dns name or ip address
+   Prefers ipv4 addresses over ipv6 in that it will only return the ipv6
+   address if no ipv4 address equivalent is available
+
+
+.. function:: getDefaultHost()
+
+   Returns host ip address of default interface using netifaces
+
+
+.. function:: getDefaultBroadcast()
+
+   Returns broadcast ip address of default interface using netifaces
+
+
+.. function:: arpCreate(ether, host, interface='en0', temp=True)
+
+   Create arp entry for ethernet mac address ether at ip address host on interface
+   If temp is false then the entry is permanent otherwise its temporary
+
+   Assumes added /etc/sudoers entry to run arp with no password for user's group
+   $ sudo visudo
+
+   ## Group to run arp as root with no password
+   Cmnd_Alias  ARP = /usr/sbin/arp
+   %arp_group ALL=(ALL) NOPASSWD: ARP
+
+
+.. function:: arpDelete(host, interface='en0')
+
+   Delete arp entry for ip address host on interface
+
+   Assumes added /etc/sudoers entry to run arp with no password for user's group
+   $ sudo visudo
+
+   ## Group to run arp as root with no password
+   Cmnd_Alias  ARP = /usr/sbin/arp
+   %arp_group ALL=(ALL) NOPASSWD: ARP
+
+

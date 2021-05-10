@@ -1,0 +1,795 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>hio.core.tcp.serving &mdash; hio 0.3.4 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../../_static/graphviz.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../../" src="../../../../../_static/documentation_options.js"></script>
+        <script src="../../../../../_static/jquery.js"></script>
+        <script src="../../../../../_static/underscore.js"></script>
+        <script src="../../../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../../index.html" class="icon icon-home"> hio
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../readme.html">Introduction to HIO</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../modules.html">src</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">hio</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li><code class="xref py py-mod docutils literal notranslate"><span class="pre">hio.core.tcp.serving</span></code></li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../../../../_sources/autoapi/hio/core/tcp/serving/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-hio.core.tcp.serving">
+<span id="hio-core-tcp-serving"></span><h1><a class="reference internal" href="../../../../../hio.core.tcp.html#module-hio.core.tcp.serving" title="hio.core.tcp.serving"><code class="xref py py-mod docutils literal notranslate"><span class="pre">hio.core.tcp.serving</span></code></a><a class="headerlink" href="#module-hio.core.tcp.serving" title="Permalink to this headline">¶</a></h1>
+<p>hio.core.tcp.serving Module</p>
+<p>Accepter listens and accepts incoming TCP socket connections
+Server is subclass of Acceptor
+Server creates Remoters
+Remoter is accepted incoming socket connection</p>
+<p>ServerTls is subclass of Server
+RemoterTls is subclass of Remoter</p>
+<div class="section" id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="classes">
+<h3>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h3>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../../../../hio.core.tcp.html#hio.core.tcp.serving.Acceptor" title="hio.core.tcp.serving.Acceptor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Acceptor</span></code></a></p></td>
+<td><p>Acceptor Base Class for Server.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../../../../hio.core.tcp.html#hio.core.tcp.serving.Server" title="hio.core.tcp.serving.Server"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Server</span></code></a></p></td>
+<td><p>Nonblocking TCP Socket Server Class.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../../../../hio.core.tcp.html#hio.core.tcp.serving.ServerTls" title="hio.core.tcp.serving.ServerTls"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ServerTls</span></code></a></p></td>
+<td><p>Server with Nonblocking TLS/SSL support</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../../../../hio.core.tcp.html#hio.core.tcp.serving.Remoter" title="hio.core.tcp.serving.Remoter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Remoter</span></code></a></p></td>
+<td><p>Class to service an incoming nonblocking TCP connection from a remote client.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../../../../hio.core.tcp.html#hio.core.tcp.serving.RemoterTls" title="hio.core.tcp.serving.RemoterTls"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoterTls</span></code></a></p></td>
+<td><p>Class to service an incoming nonblocking TCP/TLS connection from a remote client.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="functions">
+<h3>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h3>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../../../../hio.core.tcp.html#hio.core.tcp.serving.openServer" title="hio.core.tcp.serving.openServer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">openServer</span></code></a>(cls=None, **kwa)</p></td>
+<td><p>Wrapper to create and open Server instances</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../../../../hio.core.tcp.html#hio.core.tcp.serving.initServerContext" title="hio.core.tcp.serving.initServerContext"><code class="xref py py-obj docutils literal notranslate"><span class="pre">initServerContext</span></code></a>(context=None, version=None, certify=None, keypath=None, certpath=None, cafilepath=None)</p></td>
+<td><p>Initialize and return context for TLS Server</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py function">
+<dt id="hio.core.tcp.serving.openServer">
+<code class="sig-prename descclassname"><span class="pre">hio.core.tcp.serving.</span></code><code class="sig-name descname"><span class="pre">openServer</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwa</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#openServer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.openServer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper to create and open Server instances
+When used in with statement block, calls .close() on exit of with block</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>is Class instance of subclass instance</strong> (<em>cls</em>) – </p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Usage:</dt><dd><dl class="simple">
+<dt>with openServer() as server0:</dt><dd><p>server0.</p>
+</dd>
+<dt>with openServer(cls=ServerTls) as server0:</dt><dd><p>server0.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="hio.core.tcp.serving.Acceptor">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">hio.core.tcp.serving.</span></code><code class="sig-name descname"><span class="pre">Acceptor</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8096</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwa</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Acceptor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Acceptor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../../../../../hio.base.html#hio.base.tyming.Tymee" title="hio.base.tyming.Tymee"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hio.base.tyming.Tymee</span></code></a></p>
+<p>Acceptor Base Class for Server.
+Nonblocking TCP Socket Acceptor Class.
+Listen socket for incoming TCP connections</p>
+<p>See tyming.Tymee for inherited attributes, properties, and methods</p>
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">.ha</span> <span class="pre">is</span></code></dt>
+<dd><p>host = “” or “0.0.0.0” means listen on all interfaces</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>host,port) duple (two tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">.eha</span> <span class="pre">is</span> <span class="pre">normalized</span></code></dt>
+<dd><p>as external facing address for TLS context</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>host, port</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">.bs</span> <span class="pre">is</span> <span class="pre">buffer</span> <span class="pre">size</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">.ss</span> <span class="pre">is</span> <span class="pre">server</span> <span class="pre">listen</span> <span class="pre">socket</span> <span class="pre">for</span> <span class="pre">incoming</span> <span class="pre">accept</span> <span class="pre">requests</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">.axes</span> <span class="pre">is</span> <span class="pre">deque</span> <span class="pre">of</span> <span class="pre">accepte</span> <span class="pre">connection</span> <span class="pre">duples</span></code></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>ca, cs</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">.opened</span> <span class="pre">is</span> <span class="pre">boolean,</span> <span class="pre">True</span> <span class="pre">if</span> <span class="pre">listen</span> <span class="pre">socket</span> <span class="pre">.ss</span> <span class="pre">opened.</span> <span class="pre">False</span> <span class="pre">otherwise</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Acceptor.actualBufSizes">
+<code class="sig-name descname"><span class="pre">actualBufSizes</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Acceptor.actualBufSizes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Acceptor.actualBufSizes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns duple of the the actual socket send and receive buffer size
+(send, receive)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Acceptor.open">
+<code class="sig-name descname"><span class="pre">open</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Acceptor.open"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Acceptor.open" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens binds listen socket in non blocking mode.</p>
+<dl class="simple">
+<dt>if socket not closed properly, binding socket gets error</dt><dd><p>socket.error: (48, ‘Address already in use’)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Acceptor.reopen">
+<code class="sig-name descname"><span class="pre">reopen</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Acceptor.reopen"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Acceptor.reopen" title="Permalink to this definition">¶</a></dt>
+<dd><p>Idempotently opens listen socket</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Acceptor.close">
+<code class="sig-name descname"><span class="pre">close</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Acceptor.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Acceptor.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Closes listen socket.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Acceptor.accept">
+<code class="sig-name descname"><span class="pre">accept</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Acceptor.accept"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Acceptor.accept" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accept new connection nonblocking
+Returns duple (cs, ca) of connected socket and connected host address
+Otherwise if no new connection returns (None, None)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Acceptor.serviceAccepts">
+<code class="sig-name descname"><span class="pre">serviceAccepts</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Acceptor.serviceAccepts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Acceptor.serviceAccepts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Service any accept requests
+Adds to .cxes dict key by ca</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="hio.core.tcp.serving.Server">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">hio.core.tcp.serving.</span></code><code class="sig-name descname"><span class="pre">Server</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">host</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">56000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wl</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwa</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Server"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Server" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../../../../../hio.core.tcp.html#hio.core.tcp.serving.Acceptor" title="hio.core.tcp.serving.Acceptor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Acceptor</span></code></a></p>
+<p>Nonblocking TCP Socket Server Class.
+Listen socket for incoming TCP connections that generates Remoter sockets
+for accepted connections</p>
+<p>See tyming.Tymee for inherited attributes, properties, and methods</p>
+<dl>
+<dt>Inherited Attributes:</dt><dd><dl class="simple">
+<dt>.ha is (host,port) duple (two tuple)</dt><dd><p>host = “” or “0.0.0.0” means listen on all interfaces</p>
+</dd>
+<dt>.eha is normalized (host, port) duple for incoming TLS connections</dt><dd><p>as external facing address for TLS context</p>
+</dd>
+</dl>
+<p>.bs is buffer size
+.ss is server listen socket for incoming accept requests
+.axes is deque of accepte connection duples (ca, cs)
+.opened is boolean, True if listen socket .ss opened. False otherwise</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">.timeout</span> <span class="pre">is</span> <span class="pre">timeout</span> <span class="pre">in</span> <span class="pre">seconds</span> <span class="pre">for</span> <span class="pre">connection</span> <span class="pre">refresh</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">.wl</span> <span class="pre">is</span> <span class="pre">WireLog</span> <span class="pre">instance</span> <span class="pre">if</span> <span class="pre">any</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">.ixes</span> <span class="pre">is</span> <span class="pre">dict</span> <span class="pre">of</span> <span class="pre">incoming</span> <span class="pre">connections</span> <span class="pre">indexed</span> <span class="pre">by</span> <span class="pre">remote</span></code></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>host, port</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="hio.core.tcp.serving.Server.Timeout">
+<code class="sig-name descname"><span class="pre">Timeout</span></code><em class="property"> <span class="pre">=</span> <span class="pre">1.0</span></em><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Server.Timeout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Server.Timeout" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Server.wind">
+<code class="sig-name descname"><span class="pre">wind</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tymth</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Server.wind"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Server.wind" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+Updates winds .tymer .tymth</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Server.serviceAxes">
+<code class="sig-name descname"><span class="pre">serviceAxes</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Server.serviceAxes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Server.serviceAxes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Service axes</p>
+<p>For each newly accepted connection in .axes create Remoter
+and add to .ixes keyed by ca</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Server.serviceConnects">
+<code class="sig-name descname"><span class="pre">serviceConnects</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Server.serviceConnects"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Server.serviceConnects" title="Permalink to this definition">¶</a></dt>
+<dd><p>Service connects is method name to be used</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Server.shutdownIx">
+<code class="sig-name descname"><span class="pre">shutdownIx</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ca</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">how</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">socket.SHUT_RDWR</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Server.shutdownIx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Server.shutdownIx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shutdown remoter given by connection address ca</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Server.shutdownSendIx">
+<code class="sig-name descname"><span class="pre">shutdownSendIx</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ca</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Server.shutdownSendIx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Server.shutdownSendIx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shutdown send on remoter given by connection address ca</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Server.shutdownReceiveIx">
+<code class="sig-name descname"><span class="pre">shutdownReceiveIx</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ca</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Server.shutdownReceiveIx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Server.shutdownReceiveIx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shutdown send on remoter given by connection address ca</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Server.closeIx">
+<code class="sig-name descname"><span class="pre">closeIx</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ca</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Server.closeIx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Server.closeIx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shutdown and close remoter given by connection address ca</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Server.closeAllIx">
+<code class="sig-name descname"><span class="pre">closeAllIx</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Server.closeAllIx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Server.closeAllIx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shutdown and close all remoter connections</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Server.close">
+<code class="sig-name descname"><span class="pre">close</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Server.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Server.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close all sockets</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Server.removeIx">
+<code class="sig-name descname"><span class="pre">removeIx</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ca</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">close</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Server.removeIx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Server.removeIx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove remoter given by connection address ca</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Server.serviceReceivesIx">
+<code class="sig-name descname"><span class="pre">serviceReceivesIx</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ca</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Server.serviceReceivesIx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Server.serviceReceivesIx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Service receives for remoter by connection address ca</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Server.serviceReceivesAllIx">
+<code class="sig-name descname"><span class="pre">serviceReceivesAllIx</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Server.serviceReceivesAllIx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Server.serviceReceivesAllIx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Service receives for all remoters in .ixes</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Server.transmitIx">
+<code class="sig-name descname"><span class="pre">transmitIx</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ca</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Server.transmitIx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Server.transmitIx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Queue data onto .txbs for remoter given by connection address ca</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Server.serviceSendsAllIx">
+<code class="sig-name descname"><span class="pre">serviceSendsAllIx</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Server.serviceSendsAllIx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Server.serviceSendsAllIx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Service transmits for all remoters in .ixes</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Server.service">
+<code class="sig-name descname"><span class="pre">service</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Server.service"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Server.service" title="Permalink to this definition">¶</a></dt>
+<dd><p>Service connects and service receives and sends for all ix.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="hio.core.tcp.serving.initServerContext">
+<code class="sig-prename descclassname"><span class="pre">hio.core.tcp.serving.</span></code><code class="sig-name descname"><span class="pre">initServerContext</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">certify</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keypath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">certpath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cafilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#initServerContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.initServerContext" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize and return context for TLS Server
+IF context is None THEN create a context</p>
+<p>IF version is None THEN create context using ssl library default
+ELSE create context with version</p>
+<p>If certify is not None then use certify value provided Otherwise use default</p>
+<p>context = context object for tls/ssl If None use default
+version = ssl protocol version If None use default
+certify = cert requirement If None use default</p>
+<blockquote>
+<div><p>ssl.CERT_NONE = 0
+ssl.CERT_OPTIONAL = 1
+ssl.CERT_REQUIRED = 2</p>
+</div></blockquote>
+<dl class="simple">
+<dt>keypath = pathname of local server side PKI private key file path</dt><dd><p>If given apply to context</p>
+</dd>
+<dt>certpath = pathname of local server side PKI public cert file path</dt><dd><p>If given apply to context</p>
+</dd>
+<dt>cafilepath = Cert Authority file path to use to verify client cert</dt><dd><p>If given apply to context</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="hio.core.tcp.serving.ServerTls">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">hio.core.tcp.serving.</span></code><code class="sig-name descname"><span class="pre">ServerTls</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">certify</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keypath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">certpath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cafilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwa</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#ServerTls"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.ServerTls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../../../../../hio.core.tcp.html#hio.core.tcp.serving.Server" title="hio.core.tcp.serving.Server"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Server</span></code></a></p>
+<p>Server with Nonblocking TLS/SSL support
+Nonblocking TCP Socket Server Class.
+Listen socket for incoming TCP connections
+RemoterTLS sockets for accepted connections</p>
+<p>See tyming.Tymee for inherited attributes, properties, and methods</p>
+<dl>
+<dt>Inherited Attributes:</dt><dd><dl class="simple">
+<dt>.ha is (host,port) duple (two tuple)</dt><dd><p>host = “” or “0.0.0.0” means listen on all interfaces</p>
+</dd>
+<dt>.eha is normalized (host, port) duple for incoming TLS connections</dt><dd><p>as external facing address for TLS context</p>
+</dd>
+</dl>
+<p>.bs is buffer size
+.ss is server listen socket for incoming accept requests
+.axes is deque of accepte connection duples (ca, cs)
+.opened is boolean, True if listen socket .ss opened. False otherwise
+.timeout is timeout in seconds for connection refresh
+.wl is WireLog instance if any
+.ixes is dict of incoming connections indexed by remote (host, port) duple</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">.context</span> <span class="pre">is</span> <span class="pre">TLS</span> <span class="pre">context</span> <span class="pre">instance</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">.version</span> <span class="pre">is</span> <span class="pre">TLS</span> <span class="pre">version</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">.certify</span> <span class="pre">is</span> <span class="pre">boolean,</span> <span class="pre">True</span> <span class="pre">to</span> <span class="pre">client</span> <span class="pre">certify,</span> <span class="pre">False</span> <span class="pre">otherwise</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">.keypath</span> <span class="pre">is</span> <span class="pre">path</span> <span class="pre">to</span> <span class="pre">key</span> <span class="pre">file</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">.certpath</span> <span class="pre">is</span> <span class="pre">path</span> <span class="pre">to</span> <span class="pre">cert</span> <span class="pre">file</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">.cafilepath</span> <span class="pre">is</span> <span class="pre">path</span> <span class="pre">to</span> <span class="pre">ca</span> <span class="pre">file</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.ServerTls.serviceAxes">
+<code class="sig-name descname"><span class="pre">serviceAxes</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#ServerTls.serviceAxes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.ServerTls.serviceAxes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Service accepteds</p>
+<p>For each new accepted connection create RemoterTLS and add to .cxes
+Not Handshaked</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.ServerTls.serviceCxes">
+<code class="sig-name descname"><span class="pre">serviceCxes</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#ServerTls.serviceCxes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.ServerTls.serviceCxes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Service handshakes for every remoter in .cxes
+If successful move to .ixes</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.ServerTls.serviceConnects">
+<code class="sig-name descname"><span class="pre">serviceConnects</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#ServerTls.serviceConnects"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.ServerTls.serviceConnects" title="Permalink to this definition">¶</a></dt>
+<dd><p>Service accept and handshake attempts
+If not already accepted and handshaked  Then</p>
+<blockquote>
+<div><p>make nonblocking attempt</p>
+</div></blockquote>
+<p>For each successful handshaked add to .ixes
+Returns handshakeds</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="hio.core.tcp.serving.Remoter">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">hio.core.tcp.serving.</span></code><code class="sig-name descname"><span class="pre">Remoter</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ca</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">refreshable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8096</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wl</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwa</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Remoter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Remoter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../../../../../hio.base.html#hio.base.tyming.Tymee" title="hio.base.tyming.Tymee"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hio.base.tyming.Tymee</span></code></a></p>
+<p>Class to service an incoming nonblocking TCP connection from a remote client.
+Should only be used from Acceptor subclass</p>
+<dl class="py attribute">
+<dt id="hio.core.tcp.serving.Remoter.Timeout">
+<code class="sig-name descname"><span class="pre">Timeout</span></code><em class="property"> <span class="pre">=</span> <span class="pre">0.0</span></em><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Remoter.Timeout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Remoter.Timeout" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Remoter.wind">
+<code class="sig-name descname"><span class="pre">wind</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tymth</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Remoter.wind"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Remoter.wind" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+Updates winds .tymer .tymth</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Remoter.shutdown">
+<code class="sig-name descname"><span class="pre">shutdown</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">how</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">socket.SHUT_RDWR</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Remoter.shutdown"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Remoter.shutdown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shutdown connected socket .cs</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Remoter.shutdownSend">
+<code class="sig-name descname"><span class="pre">shutdownSend</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Remoter.shutdownSend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Remoter.shutdownSend" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shutdown send on connected socket .cs</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Remoter.shutdownReceive">
+<code class="sig-name descname"><span class="pre">shutdownReceive</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Remoter.shutdownReceive"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Remoter.shutdownReceive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shutdown receive on connected socket .cs</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Remoter.close">
+<code class="sig-name descname"><span class="pre">close</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Remoter.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Remoter.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shutdown and close connected socket .cs</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Remoter.refresh">
+<code class="sig-name descname"><span class="pre">refresh</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Remoter.refresh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Remoter.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restart tymer</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Remoter.receive">
+<code class="sig-name descname"><span class="pre">receive</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Remoter.receive"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Remoter.receive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform non blocking receive on connected socket .cs</p>
+<p>If no data then returns None
+If connection closed then returns ‘’
+Otherwise returns data</p>
+<p>data is string in python2 and bytes in python3</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Remoter.serviceReceives">
+<code class="sig-name descname"><span class="pre">serviceReceives</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Remoter.serviceReceives"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Remoter.serviceReceives" title="Permalink to this definition">¶</a></dt>
+<dd><p>Service receives until no more</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Remoter.serviceReceiveOnce">
+<code class="sig-name descname"><span class="pre">serviceReceiveOnce</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Remoter.serviceReceiveOnce"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Remoter.serviceReceiveOnce" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve from server only one reception</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Remoter.clearRxbs">
+<code class="sig-name descname"><span class="pre">clearRxbs</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Remoter.clearRxbs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Remoter.clearRxbs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clear .rxbs</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Remoter.send">
+<code class="sig-name descname"><span class="pre">send</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Remoter.send"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Remoter.send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform non blocking send on connected socket .cs.
+Return number of bytes sent</p>
+<p>data is string in python2 and bytes in python3</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Remoter.tx">
+<code class="sig-name descname"><span class="pre">tx</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Remoter.tx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Remoter.tx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Queue data onto .txbs</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.Remoter.serviceSends">
+<code class="sig-name descname"><span class="pre">serviceSends</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#Remoter.serviceSends"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.Remoter.serviceSends" title="Permalink to this definition">¶</a></dt>
+<dd><p>Service transmits
+For each tx if all bytes sent then keep sending until partial send
+or no more to send
+If partial send reattach and return</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="hio.core.tcp.serving.RemoterTls">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">hio.core.tcp.serving.</span></code><code class="sig-name descname"><span class="pre">RemoterTls</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">certify</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keypath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">certpath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cafilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwa</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#RemoterTls"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.RemoterTls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../../../../../hio.core.tcp.html#hio.core.tcp.serving.Remoter" title="hio.core.tcp.serving.Remoter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Remoter</span></code></a></p>
+<p>Class to service an incoming nonblocking TCP/TLS connection from a remote client.
+Should only be used from Acceptor subclass
+Provides nonblocking TLS/SSL support</p>
+<dl class="py method">
+<dt id="hio.core.tcp.serving.RemoterTls.close">
+<code class="sig-name descname"><span class="pre">close</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#RemoterTls.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.RemoterTls.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shutdown and close connected socket .cs</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.RemoterTls.wrap">
+<code class="sig-name descname"><span class="pre">wrap</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#RemoterTls.wrap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.RemoterTls.wrap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrap socket .cs in ssl context</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.RemoterTls.handshake">
+<code class="sig-name descname"><span class="pre">handshake</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#RemoterTls.handshake"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.RemoterTls.handshake" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attempt nonblocking ssl handshake to .ha
+Returns True if successful
+Returns False if not so try again later</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.RemoterTls.serviceHandshake">
+<code class="sig-name descname"><span class="pre">serviceHandshake</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#RemoterTls.serviceHandshake"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.RemoterTls.serviceHandshake" title="Permalink to this definition">¶</a></dt>
+<dd><p>Service connection and handshake attempt
+If not already accepted and handshaked  Then</p>
+<blockquote>
+<div><p>make nonblocking attempt</p>
+</div></blockquote>
+<p>Returns .handshaked</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.RemoterTls.receive">
+<code class="sig-name descname"><span class="pre">receive</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#RemoterTls.receive"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.RemoterTls.receive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform non blocking receive on connected socket .cs</p>
+<p>If no data then returns None
+If connection closed then returns ‘’
+Otherwise returns data</p>
+<p>data is string in python2 and bytes in python3</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.tcp.serving.RemoterTls.send">
+<code class="sig-name descname"><span class="pre">send</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/hio/core/tcp/serving.html#RemoterTls.send"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.tcp.serving.RemoterTls.send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform non blocking send on connected socket .cs.
+Return number of bytes sent</p>
+<p>data is string in python2 and bytes in python3</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2020-2021, Samuel M. Smith.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

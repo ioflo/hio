@@ -1,0 +1,22 @@
+:mod:`hio.base`
+===============
+
+.. py:module:: hio.base
+
+.. autoapi-nested-parse::
+
+   hio.base Package
+
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   basing/index.rst
+   doing/index.rst
+   tyming/index.rst
+
+

@@ -1,0 +1,43 @@
+:mod:`hio`
+==========
+
+.. py:module:: hio
+
+.. autoapi-nested-parse::
+
+   hio package
+
+
+
+Subpackages
+-----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 3
+
+   base/index.rst
+   core/index.rst
+   demo/index.rst
+   help/index.rst
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   __main__/index.rst
+   cli/index.rst
+   daemon/index.rst
+   hioing/index.rst
+
+
+Package Contents
+----------------
+
+.. data:: __version__
+   :annotation: = 0.3.5
+
+   
+

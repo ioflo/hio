@@ -1,0 +1,19 @@
+:mod:`hio.base.basing`
+======================
+
+.. py:module:: hio.base.basing
+
+.. autoapi-nested-parse::
+
+   hio.base.basing Module
+
+
+
+Module Contents
+---------------
+
+.. data:: State
+   
+
+   
+

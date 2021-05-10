@@ -1,0 +1,20 @@
+:mod:`hio.core.serial`
+======================
+
+.. py:module:: hio.core.serial
+
+.. autoapi-nested-parse::
+
+   hio.core.serial Package
+
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   serialing/index.rst
+
+

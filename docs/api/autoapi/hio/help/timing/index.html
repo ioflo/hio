@@ -1,0 +1,406 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>hio.help.timing &mdash; hio 0.3.4 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> hio
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../readme.html">Introduction to HIO</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">src</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">hio</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li><code class="xref py py-mod docutils literal notranslate"><span class="pre">hio.help.timing</span></code></li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../../../_sources/autoapi/hio/help/timing/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-hio.help.timing">
+<span id="hio-help-timing"></span><h1><a class="reference internal" href="../../../../hio.help.html#module-hio.help.timing" title="hio.help.timing"><code class="xref py py-mod docutils literal notranslate"><span class="pre">hio.help.timing</span></code></a><a class="headerlink" href="#module-hio.help.timing" title="Permalink to this headline">¶</a></h1>
+<p>hio.help.timing module</p>
+<div class="section" id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="classes">
+<h3>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h3>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../../../hio.help.html#hio.help.timing.Timer" title="hio.help.timing.Timer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Timer</span></code></a></p></td>
+<td><p>Class to manage real elaspsed time using time module.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../../../hio.help.html#hio.help.timing.MonoTimer" title="hio.help.timing.MonoTimer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MonoTimer</span></code></a></p></td>
+<td><p>Class to manage real elaspsed time using time module but with monotonically</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py exception">
+<dt id="hio.help.timing.TimerError">
+<em class="property"><span class="pre">exception</span> </em><code class="sig-prename descclassname"><span class="pre">hio.help.timing.</span></code><code class="sig-name descname"><span class="pre">TimerError</span></code><a class="reference internal" href="../../../../_modules/hio/help/timing.html#TimerError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.help.timing.TimerError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../../../../hio.html#hio.hioing.HioError" title="hio.hioing.HioError"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hio.hioing.HioError</span></code></a></p>
+<p>Generic Timer Errors
+Usage:</p>
+<blockquote>
+<div><p>raise TimerError(“error message”)</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py exception">
+<dt id="hio.help.timing.RetroTimerError">
+<em class="property"><span class="pre">exception</span> </em><code class="sig-prename descclassname"><span class="pre">hio.help.timing.</span></code><code class="sig-name descname"><span class="pre">RetroTimerError</span></code><a class="reference internal" href="../../../../_modules/hio/help/timing.html#RetroTimerError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.help.timing.RetroTimerError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../../../../hio.help.html#hio.help.timing.TimerError" title="hio.help.timing.TimerError"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TimerError</span></code></a></p>
+<p>Error due to real time being retrograded before start time of timer
+Usage:</p>
+<blockquote>
+<div><p>raise RetroTimerError(“error message”)</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py class">
+<dt id="hio.help.timing.Timer">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">hio.help.timing.</span></code><code class="sig-name descname"><span class="pre">Timer</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">duration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwa</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/hio/help/timing.html#Timer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.help.timing.Timer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../../../../hio.html#hio.hioing.Mixin" title="hio.hioing.Mixin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hio.hioing.Mixin</span></code></a></p>
+<p>Class to manage real elaspsed time using time module.
+.. attribute:: ._start is start tyme in seconds</p>
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">._stop</span>&#160; <span class="pre">is</span> <span class="pre">stop</span> <span class="pre">tyme</span> <span class="pre">in</span> <span class="pre">seconds</span></code></dt>
+<dd></dd></dl>
+
+<dl class="simple">
+<dt>Properties:</dt><dd><p>.duration is float time duration in seconds of timer from ._start to ._stop
+.elaspsed is float time elasped in seconds since ._start
+.remaining is float time remaining in seconds until ._stop
+.expired is boolean, True if expired, False otherwise, i.e. time &gt;= ._stop</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt>
+<code class="sig-name descname"><span class="pre">.start()</span>&#160; <span class="pre">start</span> <span class="pre">timer</span> <span class="pre">at</span> <span class="pre">current</span> <span class="pre">time</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt>
+<code class="sig-name descname"><span class="pre">.restart()</span> <span class="pre">=</span> <span class="pre">restart</span> <span class="pre">timer</span> <span class="pre">at</span> <span class="pre">last</span> <span class="pre">._stop</span> <span class="pre">so</span> <span class="pre">no</span> <span class="pre">time</span> <span class="pre">lost</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="hio.help.timing.Timer.duration">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">duration</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/hio/help/timing.html#Timer.duration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.help.timing.Timer.duration" title="Permalink to this definition">¶</a></dt>
+<dd><p>duration property getter,  .duration = ._stop - ._start
+.duration is float duration tyme</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.help.timing.Timer.elapsed">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">elapsed</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/hio/help/timing.html#Timer.elapsed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.help.timing.Timer.elapsed" title="Permalink to this definition">¶</a></dt>
+<dd><p>elapsed time property getter,
+Returns elapsed time in seconds (fractional) since ._start.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.help.timing.Timer.remaining">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">remaining</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/hio/help/timing.html#Timer.remaining"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.help.timing.Timer.remaining" title="Permalink to this definition">¶</a></dt>
+<dd><p>remaining time property getter,
+Returns remaining time in seconds (fractional) before ._stop.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.help.timing.Timer.expired">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">expired</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/hio/help/timing.html#Timer.expired"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.help.timing.Timer.expired" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if timer has expired, False otherwise.
+time.time() &gt;= ._stop,</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.help.timing.Timer.start">
+<code class="sig-name descname"><span class="pre">start</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/hio/help/timing.html#Timer.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.help.timing.Timer.start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Starts Timer of duration secs at start time start secs.
+If duration not provided then uses current duration
+If start not provided then starts at current time.time()</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.help.timing.Timer.restart">
+<code class="sig-name descname"><span class="pre">restart</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/hio/help/timing.html#Timer.restart"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.help.timing.Timer.restart" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lossless restart of Timer at start = ._stop for duration if provided,
+Otherwise current duration.
+No time lost. Useful to extend Timer so no time lost</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="hio.help.timing.MonoTimer">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">hio.help.timing.</span></code><code class="sig-name descname"><span class="pre">MonoTimer</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">duration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retro</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/hio/help/timing.html#MonoTimer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.help.timing.MonoTimer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../../../../hio.help.html#hio.help.timing.Timer" title="hio.help.timing.Timer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Timer</span></code></a></p>
+<p>Class to manage real elaspsed time using time module but with monotonically
+increating time guarantee in spite of system time being retrograded.</p>
+<p>If the system clock is retrograded (moved back in time) while the timer is
+running then time.time() could move to before the start time.
+MonoTimer detects this retrograde and if retro is True then
+retrogrades the start and stop times back Otherwise it raises a TimerRetroError.
+MonoTimer is not able to detect a prograded clock (moved forward in time)</p>
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">._start</span> <span class="pre">is</span> <span class="pre">start</span> <span class="pre">time</span> <span class="pre">in</span> <span class="pre">seconds</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">._stop</span>&#160; <span class="pre">is</span> <span class="pre">stop</span> <span class="pre">time</span> <span class="pre">in</span> <span class="pre">seconds</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">._last</span> <span class="pre">is</span> <span class="pre">last</span> <span class="pre">measured</span> <span class="pre">time</span> <span class="pre">in</span> <span class="pre">seconds</span> <span class="pre">with</span> <span class="pre">retrograde</span> <span class="pre">handling</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">.retro</span> <span class="pre">is</span> <span class="pre">boolean</span> <span class="pre">If</span> <span class="pre">True</span> <span class="pre">retrograde</span> <span class="pre">._start</span> <span class="pre">and</span> <span class="pre">._stop</span> <span class="pre">when</span> <span class="pre">time</span> <span class="pre">is</span> <span class="pre">retrograded.</span></code></dt>
+<dd></dd></dl>
+
+<dl class="simple">
+<dt>Properties:</dt><dd><p>.duration is float time duration in seconds of timer from ._start to ._stop
+.elaspsed is float time elasped in seconds since ._start
+.remaining is float time remaining in seconds until ._stop
+.expired is boolean True if expired, False otherwise, i.e. time &gt;= ._stop
+.latest is float latest measured time in seconds with retrograte handling</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt>
+<code class="sig-name descname"><span class="pre">.start()</span> <span class="pre">=</span> <span class="pre">start</span> <span class="pre">timer</span> <span class="pre">at</span> <span class="pre">current</span> <span class="pre">time</span> <span class="pre">returns</span> <span class="pre">start</span> <span class="pre">time</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt>
+<code class="sig-name descname"><span class="pre">.restart()</span> <span class="pre">=</span> <span class="pre">restart</span> <span class="pre">timer</span> <span class="pre">at</span> <span class="pre">last</span> <span class="pre">._stop</span> <span class="pre">so</span> <span class="pre">no</span> <span class="pre">time</span> <span class="pre">lost,</span> <span class="pre">returns</span> <span class="pre">start</span> <span class="pre">time</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="hio.help.timing.MonoTimer.elapsed">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">elapsed</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/hio/help/timing.html#MonoTimer.elapsed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.help.timing.MonoTimer.elapsed" title="Permalink to this definition">¶</a></dt>
+<dd><p>elapsed time property getter,
+Returns elapsed time in seconds (fractional) since ._start.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.help.timing.MonoTimer.remaining">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">remaining</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/hio/help/timing.html#MonoTimer.remaining"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.help.timing.MonoTimer.remaining" title="Permalink to this definition">¶</a></dt>
+<dd><p>remaining time property getter,
+Returns remaining time in seconds (fractional) before ._stop.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.help.timing.MonoTimer.expired">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">expired</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/hio/help/timing.html#MonoTimer.expired"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.help.timing.MonoTimer.expired" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if timer has expired, False otherwise.
+.latest &gt;= ._stop,</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.help.timing.MonoTimer.latest">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">latest</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/hio/help/timing.html#MonoTimer.latest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.help.timing.MonoTimer.latest" title="Permalink to this definition">¶</a></dt>
+<dd><p>latest measured time property getter,
+Returns latest measured time in seconds adjusted for retrograded system time.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2020-2021, Samuel M. Smith.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,353 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>hio.core.coring &mdash; hio 0.3.4 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> hio
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Introduction to HIO</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">src</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">hio</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../../hio.html">hio</a> &raquo;</li>
+        
+      <li>hio.core.coring</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for hio.core.coring</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- encoding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">hio.core.coring Module</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+
+<span class="kn">import</span> <span class="nn">netifaces</span>
+
+<span class="kn">from</span> <span class="nn">..hioing</span> <span class="kn">import</span> <span class="n">ValidationError</span>
+
+
+<div class="viewcode-block" id="normalizeHost"><a class="viewcode-back" href="../../../hio.core.html#hio.core.coring.normalizeHost">[docs]</a><span class="k">def</span> <span class="nf">normalizeHost</span><span class="p">(</span><span class="n">host</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns ip address host string in normalized dotted form or empty string</span>
+<span class="sd">    converts host parameter which may be the dns name or ip address</span>
+<span class="sd">    Prefers ipv4 addresses over ipv6 in that it will only return the ipv6</span>
+<span class="sd">    address if no ipv4 address equivalent is available</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">host</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+        <span class="n">host</span> <span class="o">=</span> <span class="s2">&quot;0.0.0.0&quot;</span>
+
+    <span class="k">try</span><span class="p">:</span>  <span class="c1"># try ipv4</span>
+        <span class="n">info</span> <span class="o">=</span>  <span class="n">socket</span><span class="o">.</span><span class="n">getaddrinfo</span><span class="p">(</span><span class="n">host</span><span class="p">,</span>
+                                   <span class="kc">None</span><span class="p">,</span>
+                                   <span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span>
+                                   <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_DGRAM</span><span class="p">,</span>
+                                   <span class="n">socket</span><span class="o">.</span><span class="n">IPPROTO_IP</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">socket</span><span class="o">.</span><span class="n">gaierror</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span> <span class="c1"># try ipv6</span>
+        <span class="k">if</span> <span class="n">host</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;0.0.0.0&quot;</span><span class="p">):</span>
+            <span class="n">host</span> <span class="o">=</span> <span class="s2">&quot;::&quot;</span>
+
+        <span class="n">info</span> <span class="o">=</span>  <span class="n">socket</span><span class="o">.</span><span class="n">getaddrinfo</span><span class="p">(</span><span class="n">host</span><span class="p">,</span>
+                                    <span class="kc">None</span><span class="p">,</span>
+                                    <span class="n">socket</span><span class="o">.</span><span class="n">AF_INET6</span><span class="p">,</span>
+                                    <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_DGRAM</span><span class="p">,</span>
+                                    <span class="n">socket</span><span class="o">.</span><span class="n">IPPROTO_IP</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">info</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="s2">&quot;Cannot resolve address for host &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">host</span><span class="p">))</span>
+
+    <span class="n">host</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">4</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">host</span></div>
+
+
+<div class="viewcode-block" id="getDefaultHost"><a class="viewcode-back" href="../../../hio.core.html#hio.core.coring.getDefaultHost">[docs]</a><span class="k">def</span> <span class="nf">getDefaultHost</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns host ip address of default interface using netifaces</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">iface</span> <span class="o">=</span> <span class="n">netifaces</span><span class="o">.</span><span class="n">gateways</span><span class="p">()[</span><span class="s1">&#39;default&#39;</span><span class="p">][</span><span class="n">netifaces</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">info</span> <span class="o">=</span> <span class="n">netifaces</span><span class="o">.</span><span class="n">ifaddresses</span><span class="p">(</span><span class="n">iface</span><span class="p">)[</span><span class="n">netifaces</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">host</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;addr&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">host</span></div>
+
+
+<div class="viewcode-block" id="getDefaultBroadcast"><a class="viewcode-back" href="../../../hio.core.html#hio.core.coring.getDefaultBroadcast">[docs]</a><span class="k">def</span> <span class="nf">getDefaultBroadcast</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns broadcast ip address of default interface using netifaces</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">iface</span> <span class="o">=</span>  <span class="n">netifaces</span><span class="o">.</span><span class="n">gateways</span><span class="p">()[</span><span class="s1">&#39;default&#39;</span><span class="p">][</span><span class="n">netifaces</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">info</span> <span class="o">=</span> <span class="n">netifaces</span><span class="o">.</span><span class="n">ifaddresses</span><span class="p">(</span><span class="n">iface</span><span class="p">)[</span><span class="n">netifaces</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">bcast</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;broadcast&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">bcast</span></div>
+
+
+<div class="viewcode-block" id="arpCreate"><a class="viewcode-back" href="../../../hio.core.html#hio.core.coring.arpCreate">[docs]</a><span class="k">def</span> <span class="nf">arpCreate</span><span class="p">(</span><span class="n">ether</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">interface</span><span class="o">=</span><span class="s2">&quot;en0&quot;</span><span class="p">,</span> <span class="n">temp</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create arp entry for ethernet mac address ether at ip address host on interface</span>
+<span class="sd">    If temp is false then the entry is permanent otherwise its temporary</span>
+
+<span class="sd">    Assumes added /etc/sudoers entry to run arp with no password for user&#39;s group</span>
+<span class="sd">    $ sudo visudo</span>
+
+<span class="sd">    ## Group to run arp as root with no password</span>
+<span class="sd">    Cmnd_Alias  ARP = /usr/sbin/arp</span>
+<span class="sd">    %arp_group ALL=(ALL) NOPASSWD: ARP</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">temp</span> <span class="o">=</span> <span class="s2">&quot;temp&quot;</span> <span class="k">if</span> <span class="n">temp</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">console</span><span class="o">.</span><span class="n">terse</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">: Creating </span><span class="si">{1}</span><span class="s2"> arp entry for </span><span class="si">{2}</span><span class="s2"> at </span><span class="si">{3}</span><span class="s2"> on </span><span class="si">{4}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                        <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                                        <span class="n">temp</span><span class="p">,</span>
+                                        <span class="n">ether</span><span class="p">,</span>
+                                        <span class="n">host</span><span class="p">,</span>
+                                        <span class="n">interface</span><span class="p">))</span>
+    <span class="n">console</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+    <span class="c1"># sudo arp -s 10.0.2.49 70:b3:d5:0:e0:30 ifscope en3 temp</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">process</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;sudo&quot;</span><span class="p">,</span>
+                                  <span class="s2">&quot;/usr/sbin/arp&quot;</span><span class="p">,</span>
+                                  <span class="s2">&quot;-s&quot;</span><span class="p">,</span>
+                                  <span class="n">host</span><span class="p">,</span>
+                                  <span class="n">ether</span><span class="p">,</span>
+                                  <span class="s2">&quot;ifscope&quot;</span><span class="p">,</span>
+                                  <span class="n">interface</span><span class="p">,</span>
+                                  <span class="n">temp</span><span class="p">],</span>
+                                 <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">SubprocessError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+        <span class="n">console</span><span class="o">.</span><span class="n">terse</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">: Failed Creation of </span><span class="si">{1}</span><span class="s2"> arp entry for </span><span class="si">{2}</span><span class="s2"> at </span><span class="si">{3}</span><span class="s2"> on </span><span class="si">{4}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                                <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                                                <span class="n">temp</span><span class="p">,</span>
+                                                <span class="n">ether</span><span class="p">,</span>
+                                                <span class="n">host</span><span class="p">,</span>
+                                                <span class="n">interface</span><span class="p">))</span>
+    <span class="n">console</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="arpDelete"><a class="viewcode-back" href="../../../hio.core.html#hio.core.coring.arpDelete">[docs]</a><span class="k">def</span> <span class="nf">arpDelete</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">interface</span><span class="o">=</span><span class="s2">&quot;en0&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Delete arp entry for ip address host on interface</span>
+
+<span class="sd">    Assumes added /etc/sudoers entry to run arp with no password for user&#39;s group</span>
+<span class="sd">    $ sudo visudo</span>
+
+<span class="sd">    ## Group to run arp as root with no password</span>
+<span class="sd">    Cmnd_Alias  ARP = /usr/sbin/arp</span>
+<span class="sd">    %arp_group ALL=(ALL) NOPASSWD: ARP</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">console</span><span class="o">.</span><span class="n">terse</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">: Deleting arp entry at </span><span class="si">{1}</span><span class="s2"> on </span><span class="si">{2}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                        <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                                        <span class="n">host</span><span class="p">,</span>
+                                        <span class="n">interface</span><span class="p">))</span>
+    <span class="n">console</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+    <span class="c1"># sudo arp -d 10.0.2.49 ifscope en3</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">process</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;sudo&quot;</span><span class="p">,</span>
+                                  <span class="s2">&quot;/usr/sbin/arp&quot;</span><span class="p">,</span>
+                                  <span class="s2">&quot;-d&quot;</span><span class="p">,</span>
+                                  <span class="n">host</span><span class="p">,</span>
+                                  <span class="s2">&quot;ifscope&quot;</span><span class="p">,</span>
+                                  <span class="n">interface</span><span class="p">],</span>
+                                 <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">SubprocessError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+        <span class="n">console</span><span class="o">.</span><span class="n">terse</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">: Failed Deletion of arp entry at </span><span class="si">{1}</span><span class="s2"> on </span><span class="si">{2}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                                <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                                                <span class="n">host</span><span class="p">,</span>
+                                                <span class="n">interface</span><span class="p">))</span>
+    <span class="n">console</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span></div>
+
+
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2020-2021, Samuel M. Smith.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

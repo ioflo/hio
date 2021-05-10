@@ -1,0 +1,104 @@
+:mod:`hio.core.udp.udping`
+==========================
+
+.. py:module:: hio.core.udp.udping
+
+.. autoapi-nested-parse::
+
+   hio.core.udping Module
+
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   hio.core.udp.udping.SocketUdpNb
+
+
+
+
+Attributes
+~~~~~~~~~~
+
+.. autoapisummary::
+
+   hio.core.udp.udping.UDP_MAX_DATAGRAM_SIZE
+   hio.core.udp.udping.UDP_MAX_SAFE_PAYLOAD
+   hio.core.udp.udping.UDP_MAX_PACKET_SIZE
+   hio.core.udp.udping.PeerUdp
+
+
+.. data:: UDP_MAX_DATAGRAM_SIZE
+   
+
+   
+
+.. data:: UDP_MAX_SAFE_PAYLOAD
+   :annotation: = 548
+
+   
+
+.. data:: UDP_MAX_PACKET_SIZE
+   
+
+   
+
+.. class:: SocketUdpNb(ha=None, host='', port=55000, bufsize=1024, wl=None, bcast=False)
+
+
+   Bases: :py:obj:`object`
+
+   Class to manage non blocking I/O on UDP socket.
+
+   .. method:: actualBufSizes(self)
+
+      Returns duple of the the actual socket send and receive buffer size
+      (send, receive)
+
+
+   .. method:: open(self)
+
+      Opens socket in non blocking mode.
+
+      if socket not closed properly, binding socket gets error
+         socket.error: (48, 'Address already in use')
+
+
+   .. method:: reopen(self)
+
+      Idempotently open socket
+
+
+   .. method:: close(self)
+
+      Closes  socket and logs if any
+
+
+   .. method:: receive(self)
+
+      Perform non blocking read on  socket.
+
+      returns tuple of form (data, sa)
+      if no data then returns (b'',None)
+      but always returns a tuple with two elements
+
+
+   .. method:: send(self, data, da)
+
+      Perform non blocking send on  socket.
+
+      data is string in python2 and bytes in python3
+      da is destination address tuple (destHost, destPort)
+
+
+
+.. data:: PeerUdp
+   
+
+   
+

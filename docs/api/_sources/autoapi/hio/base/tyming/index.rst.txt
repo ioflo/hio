@@ -1,0 +1,233 @@
+:mod:`hio.base.tyming`
+======================
+
+.. py:module:: hio.base.tyming
+
+.. autoapi-nested-parse::
+
+   hio.core.tyming Module
+
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   hio.base.tyming.Tymist
+   hio.base.tyming.Tymee
+   hio.base.tyming.Tymer
+
+
+
+
+.. class:: Tymist(tyme=0.0, tock=None, **kwa)
+
+
+   Bases: :py:obj:`hio.hioing.Mixin`
+
+   Tymist keeps artificial or simulated or cycle time, called tyme.
+   Provides relative cycle time, tyme, in seconds with .tyme property
+   in incremets of .tock seconds.
+   .tyme is advanced one .tock increment with .tick method.
+   .tyme may be synchronized with real time by a .tyme manager
+
+   Class Attributes:
+       .Tock is default .tock
+
+   Attributes:
+
+   Properties:
+       .tyme is float relative cycle time, .tyme is artificial time
+       .tock is float tyme increment of .tick()
+
+   .. method:: .tick increments .tyme by one .tock or provided tock
+
+      
+      
+      
+
+   .. attribute:: Tock
+      :annotation: = 0.03125
+
+      
+
+   .. method:: tyme(self)
+      :property:
+
+      tyme property getter, get ._tyme
+      .tyme is float cycle time in seconds
+
+
+   .. method:: tock(self)
+      :property:
+
+      tock property getter, get ._tock
+      .tock is float cycle time .tyme increment in seconds
+
+
+   .. method:: tick(self, tock=None)
+
+      Advance cycle time .tyme by tock seconds when provided othewise by .tock
+      and return new .tyme
+      :param tock is float of amount of time in seconds to change .tyme:
+
+
+   .. method:: tymen(self)
+
+      Returns function wrapper closure tymth that when called returns .tyme.
+      This enables read only injection of .tyme into any object that wants to
+      be on or access this Tymist's tyme base.
+
+
+
+.. class:: Tymee(tymth=None, **kwa)
+
+
+   Bases: :py:obj:`hio.hioing.Mixin`
+
+   Tymee has .tyme property that returns the artificial or simulated or cycle time
+   from its referenced Tymist instance ._tymist.
+
+   Attributes:
+
+   Properties:
+       .tyme is float relative cycle time of associated Tymist .tyme obtained
+           via injected .tymth function wrapper closure.
+       .tymth is function wrapper closure returned by Tymist .tymeth() method.
+           When .tymth is called it returns associated Tymist .tyme.
+           .tymth provides injected dependency on Tymist tyme base.
+
+   .. method:: .wind  injects ._tymth dependency from associated Tymist to get its .tyme
+
+      
+      
+
+   Hidden:
+       ._tymth is injected function wrapper closure returned by .tymen() of
+           associated Tymist instance that returns Tymist .tyme. when called.
+
+   .. method:: tyme(self)
+      :property:
+
+      tyme property getter, get ._tyme
+      .tyme is float cycle time in seconds
+
+
+   .. method:: tymth(self)
+      :property:
+
+      tymth property getter, get ._tymth
+      returns own copy of tymist.tynth function wrapper closure for subsequent
+      injection into related objects that want to be on same tymist tyme base.
+
+
+   .. method:: wind(self, tymth)
+
+      Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+      Override in subclasses to update any dependencies on a change in
+      tymist.tymth base
+
+
+
+.. class:: Tymer(duration=None, start=None, **kwa)
+
+
+   Bases: :py:obj:`Tymee`
+
+   Tymer class to measure cycle time given by .tyme property of Tymist instance.
+   tyme is relative cycle time either artificial or real
+
+   Inherited Attributes
+
+   Attributes:
+
+   Inherited Properties:
+       .tyme is float relative cycle time of associated Tymist .tyme obtained
+           via injected .tymth function wrapper closure.
+       .tymth is function wrapper closure returned by Tymist .tymeth() method.
+           When .tymth is called it returns associated Tymist .tyme.
+           .tymth provides injected dependency on Tymist tyme base.
+
+   Properties:
+       .duration = tyme duration of tymer in seconds from ._start to ._stop
+       .elaspsed = tyme elasped in seconds  since ._start
+       .remaining = tyme remaining in seconds  until ._stop
+       .expired = True if expired, False otherwise, i.e. .tyme >= ._stop
+
+   Inherited Methods:
+       .wind is injects ._tymth dependency
+
+   .. method:: .start() = start tymer at current .tyme
+
+      
+
+   .. method:: .restart() = restart tymer at last ._stop so no time lost
+
+      
+      
+
+   Hidden:
+       ._tymth is injected function wrapper closure returned by .tymen() of
+           associated Tymist instance that returns Tymist .tyme. when called.
+       ._start is start tyme in seconds
+       ._stop  is stop tyme in seconds
+
+   .. attribute:: Duration
+      :annotation: = 0.0
+
+      
+
+   .. method:: duration(self)
+      :property:
+
+      duration property getter,  .duration = ._stop - ._start
+      .duration is float duration tyme
+
+
+   .. method:: elapsed(self)
+      :property:
+
+      elapsed tyme property getter,
+      Returns elapsed tyme in seconds (fractional) since ._start.
+
+
+   .. method:: remaining(self)
+      :property:
+
+      remaining tyme property getter,
+      Returns remaining tyme in seconds (fractional) before ._stop.
+
+
+   .. method:: expired(self)
+      :property:
+
+      Returns True if tymer has expired, False otherwise.
+      .tyme >= ._stop,
+
+
+   .. method:: wind(self, tymth)
+
+      Inject new ._tymist and any other bundled tymee references
+      Update any dependencies on a change in ._tymist:
+          starts over itself at new ._tymists time
+
+
+   .. method:: start(self, duration=None, start=None)
+
+      Starts Tymer of duration secs at start time start secs.
+      If duration not provided then uses current duration
+      If start not provided then starts at current .tyme
+
+
+   .. method:: restart(self, duration=None)
+
+      Lossless restart of Tymer at .tyme = ._stop for duration if provided,
+      current duration otherwise
+      No time lost. Useful to extend Tymer so no time lost
+
+
+

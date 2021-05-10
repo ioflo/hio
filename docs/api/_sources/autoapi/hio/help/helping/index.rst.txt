@@ -1,0 +1,38 @@
+:mod:`hio.help.helping`
+=======================
+
+.. py:module:: hio.help.helping
+
+.. autoapi-nested-parse::
+
+   hio.help.helping module
+
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   hio.help.helping.copy_func
+
+
+
+.. function:: copy_func(f, name=None)
+
+   Copy a function in detail.
+   To change name of func provide name parameter
+
+   functools to update_wrapper assigns and updates following attributes
+   WRAPPER_ASSIGNMENTS = ('__module__', '__name__', '__qualname__', '__doc__',
+                      '__annotations__')
+   WRAPPER_UPDATES = ('__dict__',)
+   Based on
+   https://stackoverflow.com/questions/6527633/how-can-i-make-a-deepcopy-of-a-function-in-python
+   https://stackoverflow.com/questions/13503079/how-to-create-a-copy-of-a-python-function
+
+

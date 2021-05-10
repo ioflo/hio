@@ -1,0 +1,294 @@
+:mod:`hio.core.tcp.clienting`
+=============================
+
+.. py:module:: hio.core.tcp.clienting
+
+.. autoapi-nested-parse::
+
+   hio.core.tcp.clienting Module
+
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   hio.core.tcp.clienting.Client
+   hio.core.tcp.clienting.ClientTls
+
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   hio.core.tcp.clienting.openClient
+
+
+
+.. function:: openClient(cls=None, **kwa)
+
+   Wrapper to create and open Client instances
+   When used in with statement block, calls .close() on exit of with block
+
+   :param cls is Class instance of subclass instance:
+
+   Usage:
+       with openClient() as client0:
+           client0.accept()
+
+       with openClient(cls=ClientTls) as client0:
+           client0.accept()
+
+
+.. class:: Client(timeout=None, ha=None, host='127.0.0.1', port=56000, reconnectable=None, bs=8096, txbs=None, rxbs=None, wl=None, **kwa)
+
+
+   Bases: :py:obj:`hio.base.tyming.Tymee`
+
+   Nonblocking TCP Socket Client Class.
+
+   See tyming.Tymee for inherited attributes, properties, and methods
+
+   Attributes:
+
+   Properties:
+
+   Methods:
+
+   .. attribute:: Timeout
+      :annotation: = 0.0
+
+      
+
+   .. attribute:: Reconnectable
+      :annotation: = False
+
+      
+
+   .. method:: host(self)
+      :property:
+
+      Property that returns host in .ha duple
+
+
+   .. method:: port(self)
+      :property:
+
+      Property that returns port in .ha duple
+
+
+   .. method:: accepted(self)
+      :property:
+
+      Property that returns accepted state of TCP socket
+
+
+   .. method:: connected(self)
+      :property:
+
+      Property that returns connected state of TCP socket
+      Non-tls tcp is connected when accepted
+
+
+   .. method:: wind(self, tymth)
+
+      Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+      Updates winds .tymer .tymth
+
+
+   .. method:: reinitHostPort(self, ha=None, hostname='127.0.0.1', port=56000)
+
+      Reinit self.ha and self.hostname from ha = (host, port) or hostname port
+      self.ha is of form (host, port) where host is either dns name or ip address
+      self.hostname is hostname as dns name
+      host eventually is host ip address output from normalizeHost()
+
+
+   .. method:: actualBufSizes(self)
+
+      Returns duple of the the actual socket send and receive buffer size
+      (send, receive)
+
+
+   .. method:: open(self)
+
+      Opens connection socket in non blocking mode.
+
+      if socket not closed properly, binding socket gets error
+        socket.error: (48, 'Address already in use')
+
+
+   .. method:: reopen(self)
+
+      Idempotently opens socket
+
+
+   .. method:: shutdown(self, how=socket.SHUT_RDWR)
+
+      Shutdown connected socket .cs
+
+
+   .. method:: shutdownSend(self)
+
+      Shutdown send on connected socket .cs
+
+
+   .. method:: shutdownReceive(self)
+
+      Shutdown receive on connected socket .cs
+
+
+   .. method:: close(self)
+
+      Shutdown and close connected socket .cs
+
+
+   .. method:: refresh(self)
+
+      Restart timer
+
+
+   .. method:: accept(self)
+
+      Attempt nonblocking acceptance connect to .ha
+      Returns True if successful
+      Returns False if not so try again later
+
+
+   .. method:: connect(self)
+
+      Attempt nonblocking connect to .ha
+      Returns True if successful
+      Returns False if not so try again later
+      For non-TLS tcp connect is done when accepted
+      This is placeholder for subclass Tls
+
+
+   .. method:: serviceConnect(self)
+
+      Service connection attempt
+      If not already connected make a nonblocking attempt
+      Returns .connected
+
+
+   .. method:: receive(self)
+
+      Perform non blocking receive from connected socket .cs
+
+      If no data then returns None
+      If connection closed then returns empty
+      Otherwise returns data
+      data is string in python2 and bytes in python3
+
+
+   .. method:: serviceReceives(self)
+
+      Service receives until no more
+
+
+   .. method:: serviceReceiveOnce(self)
+
+      Retrieve from server only one reception
+
+
+   .. method:: clearRxbs(self)
+
+      Clear .rxbs
+
+
+   .. method:: send(self, data)
+
+      Perform non blocking send on connected socket .cs.
+      Return number of bytes sent
+      data is string in python2 and bytes in python3
+
+
+   .. method:: tx(self, data)
+
+      Copy data onto .txbs, .extend copies data.
+
+
+   .. method:: serviceSends(self)
+
+      Service sends (transmits) of data in .txbs bytearray
+      Attempt to send all of .txbs. Delete what is actually sent.
+
+
+   .. method:: service(self)
+
+      Service connect, txbs, and receives.
+
+
+
+.. class:: ClientTls(tymth, context=None, version=None, certify=None, hostify=None, certedhost='', keypath=None, certpath=None, cafilepath=None, **kwa)
+
+
+   Bases: :py:obj:`Client`
+
+   Outgoer with Nonblocking TLS/SSL support
+   Nonblocking TCP Socket Client Class.
+
+   Attributes:
+
+
+   Properties:
+
+
+   Methods:
+
+   .. method:: connected(self)
+      :property:
+
+      Property that returns connected state of TCP socket
+      TLS tcp is connected when accepted and handshake completed
+
+
+   .. method:: close(self)
+
+      Shutdown and close connected socket .cs
+
+
+   .. method:: wrap(self)
+
+      Wrap socket .cs in ssl context
+
+
+   .. method:: handshake(self)
+
+      Attempt nonblocking ssl handshake to .ha
+      Returns True if successful
+      Returns False if not so try again later
+
+
+   .. method:: connect(self)
+
+      Attempt nonblocking connect to .ha
+      Returns True if successful
+      Returns False if not so try again later
+      Connected when both accepted connection and TLS handshake complete
+
+
+   .. method:: receive(self)
+
+      Perform non blocking receive from connected socket .cs
+
+      If no data then returns None
+      If connection closed then returns ''
+      Otherwise returns data
+      data is string in python2 and bytes in python3
+
+
+   .. method:: send(self, data)
+
+      Perform non blocking send on connected socket .cs.
+      Return number of bytes sent
+      data is string in python2 and bytes in python3
+
+
+

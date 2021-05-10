@@ -1,0 +1,697 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>hio.core.serial package &mdash; hio 0.3.4 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="hio.core.tcp package" href="hio.core.tcp.html" />
+    <link rel="prev" title="hio.core package" href="hio.core.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> hio
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme.html">Introduction to HIO</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">src</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="hio.html">hio package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="hio.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="hio.base.html">hio.base package</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="hio.core.html">hio.core package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.demo.html">hio.demo package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hio.help.html">hio.help package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hio.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hio.html#module-hio.cli">hio.cli module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hio.html#module-hio.daemon">hio.daemon module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hio.html#module-hio.hioing">hio.hioing module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hio.html#module-hio">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="autoapi/index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">hio</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="modules.html">src</a> &raquo;</li>
+        
+          <li><a href="hio.html">hio package</a> &raquo;</li>
+        
+          <li><a href="hio.core.html">hio.core package</a> &raquo;</li>
+        
+      <li>hio.core.serial package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/hio.core.serial.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="hio-core-serial-package">
+<h1>hio.core.serial package<a class="headerlink" href="#hio-core-serial-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-hio.core.serial.serialing">
+<span id="hio-core-serial-serialing-module"></span><h2>hio.core.serial.serialing module<a class="headerlink" href="#module-hio.core.serial.serialing" title="Permalink to this headline">¶</a></h2>
+<p>Asynchronous (nonblocking) serial io</p>
+<dl class="py class">
+<dt id="hio.core.serial.serialing.Console">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">hio.core.serial.serialing.</span></code><code class="sig-name descname"><span class="pre">Console</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Console"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Console" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class to manage non blocking io on serial console in canonical mode.</p>
+<p>Opens non blocking read file descriptor on console
+Use instance method .close to close file descriptor
+Use instance methods .getline &amp; .put to read &amp; write to console
+Needs os module</p>
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">.bs</span> <span class="pre">is</span> <span class="pre">max</span> <span class="pre">buffer</span> <span class="pre">size</span> <span class="pre">for</span> <span class="pre">each</span> <span class="pre">read</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">.fd</span>&#160; <span class="pre">is</span> <span class="pre">file</span> <span class="pre">descriptor</span> <span class="pre">for</span> <span class="pre">console</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">.opened</span> <span class="pre">is</span> <span class="pre">Boolean</span> <span class="pre">that</span> <span class="pre">indicates</span> <span class="pre">open</span> <span class="pre">state</span> <span class="pre">of</span> <span class="pre">.fd</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt>
+<code class="sig-name descname"><span class="pre">.reopen</span>&#160; <span class="pre">closes</span> <span class="pre">and</span> <span class="pre">reopens</span> <span class="pre">.fd,</span> <span class="pre">sets</span> <span class="pre">.opened</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt>
+<code class="sig-name descname"><span class="pre">.close</span>&#160;&#160; <span class="pre">closes</span> <span class="pre">.fd</span> <span class="pre">unsets</span> <span class="pre">.opened</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt>
+<code class="sig-name descname"><span class="pre">.getLine</span>&#160; <span class="pre">gets</span> <span class="pre">one</span> <span class="pre">newline</span> <span class="pre">terminated</span> <span class="pre">line</span> <span class="pre">or</span> <span class="pre">bs</span> <span class="pre">characters</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt>
+<code class="sig-name descname"><span class="pre">.put</span>&#160; <span class="pre">puts</span> <span class="pre">characters</span></code></dt>
+<dd></dd></dl>
+
+<dl class="simple">
+<dt>Hidden:</dt><dd><p>._line is bytearray of line buffer</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt id="hio.core.serial.serialing.Console.MaxBufSize">
+<code class="sig-name descname"><span class="pre">MaxBufSize</span></code><em class="property"> <span class="pre">=</span> <span class="pre">256</span></em><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Console.MaxBufSize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Console.MaxBufSize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.serial.serialing.Console.__init__">
+<code class="sig-name descname"><span class="pre">__init__</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Console.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Console.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialization method for instance.
+Creates attributes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.serial.serialing.Console.close">
+<code class="sig-name descname"><span class="pre">close</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Console.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Console.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Closes fd.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.serial.serialing.Console.getLine">
+<code class="sig-name descname"><span class="pre">getLine</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Console.getLine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Console.getLine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets nonblocking line of bytes from console
+of up to bs characters with eol newline if in bs characters</p>
+<p>Returns empty string if no characters available else returns line.
+Assumes canonical mode where no chars available to read until eol newline
+is entered and eol is included in the read characters.</p>
+<p>Strips eol newline before returning line.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.serial.serialing.Console.put">
+<code class="sig-name descname"><span class="pre">put</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">b'\n'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Console.put"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Console.put" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes data bytes to console and return number of bytes from data written.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.serial.serialing.Console.reopen">
+<code class="sig-name descname"><span class="pre">reopen</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Console.reopen"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Console.reopen" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens fd on terminal console in non blocking mode.</p>
+<p>port is the serial port device path name
+or if ‘’ then use os.ctermid() which
+returns path name of console usually ‘/dev/tty’</p>
+<p>os.O_NONBLOCK makes non blocking io
+os.O_RDWR allows both read and write.
+os.O_NOCTTY don’t make this the controlling terminal of the process
+O_NOCTTY is only for cross platform portability BSD never makes it the
+controlling terminal</p>
+<p>Don’t use print at same time since it will mess up non blocking reads.</p>
+<p>Input mode assumes Canonical means no characters available until a newline
+It appears that canonical mode only applies to the console os.ctermid().
+For other serial ports the characters are available immediately.</p>
+<p>os.isatty(fd)
+Return True if the file descriptor fd is open and connected to a
+tty(-like) device, else False.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="hio.core.serial.serialing.ConsoleServer">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">hio.core.serial.serialing.</span></code><code class="sig-name descname"><span class="pre">ConsoleServer</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">puts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lines</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwa</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#ConsoleServer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.ConsoleServer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#hio.core.serial.serialing.Console" title="hio.core.serial.serialing.Console"><code class="xref py py-class docutils literal notranslate"><span class="pre">hio.core.serial.serialing.Console</span></code></a></p>
+<p>Class that extends Console with service interface.</p>
+<dl class="simple">
+<dt>Inherited Attributes:</dt><dd><p>.bs is max buffer size for each read
+.fd  is file descriptor for console
+.opened is Boolean that indicates open state of .fd</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">.puts</span> <span class="pre">is</span> <span class="pre">bytearray</span> <span class="pre">of</span> <span class="pre">bytes</span> <span class="pre">to</span> <span class="pre">put</span> <span class="pre">on</span> <span class="pre">serial</span> <span class="pre">port</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">.lines</span> <span class="pre">is</span> <span class="pre">deque</span> <span class="pre">of</span> <span class="pre">lines</span> <span class="pre">of</span> <span class="pre">bytes</span> <span class="pre">gotten</span> <span class="pre">from</span> <span class="pre">serial</span> <span class="pre">port</span></code></dt>
+<dd><p>each line has newline stripped.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt>
+<code class="sig-name descname"><span class="pre">.reopen</span>&#160; <span class="pre">closes</span> <span class="pre">and</span> <span class="pre">reopens</span> <span class="pre">.fd,</span> <span class="pre">sets</span> <span class="pre">.opened</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt>
+<code class="sig-name descname"><span class="pre">.close</span>&#160;&#160; <span class="pre">closes</span> <span class="pre">.fd</span> <span class="pre">unsets</span> <span class="pre">.opened</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt>
+<code class="sig-name descname"><span class="pre">.getLine</span>&#160; <span class="pre">gets</span> <span class="pre">one</span> <span class="pre">newline</span> <span class="pre">terminated</span> <span class="pre">line</span> <span class="pre">or</span> <span class="pre">bs</span> <span class="pre">characters</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt>
+<code class="sig-name descname"><span class="pre">.put</span>&#160; <span class="pre">puts</span> <span class="pre">characters</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.serial.serialing.ConsoleServer..servicePuts">
+<code class="sig-prename descclassname"><span class="pre">.</span></code><code class="sig-name descname"><span class="pre">servicePuts</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#hio.core.serial.serialing.ConsoleServer..servicePuts" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.serial.serialing.ConsoleServer..serviceLines">
+<code class="sig-prename descclassname"><span class="pre">.</span></code><code class="sig-name descname"><span class="pre">serviceLines</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#hio.core.serial.serialing.ConsoleServer..serviceLines" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.serial.serialing.ConsoleServer..service">
+<code class="sig-prename descclassname"><span class="pre">.</span></code><code class="sig-name descname"><span class="pre">service</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#hio.core.serial.serialing.ConsoleServer..service" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="simple">
+<dt>Hidden:</dt><dd><p>Hidden:
+._line is bytearray of line buffer</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="hio.core.serial.serialing.ConsoleServer.__init__">
+<code class="sig-name descname"><span class="pre">__init__</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">puts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lines</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwa</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#ConsoleServer.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.ConsoleServer.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialization method for instance.
+Creates attributes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.serial.serialing.ConsoleServer.service">
+<code class="sig-name descname"><span class="pre">service</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#ConsoleServer.service"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.ConsoleServer.service" title="Permalink to this definition">¶</a></dt>
+<dd><p>Service puts and lines</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.serial.serialing.ConsoleServer.serviceLines">
+<code class="sig-name descname"><span class="pre">serviceLines</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#ConsoleServer.serviceLines"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.ConsoleServer.serviceLines" title="Permalink to this definition">¶</a></dt>
+<dd><p>Service .lines by getting line from serial port</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.serial.serialing.ConsoleServer.servicePuts">
+<code class="sig-name descname"><span class="pre">servicePuts</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#ConsoleServer.servicePuts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.ConsoleServer.servicePuts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Service .puts by putting to serial port</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="hio.core.serial.serialing.Device">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">hio.core.serial.serialing.</span></code><code class="sig-name descname"><span class="pre">Device</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">speed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">9600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1024</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Device"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Device" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class to manage non blocking IO on serial device port.</p>
+<p>Opens non blocking read file descriptor on serial port
+Use instance method close to close file descriptor
+Use instance methods get &amp; put to read &amp; write to serial device
+Needs os module</p>
+<dl class="py method">
+<dt id="hio.core.serial.serialing.Device.__init__">
+<code class="sig-name descname"><span class="pre">__init__</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">speed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">9600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1024</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Device.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Device.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialization method for instance.</p>
+<p>port = serial device port path string
+speed = serial port speed in bps
+bs = buffer size for reads</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.serial.serialing.Device.close">
+<code class="sig-name descname"><span class="pre">close</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Device.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Device.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Closes fd.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.serial.serialing.Device.receive">
+<code class="sig-name descname"><span class="pre">receive</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Device.receive"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Device.receive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads nonblocking characters from serial device up to bs characters
+Returns empty bytes if no characters available else returns all available.
+In canonical mode no chars are available until newline is entered.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.serial.serialing.Device.reopen">
+<code class="sig-name descname"><span class="pre">reopen</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">speed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Device.reopen"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Device.reopen" title="Permalink to this definition">¶</a></dt>
+<dd><p>Idempotently open serial device port
+Opens fd on serial port in non blocking mode.</p>
+<p>port is the serial port device path name or
+if ‘’ then use os.ctermid() which
+returns path name of console usually ‘/dev/tty’</p>
+<p>os.O_NONBLOCK makes non blocking io
+os.O_RDWR allows both read and write.
+os.O_NOCTTY don’t make this the controlling terminal of the process
+O_NOCTTY is only for cross platform portability BSD never makes it the
+controlling terminal</p>
+<p>Don’t use print and console at same time since it will mess up non blocking reads.</p>
+<p>The input mode, canonical or noncanonical, is controlled by the
+ICANON flag see termios module.</p>
+<p>Raw mode</p>
+<dl class="simple">
+<dt>def setraw(fd, when=TCSAFLUSH):</dt><dd><p>Put terminal into a raw mode.
+mode = tcgetattr(fd)
+mode[IFLAG] = mode[IFLAG] &amp; ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON)
+mode[OFLAG] = mode[OFLAG] &amp; ~(OPOST)
+mode[CFLAG] = mode[CFLAG] &amp; ~(CSIZE | PARENB)
+mode[CFLAG] = mode[CFLAG] | CS8
+mode[LFLAG] = mode[LFLAG] &amp; ~(ECHO | ICANON | IEXTEN | ISIG)
+mode[CC][VMIN] = 1
+mode[CC][VTIME] = 0
+tcsetattr(fd, when, mode)</p>
+</dd>
+</dl>
+<p># set up raw mode / no echo / binary
+cflag <a href="#id1"><span class="problematic" id="id2">|=  (TERMIOS.CLOCAL|TERMIOS.CREAD)
+lflag &amp;= ~(TERMIOS.ICANON|TERMIOS.ECHO|TERMIOS.ECHOE|TERMIOS.ECHOK|TERMIOS.ECHONL|</span></a></p>
+<blockquote>
+<div><p>TERMIOS.ISIG|TERMIOS.IEXTEN) #|TERMIOS.ECHOPRT</p>
+</div></blockquote>
+<dl class="simple">
+<dt>for flag in (‘ECHOCTL’, ‘ECHOKE’): # netbsd workaround for Erk</dt><dd><dl class="simple">
+<dt>if hasattr(TERMIOS, flag):</dt><dd><p>lflag &amp;= ~getattr(TERMIOS, flag)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>oflag &amp;= ~(TERMIOS.OPOST)
+iflag &amp;= ~(TERMIOS.INLCR|TERMIOS.IGNCR|TERMIOS.ICRNL|TERMIOS.IGNBRK)
+if hasattr(TERMIOS, ‘IUCLC’):</p>
+<blockquote>
+<div><p>iflag &amp;= ~TERMIOS.IUCLC</p>
+</div></blockquote>
+<dl class="simple">
+<dt>if hasattr(TERMIOS, ‘PARMRK’):</dt><dd><p>iflag &amp;= ~TERMIOS.PARMRK</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.serial.serialing.Device.send">
+<code class="sig-name descname"><span class="pre">send</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">b'\n'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Device.send"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Device.send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes data bytes to serial device port.
+Returns number of bytes sent</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="hio.core.serial.serialing.Driver">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">hio.core.serial.serialing.</span></code><code class="sig-name descname"><span class="pre">Driver</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">speed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">9600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">server</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Driver"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Driver" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Nonblocking Serial Device Port Driver</p>
+<dl class="py method">
+<dt id="hio.core.serial.serialing.Driver.__init__">
+<code class="sig-name descname"><span class="pre">__init__</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">speed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">9600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">server</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Driver.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Driver.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialization method for instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>= user friendly name for driver</strong> (<em>name</em>) – </p></li>
+<li><p><strong>= unique identifier for driver</strong> (<em>uid</em>) – </p></li>
+<li><p><strong>= serial device port path string</strong> (<em>port</em>) – </p></li>
+<li><p><strong>= serial port speed in bps</strong> (<em>speed</em>) – </p></li>
+<li><p><strong>= canonical mode True</strong><strong> or </strong><strong>False</strong> (<em>canonical</em>) – </p></li>
+<li><p><strong>= buffer size for reads</strong> (<em>bs</em>) – </p></li>
+<li><p><strong>= serial port device server if any</strong> (<em>server</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">name</span> <span class="pre">=</span> <span class="pre">user</span> <span class="pre">friendly</span> <span class="pre">name</span> <span class="pre">for</span> <span class="pre">driver</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">uid</span> <span class="pre">=</span> <span class="pre">unique</span> <span class="pre">identifier</span> <span class="pre">for</span> <span class="pre">driver</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">server</span> <span class="pre">=</span> <span class="pre">serial</span> <span class="pre">device</span> <span class="pre">server</span> <span class="pre">nonblocking</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">txbs</span> <span class="pre">=</span> <span class="pre">bytearray</span> <span class="pre">of</span> <span class="pre">data</span> <span class="pre">bytes</span> <span class="pre">to</span> <span class="pre">send</span></code></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt>
+<code class="sig-name descname"><span class="pre">rxbs</span> <span class="pre">=</span> <span class="pre">bytearray</span> <span class="pre">of</span> <span class="pre">data</span> <span class="pre">bytes</span> <span class="pre">received</span></code></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.serial.serialing.Driver.clearRxbs">
+<code class="sig-name descname"><span class="pre">clearRxbs</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Driver.clearRxbs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Driver.clearRxbs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clear .rxbs</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.serial.serialing.Driver.scan">
+<code class="sig-name descname"><span class="pre">scan</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Driver.scan"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Driver.scan" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns offset of given start byte in self.rxbs
+Returns None if start is not given or not found
+If strip then remove any bytes before offset</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.serial.serialing.Driver.send">
+<code class="sig-name descname"><span class="pre">send</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Driver.send"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Driver.send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handle one tx data</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.serial.serialing.Driver.service">
+<code class="sig-name descname"><span class="pre">service</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Driver.service"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Driver.service" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sevice receives and sends</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.serial.serialing.Driver.serviceReceives">
+<code class="sig-name descname"><span class="pre">serviceReceives</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Driver.serviceReceives"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Driver.serviceReceives" title="Permalink to this definition">¶</a></dt>
+<dd><p>Service receives until no more</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.serial.serialing.Driver.serviceSends">
+<code class="sig-name descname"><span class="pre">serviceSends</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Driver.serviceSends"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Driver.serviceSends" title="Permalink to this definition">¶</a></dt>
+<dd><p>Service .txbs</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.serial.serialing.Driver.tx">
+<code class="sig-name descname"><span class="pre">tx</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Driver.tx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Driver.tx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Queue data onto .txbs</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt id="hio.core.serial.serialing.LineError">
+<em class="property"><span class="pre">exception</span> </em><code class="sig-prename descclassname"><span class="pre">hio.core.serial.serialing.</span></code><code class="sig-name descname"><span class="pre">LineError</span></code><a class="reference internal" href="_modules/hio/core/serial/serialing.html#LineError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.LineError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="hio.html#hio.hioing.HioError" title="hio.hioing.HioError"><code class="xref py py-class docutils literal notranslate"><span class="pre">hio.hioing.HioError</span></code></a></p>
+<p>Serial line error. Too big for buffer.</p>
+<dl class="simple">
+<dt>Usage:</dt><dd><p>raise LineError(“error message”)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="hio.core.serial.serialing.Serial">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">hio.core.serial.serialing.</span></code><code class="sig-name descname"><span class="pre">Serial</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">speed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">9600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1024</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Serial"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Serial" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class to manage non blocking IO on serial device port using pyserial</p>
+<p>Opens non blocking read file descriptor on serial port
+Use instance method close to close file descriptor
+Use instance methods get &amp; put to read &amp; write to serial device
+Needs os module</p>
+<dl class="py method">
+<dt id="hio.core.serial.serialing.Serial.__init__">
+<code class="sig-name descname"><span class="pre">__init__</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">speed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">9600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1024</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Serial.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Serial.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialization method for instance.</p>
+<p>port = serial device port path string
+speed = serial port speed in bps
+bs = buffer size for reads</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.serial.serialing.Serial.close">
+<code class="sig-name descname"><span class="pre">close</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Serial.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Serial.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Closes .serial</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.serial.serialing.Serial.receive">
+<code class="sig-name descname"><span class="pre">receive</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Serial.receive"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Serial.receive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads nonblocking characters from serial device up to bs characters
+Returns empty bytes if no characters available else returns all available.
+In canonical mode no chars are available until newline is entered.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.serial.serialing.Serial.reopen">
+<code class="sig-name descname"><span class="pre">reopen</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">speed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Serial.reopen"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Serial.reopen" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens fd on serial port in non blocking mode.</p>
+<p>port is the serial port device path name or
+if None then use os.ctermid() which returns path name of console
+usually ‘/dev/tty’</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="hio.core.serial.serialing.Serial.send">
+<code class="sig-name descname"><span class="pre">send</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">b'\n'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/hio/core/serial/serialing.html#Serial.send"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hio.core.serial.serialing.Serial.send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes data bytes to serial device port.
+Returns number of bytes sent</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-hio.core.serial">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-hio.core.serial" title="Permalink to this headline">¶</a></h2>
+<p>hio.core.serial Package</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="hio.core.tcp.html" class="btn btn-neutral float-right" title="hio.core.tcp package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="hio.core.html" class="btn btn-neutral float-left" title="hio.core package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2020-2021, Samuel M. Smith.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

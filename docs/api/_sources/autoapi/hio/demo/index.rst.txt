@@ -1,0 +1,13 @@
+:mod:`hio.demo`
+===============
+
+.. py:module:: hio.demo
+
+.. autoapi-nested-parse::
+
+   hio.demo package
+
+   Demo applications that use hio
+
+
+

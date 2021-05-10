@@ -1,0 +1,258 @@
+:mod:`hio.core.wiring`
+======================
+
+.. py:module:: hio.core.wiring
+
+.. autoapi-nested-parse::
+
+   hio.help.wiring module
+
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   hio.core.wiring.WireLog
+   hio.core.wiring.WireLogDoer
+
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   hio.core.wiring.openWL
+
+
+
+.. function:: openWL(cls=None, name='test', temp=True, **kwa)
+
+   Context manager wrapper WireLog instances.
+   Defaults to temporary wire logs.
+   Context 'with' statements call .close on exit of 'with' block
+
+   :param cls is Class instance of subclass instance:
+   :param name is str name of wirelog instance for filename so can have multiple wirelogs: at different paths thar each use different file name
+   :param temp is Boolean: Otherwise open in persistent directory, do not clear on close
+   :param True means open in temporary directory: Otherwise open in persistent directory, do not clear on close
+   :param clear on close: Otherwise open in persistent directory, do not clear on close
+
+   Usage:
+
+   with openWL(name="bob") as wl:
+       wl.writeRx  ....
+
+   with openWL(name="eve", cls=SubclassedWireLog)
+
+
+.. class:: WireLog(rxed=True, txed=True, samed=False, filed=False, fmt=None, name='main', temp=False, prefix=None, headDirPath=None, reopen=False, clear=False)
+
+
+   For debugging of non-blocking transports, provides log files or in memory
+       buffers for logging 'over the wire' network tx and rx packets as bytes
+
+       Attributes:
+           .rxed is Boolean True means log rx
+           .txed is Boolean True means log tx
+           .samed is Boolean True means log both rx and tx to same file or buffer
+           .filed is Boolean True means log to file False means log to memory buffer
+           .fmt is io write bytes printf style format string
+               Default is b'
+   %(dx)b %(who)b:
+   %(data)b
+   ' where:
+                   who is src or dst for rx tx respectively
+                   dx is the io direction and will be set to either b'tx' or b'rx' and
+                   data is the actual io data as bytes
+               to write io data without direction who or line feeds use fmt= b'%(data)b'
+           .name is str used in file name
+           .temp is Boolean True means use /tmp directory
+           .prefix is str used as part of path prefix and formating
+           .headDirPath is str used as head of path
+           .tailDirpath is str used as tail of path
+           .altTailDirPath is str used a alternate tail of path
+           .dirPath is full directory path
+           .rxl is rx log io file or io buffer
+           .txl is tx log io file or io buffer
+           .opened is Boolean, True means file is opened Otherwise False
+
+
+   .. attribute:: Prefix
+      :annotation: = hio
+
+      
+
+   .. attribute:: HeadDirPath
+      :annotation: = /usr/local/var
+
+      
+
+   .. attribute:: TailDirPath
+      :annotation: = wirelogs
+
+      
+
+   .. attribute:: AltHeadDirPath
+      :annotation: = ~
+
+      
+
+   .. attribute:: TempHeadDir
+      :annotation: = /tmp
+
+      
+
+   .. attribute:: TempPrefix
+      :annotation: = test_
+
+      
+
+   .. attribute:: TempSuffix
+      :annotation: = _temp
+
+      
+
+   .. attribute:: Format
+      :annotation: = b'\n%(dx)b %(who)b:\n%(data)b\n'
+
+      
+
+   .. method:: reopen(self, rxed=None, txed=None, samed=None, filed=None, fmt=None, name=None, temp=None, headDirPath=None, clear=False)
+
+      Use or Create if not preexistent, directory path for file .path
+      First closes .path if already opened. If clear is True then also clears
+      .path before reopening
+
+      :param rxed is optional Boolean If None or unchanged then ignore.: Otherwise when creating io use .rxed if not provided
+      :param txed is optional Boolean If None or unchanged then ignore.: Otherwise when creating io use .txed if not provided
+      :param samed is optional Boolean If None or unchanged then ignore.: Otherwise when creating io use .same if not provided
+      :param filed is optional Boolean If None or unchanged then ignore.: Otherwise when creating io use .filed if not provided
+      :param fmt is optional bytes printf format If None or unchanged then ignore.: Otherwise when creating io use .fmt if not provided
+      :param name is optional name:
+                                    if None or unchanged then ignore otherwise recreate path
+                                        When recreating path, If not provided use .name
+      :param temp is optional boolean:
+                                       If None ignore Otherwise
+                                           Assign to .temp
+                                           If True then open in temporary directory and clear on close,
+                                           If False then open persistent directory
+      :param headDirPath is optional str head directory pathname of main database:
+                                                                                   if None or unchanged then ignore otherwise recreate path
+                                                                                      When recreating path, If not provided use default .HeadDirpath
+      :param clear is Boolean True means clear .path when closing:
+
+
+   .. method:: flush(self)
+
+      flush files if any and opened.
+      A file flush only moves from program buffer to operating system buffer.
+      A file fsync moves from operating system buffer to disk.
+
+
+   .. method:: close(self, clear=False)
+
+      Close io logs. If clear or self.temp then remove directory at .dirPath
+      :param clear is boolean:
+      :param True means clear directory at .dirPath if any:
+
+
+   .. method:: clearDirPath(self)
+
+      Remove logfile directory at .dirPath
+
+
+   .. method:: readRx(self)
+
+      Returns rx string buffer value if .buffify else None
+
+
+   .. method:: readTx(self)
+
+      Returns tx string buffer value if .buffify else None
+
+
+   .. method:: writeRx(self, data, who=b'')
+
+      Write bytes data received from source host port address tuple,
+
+
+   .. method:: writeTx(self, data, who=b'')
+
+      Write bytes data transmitted to destination address da,
+
+
+
+.. class:: WireLogDoer(wl, **kwa)
+
+
+   Bases: :py:obj:`hio.base.doing.Doer`
+
+   Basic WireLog Doer
+
+   Inherited Attributes:
+       .done is Boolean completion state:
+           True means completed
+           Otherwise incomplete. Incompletion maybe due to close or abort.
+
+   .. attribute:: .wl is WireLog subclass
+
+      
+
+   Inherited Properties:
+       .tyme is float ._tymist.tyme, relative cycle or artificial time
+       .tock is float, desired time in seconds between runs or until next run,
+                non negative, zero means run asap
+
+   Properties:
+
+   .. method:: .wind  injects ._tymist dependency
+
+      
+
+   .. method:: .__call__ makes instance callable
+
+      
+      Appears as generator function that returns generator
+
+   .. method:: .do is generator method that returns generator
+
+      
+
+   .. method:: .enter is enter context action method
+
+      
+
+   .. method:: .recur is recur context action method or generator method
+
+      
+
+   .. method:: .exit is exit context method
+
+      
+
+   .. method:: .close is close context method
+
+      
+
+   .. method:: .abort is abort context method
+
+      
+      
+
+   Hidden:
+      ._tymist is Tymist instance reference
+      ._tock is hidden attribute for .tock property
+
+   .. method:: enter(self)
+
+
+   .. method:: exit(self)
+
+
+
