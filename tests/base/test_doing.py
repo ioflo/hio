@@ -517,9 +517,9 @@ def test_dodoer_always():
     # force complete doers
     assert dodoer.always == True
     assert doist.tyme == 13.0
-    deeds = doist.ready(doers=[dodoer])
-    doist.once(deeds=deeds)
-    doist.once(deeds=deeds)
+    doist.ready()
+    doist.once()
+    doist.once()
     assert doist.tyme == 15.0
     assert not dodoer.done  # dodoer not done
     assert dodoer.always == True
@@ -538,8 +538,8 @@ def test_dodoer_always():
     assert len(dodoer.deeds) == 4
     indices = [index for dog, retyme, index in dodoer.deeds]
     assert indices == [1, 2, 3, 4]
-    doist.once(deeds=deeds)
-    doist.once(deeds=deeds)
+    doist.once()
+    doist.once()
     assert doist.tyme == 17.0
     assert not dodoer.done  # dodoer not done
     assert dodoer.always == True
@@ -549,15 +549,14 @@ def test_dodoer_always():
     assert doer3.done
     assert not doer4.done
     assert len(dodoer.deeds) == 1  # deeds still there
-    doist.close(deeds=deeds)
+    doist.close()
     assert dodoer.done == False  # forced close so not done
     assert doer0.done
     assert doer1.done
     assert doer2.done
     assert doer3.done
     assert not doer4.done  # forced close so not done
-    assert not deeds
-
+    assert not doist.deeds
 
     # start over with full set to test remove
     doer0 = TryDoer(stop=1)
