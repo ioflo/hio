@@ -361,7 +361,6 @@ def test_extend_remove_doers():
     assert doist.limit == limit == 5.0
     assert doist.done is None
     assert doist.doers == doers
-    assert not doist.always
     assert not doist.deeds
 
     doist.do(limit=2)
@@ -373,26 +372,20 @@ def test_extend_remove_doers():
     assert not doist.deeds
     assert doist.doers == doers
 
-    # redo but with doist.always == True
-    doist.always = True
-    assert doist.always
+    # redo
     doist.do(tyme=0, limit=2)
     assert doist.tyme == 2.0
     assert not doist.done  # deeds that did not complete
-    assert doist.always
     assert doer0.done
     assert not doer1.done
     assert not doer2.done
     assert not doist.deeds
     assert doist.doers == doers
 
-    # redo but using parameter always = ==True
-    doist.always = False
-    assert not doist.always
-    doist.do(tyme=0, limit=2, always=True)  #  use parameter for always
+    # redo
+    doist.do(tyme=0, limit=2)
     assert doist.tyme == 2.0
     assert not doist.done  # remaining deeds that did not complete
-    assert not doist.always
     assert doer0.done
     assert not doer1.done
     assert not doer2.done
@@ -404,8 +397,6 @@ def test_extend_remove_doers():
     # and extend remove below
     doist.done = False
     assert not doist.done
-    doist.always = True
-    assert doist.always
     doist.tyme = 0.0
     assert doist.tyme == 0.0
     assert not doist.deeds
@@ -416,7 +407,6 @@ def test_extend_remove_doers():
     doist.once()
     assert doist.tyme == 2.0
     assert not doist.done
-    assert doist.always
     assert doer0.done
     assert not doer1.done
     assert not doer2.done
@@ -440,7 +430,6 @@ def test_extend_remove_doers():
     doist.once()
     assert doist.tyme == 4.0
     assert not doist.done  # doist not done
-    assert doist.always == True
     assert doer0.done
     assert doer1.done
     assert doer2.done
@@ -475,7 +464,6 @@ def test_extend_remove_doers():
     assert doist.doers == doers
     for doer in doist.doers:
         assert doer.done == None
-    assert doist.always == True
     assert doist.done == None
     assert not doist.deeds
 
@@ -485,7 +473,6 @@ def test_extend_remove_doers():
     doist.once()
     assert doist.tyme == 2.0
     assert not doist.done  # doist not done
-    assert doist.always == True
     assert doer0.done
     assert not doer1.done
     assert not doer2.done

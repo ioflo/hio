@@ -56,9 +56,6 @@ class Doist(tyming.Tymist):
             case is use the default empty initialization performed here and
             update in .ready().
         timer (MonoTimer): for real time intervals
-        always (boolean): True means keep running even when all dogs in deeds
-                are complete. Enables dynamically managing extending or removing
-                doers and associated deeds while running.
 
     Inherited Properties:
         tyme: is float relative cycle time, .tyme is artificial time
@@ -76,7 +73,7 @@ class Doist(tyming.Tymist):
             times out do to reaching time limit
 
     """
-    def __init__(self, real=False, limit=None, doers=None, always=False, **kwa):
+    def __init__(self, real=False, limit=None, doers=None, **kwa):
         """
         Returns:
             instance
@@ -93,10 +90,6 @@ class Doist(tyming.Tymist):
                 The .doers attribute is used throughout the execution lifecycle.
                 Parameterization elsewhere of doers enables some special cases.
                 The normal case is to initialize here or in .do().
-            always (Boolean): True means keep running even when all dogs in deeds
-                are complete. Enables dynamically managing extending or removing
-                doers and associated deeds while running.
-
         """
         super(Doist, self).__init__(**kwa)
 
@@ -106,10 +99,9 @@ class Doist(tyming.Tymist):
         self.doers = list(doers) if doers is not None else []  # list of Doers
         self.deeds = deque()  # deque of deeds
         self.timer = timing.MonoTimer(duration = self.tock)
-        self.always = always
 
 
-    def do(self, doers=None, limit=None, tyme=None, always=None):
+    def do(self, doers=None, limit=None, tyme=None):
         """
         Readies deeds deque from .doers or doers if any and then iteratively
         runs .once over deeds deque until completion of all deeds.
@@ -136,9 +128,6 @@ class Doist(tyming.Tymist):
             limit (float): is real time limit on execution. Forces close of all dogs.
             tyme  (float): is optional starting tyme. Resets .tyme to tyme whe provided.
                If not provided uses current .tyme
-            always (Boolean): True means keep running even when all dogs in deeds
-                are complete. Enables dynamically managing extending or removing
-                doers and associated deeds while running.
 
         Returns:
             None
@@ -146,7 +135,6 @@ class Doist(tyming.Tymist):
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
         For setting attributes on bound methods.
         """
-        always = always if always is not None else self.always
         self.done = False
         if doers is not None:
             self.doers = list(doers)
@@ -172,12 +160,11 @@ class Doist(tyming.Tymist):
                             time.sleep(max(0.0, self.timer.remaining))
                         self.timer.restart()  #  no time lost
 
-                    self.done = not self.deeds  # reset by extend or remove
-
-                    if self.limit and tymer.expired:  # reached time limit
+                    if not self.deeds:  # no deeds
+                        self.done = True
                         break  # break out of forever loop
 
-                    if not self.deeds and not always:  # no deeds and not always
+                    if self.limit and tymer.expired:  # reached time limit
                         break  # break out of forever loop
 
                 except KeyboardInterrupt:  # use CNTL-C to shutdown from shell
