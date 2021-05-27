@@ -11,6 +11,7 @@ from .. import hioing
 from .basing import State
 from . import tyming
 from ..core.tcp import serving, clienting
+from ..core.serial import serialing
 from ..help import timing, helping
 
 
@@ -234,7 +235,7 @@ class Doist(tyming.Tymist):
         return deeds
 
 
-    def once(self, doerdeeds = None):
+    def once(self, doeds = None):
         """
         Cycle once through deeds deque of tuples (triples) of form
         (dog, retyme, index) and update in place
@@ -249,7 +250,7 @@ class Doist(tyming.Tymist):
         At end of cycle advances .tyme by one .tock by calling .tick()
 
         Parameters:
-            doerdeeds (tuple): optional of form (doers (list), deeds (deque))
+            doeds (tuple): optional of form (doers list, deeds deque)
                 If not provided uses .doers and .deeds.
                 Where:
                     doers (list):  of  generator method or function callables
@@ -263,9 +264,9 @@ class Doist(tyming.Tymist):
         The normal case is to initialize .doers in .__init__. or .do() and to
         initialize .deeds in .__init__. and then update in .ready()
         """
-        if doerdeeds is not None:
-            doers = doerdeeds[0]
-            deeds = doerdeeds[1]
+        if doeds is not None:
+            doers = doeds[0]
+            deeds = doeds[1]
         else:
             doers = self.doers
             deeds = self.deeds
@@ -292,7 +293,7 @@ class Doist(tyming.Tymist):
         self.tick()  # advance .tyme by one doist .tock
 
 
-    def close(self, doerdeeds = None):
+    def close(self, doeds = None):
         """
         Force exit each still opened deed calling .close on the dog generator
         which throws a GeneratorExit to the generator.
@@ -312,7 +313,7 @@ class Doist(tyming.Tymist):
             exit A
 
         Parameters:
-            doerdeeds (tuple): optional of form (doers (list), deeds (deque))
+            doeds (tuple): optional of form (doers list, deeds deque)
                 If not provided uses .doers and .deeds.
                 Where:
                     doers (list):  of  generator method or function callables
@@ -320,9 +321,9 @@ class Doist(tyming.Tymist):
                     deeds (deque): tuples of form (dog, retyme, index).
                     Parameterization here of deeds enables some special cases.
         """
-        if doerdeeds is not None:
-            doers = doerdeeds[0]
-            deeds = doerdeeds[1]
+        if doeds is not None:
+            doers = doeds[0]
+            deeds = doeds[1]
         else:
             doers = self.doers
             deeds = self.deeds
@@ -396,7 +397,7 @@ class Doist(tyming.Tymist):
         for doer in rdoers:  # update .doers to remove rdoers
             self.doers.remove(doer)
 
-        self.close(doerdeeds=(rdoers, rdeeds))  # only close the removed ones
+        self.close(doeds=(rdoers, rdeeds))  # only close the removed ones
 
 
 
@@ -1018,7 +1019,7 @@ class DoDoer(Doer):
         return deeds
 
 
-    def recur(self, tyme, doerdeeds = None):
+    def recur(self, tyme, doeds = None):
         """
         Do 'recur' context actions. Equivalent of Doist.once
 
@@ -1026,7 +1027,7 @@ class DoDoer(Doer):
             tyme (float): is output of send fed to do yield, Doist feeds its .tyme
                 because tymist is injected by doist or dodoer doing this dodoer
                 self.tyme is same as tyme.
-             doerdeeds (tuple): optional of form (doers (list), deeds (deque))
+             doeds (tuple): optional of form (doers (ist, deeds deque)
                 If not provided uses .doers and .deeds.
                 Where:
                     doers (list):  of  generator method or function callables
@@ -1042,9 +1043,9 @@ class DoDoer(Doer):
 
         Each cycle checks all generators dogs in deeds deque and runs if retyme past.
         """
-        if doerdeeds is not None:
-            doers = doerdeeds[0]
-            deeds = doerdeeds[1]
+        if doeds is not None:
+            doers = doeds[0]
+            deeds = doeds[1]
         else:
             doers = self.doers
             deeds = self.deeds
@@ -1071,12 +1072,12 @@ class DoDoer(Doer):
         return (not deeds)  # True if deeds deque is empty
 
 
-    def exit(self, doerdeeds = None):
+    def exit(self, doeds = None):
         """
         Do 'exit' context actions.
 
         Parameters:
-            doerdeeds (tuple): optional of form (doers (list), deeds (deque))
+            doeds (tuple): optional of form (doers list, deeds deque)
                 If not provided uses .doers and .deeds.
                 Where:
                     doers (list):  of  generator method or function callables
@@ -1089,9 +1090,9 @@ class DoDoer(Doer):
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
         For setting attributes on bound methods.
         """
-        if doerdeeds is not None:
-            doers = doerdeeds[0]
-            deeds = doerdeeds[1]
+        if doeds is not None:
+            doers = doeds[0]
+            deeds = doeds[1]
         else:
             doers = self.doers
             deeds = self.deeds
@@ -1165,7 +1166,7 @@ class DoDoer(Doer):
         for doer in rdoers:  # update .doers to remove rdoers
             self.doers.remove(doer)
 
-        self.exit(doerdeeds=(rdoers, rdeeds))
+        self.exit(doeds=(rdoers, rdeeds))
 
 
 class ServerDoer(Doer):
@@ -1298,11 +1299,45 @@ class ClientDoer(Doer):
         self.client.close()
 
 
+class ConsoleDoer(Doer):
+    """
+    Basic Console Doer. Wraps console in doer context so opens and closes console
+
+    To test in WingIde must configure Debug I/O to use external console
+    See Doer for inherited attributes, properties, and methods.
+
+    Attributes:
+       .console is serial Console instance
+
+    """
+
+    def __init__(self, console, **kwa):
+        """
+        Initialize instance.
+
+        Parameters:
+           console is serial Console instance
+
+        """
+        super(ConsoleDoer, self).__init__(**kwa)
+        self.console = console
+
+
+    def enter(self):
+        """"""
+        result = self.console.reopen()
+
+
+    def exit(self):
+        """"""
+        self.console.close()
+
+
 class EchoConsoleDoer(Doer):
     """
     Basic Terminal Console IO to buffers. Echos input back to output
 
-    To test in WingIde must configure Debug i/O to use external console
+    To test in WingIde must configure Debug I/O to use external console
 
     See Doer for inherited attributes, properties, and methods.
 
@@ -1362,7 +1397,7 @@ class EchoConsoleDoer(Doer):
             count =  self.console.put(self.txbs)  #  write
             del self.txbs[:count]
 
-        line = self.console.getLine()  #  read
+        line = self.console.get()  #  read
         if line:
             self.lines.append(line)
 

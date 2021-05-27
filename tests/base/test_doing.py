@@ -1122,7 +1122,32 @@ def test_echo_server_client():
     ca, ix = list(server.ixes.items())[0]
     assert bytes(ix.rxbs) == b""  # empty server rxbs becaue echoed
 
-    """End Test """
+
+
+def test_console_doer():
+    """
+    Test ConsoleDoer class
+
+    Must run in WindIDE with Debug I/O configured as external console
+    """
+    tock = 0.03125
+    ticks = 8
+    limit = tock * ticks
+    doist = doing.Doist(tock=tock, real=True, limit=limit)
+    assert doist.tyme == 0.0  # on next cycle
+    assert doist.tock == tock == 0.03125
+    assert doist.real == True
+    assert doist.limit == limit
+    assert doist.doers == []
+
+    console = serialing.Console()
+    doer = doing.ConsoleDoer(console=console)
+
+    doers = [doer]
+    doist.do(doers=doers)
+    assert doist.tyme == limit
+    assert console.opened == False
+
 
 
 def test_echo_console():

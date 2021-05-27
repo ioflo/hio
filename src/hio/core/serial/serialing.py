@@ -22,23 +22,24 @@ class LineError(HioError):
 
 class Console():
     """
-    Class to manage non blocking io on serial console in canonical mode.
+    Class to manage non blocking interactive I/O on serial console
 
     Opens non blocking read file descriptor on console
     Use instance method .close to close file descriptor
-    Use instance methods .getline & .put to read & write to console
+    Use instance methods .getline to read & .put to write to console
     Needs os module
 
     Attributes:
-        .bs is max buffer size for each read
-        .fd  is file descriptor for console
-        .opened is Boolean that indicates open state of .fd
+        bs (int): max buffer size for each read, defaults to 256
+        fd (int):  file descriptor for console
+        opened (Boolean): True means .fd opened, False means .fd closed
+        rxbs (bytearray): of received characters (bytes)
 
     Methods:
-        .reopen  closes and reopens .fd, sets .opened
-        .close   closes .fd unsets .opened
-        .getLine  gets one newline terminated line or bs characters
-        .put  puts characters
+        reopen ():  closes and reopens .fd, sets .opened
+        close ():   closes .fd unsets .opened
+        get (): returns chars including newline but no more than bs characters
+        put ():  puts characters
 
     Hidden:
         ._line is bytearray of line buffer
@@ -54,10 +55,10 @@ class Console():
         self.bs = bs if bs is not None else self.MaxBufSize
         self.fd = None  # console file descriptor needs to be opened
         self.opened =  False
-        self._line = bytearray()
+        self.rxbs = bytearray()
 
 
-    def reopen(self, port=''):
+    def open(self, port=''):
         """
         Opens fd on terminal console in non blocking mode.
 
@@ -73,17 +74,16 @@ class Console():
 
         Don't use print at same time since it will mess up non blocking reads.
 
-        Input mode assumes Canonical means no characters available until a newline
-        It appears that canonical mode only applies to the console os.ctermid().
-        For other serial ports the characters are available immediately.
+        Works in both canonical and non-canonical input mode.
+        In canonical mode, no chars are available to read until eol newline
+        is entered and eol is included in the read characters.
 
-        os.isatty(fd)
-        Return True if the file descriptor fd is open and connected to a
-        tty(-like) device, else False.
+        It appears that canonical mode is the default for fd console os.ctermid().
+        For other serial port fds  the characters may be  available immediately.
 
+        To debug use os.isatty(fd) which returns True if the file descriptor
+        fd is open and connected to a tty-like device, else False.
         """
-        self.close()  # ensure closed first before reopening
-
         if not port:
             port = os.ctermid()  # default to console
 
@@ -97,6 +97,14 @@ class Console():
         return self.opened
 
 
+    def reopen(self):
+        """
+        Idempotently opens console
+        """
+        self.close()
+        return self.open()
+
+
     def close(self):
         """
         Closes fd.
@@ -104,7 +112,7 @@ class Console():
         if self.fd:
             os.close(self.fd)
             self.fd = None
-        del self._line[:]
+        del self.rxbs[:]
         self.opened = False
 
 
@@ -115,13 +123,15 @@ class Console():
         return (os.write(self.fd, data))  # returns number of bytes written
 
 
-    def getLine(self, bs=None):
+    def get(self, bs=None):
         """
-        Gets nonblocking line of bytes from console
-        of up to bs characters with eol newline if in bs characters
+        Gets nonblocking line of bytes from console of up to bs characters
+        including eol newline if in bs characters otherwise
+        must repeat get until a newline appears.
 
         Returns empty string if no characters available else returns line.
-        Assumes canonical mode where no chars available to read until eol newline
+        Works in both canonical and non-canonical mode
+        In canonical mode, no chars are available to read until eol newline
         is entered and eol is included in the read characters.
 
         Strips eol newline before returning line.
@@ -129,7 +139,7 @@ class Console():
         bs = bs if bs is not None else self.bs
         line = bytearray()
         try:
-            self._line.extend(os.read(self.fd, bs))
+            self.rxbs.extend(os.read(self.fd, bs))
         except OSError as ex1:  #if no chars available generates exception
             try:  # need to catch correct exception
                 errno = ex1.args[0]  # if args not sequence get TypeError
@@ -141,76 +151,11 @@ class Console():
             except TypeError as ex2:  # catch args[0] mismatch above
                 raise ex1  # ignore TypeError, re-raise exception ex1
         else:
-            if self._line[-1] == ord(b'\n'):  # got full line so return it
-                del self._line[-1]  # delete eol newline
-                line.extend(self._line)
-                del self._line[:]
+            if (idx := self.rxbs.find(ord(b'\n'))) != -1:
+                line.extend(self.rxbs[:idx])  # copy all but newline
+                del self.rxbs[:idx+1]  # delete including newline
 
         return line
-
-
-class ConsoleServer(Console):
-    """
-    Class that extends Console with service interface.
-
-
-    Inherited Attributes:
-        .bs is max buffer size for each read
-        .fd  is file descriptor for console
-        .opened is Boolean that indicates open state of .fd
-
-    Attributes:
-        .puts is bytearray of bytes to put on serial port
-        .lines is deque of lines of bytes gotten from serial port
-                  each line has newline stripped.
-
-    Methods:
-        .reopen  closes and reopens .fd, sets .opened
-        .close   closes .fd unsets .opened
-        .getLine  gets one newline terminated line or bs characters
-        .put  puts characters
-
-        .servicePuts
-        .serviceLines
-        .service
-
-    Hidden:
-        Hidden:
-        ._line is bytearray of line buffer
-    """
-
-    def __init__(self, puts=None, lines=None, **kwa):
-        """
-        Initialization method for instance.
-        Creates attributes.
-        """
-        super(ConsoleServer, self).__init__(**kwa)
-        self.puts = puts if puts is not None else bytearray()
-        self.lines = lines if lines is not None else deque()
-
-
-    def servicePuts(self):
-        """
-        Service .puts by putting to serial port
-        """
-        count = self.put(data=self.puts)
-        del self.puts[:count]
-
-
-    def serviceLines(self):
-        """
-        Service .lines by getting line from serial port
-        """
-        if (line := self.getLine()):
-            self.lines.append(line)
-
-
-    def service(self):
-        """
-        Service puts and lines
-        """
-        self.servicePuts()
-        self.serviceLines()
 
 
 class Device():
