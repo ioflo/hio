@@ -147,11 +147,12 @@ class Doist(tyming.Tymist):
         if tyme is not None:  # re-initialize starting tyme
             self.tyme = tyme
 
-        self.ready()  # runs enter context on each doer
-
-        tymer = tyming.Tymer(tymth=self.tymen(), duration=self.limit)
-        self.timer.start()
         try:  # always clean up resources upon exception
+            self.ready()  # runs enter context on each doer
+
+            tymer = tyming.Tymer(tymth=self.tymen(), duration=self.limit)
+            self.timer.start()
+
             while True:  # until doers complete or exception or keyboardInterrupt
                 try:
                     self.once()  # increments .tyme runs recur context
