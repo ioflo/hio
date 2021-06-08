@@ -177,8 +177,7 @@ class Doist(tyming.Tymist):
 
                 except Exception:  # Unknown exception
                     raise
-
-
+            
         finally: # finally clause always runs regardless of exception or not.
             self.close()  # force close remaining deeds throws GeneratorExit
 
