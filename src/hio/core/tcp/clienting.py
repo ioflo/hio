@@ -322,7 +322,7 @@ class Client(tyming.Tymee):
         try:
             result = self.cs.connect_ex(self.ha)  # async connect
         except socket.error as ex:
-            console.terse("socket.error = {0}\n".format(ex))
+            logger.error("socket.error = %s\n", ex)
             raise
 
         if result not in [0, errno.EISCONN]:  # not connected

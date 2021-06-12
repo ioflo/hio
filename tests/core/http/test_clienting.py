@@ -134,22 +134,12 @@ def test_request_echo():
     beta.close()
     """End Test"""
 
-def testNonBlockingRequestStream():
+def test_request_stream():
     """
     Test NonBlocking Http client with SSE streaming server
     """
-    console.terse("{0}\n".format(self.testNonBlockingRequestStream.__doc__))
-
-
-
-    wireLogAlpha = wiring.WireLog(buffify=True, same=True)
-    result = wireLogAlpha.reopen()
-
-    wireLogBeta = wiring.WireLog(buffify=True, same=True)
-    result = wireLogBeta.reopen()
-
     alpha = tcp.Server(port = 6101, bufsize=131072, wlog=wireLogAlpha)
-    self.assertIs(alpha.reopen(), True)
+    assert alpha.reopen()
     self.assertEqual(alpha.ha, ('0.0.0.0', 6101))
     self.assertEqual(alpha.eha, ('127.0.0.1', 6101))
 
@@ -283,8 +273,7 @@ def testNonBlockingRequestStream():
 
     alpha.close()
     beta.close()
-    wireLogAlpha.close()
-    wireLogBeta.close()
+
 
 
 def testNonBlockingRequestStreamChunked():

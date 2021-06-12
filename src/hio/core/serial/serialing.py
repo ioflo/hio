@@ -9,10 +9,13 @@ import os
 import errno
 from collections import deque
 
-from ... hioing import HioError
+
+from ... import hioing, help
+
+logger = help.ogler.getLogger()
 
 
-class LineError(HioError):
+class LineError(hioing.HioError):
     """
     Serial line error. Too big for buffer.
 
@@ -90,7 +93,7 @@ class Console():
         try:
             self.fd = os.open(port, os.O_NONBLOCK | os.O_RDWR | os.O_NOCTTY)
         except OSError as ex:
-            # maybe complain here
+            logger.error("Error opening console serial port, %s\n", ex)
             return False
 
         self.opened = True
@@ -474,7 +477,7 @@ class Driver():
                                        bs=bs)
 
             except ImportError as  ex:
-                console.terse("Error: importing pyserial\n{0}\n".format(ex))
+                logger.error("Error: importing pyserial\n%s\n", ex)
                 self.server = Device(port=port,
                                        speed=speed,
                                        bs=bs)
