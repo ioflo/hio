@@ -28,6 +28,45 @@ def test_copy_func():
 
     """Done Test"""
 
+def test_just():
+    """
+    Test just function
+    """
+
+    x = (1, 2, 3, 4)
+    assert tuple(helping.just(3, x)) == (1, 2, 3)
+
+    x = (1, 2, 3)
+    assert tuple(helping.just(3, x)) == (1, 2, 3)
+
+    x = (1, 2)
+    assert tuple(helping.just(3, x)) == (1, 2, None)
+
+    x = (1, )
+    assert tuple(helping.just(3, x)) == (1, None, None)
+
+    x = ()
+    assert tuple(helping.just(3, x)) == (None, None, None)
+
+def test_repack():
+    """
+    Test repack function
+    """
+    x = (1, 2, 3, 4)
+    assert tuple(helping.repack(3, x)) == (1, 2, (3, 4))
+
+    x = (1, 2, 3)
+    assert tuple(helping.repack(3, x)) == (1, 2, (3,))
+
+    x = (1, 2)
+    assert tuple(helping.repack(3, x)) == (1, 2, ())
+
+    x = (1, )
+    assert tuple(helping.repack(3, x)) == (1, None, ())
+
+    x = ()
+    assert tuple(helping.repack(3, x)) == (None, None, ())
+
 
 
 

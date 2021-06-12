@@ -11,10 +11,13 @@ import ssl
 
 from contextlib import contextmanager
 
+
+from ... import help
 from ...base import tyming
 from .. import coring
 
 
+logger = help.ogler.getLogger()
 
 @contextmanager
 def openClient(cls=None, **kwa):
