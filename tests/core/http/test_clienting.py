@@ -21,7 +21,7 @@ logger = help.ogler.getLogger()
 
 
 
-def test_request_echo():
+def test_request_response_echo():
     """
     Test basic nonblocking request response with
     client Requester class and client Respondent class
@@ -207,7 +207,7 @@ def test_request_response_sse_stream():
     assert msgIn == msgOut
     ixBeta.clearRxbs()
 
-    # send Alpha response to Beta
+    # build response header with event-stream content-type
     lines = [
                     b'HTTP/1.0 200 OK\r\n',
                     b'Server: PasteWSGIServer/0.5 Python/2.7.9\r\n',
@@ -250,13 +250,13 @@ def test_request_response_sse_stream():
         time.sleep(0.01)
 
     assert not beta.rxbs  # parser consumed it
+    assert not response.body  # empty
     if response.parser:
         response.parser.close()
         response.parser = None
 
     response.dictify()  # make .data a dict from json if any
     assert response.data is None
-    assert not response.body  # empy
 
     assert not response.eventSource.raw  # empty
     assert response.eventSource.retry == 1000
@@ -282,32 +282,23 @@ def test_request_response_sse_stream():
 
 
 
-def testNonBlockingRequestStreamChunked():
+def test_request_response_SSE_stream_chunked():
     """
-    Test NonBlocking Http client with SSE streaming server with transfer encoding (chunked)
+    Test NonBlocking Http client with SSE streaming server with transfer encoding
+    (chunked)
     """
-    console.terse("{0}\n".format(self.testNonBlockingRequestStreamChunked.__doc__))
+    alpha = tcp.Server(port = 6101, bufsize=131072)
+    assert alpha.reopen()
+    assert alpha.ha == ('0.0.0.0', 6101)
+    assert alpha.eha == ('127.0.0.1', 6101)
 
+    beta = tcp.Client(ha=alpha.eha, bufsize=131072)
+    assert beta.reopen()
+    assert not beta.accepted
+    assert not beta.connected
+    assert not beta.cutoff
 
-
-    wireLogAlpha = wiring.WireLog(buffify=True, same=True)
-    result = wireLogAlpha.reopen()
-
-    wireLogBeta = wiring.WireLog(buffify=True, same=True)
-    result = wireLogBeta.reopen()
-
-    alpha = tcp.Server(port = 6101, bufsize=131072, wlog=wireLogAlpha)
-    self.assertIs(alpha.reopen(), True)
-    self.assertEqual(alpha.ha, ('0.0.0.0', 6101))
-    self.assertEqual(alpha.eha, ('127.0.0.1', 6101))
-
-    beta = tcp.Client(ha=alpha.eha, bufsize=131072, wlog=wireLogBeta)
-    self.assertIs(beta.reopen(), True)
-    self.assertIs(beta.accepted, False)
-    self.assertIs(beta.connected, False)
-    self.assertIs(beta.cutoff, False)
-
-    console.terse("Connecting beta to server ...\n")
+    # connect beta to alpha
     while True:
         beta.serviceConnect()
         alpha.serviceConnects()
@@ -315,60 +306,55 @@ def testNonBlockingRequestStreamChunked():
             break
         time.sleep(0.05)
 
-    self.assertIs(beta.accepted, True)
-    self.assertIs(beta.connected, True)
-    self.assertIs(beta.cutoff, False)
-    self.assertEqual(beta.ca, beta.cs.getsockname())
-    self.assertEqual(beta.ha, beta.cs.getpeername())
-    self.assertEqual(alpha.eha, beta.ha)
+    assert beta.accepted
+    assert beta.connected
+    assert not beta.cutoff
+    assert beta.ca == beta.cs.getsockname()
+    assert beta.ha == beta.cs.getpeername()
+    assert alpha.eha == beta.ha
 
     ixBeta = alpha.ixes[beta.ca]
-    self.assertIsNotNone(ixBeta.ca)
-    self.assertIsNotNone(ixBeta.cs)
-    self.assertEqual(ixBeta.cs.getsockname(), beta.cs.getpeername())
-    self.assertEqual(ixBeta.cs.getpeername(), beta.cs.getsockname())
-    self.assertEqual(ixBeta.ca, beta.ca)
-    self.assertEqual(ixBeta.ha, beta.ha)
+    assert ixBeta.ca is not None
+    assert ixBeta.cs is not None
+    assert ixBeta.cs.getsockname() == beta.cs.getpeername()
+    assert ixBeta.cs.getpeername() == beta.cs.getsockname()
+    assert ixBeta.ca == beta.ca
+    assert ixBeta.ha == beta.ha
 
-    console.terse("{0}\n".format("Building Request ...\n"))
+    # build request
     host = u'127.0.0.1'
     port = 6061
     method = u'GET'
     path = u'/stream'
-    console.terse("{0} from  {1}:{2}{3} ...\n".format(method, host, port, path))
-    headers = dict([(u'Accept', u'application/json')])
-    request =  clienting.Requester(hostname=host,
+    headers = dict([('Accept', 'application/json')])
+    request = clienting.Requester(hostname=host,
                                  port=port,
                                  method=method,
                                  path=path,
                                  headers=headers)
     msgOut = request.rebuild()
-    lines = [
-               b'GET /stream HTTP/1.1',
-               b'Host: 127.0.0.1:6061',
-               b'Accept-Encoding: identity',
-               b'Accept: application/json',
-               b'',
-               b'',
-            ]
-    for i, line in enumerate(lines):
-        self.assertEqual(line, request.lines[i])
+    assert request.lines == [b'GET /stream HTTP/1.1',
+                            b'Host: 127.0.0.1:6061',
+                            b'Accept-Encoding: identity',
+                            b'Accept: application/json',
+                            b'',
+                            b'']
 
-    self.assertEqual(request.head, b'GET /stream HTTP/1.1\r\nHost: 127.0.0.1:6061\r\nAccept-Encoding: identity\r\nAccept: application/json\r\n\r\n')
-    self.assertEqual(msgOut, request.head)
+    assert request.head == b'GET /stream HTTP/1.1\r\nHost: 127.0.0.1:6061\r\nAccept-Encoding: identity\r\nAccept: application/json\r\n\r\n'
+    assert msgOut == request.head
 
-    console.terse("Beta requests to Alpha\n")
+    #  send Beta request to Alpha
     beta.tx(msgOut)
-    while beta.txes and not ixBeta.rxbs :
+    while beta.txbs and not ixBeta.rxbs:
         beta.serviceSends()
         time.sleep(0.05)
         alpha.serviceReceivesAllIx()
         time.sleep(0.05)
     msgIn = bytes(ixBeta.rxbs)
-    self.assertEqual(msgIn, msgOut)
+    assert msgIn == msgOut
     ixBeta.clearRxbs()
 
-    console.terse("Alpha responds to Beta\n")
+    # build response header Alpha to Beta with chunk header
     lines = [
                     b'HTTP/1.1 200 OK\r\n',
                     b'Content-Type: text/event-stream\r\n',
@@ -380,17 +366,15 @@ def testNonBlockingRequestStreamChunked():
 
     msgOut = b''.join(lines)
     ixBeta.tx(msgOut)
-    while ixBeta.txes or not beta.rxbs:
+    while ixBeta.txbs or not beta.rxbs:
         alpha.serviceSendsAllIx()
         time.sleep(0.05)
         beta.serviceReceives()
         time.sleep(0.05)
     msgIn = bytes(beta.rxbs)
-    self.assertEqual(msgIn, msgOut)
+    assert msgIn == msgOut
 
-    console.terse("Beta processes response \n")
-    response = clienting.Respondent(msg=beta.rxbs, method=method)
-
+    # build response body
     lines =  [
                 b'd\r\nretry: 1000\n\n\r\n',
                 b'd\r\ndata: START\n\n\r\n',
@@ -401,6 +385,10 @@ def testNonBlockingRequestStreamChunked():
              ]
     msgOut = b''.join(lines)
     ixBeta.tx(msgOut)
+
+    #  create Respondent to process response
+    response = clienting.Respondent(msg=beta.rxbs, method=method)
+
     timer = timing.Timer(duration=0.5)
     while response.parser and not timer.expired:
         alpha.serviceSendsAllIx()
@@ -408,47 +396,44 @@ def testNonBlockingRequestStreamChunked():
         beta.serviceReceives()
         time.sleep(0.01)
 
+    assert not beta.rxbs  #  empty
+    assert not response.body  # empty
+    assert not response.eventSource.raw  # empty
+
     if response.parser:
         response.parser.close()
         response.parser = None
 
-    response.dictify()
+    response.dictify()  # .data is None
+    assert response.data is None
 
-    self.assertEqual(len(beta.rxbs), 0)
-    self.assertEqual(response.eventSource.retry, 1000)
-    self.assertEqual(response.retry, response.eventSource.retry)
-    self.assertEqual(response.eventSource.leid, None)
-    self.assertEqual(response.leid, response.eventSource.leid)
-    self.assertTrue(len(response.events) > 2)
+
+    assert response.eventSource.retry == 1000
+    assert response.retry == response.eventSource.retry
+    assert response.eventSource.leid is None
+    assert response.leid == response.eventSource.leid
+    assert len(response.events) == 5
     event = response.events.popleft()
-    self.assertEqual(event, {'id': None, 'name': '', 'data': 'START'})
+    assert event == {'id': None, 'name': '', 'data': 'START'}
     event = response.events.popleft()
-    self.assertEqual(event, {'id': None, 'name': '', 'data': '1'})
+    assert event == {'id': None, 'name': '', 'data': '1'}
     event = response.events.popleft()
-    self.assertEqual(event, {'id': None, 'name': '', 'data': '2'})
-    self.assertTrue(len(response.body) == 0)
-    self.assertTrue(len(response.eventSource.raw) == 0)
+    assert event == {'id': None, 'name': '', 'data': '2'}
+    event = response.events.popleft()
+    assert event == {'id': None, 'name': '', 'data': '3'}
+    event = response.events.popleft()
+    assert event == {'id': None, 'name': '', 'data': '4'}
+    assert not response.events
 
     alpha.close()
     beta.close()
-    wireLogAlpha.close()
-    wireLogBeta.close()
 
 
-def testNonBlockingRequestStreamFancy():
+
+def test_request_response_stream_fancy_path():
     """
-    Test NonBlocking Http client to SSE server
+    Test NonBlocking Http client to SSE server with non trivial path
     """
-    console.terse("{0}\n".format(self.testNonBlockingRequestStreamFancy.__doc__))
-
-
-
-    wireLogAlpha = wiring.WireLog(buffify=True, same=True)
-    result = wireLogAlpha.reopen()
-
-    wireLogBeta = wiring.WireLog(buffify=True, same=True)
-    result = wireLogBeta.reopen()
-
     alpha = tcp.Server(port = 6101, bufsize=131072, wlog=wireLogAlpha)
     self.assertIs(alpha.reopen(), True)
     self.assertEqual(alpha.ha, ('0.0.0.0', 6101))
@@ -512,7 +497,7 @@ def testNonBlockingRequestStreamFancy():
 
     console.terse("Beta requests to Alpha\n")
     beta.tx(msgOut)
-    while beta.txes and not ixBeta.rxbs :
+    while beta.txbs and not ixBeta.rxbs :
         beta.serviceSends()
         time.sleep(0.05)
         alpha.serviceReceivesAllIx()
@@ -533,7 +518,7 @@ def testNonBlockingRequestStreamFancy():
 
     msgOut = b''.join(lines)
     ixBeta.tx(msgOut)
-    while ixBeta.txes or not beta.rxbs:
+    while ixBeta.txbs or not beta.rxbs:
         alpha.serviceSendsAllIx()
         time.sleep(0.05)
         beta.serviceReceives()
@@ -585,8 +570,6 @@ def testNonBlockingRequestStreamFancy():
     alpha.close()
     beta.close()
 
-    wireLogAlpha.close()
-    wireLogBeta.close()
 
 
 def testNonBlockingRequestStreamFancyChunked():
@@ -667,7 +650,7 @@ def testNonBlockingRequestStreamFancyChunked():
 
     console.terse("Beta requests to Alpha\n")
     beta.tx(msgOut)
-    while beta.txes and not ixBeta.rxbs :
+    while beta.txbs and not ixBeta.rxbs :
         beta.serviceSends()
         time.sleep(0.05)
         alpha.serviceReceivesAllIx()
@@ -688,7 +671,7 @@ def testNonBlockingRequestStreamFancyChunked():
 
     msgOut = b''.join(lines)
     ixBeta.tx(msgOut)
-    while ixBeta.txes or not beta.rxbs:
+    while ixBeta.txbs or not beta.rxbs:
         alpha.serviceSendsAllIx()
         time.sleep(0.05)
         beta.serviceReceives()
@@ -832,7 +815,7 @@ def testNonBlockingRequestStreamFancyJson():
 
     console.terse("Beta requests to Alpha\n")
     beta.tx(msgOut)
-    while beta.txes and not ixBeta.rxbs :
+    while beta.txbs and not ixBeta.rxbs :
         beta.serviceSends()
         time.sleep(0.05)
         alpha.serviceReceivesAllIx()
@@ -853,7 +836,7 @@ def testNonBlockingRequestStreamFancyJson():
 
     msgOut = b''.join(lines)
     ixBeta.tx(msgOut)
-    while ixBeta.txes or not beta.rxbs:
+    while ixBeta.txbs or not beta.rxbs:
         alpha.serviceSendsAllIx()
         time.sleep(0.05)
         beta.serviceReceives()
@@ -988,7 +971,7 @@ def testNonBlockingRequestStreamFancyJsonChunked():
 
     console.terse("Beta requests to Alpha\n")
     beta.tx(msgOut)
-    while beta.txes and not ixBeta.rxbs :
+    while beta.txbs and not ixBeta.rxbs :
         beta.serviceSends()
         time.sleep(0.05)
         alpha.serviceReceivesAllIx()
@@ -1009,7 +992,7 @@ def testNonBlockingRequestStreamFancyJsonChunked():
 
     msgOut = b''.join(lines)
     ixBeta.tx(msgOut)
-    while ixBeta.txes or not beta.rxbs:
+    while ixBeta.txbs or not beta.rxbs:
         alpha.serviceSendsAllIx()
         time.sleep(0.05)
         beta.serviceReceives()
@@ -1186,7 +1169,7 @@ def testNonBlockingRequestEchoTLS():
 
     console.terse("Beta requests to Alpha\n")
     beta.tx(msgOut)
-    while beta.txes and not ixBeta.rxbs :
+    while beta.txbs and not ixBeta.rxbs :
         beta.serviceSends()
         time.sleep(0.05)
         alpha.serviceReceivesAllIx()
@@ -1198,7 +1181,7 @@ def testNonBlockingRequestEchoTLS():
     console.terse("Alpha responds to Beta\n")
     msgOut = b'HTTP/1.1 200 OK\r\nContent-Length: 122\r\nContent-Type: application/json\r\nDate: Thu, 30 Apr 2015 19:37:17 GMT\r\nServer: IoBook.local\r\n\r\n{"content": null, "query": {"name": "fame"}, "verb": "GET", "url": "http://127.0.0.1:8080/echo?name=fame", "action": null}'
     ixBeta.tx(msgOut)
-    while ixBeta.txes or not beta.rxbs:
+    while ixBeta.txbs or not beta.rxbs:
         alpha.serviceSendsAllIx()
         time.sleep(0.05)
         beta.serviceReceives()
@@ -1317,7 +1300,7 @@ def testPatronRequestEcho():
     console.terse("Beta requests to Alpha\n")
     console.terse("{0} from  {1}:{2}{3} ...\n".format(method, host, port, path))
     beta.connector.tx(msgOut)
-    while beta.connector.txes and not ixBeta.rxbs :
+    while beta.connector.txbs and not ixBeta.rxbs :
         beta.connector.serviceSends()
         time.sleep(0.05)
         alpha.serviceReceivesAllIx()
@@ -1329,7 +1312,7 @@ def testPatronRequestEcho():
     console.terse("Alpha responds to Beta\n")
     msgOut = b'HTTP/1.1 200 OK\r\nContent-Length: 122\r\nContent-Type: application/json\r\nDate: Thu, 30 Apr 2015 19:37:17 GMT\r\nServer: IoBook.local\r\n\r\n{"content": null, "query": {"name": "fame"}, "verb": "GET", "url": "http://127.0.0.1:8080/echo?name=fame", "action": null}'
     ixBeta.tx(msgOut)
-    while ixBeta.txes or not beta.connector.rxbs:
+    while ixBeta.txbs or not beta.connector.rxbs:
         alpha.serviceSendsAllIx()
         time.sleep(0.05)
         beta.connector.serviceReceives()
@@ -1443,14 +1426,14 @@ def testPatronServiceEcho():
     for i, line in enumerate(lines):
         self.assertEqual(line, beta.requester.lines[i])
 
-    msgOut = beta.connector.txes[0]
+    msgOut = beta.connector.txbs[0]
     self.assertEqual(beta.requester.head, b'GET /echo?name=fame HTTP/1.1\r\nHost: 127.0.0.1:6101\r\nAccept-Encoding: identity\r\nAccept: application/json\r\n\r\n')
     self.assertEqual(msgOut, b'GET /echo?name=fame HTTP/1.1\r\nHost: 127.0.0.1:6101\r\nAccept-Encoding: identity\r\nAccept: application/json\r\n\r\n')
 
     console.terse("Beta requests to Alpha\n")
     console.terse("{0} from  {1}:{2}{3} ...\n".format(method, host, port, path))
 
-    while beta.connector.txes and not ixBeta.rxbs :
+    while beta.connector.txbs and not ixBeta.rxbs :
         beta.serviceAll()
         time.sleep(0.05)
         alpha.serviceReceivesAllIx()
@@ -1463,7 +1446,7 @@ def testPatronServiceEcho():
     console.terse("Beta processes response \n")
     msgOut = b'HTTP/1.1 200 OK\r\nContent-Length: 122\r\nContent-Type: application/json\r\nDate: Thu, 30 Apr 2015 19:37:17 GMT\r\nServer: IoBook.local\r\n\r\n{"content": null, "query": {"name": "fame"}, "verb": "GET", "url": "http://127.0.0.1:8080/echo?name=fame", "action": null}'
     ixBeta.tx(msgOut)
-    while ixBeta.txes or not beta.respondent.ended:
+    while ixBeta.txbs or not beta.respondent.ended:
         alpha.serviceSendsAllIx()
         time.sleep(0.05)
         beta.serviceAll()
@@ -1570,7 +1553,7 @@ def testPatronPipelineEcho():
                                                      request['method'],
                                                      request['path']))
 
-    while (beta.requests or beta.connector.txes) and not ixBeta.rxbs :
+    while (beta.requests or beta.connector.txbs) and not ixBeta.rxbs :
         beta.serviceAll()
         time.sleep(0.05)
         alpha.serviceReceivesAllIx()
@@ -1584,7 +1567,7 @@ def testPatronPipelineEcho():
     console.terse("Beta processes response \n")
     msgOut = b'HTTP/1.1 200 OK\r\nContent-Length: 122\r\nContent-Type: application/json\r\nDate: Thu, 30 Apr 2015 19:37:17 GMT\r\nServer: IoBook.local\r\n\r\n{"content": null, "query": {"name": "fame"}, "verb": "GET", "url": "http://127.0.0.1:8080/echo?name=fame", "action": null}'
     ixBeta.tx(msgOut)
-    while ixBeta.txes or not beta.respondent.ended:
+    while ixBeta.txbs or not beta.respondent.ended:
         alpha.serviceSendsAllIx()
         time.sleep(0.05)
         beta.serviceAll()
@@ -1638,7 +1621,7 @@ def testPatronPipelineEcho():
                                                        request['method'],
                                                        request['path']))
 
-    while ( beta.requests or beta.connector.txes) and not ixBeta.rxbs :
+    while ( beta.requests or beta.connector.txbs) and not ixBeta.rxbs :
         beta.serviceAll()
         time.sleep(0.05)
         alpha.serviceReceivesAllIx()
@@ -1652,7 +1635,7 @@ def testPatronPipelineEcho():
     console.terse("Beta processes response \n")
     msgOut = b'HTTP/1.1 200 OK\r\nContent-Length: 122\r\nContent-Type: application/json\r\nDate: Thu, 30 Apr 2015 19:37:17 GMT\r\nServer: IoBook.local\r\n\r\n{"content": null, "query": {"name": "fame"}, "verb": "GET", "url": "http://127.0.0.1:8080/echo?name=fame", "action": null}'
     ixBeta.tx(msgOut)
-    while ixBeta.txes or not beta.respondent.ended:
+    while ixBeta.txbs or not beta.respondent.ended:
         alpha.serviceSendsAllIx()
         time.sleep(0.05)
         beta.serviceAll()
@@ -1768,7 +1751,7 @@ def testPatronPipelineEchoSimple(self):
     beta.requests.append(request)
 
     while (not alpha.ixes or  beta.requests or
-           beta.connector.txes or not beta.respondent.ended):
+           beta.connector.txbs or not beta.respondent.ended):
         self.mockEchoService(alpha)
         time.sleep(0.05)
         beta.serviceAll()
@@ -1850,7 +1833,7 @@ def testPatronPipelineEchoSimple(self):
     beta.requests.append(request)
 
     while (not alpha.ixes or  beta.requests or
-            beta.connector.txes or not beta.respondent.ended):
+            beta.connector.txbs or not beta.respondent.ended):
         self.mockEchoService(alpha)
         time.sleep(0.05)
         beta.serviceAll()
@@ -1943,7 +1926,7 @@ def testPatronEchoSimpleFirst():
     beta.transmit()
 
     while (not alpha.ixes or  beta.requests or
-           beta.connector.txes or not beta.respondent.ended):
+           beta.connector.txbs or not beta.respondent.ended):
         self.mockEchoService(alpha)
         time.sleep(0.05)
         beta.serviceAll()
@@ -2004,7 +1987,7 @@ def testPatronEchoSimpleFirst():
                   headers=dict([('Accept', 'application/json')]))
 
     while (not alpha.ixes or  beta.requests or
-            beta.connector.txes or not beta.respondent.ended):
+            beta.connector.txbs or not beta.respondent.ended):
         self.mockEchoService(alpha)
         time.sleep(0.05)
         beta.serviceAll()
@@ -2122,7 +2105,7 @@ def testPatronPipelineEchoSimplePath():
     beta.requests.append(request)
 
     while (not alpha.ixes or beta.requests or
-            beta.connector.txes or not beta.respondent.ended):
+            beta.connector.txbs or not beta.respondent.ended):
         self.mockEchoServicePath(alpha)
         time.sleep(0.05)
         beta.serviceAll()
@@ -2171,7 +2154,7 @@ def testPatronPipelineEchoSimplePath():
     beta.requests.append(request)
 
     while (not alpha.ixes or beta.requests or
-            beta.connector.txes or not beta.respondent.ended):
+            beta.connector.txbs or not beta.respondent.ended):
         self.mockEchoServicePath(alpha)
         time.sleep(0.05)
         beta.serviceAll()
@@ -2275,7 +2258,7 @@ def testPatronPipelineEchoSimplePathTrack():
     beta.requests.append(request)
 
     while (not alpha.ixes or beta.requests or
-            beta.connector.txes or not beta.respondent.ended):
+            beta.connector.txbs or not beta.respondent.ended):
         self.mockEchoServicePath(alpha)
         time.sleep(0.05)
         beta.serviceAll()
@@ -2327,7 +2310,7 @@ def testPatronPipelineEchoSimplePathTrack():
     beta.requests.append(request)
 
     while (not alpha.ixes or beta.requests or
-            beta.connector.txes or not beta.respondent.ended):
+            beta.connector.txbs or not beta.respondent.ended):
         self.mockEchoServicePath(alpha)
         time.sleep(0.05)
         beta.serviceAll()
@@ -2453,7 +2436,7 @@ def testPatronPipelineEchoJson():
     beta.requests.append(request)
 
     while (not alpha.ixes or beta.requests or
-            beta.connector.txes or not beta.respondent.ended):
+            beta.connector.txbs or not beta.respondent.ended):
         self.mockEchoServiceJson(alpha)
         time.sleep(0.05)
         beta.serviceAll()
@@ -2506,7 +2489,7 @@ def testPatronPipelineEchoJson():
     beta.requests.append(request)
 
     while (not alpha.ixes or beta.requests or
-            beta.connector.txes or not beta.respondent.ended):
+            beta.connector.txbs or not beta.respondent.ended):
         self.mockEchoServiceJson(alpha)
         time.sleep(0.05)
         beta.serviceAll()
@@ -2644,7 +2627,7 @@ def testPatronPipelineStream():
                                                      request['method'],
                                                      request['path']))
 
-    while (beta.requests or beta.connector.txes) and not ixBeta.rxbs:
+    while (beta.requests or beta.connector.txbs) and not ixBeta.rxbs:
         beta.serviceAll()
         time.sleep(0.05)
         # beta.connector.store.advanceStamp(0.05)
@@ -2679,7 +2662,7 @@ def testPatronPipelineStream():
     msgOut = b''.join(lines)
     ixBeta.tx(msgOut)
     tymer = tyming.tymer(tymth=tymist.tymen(), duration=0.5)
-    while ixBeta.txes or not tymer.expired:
+    while ixBeta.txbs or not tymer.expired:
         alpha.serviceSendsAllIx()
         time.sleep(0.05)
         # beta.connector.store.advanceStamp(0.05)
@@ -2748,7 +2731,7 @@ def testPatronPipelineStream():
     self.assertEqual(ixBeta.ha, beta.connector.ha)
 
     console.terse("Server receiving...\n")
-    while (beta.requests or beta.connector.txes) or not ixBeta.rxbs:
+    while (beta.requests or beta.connector.txbs) or not ixBeta.rxbs:
         beta.serviceAll()
         time.sleep(0.05)
         # beta.connector.store.advanceStamp(0.05)
@@ -2779,7 +2762,7 @@ def testPatronPipelineStream():
     msgOut = b''.join(lines)
     ixBeta.tx(msgOut)
     tymer = tyming.Tymer(tymth=tymist.tymen(), duration=0.5)
-    while ixBeta.txes or not tymer.expired:
+    while ixBeta.txbs or not tymer.expired:
         alpha.serviceSendsAllIx()
         time.sleep(0.05)
         # beta.connector.store.advanceStamp(0.05)
@@ -2911,7 +2894,7 @@ def testPatronPipelineEchoSimpleSecure():
     beta.requests.append(request)
 
     while (not alpha.ixes or beta.requests or
-           beta.connector.txes or not beta.respondent.ended):
+           beta.connector.txbs or not beta.respondent.ended):
         self.mockEchoServiceSecure(alpha)
         time.sleep(0.05)
         beta.serviceAll()
@@ -2960,7 +2943,7 @@ def testPatronPipelineEchoSimpleSecure():
     beta.requests.append(request)
 
     while (not alpha.ixes or beta.requests or
-           beta.connector.txes or not beta.respondent.ended):
+           beta.connector.txbs or not beta.respondent.ended):
         self.mockEchoServiceSecure(alpha)
         time.sleep(0.05)
         beta.serviceAll()
@@ -3090,7 +3073,7 @@ def testPatronPipelineEchoSimpleSecurePath():
     beta.requests.append(request)
 
     while (not alpha.ixes or beta.requests or
-           beta.connector.txes or not beta.respondent.ended):
+           beta.connector.txbs or not beta.respondent.ended):
         self.mockEchoServiceSecure(alpha)
         time.sleep(0.05)
         beta.serviceAll()
@@ -3139,7 +3122,7 @@ def testPatronPipelineEchoSimpleSecurePath():
     beta.requests.append(request)
 
     while (not alpha.ixes or beta.requests or
-           beta.connector.txes or not beta.respondent.ended):
+           beta.connector.txbs or not beta.respondent.ended):
         self.mockEchoServiceSecure(alpha)
         time.sleep(0.05)
         beta.serviceAll()
@@ -3264,7 +3247,7 @@ def testPatronRedirectSimple():
     beta.requests.append(request)
 
     while (not alpha.ixes or beta.requests or
-           beta.connector.txes or not beta.respondent.ended):
+           beta.connector.txbs or not beta.respondent.ended):
         self.mockRedirectService(alpha)
         time.sleep(0.05)
         beta.serviceAll()
@@ -3436,7 +3419,7 @@ def testPatronRedirectComplex():
     beta.requests.append(request)
 
     while (not alpha.ixes or beta.requests or
-           beta.connector.txes or not beta.respondent.ended):
+           beta.connector.txbs or not beta.respondent.ended):
         self.mockRedirectComplexServiceA(alpha)
         self.mockRedirectComplexServiceG(gamma)
         time.sleep(0.05)
@@ -3647,7 +3630,7 @@ def testPatronRedirectComplexSecure():
     beta.requests.append(request)
 
     while (not alpha.ixes or beta.requests or
-           beta.connector.txes or not beta.respondent.ended):
+           beta.connector.txbs or not beta.respondent.ended):
         self.mockRedirectComplexServiceASecure(alpha)
         self.mockRedirectComplexServiceGSecure(gamma)
         time.sleep(0.05)
@@ -3811,4 +3794,4 @@ def testQueryQuoting():
 
 
 if __name__ == '__main__':
-    test_request_response_sse_stream()
+    test_request_response_SSE_stream_chunked()
