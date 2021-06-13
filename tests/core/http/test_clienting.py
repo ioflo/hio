@@ -575,38 +575,27 @@ def test_request_response_sse_stream_fancy():
     assert event == {'id': '4', 'name': '', 'data': '7\n8'}
     assert  not response.events
 
-
     alpha.close()
     beta.close()
 
 
 
-def testNonBlockingRequestStreamFancyChunked():
+def test_request_response_sse_stream_fancy_chunked():
     """
     Test NonBlocking Http client to server Fancy SSE with chunked transfer encoding
     """
-    console.terse("{0}\n".format(self.testNonBlockingRequestStreamFancyChunked.__doc__))
+    alpha = tcp.Server(port = 6101, bufsize=131072)
+    assert alpha.reopen()
+    assert alpha.ha == ('0.0.0.0', 6101)
+    assert alpha.eha == ('127.0.0.1', 6101)
 
+    beta = tcp.Client(ha=alpha.eha, bufsize=131072)
+    assert beta.reopen()
+    assert not beta.accepted
+    assert not beta.connected
+    assert not beta.cutoff
 
-
-    wireLogAlpha = wiring.WireLog(buffify=True, same=True)
-    result = wireLogAlpha.reopen()
-
-    wireLogBeta = wiring.WireLog(buffify=True, same=True)
-    result = wireLogBeta.reopen()
-
-    alpha = tcp.Server(port = 6101, bufsize=131072, wlog=wireLogAlpha)
-    self.assertIs(alpha.reopen(), True)
-    self.assertEqual(alpha.ha, ('0.0.0.0', 6101))
-    self.assertEqual(alpha.eha, ('127.0.0.1', 6101))
-
-    beta = tcp.Client(ha=alpha.eha, bufsize=131072, wlog=wireLogBeta)
-    self.assertIs(beta.reopen(), True)
-    self.assertIs(beta.accepted, False)
-    self.assertIs(beta.connected, False)
-    self.assertIs(beta.cutoff, False)
-
-    console.terse("Connecting beta to server ...\n")
+    # connect beta to alpha
     while True:
         beta.serviceConnect()
         alpha.serviceConnects()
@@ -614,28 +603,27 @@ def testNonBlockingRequestStreamFancyChunked():
             break
         time.sleep(0.05)
 
-    self.assertIs(beta.accepted, True)
-    self.assertIs(beta.connected, True)
-    self.assertIs(beta.cutoff, False)
-    self.assertEqual(beta.ca, beta.cs.getsockname())
-    self.assertEqual(beta.ha, beta.cs.getpeername())
-    self.assertEqual(alpha.eha, beta.ha)
+    assert beta.accepted
+    assert beta.connected
+    assert not beta.cutoff
+    assert beta.ca == beta.cs.getsockname()
+    assert beta.ha == beta.cs.getpeername()
+    assert alpha.eha == beta.ha
 
     ixBeta = alpha.ixes[beta.ca]
-    self.assertIsNotNone(ixBeta.ca)
-    self.assertIsNotNone(ixBeta.cs)
-    self.assertEqual(ixBeta.cs.getsockname(), beta.cs.getpeername())
-    self.assertEqual(ixBeta.cs.getpeername(), beta.cs.getsockname())
-    self.assertEqual(ixBeta.ca, beta.ca)
-    self.assertEqual(ixBeta.ha, beta.ha)
+    assert ixBeta.ca is not None
+    assert ixBeta.cs is not None
+    assert ixBeta.cs.getsockname() == beta.cs.getpeername()
+    assert ixBeta.cs.getpeername() == beta.cs.getsockname()
+    assert ixBeta.ca == beta.ca
+    assert ixBeta.ha == beta.ha
 
-    console.terse("{0}\n".format("Building Request ...\n"))
+    # Build Request
     host = u'127.0.0.1'
     port = 6061
     method = u'GET'
-    path = u'/fancy?idify=true&multiply=true'
-    console.terse("{0} from  {1}:{2}{3} ...\n".format(method, host, port, path))
-    headers = dict([(u'Accept', u'application/json')])
+    path = '/fancy?idify=true&multiply=true'
+    headers = dict([('Accept', 'application/json')])
     request =  clienting.Requester(hostname=host,
                                  port=port,
                                  method=method,
@@ -643,21 +631,19 @@ def testNonBlockingRequestStreamFancyChunked():
                                  headers=headers)
 
     msgOut = request.rebuild()
-    lines = [
-               b'GET /fancy?idify=true&multiply=true HTTP/1.1',
-               b'Host: 127.0.0.1:6061',
-               b'Accept-Encoding: identity',
-               b'Accept: application/json',
-               b'',
-               b'',
-            ]
-    for i, line in enumerate(lines):
-        self.assertEqual(line, request.lines[i])
+    assert  request.lines == [b'GET /fancy?idify=true&multiply=true HTTP/1.1',
+                                b'Host: 127.0.0.1:6061',
+                                b'Accept-Encoding: identity',
+                                b'Accept: application/json',
+                                b'',
+                                b'']
 
-    self.assertEqual(request.head, b'GET /fancy?idify=true&multiply=true HTTP/1.1\r\nHost: 127.0.0.1:6061\r\nAccept-Encoding: identity\r\nAccept: application/json\r\n\r\n')
-    self.assertEqual(msgOut, request.head)
+    assert msgOut == request.head
+    assert request.head == (b'GET /fancy?idify=true&multiply=true HTTP/1.1\r\n'
+                            b'Host: 127.0.0.1:6061\r\nAccept-Encoding: '
+                            b'identity\r\nAccept: application/json\r\n\r\n')
 
-    console.terse("Beta requests to Alpha\n")
+    # send request
     beta.tx(msgOut)
     while beta.txbs and not ixBeta.rxbs :
         beta.serviceSends()
@@ -665,10 +651,10 @@ def testNonBlockingRequestStreamFancyChunked():
         alpha.serviceReceivesAllIx()
         time.sleep(0.05)
     msgIn = bytes(ixBeta.rxbs)
-    self.assertEqual(msgIn, msgOut)
+    assert msgIn == msgOut
     ixBeta.clearRxbs()
 
-    console.terse("Alpha responds to Beta\n")
+    # build response
     lines = [
         b'HTTP/1.1 200 OK\r\n',
         b'Content-Type: text/event-stream\r\n',
@@ -679,6 +665,7 @@ def testNonBlockingRequestStreamFancyChunked():
     ]
 
     msgOut = b''.join(lines)
+
     ixBeta.tx(msgOut)
     while ixBeta.txbs or not beta.rxbs:
         alpha.serviceSendsAllIx()
@@ -686,10 +673,7 @@ def testNonBlockingRequestStreamFancyChunked():
         beta.serviceReceives()
         time.sleep(0.05)
     msgIn = bytes(beta.rxbs)
-    self.assertEqual(msgIn, msgOut)
-
-    console.terse("Beta processes response \n")
-    response = clienting.Respondent(msg=beta.rxbs, method=method)
+    assert msgIn == msgOut
 
     lines =  [
         b'd\r\nretry: 1000\n\n\r\n',
@@ -711,6 +695,7 @@ def testNonBlockingRequestStreamFancyChunked():
         b'1\r\n\n\r\n',
     ]
     msgOut = b''.join(lines)
+    response = clienting.Respondent(msg=beta.rxbs, method=method)
     ixBeta.tx(msgOut)
     timer = timing.Timer(duration=0.5)
     while response.parser and not timer.expired:
@@ -719,32 +704,37 @@ def testNonBlockingRequestStreamFancyChunked():
         beta.serviceReceives()
         time.sleep(0.01)
 
+    assert not beta.rxbs
+    assert not response.body
+    assert not response.eventSource.raw
+
     if response.parser:
         response.parser.close()
         response.parser = None
 
     response.dictify()
+    assert response.data is None
 
-    self.assertEqual(len(beta.rxbs), 0)
-    self.assertEqual(response.eventSource.retry, 1000)
-    self.assertEqual(response.retry, response.eventSource.retry)
-    self.assertTrue(int(response.eventSource.leid) >= 2)
-    self.assertEqual(response.leid, response.eventSource.leid)
-    self.assertTrue(len(response.events) > 2)
+    assert response.eventSource.retry == 1000
+    assert response.retry == response.eventSource.retry
+    assert int(response.eventSource.leid) == 4
+    assert response.leid == response.eventSource.leid
+    assert len(response.events) == 5
     event = response.events.popleft()
-    self.assertEqual(event, {'id': '0', 'name': '', 'data': 'START'})
+    assert event == {'id': '0', 'name': '', 'data': 'START'}
     event = response.events.popleft()
-    self.assertEqual(event, {'id': '1', 'name': '', 'data': '1\n2'})
+    assert event == {'id': '1', 'name': '', 'data': '1\n2'}
     event = response.events.popleft()
-    self.assertEqual(event, {'id': '2', 'name': '', 'data': '3\n4'})
-    self.assertTrue(len(response.body) == 0)
-    self.assertTrue(len(response.eventSource.raw) == 0)
+    assert event == {'id': '2', 'name': '', 'data': '3\n4'}
+    event = response.events.popleft()
+    assert event == {'id': '3', 'name': '', 'data': '5\n6'}
+    event = response.events.popleft()
+    assert event == {'id': '4', 'name': '', 'data': '7\n8'}
+    assert  not response.events
 
     alpha.close()
     beta.close()
 
-    wireLogAlpha.close()
-    wireLogBeta.close()
 
 
 def testNonBlockingRequestStreamFancyJson():
@@ -3803,4 +3793,4 @@ def testQueryQuoting():
 
 
 if __name__ == '__main__':
-    test_request_response_sse_stream_fancy()
+    test_request_response_sse_stream_fancy_chunked()
