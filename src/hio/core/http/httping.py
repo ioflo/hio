@@ -736,7 +736,7 @@ class EventSource(object):
                 if edata:  # data so dispatch event by appending to .events
                     if self.dictable:
                         try:
-                            ejson = json.loads(edata, encoding='utf-8', object_pairs_hook=dict)
+                            ejson = json.loads(edata, object_pairs_hook=dict)
                         except ValueError as ex:
                             ejson = None
                         else:  # valid json set edata to ejson
