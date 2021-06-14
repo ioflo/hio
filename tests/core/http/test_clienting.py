@@ -152,48 +152,35 @@ def test_client_request_echo():
     beta.connector.close()
 
 
-def testPatronServiceEcho():
+def test_client_service_all_echo():
     """
-    Test Patron service request response of echo non blocking
+    Test Client serviceAll echo nonblocking
     """
-    console.terse("{0}\n".format(self.testPatronServiceEcho.__doc__))
+    alpha = tcp.Server(port = 6101, bufsize=131072)
+    assert alpha.reopen()
+    assert alpha.ha == ('0.0.0.0', 6101)
+    assert alpha.eha == ('127.0.0.1', 6101)
 
-
-
-    wireLogAlpha = wiring.WireLog(buffify=True, same=True)
-    result = wireLogAlpha.reopen()
-
-    alpha = tcp.Server(port = 6101, bufsize=131072, wlog=wireLogAlpha)
-    self.assertIs(alpha.reopen(), True)
-    self.assertEqual(alpha.ha, ('0.0.0.0', 6101))
-    self.assertEqual(alpha.eha, ('127.0.0.1', 6101))
-
-    console.terse("{0}\n".format("Building Connector ...\n"))
-
-    wireLogBeta = wiring.WireLog(buffify=True,  same=True)
-    result = wireLogBeta.reopen()
     host = alpha.eha[0]
     port = alpha.eha[1]
     method = u'GET'
     path = u'/echo?name=fame'
-    headers = dict([(u'Accept', u'application/json')])
-
+    headers = dict([('Accept', 'application/json')])
 
     beta = clienting.Patron(bufsize=131072,
-                          wlog=wireLogBeta,
-                          hostname=host,
-                          port=port,
-                          method=method,
-                          path=path,
-                          headers=headers,
-                          )
+                                 hostname=host,
+                                 port=port,
+                                 method=method,
+                                 path=path,
+                                 headers=headers,
+                                 )
 
-    self.assertIs(beta.connector.reopen(), True)
-    self.assertIs(beta.connector.accepted, False)
-    self.assertIs(beta.connector.connected, False)
-    self.assertIs(beta.connector.cutoff, False)
+    assert beta.connector.reopen()
+    assert not beta.connector.accepted
+    assert not beta.connector.connected
+    assert not beta.connector.cutoff
 
-    console.terse("Connecting beta to server ...\n")
+    # connect Client Beta to Server Alpha
     while True:
         beta.connector.serviceConnect()
         alpha.serviceConnects()
@@ -201,24 +188,25 @@ def testPatronServiceEcho():
             break
         time.sleep(0.05)
 
-    self.assertIs(beta.connector.accepted, True)
-    self.assertIs(beta.connector.connected, True)
-    self.assertIs(beta.connector.cutoff, False)
-    self.assertEqual(beta.connector.ca, beta.connector.cs.getsockname())
-    self.assertEqual(beta.connector.ha, beta.connector.cs.getpeername())
-    self.assertEqual(alpha.eha, beta.connector.ha)
+    assert beta.connector.accepted
+    assert beta.connector.connected
+    assert not beta.connector.cutoff
+    assert beta.connector.ca == beta.connector.cs.getsockname()
+    assert beta.connector.ha == beta.connector.cs.getpeername()
+    assert alpha.eha == beta.connector.ha
 
     ixBeta = alpha.ixes[beta.connector.ca]
-    self.assertIsNotNone(ixBeta.ca)
-    self.assertIsNotNone(ixBeta.cs)
-    self.assertEqual(ixBeta.cs.getsockname(), beta.connector.cs.getpeername())
-    self.assertEqual(ixBeta.cs.getpeername(), beta.connector.cs.getsockname())
-    self.assertEqual(ixBeta.ca, beta.connector.ca)
-    self.assertEqual(ixBeta.ha, beta.connector.ha)
+    assert ixBeta.ca is not None
+    assert ixBeta.cs is not None
+    assert ixBeta.cs.getsockname() == beta.connector.cs.getpeername()
+    assert ixBeta.cs.getpeername() == beta.connector.cs.getsockname()
+    assert ixBeta.ca == beta.connector.ca
+    assert ixBeta.ha, beta.connector.ha
 
+
+    # build request as result of transmit
     beta.transmit()
-
-    lines = [
+    assert beta.requester.lines == [
                b'GET /echo?name=fame HTTP/1.1',
                b'Host: 127.0.0.1:6101',
                b'Accept-Encoding: identity',
@@ -226,15 +214,17 @@ def testPatronServiceEcho():
                b'',
                b'',
             ]
-    for i, line in enumerate(lines):
-        self.assertEqual(line, beta.requester.lines[i])
 
-    msgOut = beta.connector.txbs[0]
-    self.assertEqual(beta.requester.head, b'GET /echo?name=fame HTTP/1.1\r\nHost: 127.0.0.1:6101\r\nAccept-Encoding: identity\r\nAccept: application/json\r\n\r\n')
-    self.assertEqual(msgOut, b'GET /echo?name=fame HTTP/1.1\r\nHost: 127.0.0.1:6101\r\nAccept-Encoding: identity\r\nAccept: application/json\r\n\r\n')
 
-    console.terse("Beta requests to Alpha\n")
-    console.terse("{0} from  {1}:{2}{3} ...\n".format(method, host, port, path))
+    assert beta.requester.head == (b'GET /echo?name=fame HTTP/1.1\r\n'
+                                   b'Host: 127.0.0.1:6101\r\n'
+                                   b'Accept-Encoding: identity\r\n'
+                                   b'Accept: application/json\r\n\r\n')
+    msgOut = bytes(beta.connector.txbs)  # make copy
+    assert msgOut == (b'GET /echo?name=fame HTTP/1.1\r\n'
+                      b'Host: 127.0.0.1:6101\r\n'
+                      b'Accept-Encoding: identity\r\n'
+                      b'Accept: application/json\r\n\r\n')
 
     while beta.connector.txbs and not ixBeta.rxbs :
         beta.serviceAll()
@@ -242,12 +232,20 @@ def testPatronServiceEcho():
         alpha.serviceReceivesAllIx()
         time.sleep(0.05)
     msgIn = bytes(ixBeta.rxbs)
-    self.assertEqual(msgIn, msgOut)
+    assert msgIn == msgOut
     ixBeta.clearRxbs()
 
-    console.terse("Alpha responds to Beta\n")
-    console.terse("Beta processes response \n")
-    msgOut = b'HTTP/1.1 200 OK\r\nContent-Length: 122\r\nContent-Type: application/json\r\nDate: Thu, 30 Apr 2015 19:37:17 GMT\r\nServer: IoBook.local\r\n\r\n{"content": null, "query": {"name": "fame"}, "verb": "GET", "url": "http://127.0.0.1:8080/echo?name=fame", "action": null}'
+    # build response
+    msgOut = (b'HTTP/1.1 200 OK\r\n'
+              b'Content-Length: 122\r\n'
+              b'Content-Type: application/json\r\n'
+              b'Date: Thu, 30 Apr 2015 19:37:17 GMT\r\n'
+              b'Server: IoBook.local\r\n\r\n'
+              b'{"content": null, '
+              b'"query": {"name": "fame"}, '
+              b'"verb": "GET", '
+              b'"url": "http://127.0.0.1:8080/echo?name=fame", '
+              b'"action": null}')
     ixBeta.tx(msgOut)
     while ixBeta.txbs or not beta.respondent.ended:
         alpha.serviceSendsAllIx()
@@ -255,30 +253,29 @@ def testPatronServiceEcho():
         beta.serviceAll()
         time.sleep(0.05)
 
-    self.assertEqual(len(beta.connector.rxbs), 0)
-    self.assertIs(beta.waited, False)
-    self.assertIs(beta.respondent.ended, True)
-    self.assertEqual(len(beta.responses), 1)
+    assert not beta.connector.rxbs
+    assert not beta.waited
+    assert beta.respondent.ended
+    assert len(beta.responses) == 1
 
-    self.assertEqual(bytes(beta.respondent.body), bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GET", "url'
-                                                            b'": "http://127.0.0.1:8080/echo?name=fame", "action": null}'))
-    self.assertEqual(beta.respondent.data, {'action': None,
+    assert list(beta.respondent.headers.items()) == [('Content-Length', '122'),
+                                                     ('Content-Type', 'application/json'),
+                                                     ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'),
+                                                     ('Server', 'IoBook.local')]
+
+    assert beta.respondent.body == (b'{"content": null, '
+                                    b'"query": {"name": "fame"}, '
+                                    b'"verb": "GET", "url'
+                                    b'": "http://127.0.0.1:8080/echo?name=fame", '
+                                    b'"action": null}')
+    assert beta.respondent.data == {'action': None,
                                      'content': None,
                                      'query': {'name': 'fame'},
                                      'url': 'http://127.0.0.1:8080/echo?name=fame',
                                      'verb': 'GET'}
-                     )
-    self.assertEqual(len(beta.connector.rxbs), 0)
-    self.assertEqual(beta.respondent.headers.items(), [('content-length', '122'),
-                                                ('content-type', 'application/json'),
-                                                ('date', 'Thu, 30 Apr 2015 19:37:17 GMT'),
-                                                ('server', 'IoBook.local')])
 
     alpha.close()
     beta.connector.close()
-
-    wireLogAlpha.close()
-    wireLogBeta.close()
 
 
 
@@ -2597,4 +2594,4 @@ def testQueryQuoting():
 
 
 if __name__ == '__main__':
-    test_client_request_echo()
+    test_client_service_all_echo()

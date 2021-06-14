@@ -1124,7 +1124,7 @@ class Patron(tyming.Tymee):
                         self.connector.txes.rotate()  # ensure first request in txes
 
         self.serviceRequests()
-        self.connector.serviceTxes()
+        self.connector.serviceSends()
         self.serviceResponse()
 
 

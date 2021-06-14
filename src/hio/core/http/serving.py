@@ -713,7 +713,7 @@ class Valet(tyming.Tymee):
         if ca in self.reps:
             self.reps[ca].close()  # this signals response handler
             if ca in self.servant.ixes:
-                self.servant.ixes[ca].serviceTxes()  #  send final bytes to socket
+                self.servant.ixes[ca].serviceSends()  #  send final bytes to socket
             del self.reps[ca]
         self.servant.removeIx(ca)
 
