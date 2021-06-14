@@ -509,7 +509,6 @@ class ClientTls(Client):
     Methods:
     """
     def __init__(self,
-                 tymth,
                  context=None,
                  version=None,
                  certify=None,
@@ -543,7 +542,7 @@ class ClientTls(Client):
             hostify = verify server hostName If None use default
             certedhost = server's certificate common name (hostname) to check against
         """
-        super(ClientTls, self).__init__(tymth=tymth, **kwa)
+        super(ClientTls, self).__init__(**kwa)
 
         self._connected = False  # attributed supporting connected property
 

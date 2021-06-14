@@ -19,6 +19,11 @@ from hio.core.http import clienting
 
 logger = help.ogler.getLogger()
 
+tlsdirpath = os.path.dirname(
+                os.path.dirname(
+                        os.path.abspath(
+                            sys.modules.get(__name__).__file__)))
+certdirpath = os.path.join(tlsdirpath, 'tls', 'certs')
 
 
 def test_request_response_echo():
@@ -133,6 +138,157 @@ def test_request_response_echo():
     alpha.close()
     beta.close()
     """End Test"""
+
+
+
+def test_request_response_echo_tls():
+    """
+    Test NonBlocking HTTPS (TLS/SSL) client
+    """
+    #'/Users/Load/Data/Code/public/hio/tests/core/tls/certs'
+    assert certdirpath.endswith('/hio/tests/core/tls/certs')
+
+    #serverKeypath = '/etc/pki/tls/certs/server_key.pem'  # local server private key
+    #serverCertpath = '/etc/pki/tls/certs/server_cert.pem'  # local server public cert
+    #clientCafilepath = '/etc/pki/tls/certs/client.pem' # remote client public cert
+
+    #clientKeypath = '/etc/pki/tls/certs/client_key.pem'  # local client private key
+    #clientCertpath = '/etc/pki/tls/certs/client_cert.pem'  # local client public cert
+    #serverCafilepath = '/etc/pki/tls/certs/server.pem' # remote server public cert
+
+    serverKeypath = certdirpath + '/server_key.pem'  # local server private key
+    serverCertpath = certdirpath + '/server_cert.pem'  # local server public cert
+    clientCafilepath = certdirpath + '/client.pem' # remote client public cert
+
+    clientKeypath = certdirpath + '/client_key.pem'  # local client private key
+    clientCertpath = certdirpath + '/client_cert.pem'  # local client public cert
+    serverCafilepath = certdirpath + '/server.pem' # remote server public cert
+
+    alpha = tcp.ServerTls(host='localhost',
+                                  port = 6101,
+                                  bufsize=131072,
+                                  context=None,
+                                  version=None,
+                                  certify=None,
+                                  keypath=serverKeypath,
+                                  certpath=serverCertpath,
+                                  cafilepath=clientCafilepath,
+                                  )
+    assert alpha.reopen()
+    assert alpha.ha == ('127.0.0.1', 6101)
+    assert alpha.eha == ('127.0.0.1', 6101)
+
+    serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
+
+    beta = tcp.ClientTls(ha=alpha.ha,
+                                  bufsize=131072,
+                                  context=None,
+                                  version=None,
+                                  certify=None,
+                                  hostify=None,
+                                  certedhost=serverCertCommonName,
+                                  keypath=clientKeypath,
+                                  certpath=clientCertpath,
+                                  cafilepath=serverCafilepath,
+                                  )
+    assert beta.reopen()
+    assert not beta.accepted
+    assert not beta.connected
+    assert not beta.cutoff
+
+    #  connect and do tls handshake
+    while True:
+        beta.serviceConnect()
+        alpha.serviceConnects()
+        if beta.connected and len(alpha.ixes) >= 1:
+            break
+        time.sleep(0.01)
+
+    assert beta.accepted
+    assert beta.connected
+    assert not beta.cutoff
+    assert beta.ca == beta.cs.getsockname()
+    assert beta.ha == beta.cs.getpeername()
+
+    ixBeta = alpha.ixes[beta.ca]
+    assert ixBeta.ca is not None
+    assert ixBeta.cs is not None
+    assert ixBeta.cs.getsockname() == beta.cs.getpeername()
+    assert ixBeta.cs.getpeername() == beta.cs.getsockname()
+    assert ixBeta.ca == beta.ca
+    assert ixBeta.ha == beta.ha
+
+    #  build request
+    host = u'127.0.0.1'
+    port = 6061
+    method = u'GET'
+    path = u'/echo?name=fame'
+    headers = dict([('Accept', 'application/json')])
+    request =  clienting.Requester(hostname=host,
+                                 port=port,
+                                 method=method,
+                                 path=path,
+                                 headers=headers)
+    betaMsgOut = request.rebuild()
+    assert request.lines == [b'GET /echo?name=fame HTTP/1.1',
+                            b'Host: 127.0.0.1:6061',
+                            b'Accept-Encoding: identity',
+                            b'Accept: application/json',
+                            b'',
+                            b'']
+
+    assert request.head == betaMsgOut  # only headers no body
+    assert request.head == (b'GET /echo?name=fame HTTP/1.1\r\nHost: 127.0.0.1:6061\r\n'
+                            b'Accept-Encoding: identity\r\nAccept: application/json\r\n\r\n')
+    assert betaMsgOut == (b'GET /echo?name=fame HTTP/1.1\r\nHost: 127.0.0.1:6061\r\n'
+                          b'Accept-Encoding: identity\r\nAccept: application/json\r\n\r\n')
+
+    # Beta sends to Alpha
+    beta.tx(betaMsgOut)
+    while beta.txbs and not ixBeta.rxbs :
+        beta.serviceSends()
+        time.sleep(0.05)
+        alpha.serviceReceivesAllIx()
+        time.sleep(0.05)
+    alphaMsgIn = bytes(ixBeta.rxbs)
+    assert alphaMsgIn == betaMsgOut
+    ixBeta.clearRxbs()
+
+    # Alpha responds to Beta
+    alphaMsgOut = b'HTTP/1.1 200 OK\r\nContent-Length: 122\r\nContent-Type: application/json\r\nDate: Thu, 30 Apr 2015 19:37:17 GMT\r\nServer: IoBook.local\r\n\r\n{"content": null, "query": {"name": "fame"}, "verb": "GET", "url": "http://127.0.0.1:8080/echo?name=fame", "action": null}'
+    ixBeta.tx(alphaMsgOut)
+    while ixBeta.txbs or not beta.rxbs:
+        alpha.serviceSendsAllIx()
+        time.sleep(0.05)
+        beta.serviceReceives()
+        time.sleep(0.05)
+    betaMsgIn = bytes(beta.rxbs)
+    assert betaMsgIn == alphaMsgOut
+
+    response = clienting.Respondent(msg=beta.rxbs, method=method)
+    while response.parser:
+        response.parse()
+    assert not beta.rxbs  # fully extracted
+
+    assert list(response.headers.items()) == [('Content-Length', '122'),
+                                            ('Content-Type', 'application/json'),
+                                            ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'),
+                                            ('Server', 'IoBook.local')]
+
+    assert response.body ==  (b'{"content": null, "query": {"name": "fame"}, "verb": "GET", "url'
+                                     b'": "http://127.0.0.1:8080/echo?name=fame", "action": null}')
+
+    response.dictify()  # converts response.data to dict()
+
+    assert response.data == {'action': None,
+                                     'content': None,
+                                     'query': {'name': 'fame'},
+                                     'url': 'http://127.0.0.1:8080/echo?name=fame',
+                                     'verb': 'GET'}
+
+    alpha.close()
+    beta.close()
+
 
 def test_request_response_sse_stream():
     """
@@ -1032,171 +1188,6 @@ def test_request_response_sse_stream_fancy_json_chunked():
 
     alpha.close()
     beta.close()
-
-
-
-def testNonBlockingRequestEchoTLS():
-    """
-    Test NonBlocking HTTPS (TLS/SSL) client
-    """
-    console.terse("{0}\n".format(self.testNonBlockingRequestEchoTLS.__doc__))
-
-
-
-    wireLogAlpha = wiring.WireLog(buffify=True, same=True)
-    result = wireLogAlpha.reopen()
-
-    wireLogBeta = wiring.WireLog(buffify=True,  same=True)
-    result = wireLogBeta.reopen()
-
-    #serverKeypath = '/etc/pki/tls/certs/server_key.pem'  # local server private key
-    #serverCertpath = '/etc/pki/tls/certs/server_cert.pem'  # local server public cert
-    #clientCafilepath = '/etc/pki/tls/certs/client.pem' # remote client public cert
-
-    #clientKeypath = '/etc/pki/tls/certs/client_key.pem'  # local client private key
-    #clientCertpath = '/etc/pki/tls/certs/client_cert.pem'  # local client public cert
-    #serverCafilepath = '/etc/pki/tls/certs/server.pem' # remote server public cert
-
-    serverKeypath = self.certdirpath + '/server_key.pem'  # local server private key
-    serverCertpath = self.certdirpath + '/server_cert.pem'  # local server public cert
-    clientCafilepath = self.certdirpath + '/client.pem' # remote client public cert
-
-    clientKeypath = self.certdirpath + '/client_key.pem'  # local client private key
-    clientCertpath = self.certdirpath + '/client_cert.pem'  # local client public cert
-    serverCafilepath = self.certdirpath + '/server.pem' # remote server public cert
-
-    alpha = tcp.ServerTls(host='localhost',
-                                  port = 6101,
-                                  bufsize=131072,
-                                  wlog=wireLogAlpha,
-                                  context=None,
-                                  version=None,
-                                  certify=None,
-                                  keypath=serverKeypath,
-                                  certpath=serverCertpath,
-                                  cafilepath=clientCafilepath,
-                                  )
-    self.assertIs(alpha.reopen(), True)
-    self.assertEqual(alpha.ha, ('127.0.0.1', 6101))
-    self.assertEqual(alpha.eha, ('127.0.0.1', 6101))
-
-    serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
-
-    beta = tcp.ClientTls(ha=alpha.ha,
-                                  bufsize=131072,
-                                  wlog=wireLogBeta,
-                                  context=None,
-                                  version=None,
-                                  certify=None,
-                                  hostify=None,
-                                  certedhost=serverCertCommonName,
-                                  keypath=clientKeypath,
-                                  certpath=clientCertpath,
-                                  cafilepath=serverCafilepath,
-                                  )
-    self.assertIs(beta.reopen(), True)
-    self.assertIs(beta.accepted, False)
-    self.assertIs(beta.connected, False)
-    self.assertIs(beta.cutoff, False)
-
-    console.terse("Connecting  and Handshaking beta to alpha\n")
-    while True:
-        beta.serviceConnect()
-        alpha.serviceConnects()
-        if beta.connected and len(alpha.ixes) >= 1:
-            break
-        time.sleep(0.01)
-
-    self.assertIs(beta.accepted, True)
-    self.assertIs(beta.connected, True)
-    self.assertIs(beta.cutoff, False)
-    self.assertEqual(beta.ca, beta.cs.getsockname())
-    self.assertEqual(beta.ha, beta.cs.getpeername())
-    self.assertIs(beta.connected, True)
-
-    ixBeta = alpha.ixes[beta.ca]
-    self.assertIsNotNone(ixBeta.ca)
-    self.assertIsNotNone(ixBeta.cs)
-    self.assertEqual(ixBeta.cs.getsockname(), beta.cs.getpeername())
-    self.assertEqual(ixBeta.cs.getpeername(), beta.cs.getsockname())
-    self.assertEqual(ixBeta.ca, beta.ca)
-    self.assertEqual(ixBeta.ha, beta.ha)
-
-    console.terse("{0}\n".format("Building Request ...\n"))
-    host = u'127.0.0.1'
-    port = 6061
-    method = u'GET'
-    path = u'/echo?name=fame'
-    console.terse("{0} from  {1}:{2}{3} ...\n".format(method, host, port, path))
-    headers = dict([(u'Accept', u'application/json')])
-    request =  clienting.Requester(hostname=host,
-                                 port=port,
-                                 method=method,
-                                 path=path,
-                                 headers=headers)
-    msgOut = request.rebuild()
-    lines = [
-               b'GET /echo?name=fame HTTP/1.1',
-               b'Host: 127.0.0.1:6061',
-               b'Accept-Encoding: identity',
-               b'Accept: application/json',
-               b'',
-               b'',
-            ]
-    for i, line in enumerate(lines):
-        self.assertEqual(line, request.lines[i])
-
-    self.assertEqual(request.head, b'GET /echo?name=fame HTTP/1.1\r\nHost: 127.0.0.1:6061\r\nAccept-Encoding: identity\r\nAccept: application/json\r\n\r\n')
-    self.assertEqual(msgOut, b'GET /echo?name=fame HTTP/1.1\r\nHost: 127.0.0.1:6061\r\nAccept-Encoding: identity\r\nAccept: application/json\r\n\r\n')
-
-    console.terse("Beta requests to Alpha\n")
-    beta.tx(msgOut)
-    while beta.txbs and not ixBeta.rxbs :
-        beta.serviceSends()
-        time.sleep(0.05)
-        alpha.serviceReceivesAllIx()
-        time.sleep(0.05)
-    msgIn = bytes(ixBeta.rxbs)
-    self.assertEqual(msgIn, msgOut)
-    ixBeta.clearRxbs()
-
-    console.terse("Alpha responds to Beta\n")
-    msgOut = b'HTTP/1.1 200 OK\r\nContent-Length: 122\r\nContent-Type: application/json\r\nDate: Thu, 30 Apr 2015 19:37:17 GMT\r\nServer: IoBook.local\r\n\r\n{"content": null, "query": {"name": "fame"}, "verb": "GET", "url": "http://127.0.0.1:8080/echo?name=fame", "action": null}'
-    ixBeta.tx(msgOut)
-    while ixBeta.txbs or not beta.rxbs:
-        alpha.serviceSendsAllIx()
-        time.sleep(0.05)
-        beta.serviceReceives()
-        time.sleep(0.05)
-    msgIn = bytes(beta.rxbs)
-    self.assertEqual(msgIn, msgOut)
-
-    console.terse("Beta processes response \n")
-    response = clienting.Respondent(msg=beta.rxbs, method=method)
-    while response.parser:
-        response.parse()
-
-    response.dictify()
-
-    self.assertEqual(bytes(response.body), bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GET", "url'
-                                                     b'": "http://127.0.0.1:8080/echo?name=fame", "action": null}'))
-    self.assertEqual(response.data, {'action': None,
-                                     'content': None,
-                                     'query': {'name': 'fame'},
-                                     'url': 'http://127.0.0.1:8080/echo?name=fame',
-                                     'verb': 'GET'}
-                    )
-    self.assertEqual(len(beta.rxbs), 0)
-    self.assertEqual(response.headers.items(), [('content-length', '122'),
-                                                ('content-type', 'application/json'),
-                                                ('date', 'Thu, 30 Apr 2015 19:37:17 GMT'),
-                                                ('server', 'IoBook.local')])
-
-    alpha.close()
-    beta.close()
-
-    wireLogAlpha.close()
-    wireLogBeta.close()
 
 
 
@@ -3776,4 +3767,4 @@ def testQueryQuoting():
 
 
 if __name__ == '__main__':
-    test_request_response_sse_stream_fancy_json_chunked()
+    test_request_response_echo_tls()
