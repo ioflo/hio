@@ -675,6 +675,8 @@ class Patron(tyming.Tymee):
 
 
         """
+        super(Patron, self).__init__(**kwa)
+
         # .requests is deque of dicts of request data
         self.requests = requests if requests is not None else deque()
         # .responses is deque of dicts of response data
