@@ -1192,4 +1192,4 @@ def test_requester_respondent_sse_stream_fancy_json_chunked():
 
 
 if __name__ == '__main__':
-    test_requester_respondent_sse_stream_fancy_json_chunked()
+    test_requester_respondent_echo()
