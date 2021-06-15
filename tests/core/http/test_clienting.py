@@ -667,102 +667,74 @@ def test_client_pipeline_echo_simple():
     beta.connector.close()
 
 
-def testPatronEchoSimpleFirst():
+def test_client_echo_simple_first():
     """
-    Test Patron Simple First time request pattern
+    Test Client Simple First time request pattern
     """
-    console.terse("{0}\n".format(self.testPatronEchoSimpleFirst.__doc__))
+    alpha = tcp.Server(port = 6101, bufsize=131072)
+    assert alpha.reopen()
+    assert alpha.ha == ('0.0.0.0', 6101)
+    assert alpha.eha == ('127.0.0.1', 6101)
 
-    wireLogAlpha = wiring.WireLog(buffify=True, same=True)
-    result = wireLogAlpha.reopen()
-
-    alpha = tcp.Server(port = 6101, bufsize=131072, wlog=wireLogAlpha)
-    self.assertIs(alpha.reopen(), True)
-    self.assertEqual(alpha.ha, ('0.0.0.0', 6101))
-    self.assertEqual(alpha.eha, ('127.0.0.1', 6101))
-
-    console.terse("{0}\n".format("Building Connector ...\n"))
-
-    wireLogBeta = wiring.WireLog(buffify=True,  same=True)
-    result = wireLogBeta.reopen()
     host = alpha.eha[0]
     port = alpha.eha[1]
     method = u'GET'
     path = u'/echo?name=fame'
     headers = dict([('Accept', 'application/json')])
+
     beta = clienting.Patron(bufsize=131072,
-                                 wlog=wireLogBeta,
                                  hostname=host,
                                  port=port,
                                  method=method,
                                  path=path,
                                  headers=headers,
-                                 reconnectable=True,
                                  )
 
-    self.assertIs(beta.connector.reopen(), True)
-    self.assertIs(beta.connector.accepted, False)
-    self.assertIs(beta.connector.connected, False)
-    self.assertIs(beta.connector.cutoff, False)
+    assert beta.connector.reopen()
+    assert not beta.connector.accepted
+    assert not beta.connector.connected
+    assert not beta.connector.cutoff
 
     beta.transmit()
 
     while (not alpha.ixes or  beta.requests or
            beta.connector.txbs or not beta.respondent.ended):
-        self.mockEchoService(alpha)
+        mockEchoService(alpha)
         time.sleep(0.05)
         beta.serviceAll()
         time.sleep(0.05)
 
-    self.assertEqual(len(beta.connector.rxbs), 0)
-    self.assertIs(beta.waited, False)
-    self.assertIs(beta.respondent.ended, True)
+    assert not beta.connector.rxbs
+    assert not beta.waited
+    assert beta.respondent.ended
 
-    self.assertEqual(len(beta.responses), 1)
+    assert len(beta.responses) == 1
     response = beta.responses.popleft()
-    self.assertEqual(response, {'version': (1, 1),
-                                'status': 200,
-                                'reason': 'OK',
-                                'headers':
-                                    {'content-length': '122',
-                                    'content-type': 'application/json',
-                                    'date': 'Thu, 30 Apr 2015 19:37:17 GMT',
-                                    'server': 'IoBook.local'},
-                                'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
-                                                        b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
-                                                        b'on": null}'),
-                                'data': {'action': None,
-                                         'content': None,
-                                         'query': {'name': 'fame'},
-                                         'url': 'http://127.0.0.1:8080/echo?name=fame',
-                                         'verb': 'GET'},
-                                'error': None,
-                                'errored': False,
-                                'request':
-                                    {'host': '127.0.0.1',
-                                     'port': 6101,
-                                     'scheme': 'http',
-                                     'method': 'GET',
-                                     'path': '/echo',
-                                     'qargs': {'name': 'fame'},
-                                     'fragment': '',
-                                     'headers':
-                                         {'accept': 'application/json'},
-                                     'body': b'',
-                                     'data': None,
-                                     'fargs': None,
-                                    }
-                                })
-
-
-    #request = dict([('method', u'GET'),
-                         #('path', u'/echo?name=fame'),
-                         #('qargs', dict()),
-                         #('fragment', u''),
-                         #('headers', dict([('Accept', 'application/json')])),
-                         #('body', None),
-                         #])
-    #beta.requests.append(request)
+    assert response == {'version': (1, 1),
+                        'status': 200,
+                        'reason': 'OK',
+                        'headers': imdict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
+                        'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
+                                          b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
+                                          b'on": null}'),
+                        'data': {'content': None,
+                                 'query': {'name': 'fame'},
+                                 'verb': 'GET',
+                                 'url': 'http://127.0.0.1:8080/echo?name=fame',
+                                 'action': None},
+                        'request': {'host': '127.0.0.1',
+                                    'port': 6101,
+                                    'scheme': 'http',
+                                    'method': 'GET',
+                                    'path': '/echo',
+                                    'fragment': '',
+                                    'qargs': {'name': 'fame'},
+                                    'headers': imdict([('Accept', 'application/json')]),
+                                    'body': b'',
+                                    'data': None,
+                                    'fargs': None},
+                        'errored': False,
+                        'error': None}
 
     beta.request(method=u'GET',
                   path=u'/echo?name=fame',
@@ -770,56 +742,47 @@ def testPatronEchoSimpleFirst():
 
     while (not alpha.ixes or  beta.requests or
             beta.connector.txbs or not beta.respondent.ended):
-        self.mockEchoService(alpha)
+        mockEchoService(alpha)
         time.sleep(0.05)
         beta.serviceAll()
         time.sleep(0.05)
 
-    self.assertEqual(len(beta.connector.rxbs), 0)
-    self.assertIs(beta.waited, False)
-    self.assertIs(beta.respondent.ended, True)
+    assert not beta.connector.rxbs
+    assert not beta.waited
+    assert beta.respondent.ended
 
-    self.assertEqual(len(beta.responses), 1)
+
+    assert len(beta.responses) == 1
     response = beta.responses.popleft()
-    self.assertEqual(response, {'version': (1, 1),
-                                'status': 200,
-                                'reason': 'OK',
-                                'headers':
-                                    {'content-length': '122',
-                                    'content-type': 'application/json',
-                                    'date': 'Thu, 30 Apr 2015 19:37:17 GMT',
-                                    'server': 'IoBook.local'},
-                                'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
-                                                b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
-                                                b'on": null}'),
-                                'data': {'action': None,
-                                         'content': None,
-                                         'query': {'name': 'fame'},
-                                         'url': 'http://127.0.0.1:8080/echo?name=fame',
-                                         'verb': 'GET'},
-                                'error': None,
-                                'errored': False,
-                                'request':
-                                    {'host': '127.0.0.1',
-                                     'port': 6101,
-                                     'scheme': 'http',
-                                     'method': 'GET',
-                                     'path': '/echo',
-                                     'qargs': {'name': 'fame'},
-                                     'fragment': '',
-                                     'headers':
-                                         {'accept': 'application/json'},
-                                     'body': b'',
-                                     'data': None,
-                                     'fargs': None,
-                                    }
-                                })
+    assert response ==  {'version': (1, 1),
+                        'status': 200,
+                        'reason': 'OK',
+                        'headers': imdict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
+                        'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
+                                          b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
+                                          b'on": null}'),
+                        'data': {'content': None,
+                                 'query': {'name': 'fame'},
+                                 'verb': 'GET',
+                                 'url': 'http://127.0.0.1:8080/echo?name=fame',
+                                 'action': None},
+                        'request': {'method': 'GET',
+                                    'path': '/echo',
+                                    'qargs': {'name': 'fame'},
+                                    'fragment': '',
+                                    'headers': imdict([('Accept', 'application/json')]),
+                                    'body': b'',
+                                    'data': None,
+                                    'fargs': None,
+                                    'host': '127.0.0.1',
+                                    'port': 6101,
+                                    'scheme': 'http'},
+                        'errored': False,
+                        'error': None}
 
     alpha.close()
     beta.connector.close()
 
-    wireLogAlpha.close()
-    wireLogBeta.close()
 
 def mockEchoServicePath(server):
     """
@@ -2576,4 +2539,4 @@ def testQueryQuoting():
 
 
 if __name__ == '__main__':
-    test_client_pipeline_echo_simple()
+    test_client_echo_simple_first()
