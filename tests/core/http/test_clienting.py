@@ -553,6 +553,44 @@ def mockEchoServiceLocalhost(server):
 
         server.serviceSendsAllIx()
 
+
+def mockEchoServiceJson(server):
+    """
+    mock echo server service with json data request body utility function
+    """
+    mockMsg = (b'PUT /echo?name=fame HTTP/1.1\r\n'
+               b'Host: localhost:6101\r\n'
+               b'Accept-Encoding: identity\r\n'
+               b'Content-Length: 31\r\n'
+               b'Accept: application/json\r\n'
+               b'Content-Type: application/json; charset=utf-8\r\n\r\n'
+               b'{"first":"John","last":"Smith"}')
+
+    server.serviceConnects()
+    if server.ixes:
+        server.serviceReceivesAllIx()
+
+        ixClient = list(server.ixes.values())[0]
+        msgIn = bytes(ixClient.rxbs)
+        if msgIn == mockMsg:
+            ixClient.clearRxbs()
+            msgOut = (b'HTTP/1.1 200 OK\r\n'
+                      b'Content-Length: 122\r\n'
+                      b'Content-Type: application/json\r\n'
+                      b'Date: Thu, 30 Apr 2015 19:37:17 GMT\r\n'
+                      b'Server: IoBook.local\r\n\r\n'
+                      b'{"content": null, '
+                      b'"query": {"name": "fame"}, '
+                      b'"verb": "GET", '
+                      b'"url": "http://127.0.0.1:8080/echo?name=fame", '
+                      b'"action": null}')
+            ixClient.tx(msgOut)
+            msgIn = b''
+            msgOut = b''
+
+        server.serviceSendsAllIx()
+
+
 def test_client_pipeline_echo_simple():
     """
     Test CLient pipeline servicing
@@ -937,43 +975,29 @@ def test_client_pipline_echo_simple_path_scheme():
     beta.connector.close()
 
 
-def testPatronPipelineEchoSimplePathTrack():
+def test_client_pipeline_echo_simple_path_track():
     """
     Test Patron pipeline servicing using path components for host port scheme
     Request includes tracking information that is included in reponses copy
     of request
     """
-    console.terse("{0}\n".format(self.testPatronPipelineEchoSimplePathTrack.__doc__))
+    alpha = tcp.Server(port = 6101, bufsize=131072)
+    assert alpha.reopen()
+    assert alpha.ha == ('0.0.0.0', 6101)
+    assert alpha.eha == ('127.0.0.1', 6101)
 
 
-
-    wireLogAlpha = wiring.WireLog(buffify=True, same=True)
-    result = wireLogAlpha.reopen()
-
-    alpha = tcp.Server(port = 6101, bufsize=131072, wlog=wireLogAlpha)
-    self.assertIs(alpha.reopen(), True)
-    self.assertEqual(alpha.ha, ('0.0.0.0', 6101))
-    self.assertEqual(alpha.eha, ('127.0.0.1', 6101))
-
-    console.terse("{0}\n".format("Building Connector ...\n"))
-
-    wireLogBeta = wiring.WireLog(buffify=True,  same=True)
-    result = wireLogBeta.reopen()
-
-    #host = alpha.eha[0]
-    #port = alpha.eha[1]
-    path = "http://{0}:{1}/".format('localhost', alpha.eha[1])
-
+    path = "http://{0}:{1}/".format('localhost', alpha.eha[1])  # needed for connect
+    # method and headers set in request
     beta = clienting.Patron(bufsize=131072,
-                                 wlog=wireLogBeta,
                                  path=path,
-                                 reconnectable=True,
+                                 reconnectable=True,  # do not close connection
                                  )
 
-    self.assertIs(beta.connector.reopen(), True)
-    self.assertIs(beta.connector.accepted, False)
-    self.assertIs(beta.connector.connected, False)
-    self.assertIs(beta.connector.cutoff, False)
+    assert beta.connector.reopen()
+    assert not beta.connector.accepted
+    assert not beta.connector.connected
+    assert not beta.connector.cutoff
 
     request = dict([('method', u'GET'),
                      ('path', u'/echo?name=fame'),
@@ -981,8 +1005,8 @@ def testPatronPipelineEchoSimplePathTrack():
                      ('fragment', u''),
                      ('headers', dict([('Accept', 'application/json')])),
                      ('body', None),
-                     ('mid', 1),
-                     ('drop', '.stuff.reply'),
+                     ('mid', 1),  # tracking
+                     ('drop', '.stuff.reply'),  # tracking
                     ])
 
     beta.requests.append(request)
@@ -994,47 +1018,39 @@ def testPatronPipelineEchoSimplePathTrack():
         beta.serviceAll()
         time.sleep(0.05)
 
-    self.assertEqual(len(beta.connector.rxbs), 0)
-    self.assertIs(beta.waited, False)
-    self.assertIs(beta.respondent.ended, True)
+    assert not beta.connector.rxbs
+    assert not beta.waited
+    assert beta.respondent.ended
 
-    self.assertEqual(len(beta.responses), 1)
+    assert len(beta.responses) == 1
     response = beta.responses.popleft()
-    self.assertEqual(response, {'version': (1, 1),
-                                'status': 200,
-                                'reason': 'OK',
-                                'headers':
-                                    {'content-length': '122',
-                                    'content-type': 'application/json',
-                                    'date': 'Thu, 30 Apr 2015 19:37:17 GMT',
-                                    'server': 'IoBook.local'},
-                                'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
-                                        b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
-                                        b'on": null}'),
-                                'data': {'action': None,
-                                         'content': None,
-                                         'query': {'name': 'fame'},
-                                         'url': 'http://127.0.0.1:8080/echo?name=fame',
-                                         'verb': 'GET'},
-                                'error': None,
-                                'errored': False,
-                                'request':
-                                    {'host': 'localhost',
-                                     'port': 6101,
-                                     'scheme': 'http',
-                                     'method': 'GET',
-                                     'path': '/echo',
-                                     'qargs': {'name': 'fame'},
-                                     'fragment': '',
-                                     'headers':
-                                         {'accept': 'application/json'},
-                                     'body': b'',
-                                     'data': None,
-                                     'fargs': None,
-                                     'mid': 1,
-                                     'drop': '.stuff.reply'
-                                    }
-                                })
+    assert response == {'version': (1, 1),
+                        'status': 200,
+                        'reason': 'OK',
+                        'headers': imdict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
+                        'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
+                                          b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
+                                          b'on": null}'),
+                        'data': {'content': None,
+                                 'query': {'name': 'fame'},
+                                 'verb': 'GET',
+                                 'url': 'http://127.0.0.1:8080/echo?name=fame',
+                                 'action': None},
+                        'request': {'method': 'GET',
+                                    'path': '/echo',
+                                    'qargs': {'name': 'fame'},
+                                    'fragment': '',
+                                    'headers': imdict([('Accept', 'application/json')]),
+                                    'body': b'',
+                                    'mid': 1,
+                                    'drop': '.stuff.reply',
+                                    'host': 'localhost',
+                                    'port': 6101,
+                                    'scheme': 'http',
+                                    'data': None,
+                                    'fargs': None},
+                        'errored': False,
+                        'error': None}
 
     request.update(mid=2, drop='.puff.reply')
     beta.requests.append(request)
@@ -1046,112 +1062,68 @@ def testPatronPipelineEchoSimplePathTrack():
         beta.serviceAll()
         time.sleep(0.05)
 
-    self.assertEqual(len(beta.connector.rxbs), 0)
-    self.assertIs(beta.waited, False)
-    self.assertIs(beta.respondent.ended, True)
+    assert not beta.connector.rxbs
+    assert not beta.waited
+    assert beta.respondent.ended
 
-    self.assertEqual(len(beta.responses), 1)
+    assert len(beta.responses) == 1
     response = beta.responses.popleft()
-    self.assertEqual(response, {'version': (1, 1),
-                                'status': 200,
-                                'reason': 'OK',
-                                'headers':
-                                    {'content-length': '122',
-                                    'content-type': 'application/json',
-                                    'date': 'Thu, 30 Apr 2015 19:37:17 GMT',
-                                    'server': 'IoBook.local'},
-                                'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
-                                                b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
-                                                b'on": null}'),
-                                'data': {'action': None,
-                                         'content': None,
-                                         'query': {'name': 'fame'},
-                                         'url': 'http://127.0.0.1:8080/echo?name=fame',
-                                         'verb': 'GET'},
-                                'error': None,
-                                'errored': False,
-                                'request':
-                                    {'host': 'localhost',
-                                     'port': 6101,
-                                     'scheme': 'http',
-                                     'method': 'GET',
-                                     'path': '/echo',
-                                     'qargs': {'name': 'fame'},
-                                     'fragment': '',
-                                     'headers':
-                                         {'accept': 'application/json'},
-                                     'body': b'',
-                                     'data': None,
-                                     'fargs': None,
-                                     'mid': 2,
-                                     'drop': '.puff.reply'
-                                    }
-                                })
+    assert response ==  {'version': (1, 1),
+                        'status': 200,
+                        'reason': 'OK',
+                        'headers': imdict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
+                        'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
+                                          b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
+                                          b'on": null}'),
+                        'data': {'content': None,
+                                 'query': {'name': 'fame'},
+                                 'verb': 'GET',
+                                 'url': 'http://127.0.0.1:8080/echo?name=fame',
+                                 'action': None},
+                        'request': {'method': 'GET',
+                                    'path': '/echo',
+                                    'qargs': {'name': 'fame'},
+                                    'fragment': '',
+                                    'headers': imdict([('Accept', 'application/json')]),
+                                    'body': b'',
+                                    'mid': 2,
+                                    'drop': '.puff.reply',
+                                    'host': 'localhost',
+                                    'port': 6101,
+                                    'scheme': 'http',
+                                    'data': None,
+                                    'fargs': None},
+                        'errored': False,
+                        'error': None}
 
     alpha.close()
     beta.connector.close()
 
-    wireLogAlpha.close()
-    wireLogBeta.close()
 
-
-def mockEchoServiceJson(server):
+def test_client_pipeline_echo_json():
     """
-    mock echo server service with json data request body utility function
-    """
-    server.serviceConnects()
-    if server.ixes:
-        server.serviceReceivesAllIx()
-
-        ixClient = server.ixes.values()[0]
-        msgIn = bytes(ixClient.rxbs)
-        if msgIn == b'PUT /echo?name=fame HTTP/1.1\r\nHost: localhost:6101\r\nAccept-Encoding: identity\r\nContent-Length: 31\r\nAccept: application/json\r\nContent-Type: application/json; charset=utf-8\r\n\r\n{"first":"John","last":"Smith"}':
-            ixClient.clearRxbs()
-            msgOut = b'HTTP/1.1 200 OK\r\nContent-Length: 122\r\nContent-Type: application/json\r\nDate: Thu, 30 Apr 2015 19:37:17 GMT\r\nServer: IoBook.local\r\n\r\n{"content": null, "query": {"name": "fame"}, "verb": "GET", "url": "http://127.0.0.1:8080/echo?name=fame", "action": null}'
-            ixClient.tx(msgOut)
-            msgIn = b''
-            msgOut = b''
-
-        server.serviceSendsAllIx()
-
-def testPatronPipelineEchoJson():
-    """
-    Test Patron pipeline servicing using path components for host port scheme
+    Test Client pipeline servicing using path components for host port scheme
     with json body in data
     Request includes tracking information that is included in reponses copy
     of request
     """
-    console.terse("{0}\n".format(self.testPatronPipelineEchoJson.__doc__))
+    alpha = tcp.Server(port = 6101, bufsize=131072)
+    assert alpha.reopen()
+    assert alpha.ha == ('0.0.0.0', 6101)
+    assert alpha.eha == ('127.0.0.1', 6101)
 
 
-
-    wireLogAlpha = wiring.WireLog(buffify=True, same=True)
-    result = wireLogAlpha.reopen()
-
-    alpha = tcp.Server(port = 6101, bufsize=131072, wlog=wireLogAlpha)
-    self.assertIs(alpha.reopen(), True)
-    self.assertEqual(alpha.ha, ('0.0.0.0', 6101))
-    self.assertEqual(alpha.eha, ('127.0.0.1', 6101))
-
-    console.terse("{0}\n".format("Building Connector ...\n"))
-
-    wireLogBeta = wiring.WireLog(buffify=True,  same=True)
-    result = wireLogBeta.reopen()
-
-    #host = alpha.eha[0]
-    #port = alpha.eha[1]
-    path = "http://{0}:{1}/".format('localhost', alpha.eha[1])
-
+    path = "http://{0}:{1}/".format('localhost', alpha.eha[1])  # needed for connect
+    # method and headers set in request
     beta = clienting.Patron(bufsize=131072,
-                                 wlog=wireLogBeta,
                                  path=path,
-                                 reconnectable=True,
+                                 reconnectable=True,  # do not close connection
                                  )
 
-    self.assertIs(beta.connector.reopen(), True)
-    self.assertIs(beta.connector.accepted, False)
-    self.assertIs(beta.connector.connected, False)
-    self.assertIs(beta.connector.cutoff, False)
+    assert beta.connector.reopen()
+    assert not beta.connector.accepted
+    assert not beta.connector.connected
+    assert not beta.connector.cutoff
 
     request = dict([('method', u'PUT'),
                      ('path', u'/echo?name=fame'),
@@ -1167,112 +1139,92 @@ def testPatronPipelineEchoJson():
 
     while (not alpha.ixes or beta.requests or
             beta.connector.txbs or not beta.respondent.ended):
-        self.mockEchoServiceJson(alpha)
+        mockEchoServiceJson(alpha)
         time.sleep(0.05)
         beta.serviceAll()
         time.sleep(0.05)
 
-    self.assertEqual(len(beta.connector.rxbs), 0)
-    self.assertIs(beta.waited, False)
-    self.assertIs(beta.respondent.ended, True)
+    assert not beta.connector.rxbs
+    assert not beta.waited
+    assert beta.respondent.ended
 
-    self.assertEqual(len(beta.responses), 1)
+    assert len(beta.responses) == 1
     response = beta.responses.popleft()
-    self.assertEqual(response, {'version': (1, 1),
-                                'status': 200,
-                                'reason': 'OK',
-                                'headers':
-                                    {'content-length': '122',
-                                    'content-type': 'application/json',
-                                    'date': 'Thu, 30 Apr 2015 19:37:17 GMT',
-                                    'server': 'IoBook.local'},
-                                'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
-                                                    b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
-                                                    b'on": null}'),
-                                'data': {'action': None,
-                                         'content': None,
-                                         'query': {'name': 'fame'},
-                                         'url': 'http://127.0.0.1:8080/echo?name=fame',
-                                         'verb': 'GET'},
-                                'error': None,
-                                'errored': False,
-                                'request':
-                                    {'host': 'localhost',
-                                     'port': 6101,
-                                     'scheme': 'http',
-                                     'method': 'PUT',
-                                     'path': '/echo',
-                                     'qargs': {'name': 'fame'},
-                                     'fragment': '',
-                                     'headers':
-                                         {'accept': 'application/json',
-                                          'content-type': 'application/json; charset=utf-8'},
-                                     'body': b'',
-                                     'data': { 'first': 'John', 'last': 'Smith'},
-                                     'fargs': None,
-                                     'mid': 1,
-                                     'drop': '.stuff.reply'
-                                    }
-                                })
+    assert response == {'version': (1, 1),
+                        'status': 200,
+                        'reason': 'OK',
+                        'headers': imdict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
+                        'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
+                                          b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
+                                          b'on": null}'),
+                        'data': {'content': None,
+                                 'query': {'name': 'fame'},
+                                 'verb': 'GET',
+                                 'url': 'http://127.0.0.1:8080/echo?name=fame',
+                                 'action': None},
+                        'request': {'method': 'PUT',
+                                    'path': '/echo',
+                                    'qargs': {'name': 'fame'},
+                                    'fragment': '',
+                                    'headers': imdict([('Accept', 'application/json'), ('content-type', 'application/json; charset=utf-8')]),
+                                    'data': {'first': 'John', 'last': 'Smith'},
+                                    'mid': 1,
+                                    'drop': '.stuff.reply',
+                                    'host': 'localhost',
+                                    'port': 6101,
+                                    'scheme': 'http',
+                                    'body': b'',
+                                    'fargs': None},
+                        'errored': False,
+                        'error': None}
+
 
     request.update(mid=2, drop='.puff.reply')
     beta.requests.append(request)
 
     while (not alpha.ixes or beta.requests or
             beta.connector.txbs or not beta.respondent.ended):
-        self.mockEchoServiceJson(alpha)
+        mockEchoServiceJson(alpha)
         time.sleep(0.05)
         beta.serviceAll()
         time.sleep(0.05)
 
-    self.assertEqual(len(beta.connector.rxbs), 0)
-    self.assertIs(beta.waited, False)
-    self.assertIs(beta.respondent.ended, True)
+    assert not beta.connector.rxbs
+    assert not beta.waited
+    assert beta.respondent.ended
 
-    self.assertEqual(len(beta.responses), 1)
+    assert len(beta.responses) == 1
     response = beta.responses.popleft()
-    self.assertEqual(response, {'version': (1, 1),
-                                'status': 200,
-                                'reason': 'OK',
-                                'headers':
-                                    {'content-length': '122',
-                                    'content-type': 'application/json',
-                                    'date': 'Thu, 30 Apr 2015 19:37:17 GMT',
-                                    'server': 'IoBook.local'},
-                                'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
-                                                b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
-                                                b'on": null}'),
-                                'data': {'action': None,
-                                         'content': None,
-                                         'query': {'name': 'fame'},
-                                         'url': 'http://127.0.0.1:8080/echo?name=fame',
-                                         'verb': 'GET'},
-                                'error': None,
-                                'errored': False,
-                                'request':
-                                    {'host': 'localhost',
-                                     'port': 6101,
-                                     'scheme': 'http',
-                                     'method': 'PUT',
-                                     'path': '/echo',
-                                     'qargs': {'name': 'fame'},
-                                     'fragment': '',
-                                     'headers':
-                                         {'accept': 'application/json',
-                                          'content-type': 'application/json; charset=utf-8'},
-                                     'body': b'',
-                                     'data': { 'first': 'John', 'last': 'Smith'},
-                                     'fargs': None,
-                                     'mid': 2,
-                                     'drop': '.puff.reply'
-                                    }
-                                })
+    assert response == {'version': (1, 1),
+                        'status': 200,
+                        'reason': 'OK',
+                        'headers': imdict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
+                        'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
+                                          b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
+                                          b'on": null}'),
+                        'data': {'content': None,
+                                 'query': {'name': 'fame'},
+                                 'verb': 'GET',
+                                 'url': 'http://127.0.0.1:8080/echo?name=fame',
+                                 'action': None},
+                        'request': {'method': 'PUT',
+                                    'path': '/echo',
+                                    'qargs': {'name': 'fame'},
+                                    'fragment': '',
+                                    'headers': imdict([('Accept', 'application/json'), ('content-type', 'application/json; charset=utf-8')]),
+                                    'data': {'first': 'John', 'last': 'Smith'},
+                                    'mid': 2,
+                                    'drop': '.puff.reply',
+                                    'host': 'localhost',
+                                    'port': 6101,
+                                    'scheme': 'http',
+                                    'body': b'',
+                                    'fargs': None},
+                        'errored': False,
+                        'error': None}
 
     alpha.close()
     beta.connector.close()
-
-    wireLogAlpha.close()
-    wireLogBeta.close()
 
 
 def testPatronPipelineStream():
@@ -2524,4 +2476,4 @@ def testQueryQuoting():
 
 
 if __name__ == '__main__':
-    test_client_pipline_echo_simple_path_scheme()
+    test_client_pipeline_echo_json()
