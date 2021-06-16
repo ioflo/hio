@@ -164,6 +164,7 @@ class Requester(object):
 
         return self.build()
 
+
     def build(self):
         """
         Build and return request message from attributes
@@ -318,6 +319,7 @@ class Respondent(httping.Parsent):
         self.leid = None  # non None if evented with event ids sent
         self.eventSource = None  # httping.EventSource instance when .evented
 
+
     def reinit(self,
                redirectable=None,
                **kwa):
@@ -334,6 +336,7 @@ class Respondent(httping.Parsent):
         self.reason = None
         self.evented = None
 
+
     def close(self):
         """
         Call super to assign True to .closed
@@ -342,6 +345,7 @@ class Respondent(httping.Parsent):
         super(Respondent, self).close()
         if self.eventSource:  # assign True to .eventSource.closed
             self.eventSource.close()
+
 
     def checkPersisted(self):
         """
@@ -384,6 +388,7 @@ class Respondent(httping.Parsent):
                 proxy = self.headers.get("proxy-connection")
                 if proxy and "keep-alive" in proxy.lower():
                     self.persisted = True
+
 
     def parseHead(self):
         """
@@ -510,6 +515,7 @@ class Respondent(httping.Parsent):
         yield True
         return
 
+
     def parseBody(self):
         """
         Parse body
@@ -600,7 +606,7 @@ class Respondent(httping.Parsent):
         return
 
 
-class Patron(tyming.Tymee):
+class Patron():
     """
     Patron class nonblocking HTTP client connection manager
     """
@@ -671,9 +677,9 @@ class Patron(tyming.Tymee):
             responses is deque of responses if any processed by respondent
                  each response is dict
 
-
+            **kwa are passed through to init .connector Client or ClientTLS for
         """
-        super(Patron, self).__init__(**kwa)
+        # super(Patron, self).__init__(**kwa)
 
         # .requests is deque of dicts of request data
         self.requests = requests if requests is not None else deque()
@@ -731,8 +737,7 @@ class Patron(tyming.Tymee):
                 connector.name = name
         else:
             if secured:
-                connector = ClientTls(tymth=self.tymth,
-                                       name=name,
+                connector = ClientTls( name=name,
                                        uid=uid,
                                        host=hostname,
                                        port=port,
@@ -740,8 +745,7 @@ class Patron(tyming.Tymee):
                                        wlog=wlog,
                                        **kwa)
             else:
-                connector = Client(tymth=self.tymth,
-                                    name=name,
+                connector = Client( name=name,
                                     uid=uid,
                                     host=hostname,
                                     port=port,
@@ -1018,14 +1022,7 @@ class Patron(tyming.Tymee):
                 # future check host port scheme if need to reconnect on new ha
                 # reconnect here
                 self.transmit(**request)  # expand items in request
-                #self.transmit(method=request.get('method'),
-                              #path=request.get('path'),
-                              #qargs=request.get('qargs'),
-                              #fragment=request.get('fragment'),
-                              #headers=request.get('headers'),
-                              #body=request.get('body'),
-                              #data=request.get('data'),
-                              #fargs=request.get('fargs'))
+
 
     def serviceResponse(self):
         """
@@ -1095,6 +1092,7 @@ class Patron(tyming.Tymee):
                         self.waited = False
                 self.respondent.makeParser()  #set up for next time
 
+
     def serviceAll(self):
         """
         Service request response
@@ -1104,13 +1102,13 @@ class Patron(tyming.Tymee):
                 self.respondent.close()  # close any pending or current response parsing
 
             if self.connector.reconnectable:  # useful for server sent event stream
-                if self.connector.timeout > 0.0 and self.connector.timer.expired:  # timed out
+                if self.connector.timeout > 0.0 and self.connector.tymer.expired:  # timed out
                     self.connector.reopen()
                     if self.respondent.evented:
                         duration = float(self.respondent.retry) / 1000.0 # convert to seconds
                     else:
                         duration = None  # reused current duration
-                    self.connector.timer.restart(duration=duration)
+                    self.connector.tymer.restart(duration=duration)
 
         if not self.connector.connected:
             self.connector.serviceConnect()
@@ -1118,8 +1116,8 @@ class Patron(tyming.Tymee):
                 if self.respondent:
                     if self.respondent.evented and self.respondent.leid is not None:  # update Last-Event-ID header
                         self.requester.headers['Last-Event-ID'] = self.respondent.leid
+                        self.connector.txbs.clear()  # remove any stale request leftovers
                         self.transmit()  # rebuilds and queues up most recent http request here
-                        self.connector.txes.rotate()  # ensure first request in txes
 
         self.serviceRequests()
         self.connector.serviceSends()
@@ -1143,7 +1141,7 @@ class Patron(tyming.Tymee):
         Returns response as namedtuple or None if timeout.
         """
         tymer = tyming.Tymer(tymth=self.tymth, duration=timeout)
-        while ((self.requests or self.connector.txes or not self.responses)
+        while ((self.requests or self.connector.txbs or not self.responses)
                and not tymer.expired):
             try:
                 self.serviceAll()

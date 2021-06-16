@@ -795,7 +795,7 @@ class Valet(tyming.Tymee):
                         requestant.makeParser()  # resets requestant parser
                 else:  # not persistent so close and remove requestant and responder
                     ix = self.servant.ixes[ca]
-                    if not ix.txes:  # wait for outgoing txes to be empty
+                    if not ix.txbs:  # wait for outgoing txbs to be empty
                         self.closeConnection(ca)
 
     def serviceAll(self):

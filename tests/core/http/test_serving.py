@@ -109,7 +109,7 @@ def testPorterServiceEcho(self):
 
     beta.requests.append(request)
 
-    while (beta.requests or beta.connector.txes or not beta.responses or
+    while (beta.requests or beta.connector.txbs or not beta.responses or
            not alpha.servant.ixes or not alpha.idle()):
         alpha.serviceAll()
         time.sleep(0.05)
@@ -210,7 +210,7 @@ def testValetServiceBasic(self):
 
     beta.requests.append(request)
 
-    while (beta.requests or beta.connector.txes or not beta.responses or
+    while (beta.requests or beta.connector.txbs or not beta.responses or
            not alpha.idle()):
         alpha.serviceAll()
         time.sleep(0.05)
@@ -327,7 +327,7 @@ def testValetServiceBottle(self):
 
     beta.requests.append(request)
     tymer = tyming.Tymer(tymth=tymist.tymen(), duration=1.0)
-    while (beta.requests or beta.connector.txes or not beta.responses or
+    while (beta.requests or beta.connector.txbs or not beta.responses or
            not alpha.idle()):
         alpha.serviceAll()
         time.sleep(0.05)
@@ -454,7 +454,7 @@ def testValetServiceBottleNoContentLength(self):
 
     beta.requests.append(request)
     tymer = tyming.Tymer(tymth=tymist.tymen(), duration=1.0)
-    while (beta.requests or beta.connector.txes or not beta.responses or
+    while (beta.requests or beta.connector.txbs or not beta.responses or
            not alpha.idle()):
         alpha.serviceAll()
         time.sleep(0.05)
@@ -579,7 +579,7 @@ def testValetServiceBottleNonPersistent(self):
 
     beta.requests.append(request)
     tymer = tyming.Tymer(tymth=tymist.tymen(), duration=1.0)
-    while (beta.requests or beta.connector.txes or not beta.responses or
+    while (beta.requests or beta.connector.txbs or not beta.responses or
            not alpha.idle()):
         alpha.serviceAll()
         time.sleep(0.05)
@@ -852,7 +852,7 @@ def testValetServiceBasicSecure(self):
 
     beta.requests.append(request)
 
-    while (beta.requests or beta.connector.txes or not beta.responses or
+    while (beta.requests or beta.connector.txbs or not beta.responses or
            not alpha.idle()):
         alpha.serviceAll()
         time.sleep(0.05)
@@ -996,7 +996,7 @@ def testValetServiceBottleSecure(self):
 
     beta.requests.append(request)
     tymer = tyming.Tymer(tymth=tymist.tymen(), duration=1.0)
-    while (beta.requests or beta.connector.txes or not beta.responses or
+    while (beta.requests or beta.connector.txbs or not beta.responses or
            not alpha.idle()):
         alpha.serviceAll()
         time.sleep(0.05)

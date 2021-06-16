@@ -14,7 +14,6 @@ import pytest
 from hio import help
 from hio.help import helping
 from hio.help.helping import imdict
-from hio.help import timing
 from hio.base import tyming
 from hio.core import wiring, tcp
 from hio.core.http import clienting
@@ -1178,7 +1177,6 @@ def test_client_pipeline_echo_json():
                         'errored': False,
                         'error': None}
 
-
     request.update(mid=2, drop='.puff.reply')
     beta.requests.append(request)
 
@@ -1227,72 +1225,57 @@ def test_client_pipeline_echo_json():
     beta.connector.close()
 
 
-def testPatronPipelineStream():
+def test_client_pipeline_sse_stream():
     """
-    Test Patron pipeline stream
+    Test Client pipeline stream sse
     """
-    console.terse("{0}\n".format(self.testPatronPipelineStream.__doc__))
-
     tymist = tyming.Tymist(tyme=0.0)
 
-    wireLogAlpha = wiring.WireLog(buffify=True, same=True)
-    result = wireLogAlpha.reopen()
-
     alpha = tcp.Server(port = 6101,
-                               bufsize=131072,
-                               wlog=wireLogAlpha,
-                               tymth=tymist.tymen())
-    self.assertIs(alpha.reopen(), True)
-    self.assertEqual(alpha.ha, ('0.0.0.0', 6101))
-    self.assertEqual(alpha.eha, ('127.0.0.1', 6101))
+                       bufsize=131072,
+                       tymth=tymist.tymen())
+    assert alpha.reopen()
+    assert alpha.ha == ('0.0.0.0', 6101)
+    assert alpha.eha == ('127.0.0.1', 6101)
 
-    console.terse("{0}\n".format("Building Connector ...\n"))
-
-    wireLogBeta = wiring.WireLog(buffify=True,  same=True)
-    result = wireLogBeta.reopen()
     host = alpha.eha[0]
     port = alpha.eha[1]
-
-
     beta = clienting.Patron(bufsize=131072,
-                             wlog=wireLogBeta,
                              hostname=host,
                              port=port,
-                             tymth=tymist.tymen(),
-                             reconnectable=True,
+                             tymth=tymist.tymen(),  # passed through to connector
+                             reconnectable=True,  # passed through to connector
+                             timeout=1.0,  # passed through to connector
                              )
+    assert beta.connector.reopen()
+    assert not beta.connector.accepted
+    assert not beta.connector.connected
+    assert not beta.connector.cutoff
 
-    self.assertIs(beta.connector.reopen(), True)
-    self.assertIs(beta.connector.accepted, False)
-    self.assertIs(beta.connector.connected, False)
-    self.assertIs(beta.connector.cutoff, False)
-
-    console.terse("Connecting beta to server ...\n")
     while True:
         beta.serviceAll()
         alpha.serviceConnects()
         if beta.connector.connected and beta.connector.ca in alpha.ixes:
             break
         time.sleep(0.05)
-        # beta.connector.store.advanceStamp(0.05)
         tymist.tick(tock=0.5)
 
-    self.assertIs(beta.connector.accepted, True)
-    self.assertIs(beta.connector.connected, True)
-    self.assertIs(beta.connector.cutoff, False)
-    self.assertEqual(beta.connector.ca, beta.connector.cs.getsockname())
-    self.assertEqual(beta.connector.ha, beta.connector.cs.getpeername())
-    self.assertEqual(alpha.eha, beta.connector.ha)
+    assert beta.connector.accepted
+    assert beta.connector.connected
+    assert not beta.connector.cutoff
+    assert beta.connector.ca == beta.connector.cs.getsockname()
+    assert beta.connector.ha == beta.connector.cs.getpeername()
+    assert alpha.eha == beta.connector.ha
 
     ixBeta = alpha.ixes[beta.connector.ca]
-    self.assertIsNotNone(ixBeta.ca)
-    self.assertIsNotNone(ixBeta.cs)
-    self.assertEqual(ixBeta.cs.getsockname(), beta.connector.cs.getpeername())
-    self.assertEqual(ixBeta.cs.getpeername(), beta.connector.cs.getsockname())
-    self.assertEqual(ixBeta.ca, beta.connector.ca)
-    self.assertEqual(ixBeta.ha, beta.connector.ha)
+    assert ixBeta.ca is not None
+    assert ixBeta.cs is not None
+    assert ixBeta.cs.getsockname() == beta.connector.cs.getpeername()
+    assert ixBeta.cs.getpeername() == beta.connector.cs.getsockname()
+    assert ixBeta.ca == beta.connector.ca
+    assert ixBeta.ha == beta.connector.ha
 
-    console.terse("{0}\n".format("Building Request ...\n"))
+    # build request
     request = dict([('method', u'GET'),
                      ('path', u'/stream'),
                      ('qargs', dict()),
@@ -1302,33 +1285,26 @@ def testPatronPipelineStream():
                     ])
 
     beta.requests.append(request)
-
-    console.terse("Beta requests to Alpha\n")
-    console.terse("from {0}:{1}, {2} {3} ...\n".format(beta.connector.ha[0],
-                                                     beta.connector.ha[1],
-                                                     request['method'],
-                                                     request['path']))
-
     while (beta.requests or beta.connector.txbs) and not ixBeta.rxbs:
         beta.serviceAll()
         time.sleep(0.05)
-        # beta.connector.store.advanceStamp(0.05)
         tymist.tick(tock=0.5)
         alpha.serviceReceivesAllIx()
         time.sleep(0.05)
-        # beta.connector.store.advanceStamp(0.05)
         tymist.tick(tock=0.5)
 
     msgIn = bytes(ixBeta.rxbs)
-    msgOut = b'GET /stream HTTP/1.1\r\nHost: 127.0.0.1:6101\r\nAccept-Encoding: identity\r\nAccept: application/json\r\n\r\n'
+    assert msgIn == (b'GET /stream HTTP/1.1\r\n'
+                     b'Host: 127.0.0.1:6101\r\n'
+                     b'Accept-Encoding: identity\r\n'
+                     b'Accept: application/json\r\n\r\n')
 
-    self.assertEqual(msgIn, msgOut)
     ixBeta.clearRxbs()
 
-    console.terse("Alpha responds to Beta\n")
+    # build response
     lines = [
         b'HTTP/1.0 200 OK\r\n',
-        b'Server: PasteWSGIServer/0.5 Python/2.7.9\r\n',
+        b'Server: IoBook.local\r\n',
         b'Date: Thu, 30 Apr 2015 21:35:25 GMT\r\n'
         b'Content-Type: text/event-stream\r\n',
         b'Cache-Control: no-cache\r\n',
@@ -1340,41 +1316,40 @@ def testPatronPipelineStream():
         b'id: 3\ndata: 5\ndata: 6\n\n',
         b'id: 4\ndata: 7\ndata: 8\n\n',
     ]
-
     msgOut = b''.join(lines)
     ixBeta.tx(msgOut)
-    tymer = tyming.tymer(tymth=tymist.tymen(), duration=0.5)
+    tymer = tyming.Tymer(tymth=tymist.tymen(), duration=0.5)
     while ixBeta.txbs or not tymer.expired:
         alpha.serviceSendsAllIx()
         time.sleep(0.05)
-        # beta.connector.store.advanceStamp(0.05)
         tymist.tick(tock=0.5)
         beta.serviceAll()
         time.sleep(0.05)
-        # beta.connector.store.advanceStamp(0.05)
         tymist.tick(tock=0.5)
 
-    self.assertEqual(len(beta.connector.rxbs), 0)
+    # tymer expired  while stream still open so no responses in .responses
+    assert not beta.connector.rxbs
+    assert beta.waited
+    assert not beta.respondent.ended
+    assert len(beta.responses) == 0
 
-    #timed out while stream still open so no responses in .responses
-    self.assertIs(beta.waited, True)
-    self.assertIs(beta.respondent.ended, False)
-    self.assertEqual(len(beta.responses), 0)
+    # but events made it into in .events
+    assert len(beta.events) == 5
+    assert beta.respondent.retry == 1000
+    assert beta.respondent.leid == '4'
+    event = beta.events.popleft()
+    assert event == {'id': '0', 'name': '', 'data': 'START'}
+    event = beta.events.popleft()
+    assert event == {'id': '1', 'name': '', 'data': '1\n2'}
+    event = beta.events.popleft()
+    assert event == {'id': '2', 'name': '', 'data': '3\n4'}
+    event = beta.events.popleft()
+    assert event == {'id': '3', 'name': '', 'data': '5\n6'}
+    event = beta.events.popleft()
+    assert event == {'id': '4', 'name': '', 'data': '7\n8'}
+    assert not beta.events
 
-    # but are events in .events
-    self.assertEqual(len(beta.events), 5)
-    self.assertEqual(beta.respondent.retry, 1000)
-    self.assertEqual(beta.respondent.leid, '4')
-    event = beta.events.popleft()
-    self.assertEqual(event, {'id': '0', 'name': '', 'data': 'START'})
-    event = beta.events.popleft()
-    self.assertEqual(event, {'id': '1', 'name': '', 'data': '1\n2'})
-    event = beta.events.popleft()
-    self.assertEqual(event, {'id': '2', 'name': '', 'data': '3\n4'})
-    beta.events.clear()
-
-    # alpha's ixBeta connection shutdown prematurely
-    console.terse("Disconnecting server so beta must auto reconnect ...\n")
+    # shutdown alpha's ixBeta connection prematurely so beta must reconnect
     alpha.closeIx(beta.connector.ca)
     alpha.removeIx(beta.connector.ca)
     while True:
@@ -1382,57 +1357,53 @@ def testPatronPipelineStream():
         if not beta.connector.connected:
             break
         time.sleep(0.1)
-        # beta.connector.store.advanceStamp(0.1)
         tymist.tick(tock=0.5)
 
-    self.assertIs(beta.connector.cutoff, False)
+    assert not beta.connector.cutoff
 
-    console.terse("Auto reconnecting beta and rerequesting...\n")
+    # auto reconnect
     while True:
         beta.serviceAll()
         alpha.serviceConnects()
         if beta.connector.connected and beta.connector.ca in alpha.ixes:
             break
         time.sleep(0.05)
-        # beta.connector.store.advanceStamp(0.05)
         tymist.tick(tock=0.5)
 
-    self.assertIs(beta.connector.accepted, True)
-    self.assertIs(beta.connector.connected, True)
-    self.assertIs(beta.connector.cutoff, False)
-    self.assertEqual(beta.connector.ca, beta.connector.cs.getsockname())
-    self.assertEqual(beta.connector.ha, beta.connector.cs.getpeername())
-    self.assertEqual(alpha.eha, beta.connector.ha)
+    assert beta.connector.accepted
+    assert beta.connector.connected
+    assert not beta.connector.cutoff
+    assert beta.connector.ca == beta.connector.cs.getsockname()
+    assert beta.connector.ha == beta.connector.cs.getpeername()
+    assert alpha.eha == beta.connector.ha
 
     ixBeta = alpha.ixes[beta.connector.ca]
-    self.assertIsNotNone(ixBeta.ca)
-    self.assertIsNotNone(ixBeta.cs)
-    self.assertEqual(ixBeta.cs.getsockname(), beta.connector.cs.getpeername())
-    self.assertEqual(ixBeta.cs.getpeername(), beta.connector.cs.getsockname())
-    self.assertEqual(ixBeta.ca, beta.connector.ca)
-    self.assertEqual(ixBeta.ha, beta.connector.ha)
+    assert ixBeta.ca is not None
+    assert ixBeta.cs is not None
+    assert ixBeta.cs.getsockname() == beta.connector.cs.getpeername()
+    assert ixBeta.ca == beta.connector.ca
+    assert ixBeta.ha == beta.connector.ha
 
-    console.terse("Server receiving...\n")
     while (beta.requests or beta.connector.txbs) or not ixBeta.rxbs:
         beta.serviceAll()
         time.sleep(0.05)
-        # beta.connector.store.advanceStamp(0.05)
         tymist.tick(tock=0.5)
         alpha.serviceReceivesAllIx()
         time.sleep(0.05)
-        # beta.connector.store.advanceStamp(0.05)
         tymist.tick(tock=0.5)
 
     msgIn = bytes(ixBeta.rxbs)
-    msgOut = b'GET /stream HTTP/1.1\r\nHost: 127.0.0.1:6101\r\nAccept-Encoding: identity\r\nAccept: application/json\r\nLast-Event-Id: 4\r\n\r\n'
-
-    self.assertEqual(msgIn, msgOut)
+    assert msgIn == (b'GET /stream HTTP/1.1\r\n'
+                     b'Host: 127.0.0.1:6101\r\n'
+                     b'Accept-Encoding: identity\r\n'
+                     b'Accept: application/json\r\n'
+                     b'Last-Event-Id: 4\r\n\r\n')
     ixBeta.clearRxbs()
 
-    console.terse("Alpha responds to Beta\n")
+    # resume response
     lines = [
         b'HTTP/1.0 200 OK\r\n',
-        b'Server: PasteWSGIServer/0.5 Python/2.7.9\r\n',
+        b'Server: IoBook.local\r\n',
         b'Date: Thu, 30 Apr 2015 21:35:25 GMT\r\n'
         b'Content-Type: text/event-stream\r\n',
         b'Cache-Control: no-cache\r\n',
@@ -1447,35 +1418,29 @@ def testPatronPipelineStream():
     while ixBeta.txbs or not tymer.expired:
         alpha.serviceSendsAllIx()
         time.sleep(0.05)
-        # beta.connector.store.advanceStamp(0.05)
         tymist.tick(tock=0.5)
         beta.serviceAll()
         time.sleep(0.05)
-        # beta.connector.store.advanceStamp(0.05)
         tymist.tick(tock=0.5)
 
-    self.assertEqual(len(beta.connector.rxbs), 0)
+    assert not beta.connector.rxbs
 
     #timed out while stream still open so no responses in .responses
-    self.assertIs(beta.waited, True)
-    self.assertIs(beta.respondent.ended, False)
-    self.assertEqual(len(beta.responses), 0)
+    assert beta.waited
+    assert not beta.respondent.ended
+    assert len(beta.responses) == 0
 
     # but are events in .events
-    self.assertEqual(len(beta.events), 2)
-    self.assertEqual(beta.respondent.retry, 1000)
-    self.assertEqual(beta.respondent.leid, '6')
+    assert len(beta.events) == 2
+    assert beta.respondent.retry == 1000
+    assert beta.respondent.leid == '6'
     event = beta.events.popleft()
-    self.assertEqual(event, {'id': '5', 'name': '', 'data': '9\n10'})
+    assert event == {'id': '5', 'name': '', 'data': '9\n10'}
     event = beta.events.popleft()
-    self.assertEqual(event, {'id': '6', 'name': '', 'data': '11\n12'})
-
+    assert event == {'id': '6', 'name': '', 'data': '11\n12'}
 
     alpha.close()
     beta.connector.close()
-
-    wireLogAlpha.close()
-    wireLogBeta.close()
 
 
 def mockEchoServiceSecure(server):
@@ -2476,4 +2441,4 @@ def testQueryQuoting():
 
 
 if __name__ == '__main__':
-    test_client_pipeline_echo_json()
+    test_client_pipeline_sse_stream()
