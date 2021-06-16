@@ -61,11 +61,11 @@ class Client(tyming.Tymee):
     Methods:
 
     """
-    Timeout = 0.0  # timeout in seconds, timeout of 0.0 means ignore timeout
+    Tymeout = 0.0  # tymeout in seconds, tymeout of 0.0 means ignore tymeout
     Reconnectable = False  # auto reconnect flag
 
     def __init__(self,
-                 timeout=None,
+                 tymeout=None,
                  ha=None,
                  host='127.0.0.1',
                  port=56000,
@@ -81,7 +81,7 @@ class Client(tyming.Tymee):
         Parameters:
             tymth is injected function wrapper closure returned by .tymen() of
                 Tymist instance. Calling tymth() returns associated Tymist .tyme.
-            timeout = auto reconnect retry timeout
+            tymeout = auto reconnect retry tymeout
             ha = host address duple (host, port) of remote server
             host = host address or tcp server to connect to
             port = socket port
@@ -92,8 +92,8 @@ class Client(tyming.Tymee):
             wl = WireLog object if any
         """
         super(Client, self).__init__(**kwa)
-        self.timeout = timeout if timeout is not None else self.Timeout
-        self.tymer = tyming.Tymer(tymth=self.tymth, duration=self.timeout)  # reconnect retry timer
+        self.tymeout = tymeout if tymeout is not None else self.Tymeout
+        self.tymer = tyming.Tymer(tymth=self.tymth, duration=self.tymeout)  # reconnect retry timer
         self.reinitHostPort(ha=ha, hostname=host, port=port)
         self.ha = ha or (host, port)
         host, port = self.ha
@@ -361,7 +361,7 @@ class Client(tyming.Tymee):
             self.connect()  # if successful sets .accepted .connected to True
 
             if not self.connected and self.reconnectable:
-                if self.timeout > 0.0 and self.tymer.expired:  # timed out
+                if self.tymeout > 0.0 and self.tymer.expired:  # timed out
                     self.reopen()
                     self.tymer.restart()
 

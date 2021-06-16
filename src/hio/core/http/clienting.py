@@ -1102,7 +1102,7 @@ class Patron():
                 self.respondent.close()  # close any pending or current response parsing
 
             if self.connector.reconnectable:  # useful for server sent event stream
-                if self.connector.timeout > 0.0 and self.connector.tymer.expired:  # timed out
+                if self.connector.tymeout > 0.0 and self.connector.tymer.expired:  # timed out
                     self.connector.reopen()
                     if self.respondent.evented:
                         duration = float(self.respondent.retry) / 1000.0 # convert to seconds
@@ -1124,13 +1124,13 @@ class Patron():
         self.serviceResponse()
 
 
-    def serviceWhileGen(self, timeout=0.5):
+    def serviceWhileGen(self, tymeout=0.5):
         """
         Generator Method.
-        ServiceAll while pending requests or not a response or not timeout
+        ServiceAll while pending requests or not a response or not tymeout
 
         Usage:
-        response = yield from .serviceWhileGen(timeout=0.5)
+        response = yield from .serviceWhileGen(tymeout=0.5)
 
         Runs one iteration of serviceAll on next and yields empty
         bytes while not done.
@@ -1138,9 +1138,9 @@ class Patron():
         Assumes associated tymist is advanced and realtime sleep delay
         is incurred elsewhere.
 
-        Returns response as namedtuple or None if timeout.
+        Returns response as namedtuple or None if tymeout.
         """
-        tymer = tyming.Tymer(tymth=self.tymth, duration=timeout)
+        tymer = tyming.Tymer(tymth=self.tymth, duration=tymeout)
         while ((self.requests or self.connector.txbs or not self.responses)
                and not tymer.expired):
             try:

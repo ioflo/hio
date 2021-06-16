@@ -45,9 +45,9 @@ def test_tcp_basic():
     """
     tymist = tyming.Tymist()
     client = Client(tymth=tymist.tymen())
-    assert client.timeout == 0.0
+    assert client.tymeout == 0.0
     assert isinstance(client.tymer, tyming.Tymer)
-    assert client.tymer.duration == client.timeout
+    assert client.tymer.duration == client.tymeout
 
     assert client.ha == ('127.0.0.1', 56000)
     assert (client.host, client.port) == client.ha
@@ -65,8 +65,8 @@ def test_tcp_basic():
     assert client.wl == None
 
     tymist = tyming.Tymist()
-    with openClient(tymth=tymist.tymen(), timeout=0.5) as client:
-        assert client.timeout == 0.5
+    with openClient(tymth=tymist.tymen(), tymeout=0.5) as client:
+        assert client.tymeout == 0.5
         assert client.ha == ('127.0.0.1', 56000)
         assert client.opened == True
         assert client.accepted == False
@@ -583,7 +583,7 @@ def test_client_auto_reconnect():
     """
     tymist = tyming.Tymist(tock=0.05)
     with openServer(tymth=tymist.tymen(), ha=("", 6101)) as server, \
-         openClient(tymth=tymist.tymen(), timeout=0.2, reconnectable=True,
+         openClient(tymth=tymist.tymen(), tymeout=0.2, reconnectable=True,
                     ha=("127.0.0.1", 6101)) as beta:
 
         # close server
