@@ -2,7 +2,5 @@
 """
 hio.core.http Package
 """
-
-
-# from .clienting import Patron
+from .clienting import Client
 # from .serving import Valet

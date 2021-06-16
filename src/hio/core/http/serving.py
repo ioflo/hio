@@ -26,7 +26,8 @@ from  multidict import CIMultiDict as cimdict
 
 from ... import help
 from ...base import tyming
-from ..tcp import Server, ServerTls
+from .. import tcp
+# from ..tcp import Server, ServerTls
 from . import httping
 
 logger = help.ogler.getLogger()
@@ -565,13 +566,13 @@ class Valet(tyming.Tymee):
 
         ha = ha or (host, port)  # ha = host address takes precendence over host, port
         if servant:
-            if isinstance(servant, ServerTls):
+            if isinstance(servant, tcp.ServerTls):
                 if scheme and scheme != u'https':
                     raise  ValueError("Provided scheme '{0}' incompatible with servant".format(scheme))
                 secured = True
                 scheme = u'https'
                 defaultPort = 443
-            elif isinstance(servant, Server):
+            elif isinstance(servant, tcp.Server):
                 if scheme and scheme != u'http':
                     raise  ValueError("Provided scheme '{0}' incompatible with servant".format(scheme))
                 secured = False
@@ -602,7 +603,7 @@ class Valet(tyming.Tymee):
 
         else:  # what about timeouts for servant connections
             if secured:
-                servant = ServerTls(tymth=self.tymth,
+                servant = tcp.ServerTls(tymth=self.tymth,
                                     name=name,
                                     ha=ha,
                                     eha=eha,
@@ -611,7 +612,7 @@ class Valet(tyming.Tymee):
                                     timeout=self.timeout,
                                     **kwa)
             else:
-                servant = Server(tymth=self.tymth,
+                servant = tcp.Server(tymth=self.tymth,
                                  name=name,
                                  ha=ha,
                                  eha=eha,
@@ -1055,13 +1056,13 @@ class Porter(tyming.Tymee):
 
         ha = ha or (host, port)  # ha = host address takes precendence over host, port
         if servant:
-            if isinstance(servant, ServerTls):
+            if isinstance(servant, tcp.ServerTls):
                 if scheme and scheme != u'https':
                     raise  ValueError("Provided scheme '{0}' incompatible with servant".format(scheme))
                 secured = True
                 scheme = u'https'
                 defaultPort = 443
-            elif isinstance(servant, Server):
+            elif isinstance(servant, tcp.Server):
                 if scheme and scheme != u'http':
                     raise  ValueError("Provided scheme '{0}' incompatible with servant".format(scheme))
                 secured = False
@@ -1089,7 +1090,7 @@ class Porter(tyming.Tymee):
 
         else:  # what about timeouts for servant connections
             if secured:
-                servant = ServerTls(tymth=self.tymth,
+                servant = tcp.ServerTls(tymth=self.tymth,
                                     name=name,
                                     ha=ha,
                                     eha=eha,
@@ -1098,7 +1099,7 @@ class Porter(tyming.Tymee):
                                     timeout=self.timeout,
                                     **kwa)
             else:
-                servant = Server(tymth=self.tymth,
+                servant = tcp.Server(tymth=self.tymth,
                                  name=name,
                                  ha=ha,
                                  eha=eha,

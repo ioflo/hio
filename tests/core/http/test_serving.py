@@ -11,7 +11,8 @@ import pytest
 from hio import help
 from hio.base import tyming
 from hio.core import wiring
-from hio.core.http import httping, clienting, serving
+from hio.core import http
+from hio.core.http import httping, serving
 
 logger = help.ogler.getLogger()
 
@@ -81,13 +82,13 @@ def testPorterServiceEcho(self):
     self.assertEqual(alpha.servant.ha, ('0.0.0.0', 6101))
     self.assertEqual(alpha.servant.eha, ('127.0.0.1', 6101))
 
-    console.terse("{0}\n".format("Building Patron ...\n"))
+
     wireLogBeta = wiring.WireLog(buffify=True,  same=True)
     result = wireLogBeta.reopen()
 
     path = "http://{0}:{1}/".format('localhost', alpha.servant.eha[1])
 
-    beta = clienting.Patron(bufsize=131072,
+    beta = http.Client(bufsize=131072,
                                  wlog=wireLogBeta,
                                  tymth=tymist.tymen(),
                                  path=path,
@@ -182,13 +183,13 @@ def testValetServiceBasic(self):
     self.assertEqual(alpha.servant.ha, ('0.0.0.0', 6101))
     self.assertEqual(alpha.servant.eha, ('127.0.0.1', 6101))
 
-    console.terse("{0}\n".format("Building Patron ...\n"))
+
     wireLogBeta = wiring.WireLog(buffify=True,  same=True)
     result = wireLogBeta.reopen()
 
     path = "http://{0}:{1}/".format('localhost', alpha.servant.eha[1])
 
-    beta = clienting.Patron(bufsize=131072,
+    beta = http.Client(bufsize=131072,
                                  wlog=wireLogBeta,
                                  tymth=tymist.tymen(),
                                  path=path,
@@ -299,13 +300,13 @@ def testValetServiceBottle(self):
     self.assertEqual(alpha.servant.ha, ('0.0.0.0', 6101))
     self.assertEqual(alpha.servant.eha, ('127.0.0.1', 6101))
 
-    console.terse("{0}\n".format("Building Patron ...\n"))
+
     wireLogBeta = wiring.WireLog(buffify=True,  same=True)
     result = wireLogBeta.reopen()
 
     path = "http://{0}:{1}/".format('localhost', alpha.servant.eha[1])
 
-    beta = clienting.Patron(bufsize=131072,
+    beta = http.Client(bufsize=131072,
                                  wlog=wireLogBeta,
                                  tymth=tymist.tymen(),
                                  path=path,
@@ -426,13 +427,13 @@ def testValetServiceBottleNoContentLength(self):
     self.assertEqual(alpha.servant.ha, ('0.0.0.0', 6101))
     self.assertEqual(alpha.servant.eha, ('127.0.0.1', 6101))
 
-    console.terse("{0}\n".format("Building Patron ...\n"))
+
     wireLogBeta = wiring.WireLog(buffify=True,  same=True)
     result = wireLogBeta.reopen()
 
     path = "http://{0}:{1}/".format('localhost', alpha.servant.eha[1])
 
-    beta = clienting.Patron(bufsize=131072,
+    beta = http.Client(bufsize=131072,
                                  wlog=wireLogBeta,
                                  tymth=tymist.tymen(),
                                  path=path,
@@ -551,13 +552,12 @@ def testValetServiceBottleNonPersistent(self):
     self.assertEqual(alpha.servant.ha, ('0.0.0.0', 6101))
     self.assertEqual(alpha.servant.eha, ('127.0.0.1', 6101))
 
-    console.terse("{0}\n".format("Building Patron ...\n"))
     wireLogBeta = wiring.WireLog(buffify=True,  same=True)
     result = wireLogBeta.reopen()
 
     path = "http://{0}:{1}/".format('localhost', alpha.servant.eha[1])
 
-    beta = clienting.Patron(bufsize=131072,
+    beta = http.Client(bufsize=131072,
                                  wlog=wireLogBeta,
                                  tymth=tymist.tymen(),
                                  path=path,
@@ -678,13 +678,12 @@ def testValetServiceBottleStream(self):
     self.assertEqual(alpha.servant.ha, ('0.0.0.0', 6101))
     self.assertEqual(alpha.servant.eha, ('127.0.0.1', 6101))
 
-    console.terse("{0}\n".format("Building Patron ...\n"))
     wireLogBeta = wiring.WireLog(buffify=True,  same=True)
     result = wireLogBeta.reopen()
 
     path = "http://{0}:{1}/".format('localhost', alpha.servant.eha[1])
 
-    beta = clienting.Patron(bufsize=131072,
+    beta = http.Client(bufsize=131072,
                                  wlog=wireLogBeta,
                                  tymth=tymist.tymen(),
                                  path=path,
@@ -811,7 +810,6 @@ def testValetServiceBasicSecure(self):
     self.assertEqual(alpha.servant.ha, ('0.0.0.0', 6101))
     self.assertEqual(alpha.servant.eha, ('127.0.0.1', 6101))
 
-    console.terse("{0}\n".format("Building Patron ...\n"))
     wireLogBeta = wiring.WireLog(buffify=True,  same=True)
     result = wireLogBeta.reopen()
 
@@ -825,7 +823,7 @@ def testValetServiceBasicSecure(self):
 
     path = "https://{0}:{1}/".format('localhost', alpha.servant.eha[1])
 
-    beta = clienting.Patron(bufsize=131072,
+    beta = http.Client(bufsize=131072,
                                  wlog=wireLogBeta,
                                  tymth=tymist.tymen(),
                                  path=path,
@@ -955,7 +953,6 @@ def testValetServiceBottleSecure(self):
     self.assertEqual(alpha.servant.ha, ('0.0.0.0', 6101))
     self.assertEqual(alpha.servant.eha, ('127.0.0.1', 6101))
 
-    console.terse("{0}\n".format("Building Patron ...\n"))
     wireLogBeta = wiring.WireLog(buffify=True,  same=True)
     result = wireLogBeta.reopen()
 
@@ -969,7 +966,7 @@ def testValetServiceBottleSecure(self):
 
     path = "https://{0}:{1}/".format('localhost', alpha.servant.eha[1])
 
-    beta = clienting.Patron(bufsize=131072,
+    beta = http.Client(bufsize=131072,
                             wlog=wireLogBeta,
                             tymth=tymist.tymen(),
                             path=path,
@@ -1109,7 +1106,6 @@ def testValetServiceBottleStreamSecure(self):
     self.assertEqual(alpha.servant.ha, ('0.0.0.0', 6101))
     self.assertEqual(alpha.servant.eha, ('127.0.0.1', 6101))
 
-    console.terse("{0}\n".format("Building Patron ...\n"))
     wireLogBeta = wiring.WireLog(buffify=True,  same=True)
     result = wireLogBeta.reopen()
 
@@ -1123,7 +1119,7 @@ def testValetServiceBottleStreamSecure(self):
 
     path = "https://{0}:{1}/".format('localhost', alpha.servant.eha[1])
 
-    beta = clienting.Patron(bufsize=131072,
+    beta = http.Client(bufsize=131072,
                                  wlog=wireLogBeta,
                                  tymth=tymist.tymen(),
                                  path=path,

@@ -269,7 +269,7 @@ def test_client_request_echo():
     path = u'/echo?name=fame'
     headers = dict([('Accept', 'application/json')])
 
-    beta = clienting.Patron(bufsize=131072,
+    beta = clienting.Client(bufsize=131072,
                                  hostname=host,
                                  port=port,
                                  method=method,
@@ -393,7 +393,7 @@ def test_client_service_all_echo():
     path = u'/echo?name=fame'
     headers = dict([('Accept', 'application/json')])
 
-    beta = clienting.Patron(bufsize=131072,
+    beta = clienting.Client(bufsize=131072,
                                  hostname=host,
                                  port=port,
                                  method=method,
@@ -519,7 +519,7 @@ def test_client_pipeline_echo():
     path = u'/echo?name=fame'
     headers = dict([('Accept', 'application/json')])
 
-    beta = clienting.Patron(bufsize=131072,
+    beta = clienting.Client(bufsize=131072,
                                  hostname=host,
                                  port=port,
                                  method=method,
@@ -726,7 +726,7 @@ def test_client_pipeline_echo_simple():
     path = u'/echo?name=fame'
     headers = dict([('Accept', 'application/json')])
 
-    beta = clienting.Patron(bufsize=131072,
+    beta = clienting.Client(bufsize=131072,
                                  hostname=host,
                                  port=port,
                                  method=method,
@@ -878,7 +878,7 @@ def test_client_echo_simple_host_port_path():
     path = u'/echo?name=fame'
     headers = dict([('Accept', 'application/json')])
 
-    beta = clienting.Patron(bufsize=131072,
+    beta = clienting.Client(bufsize=131072,
                                  hostname=host,
                                  port=port,
                                  method=method,
@@ -982,7 +982,7 @@ def test_client_echo_simple_host_port_path():
 
 def test_client_pipline_echo_simple_path_scheme():
     """
-    Test Patron pipeline servicing using path components for host port scheme
+    Test Client pipeline servicing using path components for host port scheme
     """
     alpha = tcp.Server(port = 6101, bufsize=131072)
     assert alpha.reopen()
@@ -992,7 +992,7 @@ def test_client_pipline_echo_simple_path_scheme():
 
     path = "http://{0}:{1}/".format('localhost', alpha.eha[1])  # needed for connect
     # method and headers set in request
-    beta = clienting.Patron(bufsize=131072,
+    beta = clienting.Client(bufsize=131072,
                                  path=path,
                                  reconnectable=True,  # do not close connection
                                  )
@@ -1097,7 +1097,7 @@ def test_client_pipline_echo_simple_path_scheme():
 
 def test_client_pipeline_echo_simple_path_track():
     """
-    Test Patron pipeline servicing using path components for host port scheme
+    Test Client pipeline servicing using path components for host port scheme
     Request includes tracking information that is included in reponses copy
     of request
     """
@@ -1109,7 +1109,7 @@ def test_client_pipeline_echo_simple_path_track():
 
     path = "http://{0}:{1}/".format('localhost', alpha.eha[1])  # needed for connect
     # method and headers set in request
-    beta = clienting.Patron(bufsize=131072,
+    beta = clienting.Client(bufsize=131072,
                                  path=path,
                                  reconnectable=True,  # do not close connection
                                  )
@@ -1235,7 +1235,7 @@ def test_client_pipeline_echo_json():
 
     path = "http://{0}:{1}/".format('localhost', alpha.eha[1])  # needed for connect
     # method and headers set in request
-    beta = clienting.Patron(bufsize=131072,
+    beta = clienting.Client(bufsize=131072,
                                  path=path,
                                  reconnectable=True,  # do not close connection
                                  )
@@ -1361,7 +1361,7 @@ def test_client_pipeline_sse_stream():
 
     host = alpha.eha[0]
     port = alpha.eha[1]
-    beta = clienting.Patron(bufsize=131072,
+    beta = clienting.Client(bufsize=131072,
                              hostname=host,
                              port=port,
                              tymth=tymist.tymen(),  # passed through to connector
@@ -1604,7 +1604,7 @@ def test_client_pipline_echo_simple_tls():
     host = alpha.eha[0]
     port = alpha.eha[1]
 
-    beta = clienting.Patron(hostname=serverCertCommonName,
+    beta = clienting.Client(hostname=serverCertCommonName,
                           port=alpha.eha[1],
                           bufsize=131072,
                           scheme='https',
@@ -1754,7 +1754,7 @@ def test_client_pipeline_echo_simple_path_tls():
 
     path = "https://{0}:{1}/".format(serverCertCommonName, alpha.eha[1])
 
-    beta = clienting.Patron(path=path,
+    beta = clienting.Client(path=path,
                           bufsize=131072,
                           reconnectable=True,
                           keypath=clientKeypath,
@@ -1865,7 +1865,7 @@ def test_client_pipeline_echo_simple_path_tls():
 
 def test_client_redirect_differnet_path():
     """
-    Test Patron redirect
+    Test Client redirect to different path but same server
     """
     alpha = tcp.Server(port = 6101, bufsize=131072)
     assert alpha.reopen()
@@ -1875,7 +1875,7 @@ def test_client_redirect_differnet_path():
     host = alpha.eha[0]
     port = alpha.eha[1]
     # defaults to redirectable = True
-    beta = clienting.Patron(bufsize=131072,
+    beta = clienting.Client(bufsize=131072,
                                  hostname=host,
                                  port=port,
                                  reconnectable=True,
@@ -1979,7 +1979,7 @@ def test_client_redirect_different_servers():
     host = alpha.eha[0]
     port = alpha.eha[1]
     # defaults to redirectable = True
-    beta = clienting.Patron(bufsize=131072,
+    beta = clienting.Client(bufsize=131072,
                                  hostname=host,
                                  port=port,
                                  reconnectable=True,
@@ -2068,7 +2068,7 @@ def test_client_redirect_different_servers():
 
 def test_client_redirect_different_servers_tls():
     """
-    Test Patron redirect
+    Test Client redirect to a different server
     """
     serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
     #serverKeypath = '/etc/pki/tls/certs/server_key.pem'  # local server private key
@@ -2115,7 +2115,7 @@ def test_client_redirect_different_servers_tls():
 
     host = serverCertCommonName
     port = alpha.eha[1]
-    beta = clienting.Patron(bufsize=131072,
+    beta = clienting.Client(bufsize=131072,
                           hostname=host,
                           port=port,
                           reconnectable=True,

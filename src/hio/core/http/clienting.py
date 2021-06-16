@@ -25,7 +25,7 @@ from ... import help
 from ...help import helping
 from ...base import tyming
 from .. import coring
-from ..tcp import Client, ClientTls
+from .. import tcp
 from . import httping
 
 logger = help.ogler.getLogger()
@@ -42,7 +42,7 @@ Response = namedtuple('Response', 'version status reason headers body data reque
 
 class Requester(object):
     """
-    Nonblocking HTTP Client Request class
+    Nonblocking HTTP Client Requester class
     """
     HttpVersionString = httping.HTTP_11_VERSION_STRING  # http version string
     Port = httping.HTTP_PORT  # default port
@@ -282,7 +282,7 @@ class Requester(object):
 
 class Respondent(httping.Parsent):
     """
-    Nonblocking HTTP Client Response class
+    Nonblocking HTTP Client Responsdent class
     """
     Retry = 100  # retry timeout in milliseconds if evented
 
@@ -606,9 +606,10 @@ class Respondent(httping.Parsent):
         return
 
 
-class Patron():
+class Client():
     """
-    Patron class nonblocking HTTP client connection manager
+    Client class nonblocking HTTP client connection manager and HTTP client
+    request and response processor
     """
     def __init__(self,
                  connector=None,
@@ -677,10 +678,8 @@ class Patron():
             responses is deque of responses if any processed by respondent
                  each response is dict
 
-            **kwa are passed through to init .connector Client or ClientTLS for
+            **kwa are passed through to init .connector tcp.Client or tcp.ClientTLS
         """
-        # super(Patron, self).__init__(**kwa)
-
         # .requests is deque of dicts of request data
         self.requests = requests if requests is not None else deque()
         # .responses is deque of dicts of response data
@@ -698,13 +697,13 @@ class Patron():
         scheme = scheme.lower()
 
         if connector:
-            if isinstance(connector, ClientTls):
+            if isinstance(connector, tcp.ClientTls):
                 if scheme and scheme != u'https':
                     raise  ValueError("Provided scheme '{0}' incompatible with connector".format(scheme))
                 secured = True
                 scheme = u'https'
                 defaultPort = 443
-            elif isinstance(connector, Client):
+            elif isinstance(connector, tcp.Client):
                 if scheme and scheme != u'http':
                     raise  ValueError("Provided scheme '{0}' incompatible with connector".format(scheme))
                 secured = False
@@ -737,7 +736,7 @@ class Patron():
                 connector.name = name
         else:
             if secured:
-                connector = ClientTls( name=name,
+                connector = tcp.ClientTls( name=name,
                                        uid=uid,
                                        host=hostname,
                                        port=port,
@@ -745,7 +744,7 @@ class Patron():
                                        wl=wl,
                                        **kwa)
             else:
-                connector = Client( name=name,
+                connector = tcp.Client( name=name,
                                     uid=uid,
                                     host=hostname,
                                     port=port,
@@ -979,13 +978,13 @@ class Patron():
                 self.connector.close()
                 if secured:
                     context = getattr(self.connector, 'context')
-                    connector = ClientTls(tymth=self.connector.tymth,
+                    connector = tcp.ClientTls(tymth=self.connector.tymth,
                                            ha=(hostname, port),
                                            bufsize=self.connector.bs,
                                            wl=self.connector.wl,
                                            context=context)
                 else:
-                    connector = Client(tymth=self.connector.tymth,
+                    connector = tcp.Client(tymth=self.connector.tymth,
                                         ha=(hostname, port),
                                         bufsize=self.connector.bs,
                                         wl=self.connector.wl,)
@@ -1142,7 +1141,7 @@ class Patron():
             try:
                 self.serviceAll()
             except Exception as ex:
-                logger.error("Error: Servicing Patron '%s'."
+                logger.error("Error: Servicing HTTP Client '%s'."
                               " '%s'\n", self.connector.name, ex)
                 raise ex
             yield b''  # this is eventually yielded by wsgi app while waiting
