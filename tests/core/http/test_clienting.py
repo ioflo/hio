@@ -590,6 +590,53 @@ def mockEchoServiceJson(server):
         server.serviceSendsAllIx()
 
 
+def mockEchoServiceTls(server):
+    """
+    mock echo server service TLS secure utility function
+    """
+    server.serviceConnects()
+    if server.ixes:
+        server.serviceReceivesAllIx()
+
+        ixClient = server.ixes.values()[0]
+        msgIn = bytes(ixClient.rxbs)
+        if  msgIn== b'GET /echo?name=fame HTTP/1.1\r\nHost: localhost:6101\r\nAccept-Encoding: identity\r\nAccept: application/json\r\n\r\n':
+            ixClient.clearRxbs()
+            msgOut = b'HTTP/1.1 200 OK\r\nContent-Length: 122\r\nContent-Type: application/json\r\nDate: Thu, 30 Apr 2015 19:37:17 GMT\r\nServer: IoBook.local\r\n\r\n{"content": null, "query": {"name": "fame"}, "verb": "GET", "url": "http://127.0.0.1:8080/echo?name=fame", "action": null}'
+            ixClient.tx(msgOut)
+            msgIn = b''
+            msgOut = b''
+
+        server.serviceSendsAllIx()
+
+
+def mockRedirectService(server):
+    """
+    mock echo server service utility function
+    """
+    server.serviceConnects()
+    if server.ixes:
+        server.serviceReceivesAllIx()
+
+        ixClient = server.ixes.values()[0]
+        msgIn = bytes(ixClient.rxbs)
+        if msgIn == b'GET /echo?name=fame HTTP/1.1\r\nHost: 127.0.0.1:6101\r\nAccept-Encoding: identity\r\nAccept: application/json\r\n\r\n':
+            ixClient.clearRxbs()
+            msgOut = b'HTTP/1.1 307 Temporary Redirect\r\nContent-Type: text/plain\r\nContent-Length: 0\r\nAccess-Control-Allow-Origin: *\r\nLocation: http://localhost:6101/redirect?name=fame\r\n\r\n'
+            ixClient.tx(msgOut)
+            msgIn = b''
+            msgOut = b''
+
+        elif  msgIn== b'GET /redirect?name=fame HTTP/1.1\r\nHost: 127.0.0.1:6101\r\nAccept-Encoding: identity\r\nAccept: application/json\r\n\r\n':
+            ixClient.clearRxbs()
+            msgOut = b'HTTP/1.1 200 OK\r\nContent-Length: 122\r\nContent-Type: application/json\r\nDate: Thu, 30 Apr 2015 19:37:17 GMT\r\nServer: IoBook.local\r\n\r\n{"content": null, "query": {"name": "fame"}, "verb": "GET", "url": "http://127.0.0.1:8080/echo?name=fame", "action": null}'
+            ixClient.tx(msgOut)
+            msgIn = b''
+            msgOut = b''
+
+        server.serviceSendsAllIx()
+
+
 def test_client_pipeline_echo_simple():
     """
     Test CLient pipeline servicing
@@ -1443,24 +1490,6 @@ def test_client_pipeline_sse_stream():
     beta.connector.close()
 
 
-def mockEchoServiceSecure(server):
-    """
-    mock echo server service TLS secure utility function
-    """
-    server.serviceConnects()
-    if server.ixes:
-        server.serviceReceivesAllIx()
-
-        ixClient = server.ixes.values()[0]
-        msgIn = bytes(ixClient.rxbs)
-        if  msgIn== b'GET /echo?name=fame HTTP/1.1\r\nHost: localhost:6101\r\nAccept-Encoding: identity\r\nAccept: application/json\r\n\r\n':
-            ixClient.clearRxbs()
-            msgOut = b'HTTP/1.1 200 OK\r\nContent-Length: 122\r\nContent-Type: application/json\r\nDate: Thu, 30 Apr 2015 19:37:17 GMT\r\nServer: IoBook.local\r\n\r\n{"content": null, "query": {"name": "fame"}, "verb": "GET", "url": "http://127.0.0.1:8080/echo?name=fame", "action": null}'
-            ixClient.tx(msgOut)
-            msgIn = b''
-            msgOut = b''
-
-        server.serviceSendsAllIx()
 
 def testPatronPipelineEchoSimpleSecure():
     """
@@ -1542,7 +1571,7 @@ def testPatronPipelineEchoSimpleSecure():
 
     while (not alpha.ixes or beta.requests or
            beta.connector.txbs or not beta.respondent.ended):
-        self.mockEchoServiceSecure(alpha)
+        mockEchoServiceTls(alpha)
         time.sleep(0.05)
         beta.serviceAll()
         time.sleep(0.05)
@@ -1591,7 +1620,7 @@ def testPatronPipelineEchoSimpleSecure():
 
     while (not alpha.ixes or beta.requests or
            beta.connector.txbs or not beta.respondent.ended):
-        self.mockEchoServiceSecure(alpha)
+        mockEchoServiceTls(alpha)
         time.sleep(0.05)
         beta.serviceAll()
         time.sleep(0.05)
@@ -1721,7 +1750,7 @@ def testPatronPipelineEchoSimpleSecurePath():
 
     while (not alpha.ixes or beta.requests or
            beta.connector.txbs or not beta.respondent.ended):
-        self.mockEchoServiceSecure(alpha)
+        mockEchoServiceTls(alpha)
         time.sleep(0.05)
         beta.serviceAll()
         time.sleep(0.05)
@@ -1770,7 +1799,7 @@ def testPatronPipelineEchoSimpleSecurePath():
 
     while (not alpha.ixes or beta.requests or
            beta.connector.txbs or not beta.respondent.ended):
-        self.mockEchoServiceSecure(alpha)
+        mockEchoServiceTls(alpha)
         time.sleep(0.05)
         beta.serviceAll()
         time.sleep(0.05)
@@ -1822,31 +1851,6 @@ def testPatronPipelineEchoSimpleSecurePath():
     wireLogBeta.close()
 
 
-def mockRedirectService(server):
-    """
-    mock echo server service utility function
-    """
-    server.serviceConnects()
-    if server.ixes:
-        server.serviceReceivesAllIx()
-
-        ixClient = server.ixes.values()[0]
-        msgIn = bytes(ixClient.rxbs)
-        if msgIn == b'GET /echo?name=fame HTTP/1.1\r\nHost: 127.0.0.1:6101\r\nAccept-Encoding: identity\r\nAccept: application/json\r\n\r\n':
-            ixClient.clearRxbs()
-            msgOut = b'HTTP/1.1 307 Temporary Redirect\r\nContent-Type: text/plain\r\nContent-Length: 0\r\nAccess-Control-Allow-Origin: *\r\nLocation: http://localhost:6101/redirect?name=fame\r\n\r\n'
-            ixClient.tx(msgOut)
-            msgIn = b''
-            msgOut = b''
-
-        elif  msgIn== b'GET /redirect?name=fame HTTP/1.1\r\nHost: 127.0.0.1:6101\r\nAccept-Encoding: identity\r\nAccept: application/json\r\n\r\n':
-            ixClient.clearRxbs()
-            msgOut = b'HTTP/1.1 200 OK\r\nContent-Length: 122\r\nContent-Type: application/json\r\nDate: Thu, 30 Apr 2015 19:37:17 GMT\r\nServer: IoBook.local\r\n\r\n{"content": null, "query": {"name": "fame"}, "verb": "GET", "url": "http://127.0.0.1:8080/echo?name=fame", "action": null}'
-            ixClient.tx(msgOut)
-            msgIn = b''
-            msgOut = b''
-
-        server.serviceSendsAllIx()
 
 def testPatronRedirectSimple():
     """
@@ -1895,7 +1899,7 @@ def testPatronRedirectSimple():
 
     while (not alpha.ixes or beta.requests or
            beta.connector.txbs or not beta.respondent.ended):
-        self.mockRedirectService(alpha)
+        mockRedirectService(alpha)
         time.sleep(0.05)
         beta.serviceAll()
         time.sleep(0.05)
