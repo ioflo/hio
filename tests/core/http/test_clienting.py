@@ -2209,20 +2209,14 @@ def test_client_redirect_different_servers_tls():
     beta.connector.close()
 
 
-def testMultiPartForm():
+def test_multipart_form():
     """
     Test multipart form for Requester
     """
-    console.terse("{0}\n".format(self.testMultiPartForm.__doc__))
-
-
-
-    console.terse("{0}\n".format("Building Request ...\n"))
     host = u'127.0.0.1'
     port = 6101
     method = u'POST'
     path = u'/echo?name=fame'
-    console.terse("{0} from  {1}:{2}{3} ...\n".format(method, host, port, path))
     headers = dict([(u'Accept', u'application/json'),
                      (u'Content-Type', u'multipart/form-data')])
     fargs = dict([("text",  "This is the life,\nIt is the best.\n"),
@@ -2234,9 +2228,9 @@ def testMultiPartForm():
                                  headers=headers)
     msgOut = request.rebuild(fargs=fargs)
 
-    self.assertTrue(b'Content-Disposition: form-data; name="text"\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nThis is the life,\nIt is the best.\n\r\n' in msgOut)
-    self.assertTrue(b'Content-Disposition: form-data; name="html"\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n<html><body></body><html>\r\n' in msgOut)
-    self.assertTrue(request.head.startswith(b'POST /echo?name=fame HTTP/1.1\r\nHost: 127.0.0.1:6101\r\nAccept-Encoding: identity\r\nContent-Length: 325\r\nAccept: application/json\r\nContent-Type: multipart/form-data; boundary='))
+    assert b'Content-Disposition: form-data; name="text"\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nThis is the life,\nIt is the best.\n\r\n' in msgOut
+    assert b'Content-Disposition: form-data; name="html"\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n<html><body></body><html>\r\n' in msgOut
+    assert request.head.startswith(b'POST /echo?name=fame HTTP/1.1\r\nHost: 127.0.0.1:6101\r\nAccept-Encoding: identity\r\nContent-Length: 325\r\nAccept: application/json\r\nContent-Type: multipart/form-data; boundary=')
 
 
 
@@ -2295,4 +2289,4 @@ def testQueryQuoting():
 
 
 if __name__ == '__main__':
-    test_client_redirect_different_servers_tls()
+    test_multipart_form()
