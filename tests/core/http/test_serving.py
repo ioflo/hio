@@ -12,54 +12,11 @@ from hio import help
 from hio.base import tyming
 from hio.core import wiring
 from hio.core import http
-from hio.core.http import httping, serving
+from hio.core.http import serving
 
 logger = help.ogler.getLogger()
 
 
-
-
-def testHttpError(self):
-    """
-    Test HTTPError class
-    """
-    console.terse("{0}\n".format(self.testHttpError.__doc__))
-
-    error = httping.HTTPError(status=400)
-    self.assertEqual(error.status, 400)
-    self.assertEqual(error.reason, 'Bad Request')
-    self.assertEqual(error.title, "")
-    self.assertEqual(error.detail, "")
-    self.assertIs(error.fault, None)
-    self.assertEqual(error.headers, dict())
-
-    body = error.render()
-    self.assertEqual(body, b'400 Bad Request\n\n\n')
-    body = error.render(jsonify=True)
-    self.assertEqual(body, (b'{\n  "status": 400,\n  "reason": "Bad Request",\n'
-                            b'  "title": "",\n  "detail":'
-                            b' "",\n  "fault": null\n}')
-                           )
-
-    error = httping.HTTPError(status=700,
-                              title="Validation Error",
-                              detail="Bad mojo",
-                              fault=50,
-                              headers=dict(Accept='application/json'))
-
-    self.assertEqual(error.status, 700)
-    self.assertEqual(error.reason, 'Unknown')
-    self.assertEqual(error.title, "Validation Error")
-    self.assertEqual(error.detail, "Bad mojo")
-    self.assertIs(error.fault, 50)
-    self.assertEqual(error.headers, dict(Accept='application/json'))
-
-    body = error.render()
-    self.assertEqual(body, b'700 Unknown\nValidation Error\nBad mojo\n50')
-    body = error.render(jsonify=True)
-    self.assertEqual(body, (b'{\n  "status": 700,\n  "reason": "Unknown",\n'
-                            b'  "title": "Validation Error",'
-                            b'\n  "detail": "Bad mojo",\n  "fault": 50\n}'))
 
 def testPorterServiceEcho(self):
     """

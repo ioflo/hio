@@ -2,5 +2,6 @@
 """
 hio.core.http Package
 """
+from .httping import HTTPError
 from .clienting import Client
 # from .serving import Valet
