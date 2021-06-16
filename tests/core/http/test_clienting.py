@@ -37,6 +37,11 @@ def mockEchoService(server):
                b'Accept-Encoding: identity\r\n'
                b'Accept: application/json\r\n\r\n')
 
+    mockMsgLocalhost = (b'GET /echo?name=fame HTTP/1.1\r\n'
+                        b'Host: localhost:6101\r\n'
+                        b'Accept-Encoding: identity\r\n'
+                        b'Accept: application/json\r\n\r\n')
+
     server.serviceConnects()
     if server.ixes:
         server.serviceReceivesAllIx()
@@ -183,12 +188,17 @@ def mockRedirectPathService(server):
 
 def mockRedirectingService(server):
     """
-    mock echo server service utility function
+    mock redirecting echo server service utility function
     """
     mockMsg = (b'GET /echo?name=fame HTTP/1.1\r\n'
                b'Host: 127.0.0.1:6101\r\n'
                b'Accept-Encoding: identity\r\n'
                b'Accept: application/json\r\n\r\n')
+
+    mockMsgLocalhost = (b'GET /echo?name=fame HTTP/1.1\r\n'
+                        b'Host: localhost:6101\r\n'
+                        b'Accept-Encoding: identity\r\n'
+                        b'Accept: application/json\r\n\r\n')
 
 
     server.serviceConnects()
@@ -197,7 +207,7 @@ def mockRedirectingService(server):
 
         ixClient = list(server.ixes.values())[0]
         msgIn = bytes(ixClient.rxbs)
-        if msgIn == mockMsg:
+        if msgIn in (mockMsg, mockMsgLocalhost):
             ixClient.clearRxbs()
             msgOut = (b'HTTP/1.1 307 Temporary Redirect\r\n'
                       b'Content-Type: text/plain\r\n'
@@ -212,12 +222,13 @@ def mockRedirectingService(server):
 
 def mockRedirectedService(server):
     """
-    mock echo server service utility function
+    mock redirected echo server service utility function
     """
     mockMsg = (b'GET /redirect?name=fame HTTP/1.1\r\n'
                b'Host: localhost:6103\r\n'
                b'Accept-Encoding: identity\r\n'
                b'Accept: application/json\r\n\r\n')
+
     server.serviceConnects()
     if server.ixes:
         server.serviceReceivesAllIx()
@@ -226,6 +237,70 @@ def mockRedirectedService(server):
         msgIn = bytes(ixClient.rxbs)
 
         if  msgIn == mockMsg:
+            ixClient.clearRxbs()
+            msgOut = (b'HTTP/1.1 200 OK\r\n'
+                      b'Content-Length: 122\r\n'
+                      b'Content-Type: application/json\r\n'
+                      b'Date: Thu, 30 Apr 2015 19:37:17 GMT\r\n'
+                      b'Server: IoBook.local\r\n\r\n'
+                      b'{"content": null, '
+                      b'"query": {"name": "fame"}, '
+                      b'"verb": "GET", '
+                      b'"url": "http://127.0.0.1:8080/echo?name=fame", '
+                      b'"action": null}')
+            ixClient.tx(msgOut)
+            msgIn = b''
+            msgOut = b''
+
+        server.serviceSendsAllIx()
+
+
+def mockRedirectingServiceTls(server):
+    """
+    mock redirecting echo server service utility function
+    """
+    mockMsg = (b'GET /echo?name=fame HTTP/1.1\r\n'
+               b'Host: localhost:6101\r\n'
+               b'Accept-Encoding: identity\r\n'
+               b'Accept: application/json\r\n\r\n')
+
+    server.serviceConnects()
+    if server.ixes:
+        server.serviceReceivesAllIx()
+
+        ixClient = list(server.ixes.values())[0]
+        msgIn = bytes(ixClient.rxbs)
+        if msgIn in (mockMsg,):
+            ixClient.clearRxbs()
+            msgOut = (b'HTTP/1.1 307 Temporary Redirect\r\n'
+                      b'Content-Type: text/plain\r\n'
+                      b'Content-Length: 0\r\n'
+                      b'Access-Control-Allow-Origin: *\r\n'
+                      b'Location: https://localhost:6103/redirect?name=fame\r\n\r\n')
+            ixClient.tx(msgOut)
+            msgIn = b''
+            msgOut = b''
+
+        server.serviceSendsAllIx()
+
+
+def mockRedirectedServiceTls(server):
+    """
+    mock echo server service utility function
+    """
+    mockMsg = (b'GET /redirect?name=fame HTTP/1.1\r\n'
+               b'Host: localhost:6103\r\n'
+               b'Accept-Encoding: identity\r\n'
+               b'Accept: application/json\r\n\r\n')
+
+    server.serviceConnects()
+    if server.ixes:
+        server.serviceReceivesAllIx()
+
+        ixClient = list(server.ixes.values())[0]
+        msgIn = bytes(ixClient.rxbs)
+
+        if  msgIn== mockMsg:
             ixClient.clearRxbs()
             msgOut = (b'HTTP/1.1 200 OK\r\n'
                       b'Content-Length: 122\r\n'
@@ -2055,113 +2130,57 @@ def test_client_redirect_different_servers():
     beta.connector.close()
 
 
-def mockRedirectComplexServiceASecure(server):
-    """
-    mock echo server service utility function
-    """
-    server.serviceConnects()
-    if server.ixes:
-        server.serviceReceivesAllIx()
 
-        ixClient = server.ixes.values()[0]
-        msgIn = bytes(ixClient.rxbs)
-        if msgIn == b'GET /echo?name=fame HTTP/1.1\r\nHost: localhost:6101\r\nAccept-Encoding: identity\r\nAccept: application/json\r\n\r\n':
-            ixClient.clearRxbs()
-            msgOut = b'HTTP/1.1 307 Temporary Redirect\r\nContent-Type: text/plain\r\nContent-Length: 0\r\nAccess-Control-Allow-Origin: *\r\nLocation: https://localhost:6103/redirect?name=fame\r\n\r\n'
-            ixClient.tx(msgOut)
-            msgIn = b''
-            msgOut = b''
-
-        server.serviceSendsAllIx()
-
-def mockRedirectComplexServiceGSecure(server):
-    """
-    mock echo server service utility function
-    """
-    server.serviceConnects()
-    if server.ixes:
-        server.serviceReceivesAllIx()
-
-        ixClient = server.ixes.values()[0]
-        msgIn = bytes(ixClient.rxbs)
-
-        if  msgIn== b'GET /redirect?name=fame HTTP/1.1\r\nHost: localhost:6103\r\nAccept-Encoding: identity\r\nAccept: application/json\r\n\r\n':
-            ixClient.clearRxbs()
-            msgOut = b'HTTP/1.1 200 OK\r\nContent-Length: 122\r\nContent-Type: application/json\r\nDate: Thu, 30 Apr 2015 19:37:17 GMT\r\nServer: IoBook.local\r\n\r\n{"content": null, "query": {"name": "fame"}, "verb": "GET", "url": "http://127.0.0.1:8080/echo?name=fame", "action": null}'
-            ixClient.tx(msgOut)
-            msgIn = b''
-            msgOut = b''
-
-        server.serviceSendsAllIx()
-
-def testPatronRedirectComplexSecure():
+def test_client_redirect_different_servers_tls():
     """
     Test Patron redirect
     """
-    console.terse("{0}\n".format(self.testPatronRedirectComplexSecure.__doc__))
-
-
-
     serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
     #serverKeypath = '/etc/pki/tls/certs/server_key.pem'  # local server private key
     #serverCertpath = '/etc/pki/tls/certs/server_cert.pem'  # local server public cert
     #clientCafilepath = '/etc/pki/tls/certs/client.pem' # remote client public cert
 
-    serverKeypath = self.certdirpath + '/server_key.pem'  # local server private key
-    serverCertpath = self.certdirpath + '/server_cert.pem'  # local server public cert
-    clientCafilepath = self.certdirpath + '/client.pem' # remote client public cert
-
-    wireLogAlpha = wiring.WireLog(buffify=True, same=True)
-    result = wireLogAlpha.reopen()
+    serverKeypath = certdirpath + '/server_key.pem'  # local server private key
+    serverCertpath = certdirpath + '/server_cert.pem'  # local server public cert
+    clientCafilepath = certdirpath + '/client.pem' # remote client public cert
 
     alpha = tcp.ServerTls(host=serverCertCommonName,
                                port = 6101,
                                bufsize=131072,
-                               wl=wireLogAlpha,
                                context=None,
                                version=None,
                                certify=None,
                                keypath=serverKeypath,
                                certpath=serverCertpath,
                                cafilepath=clientCafilepath,)
-    self.assertIs(alpha.reopen(), True)
-    self.assertEqual(alpha.ha, ('127.0.0.1', 6101))
-    self.assertEqual(alpha.eha, ('127.0.0.1', 6101))
-
-    wireLogGamma = wiring.WireLog(buffify=True, same=True)
-    result = wireLogGamma.reopen()
+    assert alpha.reopen()
+    assert alpha.ha == ('127.0.0.1', 6101)
+    assert alpha.eha == ('127.0.0.1', 6101)
 
     gamma = tcp.ServerTls(host=serverCertCommonName,
                                port = 6103,
                                bufsize=131072,
-                               wl=wireLogGamma,
                                context=None,
                                version=None,
                                certify=None,
                                keypath=serverKeypath,
                                certpath=serverCertpath,
                                cafilepath=clientCafilepath)
-    self.assertIs(gamma.reopen(), True)
-    self.assertEqual(gamma.ha, ('127.0.0.1', 6103))
-    self.assertEqual(gamma.eha, ('127.0.0.1', 6103))
-
-    console.terse("{0}\n".format("Building Connector ...\n"))
+    assert gamma.reopen()
+    assert gamma.ha == ('127.0.0.1', 6103)
+    assert gamma.eha == ('127.0.0.1', 6103)
 
     #clientKeypath = '/etc/pki/tls/certs/client_key.pem'  # local client private key
     #clientCertpath = '/etc/pki/tls/certs/client_cert.pem'  # local client public cert
     #serverCafilepath = '/etc/pki/tls/certs/server.pem' # remote server public cert
 
-    clientKeypath = self.certdirpath + '/client_key.pem'  # local client private key
-    clientCertpath = self.certdirpath + '/client_cert.pem'  # local client public cert
-    serverCafilepath = self.certdirpath + '/server.pem' # remote server public cert
+    clientKeypath = certdirpath + '/client_key.pem'  # local client private key
+    clientCertpath = certdirpath + '/client_cert.pem'  # local client public cert
+    serverCafilepath = certdirpath + '/server.pem' # remote server public cert
 
-    wireLogBeta = wiring.WireLog(buffify=True,  same=True)
-    result = wireLogBeta.reopen()
     host = serverCertCommonName
     port = alpha.eha[1]
-
     beta = clienting.Patron(bufsize=131072,
-                          wl=wireLogBeta,
                           hostname=host,
                           port=port,
                           reconnectable=True,
@@ -2171,11 +2190,12 @@ def testPatronRedirectComplexSecure():
                           certpath=clientCertpath,
                           cafilepath=serverCafilepath,)
 
-    self.assertIs(beta.connector.reopen(), True)
-    self.assertIs(beta.connector.accepted, False)
-    self.assertIs(beta.connector.connected, False)
-    self.assertIs(beta.connector.cutoff, False)
+    assert beta.connector.reopen()
+    assert not beta.connector.accepted
+    assert not beta.connector.connected
+    assert not beta.connector.cutoff
 
+    #  build request
     request = dict([('method', u'GET'),
                      ('path', u'/echo?name=fame'),
                      ('qargs', dict()),
@@ -2188,81 +2208,70 @@ def testPatronRedirectComplexSecure():
 
     while (not alpha.ixes or beta.requests or
            beta.connector.txbs or not beta.respondent.ended):
-        self.mockRedirectComplexServiceASecure(alpha)
-        self.mockRedirectComplexServiceGSecure(gamma)
+        mockRedirectingServiceTls(alpha)
+        mockRedirectedServiceTls(gamma)
         time.sleep(0.05)
         beta.serviceAll()
         time.sleep(0.05)
 
-    self.assertEqual(len(beta.connector.rxbs), 0)
-    self.assertIs(beta.waited, False)
-    self.assertIs(beta.respondent.ended, True)
+    assert not beta.connector.rxbs
+    assert not beta.waited
+    assert beta.respondent.ended
 
-    self.assertEqual(len(beta.responses), 1)
+    assert len(beta.responses) == 1
     response = beta.responses.popleft()
-    self.assertEqual(response, {'version': (1, 1),
-                                'status': 200,
-                                'reason': 'OK',
-                                'headers':
-                                    {'content-length': '122',
-                                    'content-type': 'application/json',
-                                    'date': 'Thu, 30 Apr 2015 19:37:17 GMT',
-                                    'server': 'IoBook.local'},
-                                'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
-                                                b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
-                                                b'on": null}'),
-                                'data': {'action': None,
-                                         'content': None,
-                                         'query': {'name': 'fame'},
-                                         'url': 'http://127.0.0.1:8080/echo?name=fame',
-                                         'verb': 'GET'},
-                                'error': None,
-                                'errored': False,
-                                'redirects': [{'body': bytearray(b''),
-                                               'data': None,
-                                               'headers': {'access-control-allow-origin': '*',
-                                                           'content-length': '0',
-                                                           'content-type': 'text/plain',
-                                                           'location': 'https://localhost:6103/redirect?name=fame'},
-                                               'reason': 'Temporary Redirect',
-                                               'error': None,
-                                               'errored': False,
-                                               'request': {'body': b'',
-                                                           'data': None,
-                                                           'fargs': None,
-                                                           'fragment': '',
-                                                           'headers': {'accept': 'application/json'},
-                                                           'host': 'localhost',
-                                                           'method': 'GET',
-                                                           'path': '/echo',
-                                                           'port': 6101,
-                                                           'qargs': {'name': 'fame'},
-                                                           'scheme': 'https'},
-                                               'status': 307,
-                                               'version': (1, 1)}],
-                                'request':
-                                    {'host': 'localhost',
-                                     'port': 6103,
-                                     'scheme': 'https',
-                                     'method': 'GET',
-                                     'path': '/redirect',
-                                     'qargs': {'name': 'fame'},
-                                     'fragment': '',
-                                     'headers':
-                                         {'accept': 'application/json'},
-                                     'body': b'',
-                                     'data': None,
-                                     'fargs': None,
-                                    }
-                                })
+    assert response == {'version': (1, 1),
+                        'status': 200,
+                        'reason': 'OK',
+                        'headers': imdict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
+                        'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
+                                          b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
+                                          b'on": null}'),
+                        'data': {'content': None,
+                                 'query': {'name': 'fame'},
+                                 'verb': 'GET',
+                                 'url': 'http://127.0.0.1:8080/echo?name=fame',
+                                 'action': None},
+                        'request': {'host': 'localhost',
+                                    'port': 6103,
+                                    'scheme': 'https',
+                                    'method': 'GET',
+                                    'path': '/redirect',
+                                    'fragment': '',
+                                    'qargs': {'name': 'fame'},
+                                    'headers': imdict([('Accept', 'application/json')]),
+                                    'body': b'',
+                                    'data': None,
+                                    'fargs': None},
+                        'errored': False,
+                        'error': None,
+                        'redirects': [{'version': (1, 1),
+                                       'status': 307,
+                                       'reason': 'Temporary Redirect',
+                                       'headers': imdict([('Content-Type', 'text/plain'),
+                                                          ('Content-Length', '0'),
+                                                          ('Access-Control-Allow-Origin', '*'),
+                                                          ('Location', 'https://localhost:6103/redirect?name=fame')]),
+                                       'body': bytearray(b''),
+                                       'data': None,
+                                       'request': {'method': 'GET',
+                                                   'path': '/echo',
+                                                   'qargs': {'name': 'fame'},
+                                                   'fragment': '',
+                                                   'headers': imdict([('Accept', 'application/json')]),
+                                                   'body': b'',
+                                                   'host': 'localhost',
+                                                   'port': 6101,
+                                                   'scheme': 'https',
+                                                   'data': None,
+                                                   'fargs': None},
+                                       'errored': False,
+                                       'error': None}]}
+
 
     alpha.close()
     gamma.close()
     beta.connector.close()
-
-    wireLogAlpha.close()
-    wireLogGamma.close()
-    wireLogBeta.close()
 
 
 def testMultiPartForm():
@@ -2351,4 +2360,4 @@ def testQueryQuoting():
 
 
 if __name__ == '__main__':
-    test_client_redirect_different_servers()
+    test_client_redirect_different_servers_tls()
