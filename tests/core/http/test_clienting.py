@@ -2228,20 +2228,34 @@ def test_multipart_form():
                                  headers=headers)
     msgOut = request.rebuild(fargs=fargs)
 
-    assert b'Content-Disposition: form-data; name="text"\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nThis is the life,\nIt is the best.\n\r\n' in msgOut
-    assert b'Content-Disposition: form-data; name="html"\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n<html><body></body><html>\r\n' in msgOut
-    assert request.head.startswith(b'POST /echo?name=fame HTTP/1.1\r\nHost: 127.0.0.1:6101\r\nAccept-Encoding: identity\r\nContent-Length: 325\r\nAccept: application/json\r\nContent-Type: multipart/form-data; boundary=')
+    part = (b'Content-Disposition: form-data; name="text"\r\n'
+            b'Content-Type: text/plain; charset=utf-8\r\n\r\n'
+            b'This is the life,\nIt is the best.\n\r\n')
+    assert part in msgOut
+    part = (b'Content-Disposition: form-data; name="html"\r\n'
+            b'Content-Type: text/plain; charset=utf-8\r\n\r\n'
+            b'<html><body></body><html>\r\n')
+    assert part in msgOut
+    assert request.head.startswith((b'POST /echo?name=fame HTTP/1.1\r\n'
+                                    b'Host: 127.0.0.1:6101\r\n'
+                                    b'Accept-Encoding: identity\r\n'
+                                    b'Content-Length: 325\r\n'
+                                    b'Accept: application/json\r\n'
+                                    b'Content-Type: multipart/form-data; boundary='))
 
 
-
-def testQueryQuoting():
+def test_query_quoting():
     """
     Test agorithm for parsing and reassembling query
     """
-    console.terse("{0}\n".format(self.testQueryQuoting.__doc__))
-
-
-    location = u'https%3A%2F%2Fapi.twitter.com%2F1.1%2Faccount%2Fverify_credentials.json?oauth_consumer_key=meWtb1jEOCQciCgqheqiQoU&oauth_nonce=eb616fe02004000&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1437580412&oauth_token=1048104-WpGhCC4Fbj9Bp5PaTTuN0laSqD4vxCb2B7xh62YD&oauth_version=1.0&oauth_signature=KBD3DdNVZBjyOd0fqQ9X17ack%3D'
+    location = ('https%3A%2F%2Fapi.twitter.com%2F1.1%2Faccount%2Fverify_credentials.json'
+                '?oauth_consumer_key=meWtb1jEOCQciCgqheqiQoU'
+                '&oauth_nonce=eb616fe02004000'
+                '&oauth_signature_method=HMAC-SHA1'
+                '&oauth_timestamp=1437580412'
+                '&oauth_token=1048104-WpGhCC4Fbj9Bp5PaTTuN0laSqD4vxCb2B7xh62YD'
+                '&oauth_version=1.0'
+                '&oauth_signature=KBD3DdNVZBjyOd0fqQ9X17ack%3D')
     path, sep, query = location.partition('?')
     path = unquote(path)
     if sep:
@@ -2249,20 +2263,32 @@ def testQueryQuoting():
     else:
         location = path
 
-    #location = unquote(location)
-    self.assertEqual(location, u'https://api.twitter.com/1.1/account/verify_credentials.json?oauth_consumer_key=meWtb1jEOCQciCgqheqiQoU&oauth_nonce=eb616fe02004000&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1437580412&oauth_token=1048104-WpGhCC4Fbj9Bp5PaTTuN0laSqD4vxCb2B7xh62YD&oauth_version=1.0&oauth_signature=KBD3DdNVZBjyOd0fqQ9X17ack%3D')
+    assert location == ('https://api.twitter.com/1.1/account/verify_credentials.json'
+                        '?oauth_consumer_key=meWtb1jEOCQciCgqheqiQoU'
+                        '&oauth_nonce=eb616fe02004000'
+                        '&oauth_signature_method=HMAC-SHA1'
+                        '&oauth_timestamp=1437580412'
+                        '&oauth_token=1048104-WpGhCC4Fbj9Bp5PaTTuN0laSqD4vxCb2B7xh62YD'
+                        '&oauth_version=1.0'
+                        '&oauth_signature=KBD3DdNVZBjyOd0fqQ9X17ack%3D')
 
     splits = urlsplit(location)
     query = splits.query
-    self.assertEqual(query, u'oauth_consumer_key=meWtb1jEOCQciCgqheqiQoU&oauth_nonce=eb616fe02004000&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1437580412&oauth_token=1048104-WpGhCC4Fbj9Bp5PaTTuN0laSqD4vxCb2B7xh62YD&oauth_version=1.0&oauth_signature=KBD3DdNVZBjyOd0fqQ9X17ack%3D')
-    querySplits = query.split(u'&')
-    self.assertEqual(querySplits, [u'oauth_consumer_key=meWtb1jEOCQciCgqheqiQoU',
-                                    u'oauth_nonce=eb616fe02004000',
-                                    u'oauth_signature_method=HMAC-SHA1',
-                                    u'oauth_timestamp=1437580412',
-                                    u'oauth_token=1048104-WpGhCC4Fbj9Bp5PaTTuN0laSqD4vxCb2B7xh62YD',
-                                    u'oauth_version=1.0',
-                                    u'oauth_signature=KBD3DdNVZBjyOd0fqQ9X17ack%3D'])
+    assert query == ('oauth_consumer_key=meWtb1jEOCQciCgqheqiQoU'
+                     '&oauth_nonce=eb616fe02004000'
+                     '&oauth_signature_method=HMAC-SHA1'
+                     '&oauth_timestamp=1437580412'
+                     '&oauth_token=1048104-WpGhCC4Fbj9Bp5PaTTuN0laSqD4vxCb2B7xh62YD'
+                     '&oauth_version=1.0'
+                     '&oauth_signature=KBD3DdNVZBjyOd0fqQ9X17ack%3D')
+    querySplits = query.split('&')
+    assert querySplits == ['oauth_consumer_key=meWtb1jEOCQciCgqheqiQoU',
+                                    'oauth_nonce=eb616fe02004000',
+                                    'oauth_signature_method=HMAC-SHA1',
+                                    'oauth_timestamp=1437580412',
+                                    'oauth_token=1048104-WpGhCC4Fbj9Bp5PaTTuN0laSqD4vxCb2B7xh62YD',
+                                    'oauth_version=1.0',
+                                    'oauth_signature=KBD3DdNVZBjyOd0fqQ9X17ack%3D']
     qargs = dict()
     for queryPart in querySplits:  # this prevents duplicates even if desired
         if queryPart:
@@ -2274,19 +2300,25 @@ def testQueryQuoting():
                 val = True
             qargs[key] = val
 
-    self.assertEqual(qargs, {u'oauth_consumer_key': u'meWtb1jEOCQciCgqheqiQoU',
-                             u'oauth_nonce': u'eb616fe02004000',
-                             u'oauth_signature_method': u'HMAC-SHA1',
-                             u'oauth_timestamp': u'1437580412',
-                             u'oauth_token': u'1048104-WpGhCC4Fbj9Bp5PaTTuN0laSqD4vxCb2B7xh62YD',
-                             u'oauth_version': u'1.0',
-                             u'oauth_signature': u'KBD3DdNVZBjyOd0fqQ9X17ack='})
-    qargParts = [u"{0}={1}".format(key, quote_plus(str(val)))
+    assert qargs == {'oauth_consumer_key': u'meWtb1jEOCQciCgqheqiQoU',
+                             'oauth_nonce': u'eb616fe02004000',
+                             'oauth_signature_method': u'HMAC-SHA1',
+                             'oauth_timestamp': u'1437580412',
+                             'oauth_token': u'1048104-WpGhCC4Fbj9Bp5PaTTuN0laSqD4vxCb2B7xh62YD',
+                             'oauth_version': u'1.0',
+                             'oauth_signature': u'KBD3DdNVZBjyOd0fqQ9X17ack='}
+    qargParts = ["{0}={1}".format(key, quote_plus(str(val)))
                  for key, val in qargs.items()]
     newQuery = '&'.join(qargParts)
-    self.assertEqual(newQuery, u'oauth_consumer_key=meWtb1jEOCQciCgqheqiQoU&oauth_nonce=eb616fe02004000&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1437580412&oauth_token=1048104-WpGhCC4Fbj9Bp5PaTTuN0laSqD4vxCb2B7xh62YD&oauth_version=1.0&oauth_signature=KBD3DdNVZBjyOd0fqQ9X17ack%3D')
+    assert newQuery == ('oauth_consumer_key=meWtb1jEOCQciCgqheqiQoU'
+                        '&oauth_nonce=eb616fe02004000'
+                        '&oauth_signature_method=HMAC-SHA1'
+                        '&oauth_timestamp=1437580412'
+                        '&oauth_token=1048104-WpGhCC4Fbj9Bp5PaTTuN0laSqD4vxCb2B7xh62YD'
+                        '&oauth_version=1.0'
+                        '&oauth_signature=KBD3DdNVZBjyOd0fqQ9X17ack%3D')
 
 
 
 if __name__ == '__main__':
-    test_multipart_form()
+    test_query_quoting()
