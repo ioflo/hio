@@ -590,39 +590,6 @@ def mockEchoServiceJson(server):
         server.serviceSendsAllIx()
 
 
-def mockEchoServiceTls(server):
-    """
-    mock echo server service TLS secure utility function
-    """
-    mockMsg = (b'GET /echo?name=fame HTTP/1.1\r\n'
-               b'Host: localhost:6101\r\n'
-               b'Accept-Encoding: identity\r\n'
-               b'Accept: application/json\r\n\r\n')
-    server.serviceConnects()
-    if server.ixes:
-        server.serviceReceivesAllIx()
-
-        ixClient = list(server.ixes.values())[0]
-        msgIn = bytes(ixClient.rxbs)
-        if  msgIn == mockMsg:
-            ixClient.clearRxbs()
-            msgOut = (b'HTTP/1.1 200 OK\r\n'
-                      b'Content-Length: 122\r\n'
-                      b'Content-Type: application/json\r\n'
-                      b'Date: Thu, 30 Apr 2015 19:37:17 GMT\r\n'
-                      b'Server: IoBook.local\r\n\r\n'
-                      b'{"content": null, '
-                      b'"query": {"name": "fame"}, '
-                      b'"verb": "GET", '
-                      b'"url": "http://127.0.0.1:8080/echo?name=fame", '
-                      b'"action": null}')
-            ixClient.tx(msgOut)
-            msgIn = b''
-            msgOut = b''
-
-        server.serviceSendsAllIx()
-
-
 def mockRedirectService(server):
     """
     mock echo server service utility function
@@ -1572,7 +1539,6 @@ def test_client_pipline_echo_simple_tls():
 
     while (not alpha.ixes or beta.requests or
            beta.connector.txbs or not beta.respondent.ended):
-        # mockEchoServiceTls(alpha)
         mockEchoServiceLocalhost(alpha)
         time.sleep(0.05)
         beta.serviceAll()
@@ -1615,7 +1581,6 @@ def test_client_pipline_echo_simple_tls():
 
     while (not alpha.ixes or beta.requests or
            beta.connector.txbs or not beta.respondent.ended):
-        # mockEchoServiceTls(alpha)
         mockEchoServiceLocalhost(alpha)
         time.sleep(0.05)
         beta.serviceAll()
@@ -1721,7 +1686,6 @@ def test_client_pipeline_echo_simple_path_tls():
 
     while (not alpha.ixes or beta.requests or
            beta.connector.txbs or not beta.respondent.ended):
-        # mockEchoServiceTls(alpha)
         mockEchoServiceLocalhost(alpha)
         time.sleep(0.05)
         beta.serviceAll()
@@ -1764,7 +1728,6 @@ def test_client_pipeline_echo_simple_path_tls():
 
     while (not alpha.ixes or beta.requests or
            beta.connector.txbs or not beta.respondent.ended):
-        # mockEchoServiceTls(alpha)
         mockEchoServiceLocalhost(alpha)
         time.sleep(0.05)
         beta.serviceAll()
