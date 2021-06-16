@@ -617,7 +617,7 @@ class Patron():
                  name='',
                  uid=0,
                  bufsize=8096,
-                 wlog=None,
+                 wl=None,
                  hostname='127.0.0.1',
                  port=None,
                  scheme=u'',
@@ -647,7 +647,7 @@ class Patron():
             name is user friendly name for connector (connection)
             uid is unique identifier for connector (connection)
             bufsize is buffer size for connector
-            wlog is opened WireLog instance if any for connector
+            wl is opened WireLog instance if any for connector
             hostname is host address or hostname of remote server for connector
                 connector.hostname is used for requester
             port = socket port of remote server for connector
@@ -742,7 +742,7 @@ class Patron():
                                        host=hostname,
                                        port=port,
                                        bufsize=bufsize,
-                                       wlog=wlog,
+                                       wl=wl,
                                        **kwa)
             else:
                 connector = Client( name=name,
@@ -750,7 +750,7 @@ class Patron():
                                     host=hostname,
                                     port=port,
                                     bufsize=bufsize,
-                                    wlog=wlog,
+                                    wl=wl,
                                     **kwa)
 
         self.secured = secured
@@ -980,19 +980,15 @@ class Patron():
                 if secured:
                     context = getattr(self.connector, 'context')
                     connector = ClientTls(tymth=self.connector.tymth,
-                                           name=self.connector.name,
-                                           uid=self.connector.uid,
                                            ha=(hostname, port),
                                            bufsize=self.connector.bs,
-                                           wlog=self.connector.wlog,
+                                           wl=self.connector.wl,
                                            context=context)
                 else:
                     connector = Client(tymth=self.connector.tymth,
-                                        name=self.connector.name,
-                                        uid=self.connector.uid,
                                         ha=(hostname, port),
                                         bufsize=self.connector.bs,
-                                        wlog=self.connector.wlog,)
+                                        wl=self.connector.wl,)
 
                 self.secured = secured
                 self.connector = connector
