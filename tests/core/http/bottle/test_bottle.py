@@ -101,7 +101,7 @@ def testValetServiceBottle(self):
            not alpha.idle()):
         alpha.serviceAll()
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
         tymist.tick(tock=0.1)
 
@@ -228,7 +228,7 @@ def testValetServiceBottleNoContentLength(self):
            not alpha.idle()):
         alpha.serviceAll()
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
         tymist.tick(tock=0.1)
 
@@ -352,7 +352,7 @@ def testValetServiceBottleNonPersistent(self):
            not alpha.idle()):
         alpha.serviceAll()
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
         tymist.tick(tock=0.1)
 
@@ -478,7 +478,7 @@ def testValetServiceBottleStream(self):
     while (not tymer.expired):
         alpha.serviceAll()
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
         tymist.tock(tock=0.1)
 
@@ -523,7 +523,7 @@ def testValetServiceBottleStream(self):
     while (not tymer.expired):
         alpha.serviceAll()
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
         tymist.tick(tock=0.1)
 
@@ -649,7 +649,7 @@ def testValetServiceBottleSecure(self):
            not alpha.idle()):
         alpha.serviceAll()
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
         tymist.tick(tock=0.1)
 
@@ -802,7 +802,7 @@ def testValetServiceBottleStreamSecure(self):
     while (not timer.expired):
         alpha.serviceAll()
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
         tymist.tick(tock=0.1)
 
@@ -847,7 +847,7 @@ def testValetServiceBottleStreamSecure(self):
     while (not timer.expired):
         alpha.serviceAll()
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
         tymist.tick(tock=0.1)
 

@@ -1088,7 +1088,7 @@ class Client():
                 self.respondent.makeParser()  #set up for next time
 
 
-    def serviceAll(self):
+    def service(self):
         """
         Service request response
         """
@@ -1139,7 +1139,7 @@ class Client():
         while ((self.requests or self.connector.txbs or not self.responses)
                and not tymer.expired):
             try:
-                self.serviceAll()
+                self.service()
             except Exception as ex:
                 logger.error("Error: Servicing HTTP Client '%s'."
                               " '%s'\n", self.connector.name, ex)

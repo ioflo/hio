@@ -21,10 +21,10 @@ logger = help.ogler.getLogger()
 
 def test_bare_server_echo():
     """
-    Test Porter service request response of echo non blocking
+    Test BaserServer service request response of echo non blocking
     """
     tymist = tyming.Tymist(tyme=0.0)
-    alpha = serving.Porter(port = 6101,
+    alpha = http.BareServer(port = 6101,
                           bufsize=131072,
                           tymth=tymist.tymen())
     assert alpha.servant.reopen()
@@ -56,9 +56,9 @@ def test_bare_server_echo():
 
     while (beta.requests or beta.connector.txbs or not beta.responses or
            not alpha.servant.ixes or not alpha.idle()):
-        alpha.serviceAll()
+        alpha.service()
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
 
     assert beta.connector.accepted
@@ -156,7 +156,7 @@ def testValetServiceBasic(self):
            not alpha.idle()):
         alpha.serviceAll()
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
 
     self.assertIs(beta.connector.accepted, True)
@@ -275,7 +275,7 @@ def testValetServiceBasicSecure(self):
            not alpha.idle()):
         alpha.serviceAll()
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
 
     self.assertIs(beta.connector.accepted, True)

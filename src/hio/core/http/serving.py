@@ -47,15 +47,15 @@ class Requestant(httping.Parsent):
     Parses request msg
     """
 
-    def __init__(self, incomer=None, **kwa):
+    def __init__(self, remoter=None, **kwa):
         """
         Initialize Instance
         Parameters:
-            incomer = Incomer connection instance
+            remoter = Remoter incoming connection instance
 
         """
         super(Requestant, self).__init__(**kwa)
-        self.incomer = incomer
+        self.remoter = remoter
         self.url = u''   # full path in request line either relative or absolute
         self.scheme = u''  # scheme used in request line path
         self.hostname = u''  # hostname used in request line path
@@ -90,7 +90,7 @@ class Requestant(httping.Parsent):
                 self.persisted = True
 
         if self.persisted:  # override timeout so server never timesout
-            self.incomer.timeout =  0.0  # never timesout
+            self.remoter.timeout =  0.0  # never timesout
 
 
     def parseHead(self):
@@ -463,7 +463,7 @@ class Responder():
 
     def service(self):
         """
-        Service application
+        Service wsgi compatible application
         """
         if not self.closed and not self.ended:
             if self.iterator is None:  # initiate application
@@ -503,7 +503,7 @@ class Responder():
 
 class Valet(tyming.Tymee):
     """
-    Valet WSGI HHTP Server Class
+    Valet WSGI HTTP Server Class
     """
     Timeout = 5.0  # default server connection timeout
 
@@ -694,7 +694,7 @@ class Valet(tyming.Tymee):
 
         # Optional CGI variables
         environ['QUERY_STRING'] = requestant.query        # name=john
-        environ['REMOTE_ADDR'] = requestant.incomer.ca
+        environ['REMOTE_ADDR'] = requestant.remoter.ca
         environ['CONTENT_TYPE'] = requestant.headers.get('content-type', '')
         if requestant.length is not None:
             environ['CONTENT_LENGTH'] = str(requestant.length)
@@ -733,9 +733,9 @@ class Valet(tyming.Tymee):
                 continue
 
             if ca not in self.reqs:  # point requestant.msg to incomer.rxbs
-                self.reqs[ca] = Requestant(msg=ix.rxbs, incomer=ix)
+                self.reqs[ca] = Requestant(msg=ix.rxbs, remoter=ix)
 
-            if ix.timeout > 0.0 and ix.timer.expired:
+            if ix.timeout > 0.0 and ix.tymer.expired:
                 self.closeConnection(ca)
 
     def serviceReqs(self):
@@ -746,13 +746,13 @@ class Valet(tyming.Tymee):
             if requestant.parser:
                 try:
                     requestant.parse()
-                except httping.HTTPException as ex:  # this may be superfluous
+                except httping.HTTPException as ex:  # unkown error cause this may be superfluous
                     #requestant.errored = True
                     #requestant.error = str(ex)
                     #requestant.ended = True
                     sys.stderr.write(str(ex))
                     self.closeConnection(ca)
-                    continue
+                    continue  # give up on request since shouldn't be here
 
                 if requestant.ended:
                     if requestant.errored:  # parse may swallow error but set .errored and .error
@@ -770,7 +770,7 @@ class Valet(tyming.Tymee):
                     environ = self.buildEnviron(requestant)
                     if ca not in self.reps:
                         chunkable = True if requestant.version >= (1, 1) else False
-                        responder = Responder(incomer=requestant.incomer,
+                        responder = Responder(incomer=requestant.remoter,
                                                   app=self.app,
                                                   environ=environ,
                                                   chunkable=chunkable)
@@ -812,9 +812,10 @@ class Valet(tyming.Tymee):
         self.servant.serviceTxesAllIx()
 
 
-class CustomResponder(object):
+class CustomResponder():
     """
-    Nonblocking HTTP Server Response class
+    Nonblocking HTTP Server Response class for non-wsgi applications
+    Used by Steward
 
     HTTP/1.1 200 OK\r\n
     Content-Length: 122\r\n
@@ -879,6 +880,7 @@ class CustomResponder(object):
         else:
             self.data = None
 
+
     def build(self,
               status=None,
               headers=None,
@@ -932,9 +934,10 @@ class CustomResponder(object):
 class Steward():
     """
     Manages the associated requestant and responder for an incoming connection
+    for BareServer (non-wsgi) HTTP server
     """
     def __init__(self,
-                 incomer,
+                 remoter,
                  requestant=None,
                  responder=None,
                  dictable=False):
@@ -944,10 +947,10 @@ class Steward():
         responder = Responder instance for connection
         dictable = True if should attempt to convert request body as json
         """
-        self.incomer = incomer
+        self.remoter = remoter
         if requestant is None:
-            requestant = Requestant(msg=self.incomer.rxbs,
-                                    incomer=incomer,
+            requestant = Requestant(msg=self.remoter.rxbs,
+                                    remoter=remoter,
                                     dictable=dictable)
         self.requestant = requestant
 
@@ -957,11 +960,13 @@ class Steward():
         self.waited = False  # True if waiting for reponse to finish
         self.msg = b""  # outgoing msg bytes
 
+
     def refresh(self):
         """
-        Restart incomer timer
+        Restart incomer tymer
         """
-        incomer.timer.restart()
+        self.remoter.tymer.restart()
+
 
     def respond(self):
         """
@@ -995,8 +1000,9 @@ class Steward():
         data['data'] = copy.copy(self.requestant.data)  # make copy
 
         msg = self.responder.build(status=200, data=data)
-        self.incomer.tx(msg)
+        self.remoter.tx(msg)
         self.waited = not self.responder.ended
+
 
     def pour(self):
         """
@@ -1012,9 +1018,10 @@ class Steward():
             self.refresh()
 
 
-class Porter():
+class BareServer():
     """
-    Porter class nonblocking Basic HTTP server  (non-WSGI)
+    BareServer class nonblocking Bare (non-WSGI) HTTP server
+    Define CustomResponder subclass to respond to requests as per Steward
     """
     Timeout = 5.0  # default tcp server (servant) connection timeout
 
@@ -1113,6 +1120,7 @@ class Porter():
         self.secured = secured
         self.servant = servant
 
+
     def idle(self):
         """
         Returns True if no connections have requests in process
@@ -1125,12 +1133,14 @@ class Porter():
                 break
         return idle
 
+
     def closeConnection(self, ca):
         """
         Close and remove connection and associated steward given by ca
         """
         self.servant.removeIx(ca)
         del self.stewards[ca]
+
 
     def serviceConnects(self):
         """
@@ -1143,10 +1153,11 @@ class Porter():
             # check for and handle cutoff connections by client here
 
             if ca not in self.stewards:
-                self.stewards[ca] = Steward(incomer=ix, dictable=self.dictable)
+                self.stewards[ca] = Steward(remoter=ix, dictable=self.dictable)
 
             if ix.timeout > 0.0 and ix.tymer.expired:
                 self.closeConnection(ca)
+
 
     def serviceStewards(self):
         """
@@ -1175,7 +1186,8 @@ class Porter():
                 else:  # remove and close connection
                     self.closeConnection(ca)
 
-    def serviceAll(self):
+
+    def service(self):
         """
         Service request response
         """

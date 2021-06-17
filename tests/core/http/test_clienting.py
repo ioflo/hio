@@ -453,7 +453,7 @@ def test_client_service_all_echo():
                       b'Accept: application/json\r\n\r\n')
 
     while beta.connector.txbs and not ixBeta.rxbs :
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
         alpha.serviceReceivesAllIx()
         time.sleep(0.05)
@@ -476,7 +476,7 @@ def test_client_service_all_echo():
     while ixBeta.txbs or not beta.respondent.ended:
         alpha.serviceSendsAllIx()
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
 
     assert not beta.connector.rxbs
@@ -566,7 +566,7 @@ def test_client_pipeline_echo():
     beta.requests.append(request)
 
     while (beta.requests or beta.connector.txbs) and not ixBeta.rxbs :
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
         alpha.serviceReceivesAllIx()
         time.sleep(0.05)
@@ -595,7 +595,7 @@ def test_client_pipeline_echo():
     while ixBeta.txbs or not beta.respondent.ended:
         alpha.serviceSendsAllIx()
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
 
     assert not beta.connector.rxbs
@@ -637,7 +637,7 @@ def test_client_pipeline_echo():
     # resend request in pipeline mode
     beta.requests.append(request)
     while ( beta.requests or beta.connector.txbs) and not ixBeta.rxbs :
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
         alpha.serviceReceivesAllIx()
         time.sleep(0.05)
@@ -664,7 +664,7 @@ def test_client_pipeline_echo():
     while ixBeta.txbs or not beta.respondent.ended:
         alpha.serviceSendsAllIx()
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
 
     assert not beta.connector.rxbs
@@ -776,7 +776,7 @@ def test_client_pipeline_echo_simple():
            beta.connector.txbs or not beta.respondent.ended):
         mockEchoService(alpha)
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
 
     assert not beta.connector.rxbs
@@ -824,7 +824,7 @@ def test_client_pipeline_echo_simple():
             beta.connector.txbs or not beta.respondent.ended):
         mockEchoService(alpha)
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
 
     assert not beta.connector.rxbs
@@ -897,7 +897,7 @@ def test_client_echo_simple_host_port_path():
            beta.connector.txbs or not beta.respondent.ended):
         mockEchoService(alpha)
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
 
     assert not beta.connector.rxbs
@@ -940,7 +940,7 @@ def test_client_echo_simple_host_port_path():
             beta.connector.txbs or not beta.respondent.ended):
         mockEchoService(alpha)
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
 
     assert not beta.connector.rxbs
@@ -1016,7 +1016,7 @@ def test_client_pipline_echo_simple_path_scheme():
             beta.connector.txbs or not beta.respondent.ended):
         mockEchoService(alpha)  # mockEchoServiceLocalhost
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
 
     assert not beta.connector.rxbs
@@ -1057,7 +1057,7 @@ def test_client_pipline_echo_simple_path_scheme():
             beta.connector.txbs or not beta.respondent.ended):
         mockEchoService(alpha)
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
 
     assert not beta.connector.rxbs
@@ -1135,7 +1135,7 @@ def test_client_pipeline_echo_simple_path_track():
             beta.connector.txbs or not beta.respondent.ended):
         mockEchoService(alpha)
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
 
     assert not beta.connector.rxbs
@@ -1179,7 +1179,7 @@ def test_client_pipeline_echo_simple_path_track():
             beta.connector.txbs or not beta.respondent.ended):
         mockEchoService(alpha)
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
 
     assert not beta.connector.rxbs
@@ -1261,7 +1261,7 @@ def test_client_pipeline_echo_json():
             beta.connector.txbs or not beta.respondent.ended):
         mockEchoServiceJson(alpha)
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
 
     assert not beta.connector.rxbs
@@ -1305,7 +1305,7 @@ def test_client_pipeline_echo_json():
             beta.connector.txbs or not beta.respondent.ended):
         mockEchoServiceJson(alpha)
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
 
     assert not beta.connector.rxbs
@@ -1374,7 +1374,7 @@ def test_client_pipeline_sse_stream():
     assert not beta.connector.cutoff
 
     while True:
-        beta.serviceAll()
+        beta.service()
         alpha.serviceConnects()
         if beta.connector.connected and beta.connector.ca in alpha.ixes:
             break
@@ -1407,7 +1407,7 @@ def test_client_pipeline_sse_stream():
 
     beta.requests.append(request)
     while (beta.requests or beta.connector.txbs) and not ixBeta.rxbs:
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
         tymist.tick(tock=0.5)
         alpha.serviceReceivesAllIx()
@@ -1444,7 +1444,7 @@ def test_client_pipeline_sse_stream():
         alpha.serviceSendsAllIx()
         time.sleep(0.05)
         tymist.tick(tock=0.5)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
         tymist.tick(tock=0.5)
 
@@ -1474,7 +1474,7 @@ def test_client_pipeline_sse_stream():
     alpha.closeIx(beta.connector.ca)
     alpha.removeIx(beta.connector.ca)
     while True:
-        beta.serviceAll()
+        beta.service()
         if not beta.connector.connected:
             break
         time.sleep(0.1)
@@ -1484,7 +1484,7 @@ def test_client_pipeline_sse_stream():
 
     # auto reconnect
     while True:
-        beta.serviceAll()
+        beta.service()
         alpha.serviceConnects()
         if beta.connector.connected and beta.connector.ca in alpha.ixes:
             break
@@ -1506,7 +1506,7 @@ def test_client_pipeline_sse_stream():
     assert ixBeta.ha == beta.connector.ha
 
     while (beta.requests or beta.connector.txbs) or not ixBeta.rxbs:
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
         tymist.tick(tock=0.5)
         alpha.serviceReceivesAllIx()
@@ -1540,7 +1540,7 @@ def test_client_pipeline_sse_stream():
         alpha.serviceSendsAllIx()
         time.sleep(0.05)
         tymist.tick(tock=0.5)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
         tymist.tick(tock=0.5)
 
@@ -1635,7 +1635,7 @@ def test_client_pipline_echo_simple_tls():
            beta.connector.txbs or not beta.respondent.ended):
         mockEchoService(alpha)
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
 
     assert not beta.connector.rxbs
@@ -1677,7 +1677,7 @@ def test_client_pipline_echo_simple_tls():
            beta.connector.txbs or not beta.respondent.ended):
         mockEchoService(alpha)
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
 
     assert not beta.connector.rxbs
@@ -1782,7 +1782,7 @@ def test_client_pipeline_echo_simple_path_tls():
            beta.connector.txbs or not beta.respondent.ended):
         mockEchoService(alpha)
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
 
     assert not beta.connector.rxbs
@@ -1824,7 +1824,7 @@ def test_client_pipeline_echo_simple_path_tls():
            beta.connector.txbs or not beta.respondent.ended):
         mockEchoService(alpha)
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
 
     assert not beta.connector.rxbs
@@ -1901,7 +1901,7 @@ def test_client_redirect_differnet_path():
            beta.connector.txbs or not beta.respondent.ended):
         mockRedirectPathService(alpha)
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
 
     assert not beta.connector.rxbs
@@ -2006,7 +2006,7 @@ def test_client_redirect_different_servers():
         mockRedirectingService(alpha)
         mockRedirectedService(gamma)
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
 
     assert not beta.connector.rxbs
@@ -2146,7 +2146,7 @@ def test_client_redirect_different_servers_tls():
         mockRedirectingServiceTls(alpha)
         mockRedirectedService(gamma)
         time.sleep(0.05)
-        beta.serviceAll()
+        beta.service()
         time.sleep(0.05)
 
     assert not beta.connector.rxbs
