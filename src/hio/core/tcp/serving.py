@@ -22,7 +22,7 @@ from contextlib import contextmanager
 
 
 from ... import help
-from ...base import tyming
+from ...base import tyming, doing
 from .. import coring
 
 
@@ -995,3 +995,87 @@ class RemoterTls(Remoter):
                 self.wl.writeTx(data[:result], who=self.cs.getpeername())
 
         return result
+
+
+
+class ServerDoer(doing.Doer):
+    """
+    Basic TCP Server Doer
+
+    See Doer for inherited attributes, properties, and methods.
+
+    Attributes:
+       .server is TCP Server instance
+
+    Properties:
+
+    """
+
+    def __init__(self, server, **kwa):
+        """
+        Initialize
+
+        Parameters:
+           server is TCP Server instance
+        """
+        super(ServerDoer, self).__init__(**kwa)
+        self.server = server
+        if self.tymth:
+            self.server.wind(self.tymth)
+
+
+    def wind(self, tymth):
+        """
+        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+        Updates winds .tymer .tymth
+        """
+        super(ServerDoer, self).wind(tymth)
+        self.server.wind(tymth)
+
+
+    def enter(self):
+        """"""
+        self.server.reopen()
+
+
+    def recur(self, tyme):
+        """"""
+        self.server.service()
+
+
+    def exit(self):
+        """"""
+        self.server.close()
+
+
+class EchoServerDoer(ServerDoer):
+    """
+    Echo TCP Server
+    Just echoes back to client whatever it receives from client
+
+    See Doer for inherited attributes, properties, and methods.
+
+    Inherited Attributes:
+        .server is TCP Server instance
+
+
+    """
+
+    def enter(self):
+        """"""
+        self.server.reopen()
+
+
+    def recur(self, tyme):
+        """"""
+        self.server.service()
+        for ca, ix in self.server.ixes.items():
+            if ix.rxbs:
+                ix.tx(bytes(ix.rxbs))  # echo back
+                ix.clearRxbs()
+
+
+    def exit(self):
+        """"""
+        self.server.close()
+

@@ -11,6 +11,7 @@ from collections import deque
 
 
 from ... import hioing, help
+from ...base import doing
 
 logger = help.ogler.getLogger()
 
@@ -159,6 +160,118 @@ class Console():
                 del self.rxbs[:idx+1]  # delete including newline
 
         return line
+
+
+
+class ConsoleDoer(doing.Doer):
+    """
+    Basic Console Doer. Wraps console in doer context so opens and closes console
+
+    To test in WingIde must configure Debug I/O to use external console
+    See Doer for inherited attributes, properties, and methods.
+
+    Attributes:
+       .console is serial Console instance
+
+    """
+
+    def __init__(self, console, **kwa):
+        """
+        Initialize instance.
+
+        Parameters:
+           console is serial Console instance
+
+        """
+        super(ConsoleDoer, self).__init__(**kwa)
+        self.console = console
+
+
+    def enter(self):
+        """"""
+        result = self.console.reopen()
+
+
+    def exit(self):
+        """"""
+        self.console.close()
+
+
+class EchoConsoleDoer(doing.Doer):
+    """
+    Basic Terminal Console IO to buffers. Echos input back to output
+
+    To test in WingIde must configure Debug I/O to use external console
+
+    See Doer for inherited attributes, properties, and methods.
+
+    Attributes:
+       .console is serial Console instance
+
+    """
+
+    def __init__(self, console, lines=None, txbs=None, **kwa):
+        """
+        Initialize instance.
+
+        Parameters:
+           console is serial Console instance
+           lines is deque of input bytes bytearrays of each line from console
+           txbs is ouput bytes bytearray to send to console
+
+        """
+        super(EchoConsoleDoer, self).__init__(**kwa)
+        self.console = console
+        self.lines = lines if lines is not None else deque()
+        self.txbs = txbs if txbs is not None else bytearray()
+
+
+    def enter(self):
+        """"""
+        self.console.reopen()
+        self.txbs.extend(b"Cmds: q=quit, h=help otherwise echoes.\n")
+        self.txbs.extend(b"Type cmd & \n: ")
+
+
+    def recur(self, tyme):
+        """"""
+        done = False
+        prompt = False
+        while self.lines:
+            line = self.lines.popleft()
+            #process line here
+            if line == b'q':
+                self.txbs.extend(b"Goodbye\n.")
+                done = True  #  all done so indicate exit
+                break
+
+            elif line == b'h':
+                self.txbs.extend(b"Help: type q to quit or h for help.\n")
+
+            else:
+                self.txbs.extend(b"Echo: %s\n" % line )
+
+            prompt = True
+
+        if prompt:
+            self.txbs.extend(b"Type cmd & \n: ")
+
+
+        if self.txbs:
+            count =  self.console.put(self.txbs)  #  write
+            del self.txbs[:count]
+
+        line = self.console.get()  #  read
+        if line:
+            self.lines.append(line)
+
+
+        return done  # keep going if done == False else ends
+
+    def exit(self):
+        """"""
+        self.console.close()
+
 
 
 class Device():

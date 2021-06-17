@@ -3,5 +3,5 @@
 hio.core.tcp Package
 """
 
-from .clienting import Client, ClientTls
-from .serving import Server, ServerTls
+from .clienting import openClient, Client, ClientTls, ClientDoer
+from .serving import openServer, Server, ServerTls, Remoter, ServerDoer, EchoServerDoer

@@ -12,9 +12,8 @@ import socket
 from collections import deque
 import ssl
 
-from hio.base import tyming
-from hio.core.tcp.clienting import openClient, Client, ClientTls
-from hio.core.tcp.serving import openServer, Server, Remoter, ServerTls
+from hio.base import tyming, doing
+from hio.core import tcp
 
 def test_tcp_basic():
     """
@@ -44,7 +43,7 @@ def test_tcp_basic():
 
     """
     tymist = tyming.Tymist()
-    client = Client(tymth=tymist.tymen())
+    client = tcp.Client(tymth=tymist.tymen())
     assert client.tymeout == 0.0
     assert isinstance(client.tymer, tyming.Tymer)
     assert client.tymer.duration == client.tymeout
@@ -65,7 +64,7 @@ def test_tcp_basic():
     assert client.wl == None
 
     tymist = tyming.Tymist()
-    with openClient(tymth=tymist.tymen(), tymeout=0.5) as client:
+    with tcp.openClient(tymth=tymist.tymen(), tymeout=0.5) as client:
         assert client.tymeout == 0.5
         assert client.ha == ('127.0.0.1', 56000)
         assert client.opened == True
@@ -78,7 +77,7 @@ def test_tcp_basic():
     assert client.accepted == False
     assert client.cutoff == False
 
-    server = Server()
+    server = tcp.Server()
     assert server.timeout == 1.0
 
     assert server.ha == ('', 56000)
@@ -90,7 +89,7 @@ def test_tcp_basic():
     assert isinstance(server.ixes, dict)
     assert server.wl == None
 
-    with openServer(tymth=tymist.tymen(), timeout=1.5) as server:
+    with tcp.openServer(tymth=tymist.tymen(), timeout=1.5) as server:
         assert server.ha == ('0.0.0.0', 56000)
         assert server.eha == ('127.0.0.1', 56000)
         assert server.opened == True
@@ -98,9 +97,9 @@ def test_tcp_basic():
     assert server.opened == False
 
     tymist = tyming.Tymist()
-    with openServer(tymth=tymist.tymen(), ha=("", 6101)) as server, \
-         openClient(tymth=tymist.tymen(), ha=("127.0.0.1", 6101)) as beta, \
-         openClient(tymth=tymist.tymen(), ha=("127.0.0.1", 6101)) as gamma:
+    with tcp.openServer(tymth=tymist.tymen(), ha=("", 6101)) as server, \
+         tcp.openClient(tymth=tymist.tymen(), ha=("127.0.0.1", 6101)) as beta, \
+         tcp.openClient(tymth=tymist.tymen(), ha=("127.0.0.1", 6101)) as gamma:
 
         assert server.opened == True
         assert beta.opened == True
@@ -477,8 +476,8 @@ def test_tcp_service():
     Test Classes tcp service methods
     """
     tymist = tyming.Tymist()
-    with openServer(tymth=tymist.tymen(),  ha=("", 6101)) as server, \
-         openClient(tymth=tymist.tymen(),  ha=("127.0.0.1", 6101)) as beta:
+    with tcp.openServer(tymth=tymist.tymen(),  ha=("", 6101)) as server, \
+         tcp.openClient(tymth=tymist.tymen(),  ha=("127.0.0.1", 6101)) as beta:
 
         assert server.opened == True
         assert server.ha == ('0.0.0.0', 6101)
@@ -582,8 +581,8 @@ def test_client_auto_reconnect():
     Test client auto reconnect when  .reconnectable
     """
     tymist = tyming.Tymist(tock=0.05)
-    with openServer(tymth=tymist.tymen(), ha=("", 6101)) as server, \
-         openClient(tymth=tymist.tymen(), tymeout=0.2, reconnectable=True,
+    with tcp.openServer(tymth=tymist.tymen(), ha=("", 6101)) as server, \
+         tcp.openClient(tymth=tymist.tymen(), tymeout=0.2, reconnectable=True,
                     ha=("127.0.0.1", 6101)) as beta:
 
         # close server
@@ -688,14 +687,14 @@ def  test_tcp_tls_default_context():
     serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
 
     tymist = tyming.Tymist()
-    with openServer(cls=ServerTls,
+    with tcp.openServer(cls=tcp.ServerTls,
                     tymth=tymist.tymen(),
                     ha=("", 6101),
                     bs=16192,
                     keypath=serverKeyPath,
                     certpath=serverCertPath,
                     cafilepath=clientCaPath) as server, \
-         openClient(cls=ClientTls,
+         tcp.openClient(cls=tcp.ClientTls,
                     tymth=tymist.tymen(),
                     ha=("127.0.0.1", 6101),
                     bs=16192,
@@ -787,7 +786,7 @@ def test_tcp_tls_verify_both():
     serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
 
     tymist = tyming.Tymist()
-    with openServer(cls=ServerTls,
+    with tcp.openServer(cls=tcp.ServerTls,
                     tymth=tymist.tymen(),
                     ha=("", 6101),
                     bs=16192,
@@ -795,7 +794,7 @@ def test_tcp_tls_verify_both():
                     certpath=serverCertPath,
                     cafilepath=clientCaPath,
                     certify=ssl.CERT_REQUIRED,) as server, \
-         openClient(cls=ClientTls,
+         tcp.openClient(cls=tcp.ClientTls,
                     tymth=tymist.tymen(),
                     ha=("127.0.0.1", 6101),
                     bs=16192,
@@ -891,7 +890,7 @@ def test_tcp_tls_verify_client():
     serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
 
     tymist = tyming.Tymist()
-    with openServer(cls=ServerTls,
+    with tcp.openServer(cls=tcp.ServerTls,
                     tymth=tymist.tymen(),
                     ha=("", 6101),
                     bs=16192,
@@ -899,7 +898,7 @@ def test_tcp_tls_verify_client():
                     certpath=serverCertPath,
                     cafilepath=clientCaPath,
                     certify=ssl.CERT_REQUIRED,) as server, \
-         openClient(cls=ClientTls,
+         tcp.openClient(cls=tcp.ClientTls,
                     tymth=tymist.tymen(),
                     ha=("127.0.0.1", 6101), bs=16192,
                     certedhost=serverCertCommonName,
@@ -993,7 +992,7 @@ def test_tcp_tls_verify_server():
     serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
 
     tymist = tyming.Tymist()
-    with openServer(cls=ServerTls,
+    with tcp.openServer(cls=tcp.ServerTls,
                     tymth=tymist.tymen(),
                     ha=("", 6101),
                     bs=16192,
@@ -1001,7 +1000,7 @@ def test_tcp_tls_verify_server():
                     certpath=serverCertPath,
                     cafilepath=clientCaPath,
                     certify=ssl.CERT_NONE ,) as server, \
-         openClient(cls=ClientTls,
+         tcp.openClient(cls=tcp.ClientTls,
                     tymth=tymist.tymen(),
                     ha=("127.0.0.1", 6101),
                     bs=16192,
@@ -1096,7 +1095,7 @@ def test_tcp_tls_verify_neither():
     serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
 
     tymist = tyming.Tymist()
-    with openServer(cls=ServerTls,
+    with tcp.openServer(cls=tcp.ServerTls,
                     tymth=tymist.tymen(),
                     ha=("", 6101),
                     bs=16192,
@@ -1104,7 +1103,7 @@ def test_tcp_tls_verify_neither():
                     certpath=serverCertPath,
                     cafilepath=clientCaPath,
                     certify=ssl.CERT_NONE ,) as server, \
-         openClient(cls=ClientTls,
+         tcp.openClient(cls=tcp.ClientTls,
                     tymth=tymist.tymen(),
                     ha=("127.0.0.1", 6101),
                     bs=16192,
@@ -1199,7 +1198,7 @@ def test_tcp_tls_verify_both_tlsv12():
     serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
 
     tymist = tyming.Tymist()
-    with openServer(cls=ServerTls,
+    with tcp.openServer(cls=tcp.ServerTls,
                     tymth=tymist.tymen(),
                     ha=("", 6101),
                     bs=16192,
@@ -1208,7 +1207,7 @@ def test_tcp_tls_verify_both_tlsv12():
                     cafilepath=clientCaPath,
                     certify=ssl.CERT_REQUIRED,
                     version=ssl.PROTOCOL_TLSv1_2,) as server, \
-         openClient(cls=ClientTls,
+         tcp.openClient(cls=tcp.ClientTls,
                     tymth=tymist.tymen(),
                     ha=("127.0.0.1", 6101),
                     bs=16192,
@@ -1279,5 +1278,101 @@ def test_tcp_tls_verify_both_tlsv12():
     """Done Test"""
 
 
+
+def test_server_client():
+    """
+    Test ServerDoer ClientDoer classes
+    """
+    tock = 0.03125
+    ticks = 16
+    limit = ticks *  tock
+    doist = doing.Doist(tock=tock, real=True, limit=limit)
+    assert doist.tyme == 0.0  # on next cycle
+    assert doist.tock == tock == 0.03125
+    assert doist.real == True
+    assert doist.limit == limit == 0.5
+    assert doist.doers == []
+
+    port = 6120
+    server = tcp.Server(host="", port=port)
+    # client needs tymth in order to init its .tymer
+    client = tcp.Client(tymth=doist.tymen(), host="localhost", port=port)
+    assert client.tyme == doist.tyme
+
+    serdoer = tcp.ServerDoer(tymth=doist.tymen(), server=server)
+    assert serdoer.server ==  server
+    assert serdoer.tyme ==  serdoer.server.tyme == doist.tyme
+    clidoer = tcp.ClientDoer(tymth=doist.tymen(), client=client)
+    assert clidoer.client == client
+    assert clidoer.tyme == clidoer.client.tyme == doist.tyme
+
+    assert serdoer.tock == 0.0  # ASAP
+    assert clidoer.tock == 0.0  # ASAP
+
+    doers = [serdoer, clidoer]
+
+    msgTx = b"Hello me maties!"
+    clidoer.client.tx(msgTx)
+
+    doist.do(doers=doers)
+    assert doist.tyme == limit
+    assert server.opened == False
+    assert client.opened == False
+
+    assert not client.txbs
+    ca, ix = list(server.ixes.items())[0]
+    msgRx = bytes(ix.rxbs)
+    assert msgRx == msgTx
+
+    """End Test """
+
+
+def test_echo_server_client():
+    """
+    Test EchoServerDoer ClientDoer classes
+    """
+    tock = 0.03125
+    ticks = 16
+    limit = ticks *  tock
+    doist = doing.Doist(tock=tock, real=True, limit=limit)
+    assert doist.tyme == 0.0  # on next cycle
+    assert doist.tock == tock == 0.03125
+    assert doist.real == True
+    assert doist.limit == limit == 0.5
+    assert doist.doers == []
+
+    port = 6120
+    server = tcp.Server(host="", port=port)
+    client = tcp.Client(tymth=doist.tymen(), host="localhost", port=port)
+
+    serdoer = tcp.EchoServerDoer(tymth=doist.tymen(), server=server)
+    assert serdoer.server == server
+    assert serdoer.tyme ==  serdoer.server.tyme == doist.tyme
+    clidoer = tcp.ClientDoer(tymth=doist.tymen(), client=client)
+    assert clidoer.client == client
+    assert clidoer.tyme == clidoer.client.tyme == doist.tyme
+
+    assert serdoer.tock == 0.0  # ASAP
+    assert clidoer.tock == 0.0  # ASAP
+
+    doers = [serdoer, clidoer]
+
+    msgTx = b"Hello me maties!"
+    clidoer.client.tx(msgTx)
+
+    doist.do(doers=doers)
+    assert doist.tyme == limit
+    assert server.opened == False
+    assert client.opened == False
+
+    assert not client.txbs
+    msgEx = bytes(client.rxbs)  # echoed back message
+    assert msgEx == msgTx
+
+    ca, ix = list(server.ixes.items())[0]
+    assert bytes(ix.rxbs) == b""  # empty server rxbs becaue echoed
+    """End Test """
+
+
 if __name__ == "__main__":
-    test_client_auto_reconnect()
+    test_server_client()

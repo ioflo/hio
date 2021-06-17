@@ -13,7 +13,7 @@ from contextlib import contextmanager
 
 
 from ... import help
-from ...base import tyming
+from ...base import tyming, doing
 from .. import coring
 
 
@@ -738,4 +738,54 @@ class ClientTls(Client):
                 self.wl.writeTx(data[:result], self.ha)
 
         return result
+
+
+
+class ClientDoer(doing.Doer):
+    """
+    Basic TCP Client
+
+    See Doer for inherited attributes, properties, and methods.
+
+    Attributes:
+       .client is TCP Client instance
+
+    """
+
+    def __init__(self, client, **kwa):
+        """
+        Initialize instance.
+
+        Parameters:
+           client is TCP Client instance
+        """
+        super(ClientDoer, self).__init__(**kwa)
+        self.client = client
+        if self.tymth:
+            self.client.wind(self.tymth)
+
+
+    def wind(self, tymth):
+        """
+        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+        Updates winds .tymer .tymth
+        """
+        super(ClientDoer, self).wind(tymth)
+        self.client.wind(tymth)
+
+
+    def enter(self):
+        """"""
+        self.client.reopen()
+
+
+    def recur(self, tyme):
+        """"""
+        self.client.service()
+
+
+    def exit(self):
+        """"""
+        self.client.close()
+
 
