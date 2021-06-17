@@ -12,10 +12,15 @@ from hio import help
 from hio.base import tyming
 from hio.core import wiring
 from hio.core import http
-from hio.core.http import serving
+
 
 logger = help.ogler.getLogger()
 
+tlsdirpath = os.path.dirname(
+                os.path.dirname(
+                        os.path.abspath(
+                            sys.modules.get(__name__).__file__)))
+certdirpath = os.path.join(tlsdirpath, 'tls', 'certs')
 
 
 def testValetServiceBottle(self):
@@ -27,7 +32,7 @@ def testValetServiceBottle(self):
     try:
         import bottle
     except ImportError as ex:
-        console.terse("Bottle not available.\n")
+        logger.error("Bottle not available.\n")
         return
 
     tymist = tyming.Tymist(tyme=0.0)
@@ -60,7 +65,7 @@ def testValetServiceBottle(self):
     wireLogAlpha = wiring.WireLog(buffify=True, same=True)
     result = wireLogAlpha.reopen()
 
-    alpha = serving.Valet(port = 6101,
+    alpha = http.Server(port = 6101,
                           bufsize=131072,
                           wlog=wireLogAlpha,
                           tymth=tymist.tymen(),
@@ -99,7 +104,7 @@ def testValetServiceBottle(self):
     tymer = tyming.Tymer(tymth=tymist.tymen(), duration=1.0)
     while (beta.requests or beta.connector.txbs or not beta.responses or
            not alpha.idle()):
-        alpha.serviceAll()
+        alpha.service()
         time.sleep(0.05)
         beta.service()
         time.sleep(0.05)
@@ -145,6 +150,7 @@ def testValetServiceBottle(self):
     wireLogAlpha.close()
     wireLogBeta.close()
 
+
 def testValetServiceBottleNoContentLength(self):
     """
     Test Valet WSGI service request response no content-length in request
@@ -154,7 +160,7 @@ def testValetServiceBottleNoContentLength(self):
     try:
         import bottle
     except ImportError as ex:
-        console.terse("Bottle not available.\n")
+        logger.error("Bottle not available.\n")
         return
 
     tymist = tyming.Tymist(tyme=0.0)
@@ -187,7 +193,7 @@ def testValetServiceBottleNoContentLength(self):
     wireLogAlpha = wiring.WireLog(buffify=True, same=True)
     result = wireLogAlpha.reopen()
 
-    alpha = serving.Valet(port = 6101,
+    alpha = http.Server(port = 6101,
                           bufsize=131072,
                           wlog=wireLogAlpha,
                           tymth=tymist.tymen(),
@@ -226,7 +232,7 @@ def testValetServiceBottleNoContentLength(self):
     tymer = tyming.Tymer(tymth=tymist.tymen(), duration=1.0)
     while (beta.requests or beta.connector.txbs or not beta.responses or
            not alpha.idle()):
-        alpha.serviceAll()
+        alpha.service()
         time.sleep(0.05)
         beta.service()
         time.sleep(0.05)
@@ -279,7 +285,7 @@ def testValetServiceBottleNonPersistent(self):
     try:
         import bottle
     except ImportError as ex:
-        console.terse("Bottle not available.\n")
+        logger.error("Bottle not available.\n")
         return
 
     tymist = tyming.Tymist(tyme=0.0)
@@ -312,7 +318,7 @@ def testValetServiceBottleNonPersistent(self):
     wireLogAlpha = wiring.WireLog(buffify=True, same=True)
     result = wireLogAlpha.reopen()
 
-    alpha = serving.Valet(port = 6101,
+    alpha = http.Server(port = 6101,
                           bufsize=131072,
                           wlog=wireLogAlpha,
                           tymth=tymist.tymen(),
@@ -350,7 +356,7 @@ def testValetServiceBottleNonPersistent(self):
     tymer = tyming.Tymer(tymth=tymist.tymen(), duration=1.0)
     while (beta.requests or beta.connector.txbs or not beta.responses or
            not alpha.idle()):
-        alpha.serviceAll()
+        alpha.service()
         time.sleep(0.05)
         beta.service()
         time.sleep(0.05)
@@ -404,7 +410,7 @@ def testValetServiceBottleStream(self):
     try:
         import bottle
     except ImportError as ex:
-        console.terse("Bottle not available.\n")
+        logger.error("Bottle not available.\n")
         return
 
     tymist = tyming.Tymist(tyme=0.0)
@@ -438,7 +444,7 @@ def testValetServiceBottleStream(self):
     wireLogAlpha = wiring.WireLog(buffify=True, same=True)
     result = wireLogAlpha.reopen()
 
-    alpha = serving.Valet(port = 6101,
+    alpha = http.Server(port = 6101,
                           bufsize=131072,
                           wlog=wireLogAlpha,
                           tymth=tymist.tymen(),
@@ -476,7 +482,7 @@ def testValetServiceBottleStream(self):
     beta.requests.append(request)
     tymer = tyming.Tymer(tymth=tymist.tymen(), duration=1.0)
     while (not tymer.expired):
-        alpha.serviceAll()
+        alpha.service()
         time.sleep(0.05)
         beta.service()
         time.sleep(0.05)
@@ -521,7 +527,7 @@ def testValetServiceBottleStream(self):
     #keep going until ended
     tymer.restart(duration=1.5)
     while (not tymer.expired):
-        alpha.serviceAll()
+        alpha.service()
         time.sleep(0.05)
         beta.service()
         time.sleep(0.05)
@@ -549,7 +555,7 @@ def testValetServiceBottleSecure(self):
     try:
         import bottle
     except ImportError as ex:
-        console.terse("Bottle not available.\n")
+        logger.error("Bottle not available.\n")
         return
 
     tymist = tyming.Tymist(tyme=0.0)
@@ -591,7 +597,7 @@ def testValetServiceBottleSecure(self):
     serverCertpath = self.certdirpath + '/server_cert.pem'  # local server public cert
     clientCafilepath = self.certdirpath + '/client.pem' # remote client public cert
 
-    alpha = serving.Valet(port = 6101,
+    alpha = http.Server(port = 6101,
                           bufsize=131072,
                           wlog=wireLogAlpha,
                           tymth=tymist.tymen(),
@@ -647,7 +653,7 @@ def testValetServiceBottleSecure(self):
     tymer = tyming.Tymer(tymth=tymist.tymen(), duration=1.0)
     while (beta.requests or beta.connector.txbs or not beta.responses or
            not alpha.idle()):
-        alpha.serviceAll()
+        alpha.service()
         time.sleep(0.05)
         beta.service()
         time.sleep(0.05)
@@ -701,7 +707,7 @@ def testValetServiceBottleStreamSecure(self):
     try:
         import bottle
     except ImportError as ex:
-        console.terse("Bottle not available.\n")
+        logger.error("Bottle not available.\n")
         return
 
     tymist = tyming.Tymist(tyme=0.0)
@@ -744,7 +750,7 @@ def testValetServiceBottleStreamSecure(self):
     serverCertpath = self.certdirpath + '/server_cert.pem'  # local server public cert
     clientCafilepath = self.certdirpath + '/client.pem' # remote client public cert
 
-    alpha = serving.Valet(port = 6101,
+    alpha = http.Server(port = 6101,
                           bufsize=131072,
                           wlog=wireLogAlpha,
                           tymth=tymist.tymen(),
@@ -800,7 +806,7 @@ def testValetServiceBottleStreamSecure(self):
     beta.requests.append(request)
     tymer = tyming.Tymer(tymth=tymist.tymen(), duration=1.0)
     while (not timer.expired):
-        alpha.serviceAll()
+        alpha.service()
         time.sleep(0.05)
         beta.service()
         time.sleep(0.05)
@@ -845,7 +851,7 @@ def testValetServiceBottleStreamSecure(self):
     #keep going until ended
     tymer.restart(duration=1.5)
     while (not timer.expired):
-        alpha.serviceAll()
+        alpha.service()
         time.sleep(0.05)
         beta.service()
         time.sleep(0.05)

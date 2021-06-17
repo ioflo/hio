@@ -501,20 +501,20 @@ class Responder():
                         self.ended = True
 
 
-class Valet():
+class Server():
     """
-    Valet WSGI HTTP Server Class
+    Server WSGI HTTP Server Class
     """
     Tymeout = 5.0  # default tcp server connection tymeout
 
     def __init__(self,
+                 name="hio.wsgi.server",
                  app=None,
                  reqs=None,
                  reps=None,
                  servant=None,
-                 name='',
                  bufsize=8096,
-                 wlog=None,
+                 wl=None,
                  ha=None,
                  host=u'',
                  port=None,
@@ -526,14 +526,14 @@ class Valet():
         Initialization method for instance.
 
         Parameters:
+            name is wsgi server name
             app is wsgi application callable
             reqs is dict of Requestant instances keyed by ca
             reps is dict of running Wsgi Responder instances keyed by ca
             servant is instance of Server or ServerTls or None
 
-            name is user friendly name for servant
             bufsize is buffer size for servant
-            wlog is WireLog instance if any for servant
+            wl is WireLog instance if any for servant
             ha is  host address duple (host, port) for local servant listen socket
             host is host address for local servant listen socket,
                 '' means any interface on host
@@ -555,14 +555,13 @@ class Valet():
             .secured is Boolean true if TLS
 
         """
+        self.name = name
         self.app = app
         self.reqs = reqs if reqs is not None else dict()  # allows external view
         self.reqs.clear()  # items should only be assigned by valet
         self.reps = reps if reps is not None else dict()  # allows external view
         self.reps.clear()  # items should only be assigned by valet
 
-        if not name:
-            name = "Hio_WSGI_server"
         if tymeout is None:
             tymeout = self.Tymeout
 
@@ -600,24 +599,20 @@ class Valet():
             if servant.ha != ha:
                 ValueError("Provided ha '{0}:{1}' incompatible with servant".format(ha[0], ha[1]))
             # at some point may want to support changing the ha of provided servant
-            if name:
-                servant.name = name
 
         else:  # what about timeouts for servant connections
             if secured:
-                servant = tcp.ServerTls(name=name,
-                                    ha=ha,
+                servant = tcp.ServerTls(ha=ha,
                                     eha=eha,
                                     bufsize=bufsize,
-                                    wlog=wlog,
+                                    wl=wl,
                                     tymeout=tymeout,
                                     **kwa)
             else:
-                servant = tcp.Server(name=name,
-                                 ha=ha,
+                servant = tcp.Server(ha=ha,
                                  eha=eha,
                                  bufsize=bufsize,
-                                 wlog=wlog,
+                                 wl=wl,
                                  tymeout=tymeout,
                                  **kwa)
 
@@ -644,7 +639,7 @@ class Valet():
             self.closeConnection(ca)
 
         # just in case there is an orphan ix
-        self.servant.closeAll()
+        self.servant.close()
 
 
     def idle(self):
@@ -678,7 +673,7 @@ class Valet():
         environ['wsgi.multithread'] = False
         environ['wsgi.multiprocess'] = False
         environ['wsgi.run_once'] = False
-        environ["wsgi.server_name"] = self.servant.name
+        environ["wsgi.server_name"] = self.name
         environ["wsgi.server_version"] = (1, 0)
 
         # Required CGI variables
@@ -703,6 +698,7 @@ class Valet():
 
         return environ
 
+
     def closeConnection(self, ca):
         """
         Close and remove connection given by ca
@@ -716,6 +712,7 @@ class Valet():
                 self.servant.ixes[ca].serviceSends()  #  send final bytes to socket
             del self.reps[ca]
         self.servant.removeIx(ca)
+
 
     def serviceConnects(self):
         """
@@ -734,6 +731,7 @@ class Valet():
 
             if ix.tymeout > 0.0 and ix.tymer.expired:
                 self.closeConnection(ca)
+
 
     def serviceReqs(self):
         """
@@ -776,6 +774,7 @@ class Valet():
                         responder = self.reps[ca]
                         responder.reset(environ=environ)
 
+
     def serviceReps(self):
         """
         Service pending responders
@@ -798,7 +797,7 @@ class Valet():
                     if not ix.txbs:  # wait for outgoing txbs to be empty
                         self.closeConnection(ca)
 
-    def serviceAll(self):
+    def service(self):
         """
         Service request response
         """
@@ -806,7 +805,9 @@ class Valet():
         self.servant.serviceReceivesAllIx()
         self.serviceReqs()
         self.serviceReps()
-        self.servant.serviceTxesAllIx()
+        self.servant.serviceSendsAllIx()
+
+WsgiServer = Server  # alias
 
 
 class CustomResponder():
