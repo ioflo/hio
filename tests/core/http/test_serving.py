@@ -9,6 +9,7 @@ import time
 import pytest
 
 from hio import help
+from hio.help import helping
 from hio.base import tyming
 from hio.core import wiring
 from hio.core import http
@@ -18,44 +19,30 @@ logger = help.ogler.getLogger()
 
 
 
-def testPorterServiceEcho(self):
+def test_bare_server_echo():
     """
     Test Porter service request response of echo non blocking
     """
-    console.terse("{0}\n".format(self.testPorterServiceEcho.__doc__))
-
-
     tymist = tyming.Tymist(tyme=0.0)
-
-    console.terse("{0}\n".format("Building Valet ...\n"))
-    wireLogAlpha = wiring.WireLog(buffify=True, same=True)
-    result = wireLogAlpha.reopen()
-
     alpha = serving.Porter(port = 6101,
                           bufsize=131072,
-                          wlog=wireLogAlpha,
                           tymth=tymist.tymen())
-    self.assertIs(alpha.servant.reopen(), True)
-    self.assertEqual(alpha.servant.ha, ('0.0.0.0', 6101))
-    self.assertEqual(alpha.servant.eha, ('127.0.0.1', 6101))
+    assert alpha.servant.reopen()
+    assert alpha.servant.ha == ('0.0.0.0', 6101)
+    assert alpha.servant.eha == ('127.0.0.1', 6101)
 
-
-    wireLogBeta = wiring.WireLog(buffify=True,  same=True)
-    result = wireLogBeta.reopen()
 
     path = "http://{0}:{1}/".format('localhost', alpha.servant.eha[1])
-
     beta = http.Client(bufsize=131072,
-                                 wlog=wireLogBeta,
                                  tymth=tymist.tymen(),
                                  path=path,
                                  reconnectable=True,
                                  )
 
-    self.assertIs(beta.connector.reopen(), True)
-    self.assertIs(beta.connector.accepted, False)
-    self.assertIs(beta.connector.connected, False)
-    self.assertIs(beta.connector.cutoff, False)
+    assert beta.connector.reopen()
+    assert not beta.connector.accepted
+    assert not beta.connector.connected
+    assert not beta.connector.cutoff
 
     request = dict([('method', u'GET'),
                      ('path', u'/echo?name=fame'),
@@ -74,44 +61,41 @@ def testPorterServiceEcho(self):
         beta.serviceAll()
         time.sleep(0.05)
 
-    self.assertIs(beta.connector.accepted, True)
-    self.assertIs(beta.connector.connected, True)
-    self.assertIs(beta.connector.cutoff, False)
+    assert beta.connector.accepted
+    assert beta.connector.connected
+    assert not beta.connector.cutoff
 
-    self.assertEqual(len(alpha.servant.ixes), 1)
-    self.assertEqual(len(alpha.stewards), 1)
-    requestant = alpha.stewards.values()[0].requestant
-    self.assertEqual(requestant.method, request['method'])
-    self.assertEqual(requestant.url, request['path'])
-    self.assertEqual(requestant.headers, {'accept': 'application/json',
-                                            'accept-encoding': 'identity',
-                                            'content-length': '0',
-                                            'host': 'localhost:6101'})
+    assert len(alpha.servant.ixes) == 1
+    assert len(alpha.stewards) == 1
+    requestant = list(alpha.stewards.values())[0].requestant
+    assert requestant.method == request['method']
+    assert requestant.url == request['path']
+    assert requestant.headers == helping.imdict([('Host', 'localhost:6101'),
+                                                 ('Accept-Encoding', 'identity'),
+                                                 ('Accept', 'application/json'),
+                                                 ('Content-Length', '0')])
 
-
-    self.assertEqual(len(beta.responses), 1)
+    assert len(beta.responses) == 1
     response = beta.responses.popleft()
-    self.assertEqual(response['data'],{'body': '',
-                                    'data': None,
-                                    'fragment': '',
-                                    'headers': {'accept': 'application/json',
-                                                'accept-encoding': 'identity',
-                                                'content-length': '0',
-                                                'host': 'localhost:6101'},
-                                    'method': 'GET',
-                                    'path': '/echo',
-                                    'qargs': {'name': 'fame'},
-                                    'version': 'HTTP/1.1'})
+    assert response['data'] == {'version': 'HTTP/1.1',
+                                'method': 'GET',
+                                'path': '/echo',
+                                'qargs': {'name': 'fame'},
+                                'fragment': '',
+                                'headers': [['Host', 'localhost:6101'],
+                                            ['Accept-Encoding', 'identity'],
+                                            ['Accept', 'application/json'],
+                                            ['Content-Length', '0']],
+                                'body': '',
+                                'data': None}
 
-    responder = alpha.stewards.values()[0].responder
-    self.assertEqual(responder.status, response['status'])
-    self.assertEqual(responder.headers, response['headers'])
+    responder = list(alpha.stewards.values())[0].responder
+    assert responder.status == response['status']
+    assert responder.headers == response['headers']
 
-    alpha.servant.closeAll()
+    alpha.servant.close()
     beta.connector.close()
 
-    wireLogAlpha.close()
-    wireLogBeta.close()
 
 
 def testValetServiceBasic(self):
@@ -200,7 +184,7 @@ def testValetServiceBasic(self):
     self.assertTrue(responder.status.startswith, str(response['status']))
     self.assertEqual(responder.headers, response['headers'])
 
-    alpha.servant.closeAll()
+    alpha.servant.close()
     beta.connector.close()
 
     wireLogAlpha.close()
@@ -319,7 +303,7 @@ def testValetServiceBasicSecure(self):
     self.assertTrue(responder.status.startswith, str(response['status']))
     self.assertEqual(responder.headers, response['headers'])
 
-    alpha.servant.closeAll()
+    alpha.servant.close()
     beta.connector.close()
 
     wireLogAlpha.close()
@@ -329,4 +313,4 @@ def testValetServiceBasicSecure(self):
 
 
 if __name__ == '__main__':
-    pass
+    test_bare_server_echo()

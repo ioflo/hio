@@ -25,6 +25,7 @@ from  multidict import CIMultiDict as cimdict
 
 
 from ... import help
+from ...help import helping
 from ...base import tyming
 from .. import tcp
 # from ..tcp import Server, ServerTls
@@ -62,6 +63,7 @@ class Requestant(httping.Parsent):
         self.path = u''  # partial path in request line without scheme host port query fragment
         self.query = u'' # query string from full path
         self.fragment = u''  # fragment from full path
+        # self.headers = None  # never received a request
 
     def checkPersisted(self):
         """
@@ -100,7 +102,7 @@ class Requestant(httping.Parsent):
         if self.headed:
             return  # already parsed the head
 
-        self.headers = cimdict()
+        self.headers = helping.imdict()
 
         # create generator
         lineParser = httping.parseLine(raw=self.msg, eols=(CRLF, LF), kind="status line")
@@ -262,7 +264,7 @@ class Requestant(httping.Parsent):
         return
 
 
-class Responder(object):
+class Responder():
     """
     Nonblocking HTTP WSGI Responder class
 
@@ -296,7 +298,7 @@ class Responder(object):
         self.closed = False  # True if connection closed by far side
         self.iterator = None  # iterator on application body
         self.status = status
-        self.headers = cimdict()  # headers
+        self.headers = helping.imdict()  # headers
         self.length = None  # if content-length provided must not exceed
         self.size = 0  # number of body bytes sent so far
         self.evented = False  # True if response is event-stream
@@ -325,7 +327,7 @@ class Responder(object):
         self.ended = False
         self.iterator = None
         self.status = "200 OK"
-        self.headers = cimdict()
+        self.headers = helping.imdict()
         self.length = None
         self.size = 0
 
@@ -350,7 +352,7 @@ class Responder(object):
         lines.append(startLine)
 
         # Override if AttributiveGenerator
-        self.headers.update(getattr(self.iterator, '_headers', cimdict()))
+        self.headers.update(getattr(self.iterator, '_headers', helping.imdict()))
 
         if u'server' not in self.headers:  # create Server header
             self.headers[u'server'] = "Ioflo WSGI Server"
@@ -444,7 +446,7 @@ class Responder(object):
             raise AssertionError("Already started!")
 
         self.status = status
-        self.headers = cimdict(response_headers)
+        self.headers = helping.imdict(response_headers)
 
         if u'content-length' in self.headers:
             self.length = int(self.headers['content-length'])
@@ -475,7 +477,7 @@ class Responder(object):
                 self.ended = True
             except httping.HTTPError as ex:
                 if not self.headed:
-                    headers = cimdict()
+                    headers = helping.imdict()
                     headers.update(ex.headers.items())
                     if 'content-type' not in headers:
                         headers['content-type'] = 'text/plain'
@@ -838,7 +840,7 @@ class CustomResponder(object):
         """
         self.steward = steward
         self.status = status
-        self.headers = cimdict(headers) if headers else cimdict()
+        self.headers = helping.imdict(headers) if headers else helping.imdict()
         if body and isinstance(body, str):  # use default
             # RFC 2616 Section 3.7.1 default charset of iso-8859-1.
             body = body.encode('iso-8859-1')
@@ -864,7 +866,7 @@ class CustomResponder(object):
         if status is not None:
             self.status = status
         if headers is not None:
-            self.headers = cimdict(headers)
+            self.headers = helping.imdict(headers)
         if body is not None:  # body should be bytes
             if isinstance(body, str):
                 # RFC 2616 Section 3.7.1 default charset of iso-8859-1.
@@ -927,7 +929,7 @@ class CustomResponder(object):
         return self.msg
 
 
-class Steward(object):
+class Steward():
     """
     Manages the associated requestant and responder for an incoming connection
     """
@@ -988,7 +990,7 @@ class Steward(object):
         fragment = pathSplits.fragment
         data['fragment'] = fragment
 
-        data['headers'] = copy.copy(self.requestant.headers)  # make copy
+        data['headers'] = list(self.requestant.headers.items()) # copy.copy(self.requestant.headers)  # make copy
         data['body'] = self.requestant.body.decode('utf-8')
         data['data'] = copy.copy(self.requestant.data)  # make copy
 
@@ -1010,18 +1012,18 @@ class Steward(object):
             self.refresh()
 
 
-class Porter(tyming.Tymee):
+class Porter():
     """
     Porter class nonblocking Basic HTTP server  (non-WSGI)
     """
-    Timeout = 5.0  # default server connection timeout
+    Timeout = 5.0  # default tcp server (servant) connection timeout
 
     def __init__(self,
                  servant=None,
                  stewards=None,
                  name='',
                  bufsize=8096,
-                 wlog=None,
+                 wl=None,
                  ha=None,
                  host=u'',
                  port=None,
@@ -1041,7 +1043,7 @@ class Porter(tyming.Tymee):
 
         name = user friendly name for servant
         bufsize = buffer size
-        wlog = WireLog instance if any
+        wl = WireLog instance if any
         ha = host address duple (host, port) for local servant listen socket
         host = host address for local servant listen socket, '' means any interface on host
         port = socket port for local servant listen socket
@@ -1052,7 +1054,8 @@ class Porter(tyming.Tymee):
         """
         self.stewards = stewards if stewards is not None else dict()
         self.dictable = True if dictable else False  # for stewards
-        self.timeout = timeout if timeout is not None else self.Timeout
+        if timeout is None:
+            timeout = self.Timeout
 
         ha = ha or (host, port)  # ha = host address takes precendence over host, port
         if servant:
@@ -1090,22 +1093,20 @@ class Porter(tyming.Tymee):
 
         else:  # what about timeouts for servant connections
             if secured:
-                servant = tcp.ServerTls(tymth=self.tymth,
-                                    name=name,
+                servant = tcp.ServerTls(name=name,
                                     ha=ha,
                                     eha=eha,
                                     bufsize=bufsize,
-                                    wlog=wlog,
-                                    timeout=self.timeout,
+                                    wl=wl,
+                                    timeout=timeout,
                                     **kwa)
             else:
-                servant = tcp.Server(tymth=self.tymth,
-                                 name=name,
+                servant = tcp.Server(name=name,
                                  ha=ha,
                                  eha=eha,
                                  bufsize=bufsize,
-                                 wlog=wlog,
-                                 timeout=self.timeout,
+                                 wl=wl,
+                                 timeout=timeout,
                                  **kwa)
 
 
@@ -1144,7 +1145,7 @@ class Porter(tyming.Tymee):
             if ca not in self.stewards:
                 self.stewards[ca] = Steward(incomer=ix, dictable=self.dictable)
 
-            if ix.timeout > 0.0 and ix.timer.expired:
+            if ix.timeout > 0.0 and ix.tymer.expired:
                 self.closeConnection(ca)
 
     def serviceStewards(self):
@@ -1181,5 +1182,5 @@ class Porter(tyming.Tymee):
         self.serviceConnects()
         self.servant.serviceReceivesAllIx()
         self.serviceStewards()
-        self.servant.serviceTxesAllIx()
+        self.servant.serviceSendsAllIx()
 
