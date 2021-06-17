@@ -90,7 +90,7 @@ class Requestant(httping.Parsent):
                 self.persisted = True
 
         if self.persisted:  # override timeout so server never timesout
-            self.remoter.timeout =  0.0  # never timesout
+            self.remoter.tymeout =  0.0  # never timesout
 
 
     def parseHead(self):
@@ -501,11 +501,11 @@ class Responder():
                         self.ended = True
 
 
-class Valet(tyming.Tymee):
+class Valet():
     """
     Valet WSGI HTTP Server Class
     """
-    Timeout = 5.0  # default server connection timeout
+    Tymeout = 5.0  # default tcp server connection tymeout
 
     def __init__(self,
                  app=None,
@@ -520,7 +520,7 @@ class Valet(tyming.Tymee):
                  port=None,
                  eha=None,
                  scheme=u'',
-                 timeout=None,
+                 tymeout=None,
                  **kwa):
         """
         Initialization method for instance.
@@ -543,15 +543,14 @@ class Valet(tyming.Tymee):
             scheme is http scheme u'http' or u'https' or empty
                 for servant and WSGI environment
             kwa needed to pass additional parameters to servant
-
-            timeout is timeout in seconds for dropping idle connections
+            tymeout is tymeout in seconds for dropping idle connections
 
         Attributes:
             .app is wsgi application callable
             .reqs is dict of Requestant instances keyed by ca
             .reps is dict of running Wsgi Responder instances keyed by ca
             .servant is instance of Server or ServerTls or None
-            .timeout is timeout in seconds for dropping idle connections
+            .tymeout is tymeout in seconds for dropping idle connections
             .scheme is http scheme http or https for servant and environment
             .secured is Boolean true if TLS
 
@@ -563,8 +562,9 @@ class Valet(tyming.Tymee):
         self.reps.clear()  # items should only be assigned by valet
 
         if not name:
-            name = "Ioflo_WSGI_server"
-        self.timeout = timeout if timeout is not None else self.Timeout
+            name = "Hio_WSGI_server"
+        if tymeout is None:
+            tymeout = self.Tymeout
 
         ha = ha or (host, port)  # ha = host address takes precendence over host, port
         if servant:
@@ -605,24 +605,21 @@ class Valet(tyming.Tymee):
 
         else:  # what about timeouts for servant connections
             if secured:
-                servant = tcp.ServerTls(tymth=self.tymth,
-                                    name=name,
+                servant = tcp.ServerTls(name=name,
                                     ha=ha,
                                     eha=eha,
                                     bufsize=bufsize,
                                     wlog=wlog,
-                                    timeout=self.timeout,
+                                    tymeout=tymeout,
                                     **kwa)
             else:
-                servant = tcp.Server(tymth=self.tymth,
-                                 name=name,
+                servant = tcp.Server(name=name,
                                  ha=ha,
                                  eha=eha,
                                  bufsize=bufsize,
                                  wlog=wlog,
-                                 timeout=self.timeout,
+                                 tymeout=tymeout,
                                  **kwa)
-
 
         self.secured = secured
         self.servant = servant
@@ -735,7 +732,7 @@ class Valet(tyming.Tymee):
             if ca not in self.reqs:  # point requestant.msg to incomer.rxbs
                 self.reqs[ca] = Requestant(msg=ix.rxbs, remoter=ix)
 
-            if ix.timeout > 0.0 and ix.tymer.expired:
+            if ix.tymeout > 0.0 and ix.tymer.expired:
                 self.closeConnection(ca)
 
     def serviceReqs(self):
@@ -1105,7 +1102,7 @@ class BareServer():
                                     eha=eha,
                                     bufsize=bufsize,
                                     wl=wl,
-                                    timeout=timeout,
+                                    tymeout=timeout,
                                     **kwa)
             else:
                 servant = tcp.Server(name=name,
@@ -1113,7 +1110,7 @@ class BareServer():
                                  eha=eha,
                                  bufsize=bufsize,
                                  wl=wl,
-                                 timeout=timeout,
+                                 tymeout=timeout,
                                  **kwa)
 
 
@@ -1155,7 +1152,7 @@ class BareServer():
             if ca not in self.stewards:
                 self.stewards[ca] = Steward(remoter=ix, dictable=self.dictable)
 
-            if ix.timeout > 0.0 and ix.tymer.expired:
+            if ix.tymeout > 0.0 and ix.tymer.expired:
                 self.closeConnection(ca)
 
 

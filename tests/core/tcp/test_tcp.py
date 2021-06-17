@@ -78,7 +78,7 @@ def test_tcp_basic():
     assert client.cutoff == False
 
     server = tcp.Server()
-    assert server.timeout == 1.0
+    assert server.tymeout == 1.0
 
     assert server.ha == ('', 56000)
     assert server.eha == ('127.0.0.1', 56000)
@@ -89,7 +89,7 @@ def test_tcp_basic():
     assert isinstance(server.ixes, dict)
     assert server.wl == None
 
-    with tcp.openServer(tymth=tymist.tymen(), timeout=1.5) as server:
+    with tcp.openServer(tymth=tymist.tymen(), tymeout=1.5) as server:
         assert server.ha == ('0.0.0.0', 56000)
         assert server.eha == ('127.0.0.1', 56000)
         assert server.opened == True

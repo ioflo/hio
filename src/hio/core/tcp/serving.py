@@ -216,18 +216,18 @@ class Server(Acceptor):
         .opened is boolean, True if listen socket .ss opened. False otherwise
 
     Attributes:
-        .timeout is timeout in seconds for connection refresh
+        .tymeout is tymeout in seconds for connection refresh
         .wl is WireLog instance if any
         .ixes is dict of incoming connections indexed by remote (host, port) duple
     """
 
-    Timeout = 1.0  # timeout in seconds
+    Tymeout = 1.0  # tymeout in seconds virtual tyme
 
     def __init__(self,
                  ha=None,
                  host="",
                  port=56000,
-                 timeout=None,
+                 tymeout=None,
                  wl=None,
                  **kwa):
         """
@@ -237,12 +237,12 @@ class Server(Acceptor):
             host is default TCP/IP host address for listen socket
                 "" or "0.0.0.0" is listen on all interfaces
             port is default TCP/IP port
-            timeout is default timeout for to pass to remoters for  incoming connections
+            tymeout is default tymeout for to pass to remoters for incoming connections
             wl is WireLog instance if any
         """
         ha = ha or (host, port)
         super(Server, self).__init__(ha=ha, **kwa)
-        self.timeout = timeout if timeout is not None else self.Timeout
+        self.tymeout = tymeout if tymeout is not None else self.Tymeout
         self.wl = wl
         self.ixes = dict()  # ready to rx tx incoming connections, Remoter instances
 
@@ -277,7 +277,7 @@ class Server(Acceptor):
                               cs=cs,
                               bs=self.bs,
                               wl=self.wl,
-                              timeout=self.timeout)
+                              timeout=self.tymeout)
             if ca in self.ixes and self.ixes[ca] is not remoter:
                 self.shutdownIx[ca]
             self.ixes[ca] = remoter
@@ -549,7 +549,7 @@ class ServerTls(Server):
                                  bs=self.bs,
                                  cs=cs,
                                  wl=self.wl,
-                                 timeout=self.timeout,
+                                 timeout=self.tymeout,
                                  context=self.context,
                                  version=self.version,
                                  certify=self.certify,
@@ -589,13 +589,13 @@ class Remoter(tyming.Tymee):
     Class to service an incoming nonblocking TCP connection from a remote client.
     Should only be used from Acceptor subclass
     """
-    Timeout = 0.0  # timeout in seconds
+    Tymeout = 0.0  # virtual tymeout in seconds
 
     def __init__(self,
                  ha,
                  ca,
                  cs,
-                 timeout=None,
+                 tymeout=None,
                  refreshable=True,
                  bs=8096,
                  wl=None,
@@ -610,7 +610,7 @@ class Remoter(tyming.Tymee):
              know how to delete from .ixes when connection closed as .cs loses
              cs.getpeername() after its closed.
         cs = connection socket object
-        timeout = timeout for .timer
+        tymeout = tymeout for .tymer
         refreshable = True if tx/rx activity refreshes timer False otherwise
         bs = buffer size
         wl = WireLog object if any
@@ -621,8 +621,8 @@ class Remoter(tyming.Tymee):
         self.cs = cs  # connection socket
         if self.cs:
             self.cs.setblocking(0)  # linux does not preserve blocking from accept
-        self.timeout = timeout if timeout is not None else self.Timeout
-        self.tymer = tyming.Tymer(tymth=self.tymth, duration=self.timeout)
+        self.tymeout = tymeout if tymeout is not None else self.Tymeout
+        self.tymer = tyming.Tymer(tymth=self.tymth, duration=self.tymeout)
         self.cutoff = False # True when detect connection closed on far side
         self.refreshable = refreshable
         self.bs = bs

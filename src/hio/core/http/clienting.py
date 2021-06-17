@@ -282,9 +282,9 @@ class Requester(object):
 
 class Respondent(httping.Parsent):
     """
-    Nonblocking HTTP Client Responsdent class
+    Nonblocking HTTP Client Respondent class
     """
-    Retry = 100  # retry timeout in milliseconds if evented
+    Retry = 100  # sse retry timeout in milliseconds if evented
 
     def __init__(self,
                  redirects=None,
@@ -299,7 +299,7 @@ class Respondent(httping.Parsent):
         redirects = list of redirects if any
         redirectable = Boolean allow redirects
         events = deque of events if any
-        retry = retry timeout in seconds if any if evented
+        retry = sse retry timeout in seconds if any if evented
         leid = last event id if any if evented
         """
         super(Respondent, self).__init__(**kwa)
