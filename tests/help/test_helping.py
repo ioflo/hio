@@ -230,7 +230,7 @@ def test_non_string_sequence():
     assert isinstance(z, helping.NonStringSequence)
 
 
-def testIsIterator(self):
+def test_is_iterator():
     """
     Test the utility function isIterator
     """
@@ -243,70 +243,68 @@ def testIsIterator(self):
         yield ""
         yield ""
 
-    assert not helping.isIterator(genf))
+    assert not helping.isIterator(genf)
     gen = genf()
-    assert helping.isIterator(gen))
+    assert helping.isIterator(gen)
 
 
-def testAttributize(self):
+def test_attributize():
     """
     Test the utility decorator attributize generator
     """
-    global headed
-
-    console.terse("{0}\n".format(self.testAttributize.__doc__))
-
-    def gf(skin, x):
-        skin.x = 5
-        skin.y = 'a'
+    #  use as function wrapper not decorator
+    def gf(me, x):  # convention injected reference to attributed wrapper is 'me'
+        me.x = 5
+        me.y = 'a'
         cnt = 0
         while cnt < x:
             yield cnt
             cnt += 1
 
-    agf = classing.attributize(gf)
+    agf = helping.attributize(gf)
     ag = agf(3)
-    self.assertTrue(classing.isIterator(ag))
-    self.assertFalse(hasattr(ag, 'x'))
-    self.assertFalse(hasattr(ag, 'y'))
-    n = next(ag)  # body of gf is not run until first next call
-    self.assertEqual(n, 0)
-    self.assertTrue(hasattr(ag, 'x'))
-    self.assertTrue(hasattr(ag, 'y'))
-    self.assertEqual(ag.x, 5)
-    self.assertEqual(ag.y, 'a')
+    # body of gf is not run until first next call so attributes not set up yet
+    assert helping.isIterator(ag)
+    assert not hasattr(ag, 'x')
+    assert not hasattr(ag, 'y')
+    n = next(ag)  # attributes now set up
+    assert n == 0
+    assert hasattr(ag, 'x')
+    assert hasattr(ag, 'y')
+    assert ag.x == 5
+    assert ag.y == 'a'
     n = next(ag)
-    self.assertEqual(n, 1)
+    assert n == 1
 
-
+    #  use as decorator
     # Set up like WSGI for generator function
-    @classing.attributize
-    def bar(skin, req=None, rep=None):
+    @helping.attributize
+    def bar(me, req=None, rep=None):
         """
         Generator function with "skin" parameter for skin wrapper to
         attach attributes
         """
-        skin._status = 400
-        skin._headers = odict(example="Hi")
+        me._status = 400
+        me._headers = helping.imdict(example="Hi")
         yield b""
         yield b""
         yield b"Hello There"
         return b"Goodbye"
 
     # now use it like WSGI server does
+    global  headed, gen
+    headed = False
     msgs = []
     gen = bar()
-    self.assertTrue(classing.isIterator(gen))
-    self.assertFalse(hasattr(gen, '_status'))
-    self.assertFalse(hasattr(gen, '_headers'))
-
-    headed = False
+    assert helping.isIterator(gen)
+    assert not hasattr(gen, '_status')
+    assert not hasattr(gen, '_headers')
 
     def write(msg):
         """
         Simulate WSGI write
         """
-        global headed
+        global headed, gen
 
         if not headed:  # add headers
             if hasattr(gen, "_status"):
@@ -321,11 +319,11 @@ def testAttributize(self):
         msgs.append(msg)
 
     igen = iter(gen)
-    self.assertIs(igen, gen)
+    assert igen is gen  # already iterator to iter() call does nothing
     done = False
     while not done:
         try:
-            msg = next(igen)
+            msg = next(igen)  # assigns (creates) attributes with defaults
         except StopIteration as ex:
             if hasattr(ex, "value") and ex.value:
                 write(ex.value)
@@ -335,40 +333,42 @@ def testAttributize(self):
             if msg:  # only write if not empty allows async processing
                 write(msg)
 
-    self.assertEqual(msgs, ['400', 'example=Hi', b'Hello There', b'Goodbye', b''])
+    assert msgs == ['400', 'example=Hi', b'Hello There', b'Goodbye', b'']
 
 
     # Set up like WSGI for generator method
+    # use as decorator
     class R:
-        @classing.attributize
-        def bar(self, skin, req=None, rep=None):
+        @helping.attributize
+        def bar(self, me, req=None, rep=None):
             """
             Generator function with "skin" parameter for skin wrapper to
             attach attributes
             """
             self.name = "Peter"
-            skin._status = 400
-            skin._headers = odict(example="Hi")
+            me._status = 400
+            me._headers = helping.imdict(example="Hi")
             yield b""
             yield b""
             yield b"Hello There " + self.name.encode()
             return b"Goodbye"
 
     # now use it like WSGI server does
+    headed = False
     r = R()
     msgs = []
     gen = r.bar()
-    self.assertTrue(classing.isIterator(gen))
-    self.assertFalse(hasattr(gen, '_status'))
-    self.assertFalse(hasattr(gen, '_headers'))
+    assert helping.isIterator(gen)
+    # attributes not created yet
+    assert not hasattr(gen, '_status')
+    assert not hasattr(gen, '_headers')
 
-    headed = False
 
     def write(msg):
         """
         Simulate WSGI write
         """
-        global headed
+        global headed, gen
 
         if not headed:  # add headers
             if hasattr(gen, "_status"):
@@ -383,7 +383,7 @@ def testAttributize(self):
         msgs.append(msg)
 
     igen = iter(gen)
-    self.assertIs(igen, gen)
+    assert igen is gen  # iter() call is innocuous
     done = False
     while not done:
         try:
@@ -397,10 +397,10 @@ def testAttributize(self):
             if msg:  # only write if not empty allows async processing
                 write(msg)
 
-    self.assertEqual(msgs, ['400', 'example=Hi', b'Hello There Peter', b'Goodbye', b''])
+    assert msgs == ['400', 'example=Hi', b'Hello There Peter', b'Goodbye', b'']
 
 
 
 
 if __name__ == "__main__":
-    test_non_string_sequence()
+    test_is_iterator()
