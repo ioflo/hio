@@ -15,3 +15,5 @@ from . import ogling
 ogler = ogling.initOgler(prefix='hio')  # init only runs  once on import
 
 from .helping import mdict, imdict
+
+from .decking import Deck
