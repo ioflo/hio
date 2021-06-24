@@ -292,7 +292,7 @@ def test_attributize():
         return b"Goodbye"
 
     # now use it like WSGI server does
-    global  headed, gen
+    global  headed  # gen is nonlocal not global nonlocals may be read but not assigned
     headed = False
     msgs = []
     gen = bar()
@@ -304,13 +304,13 @@ def test_attributize():
         """
         Simulate WSGI write
         """
-        global headed, gen
+        global headed  # because assinged
 
         if not headed:  # add headers
-            if hasattr(gen, "_status"):
+            if hasattr(gen, "_status"):  # nonlocal gen
                 if gen._status is not None:
                     msgs.append(str(gen._status))
-            if hasattr(gen, "_headers"):
+            if hasattr(gen, "_headers"):  # nonlocal gen
                 for key, val in gen._headers.items():
                     msgs.append("{}={}".format(key, val))
 
@@ -318,6 +318,7 @@ def test_attributize():
 
         msgs.append(msg)
 
+    assert headed == False
     igen = iter(gen)
     assert igen is gen  # already iterator to iter() call does nothing
     done = False
@@ -333,6 +334,7 @@ def test_attributize():
             if msg:  # only write if not empty allows async processing
                 write(msg)
 
+    assert headed == True
     assert msgs == ['400', 'example=Hi', b'Hello There', b'Goodbye', b'']
 
 
@@ -368,13 +370,13 @@ def test_attributize():
         """
         Simulate WSGI write
         """
-        global headed, gen
+        global headed  # because assigned
 
         if not headed:  # add headers
             if hasattr(gen, "_status"):
-                if gen._status is not None:
+                if gen._status is not None:  # nonlocal gen
                     msgs.append(str(gen._status))
-            if hasattr(gen, "_headers"):
+            if hasattr(gen, "_headers"):  # nonlocal gen
                 for key, val in gen._headers.items():
                     msgs.append("{}={}".format(key, val))
 
@@ -382,6 +384,7 @@ def test_attributize():
 
         msgs.append(msg)
 
+    assert headed == False
     igen = iter(gen)
     assert igen is gen  # iter() call is innocuous
     done = False
@@ -397,10 +400,11 @@ def test_attributize():
             if msg:  # only write if not empty allows async processing
                 write(msg)
 
+    assert headed == True
     assert msgs == ['400', 'example=Hi', b'Hello There Peter', b'Goodbye', b'']
 
 
 
 
 if __name__ == "__main__":
-    test_is_iterator()
+    test_attributize()
