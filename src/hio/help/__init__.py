@@ -14,6 +14,5 @@ from . import ogling
 # initialize global ogler at hio.help.ogler always instantiated by default
 ogler = ogling.initOgler(prefix='hio')  # init only runs  once on import
 
-from .helping import mdict, imdict
-
 from .decking import Deck
+from .hicting import Hict, Mict

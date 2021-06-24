@@ -102,7 +102,7 @@ class Requestant(httping.Parsent):
         if self.headed:
             return  # already parsed the head
 
-        self.headers = helping.imdict()
+        self.headers = help.Hict()
 
         # create generator
         lineParser = httping.parseLine(raw=self.msg, eols=(CRLF, LF), kind="status line")
@@ -298,7 +298,7 @@ class Responder():
         self.closed = False  # True if connection closed by far side
         self.iterator = None  # iterator on application body
         self.status = status
-        self.headers = helping.imdict()  # headers
+        self.headers = help.Hict()  # headers
         self.length = None  # if content-length provided must not exceed
         self.size = 0  # number of body bytes sent so far
         self.evented = False  # True if response is event-stream
@@ -327,7 +327,7 @@ class Responder():
         self.ended = False
         self.iterator = None
         self.status = "200 OK"
-        self.headers = helping.imdict()
+        self.headers = help.Hict()
         self.length = None
         self.size = 0
 
@@ -352,7 +352,7 @@ class Responder():
         lines.append(startLine)
 
         # Override if AttributiveGenerator
-        self.headers.update(getattr(self.iterator, '_headers', helping.imdict()))
+        self.headers.update(getattr(self.iterator, '_headers', help.Hict()))
 
         if u'server' not in self.headers:  # create Server header
             self.headers[u'server'] = "Ioflo WSGI Server"
@@ -446,7 +446,7 @@ class Responder():
             raise AssertionError("Already started!")
 
         self.status = status
-        self.headers = helping.imdict(response_headers)
+        self.headers = help.Hict(response_headers)
 
         if u'content-length' in self.headers:
             self.length = int(self.headers['content-length'])
@@ -477,7 +477,7 @@ class Responder():
                 self.ended = True
             except httping.HTTPError as ex:
                 if not self.headed:
-                    headers = helping.imdict()
+                    headers = help.Hict()
                     headers.update(ex.headers.items())
                     if 'content-type' not in headers:
                         headers['content-type'] = 'text/plain'
@@ -839,7 +839,7 @@ class CustomResponder():
         """
         self.steward = steward
         self.status = status
-        self.headers = helping.imdict(headers) if headers else helping.imdict()
+        self.headers = help.Hict(headers) if headers else help.Hict()
         if body and isinstance(body, str):  # use default
             # RFC 2616 Section 3.7.1 default charset of iso-8859-1.
             body = body.encode('iso-8859-1')
@@ -865,7 +865,7 @@ class CustomResponder():
         if status is not None:
             self.status = status
         if headers is not None:
-            self.headers = helping.imdict(headers)
+            self.headers = help.Hict(headers)
         if body is not None:  # body should be bytes
             if isinstance(body, str):
                 # RFC 2616 Section 3.7.1 default charset of iso-8859-1.

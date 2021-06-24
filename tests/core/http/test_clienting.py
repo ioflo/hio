@@ -13,7 +13,7 @@ import pytest
 
 from hio import help
 from hio.help import helping
-from hio.help.helping import imdict
+from hio.help import Hict
 from hio.base import tyming
 from hio.core import wiring, tcp
 from hio.core.http import clienting
@@ -788,7 +788,7 @@ def test_client_pipeline_echo_simple():
     assert response == clienting.Response(version=(1, 1),
                                           status=200,
                                           reason='OK',
-                                          headers=imdict([('Content-Length', '122'),
+                                          headers=Hict([('Content-Length', '122'),
                                                           ('Content-Type', 'application/json'),
                                                           ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'),
                                                           ('Server', 'IoBook.local')]),
@@ -806,7 +806,7 @@ def test_client_pipeline_echo_simple():
                                                    'path': '/echo',
                                                    'qargs': {'name': 'fame'},
                                                    'fragment': '',
-                                                   'headers': imdict([('Accept', 'application/json')]),
+                                                   'headers': Hict([('Accept', 'application/json')]),
                                                    'body': b'',
                                                    'host': '127.0.0.1',
                                                    'port': 6101,
@@ -836,7 +836,7 @@ def test_client_pipeline_echo_simple():
     assert response == {'version': (1, 1),
                         'status': 200,
                         'reason': 'OK',
-                        'headers': imdict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
+                        'headers': Hict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
                         'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
                                           b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
                                           b'on": null}'),
@@ -849,7 +849,7 @@ def test_client_pipeline_echo_simple():
                                     'path': '/echo',
                                     'qargs': {'name': 'fame'},
                                     'fragment': '',
-                                    'headers': imdict([('Accept', 'application/json')]),
+                                    'headers': Hict([('Accept', 'application/json')]),
                                     'body': b'',
                                     'host': '127.0.0.1',
                                     'port': 6101,
@@ -909,7 +909,7 @@ def test_client_echo_simple_host_port_path():
     assert response == {'version': (1, 1),
                         'status': 200,
                         'reason': 'OK',
-                        'headers': imdict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
+                        'headers': Hict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
                         'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
                                           b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
                                           b'on": null}'),
@@ -925,7 +925,7 @@ def test_client_echo_simple_host_port_path():
                                     'path': '/echo',
                                     'fragment': '',
                                     'qargs': {'name': 'fame'},
-                                    'headers': imdict([('Accept', 'application/json')]),
+                                    'headers': Hict([('Accept', 'application/json')]),
                                     'body': b'',
                                     'data': None,
                                     'fargs': None},
@@ -953,7 +953,7 @@ def test_client_echo_simple_host_port_path():
     assert response ==  {'version': (1, 1),
                         'status': 200,
                         'reason': 'OK',
-                        'headers': imdict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
+                        'headers': Hict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
                         'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
                                           b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
                                           b'on": null}'),
@@ -966,7 +966,7 @@ def test_client_echo_simple_host_port_path():
                                     'path': '/echo',
                                     'qargs': {'name': 'fame'},
                                     'fragment': '',
-                                    'headers': imdict([('Accept', 'application/json')]),
+                                    'headers': Hict([('Accept', 'application/json')]),
                                     'body': b'',
                                     'data': None,
                                     'fargs': None,
@@ -1028,7 +1028,7 @@ def test_client_pipline_echo_simple_path_scheme():
     assert response ==  {'version': (1, 1),
                         'status': 200,
                         'reason': 'OK',
-                        'headers': imdict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
+                        'headers': Hict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
                         'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
                                           b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
                                           b'on": null}'),
@@ -1041,7 +1041,7 @@ def test_client_pipline_echo_simple_path_scheme():
                                     'path': '/echo',
                                     'qargs': {'name': 'fame'},
                                     'fragment': '',
-                                    'headers': imdict([('Accept', 'application/json')]),
+                                    'headers': Hict([('Accept', 'application/json')]),
                                     'body': b'',
                                     'host': 'localhost',
                                     'port': 6101,
@@ -1069,7 +1069,7 @@ def test_client_pipline_echo_simple_path_scheme():
     assert response ==  {'version': (1, 1),
                         'status': 200,
                         'reason': 'OK',
-                        'headers': imdict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
+                        'headers': Hict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
                         'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
                                           b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
                                           b'on": null}'),
@@ -1082,7 +1082,7 @@ def test_client_pipline_echo_simple_path_scheme():
                                     'path': '/echo',
                                     'qargs': {'name': 'fame'},
                                     'fragment': '',
-                                    'headers': imdict([('Accept', 'application/json')]),
+                                    'headers': Hict([('Accept', 'application/json')]),
                                     'body': b'',
                                     'host': 'localhost',
                                     'port': 6101,
@@ -1147,7 +1147,7 @@ def test_client_pipeline_echo_simple_path_track():
     assert response == {'version': (1, 1),
                         'status': 200,
                         'reason': 'OK',
-                        'headers': imdict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
+                        'headers': Hict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
                         'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
                                           b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
                                           b'on": null}'),
@@ -1160,7 +1160,7 @@ def test_client_pipeline_echo_simple_path_track():
                                     'path': '/echo',
                                     'qargs': {'name': 'fame'},
                                     'fragment': '',
-                                    'headers': imdict([('Accept', 'application/json')]),
+                                    'headers': Hict([('Accept', 'application/json')]),
                                     'body': b'',
                                     'mid': 1,
                                     'drop': '.stuff.reply',
@@ -1191,7 +1191,7 @@ def test_client_pipeline_echo_simple_path_track():
     assert response ==  {'version': (1, 1),
                         'status': 200,
                         'reason': 'OK',
-                        'headers': imdict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
+                        'headers': Hict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
                         'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
                                           b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
                                           b'on": null}'),
@@ -1204,7 +1204,7 @@ def test_client_pipeline_echo_simple_path_track():
                                     'path': '/echo',
                                     'qargs': {'name': 'fame'},
                                     'fragment': '',
-                                    'headers': imdict([('Accept', 'application/json')]),
+                                    'headers': Hict([('Accept', 'application/json')]),
                                     'body': b'',
                                     'mid': 2,
                                     'drop': '.puff.reply',
@@ -1273,7 +1273,7 @@ def test_client_pipeline_echo_json():
     assert response == {'version': (1, 1),
                         'status': 200,
                         'reason': 'OK',
-                        'headers': imdict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
+                        'headers': Hict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
                         'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
                                           b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
                                           b'on": null}'),
@@ -1286,7 +1286,7 @@ def test_client_pipeline_echo_json():
                                     'path': '/echo',
                                     'qargs': {'name': 'fame'},
                                     'fragment': '',
-                                    'headers': imdict([('Accept', 'application/json'), ('content-type', 'application/json; charset=utf-8')]),
+                                    'headers': Hict([('Accept', 'application/json'), ('content-type', 'application/json; charset=utf-8')]),
                                     'data': {'first': 'John', 'last': 'Smith'},
                                     'mid': 1,
                                     'drop': '.stuff.reply',
@@ -1317,7 +1317,7 @@ def test_client_pipeline_echo_json():
     assert response == {'version': (1, 1),
                         'status': 200,
                         'reason': 'OK',
-                        'headers': imdict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
+                        'headers': Hict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
                         'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
                                           b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
                                           b'on": null}'),
@@ -1330,7 +1330,7 @@ def test_client_pipeline_echo_json():
                                     'path': '/echo',
                                     'qargs': {'name': 'fame'},
                                     'fragment': '',
-                                    'headers': imdict([('Accept', 'application/json'), ('content-type', 'application/json; charset=utf-8')]),
+                                    'headers': Hict([('Accept', 'application/json'), ('content-type', 'application/json; charset=utf-8')]),
                                     'data': {'first': 'John', 'last': 'Smith'},
                                     'mid': 2,
                                     'drop': '.puff.reply',
@@ -1647,7 +1647,7 @@ def test_client_pipline_echo_simple_tls():
     assert response == {'version': (1, 1),
                         'status': 200,
                         'reason': 'OK',
-                        'headers': imdict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
+                        'headers': Hict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
                         'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
                                           b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
                                           b'on": null}'),
@@ -1660,7 +1660,7 @@ def test_client_pipline_echo_simple_tls():
                                     'path': '/echo',
                                     'qargs': {'name': 'fame'},
                                     'fragment': '',
-                                    'headers': imdict([('Accept', 'application/json')]),
+                                    'headers': Hict([('Accept', 'application/json')]),
                                     'body': b'',
                                     'host': 'localhost',
                                     'port': 6101,
@@ -1689,7 +1689,7 @@ def test_client_pipline_echo_simple_tls():
     assert response == {'version': (1, 1),
                         'status': 200,
                         'reason': 'OK',
-                        'headers': imdict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
+                        'headers': Hict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
                         'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
                                           b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
                                           b'on": null}'),
@@ -1702,7 +1702,7 @@ def test_client_pipline_echo_simple_tls():
                                     'path': '/echo',
                                     'qargs': {'name': 'fame'},
                                     'fragment': '',
-                                    'headers': imdict([('Accept', 'application/json')]),
+                                    'headers': Hict([('Accept', 'application/json')]),
                                     'body': b'',
                                     'host': 'localhost',
                                     'port': 6101,
@@ -1794,7 +1794,7 @@ def test_client_pipeline_echo_simple_path_tls():
     assert response == {'version': (1, 1),
                         'status': 200,
                         'reason': 'OK',
-                        'headers': imdict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
+                        'headers': Hict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
                         'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
                                           b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
                                           b'on": null}'),
@@ -1807,7 +1807,7 @@ def test_client_pipeline_echo_simple_path_tls():
                                     'path': '/echo',
                                     'qargs': {'name': 'fame'},
                                     'fragment': '',
-                                    'headers': imdict([('Accept', 'application/json')]),
+                                    'headers': Hict([('Accept', 'application/json')]),
                                     'body': b'',
                                     'host': 'localhost',
                                     'port': 6101,
@@ -1836,7 +1836,7 @@ def test_client_pipeline_echo_simple_path_tls():
     assert response == {'version': (1, 1),
                          'status': 200,
                          'reason': 'OK',
-                         'headers': imdict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
+                         'headers': Hict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
                          'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
                                            b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
                                            b'on": null}'),
@@ -1849,7 +1849,7 @@ def test_client_pipeline_echo_simple_path_tls():
                                      'path': '/echo',
                                      'qargs': {'name': 'fame'},
                                      'fragment': '',
-                                     'headers': imdict([('Accept', 'application/json')]),
+                                     'headers': Hict([('Accept', 'application/json')]),
                                      'body': b'',
                                      'host': 'localhost',
                                      'port': 6101,
@@ -1914,7 +1914,7 @@ def test_client_redirect_differnet_path():
     assert response == {'version': (1, 1),
                         'status': 200,
                         'reason': 'OK',
-                        'headers': imdict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
+                        'headers': Hict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
                         'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
                                           b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
                                           b'on": null}'),
@@ -1930,7 +1930,7 @@ def test_client_redirect_differnet_path():
                                     'path': '/redirect',
                                     'fragment': '',
                                     'qargs': {'name': 'fame'},
-                                    'headers': imdict([('Accept', 'application/json')]),
+                                    'headers': Hict([('Accept', 'application/json')]),
                                     'body': b'',
                                     'data': None,
                                     'fargs': None},
@@ -1939,14 +1939,14 @@ def test_client_redirect_differnet_path():
                         'redirects': [{'version': (1, 1),
                                        'status': 307,
                                        'reason': 'Temporary Redirect',
-                                       'headers': imdict([('Content-Type', 'text/plain'), ('Content-Length', '0'), ('Access-Control-Allow-Origin', '*'), ('Location', 'http://localhost:6101/redirect?name=fame')]),
+                                       'headers': Hict([('Content-Type', 'text/plain'), ('Content-Length', '0'), ('Access-Control-Allow-Origin', '*'), ('Location', 'http://localhost:6101/redirect?name=fame')]),
                                        'body': bytearray(b''),
                                        'data': None,
                                        'request': {'method': 'GET',
                                                    'path': '/echo',
                                                    'qargs': {'name': 'fame'},
                                                    'fragment': '',
-                                                   'headers': imdict([('Accept', 'application/json')]),
+                                                   'headers': Hict([('Accept', 'application/json')]),
                                                    'body': b'',
                                                    'host': '127.0.0.1',
                                                    'port': 6101,
@@ -2018,7 +2018,7 @@ def test_client_redirect_different_servers():
     assert response == {'version': (1, 1),
                         'status': 200,
                         'reason': 'OK',
-                        'headers': imdict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
+                        'headers': Hict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
                         'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
                                           b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
                                           b'on": null}'),
@@ -2034,7 +2034,7 @@ def test_client_redirect_different_servers():
                                     'path': '/redirect',
                                     'fragment': '',
                                     'qargs': {'name': 'fame'},
-                                    'headers': imdict([('Accept', 'application/json')]),
+                                    'headers': Hict([('Accept', 'application/json')]),
                                     'body': b'',
                                     'data': None,
                                     'fargs': None},
@@ -2043,14 +2043,14 @@ def test_client_redirect_different_servers():
                         'redirects': [{'version': (1, 1),
                                        'status': 307,
                                        'reason': 'Temporary Redirect',
-                                       'headers': imdict([('Content-Type', 'text/plain'), ('Content-Length', '0'), ('Access-Control-Allow-Origin', '*'), ('Location', 'http://localhost:6103/redirect?name=fame')]),
+                                       'headers': Hict([('Content-Type', 'text/plain'), ('Content-Length', '0'), ('Access-Control-Allow-Origin', '*'), ('Location', 'http://localhost:6103/redirect?name=fame')]),
                                        'body': bytearray(b''),
                                        'data': None,
                                        'request': {'method': 'GET',
                                                    'path': '/echo',
                                                    'qargs': {'name': 'fame'},
                                                    'fragment': '',
-                                                   'headers': imdict([('Accept', 'application/json')]),
+                                                   'headers': Hict([('Accept', 'application/json')]),
                                                    'body': b'',
                                                    'host': '127.0.0.1',
                                                    'port': 6101,
@@ -2158,7 +2158,7 @@ def test_client_redirect_different_servers_tls():
     assert response == {'version': (1, 1),
                         'status': 200,
                         'reason': 'OK',
-                        'headers': imdict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
+                        'headers': Hict([('Content-Length', '122'), ('Content-Type', 'application/json'), ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'), ('Server', 'IoBook.local')]),
                         'body': bytearray(b'{"content": null, "query": {"name": "fame"}, "verb": "GE'
                                           b'T", "url": "http://127.0.0.1:8080/echo?name=fame", "acti'
                                           b'on": null}'),
@@ -2174,7 +2174,7 @@ def test_client_redirect_different_servers_tls():
                                     'path': '/redirect',
                                     'fragment': '',
                                     'qargs': {'name': 'fame'},
-                                    'headers': imdict([('Accept', 'application/json')]),
+                                    'headers': Hict([('Accept', 'application/json')]),
                                     'body': b'',
                                     'data': None,
                                     'fargs': None},
@@ -2183,7 +2183,7 @@ def test_client_redirect_different_servers_tls():
                         'redirects': [{'version': (1, 1),
                                        'status': 307,
                                        'reason': 'Temporary Redirect',
-                                       'headers': imdict([('Content-Type', 'text/plain'),
+                                       'headers': Hict([('Content-Type', 'text/plain'),
                                                           ('Content-Length', '0'),
                                                           ('Access-Control-Allow-Origin', '*'),
                                                           ('Location', 'https://localhost:6103/redirect?name=fame')]),
@@ -2193,7 +2193,7 @@ def test_client_redirect_different_servers_tls():
                                                    'path': '/echo',
                                                    'qargs': {'name': 'fame'},
                                                    'fragment': '',
-                                                   'headers': imdict([('Accept', 'application/json')]),
+                                                   'headers': Hict([('Accept', 'application/json')]),
                                                    'body': b'',
                                                    'host': 'localhost',
                                                    'port': 6101,

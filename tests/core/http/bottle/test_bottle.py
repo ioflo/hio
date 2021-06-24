@@ -107,7 +107,7 @@ def test_server_with_bottle():
     requestant = list(alpha.reqs.values())[0]
     assert requestant.method == request['method']
     assert requestant.url == request['path']
-    assert requestant.headers == helping.imdict([('Host', 'localhost:6101'),
+    assert requestant.headers == help.Hict([('Host', 'localhost:6101'),
                                                  ('Accept-Encoding', 'identity'),
                                                  ('Accept', 'application/json'),
                                                  ('Content-Length', '0')])
@@ -246,7 +246,7 @@ def test_server_with_bottle_tls():
     requestant = list(alpha.reqs.values())[0]
     assert requestant.method == request['method']
     assert requestant.url, request['path']
-    assert requestant.headers == helping.imdict([('Host', 'localhost:6101'),
+    assert requestant.headers == help.Hict([('Host', 'localhost:6101'),
                                          ('Accept-Encoding', 'identity'),
                                          ('Accept', 'application/json'),
                                          ('Content-Length', '0')])
@@ -360,7 +360,7 @@ def test_request_with_no_content_length():
     requestant = list(alpha.reqs.values())[0]
     assert requestant.method == request['method']
     assert requestant.url == request['path']
-    assert requestant.headers == helping.imdict([('Host', 'localhost:6101'),
+    assert requestant.headers == help.Hict([('Host', 'localhost:6101'),
                                                  ('Accept-Encoding', 'identity'),
                                                  ('Accept', 'application/json')])
 
@@ -469,7 +469,7 @@ def test_connection_non_persistent():
     requestant = list(alpha.reqs.values())[0]
     assert requestant.method == request['method']
     assert requestant.url == request['path']
-    assert requestant.headers == helping.imdict([('Host', 'localhost:6101'),
+    assert requestant.headers == help.Hict([('Host', 'localhost:6101'),
                                                  ('Accept-Encoding', 'identity'),
                                                  ('Accept', 'application/json'),
                                                  ('Connection', 'close')])
@@ -584,7 +584,7 @@ def test_sse_stream():
     requestant = list(alpha.reqs.values())[0]
     assert requestant.method == request['method']
     assert requestant.url == request['path']
-    assert requestant.headers == helping.imdict([('Host', 'localhost:6101'),
+    assert requestant.headers == help.Hict([('Host', 'localhost:6101'),
                                                  ('Accept-Encoding', 'identity'),
                                                  ('Accept', 'application/json'),
                                                  ('Content-Length', '0')])
@@ -746,7 +746,7 @@ def test_sse_stream_tls():
     requestant = list(alpha.reqs.values())[0]
     assert requestant.method == request['method']
     assert requestant.url == request['path']
-    assert requestant.headers == helping.imdict([('Host', 'localhost:6101'),
+    assert requestant.headers == help.Hict([('Host', 'localhost:6101'),
                                                  ('Accept-Encoding', 'identity'),
                                                  ('Accept', 'application/json'),
                                                  ('Content-Length', '0')])

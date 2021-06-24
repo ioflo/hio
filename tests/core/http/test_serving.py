@@ -73,7 +73,7 @@ def test_bare_server_echo():
     requestant = list(alpha.stewards.values())[0].requestant
     assert requestant.method == request['method']
     assert requestant.url == request['path']
-    assert requestant.headers == helping.imdict([('Host', 'localhost:6101'),
+    assert requestant.headers == help.Hict([('Host', 'localhost:6101'),
                                                  ('Accept-Encoding', 'identity'),
                                                  ('Accept', 'application/json'),
                                                  ('Content-Length', '0')])
@@ -159,7 +159,7 @@ def test_wsgi_server():
     requestant = list(alpha.reqs.values())[0]
     assert requestant.method == request['method']
     assert requestant.url == request['path']
-    assert requestant.headers == helping.imdict([('Host', 'localhost:6101'),
+    assert requestant.headers == help.Hict([('Host', 'localhost:6101'),
                                                  ('Accept-Encoding', 'identity'),
                                                  ('Accept', 'application/json'),
                                                  ('Content-Length', '0')])
@@ -264,7 +264,7 @@ def test_wsgi_server_tls():
     requestant = list(alpha.reqs.values())[0]
     assert requestant.method == request['method']
     assert requestant.url == request['path']
-    assert requestant.headers == helping.imdict([('Host', 'localhost:6101'),
+    assert requestant.headers == help.Hict([('Host', 'localhost:6101'),
                                                  ('Accept-Encoding', 'identity'),
                                                  ('Accept', 'application/json'),
                                                  ('Content-Length', '0')])

@@ -80,7 +80,7 @@ class Requester(object):
         self.path = path or u'/'
         self.qargs = qargs if qargs is not None else dict()
         self.fragment = fragment
-        self.headers = helping.imdict(headers) if headers else helping.imdict()
+        self.headers = help.Hict(headers) if headers else help.Hict()
         if body and isinstance(body, str):  # use default
             # RFC 2616 Section 3.7.1 default charset of iso-8859-1.
             body = body.encode('iso-8859-1')
@@ -123,7 +123,7 @@ class Requester(object):
         if fragment is not None:
             self.fragment = fragment
         if headers is not None:
-            self.headers = helping.imdict(headers)
+            self.headers = help.Hict(headers)
         if body is not None:  # body should be bytes
             if isinstance(body, str):
                 # RFC 2616 Section 3.7.1 default charset of iso-8859-1.
@@ -399,7 +399,7 @@ class Respondent(httping.Parsent):
         if self.headed:
             return  # already parsed the head
 
-        self.headers = helping.imdict()
+        self.headers = help.Hict()
 
         # create generator
         lineParser = httping.parseLine(raw=self.msg, eols=(CRLF, LF), kind="status line")
@@ -871,7 +871,7 @@ class Client():
         request["path"] = path if path is not None else self.requester.path
         request["qargs"] = qargs if qargs is not None else self.requester.qargs.copy()
         request["fragment"] = fragment if qargs is not None else self.requester.fragment
-        request["headers"] = helping.imdict(headers) if headers is not None else self.requester.headers.copy()
+        request["headers"] = help.Hict(headers) if headers is not None else self.requester.headers.copy()
         request["body"] = body if body is not None else b''
         if body is not None:  # body should be bytes
             if isinstance(body, str):
