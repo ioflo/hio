@@ -24,6 +24,7 @@ from urllib.parse import urlsplit, quote, quote_plus, unquote, unquote_plus
 from ... import help
 from ...help import helping
 from ...base import tyming
+from .. import core
 from .. import coring
 from .. import tcp
 from . import httping
@@ -1146,3 +1147,81 @@ class Client():
                 raise ex
             yield b''  # this is eventually yielded by wsgi app while waiting
         return self.respond()
+
+
+def backendRequest(tymth, *,
+                   method=u'GET',
+                   scheme=u'',  #default if not in path
+                   host=u'localhost',  # default if not in path
+                   port=None, # default if not in path
+                   path=u'/',
+                   qargs=None,
+                   data=None,
+                   buffered=False,
+                   tymeout=2.0,
+                   ):
+    """
+    Perform Async ReST request to Backend Server
+
+    Parameters:
+
+    Usage: (Inside a generator function)
+
+        response = yield from backendRequest()
+
+    response is the response if valid else None
+    before response is completed the yield from yields up an empty string ''
+    once completed then response has a value
+
+    path can be full url with host port etc  path takes precedence over others
+
+
+    """
+    try:
+
+        if buffered:
+            wl = wiring.WireLog(name='backend', filed=True, samed=True)
+            wl.reopen()
+        else:
+            wl = None
+
+        headers = core.Hict([('Accept', 'application/json'),
+                          ('Connection', 'close')])
+
+        client = Client(bufsize=131072,
+                             wl=wl,
+                             scheme=scheme,
+                             hostname=host,
+                             port=port,
+                             method=method,
+                             path=path,
+                             qargs=qargs,
+                             headers=headers,
+                             data=data,
+                             tymeout=tymeout,
+                             reconnectable=False,
+                             tymth=tymth,
+                        )
+
+        client.transmit()
+        # assumes store clock is advanced elsewhere
+        tymer = tyming.Tymer(tymth=tymth, duration=tymeout)
+        while ((client.requests or client.connector.txes or not client.responses)
+               and not tymer.expired):
+            try:
+                client.service()
+            except Exception as ex:
+                logger.error("Error: Servicing backend client. '{0}'\n".format(ex))
+                raise ex
+            yield b''  # this is eventually yielded by wsgi app while waiting
+
+        response = None  # in case timed out
+        if client.responses:
+            response = client.responses.popleft()
+
+    finally:
+        client.close()
+        if wl:
+            wl.close()
+
+    return response

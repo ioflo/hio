@@ -14,7 +14,7 @@ from contextlib import contextmanager
 
 from ... import help
 from ...base import tyming, doing
-from .. import coring
+from .. import coring, wiring
 
 
 logger = help.ogler.getLogger()

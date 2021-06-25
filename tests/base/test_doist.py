@@ -43,14 +43,14 @@ def test_doist_once():
     doers = [doer0, doer1]
 
     doist.doers = doers
-    doist.ready()
+    doist.enter()
     assert len(doist.deeds) == 2
     assert [val[1] for val in doist.deeds] == [0.0, 0.0]
     for doer in doers:
         assert doer.states == [State(tyme=0.0, context='enter', feed=0.0, count=0)]
         assert doer.done == False
 
-    doist.once()
+    doist.recur()
     assert doist.tyme == 0.25  # on next cycle
     assert len(doist.deeds) == 2
     assert [val[1] for val in doist.deeds] == [0.25, 0.5]
@@ -59,7 +59,7 @@ def test_doist_once():
     assert doer1.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1)]
 
-    doist.once()
+    doist.recur()
     assert doist.tyme == 0.5  # on next cycle
     assert len(doist.deeds) == 2
     assert [val[1] for val in doist.deeds] == [0.5, 0.5]
@@ -69,7 +69,7 @@ def test_doist_once():
     assert doer1.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1)]
 
-    doist.once()
+    doist.recur()
     assert doist.tyme == 0.75  # on next cycle
     assert len(doist.deeds) == 2
     assert [val[1] for val in doist.deeds] == [0.75, 1.0]
@@ -81,7 +81,7 @@ def test_doist_once():
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.5, context='recur', feed=0.5, count=2)]
 
-    doist.once()
+    doist.recur()
     assert doist.tyme == 1.0  # on next cycle
     assert len(doist.deeds) == 1
     assert [val[1] for val in doist.deeds] == [1.0]
@@ -96,7 +96,7 @@ def test_doist_once():
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.5, context='recur', feed=0.5, count=2)]
 
-    doist.once()
+    doist.recur()
     assert doist.tyme == 1.25  # on next cycle
     assert len(doist.deeds) == 1
     assert doer0.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
@@ -110,7 +110,7 @@ def test_doist_once():
                             State(tyme=0.5, context='recur', feed=0.5, count=2),
                             State(tyme=1.0, context='recur', feed=1.0, count=3)]
 
-    doist.once()
+    doist.recur()
     assert doist.tyme == 1.50  # on next cycle
     assert len(doist.deeds) == 1
     assert doer0.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
@@ -124,7 +124,7 @@ def test_doist_once():
                             State(tyme=0.5, context='recur', feed=0.5, count=2),
                             State(tyme=1.0, context='recur', feed=1.0, count=3)]
 
-    doist.once()
+    doist.recur()
     assert doist.tyme == 1.75  # on next cycle
     assert len(doist.deeds) == 0
     assert doer0.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
@@ -401,10 +401,10 @@ def test_extend_remove_doers():
     assert doist.tyme == 0.0
     assert not doist.deeds
     assert doist.doers == doers
-    doist.ready()
+    doist.enter()
     assert len(doist.deeds) == 3
-    doist.once()
-    doist.once()
+    doist.recur()
+    doist.recur()
     assert doist.tyme == 2.0
     assert not doist.done
     assert doer0.done
@@ -426,8 +426,8 @@ def test_extend_remove_doers():
         assert not doist.doers[deed[2]].done
     for i, doer in enumerate(doist.doers):
         assert doer.done == (i not  in indices)
-    doist.once()
-    doist.once()
+    doist.recur()
+    doist.recur()
     assert doist.tyme == 4.0
     assert not doist.done  # doist not done
     assert doer0.done
@@ -467,10 +467,10 @@ def test_extend_remove_doers():
     assert doist.done == None
     assert not doist.deeds
 
-    doist.ready()
+    doist.enter()
     assert doist.done == None  # did not call .do so stays None not False
-    doist.once()
-    doist.once()
+    doist.recur()
+    doist.recur()
     assert doist.tyme == 2.0
     assert not doist.done  # doist not done
     assert doer0.done
@@ -494,8 +494,8 @@ def test_extend_remove_doers():
         assert not doist.doers[deed[2]].done
     for i, doer in enumerate(doist.doers):
         assert doer.done == (i not  in indices)
-    doist.once()
-    doist.once()
+    doist.recur()
+    doist.recur()
     assert doist.tyme == 4.0
     assert doist.done == None  # never called .do
     assert len(doist.deeds) == 0  # all done
@@ -505,8 +505,8 @@ def test_extend_remove_doers():
         assert not doist.doers[deed[2]].done
     for i, doer in enumerate(doist.doers):
         assert doer.done == (i not in indices)
-    doist.once()
-    doist.once()  # does not complete because always == True
+    doist.recur()
+    doist.recur()  # does not complete because always == True
     """ Done Test"""
 
 def test_nested_doers():

@@ -285,7 +285,7 @@ def test_redoer():
     redoer.tock = 0.0
     assert redoer.tock ==  0.0
 
-    # create generator use send and run until normal exit. emulates Doist.ready
+    # create generator use send and run until normal exit. emulates Doist.enter()
     args = {}
     dog = redoer(tymth=redoer.tymth, tock=redoer.tock, **args)
     assert inspect.isgenerator(dog)
@@ -317,7 +317,7 @@ def test_redoer():
             assert ex.value == None
             raise
 
-    # create generator use send and then explicit close. emulates Doist.ready
+    # create generator use send and then explicit close. emulates Doist.enter()
     args = {}
     dog = redoer(tymth=redoer.tymth, tock=redoer.tock, **args)
     assert inspect.isgenerator(dog)
@@ -379,7 +379,7 @@ def test_dodoer():
     dodoer.tock = 0.0
     assert dodoer.tock ==  0.0
 
-    # create generator use send and run until normal exit. emulates Doist.ready
+    # create generator use send and run until normal exit. emulates Doist.enter()
     args = {}
     dog = dodoer(tymth=dodoer.tymth, tock=dodoer.tock, **args)
     assert inspect.isgenerator(dog)
@@ -412,7 +412,7 @@ def test_dodoer():
 
     doers = [doer0, doer1, doer2]
 
-    # create generator use send and then explicit close. emulates Doist.ready
+    # create generator use send and then explicit close. emulates Doist.enter()
     args = {}
     dog = dodoer(tymth=dodoer.tymth, tock=dodoer.tock, doers=doers, **args)
     assert inspect.isgenerator(dog)
@@ -517,9 +517,9 @@ def test_dodoer_always():
     # force complete doers
     assert dodoer.always == True
     assert doist.tyme == 13.0
-    doist.ready()
-    doist.once()
-    doist.once()
+    doist.enter()
+    doist.recur()
+    doist.recur()
     assert doist.tyme == 15.0
     assert not dodoer.done  # dodoer not done
     assert dodoer.always == True
@@ -538,8 +538,8 @@ def test_dodoer_always():
     assert len(dodoer.deeds) == 4
     indices = [index for dog, retyme, index in dodoer.deeds]
     assert indices == [1, 2, 3, 4]
-    doist.once()
-    doist.once()
+    doist.recur()
+    doist.recur()
     assert doist.tyme == 17.0
     assert not dodoer.done  # dodoer not done
     assert dodoer.always == True
@@ -583,10 +583,10 @@ def test_dodoer_always():
     assert dodoer.always == True
     assert not dodoer.deeds
 
-    doist.ready()
+    doist.enter()
     assert not dodoer.done
-    doist.once()
-    doist.once()
+    doist.recur()
+    doist.recur()
     assert doist.tyme == 2.0
     assert not dodoer.done  # dodoer not done
     assert dodoer.always == True
@@ -612,8 +612,8 @@ def test_dodoer_always():
         assert not dodoer.doers[deed[2]].done
     for i, doer in enumerate(dodoer.doers):
         assert doer.done == (i not  in indices)
-    doist.once()
-    doist.once()
+    doist.recur()
+    doist.recur()
     assert doist.tyme == 4.0
     assert doist.done == None  # never called .do
     assert dodoer.done == True  # all its doers completed
@@ -624,8 +624,8 @@ def test_dodoer_always():
         assert not dodoer.doers[deed[2]].done
     for i, doer in enumerate(doist.doers):
         assert doer.done == (i not in indices)
-    doist.once()
-    doist.once()  # does not complete because dodoer not done its always == True
+    doist.recur()
+    doist.recur()  # does not complete because dodoer not done its always == True
     """ Done Test"""
 
 

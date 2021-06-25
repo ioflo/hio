@@ -467,7 +467,8 @@ class Responder():
         """
         if not self.closed and not self.ended:
             if self.iterator is None:  # initiate application
-                self.iterator = iter(self.app(self.environ, self.start))
+                self.iterator = iter(self.app(self.environ,
+                                              start_response=self.start))
             try:
                 msg = next(self.iterator)
             except StopIteration as ex:
@@ -492,8 +493,7 @@ class Responder():
                     logger.error("HTTPError streaming body after headers sent.\n"
                                     "%s\n", ex)
             except Exception as ex:  # handle http exceptions not caught by app
-                logger.error("Unexcepted Server Error.\n"
-                                    "%s\n", ex)
+                logger.error("Unexcepted Server Error.\n%s\n", ex)
             else:
                 if msg:  # only write if not empty allows async processing
                     self.write(msg)
@@ -619,11 +619,12 @@ class Server():
         self.secured = secured
         self.servant = servant
 
-    def open(self):
+    def reopen(self):
         """
         Return result of .servant.reopen()
         """
         return self.servant.reopen()
+
 
     def close(self):
         """
@@ -721,7 +722,7 @@ class Server():
         Timeout stale connections
         """
         self.servant.serviceConnects()
-        for ca, ix in self.servant.ixes.items():
+        for ca, ix in list(self.servant.ixes.items()):  # ixes changes during iteration
             if ix.cutoff:
                 self.closeConnection(ca)
                 continue

@@ -1,30 +1,27 @@
-from __future__ import generator_stop
-
+# -*- encoding: utf-8 -*-
+"""
+Demo web server for static files for client side web app
+"""
 import sys
 import os
-from collections import OrderedDict as ODict
-import time
 import mimetypes
-import wsgiref
-
-import pytest
-from pytest import approx
 
 import falcon
-import pytest_falcon # declares client fixture
 
-from ioflo.aid.timing import Stamper, StoreTimer
-from ioflo.aio.http import Valet, Patron
-from ioflo.aid import odict
-from ioflo.base import Store
+from ... import help
 
-from ioflo.aid import getConsole
+logger = help.ogler.getLogger()
 
-console = getConsole()
+# /Users/Load/Data/Code/public/hio/src/hio/demo/web/static
+WebDirPath = os.path.dirname(
+                os.path.abspath(
+                    sys.modules.get(__name__).__file__))
+StaticDirPath = os.path.join(WebDirPath, 'static')
 
-class StaticSink(object):
+class StaticSink():
     """
-    Class that provided Falcon sink endpoint for serving static files.
+    Class that provided Falcon sink endpoint for serving static files in support
+    of client side web app.
 
     # Geterating the full path of the static resource
     path = os.path.abspath(
@@ -53,7 +50,7 @@ class StaticSink(object):
     """
     def __init__(self, *pa, **kwa):
         super().__init__(*pa, **kwa)
-        self.staticDirpath = "/Data/Code/private/indigo/bluepea/src/bluepea/static/"
+        self.staticDirpath = StaticDirPath
 
     def __call__(self, req, rep):
         path = req.path  # Falcon removes trailing "/" if any after non "/"
@@ -63,7 +60,7 @@ class StaticSink(object):
         if splits and splits[0] == "static":
             splits = splits[1:]  #remove static
         if not splits:  # return default
-            filepath = "main.html"
+            filepath = "index.html"
         else:
             filepath = "/".join(splits)
         filepath = os.path.join(self.staticDirpath, filepath)
@@ -74,52 +71,12 @@ class StaticSink(object):
         filetype = mimetypes.guess_type(filepath, strict=True)[0]  # get first guess
         rep.set_header("Content-Type", "{}; charset=UTF-8".format(filetype))
         rep.status = falcon.HTTP_200  # This is the default status
-        #rep.stream = open(filepath, 'rb')
+
+        # for better stream handling provide "wsgi.file_wrapper" in wsgi environ
+        # rep.stream = open(filepath, 'rb')
+        # the following works faster and more consistently than rep.stream above
+        # Maybe Falcon's default is to throttle the reads too much for rep.stream
         with open(filepath, 'rb') as f:
-            rep.body = f.read()
+            rep.data = f.read()
 
 
-def run_simpleserver():
-    """
-    Use wsgiref simpleserver server
-    """
-    from wsgiref import simple_server
-
-    app = falcon.API() # falcon.API instances are callable WSGI apps
-    sink = StaticSink()
-    app.add_sink(sink, prefix="/")
-
-
-    httpd = simple_server.make_server('127.0.0.1', 8080, app)
-    httpd.serve_forever()  # navigate web client to http://127.0.0.1:8080/example
-
-def run_valet():
-    """
-    Use ioflo valet server
-    """
-    console.reinit(verbosity=console.Wordage.profuse)
-
-    store = Store(stamp=0.0)
-
-    app = falcon.API() # falcon.API instances are callable WSGI apps
-    sink = StaticSink()
-    app.add_sink(sink, prefix="/")
-
-    server = Valet(store=store,
-                   app=app,
-                   name='test',
-                   port=8080,
-                   timeout=0.5)
-    server.open()
-
-
-    while True:
-        server.serviceAll()
-        time.sleep(0.0625)
-        store.advanceStamp(0.0625)
-
-
-
-if __name__ == '__main__':
-    #run_simpleserver()
-    run_valet()

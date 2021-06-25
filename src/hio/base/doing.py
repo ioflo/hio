@@ -22,16 +22,15 @@ class Doist(tyming.Tymist):
     .tick method.
     The doist may treat .tyme as artificial time or synchonize it to real time.
 
-    .ready method prepares deeds deque of triples (dog, retyme, index) where
+    .enter method prepares deeds deque of triples (dog, retyme, index) where
         dog is a doer generator returned by calling doer generator instances,
         functions, or methods.
 
-    .once method runs its deeds deque of triples (dog, retyme, index) once per
+    .recur method runs its deeds deque of triples (dog, retyme, index) once per
         invocation.
         This synchronizes their cycle time .tyme to the Doist's tyme.
 
-
-    .do method repeatedly runs .once until generators are complete
+    .do method repeatedly runs .recur until generators are complete
        it may either repeat as fast as possbile or repeat at real time increments.
 
     Inherited Class Attributes:
@@ -52,7 +51,7 @@ class Doist(tyming.Tymist):
                 .done state to associated doer for dog
             Used throughout the execution lifecycle. The normal
             case is use the default empty initialization performed here and
-            update in .ready().
+            update in .enter().
         timer (MonoTimer): for real time intervals
 
     Inherited Properties:
@@ -65,9 +64,9 @@ class Doist(tyming.Tymist):
         .tick increments .tyme by one .tock or provided tock
 
     Methods:
-        .ready prepare deeds, deque of triples (dog, retyme, index)
-        .once  run through all deeds once
-        .do repeadedly call .once until all dogs in deeds are complete or
+        .enter prepare deeds, deque of triples (dog, retyme, index)
+        .recur  run through all deeds once
+        .do repeadedly call .recur until all dogs in deeds are complete or
             times out do to reaching time limit
 
     """
@@ -102,7 +101,7 @@ class Doist(tyming.Tymist):
     def do(self, doers=None, limit=None, tyme=None):
         """
         Readies deeds deque from .doers or doers if any and then iteratively
-        runs .once over deeds deque until completion of all deeds.
+        runs .recur over deeds deque until completion of all deeds.
         Each entry in deeds is a triple (dog, retyme, index)  where:
             dog is generator
             retyme is tyme (real or simulated) in seconds when dog should run next
@@ -145,14 +144,14 @@ class Doist(tyming.Tymist):
             self.tyme = tyme
 
         try:  # always clean up resources upon exception
-            self.ready()  # runs enter context on each doer
+            self.enter()  # runs enter context on each doer
 
             tymer = tyming.Tymer(tymth=self.tymen(), duration=self.limit)
             self.timer.start()
 
             while True:  # until doers complete or exception or keyboardInterrupt
                 try:
-                    self.once()  # increments .tyme runs recur context
+                    self.recur()  # increments .tyme runs recur context
 
                     if self.real:  # wait for real time to expire
                         while not self.timer.expired:
@@ -179,9 +178,10 @@ class Doist(tyming.Tymist):
             self.close()  # force close remaining deeds throws GeneratorExit
 
 
-    def ready(self, doers=None):
+    def enter(self, doers=None):
         """
-        Returns deeds deque of triples (dog, retyme, index)  where:
+        Enter context
+        Returns (deque):  deeds deque of triples (dog, retyme, index)  where:
             dog is generator
             retyme is tyme (real or simulated) in seconds when dog should run next
             index is position of associated doer in .doers list used to assign
@@ -232,9 +232,9 @@ class Doist(tyming.Tymist):
         return deeds
 
 
-    def once(self, doeds = None):
+    def recur(self, doeds = None):
         """
-        Cycle once through deeds deque of tuples (triples) of form
+        Recur once through deeds deque of tuples (triples) of form
         (dog, retyme, index) and update in place
 
         Each deed is deque of tuples of  form (dog, retyme, index) where:
@@ -259,7 +259,7 @@ class Doist(tyming.Tymist):
         The Parameterization here of doers and deeds enables some special cases
         such as manual testing or iteraton.
         The normal case is to initialize .doers in .__init__. or .do() and to
-        initialize .deeds in .__init__. and then update in .ready()
+        initialize .deeds in .__init__. and then update in .enter()
         """
         if doeds is not None:
             doers = doeds[0]
@@ -348,7 +348,7 @@ class Doist(tyming.Tymist):
             doers is list of doers to add as extension.
 
         """
-        deeds = self.ready(doers=doers)  # provide fresh deeds
+        deeds = self.enter(doers=doers)  # provide fresh deeds
         offset = len(self.doers)  # get offset of index for extending dogs
         for i in range(len(deeds)):  # iterate once over each deed
             dog, retyme, index = deeds.popleft()
@@ -403,7 +403,7 @@ def doify(f, name=None, tock=0.0, **opts):
     Returns Doist compatible copy, g, of converted generator function f.
     Each invoction of doify(f) returns a unique copy of doified function f.
     Imbues copy, g, of converted generator function, f, with attributes used by
-    Doist.ready() or DoDoer.enter().
+    Doist.enter() or DoDoer.enter().
     Allows multiple instances of copy, g, of generator function, f, each with
     unique attributes.
 
@@ -431,7 +431,7 @@ def doify(f, name=None, tock=0.0, **opts):
 def doize(tock=0.0, **opts):
     """
     Returns decorator that makes decorated generator function Doist compatible.
-    Imbues decorated generator function with attributes used by Doist.ready() or
+    Imbues decorated generator function with attributes used by Doist.enter() or
     DoDoer.enter().
     Only one instance of decorated function with shared attributes is allowed.
 
@@ -784,7 +784,7 @@ class DoDoer(Doer):
             index is position of associated doer in .doers list
             Used throughout the execution lifecycle. The normal
             case is use the default empty initialization performed here and
-            update in .ready().
+            update in .enter().
         always (Boolean): True means keep running even when all dogs in deeds
             are complete. Enables dynamically managing extending or removing
             doers and associated deeds while running.
@@ -940,12 +940,12 @@ class DoDoer(Doer):
             self.tock = tock  #  set tock to parameter
             # tyme = self.tyme
             self.done = False  # allows enter to override completion state
-            self.enter()  # doist.ready equivalent
+            self.enter()  # doist.enter() equivalent
 
             #recur context
             while (not self.done or always):  # recur context
                 tyme = (yield (self.tock))  # yields .tock then waits for next send
-                self.done = self.recur(tyme=tyme)  # equv of doist.once
+                self.done = self.recur(tyme=tyme)  # equv of doist.recur
 
         except GeneratorExit:  # close context, forced exit due to .close
             self.close()
@@ -966,7 +966,7 @@ class DoDoer(Doer):
 
     def enter(self, doers=None):
         """
-        Do 'enter' context actions. Equivalent of Doist.ready()
+        Do 'enter' context actions. Equivalent of Doist.enter()
 
         Returns deeds deque of triples (dog, retyme, index)  where:
             dog is generator
@@ -1018,7 +1018,7 @@ class DoDoer(Doer):
 
     def recur(self, tyme, doeds = None):
         """
-        Do 'recur' context actions. Equivalent of Doist.once
+        Do 'recur' context actions. Equivalent of Doist.recur
 
         Parameters:
             tyme (float): is output of send fed to do yield, Doist feeds its .tyme
