@@ -59,11 +59,19 @@ See API docs on readthedocs.org [Here](https://hio-py.readthedocs.io/en/latest/i
 Current Status
 ================
 
+Version 0.4.1
+  Refined Doist and DoDoer makes their protocol interfaces nearly identical as
+    as is reasonably practical
+  Added HTTP support with hio compatible HTTP Client and HTTP WSGI Server
+  Example test code shows HTTP Server working with Falcon and Bottle ReST Micro
+    frameworks
+
+
 Version 0.3.4
-   The async scheduler features should be pretty stable going forward.
-   The tcp library should also be stable going forward.
+  The async scheduler features should be pretty stable going forward.
+  The tcp library should also be stable going forward.
 
-   The TCP IO  Client and Server classes are implemented. Includes support for TLS
+  The TCP IO  Client and Server classes are implemented. Includes support for TLS
 
-   TCP ServerDoer, EchoServerDoer, and ClientDoer classes are implemented as examples
+  TCP ServerDoer, EchoServerDoer, and ClientDoer classes are implemented as examples
 
