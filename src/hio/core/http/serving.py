@@ -16,8 +16,9 @@ from urllib.parse import urlsplit, unquote
 from contextlib import contextmanager
 
 from ... import help
+from ...base import doing
 from .. import tcp
-# from ..tcp import Server, ServerTls
+
 from . import httping
 
 logger = help.ogler.getLogger()
@@ -647,6 +648,16 @@ class Server():
         self.secured = secured
         self.servant = servant
 
+
+    def wind(self, tymth):
+        """
+        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+        Updates winds .tymer .tymth
+        """
+        if self.servant:
+            self.servant.wind(tymth)
+
+
     def reopen(self):
         """
         Return result of .servant.reopen()
@@ -1240,3 +1251,52 @@ class BareServer():
         self.serviceStewards()
         self.servant.serviceSendsAllIx()
 
+
+class ServerDoer(doing.Doer):
+    """
+    HTTP WSGI Server Doer
+
+    See Doer for inherited attributes, properties, and methods.
+
+    Attributes:
+       .server is HTTP WSGI Server instance
+
+    Properties:
+
+    """
+
+    def __init__(self, server, **kwa):
+        """
+        Initialize
+
+        Parameters:
+           server is HTTP Server instance
+        """
+        super(ServerDoer, self).__init__(**kwa)
+        self.server = server
+        if self.tymth:
+            self.server.wind(self.tymth)
+
+
+    def wind(self, tymth):
+        """
+        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+        Updates winds .tymer .tymth
+        """
+        super(ServerDoer, self).wind(tymth)
+        self.server.wind(tymth)
+
+
+    def enter(self):
+        """"""
+        self.server.reopen()
+
+
+    def recur(self, tyme):
+        """"""
+        self.server.service()
+
+
+    def exit(self):
+        """"""
+        self.server.close()

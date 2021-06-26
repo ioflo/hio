@@ -10,7 +10,7 @@ import pytest
 
 from hio import help
 from hio.help import helping
-from hio.base import tyming
+from hio.base import tyming, doing
 from hio.core import http
 
 
@@ -251,6 +251,67 @@ def test_wsgi_server_tls():
             assert responder.headers == response['headers']
 
 
+def test_server_client_doers():
+    """
+    Test HTTP ServerDoer ClientDoer classes
+    """
+    tock = 0.03125
+    ticks = 16
+    limit = ticks * tock
+    doist = doing.Doist(tock=tock, real=True, limit=limit)
+    assert doist.tyme == 0.0  # on next cycle
+    assert doist.tock == tock == 0.03125
+    assert doist.real == True
+    assert doist.limit == limit == 0.5
+    assert doist.doers == []
+
+    def wsgiApp(environ, start_response):
+        start_response('200 OK', [('Content-type','text/plain'),
+                              ('Content-length', '12')])
+        return [b"Hello World!"]
+
+    port = 6101
+    server = http.Server(port=port, app=wsgiApp, tymth=doist.tymen())
+    assert server.servant.tyme == doist.tyme
+
+    serdoer = http.ServerDoer(tymth=doist.tymen(), server=server)
+    assert serdoer.server ==  server
+    assert serdoer.tyme ==  serdoer.server.servant.tyme == doist.tyme
+
+    path = "http://{0}:{1}/".format('localhost', port)
+    client = http.Client(path=path, tymth=doist.tymen())
+    assert client.connector.tyme == doist.tyme
+
+    request = dict([('method', u'GET'),
+                     ('path', u'/echo?name=fame'),
+                     ('qargs', dict()),
+                     ('fragment', u''),
+                     ('headers', dict([('Accept', 'application/json'),
+                                        ('Content-Length', 0)])),
+                    ])
+
+    client.requests.append(request)
+
+    clidoer = http.ClientDoer(tymth=doist.tymen(), client=client)
+    assert clidoer.client == client
+    assert clidoer.tyme == clidoer.client.connector.tyme == doist.tyme
+
+    assert serdoer.tock == 0.0  # ASAP
+    assert clidoer.tock == 0.0  # ASAP
+
+    doers = [serdoer, clidoer]
+
+    doist.do(doers=doers, limit=limit)
+    assert doist.tyme == limit
+    assert server.servant.opened == False
+    assert client.connector.opened == False
+
+    assert len(client.responses) == 1
+    response = client.responses.popleft()
+    assert response['body'] == (b'Hello World!')
+    assert response['status'] == 200
+    """End Test """
+
 
 if __name__ == '__main__':
-    test_wsgi_server_tls()
+    test_server_client_doers()

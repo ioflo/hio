@@ -1279,7 +1279,7 @@ def test_tcp_tls_verify_both_tlsv12():
 
 
 
-def test_server_client():
+def test_server_client_doers():
     """
     Test ServerDoer ClientDoer classes
     """
@@ -1327,7 +1327,7 @@ def test_server_client():
     """End Test """
 
 
-def test_echo_server_client():
+def test_echo_server_client_doers():
     """
     Test EchoServerDoer ClientDoer classes
     """

@@ -14,7 +14,7 @@ from urllib.parse import urlsplit, quote, quote_plus, unquote, unquote_plus
 from contextlib import contextmanager
 
 from ... import help
-from ...base import tyming
+from ...base import tyming, doing
 from .. import coring, wiring
 from .. import tcp
 from . import httping
@@ -827,6 +827,15 @@ class Client():
         self.respondent = respondent
 
 
+    def wind(self, tymth):
+        """
+        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+        Updates winds .tymer .tymth
+        """
+        if self.connector:
+            self.connector.wind(tymth)
+
+
     def reopen(self):
         """
         Return result of .connector.reopen()
@@ -1245,3 +1254,53 @@ def backendRequest(tymth, *,
             wl.close()
 
     return response
+
+
+
+class ClientDoer(doing.Doer):
+    """
+    HTTP Client Doer
+
+    See Doer for inherited attributes, properties, and methods.
+
+    Attributes:
+       .client is HTTP Client instance
+
+    """
+
+    def __init__(self, client, **kwa):
+        """
+        Initialize instance.
+
+        Parameters:
+           client is HTTP Client instance
+        """
+        super(ClientDoer, self).__init__(**kwa)
+        self.client = client
+        if self.tymth:
+            self.client.wind(self.tymth)
+
+
+    def wind(self, tymth):
+        """
+        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+        Updates winds .tymer .tymth
+        """
+        super(ClientDoer, self).wind(tymth)
+        self.client.wind(tymth)
+
+
+    def enter(self):
+        """"""
+        self.client.reopen()
+
+
+    def recur(self, tyme):
+        """"""
+        self.client.service()
+
+
+    def exit(self):
+        """"""
+        self.client.close()
+
