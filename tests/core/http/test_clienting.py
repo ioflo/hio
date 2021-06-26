@@ -15,7 +15,7 @@ from hio import help
 from hio.help import helping
 from hio.help import Hict
 from hio.base import tyming
-from hio.core import wiring, tcp
+from hio.core import wiring, tcp, http
 from hio.core.http import clienting
 
 
@@ -258,124 +258,114 @@ def test_client_request_echo():
     """
     Test HTTP Client request echo non blocking
     """
-    alpha = tcp.Server(port = 6101, bufsize=131072)
-    assert alpha.reopen()
-    assert alpha.ha == ('0.0.0.0', 6101)
-    assert alpha.eha == ('127.0.0.1', 6101)
+    with tcp.openServer(port = 6101, bufsize=131072) as alpha:
 
-    host = alpha.eha[0]
-    port = alpha.eha[1]
-    method = u'GET'
-    path = u'/echo?name=fame'
-    headers = dict([('Accept', 'application/json')])
+        assert alpha.ha == ('0.0.0.0', 6101)
+        assert alpha.eha == ('127.0.0.1', 6101)
 
-    beta = clienting.Client(bufsize=131072,
-                                 hostname=host,
-                                 port=port,
-                                 method=method,
-                                 path=path,
-                                 headers=headers,
-                                 )
+        host = alpha.eha[0]
+        port = alpha.eha[1]
+        method = u'GET'
+        path = u'/echo?name=fame'
+        headers = dict([('Accept', 'application/json')])
 
-    assert beta.connector.reopen()
-    assert not beta.connector.accepted
-    assert not beta.connector.connected
-    assert not beta.connector.cutoff
+        with http.openClient(bufsize=131072, hostname=host, port=port, \
+                    method=method, path=path, headers=headers,) as beta:
 
-    # connect Client Beta to Server Alpha
-    while True:
-        beta.connector.serviceConnect()
-        alpha.serviceConnects()
-        if beta.connector.connected and beta.connector.ca in alpha.ixes:
-            break
-        time.sleep(0.05)
+            assert not beta.connector.accepted
+            assert not beta.connector.connected
+            assert not beta.connector.cutoff
 
-    assert beta.connector.accepted
-    assert beta.connector.connected
-    assert not beta.connector.cutoff
-    assert beta.connector.ca == beta.connector.cs.getsockname()
-    assert beta.connector.ha == beta.connector.cs.getpeername()
-    assert alpha.eha == beta.connector.ha
+            # connect Client Beta to Server Alpha
+            while True:
+                beta.connector.serviceConnect()
+                alpha.serviceConnects()
+                if beta.connector.connected and beta.connector.ca in alpha.ixes:
+                    break
+                time.sleep(0.05)
 
-    ixBeta = alpha.ixes[beta.connector.ca]
-    assert ixBeta.ca is not None
-    assert ixBeta.cs is not None
-    assert ixBeta.cs.getsockname() == beta.connector.cs.getpeername()
-    assert ixBeta.cs.getpeername() == beta.connector.cs.getsockname()
-    assert ixBeta.ca == beta.connector.ca
-    assert ixBeta.ha, beta.connector.ha
+            assert beta.connector.accepted
+            assert beta.connector.connected
+            assert not beta.connector.cutoff
+            assert beta.connector.ca == beta.connector.cs.getsockname()
+            assert beta.connector.ha == beta.connector.cs.getpeername()
+            assert alpha.eha == beta.connector.ha
 
-    #  build request
-    msgOut = beta.requester.rebuild()
-    assert  beta.requester.lines == [
-               b'GET /echo?name=fame HTTP/1.1',
-               b'Host: 127.0.0.1:6101',
-               b'Accept-Encoding: identity',
-               b'Accept: application/json',
-               b'',
-               b'',
-            ]
+            ixBeta = alpha.ixes[beta.connector.ca]
+            assert ixBeta.ca is not None
+            assert ixBeta.cs is not None
+            assert ixBeta.cs.getsockname() == beta.connector.cs.getpeername()
+            assert ixBeta.cs.getpeername() == beta.connector.cs.getsockname()
+            assert ixBeta.ca == beta.connector.ca
+            assert ixBeta.ha, beta.connector.ha
 
-    assert beta.requester.head == (b'GET /echo?name=fame HTTP/1.1\r\n'
-                                   b'Host: 127.0.0.1:6101\r\nAccept-Encoding: '
-                                   b'identity\r\nAccept: application/json\r\n\r\n')
-    assert msgOut == (b'GET /echo?name=fame HTTP/1.1\r\nHost: 127.0.0.1:6101\r\n'
-                      b'Accept-Encoding: identity\r\nAccept: application/json\r\n\r\n')
+            #  build request
+            msgOut = beta.requester.rebuild()
+            assert  beta.requester.lines == [
+                       b'GET /echo?name=fame HTTP/1.1',
+                       b'Host: 127.0.0.1:6101',
+                       b'Accept-Encoding: identity',
+                       b'Accept: application/json',
+                       b'',
+                       b'',
+                    ]
+
+            assert beta.requester.head == (b'GET /echo?name=fame HTTP/1.1\r\n'
+                                           b'Host: 127.0.0.1:6101\r\nAccept-Encoding: '
+                                           b'identity\r\nAccept: application/json\r\n\r\n')
+            assert msgOut == (b'GET /echo?name=fame HTTP/1.1\r\nHost: 127.0.0.1:6101\r\n'
+                              b'Accept-Encoding: identity\r\nAccept: application/json\r\n\r\n')
 
 
-    beta.connector.tx(msgOut)
-    while beta.connector.txbs and not ixBeta.rxbs :
-        beta.connector.serviceSends()
-        time.sleep(0.05)
-        alpha.serviceReceivesAllIx()
-        time.sleep(0.05)
-    msgIn = bytes(ixBeta.rxbs)
-    assert msgIn == msgOut
-    ixBeta.clearRxbs()
+            beta.connector.tx(msgOut)
+            while beta.connector.txbs and not ixBeta.rxbs :
+                beta.connector.serviceSends()
+                time.sleep(0.05)
+                alpha.serviceReceivesAllIx()
+                time.sleep(0.05)
+            msgIn = bytes(ixBeta.rxbs)
+            assert msgIn == msgOut
+            ixBeta.clearRxbs()
 
-    # build resonse
-    msgOut = (b'HTTP/1.1 200 OK\r\n'
-              b'Content-Length: 122\r\n'
-              b'Content-Type: application/json\r\n'
-              b'Date: Thu, 30 Apr 2015 19:37:17 GMT\r\n'
-              b'Server: IoBook.local\r\n\r\n'
-              b'{"content": null, "query": {"name": "fame"}, "verb": "GET", '
-              b'"url": "http://127.0.0.1:8080/echo?name=fame", "action": null}')
+            # build resonse
+            msgOut = (b'HTTP/1.1 200 OK\r\n'
+                      b'Content-Length: 122\r\n'
+                      b'Content-Type: application/json\r\n'
+                      b'Date: Thu, 30 Apr 2015 19:37:17 GMT\r\n'
+                      b'Server: IoBook.local\r\n\r\n'
+                      b'{"content": null, "query": {"name": "fame"}, "verb": "GET", '
+                      b'"url": "http://127.0.0.1:8080/echo?name=fame", "action": null}')
 
-    ixBeta.tx(msgOut)
-    while ixBeta.txbs or not beta.connector.rxbs:
-        alpha.serviceSendsAllIx()
-        time.sleep(0.05)
-        beta.connector.serviceReceives()
-        time.sleep(0.05)
-    msgIn = bytes(beta.connector.rxbs)
-    assert msgIn == msgOut
+            ixBeta.tx(msgOut)
+            while ixBeta.txbs or not beta.connector.rxbs:
+                alpha.serviceSendsAllIx()
+                time.sleep(0.05)
+                beta.connector.serviceReceives()
+                time.sleep(0.05)
+            msgIn = bytes(beta.connector.rxbs)
+            assert msgIn == msgOut
 
-    while beta.respondent.parser:
-        beta.respondent.parse()
+            while beta.respondent.parser:
+                beta.respondent.parse()
 
-    assert not beta.connector.rxbs
-    assert list(beta.respondent.headers.items()) ==  [('Content-Length', '122'),
-                                                      ('Content-Type', 'application/json'),
-                                                      ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'),
-                                                      ('Server', 'IoBook.local')]
+            assert not beta.connector.rxbs
+            assert list(beta.respondent.headers.items()) ==  [('Content-Length', '122'),
+                                                              ('Content-Type', 'application/json'),
+                                                              ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'),
+                                                              ('Server', 'IoBook.local')]
 
-    beta.respondent.dictify()  # convert JSON data in body
+            beta.respondent.dictify()  # convert JSON data in body
 
-    assert beta.respondent.body == (b'{"content": null, '
-                                           b'"query": {"name": "fame"}, '
-                                           b'"verb": "GET", "url'
-                                           b'": "http://127.0.0.1:8080/echo?name=fame", '
-                                           b'"action": null}')
-    assert beta.respondent.data == {'action': None,
-                                     'content': None,
-                                     'query': {'name': 'fame'},
-                                     'url': 'http://127.0.0.1:8080/echo?name=fame',
-                                     'verb': 'GET'}
-
-
-    alpha.close()
-    beta.connector.close()
+            assert beta.respondent.body == (b'{"content": null, '
+                                                   b'"query": {"name": "fame"}, '
+                                                   b'"verb": "GET", "url'
+                                                   b'": "http://127.0.0.1:8080/echo?name=fame", '
+                                                   b'"action": null}')
+            assert beta.respondent.data == {'action': None,
+                                             'content': None,
+                                             'query': {'name': 'fame'},
+                                             'url': 'http://127.0.0.1:8080/echo?name=fame',
+                                             'verb': 'GET'}
 
 
 def test_client_service_all_echo():
@@ -401,7 +391,7 @@ def test_client_service_all_echo():
                                  headers=headers,
                                  )
 
-    assert beta.connector.reopen()
+    assert beta.reopen()
     assert not beta.connector.accepted
     assert not beta.connector.connected
     assert not beta.connector.cutoff
@@ -501,7 +491,7 @@ def test_client_service_all_echo():
                                      'verb': 'GET'}
 
     alpha.close()
-    beta.connector.close()
+    beta.close()
 
 
 def test_client_pipeline_echo():
@@ -527,7 +517,7 @@ def test_client_pipeline_echo():
                                  headers=headers,
                                  )
 
-    assert beta.connector.reopen()
+    assert beta.reopen()
     assert not beta.connector.accepted
     assert not beta.connector.connected
     assert not beta.connector.cutoff
@@ -706,7 +696,7 @@ def test_client_pipeline_echo():
                                 }
 
     alpha.close()
-    beta.connector.close()
+    beta.close()
 
 
 
@@ -734,7 +724,7 @@ def test_client_pipeline_echo_simple():
                                  headers=headers,
                                  )
 
-    assert beta.connector.reopen()
+    assert beta.reopen()
     assert not beta.connector.accepted
     assert not beta.connector.connected
     assert not beta.connector.cutoff
@@ -860,7 +850,7 @@ def test_client_pipeline_echo_simple():
                         'error': None}
 
     alpha.close()
-    beta.connector.close()
+    beta.close()
 
 
 def test_client_echo_simple_host_port_path():
@@ -886,7 +876,7 @@ def test_client_echo_simple_host_port_path():
                                  headers=headers,
                                  )
 
-    assert beta.connector.reopen()
+    assert beta.reopen()
     assert not beta.connector.accepted
     assert not beta.connector.connected
     assert not beta.connector.cutoff
@@ -977,7 +967,7 @@ def test_client_echo_simple_host_port_path():
                         'error': None}
 
     alpha.close()
-    beta.connector.close()
+    beta.close()
 
 
 def test_client_pipline_echo_simple_path_scheme():
@@ -997,7 +987,7 @@ def test_client_pipline_echo_simple_path_scheme():
                                  reconnectable=True,  # do not close connection
                                  )
 
-    assert beta.connector.reopen()
+    assert beta.reopen()
     assert not beta.connector.accepted
     assert not beta.connector.connected
     assert not beta.connector.cutoff
@@ -1092,7 +1082,7 @@ def test_client_pipline_echo_simple_path_scheme():
                         'errored': False,
                         'error': None}
     alpha.close()
-    beta.connector.close()
+    beta.close()
 
 
 def test_client_pipeline_echo_simple_path_track():
@@ -1114,7 +1104,7 @@ def test_client_pipeline_echo_simple_path_track():
                                  reconnectable=True,  # do not close connection
                                  )
 
-    assert beta.connector.reopen()
+    assert beta.reopen()
     assert not beta.connector.accepted
     assert not beta.connector.connected
     assert not beta.connector.cutoff
@@ -1217,7 +1207,7 @@ def test_client_pipeline_echo_simple_path_track():
                         'error': None}
 
     alpha.close()
-    beta.connector.close()
+    beta.close()
 
 
 def test_client_pipeline_echo_json():
@@ -1240,7 +1230,7 @@ def test_client_pipeline_echo_json():
                                  reconnectable=True,  # do not close connection
                                  )
 
-    assert beta.connector.reopen()
+    assert beta.reopen()
     assert not beta.connector.accepted
     assert not beta.connector.connected
     assert not beta.connector.cutoff
@@ -1343,7 +1333,7 @@ def test_client_pipeline_echo_json():
                         'error': None}
 
     alpha.close()
-    beta.connector.close()
+    beta.close()
 
 
 def test_client_pipeline_sse_stream():
@@ -1368,7 +1358,7 @@ def test_client_pipeline_sse_stream():
                              reconnectable=True,  # passed through to connector
                              tymeout=1.0,  # passed through to connector
                              )
-    assert beta.connector.reopen()
+    assert beta.reopen()
     assert not beta.connector.accepted
     assert not beta.connector.connected
     assert not beta.connector.cutoff
@@ -1561,7 +1551,7 @@ def test_client_pipeline_sse_stream():
     assert event == {'id': '6', 'name': '', 'data': '11\n12'}
 
     alpha.close()
-    beta.connector.close()
+    beta.close()
 
 
 
@@ -1615,7 +1605,7 @@ def test_client_pipline_echo_simple_tls():
                           cafilepath=serverCafilepath,
                         )
 
-    assert beta.connector.reopen()
+    assert beta.reopen()
     assert not beta.connector.accepted
     assert not beta.connector.connected
     assert not beta.connector.cutoff
@@ -1713,7 +1703,7 @@ def test_client_pipline_echo_simple_tls():
                         'error': None}
 
     alpha.close()
-    beta.connector.close()
+    beta.close()
 
 
 def test_client_pipeline_echo_simple_path_tls():
@@ -1762,7 +1752,7 @@ def test_client_pipeline_echo_simple_path_tls():
                           cafilepath=serverCafilepath,
                         )
 
-    assert beta.connector.reopen()
+    assert beta.reopen()
     assert not beta.connector.accepted
     assert not beta.connector.connected
     assert not beta.connector.cutoff
@@ -1860,7 +1850,7 @@ def test_client_pipeline_echo_simple_path_tls():
                          'error': None}
 
     alpha.close()
-    beta.connector.close()
+    beta.close()
 
 
 def test_client_redirect_differnet_path():
@@ -1881,7 +1871,7 @@ def test_client_redirect_differnet_path():
                                  reconnectable=True,
                                  )
 
-    assert beta.connector.reopen()
+    assert beta.reopen()
     assert not beta.connector.accepted
     assert not beta.connector.connected
     assert not beta.connector.cutoff
@@ -1957,7 +1947,7 @@ def test_client_redirect_differnet_path():
                                        'error': None}]}
 
     alpha.close()
-    beta.connector.close()
+    beta.close()
 
 
 
@@ -1985,7 +1975,7 @@ def test_client_redirect_different_servers():
                                  reconnectable=True,
                                  )
 
-    assert beta.connector.reopen()
+    assert beta.reopen()
     assert not beta.connector.accepted
     assert not beta.connector.connected
     assert not beta.connector.cutoff
@@ -2062,7 +2052,7 @@ def test_client_redirect_different_servers():
 
     alpha.close()
     gamma.close()
-    beta.connector.close()
+    beta.close()
 
 
 
@@ -2125,7 +2115,7 @@ def test_client_redirect_different_servers_tls():
                           certpath=clientCertpath,
                           cafilepath=serverCafilepath,)
 
-    assert beta.connector.reopen()
+    assert beta.reopen()
     assert not beta.connector.accepted
     assert not beta.connector.connected
     assert not beta.connector.cutoff
@@ -2206,7 +2196,7 @@ def test_client_redirect_different_servers_tls():
 
     alpha.close()
     gamma.close()
-    beta.connector.close()
+    beta.close()
 
 
 def test_multipart_form():

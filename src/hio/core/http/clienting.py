@@ -5,26 +5,16 @@ hio.core.http.clienting module
 nonblocking http client
 """
 
-import sys
-import os
-import socket
-import errno
-import io
-from collections import deque, namedtuple
-import codecs
 import json
-import ssl
 import copy
 import random
-import datetime
-import time
 
+from collections import deque, namedtuple
 from urllib.parse import urlsplit, quote, quote_plus, unquote, unquote_plus
+from contextlib import contextmanager
 
 from ... import help
-from ...help import helping
 from ...base import tyming
-from .. import core
 from .. import coring
 from .. import tcp
 from . import httping
@@ -607,6 +597,36 @@ class Respondent(httping.Parsent):
         return
 
 
+
+@contextmanager
+def openClient(cls=None, **kwa):
+    """
+    Wrapper to create and open HTTP Client instances
+    When used in with statement block, calls .close() on exit of with block
+
+    Parameters:
+        cls is Class instance of subclass instance
+
+    Usage:
+        with openClient() as client0:
+            client0.accept()
+
+        with openClient(cls=Client) as client0:
+            client0.accept()
+
+    """
+    if cls is None:
+        cls = Client
+    try:
+        client = cls(**kwa)
+        client.reopen()
+
+        yield client
+
+    finally:
+        client.close()
+
+
 class Client():
     """
     Client class nonblocking HTTP client connection manager and HTTP client
@@ -807,7 +827,7 @@ class Client():
         self.respondent = respondent
 
 
-    def open(self):
+    def reopen(self):
         """
         Return result of .connector.reopen()
         """

@@ -11,7 +11,6 @@ import pytest
 from hio import help
 from hio.help import helping
 from hio.base import tyming
-from hio.core import wiring
 from hio.core import http
 
 
@@ -60,80 +59,71 @@ def test_server_with_bottle():
                     content=body)
         return data
 
-    alpha = http.Server(port = 6101,
-                          bufsize=131072,
-                          app=app,
-                          tymth=tymist.tymen(),)
-    assert alpha.servant.reopen()
-    assert alpha.servant.ha == ('0.0.0.0', 6101)
-    assert alpha.servant.eha == ('127.0.0.1', 6101)
+    with http.openServer(port = 6101, bufsize=131072, app=app, \
+                         tymth=tymist.tymen()) as alpha:
 
-    path = "http://{0}:{1}/".format('localhost', alpha.servant.eha[1])
-    beta = http.Client(bufsize=131072,
-                                 path=path,
-                                 reconnectable=True,
-                                 tymth=tymist.tymen(),
-                                 )
+        assert alpha.servant.ha == ('0.0.0.0', 6101)
+        assert alpha.servant.eha == ('127.0.0.1', 6101)
 
-    assert beta.connector.reopen()
-    assert not beta.connector.accepted
-    assert not beta.connector.connected
-    assert not beta.connector.cutoff
+        path = "http://{0}:{1}/".format('localhost', alpha.servant.eha[1])
 
-    request = dict([('method', u'GET'),
-                     ('path', u'/echo?name=fame'),
-                     ('qargs', dict()),
-                     ('fragment', u''),
-                     ('headers', dict([('Accept', 'application/json'),
-                                        ('Content-Length', 0)])),
-                    ])
+        with http.openClient(bufsize=131072, path=path, reconnectable=True, \
+                                     tymth=tymist.tymen(),) as beta:
 
-    beta.requests.append(request)
-    while (beta.requests or beta.connector.txbs or not beta.responses or
-           not alpha.idle()):
-        alpha.service()
-        time.sleep(0.05)
-        beta.service()
-        time.sleep(0.05)
-        tymist.tick(tock=0.1)
+            assert not beta.connector.accepted
+            assert not beta.connector.connected
+            assert not beta.connector.cutoff
 
-    assert beta.connector.accepted
-    assert beta.connector.connected
-    assert not beta.connector.cutoff
+            request = dict([('method', u'GET'),
+                             ('path', u'/echo?name=fame'),
+                             ('qargs', dict()),
+                             ('fragment', u''),
+                             ('headers', dict([('Accept', 'application/json'),
+                                                ('Content-Length', 0)])),
+                            ])
 
-    assert len(alpha.servant.ixes) == 1
-    assert len(alpha.reqs) == 1
-    assert len(alpha.reps) == 1
-    requestant = list(alpha.reqs.values())[0]
-    assert requestant.method == request['method']
-    assert requestant.url == request['path']
-    assert requestant.headers == help.Hict([('Host', 'localhost:6101'),
-                                                 ('Accept-Encoding', 'identity'),
-                                                 ('Accept', 'application/json'),
-                                                 ('Content-Length', '0')])
+            beta.requests.append(request)
+            while (beta.requests or beta.connector.txbs or not beta.responses or
+                   not alpha.idle()):
+                alpha.service()
+                time.sleep(0.05)
+                beta.service()
+                time.sleep(0.05)
+                tymist.tick(tock=0.1)
 
-    assert len(beta.responses) == 1
-    response = beta.responses.popleft()
-    assert response['status'] == 200
-    assert response['reason'] == 'OK'
-    assert response['body'] == (b'{"verb": "GET", "url": "http://localhost:6101/echo?name=fame", "'
-                                b'action": null, "query": {"name": "fame"}, "form": {}, "content":'
-                                b' null}')
+            assert beta.connector.accepted
+            assert beta.connector.connected
+            assert not beta.connector.cutoff
 
-    assert response['data'] == {'action': None,
-                                'content': None,
-                                'form': {},
-                                'query': {'name': 'fame'},
-                                'url': 'http://localhost:6101/echo?name=fame',
-                                'verb': 'GET'}
+            assert len(alpha.servant.ixes) == 1
+            assert len(alpha.reqs) == 1
+            assert len(alpha.reps) == 1
+            requestant = list(alpha.reqs.values())[0]
+            assert requestant.method == request['method']
+            assert requestant.url == request['path']
+            assert requestant.headers == help.Hict([('Host', 'localhost:6101'),
+                                                         ('Accept-Encoding', 'identity'),
+                                                         ('Accept', 'application/json'),
+                                                         ('Content-Length', '0')])
 
-    responder = list(alpha.reps.values())[0]
-    assert responder.status.startswith(str(response['status']))
-    assert responder.headers == response['headers']
+            assert len(beta.responses) == 1
+            response = beta.responses.popleft()
+            assert response['status'] == 200
+            assert response['reason'] == 'OK'
+            assert response['body'] == (b'{"verb": "GET", "url": "http://localhost:6101/echo?name=fame", "'
+                                        b'action": null, "query": {"name": "fame"}, "form": {}, "content":'
+                                        b' null}')
 
-    alpha.servant.close()
-    beta.connector.close()
+            assert response['data'] == {'action': None,
+                                        'content': None,
+                                        'form': {},
+                                        'query': {'name': 'fame'},
+                                        'url': 'http://localhost:6101/echo?name=fame',
+                                        'verb': 'GET'}
 
+            responder = list(alpha.reps.values())[0]
+            assert responder.status.startswith(str(response['status']))
+            assert responder.headers == response['headers']
 
 
 def test_server_with_bottle_tls():
@@ -189,7 +179,7 @@ def test_server_with_bottle_tls():
                           cafilepath=clientCafilepath,
                           tymth=tymist.tymen(),
                           )
-    assert alpha.servant.reopen()
+    assert alpha.reopen()
     assert alpha.servant.ha == ('0.0.0.0', 6101)
     assert alpha.servant.eha == ('127.0.0.1', 6101)
 
@@ -214,7 +204,7 @@ def test_server_with_bottle_tls():
                             reconnectable=True,
                             )
 
-    assert beta.connector.reopen()
+    assert beta.reopen()
     assert not beta.connector.accepted
     assert not beta.connector.connected
     assert not beta.connector.cutoff
@@ -272,8 +262,8 @@ def test_server_with_bottle_tls():
     assert responder.status.startswith(str(response['status']))
     assert responder.headers == response['headers']
 
-    alpha.servant.close()
-    beta.connector.close()
+    alpha.close()
+    beta.close()
 
 
 def test_request_with_no_content_length():
@@ -317,7 +307,7 @@ def test_request_with_no_content_length():
                         bufsize=131072,
                           app=app,
                           tymth=tymist.tymen(),)
-    assert alpha.servant.reopen()
+    assert alpha.reopen()
     assert alpha.servant.ha == ('0.0.0.0', 6101)
     assert alpha.servant.eha == ('127.0.0.1', 6101)
 
@@ -328,7 +318,7 @@ def test_request_with_no_content_length():
                                  tymth=tymist.tymen(),
                                  )
 
-    assert beta.connector.reopen()
+    assert beta.reopen()
     assert not beta.connector.accepted
     assert not beta.connector.connected
     assert not beta.connector.cutoff
@@ -383,8 +373,8 @@ def test_request_with_no_content_length():
     assert responder.status.startswith(str(response['status']))
     assert responder.headers == response['headers']
 
-    alpha.servant.close()
-    beta.connector.close()
+    alpha.close()
+    beta.close()
 
 
 def test_connection_non_persistent():
@@ -426,7 +416,7 @@ def test_connection_non_persistent():
                         bufsize=131072,
                           app=app,
                           tymth=tymist.tymen(),)
-    assert alpha.servant.reopen()
+    assert alpha.reopen()
     assert alpha.servant.ha == ('0.0.0.0', 6101)
     assert alpha.servant.eha == ('127.0.0.1', 6101)
 
@@ -437,7 +427,7 @@ def test_connection_non_persistent():
                                  tymth=tymist.tymen(),
                                  )
 
-    assert beta.connector.reopen()
+    assert beta.reopen()
     assert not beta.connector.accepted
     assert not beta.connector.connected
     assert not beta.connector.cutoff
@@ -494,8 +484,8 @@ def test_connection_non_persistent():
     assert responder.status.startswith(str(response['status']))
     assert responder.headers == response['headers']
 
-    alpha.servant.close()
-    beta.connector.close()
+    alpha.close()
+    beta.close()
 
 
 
@@ -540,7 +530,7 @@ def test_sse_stream():
                         bufsize=131072,
                           app=app,
                           tymth=tymist.tymen(),)
-    assert alpha.servant.reopen()
+    assert alpha.reopen()
     assert alpha.servant.ha == ('0.0.0.0', 6101)
     assert alpha.servant.eha == ('127.0.0.1', 6101)
 
@@ -628,8 +618,8 @@ def test_sse_stream():
     assert beta.events[-1] == {'id': '9', 'name': '', 'data': 'END'}
     beta.events.clear()
 
-    alpha.servant.close()
-    beta.connector.close()
+    alpha.close()
+    beta.close()
 
 
 def test_sse_stream_tls():
@@ -688,7 +678,7 @@ def test_sse_stream_tls():
                           tymth=tymist.tymen(),
                           app=app,
                           )
-    assert alpha.servant.reopen()
+    assert alpha.reopen()
     assert alpha.servant.ha == ('0.0.0.0', 6101)
     assert alpha.servant.eha == ('127.0.0.1', 6101)
 
@@ -713,7 +703,7 @@ def test_sse_stream_tls():
                         tymth=tymist.tymen(),
                       )
 
-    assert beta.connector.reopen()
+    assert beta.reopen()
     assert not beta.connector.accepted
     assert not beta.connector.connected
     assert not beta.connector.cutoff
@@ -788,8 +778,8 @@ def test_sse_stream_tls():
     beta.events.clear()
 
 
-    alpha.servant.close()
-    beta.connector.close()
+    alpha.close()
+    beta.close()
 
 
 if __name__ == '__main__':

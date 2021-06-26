@@ -22,7 +22,7 @@ logger = help.ogler.getLogger()
 @contextmanager
 def openClient(cls=None, **kwa):
     """
-    Wrapper to create and open Client instances
+    Wrapper to create and open TCP Client instances
     When used in with statement block, calls .close() on exit of with block
 
     Parameters:

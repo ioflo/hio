@@ -7,26 +7,15 @@ nonblocking http server
 
 
 import sys
-import os
-import socket
-import errno
 import io
-from collections import deque
-import codecs
 import json
-import ssl
 import copy
-import random
 import datetime
 
-from urllib.parse import urlsplit, quote, quote_plus, unquote, unquote_plus
-
-from  multidict import CIMultiDict as cimdict
-
+from urllib.parse import urlsplit, unquote
+from contextlib import contextmanager
 
 from ... import help
-from ...help import helping
-from ...base import tyming
 from .. import tcp
 # from ..tcp import Server, ServerTls
 from . import httping
@@ -499,6 +488,36 @@ class Responder():
                     self.write(msg)
                     if self.length is not None and self.size >= self.length:
                         self.ended = True
+
+
+@contextmanager
+def openServer(cls=None, **kwa):
+    """
+    Wrapper to create and open HTTP Server instances
+    When used in with statement block, calls .close() on exit of with block
+
+    Parameters:
+        cls is Class instance of subclass instance
+
+    Usage:
+        with openServer() as server0:
+            server0.
+
+        with openServer(cls=BareServer) as server0:
+            server0.
+
+    """
+    cls = cls if cls is not None else Server
+
+    try:
+        server = cls(**kwa)
+        server.reopen()  #  opens accept socket
+
+        yield server
+
+    finally:
+        server.close()
+
 
 
 class Server():
@@ -1115,9 +1134,15 @@ class BareServer():
                                  tymeout=timeout,
                                  **kwa)
 
-
         self.secured = secured
         self.servant = servant
+
+
+    def reopen(self):
+        """
+        Return result of .servant.reopen()
+        """
+        return self.servant.reopen()
 
 
     def idle(self):
@@ -1131,6 +1156,17 @@ class BareServer():
                 idle = False
                 break
         return idle
+
+
+    def close(self):
+        """
+        Close all  ixes for all stewards
+        """
+        for ca, steward in list(self.stewards.items()):
+            self.closeConnection(ca)
+
+        # just in case there is an orphan ix
+        self.servant.close()
 
 
     def closeConnection(self, ca):

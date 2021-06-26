@@ -20,11 +20,9 @@ import ssl
 from collections import deque
 from contextlib import contextmanager
 
-
 from ... import help
 from ...base import tyming, doing
 from .. import coring
-
 
 logger = help.ogler.getLogger()
 
@@ -32,7 +30,7 @@ logger = help.ogler.getLogger()
 @contextmanager
 def openServer(cls=None, **kwa):
     """
-    Wrapper to create and open Server instances
+    Wrapper to create and open TCP Server instances
     When used in with statement block, calls .close() on exit of with block
 
     Parameters:

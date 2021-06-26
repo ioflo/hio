@@ -271,7 +271,7 @@ def pauseJsonGenerator():
         yield b''
         time.sleep(0.1)
     yield json.dumps(dict(name="John Smith",
-                          country="United States")), "ascii").encode("utf-8")
+                          country="United States"), "ascii").encode("utf-8")
 
 
 class ExamplePauseEnd:
