@@ -292,6 +292,7 @@ class Responder():
         self.size = 0  # number of body bytes sent so far
         self.evented = False  # True if response is event-stream
 
+
     def close(self):
         """
         Close any resources
@@ -300,6 +301,7 @@ class Responder():
             self.write(b'')  # in case chunked send empty chunk to terminate
         self.ended = True
         self.closed = True
+
 
     def reset(self, environ, chunkable=None):
         """
@@ -320,6 +322,7 @@ class Responder():
         self.length = None
         self.size = 0
 
+
     def build(self):
         """
         Return built head bytes from .status and .headers
@@ -328,12 +331,14 @@ class Responder():
         lines = []
 
         _status = getattr(self.iterator, '_status', None)  # if AttributiveGenerator
-        status = _status if _status is not None else self.status  # override
+        if _status is not None:  # override
+            self.status = _status
 
-        if isinstance(status, int):
-            status = "{0} {1}".format(status, httping.STATUS_DESCRIPTIONS[status])
+        if isinstance(self.status, int):  # replace int with str
+            self.status = "{0} {1}".format(self.status,
+                                           httping.STATUS_DESCRIPTIONS[self.status])
 
-        startLine = "{0} {1}".format(self.HttpVersionString, status)
+        startLine = "{0} {1}".format(self.HttpVersionString, self.status)
         try:
             startLine = startLine.encode('ascii')
         except UnicodeEncodeError:
@@ -361,6 +366,7 @@ class Responder():
 
         return head
 
+
     def write(self, msg):
         """
         WSGI write callback This writes out the headers the first time its called
@@ -386,13 +392,15 @@ class Responder():
         if msg:
             self.incomer.tx(msg)
 
+
     def start(self, status, response_headers, exc_info=None):
         """
         WSGI application start_response callable
 
         Parameters:
 
-        status is string of status code and status reason '200 OK'
+        status is string of status code and status reason '200 OK' or simple
+            status code int which will be replaced with string
 
         response_headers is list of tuples of strings of the form (field, value)
                           one tuple for each header example:
@@ -449,6 +457,7 @@ class Responder():
 
         self.started = True
         return self.write
+
 
     def service(self):
         """
@@ -757,7 +766,7 @@ class Server():
         """
         Service pending requestants
         """
-        for ca, requestant in self.reqs.items():
+        for ca, requestant in list(self.reqs.items()):
             if requestant.parser:
                 try:
                     requestant.parse()
@@ -799,7 +808,7 @@ class Server():
         """
         Service pending responders
         """
-        for ca, responder in self.reps.items():
+        for ca, responder in list(self.reps.items()):
             if responder.closed:
                 self.closeConnection(ca)
                 continue

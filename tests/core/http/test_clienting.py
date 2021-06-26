@@ -368,9 +368,9 @@ def test_client_request_echo():
                                              'verb': 'GET'}
 
 
-def test_client_service_all_echo():
+def test_client_service_echo():
     """
-    Test Client serviceAll echo nonblocking
+    Test Client service echo nonblocking
     """
     alpha = tcp.Server(port = 6101, bufsize=131072)
     assert alpha.reopen()

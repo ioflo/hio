@@ -15,7 +15,7 @@ from contextlib import contextmanager
 
 from ... import help
 from ...base import tyming
-from .. import coring
+from .. import coring, wiring
 from .. import tcp
 from . import httping
 
@@ -1148,7 +1148,7 @@ class Client():
         Usage:
         response = yield from .serviceWhileGen(tymeout=0.5)
 
-        Runs one iteration of serviceAll on next and yields empty
+        Runs one iteration of .service() on next and yields empty
         bytes while not done.
 
         Assumes associated tymist is advanced and realtime sleep delay
@@ -1205,8 +1205,8 @@ def backendRequest(tymth, *,
         else:
             wl = None
 
-        headers = core.Hict([('Accept', 'application/json'),
-                          ('Connection', 'close')])
+        headers = help.Hict([('Accept', 'application/json'),
+                             ('Connection', 'close')])
 
         client = Client(bufsize=131072,
                              wl=wl,
@@ -1226,14 +1226,14 @@ def backendRequest(tymth, *,
         client.transmit()
         # assumes store clock is advanced elsewhere
         tymer = tyming.Tymer(tymth=tymth, duration=tymeout)
-        while ((client.requests or client.connector.txes or not client.responses)
+        while ((client.requests or client.connector.txbs or not client.responses)
                and not tymer.expired):
             try:
                 client.service()
             except Exception as ex:
                 logger.error("Error: Servicing backend client. '{0}'\n".format(ex))
                 raise ex
-            yield b''  # this is eventually yielded by wsgi app while waiting
+            yield b''  # yield from yields up to wsgi app while waiting
 
         response = None  # in case timed out
         if client.responses:
