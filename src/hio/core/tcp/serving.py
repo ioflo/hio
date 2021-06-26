@@ -136,12 +136,15 @@ class Acceptor(tyming.Tymee):
             self.ss.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self.bs)
 
         self.ss.setblocking(0) #non blocking socket
+        # bind to listen socket (host, port) to receive connections
+        self.ss.bind(self.ha)
+        self.ss.listen(5)
 
-        try:  # bind to listen socket (host, port) to receive connections
-            self.ss.bind(self.ha)
-            self.ss.listen(5)
-        except socket.error as ex:
-            return False
+        #try:  # bind to listen socket (host, port) to receive connections
+            #self.ss.bind(self.ha)
+            #self.ss.listen(5)
+        #except socket.error as ex:
+            #return False
 
         self.ha = self.ss.getsockname()  # get resolved ha after bind
         self.opened = True
