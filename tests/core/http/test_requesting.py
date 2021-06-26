@@ -33,112 +33,106 @@ def test_requester_respondent_echo():
     use manual echo server
     """
     # Test tcp connection
-    alpha = tcp.Server(port = 6101, bufsize=131072)
-    assert alpha.reopen()
-    assert alpha.ha == ('0.0.0.0', 6101)
-    assert alpha.eha == ('127.0.0.1', 6101)
+    with tcp.openServer(port = 6101, bufsize=131072) as alpha:
+        assert alpha.ha == ('0.0.0.0', 6101)
+        assert alpha.eha == ('127.0.0.1', 6101)
 
-    beta = tcp.Client(ha=alpha.eha, bufsize=131072,)
-    assert beta.reopen()
-    assert not beta.accepted
-    assert not beta.connected
-    assert not beta.cutoff
+        with tcp.openClient(ha=alpha.eha, bufsize=131072,) as beta:
+            assert not beta.accepted
+            assert not beta.connected
+            assert not beta.cutoff
 
-    while True:
-        beta.serviceConnect()
-        alpha.serviceConnects()
-        if beta.connected and beta.ca in alpha.ixes:
-            break
-        time.sleep(0.05)
+            while True:
+                beta.serviceConnect()
+                alpha.serviceConnects()
+                if beta.connected and beta.ca in alpha.ixes:
+                    break
+                time.sleep(0.05)
 
-    assert beta.accepted
-    assert beta.connected
-    assert not beta.cutoff
-    assert beta.ca == beta.cs.getsockname()
-    assert beta.ha == beta.cs.getpeername()
-    assert alpha.eha == beta.ha
+            assert beta.accepted
+            assert beta.connected
+            assert not beta.cutoff
+            assert beta.ca == beta.cs.getsockname()
+            assert beta.ha == beta.cs.getpeername()
+            assert alpha.eha == beta.ha
 
-    ixBeta = alpha.ixes[beta.ca]
-    assert ixBeta.ca is not None
-    assert ixBeta.cs is not None
-    assert ixBeta.cs.getsockname() == beta.cs.getpeername()
-    assert ixBeta.cs.getpeername() == beta.cs.getsockname()
-    assert ixBeta.ca == beta.ca
-    assert ixBeta.ha == beta.ha
+            ixBeta = alpha.ixes[beta.ca]
+            assert ixBeta.ca is not None
+            assert ixBeta.cs is not None
+            assert ixBeta.cs.getsockname() == beta.cs.getpeername()
+            assert ixBeta.cs.getpeername() == beta.cs.getsockname()
+            assert ixBeta.ca == beta.ca
+            assert ixBeta.ha == beta.ha
 
-    # build http request
-    host = '127.0.0.1'
-    port = 6101
-    method = 'GET'
-    path = '/echo?name=fame'
-    # GET /echo?name=fame from 127.0.0.1:6101
-    headers = dict([('Accept', 'application/json')])
-    request = clienting.Requester(hostname=host,
-                                 port=port,
-                                 method=method,
-                                 path=path,
-                                 headers=headers)
-    betaMsgOut = request.rebuild()
-    assert request.lines == [b'GET /echo?name=fame HTTP/1.1',
-                                b'Host: 127.0.0.1:6101',
-                                b'Accept-Encoding: identity',
-                                b'Accept: application/json',
-                                b'',
-                                b'']
+            # build http request
+            host = '127.0.0.1'
+            port = 6101
+            method = 'GET'
+            path = '/echo?name=fame'
+            # GET /echo?name=fame from 127.0.0.1:6101
+            headers = dict([('Accept', 'application/json')])
+            request = clienting.Requester(hostname=host,
+                                         port=port,
+                                         method=method,
+                                         path=path,
+                                         headers=headers)
+            betaMsgOut = request.rebuild()
+            assert request.lines == [b'GET /echo?name=fame HTTP/1.1',
+                                        b'Host: 127.0.0.1:6101',
+                                        b'Accept-Encoding: identity',
+                                        b'Accept: application/json',
+                                        b'',
+                                        b'']
 
-    assert request.head == betaMsgOut  # only headers no body
-    assert request.head == (b'GET /echo?name=fame HTTP/1.1\r\nHost: 127.0.0.1:6101\r\nAccept-Encoding: ide'
-                            b'ntity\r\nAccept: application/json\r\n\r\n')
-    assert betaMsgOut == (b'GET /echo?name=fame HTTP/1.1\r\nHost: 127.0.0.1:6101\r\nAccept-Encoding: ide'
-                      b'ntity\r\nAccept: application/json\r\n\r\n')
+            assert request.head == betaMsgOut  # only headers no body
+            assert request.head == (b'GET /echo?name=fame HTTP/1.1\r\nHost: 127.0.0.1:6101\r\nAccept-Encoding: ide'
+                                    b'ntity\r\nAccept: application/json\r\n\r\n')
+            assert betaMsgOut == (b'GET /echo?name=fame HTTP/1.1\r\nHost: 127.0.0.1:6101\r\nAccept-Encoding: ide'
+                              b'ntity\r\nAccept: application/json\r\n\r\n')
 
-    # Beta sends to Alpha
-    beta.tx(betaMsgOut)
-    while beta.txbs and not ixBeta.rxbs :
-        beta.serviceSends()
-        time.sleep(0.05)
-        alpha.serviceReceivesAllIx()
-        time.sleep(0.05)
-    alphaMsgIn = bytes(ixBeta.rxbs)
-    assert alphaMsgIn == betaMsgOut
-    ixBeta.clearRxbs()
+            # Beta sends to Alpha
+            beta.tx(betaMsgOut)
+            while beta.txbs and not ixBeta.rxbs :
+                beta.serviceSends()
+                time.sleep(0.05)
+                alpha.serviceReceivesAllIx()
+                time.sleep(0.05)
+            alphaMsgIn = bytes(ixBeta.rxbs)
+            assert alphaMsgIn == betaMsgOut
+            ixBeta.clearRxbs()
 
-    # Alpha responds to Beta
-    alphaMsgOut = b'HTTP/1.1 200 OK\r\nContent-Length: 122\r\nContent-Type: application/json\r\nDate: Thu, 30 Apr 2015 19:37:17 GMT\r\nServer: IoBook.local\r\n\r\n{"content": null, "query": {"name": "fame"}, "verb": "GET", "url": "http://127.0.0.1:8080/echo?name=fame", "action": null}'
-    ixBeta.tx(alphaMsgOut)
-    while ixBeta.txbs or not beta.rxbs:
-        alpha.serviceSendsAllIx()
-        time.sleep(0.05)
-        beta.serviceReceives()
-        time.sleep(0.05)
-    betaMsgIn = bytes(beta.rxbs)
-    assert betaMsgIn == alphaMsgOut
+            # Alpha responds to Beta
+            alphaMsgOut = b'HTTP/1.1 200 OK\r\nContent-Length: 122\r\nContent-Type: application/json\r\nDate: Thu, 30 Apr 2015 19:37:17 GMT\r\nServer: IoBook.local\r\n\r\n{"content": null, "query": {"name": "fame"}, "verb": "GET", "url": "http://127.0.0.1:8080/echo?name=fame", "action": null}'
+            ixBeta.tx(alphaMsgOut)
+            while ixBeta.txbs or not beta.rxbs:
+                alpha.serviceSendsAllIx()
+                time.sleep(0.05)
+                beta.serviceReceives()
+                time.sleep(0.05)
+            betaMsgIn = bytes(beta.rxbs)
+            assert betaMsgIn == alphaMsgOut
 
-    response = clienting.Respondent(msg=beta.rxbs, method=method)
-    while response.parser:
-        response.parse()
-    assert not beta.rxbs  # fully extracted
+            response = clienting.Respondent(msg=beta.rxbs, method=method)
+            while response.parser:
+                response.parse()
+            assert not beta.rxbs  # fully extracted
 
-    assert list(response.headers.items()) == [('Content-Length', '122'),
-                                            ('Content-Type', 'application/json'),
-                                            ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'),
-                                            ('Server', 'IoBook.local')]
+            assert list(response.headers.items()) == [('Content-Length', '122'),
+                                                    ('Content-Type', 'application/json'),
+                                                    ('Date', 'Thu, 30 Apr 2015 19:37:17 GMT'),
+                                                    ('Server', 'IoBook.local')]
 
-    assert response.body ==  (b'{"content": null, "query": {"name": "fame"}, "verb": "GET", "url'
-                                     b'": "http://127.0.0.1:8080/echo?name=fame", "action": null}')
+            assert response.body ==  (b'{"content": null, "query": {"name": "fame"}, "verb": "GET", "url'
+                                             b'": "http://127.0.0.1:8080/echo?name=fame", "action": null}')
 
-    response.dictify()  # converts response.data to dict()
+            response.dictify()  # converts response.data to dict()
 
-    assert response.data == {'action': None,
-                                     'content': None,
-                                     'query': {'name': 'fame'},
-                                     'url': 'http://127.0.0.1:8080/echo?name=fame',
-                                     'verb': 'GET'}
-
-    alpha.close()
-    beta.close()
+            assert response.data == {'action': None,
+                                             'content': None,
+                                             'query': {'name': 'fame'},
+                                             'url': 'http://127.0.0.1:8080/echo?name=fame',
+                                             'verb': 'GET'}
     """End Test"""
-
 
 
 def test_requester_respondent_echo_tls():

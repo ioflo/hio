@@ -170,100 +170,84 @@ def test_server_with_bottle_tls():
     serverCertpath = certdirpath + '/server_cert.pem'  # local server public cert
     clientCafilepath = certdirpath + '/client.pem' # remote client public cert
 
-    alpha = http.Server(port = 6101,
-                          bufsize=131072,
-                          app=app,
-                          scheme='https',
-                          keypath=serverKeypath,
-                          certpath=serverCertpath,
-                          cafilepath=clientCafilepath,
-                          tymth=tymist.tymen(),
-                          )
-    assert alpha.reopen()
-    assert alpha.servant.ha == ('0.0.0.0', 6101)
-    assert alpha.servant.eha == ('127.0.0.1', 6101)
+    with http.openServer(port = 6101, bufsize=131072, scheme='https', \
+            keypath=serverKeypath, certpath=serverCertpath, \
+            cafilepath=clientCafilepath, app=app, tymth=tymist.tymen()) as alpha:
 
-    #clientKeypath = '/etc/pki/tls/certs/client_key.pem'  # local client private key
-    #clientCertpath = '/etc/pki/tls/certs/client_cert.pem'  # local client public cert
-    #serverCafilepath = '/etc/pki/tls/certs/server.pem' # remote server public cert
+        assert alpha.servant.ha == ('0.0.0.0', 6101)
+        assert alpha.servant.eha == ('127.0.0.1', 6101)
 
-    clientKeypath = certdirpath + '/client_key.pem'  # local client private key
-    clientCertpath = certdirpath + '/client_cert.pem'  # local client public cert
-    serverCafilepath = certdirpath + '/server.pem' # remote server public cert
+        #clientKeypath = '/etc/pki/tls/certs/client_key.pem'  # local client private key
+        #clientCertpath = '/etc/pki/tls/certs/client_cert.pem'  # local client public cert
+        #serverCafilepath = '/etc/pki/tls/certs/server.pem' # remote server public cert
 
-    path = "https://{0}:{1}/".format('localhost', alpha.servant.eha[1])
+        clientKeypath = certdirpath + '/client_key.pem'  # local client private key
+        clientCertpath = certdirpath + '/client_cert.pem'  # local client public cert
+        serverCafilepath = certdirpath + '/server.pem' # remote server public cert
 
-    beta = http.Client(bufsize=131072,
-                            path=path,
-                            scheme='https',
-                            certedhost=serverCertCommonName,
-                            keypath=clientKeypath,
-                            certpath=clientCertpath,
-                            cafilepath=serverCafilepath,
-                            tymth=tymist.tymen(),
-                            reconnectable=True,
-                            )
+        path = "https://{0}:{1}/".format('localhost', alpha.servant.eha[1])
 
-    assert beta.reopen()
-    assert not beta.connector.accepted
-    assert not beta.connector.connected
-    assert not beta.connector.cutoff
+        with http.openClient(bufsize=131072, path=path, scheme='https', \
+                certedhost=serverCertCommonName, keypath=clientKeypath, \
+                certpath=clientCertpath, cafilepath=serverCafilepath, \
+                reconnectable=True, tymth=tymist.tymen(),) as beta:
 
-    request = dict([('method', u'GET'),
-                     ('path', u'/echo?name=fame'),
-                     ('qargs', dict()),
-                     ('fragment', u''),
-                     ('headers', dict([('Accept', 'application/json'),
-                                        ('Content-Length', 0)])),
-                    ])
+            assert not beta.connector.accepted
+            assert not beta.connector.connected
+            assert not beta.connector.cutoff
 
-    beta.requests.append(request)
-    while (beta.requests or beta.connector.txbs or not beta.responses or
-           not alpha.idle()):
-        alpha.service()
-        time.sleep(0.05)
-        beta.service()
-        time.sleep(0.05)
-        tymist.tick(tock=0.1)
+            request = dict([('method', u'GET'),
+                             ('path', u'/echo?name=fame'),
+                             ('qargs', dict()),
+                             ('fragment', u''),
+                             ('headers', dict([('Accept', 'application/json'),
+                                                ('Content-Length', 0)])),
+                            ])
 
-    assert beta.connector.accepted
-    assert beta.connector.connected
-    assert not beta.connector.cutoff
+            beta.requests.append(request)
+            while (beta.requests or beta.connector.txbs or not beta.responses or
+                   not alpha.idle()):
+                alpha.service()
+                time.sleep(0.05)
+                beta.service()
+                time.sleep(0.05)
+                tymist.tick(tock=0.1)
 
-    assert len(alpha.servant.ixes) == 1
-    assert len(alpha.reqs) == 1
-    assert len(alpha.reps), 1
-    requestant = list(alpha.reqs.values())[0]
-    assert requestant.method == request['method']
-    assert requestant.url, request['path']
-    assert requestant.headers == help.Hict([('Host', 'localhost:6101'),
-                                         ('Accept-Encoding', 'identity'),
-                                         ('Accept', 'application/json'),
-                                         ('Content-Length', '0')])
+            assert beta.connector.accepted
+            assert beta.connector.connected
+            assert not beta.connector.cutoff
 
-    assert len(beta.responses) == 1
-    response = beta.responses.popleft()
-    assert response['status'] == 200
-    assert response['reason'] == 'OK'
-    assert response['body'] == (b'{"verb": "GET", '
-                                b'"url": "https://localhost:6101/echo?name=fame", '
-                                b'"action": null, '
-                                b'"query": {"name": "fame"}, '
-                                b'"form": {}, '
-                                b'"content": null}')
-    assert response['data'] == {'action': None,
-                                'content': None,
-                                'form': {},
-                                'query': {'name': 'fame'},
-                                'url': 'https://localhost:6101/echo?name=fame',
-                                'verb': 'GET'}
+            assert len(alpha.servant.ixes) == 1
+            assert len(alpha.reqs) == 1
+            assert len(alpha.reps), 1
+            requestant = list(alpha.reqs.values())[0]
+            assert requestant.method == request['method']
+            assert requestant.url, request['path']
+            assert requestant.headers == help.Hict([('Host', 'localhost:6101'),
+                                                 ('Accept-Encoding', 'identity'),
+                                                 ('Accept', 'application/json'),
+                                                 ('Content-Length', '0')])
 
-    responder = list(alpha.reps.values())[0]
-    assert responder.status.startswith(str(response['status']))
-    assert responder.headers == response['headers']
+            assert len(beta.responses) == 1
+            response = beta.responses.popleft()
+            assert response['status'] == 200
+            assert response['reason'] == 'OK'
+            assert response['body'] == (b'{"verb": "GET", '
+                                        b'"url": "https://localhost:6101/echo?name=fame", '
+                                        b'"action": null, '
+                                        b'"query": {"name": "fame"}, '
+                                        b'"form": {}, '
+                                        b'"content": null}')
+            assert response['data'] == {'action': None,
+                                        'content': None,
+                                        'form': {},
+                                        'query': {'name': 'fame'},
+                                        'url': 'https://localhost:6101/echo?name=fame',
+                                        'verb': 'GET'}
 
-    alpha.close()
-    beta.close()
+            responder = list(alpha.reps.values())[0]
+            assert responder.status.startswith(str(response['status']))
+            assert responder.headers == response['headers']
 
 
 def test_request_with_no_content_length():
@@ -302,79 +286,70 @@ def test_request_with_no_content_length():
                     content=body)
         return data
 
+    with http.openServer(port = 6101, bufsize=131072, app=app, \
+                         tymth=tymist.tymen()) as alpha:
 
-    alpha = http.Server(port = 6101,
-                        bufsize=131072,
-                          app=app,
-                          tymth=tymist.tymen(),)
-    assert alpha.reopen()
-    assert alpha.servant.ha == ('0.0.0.0', 6101)
-    assert alpha.servant.eha == ('127.0.0.1', 6101)
+        assert alpha.servant.ha == ('0.0.0.0', 6101)
+        assert alpha.servant.eha == ('127.0.0.1', 6101)
 
-    path = "http://{0}:{1}/".format('localhost', alpha.servant.eha[1])
-    beta = http.Client(bufsize=131072,
-                       path=path,
-                                 reconnectable=True,
-                                 tymth=tymist.tymen(),
-                                 )
+        path = "http://{0}:{1}/".format('localhost', alpha.servant.eha[1])
 
-    assert beta.reopen()
-    assert not beta.connector.accepted
-    assert not beta.connector.connected
-    assert not beta.connector.cutoff
+        with http.openClient(bufsize=131072, path=path, reconnectable=True, \
+                                     tymth=tymist.tymen(),) as beta:
 
-    request = dict([('method', u'GET'),
-                     ('path', u'/echo?name=fame'),
-                     ('qargs', dict()),
-                     ('fragment', u''),
-                     ('headers', dict([('Accept', 'application/json'),
-                                        ])),
-                    ])
+            assert not beta.connector.accepted
+            assert not beta.connector.connected
+            assert not beta.connector.cutoff
 
-    beta.requests.append(request)
-    while (beta.requests or beta.connector.txbs or not beta.responses or
-           not alpha.idle()):
-        alpha.service()
-        time.sleep(0.05)
-        beta.service()
-        time.sleep(0.05)
-        tymist.tick(tock=0.1)
+            request = dict([('method', u'GET'),
+                             ('path', u'/echo?name=fame'),
+                             ('qargs', dict()),
+                             ('fragment', u''),
+                             ('headers', dict([('Accept', 'application/json'),
+                                                ])),
+                            ])
 
-    assert beta.connector.accepted
-    assert beta.connector.connected
-    assert not beta.connector.cutoff
+            beta.requests.append(request)
+            while (beta.requests or beta.connector.txbs or not beta.responses or
+                   not alpha.idle()):
+                alpha.service()
+                time.sleep(0.05)
+                beta.service()
+                time.sleep(0.05)
+                tymist.tick(tock=0.1)
 
-    assert len(alpha.servant.ixes) == 1
-    assert len(alpha.reqs) == 1
-    assert len(alpha.reps) == 1
-    requestant = list(alpha.reqs.values())[0]
-    assert requestant.method == request['method']
-    assert requestant.url == request['path']
-    assert requestant.headers == help.Hict([('Host', 'localhost:6101'),
-                                                 ('Accept-Encoding', 'identity'),
-                                                 ('Accept', 'application/json')])
+            assert beta.connector.accepted
+            assert beta.connector.connected
+            assert not beta.connector.cutoff
 
-    assert len(beta.responses) == 1
-    response = beta.responses.popleft()
-    assert response['status'] == 200
-    assert response['reason'] == 'OK'
-    assert response['body'] == (b'{"verb": "GET", "url": "http://localhost:6101/echo?name=fame", "'
-                                b'action": null, "query": {"name": "fame"}, "form": {}, "content":'
-                                b' null}')
+            assert len(alpha.servant.ixes) == 1
+            assert len(alpha.reqs) == 1
+            assert len(alpha.reps) == 1
+            requestant = list(alpha.reqs.values())[0]
+            assert requestant.method == request['method']
+            assert requestant.url == request['path']
+            assert requestant.headers == help.Hict([('Host', 'localhost:6101'),
+                                                         ('Accept-Encoding', 'identity'),
+                                                         ('Accept', 'application/json')])
 
-    assert response['data'] == {'action': None,
-                                'content': None,
-                                'form': {},
-                                'query': {'name': 'fame'},
-                                'url': 'http://localhost:6101/echo?name=fame',
-                                'verb': 'GET'}
+            assert len(beta.responses) == 1
+            response = beta.responses.popleft()
+            assert response['status'] == 200
+            assert response['reason'] == 'OK'
+            assert response['body'] == (b'{"verb": "GET", "url": "http://localhost:6101/echo?name=fame", "'
+                                        b'action": null, "query": {"name": "fame"}, "form": {}, "content":'
+                                        b' null}')
 
-    responder = list(alpha.reps.values())[0]
-    assert responder.status.startswith(str(response['status']))
-    assert responder.headers == response['headers']
+            assert response['data'] == {'action': None,
+                                        'content': None,
+                                        'form': {},
+                                        'query': {'name': 'fame'},
+                                        'url': 'http://localhost:6101/echo?name=fame',
+                                        'verb': 'GET'}
 
-    alpha.close()
-    beta.close()
+            responder = list(alpha.reps.values())[0]
+            assert responder.status.startswith(str(response['status']))
+            assert responder.headers == response['headers']
 
 
 def test_connection_non_persistent():
@@ -412,81 +387,72 @@ def test_connection_non_persistent():
                     content=body)
         return data
 
-    alpha = http.Server(port = 6101,
-                        bufsize=131072,
-                          app=app,
-                          tymth=tymist.tymen(),)
-    assert alpha.reopen()
-    assert alpha.servant.ha == ('0.0.0.0', 6101)
-    assert alpha.servant.eha == ('127.0.0.1', 6101)
+    with http.openServer(port = 6101, bufsize=131072, app=app, \
+                         tymth=tymist.tymen()) as alpha:
 
-    path = "http://{0}:{1}/".format('localhost', alpha.servant.eha[1])
-    beta = http.Client(bufsize=131072,
-                       path=path,
-                                 reconnectable=True,
-                                 tymth=tymist.tymen(),
-                                 )
+        assert alpha.servant.ha == ('0.0.0.0', 6101)
+        assert alpha.servant.eha == ('127.0.0.1', 6101)
 
-    assert beta.reopen()
-    assert not beta.connector.accepted
-    assert not beta.connector.connected
-    assert not beta.connector.cutoff
+        path = "http://{0}:{1}/".format('localhost', alpha.servant.eha[1])
 
-    request = dict([('method', u'GET'),
-                     ('path', u'/echo?name=fame'),
-                     ('qargs', dict()),
-                     ('fragment', u''),
-                     ('headers', dict([('Accept', 'application/json'),
-                                        ('Connection', 'close')])),
-                    ])
+        with http.openClient(bufsize=131072, path=path, reconnectable=True, \
+                                     tymth=tymist.tymen(),) as beta:
 
-    beta.requests.append(request)
-    while (beta.requests or beta.connector.txbs or not beta.responses or
-           not alpha.idle()):
-        alpha.service()
-        time.sleep(0.05)
-        beta.service()
-        time.sleep(0.05)
-        tymist.tick(tock=0.1)
+            assert not beta.connector.accepted
+            assert not beta.connector.connected
+            assert not beta.connector.cutoff
 
-    assert beta.connector.accepted
-    assert beta.connector.connected
-    assert not beta.connector.cutoff
+            request = dict([('method', u'GET'),
+                             ('path', u'/echo?name=fame'),
+                             ('qargs', dict()),
+                             ('fragment', u''),
+                             ('headers', dict([('Accept', 'application/json'),
+                                                ('Connection', 'close')])),
+                            ])
 
-    assert len(alpha.servant.ixes) == 1
-    assert len(alpha.reqs) == 1
-    assert len(alpha.reps) == 1
-    requestant = list(alpha.reqs.values())[0]
-    assert requestant.method == request['method']
-    assert requestant.url == request['path']
-    assert requestant.headers == help.Hict([('Host', 'localhost:6101'),
-                                                 ('Accept-Encoding', 'identity'),
-                                                 ('Accept', 'application/json'),
-                                                 ('Connection', 'close')])
+            beta.requests.append(request)
+            while (beta.requests or beta.connector.txbs or not beta.responses or
+                   not alpha.idle()):
+                alpha.service()
+                time.sleep(0.05)
+                beta.service()
+                time.sleep(0.05)
+                tymist.tick(tock=0.1)
+
+            assert beta.connector.accepted
+            assert beta.connector.connected
+            assert not beta.connector.cutoff
+
+            assert len(alpha.servant.ixes) == 1
+            assert len(alpha.reqs) == 1
+            assert len(alpha.reps) == 1
+            requestant = list(alpha.reqs.values())[0]
+            assert requestant.method == request['method']
+            assert requestant.url == request['path']
+            assert requestant.headers == help.Hict([('Host', 'localhost:6101'),
+                                                         ('Accept-Encoding', 'identity'),
+                                                         ('Accept', 'application/json'),
+                                                         ('Connection', 'close')])
 
 
-    assert len(beta.responses) == 1
-    response = beta.responses.popleft()
-    assert response['status'] == 200
-    assert response['reason'] == 'OK'
-    assert response['body'] == (b'{"verb": "GET", "url": "http://localhost:6101/echo?name=fame", "'
-                                b'action": null, "query": {"name": "fame"}, "form": {}, "content":'
-                                b' null}')
+            assert len(beta.responses) == 1
+            response = beta.responses.popleft()
+            assert response['status'] == 200
+            assert response['reason'] == 'OK'
+            assert response['body'] == (b'{"verb": "GET", "url": "http://localhost:6101/echo?name=fame", "'
+                                        b'action": null, "query": {"name": "fame"}, "form": {}, "content":'
+                                        b' null}')
 
-    assert response['data'] == {'action': None,
-                                'content': None,
-                                'form': {},
-                                'query': {'name': 'fame'},
-                                'url': 'http://localhost:6101/echo?name=fame',
-                                'verb': 'GET'}
+            assert response['data'] == {'action': None,
+                                        'content': None,
+                                        'form': {},
+                                        'query': {'name': 'fame'},
+                                        'url': 'http://localhost:6101/echo?name=fame',
+                                        'verb': 'GET'}
 
-    responder = list(alpha.reps.values())[0]
-    assert responder.status.startswith(str(response['status']))
-    assert responder.headers == response['headers']
-
-    alpha.close()
-    beta.close()
-
+            responder = list(alpha.reps.values())[0]
+            assert responder.status.startswith(str(response['status']))
+            assert responder.headers == response['headers']
 
 
 def test_sse_stream():
@@ -526,100 +492,92 @@ def test_sse_stream():
             n += 1
         yield "data: END\n\n"
 
-    alpha = http.Server(port = 6101,
-                        bufsize=131072,
-                          app=app,
-                          tymth=tymist.tymen(),)
-    assert alpha.reopen()
-    assert alpha.servant.ha == ('0.0.0.0', 6101)
-    assert alpha.servant.eha == ('127.0.0.1', 6101)
+    with http.openServer(port = 6101, bufsize=131072, app=app, \
+                             tymth=tymist.tymen()) as alpha:
 
-    path = "http://{0}:{1}/".format('localhost', alpha.servant.eha[1])
-    beta = http.Client(bufsize=131072,
-                       path=path,
-                                 reconnectable=True,
-                                 tymth=tymist.tymen(),
-                                 )
+        assert alpha.servant.ha == ('0.0.0.0', 6101)
+        assert alpha.servant.eha == ('127.0.0.1', 6101)
 
-    assert beta.connector.reopen()
-    assert not beta.connector.accepted
-    assert not beta.connector.connected
-    assert not beta.connector.cutoff
+        path = "http://{0}:{1}/".format('localhost', alpha.servant.eha[1])
 
-    request = dict([('method', u'GET'),
-                     ('path', u'/stream'),
-                     ('qargs', dict()),
-                     ('fragment', u''),
-                     ('headers', dict([('Accept', 'application/json'),
-                                        ('Content-Length', 0)])),
-                     ('body', None),
-                    ])
+        with http.openClient(bufsize=131072, path=path, reconnectable=True, \
+                                     tymth=tymist.tymen(),) as beta:
 
-    beta.requests.append(request)
-    tymer = tyming.Tymer(tymth=tymist.tymen(), duration=1.0)
-    while (not tymer.expired):
-        alpha.service()
-        time.sleep(0.05)
-        beta.service()
-        time.sleep(0.05)
-        tymist.tick(tock=0.1)
+            assert not beta.connector.accepted
+            assert not beta.connector.connected
+            assert not beta.connector.cutoff
 
-    assert beta.connector.accepted
-    assert beta.connector.connected
-    assert not beta.connector.cutoff
+            request = dict([('method', u'GET'),
+                             ('path', u'/stream'),
+                             ('qargs', dict()),
+                             ('fragment', u''),
+                             ('headers', dict([('Accept', 'application/json'),
+                                                ('Content-Length', 0)])),
+                             ('body', None),
+                            ])
 
-    assert len(alpha.servant.ixes) == 1
-    assert len(alpha.reqs) == 1
-    assert len(alpha.reps) == 1
-    requestant = list(alpha.reqs.values())[0]
-    assert requestant.method == request['method']
-    assert requestant.url == request['path']
-    assert requestant.headers == help.Hict([('Host', 'localhost:6101'),
-                                                 ('Accept-Encoding', 'identity'),
-                                                 ('Accept', 'application/json'),
-                                                 ('Content-Length', '0')])
+            beta.requests.append(request)
+            tymer = tyming.Tymer(tymth=tymist.tymen(), duration=1.0)
+            while (not tymer.expired):
+                alpha.service()
+                time.sleep(0.05)
+                beta.service()
+                time.sleep(0.05)
+                tymist.tick(tock=0.1)
+
+            assert beta.connector.accepted
+            assert beta.connector.connected
+            assert not beta.connector.cutoff
+
+            assert len(alpha.servant.ixes) == 1
+            assert len(alpha.reqs) == 1
+            assert len(alpha.reps) == 1
+            requestant = list(alpha.reqs.values())[0]
+            assert requestant.method == request['method']
+            assert requestant.url == request['path']
+            assert requestant.headers == help.Hict([('Host', 'localhost:6101'),
+                                                         ('Accept-Encoding', 'identity'),
+                                                         ('Accept', 'application/json'),
+                                                         ('Content-Length', '0')])
 
 
-    # timed out while body streaming still open so no completed responses
-    # in .responses. But headers fully received
-    assert beta.waited
-    assert not beta.respondent.ended
-    assert len(beta.responses) == 0
-    assert 'Content-Type' in beta.respondent.headers
-    assert beta.respondent.headers['Content-Type'] == 'text/event-stream'
-    assert 'Transfer-Encoding'in beta.respondent.headers
-    assert beta.respondent.headers['Transfer-Encoding'] == 'chunked'
+            # timed out while body streaming still open so no completed responses
+            # in .responses. But headers fully received
+            assert beta.waited
+            assert not beta.respondent.ended
+            assert len(beta.responses) == 0
+            assert 'Content-Type' in beta.respondent.headers
+            assert beta.respondent.headers['Content-Type'] == 'text/event-stream'
+            assert 'Transfer-Encoding'in beta.respondent.headers
+            assert beta.respondent.headers['Transfer-Encoding'] == 'chunked'
 
-    assert len(beta.events) == 4
-    assert beta.respondent.retry == 1000
-    assert int(beta.respondent.leid) >= 2
-    event = beta.events.popleft()
-    assert event == {'id': '0', 'name': '', 'data': 'START'}
-    event = beta.events.popleft()
-    assert event == {'id': '1', 'name': '', 'data': '1'}
-    event = beta.events.popleft()
-    assert event == {'id': '2', 'name': '', 'data': '2'}
-    event = beta.events.popleft()
-    assert event == {'id': '3', 'name': '', 'data': '3'}
-    assert not beta.events
+            assert len(beta.events) == 4
+            assert beta.respondent.retry == 1000
+            assert int(beta.respondent.leid) >= 2
+            event = beta.events.popleft()
+            assert event == {'id': '0', 'name': '', 'data': 'START'}
+            event = beta.events.popleft()
+            assert event == {'id': '1', 'name': '', 'data': '1'}
+            event = beta.events.popleft()
+            assert event == {'id': '2', 'name': '', 'data': '2'}
+            event = beta.events.popleft()
+            assert event == {'id': '3', 'name': '', 'data': '3'}
+            assert not beta.events
 
-    #keep going until ended
-    tymer.restart(duration=1.5)
-    while (not tymer.expired):
-        alpha.service()
-        time.sleep(0.05)
-        beta.service()
-        time.sleep(0.05)
-        tymist.tick(tock=0.1)
+            #keep going until ended
+            tymer.restart(duration=1.5)
+            while (not tymer.expired):
+                alpha.service()
+                time.sleep(0.05)
+                beta.service()
+                time.sleep(0.05)
+                tymist.tick(tock=0.1)
 
-    assert len(beta.events) == 7
-    assert beta.respondent.leid ==  '9'
-    assert beta.events[-2] == {'id': '9', 'name': '', 'data': '9'}
-    assert beta.events[-1] == {'id': '9', 'name': '', 'data': 'END'}
-    beta.events.clear()
-
-    alpha.close()
-    beta.close()
+            assert len(beta.events) == 7
+            assert beta.respondent.leid ==  '9'
+            assert beta.events[-2] == {'id': '9', 'name': '', 'data': '9'}
+            assert beta.events[-1] == {'id': '9', 'name': '', 'data': 'END'}
+            beta.events.clear()
 
 
 def test_sse_stream_tls():
@@ -669,117 +627,100 @@ def test_sse_stream_tls():
     serverCertpath = certdirpath + '/server_cert.pem'  # local server public cert
     clientCafilepath = certdirpath + '/client.pem' # remote client public cert
 
-    alpha = http.Server(port = 6101,
-                          bufsize=131072,
-                          scheme='https',
-                          keypath=serverKeypath,
-                          certpath=serverCertpath,
-                          cafilepath=clientCafilepath,
-                          tymth=tymist.tymen(),
-                          app=app,
-                          )
-    assert alpha.reopen()
-    assert alpha.servant.ha == ('0.0.0.0', 6101)
-    assert alpha.servant.eha == ('127.0.0.1', 6101)
+    with http.openServer(port = 6101, bufsize=131072, scheme='https', \
+            keypath=serverKeypath, certpath=serverCertpath, \
+            cafilepath=clientCafilepath, app=app, tymth=tymist.tymen()) as alpha:
 
-    #clientKeypath = '/etc/pki/tls/certs/client_key.pem'  # local client private key
-    #clientCertpath = '/etc/pki/tls/certs/client_cert.pem'  # local client public cert
-    #serverCafilepath = '/etc/pki/tls/certs/server.pem' # remote server public cert
+        assert alpha.servant.ha == ('0.0.0.0', 6101)
+        assert alpha.servant.eha == ('127.0.0.1', 6101)
 
-    clientKeypath = certdirpath + '/client_key.pem'  # local client private key
-    clientCertpath = certdirpath + '/client_cert.pem'  # local client public cert
-    serverCafilepath = certdirpath + '/server.pem' # remote server public cert
+        #clientKeypath = '/etc/pki/tls/certs/client_key.pem'  # local client private key
+        #clientCertpath = '/etc/pki/tls/certs/client_cert.pem'  # local client public cert
+        #serverCafilepath = '/etc/pki/tls/certs/server.pem' # remote server public cert
 
-    path = "https://{0}:{1}/".format('localhost', alpha.servant.eha[1])
+        clientKeypath = certdirpath + '/client_key.pem'  # local client private key
+        clientCertpath = certdirpath + '/client_cert.pem'  # local client public cert
+        serverCafilepath = certdirpath + '/server.pem' # remote server public cert
 
-    beta = http.Client(bufsize=131072,
-                        path=path,
-                        scheme='https',
-                        certedhost=serverCertCommonName,
-                        keypath=clientKeypath,
-                        certpath=clientCertpath,
-                        cafilepath=serverCafilepath,
-                        reconnectable=True,
-                        tymth=tymist.tymen(),
-                      )
+        path = "https://{0}:{1}/".format('localhost', alpha.servant.eha[1])
 
-    assert beta.reopen()
-    assert not beta.connector.accepted
-    assert not beta.connector.connected
-    assert not beta.connector.cutoff
+        with http.openClient(bufsize=131072, path=path, scheme='https', \
+                certedhost=serverCertCommonName, keypath=clientKeypath, \
+                certpath=clientCertpath, cafilepath=serverCafilepath, \
+                reconnectable=True, tymth=tymist.tymen(),) as beta:
 
-    request = dict([('method', u'GET'),
-                     ('path', u'/stream'),
-                     ('qargs', dict()),
-                     ('fragment', u''),
-                     ('headers', dict([('Accept', 'application/json'),
-                                        ('Content-Length', 0)])),
-                     ('body', None),
-                    ])
+            assert not beta.connector.accepted
+            assert not beta.connector.connected
+            assert not beta.connector.cutoff
 
-    beta.requests.append(request)
-    tymer = tyming.Tymer(tymth=tymist.tymen(), duration=1.0)
-    while (not tymer.expired):
-        alpha.service()
-        time.sleep(0.05)
-        beta.service()
-        time.sleep(0.05)
-        tymist.tick(tock=0.1)
+            request = dict([('method', u'GET'),
+                             ('path', u'/stream'),
+                             ('qargs', dict()),
+                             ('fragment', u''),
+                             ('headers', dict([('Accept', 'application/json'),
+                                                ('Content-Length', 0)])),
+                             ('body', None),
+                            ])
 
-    assert beta.connector.accepted
-    assert beta.connector.connected
-    assert not beta.connector.cutoff
+            beta.requests.append(request)
+            tymer = tyming.Tymer(tymth=tymist.tymen(), duration=1.0)
+            while (not tymer.expired):
+                alpha.service()
+                time.sleep(0.05)
+                beta.service()
+                time.sleep(0.05)
+                tymist.tick(tock=0.1)
 
-    assert len(alpha.servant.ixes) == 1
-    assert len(alpha.reqs) == 1
-    assert len(alpha.reps) == 1
-    requestant = list(alpha.reqs.values())[0]
-    assert requestant.method == request['method']
-    assert requestant.url == request['path']
-    assert requestant.headers == help.Hict([('Host', 'localhost:6101'),
-                                                 ('Accept-Encoding', 'identity'),
-                                                 ('Accept', 'application/json'),
-                                                 ('Content-Length', '0')])
+            assert beta.connector.accepted
+            assert beta.connector.connected
+            assert not beta.connector.cutoff
+
+            assert len(alpha.servant.ixes) == 1
+            assert len(alpha.reqs) == 1
+            assert len(alpha.reps) == 1
+            requestant = list(alpha.reqs.values())[0]
+            assert requestant.method == request['method']
+            assert requestant.url == request['path']
+            assert requestant.headers == help.Hict([('Host', 'localhost:6101'),
+                                                         ('Accept-Encoding', 'identity'),
+                                                         ('Accept', 'application/json'),
+                                                         ('Content-Length', '0')])
 
 
-    # timed out while body streaming still open so no completed responses
-    # in .responses. But headers fully received
-    assert beta.waited
-    assert not beta.respondent.ended
-    assert len(beta.responses) == 0
-    assert 'Content-Type' in beta.respondent.headers
-    assert beta.respondent.headers['Content-Type'] == 'text/event-stream'
-    assert 'Transfer-Encoding'in beta.respondent.headers
-    assert beta.respondent.headers['Transfer-Encoding'] == 'chunked'
-    assert len(beta.events) == 3
-    assert beta.respondent.retry == 1000
-    assert int(beta.respondent.leid) >= 2
-    event = beta.events.popleft()
-    assert event == {'id': '0', 'name': '', 'data': 'START'}
-    event = beta.events.popleft()
-    assert event == {'id': '1', 'name': '', 'data': '1'}
-    event = beta.events.popleft()
-    assert event == {'id': '2', 'name': '', 'data': '2'}
-    assert not beta.events
+            # timed out while body streaming still open so no completed responses
+            # in .responses. But headers fully received
+            assert beta.waited
+            assert not beta.respondent.ended
+            assert len(beta.responses) == 0
+            assert 'Content-Type' in beta.respondent.headers
+            assert beta.respondent.headers['Content-Type'] == 'text/event-stream'
+            assert 'Transfer-Encoding'in beta.respondent.headers
+            assert beta.respondent.headers['Transfer-Encoding'] == 'chunked'
+            assert len(beta.events) == 3
+            assert beta.respondent.retry == 1000
+            assert int(beta.respondent.leid) >= 2
+            event = beta.events.popleft()
+            assert event == {'id': '0', 'name': '', 'data': 'START'}
+            event = beta.events.popleft()
+            assert event == {'id': '1', 'name': '', 'data': '1'}
+            event = beta.events.popleft()
+            assert event == {'id': '2', 'name': '', 'data': '2'}
+            assert not beta.events
 
-    #keep going until ended
-    tymer.restart(duration=1.5)
-    while (not tymer.expired):
-        alpha.service()
-        time.sleep(0.05)
-        beta.service()
-        time.sleep(0.05)
-        tymist.tick(tock=0.1)
+            #keep going until ended
+            tymer.restart(duration=1.5)
+            while (not tymer.expired):
+                alpha.service()
+                time.sleep(0.05)
+                beta.service()
+                time.sleep(0.05)
+                tymist.tick(tock=0.1)
 
-    assert len(beta.events) == 8
-    assert beta.respondent.leid ==  '9'
-    assert beta.events[-2] == {'id': '9', 'name': '', 'data': '9'}
-    assert beta.events[-1] == {'id': '9', 'name': '', 'data': 'END'}
-    beta.events.clear()
-
-
-    alpha.close()
-    beta.close()
+            assert len(beta.events) == 8
+            assert beta.respondent.leid ==  '9'
+            assert beta.events[-2] == {'id': '9', 'name': '', 'data': '9'}
+            assert beta.events[-1] == {'id': '9', 'name': '', 'data': 'END'}
+            beta.events.clear()
 
 
 if __name__ == '__main__':

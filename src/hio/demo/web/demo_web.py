@@ -2,6 +2,7 @@
 """
 Demo web server for static files for client side web app
 """
+import sys
 import os
 import time
 import mimetypes
@@ -11,6 +12,7 @@ import falcon
 from hio import help
 from hio.base import tyming
 from hio.core import http
+from hio.core.http import serving
 from hio.demo.web import demoing
 
 logger = help.ogler.getLogger()
@@ -24,8 +26,15 @@ def run():
     tymist = tyming.Tymist(tyme=0.0)
 
     app = falcon.App()  # falcon.API instances are callable WSGI apps
-    sink = demoing.StaticSink()
-    app.add_sink(sink, prefix="/")
+
+    WEB_DIR_PATH = os.path.dirname(
+                    os.path.abspath(
+                        sys.modules.get(__name__).__file__))
+    STATIC_DIR_PATH = os.path.join(WEB_DIR_PATH, 'static')
+
+
+    sink = serving.StaticSink(staticDirPath=STATIC_DIR_PATH)
+    app.add_sink(sink, prefix=sink.DefaultStaticSinkBasePath)
 
     try:
         server = http.Server(name='test',
