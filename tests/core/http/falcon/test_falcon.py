@@ -17,9 +17,9 @@ from collections import OrderedDict as ODict
 import time
 
 import falcon
-import pytest
-import pytest_falcon # provides pytest falcon client fixture
+from falcon import testing
 
+import pytest
 
 from hio import help
 from hio.help import helping
@@ -32,72 +32,8 @@ logger = help.ogler.getLogger()
 
 
 
-
-
-#class StaticSink():
-    #"""
-    #Class that provided Falcon sink endpoint for serving static files in support
-    #of client side web app.
-
-    ## Geterating the full path of the static resource
-    #path = os.path.abspath(
-        #os.path.join(
-            #static_path,
-            #self.static_dir,
-            #environ['PATH_INFO'].lstrip('/')
-        #)
-    #)
-
-    #if not path.startswith(static_path) or not os.path.exists(path):
-        #return self.app(environ, start_response)
-    #else:
-        #filetype = mimetypes.guess_type(path, strict=True)[0]
-        #if not filetype:
-            #filetype = 'text/plain'
-        #start_response("200 OK", [('Content-type', filetype)])
-        #return environ['wsgi.file_wrapper'](open(path, 'rb'), 4096)
-
-    ## project directory
-    #PROJECT_DIR_PATH = os.path.dirname(os.path.abspath(__file__))
-
-    ## Web application specific static files
-    #STATIC_APP_PATH = os.path.join(PROJECT_DIR_PATH, 'app')
-
-    #"""
-    #def __init__(self):
-        #self.staticDirpath = STATIC_DIR_PATH
-
-    #def __call__(self, req, rep):
-        #path = req.path  # Falcon removes trailing "/" if any after non "/"
-        #splits = path.split("/")[1:]  # split and remove first split [""]
-        #splits = [split for split in splits if split] # remove empty splits
-        #if splits and splits[0] == "static":
-            #splits = splits[1:]  #remove static
-        #if not splits:  # return default
-            #filepath = "index.html"
-        #else:
-            #filepath = "/".join(splits)
-        #filepath = os.path.join(self.staticDirpath, filepath)
-        #if not os.path.exists(filepath):
-            #raise falcon.HTTPError(falcon.HTTP_NOT_FOUND,
-                            #'Missing Resource',
-                            #'File "{}" not found or forbidden'.format(filepath))
-        #filetype = mimetypes.guess_type(filepath, strict=True)[0]  # get first guess
-        #rep.set_header("Content-Type", "{}; charset=UTF-8".format(filetype))
-        #rep.status = falcon.HTTP_200  # This is the default status
-        ## for better stream handling provide "wsgi.file_wrapper" in wsgi environ
-        ## rep.stream = open(filepath, 'rb')
-        ## the following works faster and more consistently than rep.stream above
-        ## Maybe Falcon's default is to throttle the reads too much for rep.stream
-        #with open(filepath, 'rb') as f:
-            #rep.data = f.read()
-
-
-
 # Falcon reource endpoints
 class ExampleEnd:
-
-
     def on_get(self, req, rep):
         """
         Handles GET requests
@@ -126,7 +62,7 @@ class ExampleJsonEnd:
         Handles POST requests
         """
         try:
-            raw_json = req.stream.read()
+            raw_json = req.bounded_stream.read()
         except Exception:
             raise falcon.HTTPError(falcon.HTTP_748,
                                        'Read Error',
@@ -145,6 +81,37 @@ class ExampleJsonEnd:
 
         #rep.status = falcon.HTTP_201
         #rep.location = '/example/%s' % (uid)  # location header redirect
+
+        rep.status = falcon.HTTP_200  # This is the default status
+        rep.text = json.dumps(result)
+
+
+class ExampleJsonMediaEnd:
+
+    def on_get(self, req, rep, uid):
+        """
+        Handles GET requests
+        """
+        message = "\nHello World from {}\n\n".format(uid)
+        result = dict(user=uid, msg=message)
+
+        rep.status = falcon.HTTP_200  # This is the default status
+        rep.text = json.dumps(result)
+
+
+    def on_post(self, req, rep, uid):
+        """
+        Handles POST requests
+        """
+        try:
+            data = req.media
+        except Exception:
+            raise falcon.HTTPError(falcon.HTTP_748,
+                                       'Read Error',
+                                       'Could not read the request body.')
+
+
+        result = dict(user=uid, data=data)
 
         rep.status = falcon.HTTP_200  # This is the default status
         rep.text = json.dumps(result)
@@ -295,6 +262,9 @@ exapp.add_route('/example', example) # example handles all requests to '/example
 exampleJson = ExampleJsonEnd()
 exapp.add_route('/example/{uid}', exampleJson)
 
+exampleMediaJson = ExampleJsonMediaEnd()
+exapp.add_route('/example/media/{uid}', exampleMediaJson)
+
 exampleUrl = ExampleUrlEnd()
 exapp.add_route('/example/url/{name}', exampleUrl)
 
@@ -423,88 +393,93 @@ def app():  # pytest_falcon client fixture assumes there is a fixture named "app
     return exapp
 
 
-def test_get_StaticSink(client):  # client is a fixture in pytest_falcon
+def test_get_static_sink():
     """
     Test GET to static files
     """
+    # must do it here to inject into Falcon endpoint resource instances
+    tymist = tyming.Tymist(tyme=0.0)
+
+    #myapp = falcon.App() # falcon.App instances are callable WSGI apps
+    #ending.loadEnds(myapp, tymth=tymist.tymen())
+
+    client = testing.TestClient(app=exapp)
+
     index = ('<html>\n'
-                        '    <head>\n'
-                        '        <title>Demo</title>\n'
-                        '        <!--\n'
-                        '        <link rel="stylesheet" type="text/css" '
-                        'href="semantic/dist/semantic.min.css">\n'
-                        '        <script src="node_modules/jquery/dist/jquery.min.js"></script>\n'
-                        '        <script src="semantic/dist/semantic.min.js"></script>\n'
-                        '        -->\n'
-                        '    </head>\n'
-                        '    <body>\n'
-                        '        <!--\n'
-                        '        <script src="bin/app.js"></script>\n'
-                        '        <button class="ui button">Follow</button>\n'
-                        '        -->\n'
-                        '        <p>Hello World.</p>\n'
-                        '    </body>\n'
-                        '</html>\n')
+            '    <head>\n'
+            '        <title>Demo</title>\n'
+            '        <!--\n'
+            '        <link rel="stylesheet" type="text/css" '
+            'href="semantic/dist/semantic.min.css">\n'
+            '        <script src="node_modules/jquery/dist/jquery.min.js"></script>\n'
+            '        <script src="semantic/dist/semantic.min.js"></script>\n'
+            '        -->\n'
+            '    </head>\n'
+            '    <body>\n'
+            '        <!--\n'
+            '        <script src="bin/app.js"></script>\n'
+            '        <button class="ui button">Follow</button>\n'
+            '        -->\n'
+            '        <p>Hello World.</p>\n'
+            '    </body>\n'
+            '</html>\n')
 
     # get default at  /  which is index.html
-    rep = client.get('/')
+    rep = client.simulate_get('/')
     assert rep.status == falcon.HTTP_OK
     assert rep.headers['content-type'] == 'text/html; charset=UTF-8'
-    assert len(rep.body) > 0
-    assert rep.body == index
+    assert len(rep.text) > 0
+    assert rep.text == index
 
     # get default at /static  which is index.html
-    rep = client.get('/static')
+    rep = client.simulate_get('/static')
     assert rep.status == falcon.HTTP_OK
     assert rep.headers['content-type'] == 'text/html; charset=UTF-8'
-    assert len(rep.body) > 0
-    assert rep.body == index
+    assert len(rep.text) > 0
+    assert rep.text == index
 
     # get default at /static/  e.g. trailing / which is index.html
-    rep = client.get('/static/')
+    rep = client.simulate_get('/static/')
     assert rep.status == falcon.HTTP_OK
     assert rep.headers['content-type'] == 'text/html; charset=UTF-8'
-    assert len(rep.body) > 0
-    assert rep.body == index
+    assert len(rep.text) > 0
+    assert rep.text == index
 
     # get index.html
-    rep = client.get('/index.html')
+    rep = client.simulate_get('/index.html')
     assert rep.status == falcon.HTTP_OK
     assert rep.headers['content-type'] == 'text/html; charset=UTF-8'
-    assert len(rep.body) > 0
-    assert rep.body == index
+    assert len(rep.text) > 0
+    assert rep.text == index
 
     # get /static/index.html
-    rep = client.get('/static/index.html')
+    rep = client.simulate_get('/static/index.html')
     assert rep.status == falcon.HTTP_OK
     assert rep.headers['content-type'] == 'text/html; charset=UTF-8'
-    assert len(rep.body) > 0
-    assert rep.body == index
+    assert len(rep.text) > 0
+    assert rep.text == index
 
     # attempt missing file
-    rep = client.get('/static/missing.txt')
+    rep = client.simulate_get('/static/missing.txt')
     assert rep.status == falcon.HTTP_NOT_FOUND
     assert rep.headers['content-type'] == 'application/json'
-    assert rep.json == {'title': 'Missing Resource',
-                        'description': 'File '
-                        '"/Users/Load/Data/Code/public/hio/tests/core/http/falcon/static/missing.txt" '
-                        'not found or forbidden'}
+    assert rep.json['title'] == 'Missing Resource'
 
     # get robots.txt
-    rep = client.get('/static/robots.txt')
+    rep = client.simulate_get('/static/robots.txt')
     assert rep.status == falcon.HTTP_OK
     assert rep.headers['content-type'] == 'text/plain; charset=UTF-8'
-    assert rep.body == '# robotstxt.org\n\nUser-agent: *\n'
+    assert rep.text == '# robotstxt.org\n\nUser-agent: *\n'
 
     # get trial.js
-    rep = client.get('/static/index.js')
+    rep = client.simulate_get('/static/index.js')
     assert rep.status == falcon.HTTP_OK
     assert rep.headers['content-type'] == 'application/javascript; charset=UTF-8'
-    assert len(rep.body) > 0
-    assert rep.body == '// vanilla index.js\n\nm.render(document.body, "Hello world")\n'
+    assert len(rep.text) > 0
+    assert rep.text == '// vanilla index.js\n\nm.render(document.body, "Hello world")\n'
 
 
-def test_get_example(client):  # client is a fixture in pytest_falcon
+def test_get_example():
     """
     PyTest fixtures are registered globally in the pytest package
     So any test function can accept a fixture as a parameter supplied by
@@ -512,40 +487,66 @@ def test_get_example(client):  # client is a fixture in pytest_falcon
 
     pytest_falcon assumes there is a fixture named "app"
     """
-    rep = client.get('/example')
+    client = testing.TestClient(app=exapp)
+
+    rep = client.simulate_get('/example')
     assert rep.status == falcon.HTTP_OK
-    assert rep.body == '\nHello World\n\n'
+    assert rep.text == '\nHello World\n\n'
 
 
-def test_get_uid_json(client):  # client is a fixture in pytest_falcon
+def test_get_uid_json():
     """
     """
-    rep = client.get('/example/2')
+    client = testing.TestClient(app=exapp)
+
+    rep = client.simulate_get(path='/example/2')
     assert rep.status == falcon.HTTP_OK
     assert rep.json == {'user': '2', 'msg': '\nHello World from 2\n\n'}
 
     headers = {"Content-Type": "application/json; charset=utf-8",
                }
-    rep = client.post('/example/2', dict(name="John Smith"), headers=headers)
+    rep = client.simulate_post(path='/example/2',
+                               body=json.dumps(dict(name="John Smith")),
+                               headers=headers)
     assert rep.status == falcon.HTTP_OK
     assert rep.json == dict(data=dict(name='John Smith'), user='2')
 
 
-def test_get_url_name(client):  # client is a fixture in pytest_falcon
+def test_get_uid__media_json():
     """
     """
-    rep = client.get('/example/url/Peter')
+    client = testing.TestClient(app=exapp)
+
+    rep = client.simulate_get(path='/example/media/2')
     assert rep.status == falcon.HTTP_OK
-    assert rep.body == '\nHello World Peter from path\n/example/url/Peter\n\n'
+    assert rep.json == {'user': '2', 'msg': '\nHello World from 2\n\n'}
 
-
-
-def test_get_async(client):  # client is a fixture in pytest_falcon
-    """
-    """
-    rep = client.get('/example/async')
+    headers = {"Content-Type": "application/json; charset=utf-8",
+               }
+    rep = client.simulate_post(path='/example/media/2',
+                               json=dict(name="John Smith"),
+                               headers=headers)
     assert rep.status == falcon.HTTP_OK
-    assert rep.body == ('\n'
+    assert rep.json == dict(data=dict(name='John Smith'), user='2')
+
+
+def test_get_url_name():
+    """
+    """
+    client = testing.TestClient(app=exapp)
+    rep = client.simulate_get('/example/url/Peter')
+    assert rep.status == falcon.HTTP_OK
+    assert rep.text == '\nHello World Peter from path\n/example/url/Peter\n\n'
+
+
+
+def test_get_async():
+    """
+    """
+    client = testing.TestClient(app=exapp)
+    rep = client.simulate_get('/example/async')
+    assert rep.status == falcon.HTTP_OK
+    assert rep.text == ('\n'
                         'Waiting 0\n'
                         'Waiting 1\n'
                         'Waiting 2\n'
@@ -559,13 +560,14 @@ def test_get_async(client):  # client is a fixture in pytest_falcon
                         '\r\n')
 
 
-def test_get_pause(client):  # client is a fixture in pytest_falcon
+def test_get_pause():
     """
     """
-    rep = client.get('/example/pause')
+    client = testing.TestClient(app=exapp)
+    rep = client.simulate_get('/example/pause')
     assert rep.status == falcon.HTTP_OK
     assert rep.json == {'country': 'United States', 'name': 'John Smith'}
 
 
 if __name__ == '__main__':
-    test_get_backend()
+    test_get_pause()
