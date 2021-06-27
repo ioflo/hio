@@ -388,11 +388,6 @@ def test_get_backend():
     """Done Test """
 
 
-@pytest.fixture
-def app():  # pytest_falcon client fixture assumes there is a fixture named "app"
-    return exapp
-
-
 def test_get_static_sink():
     """
     Test GET to static files
