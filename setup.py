@@ -94,6 +94,10 @@ setup(
         #   'rst': ['docutils>=0.11'],
         #   ':python_version=="2.6"': ['argparse'],
     },
+    tests_require=[
+                    'coverage>=5.5',
+                    'pytest>=6.2.4',
+                  ],
     setup_requires=[
     ],
     entry_points={

@@ -269,7 +269,11 @@ class Doist(tyming.Tymist):
             deeds = self.deeds
 
         for i in range(len(deeds)):  # iterate once over each deed
-            dog, retyme, index = deeds.popleft()  # pop it off
+            try:
+                dog, retyme, index = deeds.popleft()  # pop it off
+            except IndexError as ex:
+                # .remove called by a doer may have changed length of deeds
+                break  # break out of for loop
 
             if retyme <= self.tyme:  # run it now
                 try:
@@ -1048,7 +1052,11 @@ class DoDoer(Doer):
             deeds = self.deeds
 
         for i in range(len(deeds)):  # iterate once over each deed
-            dog, retyme, index = deeds.popleft()  # pop it off
+            try:
+                dog, retyme, index = deeds.popleft()  # pop it off
+            except IndexError as ex:
+                # .remove called by a doer may have changed length of deeds
+                break  # break out of for loop
 
             if retyme <= tyme:  # run it now
                 try:  # tock == 0.0 means re-run asap
