@@ -12,7 +12,7 @@ from . import tyming
 from ..help import timing, helping
 
 
-Deed = namedtuple("Deed", "dog retyme index")
+Deed = namedtuple("Deed", "dog retyme doer")
 
 class Doist(tyming.Tymist):
     """
@@ -272,7 +272,7 @@ class Doist(tyming.Tymist):
             try:
                 dog, retyme, index = deeds.popleft()  # pop it off
             except IndexError as ex:
-                # .remove called by a doer may have changed length of deeds
+                # length of deeds may have changed if .remove called by dog
                 break  # break out of for loop
 
             if retyme <= self.tyme:  # run it now
@@ -381,7 +381,7 @@ class Doist(tyming.Tymist):
             except ValueError:
                 rdoers.remove(doer)  # not in .doers so ignore remove from rdoers
             else:
-                indices[i] = j
+                indices[i] = j  # index of rdoer, j,  for a given doer index, i.
                 j += 1
 
         rdeeds = deque()  # fresh deque for deeds to remove
@@ -782,10 +782,10 @@ class DoDoer(Doer):
     Properties:
         doers (list): Doer or Doist compatible generator instances,
             functions, or methods.
-        deeds (deque):  tuples of form (dog, retyme, index)  where:
-            dog is generator
-            retyme is tyme in seconds when next should run may be real or simulated
-            index is position of associated doer in .doers list
+        deeds (deque):  tuples of form (dog, retyme, doer)  where:
+            dog is generator created by doer.
+            retyme is tyme in seconds when next should run may be real or simulated.
+            doer is associated doer in .doers list.
             Used throughout the execution lifecycle. The normal
             case is use the default empty initialization performed here and
             update in .enter().
@@ -842,8 +842,6 @@ class DoDoer(Doer):
                 are complete. Enables dynamically managing extending or removing
                 doers and associated deeds while running.
 
-        In each deed the index must match offset of the doer in the doers list.
-
         """
         super(DoDoer, self).__init__(**kwa)
         self.doers = list(doers) if doers is not None else []
@@ -875,7 +873,7 @@ class DoDoer(Doer):
     def deeds(self):
         """
         deeds property getter, get ._deeds
-        .deeds is deque of triples, each of form (dog, retyme, index)
+        .deeds is deque of triples, each of form (dog, retyme, doer)
         """
         return self._deeds
 
@@ -930,8 +928,6 @@ class DoDoer(Doer):
                 doers and associated deeds while running.
                 When not provided use .always.
             opts is dict of injected optional additional parameters
-
-        In each deed the index must match offset of the doer in the doers list.
         """
         always = always if always is not None else self.always
         if doers is not None:
@@ -972,10 +968,10 @@ class DoDoer(Doer):
         """
         Do 'enter' context actions. Equivalent of Doist.enter()
 
-        Returns deeds deque of triples (dog, retyme, index)  where:
-            dog is generator
+        Returns deeds deque of triples (dog, retyme, doer)  where:
+            dog is generator created by doer
             retyme is tyme in seconds when next should run may be real or simulated
-            index is position of associated doer in .doers list
+            doer is doer for dog from doers list
 
         Calls each generator callable (function or method) in .doers to create
         each generator dog.
@@ -991,10 +987,8 @@ class DoDoer(Doer):
 
         Returns:
             deeds deque():
-                A deed is tuple of form (dog, retyme, index). If not provided
+                A deed is tuple of form (dog, retyme, doer). If not provided
                 uses .deeds.
-
-        In each deed the index must match offset of the doer in the doers list.
 
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
         For setting attributes on bound methods.
@@ -1005,7 +999,7 @@ class DoDoer(Doer):
         else:
             deeds = deque()
 
-        for index, doer in enumerate(doers):
+        for doer in doers:
             try:
                 doer.done = None  # None before enter. enter may set to False
             except AttributeError:   # when using bound method for generator function
@@ -1014,28 +1008,28 @@ class DoDoer(Doer):
             dog = doer(tymth=self.tymth, tock=doer.tock, **opts)
             try:
                 next(dog)  # run enter by advancing to first yield
-            except StopIteration:
-                continue  # don't append
-            deeds.append((dog, self.tyme, index))
+            except StopIteration as ex:  # returned instead of yielded
+                try:
+                    doer.done = ex.value if ex.value else False  # assign done state
+                except AttributeError:
+                    doer.__func__.done = ex.value if ex.value else False  # assign done state
+                continue  # don't append already complete
+            deeds.append((dog, self.tyme, doer))
         return deeds
 
 
-    def recur(self, tyme, doeds = None):
+    def recur(self, tyme, deeds = None):
         """
         Do 'recur' context actions. Equivalent of Doist.recur
 
         Parameters:
-            tyme (float): is output of send fed to do yield, Doist feeds its .tyme
-                because tymist is injected by doist or dodoer doing this dodoer
-                self.tyme is same as tyme.
-             doeds (tuple): optional of form (doers (ist, deeds deque)
-                If not provided uses .doers and .deeds.
-                Where:
-                    doers (list):  of  generator method or function callables
-                    with attributes  tock, done, and opts dict().
-
-                    deeds (deque): tuples of form (dog, retyme, index).
-                    Parameterization here of deeds enables some special cases.
+            tyme (float): is output of send fed to do yield, The root scheduler
+                Doist feeds its .tyme which propagates down the chain of DoDoers
+                Because tymist is injected by doist or dodoer, self.tyme is same
+                as tyme. So may use either which is more convenient.
+             deeds (deque): tuples of form (dog, retyme, doer).
+                If not provided uses .deeds.
+                Parameterization here of deeds enables some special cases.
 
         Returns completion state of recurrence actions.
            True means done False means continue
@@ -1044,72 +1038,59 @@ class DoDoer(Doer):
 
         Each cycle checks all generators dogs in deeds deque and runs if retyme past.
         """
-        if doeds is not None:
-            doers = doeds[0]
-            deeds = doeds[1]
-        else:
-            doers = self.doers
+        if deeds is None:
             deeds = self.deeds
 
-        for i in range(len(deeds)):  # iterate once over each deed
-            try:
-                dog, retyme, index = deeds.popleft()  # pop it off
-            except IndexError as ex:
-                # .remove called by a doer may have changed length of deeds
-                break  # break out of for loop
+        deeds.append((None, None, None))  # append run through once marker
+        while deeds:  # do while uses explicit break to exit while
+            dog, retyme, doer = deeds.popleft()  # pop it off
+            if not dog:  # Marker detected so this run through once has completed
+                break  # break loop at marker signifies once through
 
             if retyme <= tyme:  # run it now
-                try:  # tock == 0.0 means re-run asap
-                    tock = dog.send(tyme)  # send tyme. yield tock
+                try:  # send tyme. yield tock, tock may change during sended run
+                    tock = dog.send(tyme)  # yielded tock == 0.0 means re-run asap
                 except StopIteration as ex:  # returned instead of yielded
-                    doer = doers[index]
                     try:
                         doer.done = ex.value if ex.value else False  # assign done state
                     except AttributeError:
                         doer.__func__.done = ex.value if ex.value else False  # assign done state
                 else:  # reappend for next pass
-                    if tock is None:  # bare yield results None
-                        tock = 0.0  # # rerun asap when tock == 0.0
-                    deeds.append((dog, retyme + tock, index))  # tock may change during run
+                    if not tock:  # tock is None or tock == 0.0 with empty yield tock == None
+                        retyme = tyme + self.tock  # rerun at next recur
+                    else:
+                        retyme += tock  # cumulative retyme of doer tock
+                    deeds.append((dog, retyme, doer))  # reappend for next run through
             else:  # not retyme yet
-                deeds.append((dog, retyme, index))  # reappend for next pass
+                deeds.append((dog, retyme, doer))  # reappend for next run through
 
         return (not deeds)  # True if deeds deque is empty
 
 
-    def exit(self, doeds = None):
+    def exit(self, deeds = None):
         """
         Do 'exit' context actions.
 
         Parameters:
-            doeds (tuple): optional of form (doers list, deeds deque)
-                If not provided uses .doers and .deeds.
-                Where:
-                    doers (list):  of  generator method or function callables
-                    with attributes  tock, done, and opts dict().
-                    deeds (deque): tuples of form (dog, retyme, index).
-                    Parameterization here of deeds enables some special cases.
-
-        In each deed the index must match offset of the doer in the doers list.
+            deeds (deque): of deed tuples of form (dog, retyme, doer)
+                If not provided uses .deeds.
+                Parameterization here of deeds enables some special cases.
 
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
         For setting attributes on bound methods.
         """
-        if doeds is not None:
-            doers = doeds[0]
-            deeds = doeds[1]
-        else:
-            doers = self.doers
+        if deeds is None:
             deeds = self.deeds
 
         while(deeds):  # .close each remaining dog in deeds in reverse order
-            dog, retime, index = deeds.pop()  # pop it off in reverse (right side)
+            dog, retime, doer = deeds.pop()  # pop it off in reverse (right side)
+            if not dog:  # marker deed
+                continue  # skip marker
             try:
                 tock = dog.close()  # force GeneratorExit
             except StopIteration:
                 pass  # Hmm? Not supposed to happen!
             else:  # set done state
-                doer = doers[index]
                 try:
                     doer.done = False  # forced close
                 except AttributeError:  # when using bound method for generator function
@@ -1125,13 +1106,8 @@ class DoDoer(Doer):
             doers is list of doers to add as extension.
 
         """
-        deeds = self.enter(doers=doers)  # provide fresh deeds
-        offset = len(self.doers)  # get offset of index for extending dogs
-        for i in range(len(deeds)):  # iterate once over each deed
-            dog, retyme, index = deeds.popleft()
-            index += offset
-            deeds.append((dog, retyme, index))
-
+        doers = [doer for doer in doers if doer not in self.doers] # ensure unique
+        deeds = self.enter(doers=doers)  # provide fresh deeds for new doers
         self.doers.extend(doers)
         self.deeds.extend(deeds)
 
@@ -1145,33 +1121,22 @@ class DoDoer(Doer):
             doers is list of doers to remove.
 
         """
-        rdoers = list(doers)  # doers to remove, make copy since destructive
-        indices = {}  # map indices for each doer as appears in .doers to rdoers
-        j = 0  # index in remove list
-        for doer in list(rdoers):  # make copy since inplace filter of rdoers
-            try:
-                i = self.doers.index(doer)  # make sure a member of .doers
-            except ValueError:
-                rdoers.remove(doer)  # not in .doers so ignore remove from rdoers
-            else:
-                indices[i] = j
-                j += 1
-
+        rdoers = [doer for doer in doers if doer in self.doers] # ensure in .doers
         rdeeds = deque()  # fresh deque for deeds to remove
         deeds = self.deeds  # edit update self.deeds in place
-        k = 0  # reappended index of remaining (not removed) deed
         for i in range(len(deeds)):  # iterate once over each deed
-            dog, retyme, index = deeds.popleft()
-            if index in indices:  # found deed to remove and close
-                rdeeds.append((dog, retyme, indices[index]))  # add to removal deque
+            dog, retyme, doer = deeds.popleft()
+            if not dog:  # reappend the run through once marker deed
+                deeds.append((dog, retyme, doer))
+            elif doer in rdoers:  # found deed to remove and close
+                rdeeds.append((dog, retyme, doer))  # add to removal deque
             else:  # keep deed do not remove and close
-                deeds.append((dog, retyme, k))  # reappend
-                k += 1
+                deeds.append((dog, retyme, doer))  # reappend
 
         for doer in rdoers:  # update .doers to remove rdoers
             self.doers.remove(doer)
 
-        self.exit(doeds=(rdoers, rdeeds))
+        self.exit(deeds=rdeeds)
 
 
 def bareDo(tymth=None, tock=0.0, **opts):
