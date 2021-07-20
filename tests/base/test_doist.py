@@ -348,14 +348,14 @@ def test_extend_remove_doers():
     """
     Test Doist but dynamically extend and remove doers
     """
+    tock = 1.0
+    limit = 5.0
     # create some TryDoers for doers
     doer0 = TryDoer(stop=1)
     doer1 = TryDoer(stop=2)
     doer2 = TryDoer(stop=3)
 
     doers = [doer0, doer1, doer2]
-    tock = 1.0
-    limit = 5.0
     doist = doing.Doist(tock=tock, limit=limit, doers=list(doers))  # make copy
     assert doist.tock == tock ==  1.0
     assert doist.limit == limit == 5.0
@@ -412,7 +412,7 @@ def test_extend_remove_doers():
     assert not doer2.done
     assert len(doist.deeds) == 2  # deeds still there
 
-    # now extend Doers
+    # test extend Doers
     doer3 = TryDoer(stop=1)
     doer4 = TryDoer(stop=2)
     moredoers =  [doer3, doer4]
@@ -421,11 +421,8 @@ def test_extend_remove_doers():
     assert len(doist.doers) == 5
     assert len(doist.deeds) == 4
     indices = [index for dog, retyme, index in doist.deeds]
-    assert indices == [1, 2, 3, 4]  # doer0 is done
-    for deed in doist.deeds:
-        assert not doist.doers[deed[2]].done
-    for i, doer in enumerate(doist.doers):
-        assert doer.done == (i not  in indices)
+    doers = [doer for dog, retyme, doer in doist.deeds]
+    assert doers == [doer1, doer2, doer3, doer4]
     doist.recur()
     doist.recur()
     assert doist.tyme == 4.0
@@ -436,12 +433,6 @@ def test_extend_remove_doers():
     assert doer3.done
     assert not doer4.done
     assert len(doist.deeds) == 1  # deeds still there
-    indices = [index for dog, retyme, index in doist.deeds]
-    assert indices == [4]  # doer4 not done
-    for deed in doist.deeds:
-        assert not doist.doers[deed[2]].done
-    for i, doer in enumerate(doist.doers):
-        assert doer.done == (i not  in indices)
     doist.close()
     assert doist.done == False  # forced close so not done
     assert doer0.done
@@ -450,7 +441,14 @@ def test_extend_remove_doers():
     assert doer3.done
     assert not doer4.done  # forced close so not done
     assert not doist.deeds
+    """ Done Test"""
 
+def test_doist_remove():
+    """
+    Test Doist.remove of doers
+    """
+    tock = 1.0
+    limit = 5.0
     # start over with full set to test remove
     doer0 = TryDoer(stop=1)
     doer1 = TryDoer(stop=2)
@@ -479,35 +477,130 @@ def test_extend_remove_doers():
     assert not doer3.done
     assert not doer4.done
     assert len(doist.deeds) == 4  # deeds still there
-    indices = [index for dog, retyme, index in doist.deeds]
-    assert indices == [1, 2, 3, 4]  # only doer0 done
-    for deed in doist.deeds:
-        assert not doist.doers[deed[2]].done
-    for i, doer in enumerate(doist.doers):
-        assert doer.done == (i not  in indices)
+    doers = [doer for dog, retyme, doer in doist.deeds]
+    assert doers == [doer1, doer2, doer3, doer4]  # doer0 is removed
+    for dog, retyme, doer in doist.deeds:
+        assert not doer.done
+
     doist.remove(doers=[doer0, doer1, doer3])
     assert doist.doers == [doer2, doer4]
     assert len(doist.deeds) == 2
-    indices = [index for dog, retyme, index in doist.deeds]
-    assert indices == [0, 1]  # indices shifted to match new doers
-    for deed in doist.deeds:
-        assert not doist.doers[deed[2]].done
-    for i, doer in enumerate(doist.doers):
-        assert doer.done == (i not  in indices)
+    doers = [doer for dog, retyme, doer in doist.deeds]
+    assert doers == [doer2, doer4]  # others are removed
+    for dog, retyme, doer in doist.deeds:
+        assert not doer.done
+    assert not doer1.done  # forced exit
+    assert not doer3.done  # forced exit
+
     doist.recur()
     doist.recur()
     assert doist.tyme == 4.0
     assert doist.done == None  # never called .do
     assert len(doist.deeds) == 0  # all done
-    indices = [index for dog, retyme, index in doist.deeds]
-    assert indices == []  # all done
-    for deed in doist.deeds:
-        assert not doist.doers[deed[2]].done
-    for i, doer in enumerate(doist.doers):
-        assert doer.done == (i not in indices)
+    assert len(doist.doers) == 2  # not removed but completed
+    for doer in doist.doers:
+        assert doer.done
+    assert doer0.done  # already clean done before remove
+    assert not doer1.done  # forced exit upon remove before done
+    assert doer2.done  # clean done
+    assert not doer3.done  # forced exit upon remove before done
+    assert doer4.done  # clean done
     doist.recur()
     doist.recur()  # does not complete because always == True
-    """ Done Test"""
+    """Done Test"""
+
+
+def test_doist_remove_by_own_doer():
+    """
+    Test .remove method of Doist called by a doer of Doist
+    """
+    tock = 1.0
+    limit = 5.0
+    # create doist first so can inject it into removeDo
+    doist = doing.Doist(tock=tock, limit=limit)
+    # create doized function that removes doers
+    @doing.doize(tock=0.0, doist=doist)
+    def removeDo(tymth=None, tock=0.0, doist=None, **opts):
+        """
+         Returns generator function (doer dog) to process
+            to remove all doers of doist but itself
+
+        Parameters:
+            tymth is injected function wrapper closure returned by .tymen() of
+                Tymist instance (e.e. Doist/DoDoer). Calling tymth() returns
+                associated Tymist .tyme.
+            tock is injected initial tock value from doer.tock
+            opts is dict of injected optional additional parameters from doer.opts
+
+        Injected attributes by doize decorator as parameters to this method:
+            gf.tock = tock  # default tock attribute for doer
+            gf.opts = {}  # default opts for doer
+
+        Usage:
+            add to doers list
+        """
+        rdoers = []
+        yield  # enter context also makes generator method
+        # recur context
+        for doer in doist.doers:
+            # doize decorated function satisfies '==' but not 'is'
+            if doer != removeDo:  # must be != vs. is not
+                rdoers.append(doer)
+        doist.remove(rdoers)
+        yield  # extra yield for testing so does a couple of passes after removed
+        yield  # extra yield for testing so does a couple of passes after removed
+        return True  # once removed then return to remove itself as doer
+
+    # create other doers to remove
+    doer0 = TryDoer(stop=1)
+    doer1 = TryDoer(stop=2)
+    doer2 = TryDoer(stop=3)
+    doer3 = TryDoer(stop=2)
+    doer4 = TryDoer(stop=3)
+    doers = [doer0, doer1, doer2, doer3, doer4, removeDo]
+
+    doist.doers = list(doers)  # make copy
+    assert doist.tock == tock == 1.0
+    assert doist.tyme == 0.0
+    assert doist.limit == limit == 5.0
+    assert doist.doers == doers
+    assert removeDo in doist.doers
+    for doer in doist.doers:
+        assert doer.done == None
+    assert doist.done == None
+    assert not doist.deeds
+
+    doist.enter()
+    assert not doist.done
+    doist.recur()  # should run removeDo and remove all but itself
+    assert doist.tyme == 1.0
+    assert doist.deeds
+    assert not doist.done  # doist not done
+    assert len(doist.doers) == 1
+    assert removeDo in doist.doers
+    # force exited so not done
+    assert not doer0.done
+    assert not doer1.done
+    assert not doer2.done
+    assert not doer3.done
+    assert not doer4.done
+    doist.recur()
+    assert doist.tyme == 2.0
+    assert doist.deeds
+    assert not doist.done  # dodoer not done
+    assert doist.deeds
+    assert len(doist.doers) == 1
+    assert removeDo in doist.doers
+    doist.recur()
+    assert doist.tyme == 3.0
+    assert not doist.deeds
+    assert not doist.done
+    assert len(doist.doers) == 1
+    assert removeDo in doist.doers
+    assert removeDo.done
+
+    """Done Test"""
+
 
 def test_nested_doers():
     """
@@ -749,4 +842,4 @@ def test_doist_dos():
 
 
 if __name__ == "__main__":
-    test_doist_doers()
+    test_doist_remove_by_own_doer()
