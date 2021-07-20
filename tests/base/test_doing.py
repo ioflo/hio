@@ -549,7 +549,7 @@ def test_dodoer_always():
     assert doer3.done
     assert not doer4.done
     assert len(dodoer.deeds) == 1  # deeds still there
-    doist.close()
+    doist.exit()
     assert dodoer.done == False  # forced close so not done
     assert doer0.done
     assert doer1.done

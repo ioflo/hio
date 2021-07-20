@@ -175,7 +175,7 @@ class Doist(tyming.Tymist):
                     raise
 
         finally: # finally clause always runs regardless of exception or not.
-            self.close()  # force close remaining deeds throws GeneratorExit
+            self.exit()  # force close remaining deeds throws GeneratorExit
 
 
     def enter(self, doers=None):
@@ -288,7 +288,7 @@ class Doist(tyming.Tymist):
         self.tick()  # advance .tyme by one doist .tock
 
 
-    def close(self, deeds = None):
+    def exit(self, deeds = None):
         """
         Force exit each still opened deed calling .close on the dog generator
         which throws a GeneratorExit to the generator.
@@ -369,7 +369,7 @@ class Doist(tyming.Tymist):
         for doer in rdoers:  # update .doers to remove rdoers
             self.doers.remove(doer)
 
-        self.close(deeds=rdeeds)
+        self.exit(deeds=rdeeds)
 
 
 def doify(f, name=None, tock=0.0, **opts):

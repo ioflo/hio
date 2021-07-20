@@ -433,7 +433,7 @@ def test_extend_remove_doers():
     assert doer3.done
     assert not doer4.done
     assert len(doist.deeds) == 1  # deeds still there
-    doist.close()
+    doist.exit()
     assert doist.done == False  # forced close so not done
     assert doer0.done
     assert doer1.done
