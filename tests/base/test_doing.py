@@ -756,6 +756,123 @@ def test_dodoer_remove_by_own_doer():
     """Done Test"""
 
 
+def test_dodoer_remove_own_doer():
+    """
+    Test .remove method of DoDoer called by a doer of DoDoer that removes all
+    doers including own doer
+    """
+    tock = 1.0
+
+    # create DoDoer subclass with doized method to remove other doers
+    class RemoveDoDoer(doing.DoDoer):
+        """
+        Subclass with doized method to remove other doers
+        """
+        def __init__(self, doers=None, **kwa):
+            """
+            Add removeDo to doers
+
+            Inherited Parameters:
+                tymist is  Tymist instance
+                tock is float seconds initial value of .tock
+                doers is list of doers (do generator instancs or functions)
+
+            """
+            doers = doers if doers is not None else []  # default
+            doers.extend([self.removeDo])  # add .removeDo
+            super(RemoveDoDoer, self).__init__(doers=doers, **kwa)
+
+
+        @doing.doize()
+        def removeDo(self, tymth=None, tock=0.0, **opts):
+            """
+             Returns Doist compatibile generator method (doer dog) to process
+                to remove all doers but itself
+
+            Parameters:
+                tymth is injected function wrapper closure returned by .tymen() of
+                    Tymist instance (e.e. Doist/DoDoer). Calling tymth() returns
+                    associated Tymist .tyme.
+                tock is injected initial tock value from doer.tock
+                opts is dict of injected optional additional parameters from doer.opts
+
+            Injected attributes by doize decorator as parameters to this method:
+                gf.tock = tock  # default tock attribute for doer
+                gf.opts = {}  # default opts for doer
+
+            Usage:
+                add to doers list
+            """
+            yield  # enter context also makes generator method
+            # recur context
+            self.remove(list(self.doers))
+            yield  # extra yield for testing so does a couple of passes after removed
+            yield  # extra yield for testing so does a couple of passes after removed
+            return True  # once removed then return to remove itself as doer
+
+    # start over with full set to test remove where the remove is called by
+    # a doer in the DoDoer.doers
+    doer0 = TryDoer(stop=1)
+    doer1 = TryDoer(stop=2)
+    doer2 = TryDoer(stop=3)
+    doer3 = TryDoer(stop=2)
+    doer4 = TryDoer(stop=3)
+    doers = [doer0, doer1, doer2, doer3, doer4]
+    dodoer = RemoveDoDoer(tock=tock, doers=list(doers))
+    assert dodoer.tock == tock == 1.0
+    assert dodoer.removeDo in  dodoer.doers
+    assert len(dodoer.doers) == len(doers) + 1 == 6
+    for doer in dodoer.doers:
+        assert doer.done == None
+    assert dodoer.always == False
+
+    limit = 5.0
+    doist = doing.Doist(tock=tock, limit=limit, doers=[dodoer])
+    assert doist.tyme == 0.0
+    assert doist.tock == tock ==  1.0
+    assert doist.limit == limit == 5.0
+    assert doist.doers == [dodoer]
+
+    assert dodoer.done == None
+    assert dodoer.always == False
+    assert not dodoer.deeds
+
+    doist.enter()
+    assert not dodoer.done
+
+    doist.recur()  # should run dodoer.removeDo and remove all but itself
+    assert doist.tyme == 1.0
+    assert doist.deeds
+    assert not dodoer.done  # dodoer not done
+    assert dodoer.deeds  # deed still there even though doer is removed
+    assert not dodoer.doers
+    assert not dodoer.removeDo in dodoer.doers
+    # force exited so not done
+    assert not doer0.done
+    assert not doer1.done
+    assert not doer2.done
+    assert not doer3.done
+    assert not doer4.done
+    assert not dodoer.removeDo.done
+
+    doist.recur()
+    assert doist.tyme == 2.0
+    assert doist.deeds
+    assert not dodoer.done  # dodoer not done
+    assert dodoer.deeds
+    assert not dodoer.doers
+
+    doist.recur()
+    assert doist.tyme == 3.0
+    assert not doist.deeds
+    assert dodoer.done  # dodoer done completed successfully
+    assert not dodoer.deeds  # finished by itself
+    assert not dodoer.doers
+    assert dodoer.removeDo.done  # finished by itself.
+
+    """Done Test"""
+
+
 def test_exDo():
     """
     Test exDo generator function non-class based
@@ -1155,4 +1272,4 @@ def test_trydo_throw():
 
 
 if __name__ == "__main__":
-    test_dodoer_remove()
+    test_dodoer_remove_own_doer()
