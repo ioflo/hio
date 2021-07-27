@@ -759,7 +759,7 @@ class DoDoer(Doer):
             Used throughout the execution lifecycle. The normal
             case is use the default empty initialization performed here and
             update in .enter().
-        always (Boolean): True means keep running even when all dogs in deeds
+        always (bool): True means keep running even when all dogs in deeds
             are complete. Enables dynamically managing extending or removing
             doers and associated deeds while running.
 

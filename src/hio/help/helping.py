@@ -133,7 +133,7 @@ class NonStringSequence(metaclass=ABCMeta):
 
 def nonStringIterable(obj):
     """
-    Returns: (Boolean) True if obj is non-string iterable, False otherwise
+    Returns: (bool) True if obj is non-string iterable, False otherwise
 
     Another way that is less future proof
     return (hasattr(x, '__iter__') and not isinstance(x, (str, bytes)))
@@ -143,7 +143,7 @@ def nonStringIterable(obj):
 
 def nonStringSequence(obj):
     """
-    Returns: (Boolean) True if obj is non-string sequence, False otherwise
+    Returns: (bool) True if obj is non-string sequence, False otherwise
     """
     return (not isinstance(obj, (str, bytes)) and isinstance(obj, Sequence) )
 

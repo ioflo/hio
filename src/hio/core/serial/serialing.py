@@ -36,7 +36,7 @@ class Console():
     Attributes:
         bs (int): max buffer size for each read, defaults to 256
         fd (int):  file descriptor for console
-        opened (Boolean): True means .fd opened, False means .fd closed
+        opened (bool): True means .fd opened, False means .fd closed
         rxbs (bytearray): of received characters (bytes)
 
     Methods:

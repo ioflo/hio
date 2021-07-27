@@ -86,6 +86,42 @@ class ExampleJsonEnd:
         rep.text = json.dumps(result)
 
 
+class ExampleJsonAltEnd:
+
+    def on_get(self, req, rep, uid):
+        """
+        Handles GET requests
+        """
+        message = "\nHello World from {}\n\n".format(uid)
+        result = dict(user=uid, msg=message)
+
+        rep.status = falcon.HTTP_200  # This is the default status
+        rep.text = json.dumps(result)
+
+
+    def on_post(self, req, rep, uid):
+        """
+        Handles POST requests
+        """
+        # alternate
+        try:
+            data = json.load(req.bounded_stream)
+        except ValueError:
+            raise falcon.HTTPError(falcon.HTTP_753,
+                                       'Malformed JSON',
+                                       'Could not decode the request body. The '
+                                       'JSON was incorrect.')
+
+
+        result = dict(user=uid, data=data)
+
+        #rep.status = falcon.HTTP_201
+        #rep.location = '/example/%s' % (uid)  # location header redirect
+
+        rep.status = falcon.HTTP_200  # This is the default status
+        rep.text = json.dumps(result)
+
+
 class ExampleJsonMediaEnd:
 
     def on_get(self, req, rep, uid):
@@ -261,6 +297,9 @@ exapp.add_route('/example', example) # example handles all requests to '/example
 
 exampleJson = ExampleJsonEnd()
 exapp.add_route('/example/{uid}', exampleJson)
+
+exampleJsonAlt = ExampleJsonAltEnd()
+exapp.add_route('/example/alt/{uid}', exampleJsonAlt)
 
 exampleMediaJson = ExampleJsonMediaEnd()
 exapp.add_route('/example/media/{uid}', exampleMediaJson)
@@ -501,6 +540,24 @@ def test_get_uid_json():
     headers = {"Content-Type": "application/json; charset=utf-8",
                }
     rep = client.simulate_post(path='/example/2',
+                               body=json.dumps(dict(name="John Smith")),
+                               headers=headers)
+    assert rep.status == falcon.HTTP_OK
+    assert rep.json == dict(data=dict(name='John Smith'), user='2')
+
+
+def test_get_uid_alt_json():
+    """
+    """
+    client = testing.TestClient(app=exapp)
+
+    rep = client.simulate_get(path='/example/alt/2')
+    assert rep.status == falcon.HTTP_OK
+    assert rep.json == {'user': '2', 'msg': '\nHello World from 2\n\n'}
+
+    headers = {"Content-Type": "application/json; charset=utf-8",
+               }
+    rep = client.simulate_post(path='/example/alt/2',
                                body=json.dumps(dict(name="John Smith")),
                                headers=headers)
     assert rep.status == falcon.HTTP_OK
