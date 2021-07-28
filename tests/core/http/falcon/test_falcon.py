@@ -65,15 +65,15 @@ class ExampleJsonEnd:
             raw_json = req.bounded_stream.read()
         except Exception:
             raise falcon.HTTPError(falcon.HTTP_748,
-                                       'Read Error',
-                                       'Could not read the request body.')
+                                   title='Read Error',
+                                   description='Could not read the request body.')
 
         try:
             data = json.loads(raw_json)
         except ValueError:
             raise falcon.HTTPError(falcon.HTTP_753,
-                                       'Malformed JSON',
-                                       'Could not decode the request body. The '
+                                   title='Malformed JSON',
+                                   description='Could not decode the request body. The '
                                        'JSON was incorrect.')
 
 
@@ -108,8 +108,8 @@ class ExampleJsonAltEnd:
             data = json.load(req.bounded_stream)
         except ValueError:
             raise falcon.HTTPError(falcon.HTTP_753,
-                                       'Malformed JSON',
-                                       'Could not decode the request body. The '
+                                       title='Malformed JSON',
+                                       description='Could not decode the request body. The '
                                        'JSON was incorrect.')
 
 
@@ -143,8 +143,8 @@ class ExampleJsonMediaEnd:
             data = req.media
         except Exception:
             raise falcon.HTTPError(falcon.HTTP_748,
-                                       'Read Error',
-                                       'Could not read the request body.')
+                                   title='Read Error',
+                                   description='Could not read the request body.')
 
 
         result = dict(user=uid, data=data)
@@ -622,4 +622,4 @@ def test_get_pause():
 
 
 if __name__ == '__main__':
-    test_get_pause()
+    test_get_uid_json()

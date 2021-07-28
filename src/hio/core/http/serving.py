@@ -1298,8 +1298,8 @@ else:  # falcon import succeeded
             path = os.path.join(self.staticDirPath, path)
             if not os.path.exists(path):
                 raise falcon.HTTPError(falcon.HTTP_NOT_FOUND,
-                                'Missing Resource',
-                                'File "{}" not found or forbidden'.format(path))
+                                title='Missing Resource',
+                                description='File "{}" not found or forbidden'.format(path))
             filetype = mimetypes.guess_type(path, strict=True)[0]  # get first guess
             rep.set_header("Content-Type", "{}; charset=UTF-8".format(filetype))
             rep.status = falcon.HTTP_200  # This is the default status
