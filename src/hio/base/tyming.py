@@ -89,9 +89,9 @@ class Tymist(hioing.Mixin):
 
     def tymen(self):
         """
-        Returns function wrapper closure tymth that when called returns .tyme.
-        This enables read only injection of .tyme into any object that wants to
-        be on or access this Tymist's tyme base.
+        Returns function wrapper closure tymth, when called tymth() returns .tyme.
+        This enables read only injection of .tyme into any object via tymth()
+        that wants to be on or access this Tymist's tyme base.
         """
         def tymth():
             return self.tyme
