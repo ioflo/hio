@@ -175,11 +175,14 @@ def attributize(genie):
     Python generators do not support adding attributes.
     Adding support for attributes provides a way to pass information
     from a WSGI App that returns a generator to a WSGI server via the generator
-    after the WSGI app has already started returning the its body. This allows
-    a streaming WSGI App body iterator to later modify the headers and status
-    returns before the body iterator began iterating. This is useful for web
-    hooks or backend requents from a coroutine based async WSGI server and
-    WSGI app that leverage the streaming support of standard WSGI.
+    after the WSGI app has already started returning its body. The hio.http.Server
+    WSGI server looks for the attributes ._status and ._headers and substitutes
+    these if present. This allows a streaming WSGI App body iterator to later
+    modify the headers and status taht will be returned before the body iterator
+    began iterating. This is useful for web hooks or backend requests that are
+    serviced by an async coroutine based WSGI app so that they may leverage
+    the streaming support of standard WSGI but use a the coroutine based
+    hio.http.Server as an async WSGI server.
 
     This decorator takes a Duck Typing approach to decorating
     a generator function or method that returns a new function type instance that
