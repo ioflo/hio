@@ -2,5 +2,5 @@
 """
 hio.core Package
 """
-
+from .wiring import openWL, WireLog, WireLogDoer
 

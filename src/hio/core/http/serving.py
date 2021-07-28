@@ -621,7 +621,7 @@ class Server():
 
         self.scheme = scheme
         host, port = ha
-        port = port or  defaultPort  # if port not specified
+        port = port or defaultPort  # if port not specified
         ha = (host, port)
 
         if servant:
