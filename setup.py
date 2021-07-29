@@ -79,7 +79,7 @@ setup(
                "structured concurrency",
         # eg: 'keyword1', 'keyword2', 'keyword3',
     ],
-    python_requires='>=3.9.5',
+    python_requires='>=3.9.6',
     install_requires=[
         'netifaces>=0.10.9',
         'lmdb>=1.2.1',
