@@ -351,7 +351,7 @@ def test_tcp_basic():
         assert count == len(msgOut1)
         ixBeta.shutdownSend()
         msgOut2 = b"Server send again after server shutdowns socket"
-        with pytest.raises(socket.error) as ex:
+        with pytest.raises(OSError) as ex:
             count = ixBeta.send(msgOut)
         assert ex.typename == 'BrokenPipeError'
         time.sleep(0.05)

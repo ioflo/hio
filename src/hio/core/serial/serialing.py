@@ -144,23 +144,67 @@ class Console():
         line = bytearray()
         try:
             self.rxbs.extend(os.read(self.fd, bs))
-        except OSError as ex1:  #if no chars available generates exception
-            try:  # need to catch correct exception
-                # BSD 35 == errno.EAGAIN, errno.EWOULDBLOCK; Linux 11 == errno.EDEADLK
-                en = ex1.args[0]  # if args not sequence get TypeError
-                if en in (errno.EAGAIN, errno.EDEADLK):
-                    pass  # No characters available
-                else:
-                    raise  # re raise exception ex1
+        except OSError as ex1:  # if no chars available generates exception
+            # ex.args[0] == ex.errno for better os compatibility
+            # the value of a given errno.XXXXX may be different on each os
+            # EAGAIN: BSD 35, Linux 11, Windows 11
+            # EWOULDBLOCK: BSD 35 Linux 11 Windows 140
+            if ex1.args[0] in (errno.EAGAIN, errno.EWOULDBLOCK):
+                pass  # No characters available
+            else:
+                logger.error("Error: Get on Console '%s'."
+                              " '%s'\n", self.fd, ex1)
+                raise  # re-raise exception ex1
 
-            except TypeError as ex2:  # catch args[0] mismatch above
-                raise ex1  # ignore TypeError, re-raise exception ex1
+
         else:
             if (idx := self.rxbs.find(ord(b'\n'))) != -1:
                 line.extend(self.rxbs[:idx])  # copy all but newline
                 del self.rxbs[:idx+1]  # delete including newline
 
         return line
+
+    #def get(self, bs=None):
+        #"""
+        #Gets nonblocking line of bytes from console of up to bs characters
+        #including eol newline if in bs characters otherwise
+        #must repeat get until a newline appears.
+
+        #Returns empty string if no characters available else returns line.
+        #Works in both canonical and non-canonical mode
+        #In canonical mode, no chars are available to read until eol newline
+        #is entered and eol is included in the read characters.
+
+        #Strips eol newline before returning line.
+        #"""
+        #bs = bs if bs is not None else self.bs
+        #line = bytearray()
+        #try:
+            #self.rxbs.extend(os.read(self.fd, bs))
+        #except OSError as ex1:  # if no chars available generates exception
+            #try:  # need to catch correct exception
+                ## ex.args[0] == ex.errno for better os compatibility.
+                ## the value of a given errno.XXXXX may be different on each os
+                ## EAGAIN: BSD 35, Linux 11, Windows 11
+                ## EWOULDBLOCK: BSD 35 Linux 11 Windows 140
+                ## if args not sequence get TypeError
+                #if ex1.args[0] in (errno.EAGAIN, errno.EWOULDBLOCK):
+                    #pass  # No characters available
+                #else:
+                    #logger.error("Error: Get on Console '%s'."
+                                  #" '%s'\n", self.fd, ex1)
+                    #raise  # re-raise exception ex1
+
+            #except TypeError as ex2:  # catch args[0] mismatch above
+                #logger.error("Error: Get on Console '%s'."
+                              #" '%s'\n", self.fd, ex1)
+                #raise ex1  # ignore TypeError, re-raise exception ex1
+        #else:
+            #if (idx := self.rxbs.find(ord(b'\n'))) != -1:
+                #line.extend(self.rxbs[:idx])  # copy all but newline
+                #del self.rxbs[:idx+1]  # delete including newline
+
+        #return line
 
 
 
@@ -293,7 +337,7 @@ class Device():
         speed = serial port speed in bps
         bs = buffer size for reads
         """
-        self.fd = None #serial device port file descriptor, must be opened first
+        self.fd = None  # serial device port file descriptor, must be opened first
         self.port = port or os.ctermid() #default to console
         self.speed = speed or 9600
         self.bs = bs or 1024
@@ -428,6 +472,8 @@ class Device():
             if ex1.errno == errno.EAGAIN: #BSD 35, Linux 11
                 pass #No characters available
             else:
+                logger.error("Error: Receive on Device '%s'."
+                              " '%s'\n", self.port, ex)
                 raise #re raise exception ex1
 
         return data
@@ -440,9 +486,11 @@ class Device():
         try:
             count = os.write(self.fd, data)
         except OSError as ex1:  # ex1 is the target instance of the exception
-            if ex1.errno == errno.EAGAIN: #BSD 35, Linux 11
+            if ex1.errno == errno.EAGAIN:  # BSD 35, Linux 11
                 count = 0  # buffer full can't write
             else:
+                logger.error("Error: Send on Device '%s'."
+                              " '%s'\n", self.port, ex)
                 raise #re raise exception ex1
 
         return count
@@ -527,6 +575,8 @@ class Serial():
             if ex1.errno == errno.EAGAIN: #BSD 35, Linux 11
                 pass #No characters available
             else:
+                logger.error("Error: Receive on Serial '%s'."
+                              " '%s'\n", self.port, ex)
                 raise #re raise exception ex1
 
         return data
@@ -542,6 +592,8 @@ class Serial():
             if ex1.errno == errno.EAGAIN: #BSD 35, Linux 11
                 count = 0  # buffer full can't write
             else:
+                logger.error("Error: Send on Serial '%s'."
+                              " '%s'\n", self.port, ex)
                 raise #re raise exception ex1
 
         return count

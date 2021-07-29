@@ -7,7 +7,10 @@ import os
 import errno
 import socket
 
-from binascii import hexlify
+
+from ... import help
+
+logger = help.ogler.getLogger()
 
 
 UDP_MAX_DATAGRAM_SIZE = (2 ** 16) - 1  # 65535
@@ -16,7 +19,7 @@ UDP_MAX_SAFE_PAYLOAD = 548  # IPV4 MTU 576 - udp headers 28
 UDP_MAX_PACKET_SIZE = min(1024, UDP_MAX_DATAGRAM_SIZE)  # assumes IPV6 capable equipment
 
 
-class SocketUdpNb(object):
+class Peer(object):
     """
     Class to manage non blocking I/O on UDP socket.
     """
@@ -63,7 +66,7 @@ class SocketUdpNb(object):
         Opens socket in non blocking mode.
 
         if socket not closed properly, binding socket gets error
-           socket.error: (48, 'Address already in use')
+           OSError: (48, 'Address already in use')
         """
         #create socket ss = server socket
         self.ss = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -85,8 +88,8 @@ class SocketUdpNb(object):
         #bind to Host Address Port
         try:
             self.ss.bind(self.ha)
-        except socket.error as ex:
-            console.terse("socket.error = {0}\n".format(ex))
+        except OSError as ex:
+            logger.error("Error opening UDP %s\n %s\n", self.ha, ex)
             return False
 
         self.ha = self.ss.getsockname() #get resolved ha after bind
@@ -119,25 +122,18 @@ class SocketUdpNb(object):
         """
         try:
             data, sa = self.ss.recvfrom(self.bs)  # sa is source (host, port)
-        except socket.error as ex:
-            # ex.args[0] is always ex.errno for better compat
+        except OSError as ex:
+            # ex.args[0] == ex.errno for better compat
+            # the value of a given errno.XXXXX may be different on each os
+            # EAGAIN: BSD 35, Linux 11, Windows 11
+            # EWOULDBLOCK: BSD 35 Linux 11 Windows 140
             if ex.args[0] in (errno.EAGAIN, errno.EWOULDBLOCK):
                 return (b'', None) #receive has nothing empty string for data
             else:
-                emsg = "socket.error = {0}: receiving at {1}\n".format(ex, self.ha)
-                console.profuse(emsg)
+                logger.error("Error receive on UDP %s\n %s\n", self.ha, ex)
                 raise #re raise exception ex1
 
-        if console._verbosity >= console.Wordage.profuse:  # faster to check
-            try:
-                load = data.decode("UTF-8")
-            except UnicodeDecodeError as ex:
-                load = "0x{0}".format(hexlify(data).decode("ASCII"))
-            cmsg = ("Server at {0}, received from {1}:\n------------\n"
-                       "{2}\n\n".format(self.ha, sa, load))
-            console.profuse(cmsg)
-
-        if self.wl:  # log over the wire rx
+        if self.wl:  # log over the wire receive
             self.wl.writeRx(data, who=sa)
 
         return (data, sa)
@@ -151,25 +147,14 @@ class SocketUdpNb(object):
         """
         try:
             result = self.ss.sendto(data, da) #result is number of bytes sent
-        except socket.error as ex:
-            emsg = "socket.error = {0}: sending from {1} to {2}\n".format(ex, self.ha, da)
-            console.profuse(emsg)
+        except OSError as ex:
+            logger.error("Error send UDP from %s to %s.\n %s\n", self.ha, da, ex)
             result = 0
             raise
 
-        if console._verbosity >=  console.Wordage.profuse:
-            try:
-                load = data[:result].decode("UTF-8")
-            except UnicodeDecodeError as ex:
-                load = "0x{0}".format(hexlify(data[:result]).decode("ASCII"))
-            cmsg = ("Server at {0}, sent {1} bytes to {2}:\n------------\n"
-                    "{3}\n\n".format(self.ha, result, da, load))
-            console.profuse(cmsg)
-
-        if self.wl:
+        if self.wl:  # log over the wire send
             self.wl.writeTx(data[:result], who=da)
 
         return result
 
 
-PeerUdp = SocketUdpNb  # alias

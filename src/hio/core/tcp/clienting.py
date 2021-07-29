@@ -219,7 +219,7 @@ class Client(tyming.Tymee):
         Opens connection socket in non blocking mode.
 
         if socket not closed properly, binding socket gets error
-          socket.error: (48, 'Address already in use')
+          OSError: (48, 'Address already in use')
         """
         self.accepted = False
         self.connected = False
@@ -264,7 +264,7 @@ class Client(tyming.Tymee):
         if self.cs:
             try:
                 self.cs.shutdown(how)  # shutdown socket
-            except socket.error as ex:
+            except OSError as ex:
                 pass
 
 
@@ -275,7 +275,7 @@ class Client(tyming.Tymee):
         if self.cs:
             try:
                 self.shutdown(how=socket.SHUT_WR)  # shutdown socket
-            except socket.error as ex:
+            except OSError as ex:
                 pass
 
 
@@ -286,7 +286,7 @@ class Client(tyming.Tymee):
         if self.cs:
             try:
                 self.shutdown(how=socket.SHUT_RD)  # shutdown socket
-            except socket.error as ex:
+            except OSError as ex:
                 pass
 
 
@@ -321,8 +321,8 @@ class Client(tyming.Tymee):
 
         try:
             result = self.cs.connect_ex(self.ha)  # async connect
-        except socket.error as ex:
-            logger.error("socket.error = %s\n", ex)
+        except OSError as ex:
+            logger.error("OSError = %s\n", ex)
             raise
 
         if result not in [0, errno.EISCONN]:  # not connected
@@ -379,8 +379,11 @@ class Client(tyming.Tymee):
         """
         try:
             data = self.cs.recv(self.bs)
-        except socket.error as ex:
-            # ex.args[0] is always ex.errno for better compat
+        except OSError as ex:
+            # ex.args[0] == ex.errno for better os compatibility.
+            # the value of a given errno.XXXXX may be different on each os
+            # EAGAIN: BSD 35, Linux 11, Windows 11
+            # EWOULDBLOCK: BSD 35 Linux 11 Windows 140
             if  ex.args[0] in (errno.EAGAIN, errno.EWOULDBLOCK):
                 return None  # blocked waiting for data
             elif ex.args[0] in (errno.ECONNRESET,
@@ -395,6 +398,8 @@ class Client(tyming.Tymee):
                 self.cutoff = True  # this signals need to close/reopen connection
                 return bytes()  # data empty
             else:
+                logger.error("Error: Receive on HTTP Client '%s'."
+                              " '%s'\n", self.ha, ex)
                 raise  # re-raise
 
         if data:  # connection open
@@ -442,8 +447,11 @@ class Client(tyming.Tymee):
         """
         try:
             count = self.cs.send(data)  # result is number of bytes sent
-        except socket.error as ex:
-            # ex.args[0] is always ex.errno for better compat
+        except OSError as ex:
+            # ex.args[0] == ex.errno for better os compatibility.
+            # the value of a given errno.XXXXX may be different on each os
+            # EAGAIN: BSD 35, Linux 11, Windows 11
+            # EWOULDBLOCK: BSD 35 Linux 11 Windows 140
             if ex.args[0] in (errno.EAGAIN, errno.EWOULDBLOCK):
                 count = 0  # blocked try again
             elif ex.args[0] in (errno.ECONNRESET,
@@ -458,6 +466,8 @@ class Client(tyming.Tymee):
                 self.cutoff = True  # this signals need to close/reopen connection
                 count = 0
             else:
+                logger.error("Error: Send on HTTP Client '%s'."
+                              " '%s'\n", self.ha, ex)
                 raise
 
         if count:
@@ -626,22 +636,22 @@ class ClientTls(Client):
         """
         try:
             self.cs.do_handshake()
-        except ssl.SSLError as ex:
+        except OSError as ex:
             if ex.errno in (ssl.SSL_ERROR_WANT_READ, ssl.SSL_ERROR_WANT_WRITE):
                 return False
             elif ex.errno in (ssl.SSL_ERROR_EOF, ):
-                self.shutclose()
+                self.close()
                 raise   # should give up here nicely
             else:
-                self.shutclose()
+                self.close()
                 raise
         except OSError as ex:
-            self.shutclose()
+            self.close()
             if ex.errno in (errno.ECONNABORTED, ):
                 raise  # should give up here nicely
             raise
         except Exception as ex:
-            self.shutclose()
+            self.close()
             raise
 
         self.connected = True
@@ -678,8 +688,9 @@ class ClientTls(Client):
         """
         try:
             data = self.cs.recv(self.bs)
-        except socket.error as ex:  # ssl.SSLError is a subtype of socket.error
-            # ex.args[0] is always ex.errno for better compat
+        except OSError as ex:  # ssl.SSLError is a subtype of OSError
+            # ex.args[0] == ex.errno for better os compatibility.
+            # the value of a given errno.XXXXX may be different on each os
             if ex.args[0] in (ssl.SSL_ERROR_WANT_READ, ssl.SSL_ERROR_WANT_WRITE):
                 return None
             elif ex.args[0] in (errno.ECONNRESET,
@@ -695,6 +706,8 @@ class ClientTls(Client):
                 self.cutoff = True  # this signals need to close/reopen connection
                 return bytes()  # data empty
             else:
+                logger.error("Error: Receive on HTTP ClientTLS '%s'."
+                              " '%s'\n", self.ha, ex)
                 raise  # re-raise
 
         if data:  # connection open
@@ -714,8 +727,9 @@ class ClientTls(Client):
         """
         try:
             result = self.cs.send(data) #result is number of bytes sent
-        except socket.error as ex:  # ssl.SSLError is a subtype of socket.error
-            # ex.args[0] is always ex.errno for better compat
+        except OSError as ex:  # ssl.SSLError is a subtype of OSError
+            # ex.args[0] == ex.errno for better os compatibility.
+            # the value of a given errno.XXXXX may be different on each os
             if ex.args[0] in (ssl.SSL_ERROR_WANT_READ, ssl.SSL_ERROR_WANT_WRITE):
                 result = 0
             elif ex.args[0] in (errno.ECONNRESET,
@@ -731,6 +745,8 @@ class ClientTls(Client):
                 self.cutoff = True  # this signals need to close/reopen connection
                 result = 0
             else:
+                logger.error("Error: Send on HTTP ClientTLS '%s'."
+                              " '%s'\n", self.ha, ex)
                 raise
 
         if result:

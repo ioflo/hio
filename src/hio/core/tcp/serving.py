@@ -114,7 +114,7 @@ class Acceptor(tyming.Tymee):
         Opens binds listen socket in non blocking mode.
 
         if socket not closed properly, binding socket gets error
-           socket.error: (48, 'Address already in use')
+           OSError: (48, 'Address already in use')
         """
         #create server socket ss to listen on
         self.ss = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -143,7 +143,7 @@ class Acceptor(tyming.Tymee):
         #try:  # bind to listen socket (host, port) to receive connections
             #self.ss.bind(self.ha)
             #self.ss.listen(5)
-        #except socket.error as ex:
+        #except OSError as ex:
             #return False
 
         self.ha = self.ss.getsockname()  # get resolved ha after bind
@@ -164,7 +164,7 @@ class Acceptor(tyming.Tymee):
         if self.ss:
             try:
                 self.ss.shutdown(socket.SHUT_RDWR)  # shutdown socket
-            except socket.error as ex:
+            except OSError as ex:
                 pass
             self.ss.close()  #close socket
             self.ss = None
@@ -179,7 +179,7 @@ class Acceptor(tyming.Tymee):
         # accept new virtual connected socket created from server socket
         try:
             cs, ca = self.ss.accept()  # virtual connection (socket, host address)
-        except socket.error as ex:
+        except OSError as ex:
             if ex.errno in (errno.EAGAIN, errno.EWOULDBLOCK):
                 return (None, None)  # nothing yet
             raise  # re-raise
@@ -648,7 +648,7 @@ class Remoter(tyming.Tymee):
         if self.cs:
             try:
                 self.cs.shutdown(how)  # shutdown socket
-            except socket.error as ex:
+            except OSError as ex:
                 pass
 
 
@@ -659,7 +659,7 @@ class Remoter(tyming.Tymee):
         if self.cs:
             try:
                 self.shutdown(how=socket.SHUT_WR)  # shutdown socket
-            except socket.error as ex:
+            except OSError as ex:
                 pass
 
 
@@ -670,7 +670,7 @@ class Remoter(tyming.Tymee):
         if self.cs:
             try:
                 self.shutdown(how=socket.SHUT_RD)  # shutdown socket
-            except socket.error as ex:
+            except OSError as ex:
                 pass
 
 
@@ -703,8 +703,9 @@ class Remoter(tyming.Tymee):
         """
         try:
             data = self.cs.recv(self.bs)
-        except socket.error as ex:
-            # ex.args[0] is always ex.errno for better compat
+        except OSError as ex:
+            # ex.args[0] == ex.errno for better os compatibility.
+            # the value of a given errno.XXXXX may be different on each os
             if ex.args[0] in (errno.EAGAIN, errno.EWOULDBLOCK):
                 return None  # keep trying
             elif ex.args[0] in (errno.ECONNRESET,
@@ -770,8 +771,9 @@ class Remoter(tyming.Tymee):
         """
         try:
             count = self.cs.send(data) #result is number of bytes sent
-        except socket.error as ex:
-            # ex.args[0] is always ex.errno for better compat
+        except OSError as ex:
+            # ex.args[0] == ex.errno for better compat
+            # the value of a given errno.XXXXX may be different on each os
             if ex.args[0] in (errno.EAGAIN, errno.EWOULDBLOCK):
                 count = 0  # blocked try again
             elif ex.args[0] in (errno.ECONNRESET,
@@ -936,8 +938,9 @@ class RemoterTls(Remoter):
         """
         try:
             data = self.cs.recv(self.bs)
-        except socket.error as ex:  # ssl.SSLError is a subtype of socket.error
-            # ex.args[0] is always ex.errno for better compat
+        except OSError as ex:  # ssl.SSLError is a subtype of OSError
+            # ex.args[0] == ex.errno for better compat
+            # the value of a given errno.XXXXX may be different on each os
             if  ex.args[0] in (ssl.SSL_ERROR_WANT_READ, ssl.SSL_ERROR_WANT_WRITE):
                 return None  # blocked waiting for data
             elif ex.args[0] in (errno.ECONNRESET,
@@ -973,8 +976,9 @@ class RemoterTls(Remoter):
         """
         try:
             result = self.cs.send(data) #result is number of bytes sent
-        except socket.error as ex:  # ssl.SSLError is a subtype of socket.error
-            # ex.args[0] is always ex.errno for better compat
+        except OSError as ex:  # ssl.SSLError is a subtype of OSError
+            # ex.args[0] == ex.errno for better compat
+            # the value of a given errno.XXXXX may be different on each os
             if ex.args[0] in (ssl.SSL_ERROR_WANT_READ, ssl.SSL_ERROR_WANT_WRITE):
                 result = 0  # blocked try again
             elif ex.args[0] in (errno.ECONNRESET,
