@@ -564,7 +564,7 @@ def test_get_uid_alt_json():
     assert rep.json == dict(data=dict(name='John Smith'), user='2')
 
 
-def test_get_uid__media_json():
+def test_uid_media_json():
     """
     """
     client = testing.TestClient(app=exapp)

@@ -164,49 +164,6 @@ class Console():
 
         return line
 
-    #def get(self, bs=None):
-        #"""
-        #Gets nonblocking line of bytes from console of up to bs characters
-        #including eol newline if in bs characters otherwise
-        #must repeat get until a newline appears.
-
-        #Returns empty string if no characters available else returns line.
-        #Works in both canonical and non-canonical mode
-        #In canonical mode, no chars are available to read until eol newline
-        #is entered and eol is included in the read characters.
-
-        #Strips eol newline before returning line.
-        #"""
-        #bs = bs if bs is not None else self.bs
-        #line = bytearray()
-        #try:
-            #self.rxbs.extend(os.read(self.fd, bs))
-        #except OSError as ex1:  # if no chars available generates exception
-            #try:  # need to catch correct exception
-                ## ex.args[0] == ex.errno for better os compatibility.
-                ## the value of a given errno.XXXXX may be different on each os
-                ## EAGAIN: BSD 35, Linux 11, Windows 11
-                ## EWOULDBLOCK: BSD 35 Linux 11 Windows 140
-                ## if args not sequence get TypeError
-                #if ex1.args[0] in (errno.EAGAIN, errno.EWOULDBLOCK):
-                    #pass  # No characters available
-                #else:
-                    #logger.error("Error: Get on Console '%s'."
-                                  #" '%s'\n", self.fd, ex1)
-                    #raise  # re-raise exception ex1
-
-            #except TypeError as ex2:  # catch args[0] mismatch above
-                #logger.error("Error: Get on Console '%s'."
-                              #" '%s'\n", self.fd, ex1)
-                #raise ex1  # ignore TypeError, re-raise exception ex1
-        #else:
-            #if (idx := self.rxbs.find(ord(b'\n'))) != -1:
-                #line.extend(self.rxbs[:idx])  # copy all but newline
-                #del self.rxbs[:idx+1]  # delete including newline
-
-        #return line
-
-
 
 class ConsoleDoer(doing.Doer):
     """
