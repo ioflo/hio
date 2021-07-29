@@ -293,7 +293,7 @@ def test_tcp_basic():
         msgIn = gamma.receive()
         if 'linux' in sys.platform:
             assert msgIn == b''  # server shutdown detected not None
-            self.assertIs(gamma.cutoff, True)
+            assert gamma.cutoff == True
         else:
             assert msgIn == None   # server shutdown not detected
             assert gamma.cutoff == False

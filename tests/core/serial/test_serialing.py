@@ -136,3 +136,4 @@ def test_echo_console():
 
 if __name__ == "__main__":
     test_console()
+    test_echo_console()

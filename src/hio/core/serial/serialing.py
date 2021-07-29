@@ -147,8 +147,8 @@ class Console():
         except OSError as ex1:  #if no chars available generates exception
             try:  # need to catch correct exception
                 errno = ex1.args[0]  # if args not sequence get TypeError
-                if errno == 35:  # 35 errno.EAGAIN, errno.EWOULDBLOCK, 11 errno.EDEADLK
-                    pass  # No characters available
+                if errno in (35, 11):  # BSD 35 errno.EAGAIN, errno.EWOULDBLOCK; Linux 11 errno.EDEADLK
+                    pass  # No characters available 
                 else:
                     raise  # re raise exception ex1
 
