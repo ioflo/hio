@@ -2,3 +2,4 @@
 """
 hio.core.serial Package
 """
+from .serialing import Console
