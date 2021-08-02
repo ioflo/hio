@@ -5,3 +5,4 @@ hio package
 
 __version__ = '0.4.5'  # also change in setup.py
 
+from .hioing import Mixin, HioError, ValidationError, VersionError
