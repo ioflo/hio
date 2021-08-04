@@ -17,7 +17,7 @@ def test_copy_func():
     assert a.__name__ == 'a'
     a.m = 2
 
-    b = helping.copy_func(a, name='b')
+    b = helping.copyfunc(a, name='b')
     assert b.__name__ == 'b'
     b.m = 4
 

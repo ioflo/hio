@@ -3,7 +3,9 @@
 hio.core.doing Module
 """
 import time
-from inspect import isgeneratorfunction, ismethod
+import types
+import inspect
+from inspect import isgeneratorfunction
 from collections import deque, namedtuple
 
 from .. import hioing
@@ -372,7 +374,7 @@ class Doist(tyming.Tymist):
         self.exit(deeds=rdeeds)
 
 
-def doify(f, name=None, tock=0.0, **opts):
+def doify(f, *, name=None, tock=0.0, **opts):
     """
     Returns Doist compatible copy, g, of converted generator function f.
     Each invoction of doify(f) returns a unique copy of doified function f.
@@ -395,14 +397,16 @@ def doify(f, name=None, tock=0.0, **opts):
         opts is dictionary of remaining parameters that becomes .opts attribute
             of doified copy g
     """
-    g = helping.copy_func(f, name=name)
-    g.tock = tock  # default tock attributes
+    g = helping.copyfunc(f, name=name)
     g.done = None  # default done state
+    g.tock = tock  # default tock attributes
     g.opts = dict(opts)  #  default opts attribute
+    if inspect.ismethod(f):  # f.__self__ instance method
+        g = types.MethodType(g, f.__self__)  # make g a method of f.__self__ only
     return g
 
 
-def doize(tock=0.0, **opts):
+def doize(*, tock=0.0, **opts):
     """
     Returns decorator that makes decorated generator function Doist compatible.
     Imbues decorated generator function with attributes used by Doist.enter() or
@@ -420,13 +424,10 @@ def doize(tock=0.0, **opts):
             of doized f
     """
     def decorator(f):
-        # must create copy not wrapper so inspect.isgeneratorfunction works
-        # result of decoration
-        g = helping.copy_func(f)
-        g.tock = tock  # default tock attributes
-        g.done = None  # default done state
-        g.opts = dict(opts)  # default opts attribute
-        return g
+        f.done = None  # default done state
+        f.tock = tock  # default tock attributes
+        f.opts = dict(opts)  # default opts attribute
+        return f
     return decorator
 
 

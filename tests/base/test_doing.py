@@ -7,6 +7,7 @@ import pytest
 
 import os
 import inspect
+import types
 
 from hio.base import tyming
 from hio.base import doing
@@ -14,7 +15,7 @@ from hio.base.basing import State
 from hio.base.doing import TryDoer, tryDo
 from hio.core.tcp import serving, clienting
 from hio.core.serial import serialing
-
+from hio.help import helping
 
 def test_deed():
     """
@@ -59,6 +60,46 @@ def test_doify():
     assert inspect.isgenerator(g1)
 
     assert id(g0) != id(g1)
+
+
+    class A:
+        def __init__(self, name="hi"):
+            self.name = name
+
+        def gf(self):
+            yield self.name
+
+
+    a = A()
+    tock = 0.5
+    opts = dict(cold=True)
+    a.dgf = doing.doify(a.gf, name="dgf", tock=tock, **opts)
+    assert inspect.isgeneratorfunction(a.dgf)
+    gen = a.dgf()
+    assert next(gen) == "hi" == a.name
+    assert inspect.isgeneratorfunction(a.dgf)
+    assert inspect.isgenerator(gen)
+    assert a.dgf.__func__.done is None
+    a.dgf.__func__.done = True
+    assert a.dgf.done == True
+    assert a.dgf.opts == opts
+
+    b = A()
+    assert not hasattr(b, "dgf")
+    b.dgf = doing.doify(b.gf, name="dgf", tock=tock, **opts)
+    assert inspect.isgeneratorfunction(b.dgf)
+    gen = b.dgf()
+    assert next(gen) == "hi" == b.name
+    assert inspect.isgeneratorfunction(b.dgf)
+    assert inspect.isgenerator(gen)
+    assert b.dgf.__func__.done is None
+    b.dgf.__func__.done = False
+    assert b.dgf.done == False
+    assert a.dgf.done == True
+    assert b.dgf.opts == opts
+
+    assert a.dgf is not b.dgf
+
     """End Test"""
 
 def test_doize():
@@ -1269,7 +1310,134 @@ def test_trydo_throw():
                                 State(tyme=0.25, context='exit', feed='Hi', count=4)]
 
 
+def test_decoration():
+    """
+    Test some stuff with regards decorating methods etc
+    """
+    import inspect
+
+    def gf(name="howdy"):
+        yield name
+
+    assert inspect.isfunction(gf)
+    assert inspect.isgeneratorfunction(gf)
+    gen = gf()
+    assert inspect.isgenerator(gen)
+    assert next(gen) == "howdy"
+
+    @doing.doize()
+    def adgf(name="hi"):
+        yield name
+
+    assert inspect.isgeneratorfunction(adgf)
+    agen = adgf()
+    assert next(agen) == "hi"
+    assert inspect.isgeneratorfunction(adgf)
+    assert inspect.isgenerator(agen)
+    assert adgf.done is None
+    adgf.done = True
+
+    bgen = adgf()
+    assert inspect.isgenerator(bgen)
+    assert next(bgen) == "hi"
+    assert adgf.done == True
+
+
+    class A:
+        def __init__(self, name="hi"):
+            self.name = name
+
+        @doing.doize()
+        def dgf(self):
+            yield self.name
+
+        def gf(self):
+            yield self.name
+
+    a = A()
+    assert inspect.isgeneratorfunction(a.dgf)
+    gen = a.dgf()
+    assert next(gen) == "hi" == a.name
+    assert inspect.isgeneratorfunction(a.dgf)
+    assert inspect.isgenerator(gen)
+    assert a.dgf.__func__.done is None
+    a.dgf.__func__.done = True
+
+    #  doize problem  all instances share same .__func__ object
+    b = A()
+    assert b.dgf.__func__.done == True
+    assert inspect.ismethod(a.dgf)
+
+    assert inspect.isgeneratorfunction(a.gf)
+    gen = a.gf()
+    assert next(gen) == "hi" == a.name
+    assert inspect.isgeneratorfunction(a.gf)
+    assert inspect.isgenerator(gen)
+    with pytest.raises(AttributeError):
+        assert a.gf.__func__.done is None
+
+    assert inspect.ismethod(a.gf)
+    assert type(a.gf) == types.MethodType
+    assert issubclass(type(a.gf), types.MethodType)
+    assert not isinstance(type(a.gf), types.MethodType)
+    assert isinstance(a.gf, types.MethodType)
+    assert a.gf.__self__ is a
+
+    fargs = inspect.getfullargspec(a.gf).args
+    assert fargs == ['self']
+
+    assert not hasattr(a.gf.__func__, "hope")
+    a.gf.__func__.hope = True
+    assert a.gf.hope == True
+
+    # not work because a.mgf.__func__ will be assgned a method not a func so
+    # a.mgf.__func__.done = True will fail
+    # a.mgf = types.MethodType(a.gf, a)
+
+    a.mgf = types.MethodType(helping.copyfunc(a.gf), a.gf.__self__)
+
+    assert id(a.mgf) != id(a.gf)
+    assert inspect.ismethod(a.mgf)
+    assert type(a.mgf) == types.MethodType
+    assert issubclass(type(a.mgf), types.MethodType)
+    assert not isinstance(type(a.mgf), types.MethodType)
+    assert isinstance(a.mgf, types.MethodType)
+    assert a.mgf.__self__ is a
+    gen = a.mgf()
+    assert next(gen) == "hi" == a.name
+    assert inspect.isgeneratorfunction(a.mgf)
+    assert inspect.isgenerator(gen)
+
+    assert hasattr(a.mgf.__func__, "hope")  # set before copy
+    assert a.mgf.hope == True
+    a.mgf.__func__.hope = False
+    assert a.mgf.hope == False
+    assert a.gf.hope == True
+
+    assert not hasattr(a.gf.__func__, "done")
+    a.gf.__func__.done = True
+    assert a.gf.done == True
+
+    assert not hasattr(a.mgf.__func__, "done")  # not set before copy
+    a.mgf.__func__.done = False
+    assert a.mgf.done == False
+    assert a.gf.done == True
+
+    mgf = types.MethodType(helping.copyfunc(a.gf), a.gf.__self__)
+    assert id(mgf) != id(a.gf)
+    assert inspect.ismethod(mgf)
+    assert type(mgf) == types.MethodType
+    assert issubclass(type(mgf), types.MethodType)
+    assert not isinstance(type(mgf), types.MethodType)
+    assert isinstance(mgf, types.MethodType)
+    assert mgf.__self__ is a
+    gen = mgf()
+    assert next(gen) == "hi" == a.name
+    assert inspect.isgeneratorfunction(mgf)
+    assert inspect.isgenerator(gen)
+
+    """Done Test"""
 
 
 if __name__ == "__main__":
-    test_dodoer_remove_own_doer()
+    test_doify()

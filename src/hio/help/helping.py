@@ -13,7 +13,7 @@ from abc import ABCMeta
 from multidict import MultiDict, CIMultiDict
 from orderedset import OrderedSet as oset
 
-def copy_func(f, name=None):
+def copyfunc(f, name=None):
     """
     Copy a function in detail.
     To change name of func provide name parameter
@@ -37,135 +37,6 @@ def copy_func(f, name=None):
     if name:
         g.__name__ = name
     return g
-
-
-def repack(n, seq, default=None):
-    """ Repacks seq into a generator of len n and returns the generator.
-        The purpose is to enable unpacking into n variables.
-        The first n-1 elements of seq are returned as the first n-1 elements of the
-        generator and any remaining elements are returned in a tuple as the
-        last element of the generator
-        default (None) is substituted for missing elements when len(seq) < n
-
-        Example:
-
-        x = (1, 2, 3, 4)
-        tuple(repack(3, x))
-        (1, 2, (3, 4))
-
-        x = (1, 2, 3)
-        tuple(repack(3, x))
-        (1, 2, (3,))
-
-        x = (1, 2)
-        tuple(repack(3, x))
-        (1, 2, ())
-
-        x = (1, )
-        tuple(repack(3, x))
-        (1, None, ())
-
-        x = ()
-        tuple(repack(3, x))
-        (None, None, ())
-
-    """
-    it = iter(seq)
-    for i in range(n - 1):
-        yield next(it, default)
-    yield tuple(it)
-
-
-def just(n, seq, default=None):
-    """ Returns a generator of just the first n elements of seq and substitutes
-        default (None) for any missing elements. This guarantees that a generator of exactly
-        n elements is returned. This is to enable unpacking into n varaibles
-
-        Example:
-
-        x = (1, 2, 3, 4)
-        tuple(just(3, x))
-        (1, 2, 3)
-        x = (1, 2, 3)
-        tuple(just(3, x))
-        (1, 2, 3)
-        x = (1, 2)
-        tuple(just(3, x))
-        (1, 2, None)
-        x = (1, )
-        tuple(just(3, x))
-        (1, None, None)
-        x = ()
-        tuple(just(3, x))
-        (None, None, None)
-
-    """
-    it = iter(seq)
-    for i in range(n):
-        yield next(it, default)
-
-
-class NonStringIterable(metaclass=ABCMeta):
-    """
-    Allows isinstance check for iterable that is not a string
-    if isinstance(x, NonStringIterable):
-    """
-    @classmethod
-    def __subclasshook__(cls, C):
-        if cls is NonStringIterable:
-            if (not issubclass(C, (str, bytes)) and issubclass(C, Iterable)):
-                return True
-        return NotImplemented
-
-
-class NonStringSequence(metaclass=ABCMeta):
-    """
-    Allows isinstance check for sequence that is not a string
-    if isinstance(x, NonStringSequence):
-    """
-    @classmethod
-    def __subclasshook__(cls, C):
-        if cls is NonStringSequence:
-            if (not issubclass(C, (str, bytes)) and issubclass(C, Sequence)):
-                return True
-        return NotImplemented
-
-
-def nonStringIterable(obj):
-    """
-    Returns: (bool) True if obj is non-string iterable, False otherwise
-
-    Another way that is less future proof
-    return (hasattr(x, '__iter__') and not isinstance(x, (str, bytes)))
-    """
-    return (not isinstance(obj, (str, bytes)) and isinstance(obj, Iterable))
-
-
-def nonStringSequence(obj):
-    """
-    Returns: (bool) True if obj is non-string sequence, False otherwise
-    """
-    return (not isinstance(obj, (str, bytes)) and isinstance(obj, Sequence) )
-
-
-def isIterator(obj):
-    """
-    Returns True if obj is an iterator object, that is,
-
-    has an __iter__ method
-    has a __next__ method
-    .__iter__ is callable and returns obj
-
-    Otherwise returns False
-
-    """
-    if (hasattr(obj, "__iter__") and
-        hasattr(obj, "__next__") and
-        callable(obj.__iter__) and
-        obj.__iter__() is obj
-       ):
-        return True
-    return False
 
 
 def attributize(genie):
@@ -322,3 +193,133 @@ def attributize(genie):
         return ag
 
     return wrapper
+
+
+def repack(n, seq, default=None):
+    """ Repacks seq into a generator of len n and returns the generator.
+        The purpose is to enable unpacking into n variables.
+        The first n-1 elements of seq are returned as the first n-1 elements of the
+        generator and any remaining elements are returned in a tuple as the
+        last element of the generator
+        default (None) is substituted for missing elements when len(seq) < n
+
+        Example:
+
+        x = (1, 2, 3, 4)
+        tuple(repack(3, x))
+        (1, 2, (3, 4))
+
+        x = (1, 2, 3)
+        tuple(repack(3, x))
+        (1, 2, (3,))
+
+        x = (1, 2)
+        tuple(repack(3, x))
+        (1, 2, ())
+
+        x = (1, )
+        tuple(repack(3, x))
+        (1, None, ())
+
+        x = ()
+        tuple(repack(3, x))
+        (None, None, ())
+
+    """
+    it = iter(seq)
+    for i in range(n - 1):
+        yield next(it, default)
+    yield tuple(it)
+
+
+def just(n, seq, default=None):
+    """ Returns a generator of just the first n elements of seq and substitutes
+        default (None) for any missing elements. This guarantees that a generator of exactly
+        n elements is returned. This is to enable unpacking into n varaibles
+
+        Example:
+
+        x = (1, 2, 3, 4)
+        tuple(just(3, x))
+        (1, 2, 3)
+        x = (1, 2, 3)
+        tuple(just(3, x))
+        (1, 2, 3)
+        x = (1, 2)
+        tuple(just(3, x))
+        (1, 2, None)
+        x = (1, )
+        tuple(just(3, x))
+        (1, None, None)
+        x = ()
+        tuple(just(3, x))
+        (None, None, None)
+
+    """
+    it = iter(seq)
+    for i in range(n):
+        yield next(it, default)
+
+
+class NonStringIterable(metaclass=ABCMeta):
+    """
+    Allows isinstance check for iterable that is not a string
+    if isinstance(x, NonStringIterable):
+    """
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is NonStringIterable:
+            if (not issubclass(C, (str, bytes)) and issubclass(C, Iterable)):
+                return True
+        return NotImplemented
+
+
+class NonStringSequence(metaclass=ABCMeta):
+    """
+    Allows isinstance check for sequence that is not a string
+    if isinstance(x, NonStringSequence):
+    """
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is NonStringSequence:
+            if (not issubclass(C, (str, bytes)) and issubclass(C, Sequence)):
+                return True
+        return NotImplemented
+
+
+def nonStringIterable(obj):
+    """
+    Returns: (bool) True if obj is non-string iterable, False otherwise
+
+    Another way that is less future proof
+    return (hasattr(x, '__iter__') and not isinstance(x, (str, bytes)))
+    """
+    return (not isinstance(obj, (str, bytes)) and isinstance(obj, Iterable))
+
+
+def nonStringSequence(obj):
+    """
+    Returns: (bool) True if obj is non-string sequence, False otherwise
+    """
+    return (not isinstance(obj, (str, bytes)) and isinstance(obj, Sequence) )
+
+
+def isIterator(obj):
+    """
+    Returns True if obj is an iterator object, that is,
+
+    has an __iter__ method
+    has a __next__ method
+    .__iter__ is callable and returns obj
+
+    Otherwise returns False
+
+    """
+    if (hasattr(obj, "__iter__") and
+        hasattr(obj, "__next__") and
+        callable(obj.__iter__) and
+        obj.__iter__() is obj
+       ):
+        return True
+    return False
+
