@@ -396,6 +396,9 @@ def doify(f, *, name=None, tock=0.0, **opts):
         tock is default tock attribute of doified copy g
         opts is dictionary of remaining parameters that becomes .opts attribute
             of doified copy g
+
+    Based on:
+    https://stackoverflow.com/questions/972/adding-a-method-to-an-existing-object-instance
     """
     g = helping.copyfunc(f, name=name)
     g.done = None  # default done state
