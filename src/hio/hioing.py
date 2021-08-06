@@ -49,6 +49,7 @@ class Mixin():
     Allows each subclass to call
     super(MixinSubClass, self).__init__(*pa, **kwa)
     So the __init__ propagates to common top of Tree
+    https://medium.com/geekculture/cooperative-multiple-inheritance-in-python-practice-60e3ac5f91cc
     """
     def __init__(self, *pa, **kwa):
         pass

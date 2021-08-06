@@ -490,7 +490,7 @@ class Doer(tyming.Tymee):
 
     """
 
-    def __init__(self, tock=0.0, **kwa):
+    def __init__(self, *, tymth=None, tock=0.0, **opts):
         """
         Initialize instance.
 
@@ -502,10 +502,10 @@ class Doer(tyming.Tymee):
            tock is float seconds initial value of .tock
 
         """
-        super(Doer, self).__init__(**kwa)
-        self.tock = tock  # desired tyme interval between runs, 0.0 means asap
+        super(Doer, self).__init__(tymth=tymth)
         self.done = None  #  default completion state
-        self.opts = {}  # used for injection of options into .do by scheduler
+        self.tock = tock  # desired tyme interval between runs, 0.0 means asap
+        self.opts = opts  # used for injection of options into .do by scheduler
 
 
     def __call__(self, **kwa):
@@ -538,7 +538,7 @@ class Doer(tyming.Tymee):
         self._tock = abs(float(tock))
 
 
-    def do(self, tymth, tock=0.0, **opts):
+    def do(self, tymth, *, tock=0.0, **opts):
         """
         Generator method to run this doer.
         Calling this method returns generator.

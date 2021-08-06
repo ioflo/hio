@@ -230,6 +230,12 @@ def test_doer():
     """
     tock = 1.0
     doer = doing.Doer()
+    assert isinstance(doer, doing.Doer)
+    assert callable(doing.Doer)
+    assert callable(doer)
+    assert inspect.isgeneratorfunction(doer.do)
+    # callable instance when called returns generator
+    assert not inspect.isgeneratorfunction(doer)  # not directly generator function
     assert doer.tock == 0.0
     assert doer.tymth == None
 
@@ -309,6 +315,36 @@ def test_doer():
         except StopIteration as ex:
             assert ex.value == None
             raise
+
+
+    # Test default pass through of extra __init__ kwa to .opts
+    assert callable(doing.Doer)
+
+    opts = dict(extra=True, more=1, evenmore="hi")
+    doer = doing.Doer(extra=True, more=1, evenmore="hi")
+    assert callable(doer)
+    assert not inspect.isgeneratorfunction(doer)
+    assert doer.tock == 0.0
+    assert doer.tymth is None
+    assert doer.opts == opts
+    dog = doer(tymth=doer.tymth, tock=doer.tock, **doer.opts)
+    assert inspect.isgenerator(dog)
+
+    tymist = tyming.Tymist()
+    tock = 1.0
+    doer = doing.Doer(tymth=tymist.tymen(), tock=tock, **opts)
+    assert callable(doer)
+    assert not inspect.isgeneratorfunction(doer)
+    assert doer.tymth is not None
+    assert doer.tyme == tymist.tyme == 0.0
+    assert doer.tock == tock == 1.0
+    assert doer.opts == opts
+    tymist.tick()
+    assert doer.tyme == tymist.tyme == tymist.tock == 0.03125
+    dog = doer(tymth=doer.tymth, tock=doer.tock, **doer.opts)
+    assert inspect.isgenerator(dog)
+
+
     """End Test """
 
 
@@ -1440,4 +1476,4 @@ def test_decoration():
 
 
 if __name__ == "__main__":
-    test_doify()
+    test_doer()
