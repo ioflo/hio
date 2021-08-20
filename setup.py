@@ -89,6 +89,7 @@ setup(
         'simplejson>=3.17.2',
         'cbor2>=5.2.0',
         'multidict>=5.1.0',
+        'orderedset>=2.0.3',
     ],
     extras_require={
         # eg:
