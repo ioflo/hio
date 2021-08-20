@@ -16,8 +16,10 @@ jobs:
           python-version: 3.9
       - name: Install dependencies
         run: |
-          mkdir -p /usr/local/var/hio/logs
-          mkdir -p /usr/local/var/hio/wirelogs
+          sudo mkdir -p /usr/local/var/hio/logs
+          sudo mkdir -p /usr/local/var/hio/wirelogs
+          sudo chown -R $USER:$USER /usr/local/var/hio/logs
+          sudo chown -R $USER:$USER /usr/local/var/hio/wirelogs
           python -m pip install --upgrade pip
           pip install pytest
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
