@@ -90,6 +90,7 @@ setup(
         'cbor2>=5.2.0',
         'multidict>=5.1.0',
         'orderedset>=2.0.3',
+        'falcon>=3.0.1',
     ],
     extras_require={
         # eg:
