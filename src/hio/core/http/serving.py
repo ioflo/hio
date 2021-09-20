@@ -526,7 +526,8 @@ def openServer(cls=None, **kwa):
         yield server
 
     finally:
-        server.close()
+        if server:
+            server.close()
 
 
 

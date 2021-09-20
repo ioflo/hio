@@ -42,7 +42,8 @@ def openWL(cls=None, name="test", temp=True, **kwa):
         yield wl
 
     finally:
-        wl.close()  # if .temp also clears
+        if wl:
+            wl.close()  # if .temp also clears
 
 
 class WireLog():

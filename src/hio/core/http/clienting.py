@@ -624,7 +624,8 @@ def openClient(cls=None, **kwa):
         yield client
 
     finally:
-        client.close()
+        if client:
+            client.close()
 
 
 class Client():

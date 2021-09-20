@@ -66,7 +66,8 @@ def openOgler(cls=None, name="test", temp=True, **kwa):
         yield ogler
 
     finally:
-        ogler.close()  # if .temp also clears
+        if ogler:
+            ogler.close()  # if .temp also clears
 
 
 class Ogler():
