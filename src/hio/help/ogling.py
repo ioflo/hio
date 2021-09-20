@@ -257,7 +257,7 @@ class Ogler():
 
     def close(self, clear=False):
         """
-        Close lmdb at .env and if clear or self.temp then remove directory at .path
+        Set .opened to False and remove directory at .path
         Parameters:
            clear is boolean, True means clear directory
         """
