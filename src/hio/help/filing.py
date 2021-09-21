@@ -9,73 +9,76 @@ import json
 import msgpack
 
 
-def ocfn(filepath, mode='r+', binary=False):
-    """Atomically open or create file from filepath.
+def ocfn(path, mode='r+'):
+    """
+    Atomically open or create file from filepath.
 
-       If file already exists, Then open file using openMode
-       Else create file using write update mode If not binary Else
-           write update binary mode
-       Returns file object
+    If file already exists, Then open file using openMode
+    Else create file using write update mode If not binary Else
+        write update binary mode
+    Returns file object
 
-       If binary Then If new file open with write update binary mode
+    If binary Then If new file open with write update binary mode
     """
     try:
-        newfd = os.open(filepath, os.O_EXCL | os.O_CREAT | os.O_RDWR, 436) # 436 == octal 0664
-        if not binary:
-            newfile = os.fdopen(newfd,"w+")
+        # 436 == octal 0664
+        newfd = os.open(path, os.O_EXCL | os.O_CREAT | os.O_RDWR, 436)
+        if "b" in mode:
+            file = os.fdopen(newfd,"w+b")
         else:
-            newfile = os.fdopen(newfd,"w+b")
+            file = os.fdopen(newfd,"w+")
+
     except OSError as ex:
         if ex.errno == errno.EEXIST:
-            newfile = open(filepath, mode)
+            file = open(path, mode)
         else:
             raise
-    return newfile
+    return file
 
 
-def dump(data, filepath):
+def dump(data, path):
     '''
-    Write data as as type self.ext to filepath. json or .msgpack
+    Write data as as type self.ext to path as either json or msgpack
     '''
-    if ' ' in filepath:
-        raise IOError("Invalid filepath '{0}' "
-                                "contains space".format(filepath))
+    if ' ' in path:
+        raise IOError("Invalid file path '{0}' "
+                                "contains space".format(path))
 
-    root, ext = os.path.splitext(filepath)
+    root, ext = os.path.splitext(path)
     if ext == '.json':
-        with ocfn(filepath, "w+") as f:
+        with ocfn(path, "w+") as f:
             json.dump(data, f, indent=2)
             f.flush()
             os.fsync(f.fileno())
-    elif ext == '.msgpack':
+    elif ext == '.mgpk':
         if not msgpack:
-            raise IOError("Invalid filepath ext '{0}' "
-                        "needs msgpack installed".format(filepath))
-        with ocfn(filepath, "w+b", binary=True) as f:
+            raise IOError("Invalid file path ext '{0}' "
+                        "needs msgpack installed".format(path))
+        with ocfn(path, "w+b") as f:
             msgpack.dump(data, f)
             f.flush()
             os.fsync(f.fileno())
     else:
-        raise IOError("Invalid filepath ext '{0}' "
-                    "not '.json' or '.msgpack'".format(filepath))
+        raise IOError("Invalid file path ext '{0}' "
+                    "not '.json' or '.mgpk'".format(path))
 
 
-def load(filepath):
+def load(path):
     '''
-    Return data read from filepath as dict
+    Return data read from file path as dict
     file may be either json or msgpack given by extension .json or .msgpack
     Otherwise return None
     '''
     try:
-        root, ext = os.path.splitext(filepath)
+        root, ext = os.path.splitext(path)
         if ext == '.json':
-            with ocfn(filepath, "r") as f:
+            with ocfn(path, "r") as f:
                 it = json.load(f)
-        elif ext == '.msgpack':
+        elif ext == '.mgpk':
             if not msgpack:
-                raise IOError("Invalid filepath ext '{0}' "
-                            "needs msgpack installed".format(filepath))
-            with ocfn(filepath, "rb", binary=True) as f:
+                raise IOError("Invalid file path ext '{0}' "
+                            "needs msgpack installed".format(path))
+            with ocfn(path, "rb") as f:
                 it = msgpack.load(f)
         else:
             it = None
