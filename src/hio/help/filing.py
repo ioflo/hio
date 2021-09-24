@@ -144,6 +144,7 @@ class Filer():
 
     Attributes:
         .name (str): unique path component used in directory or file path name
+        .base (str): another unique path component inserted before name
         .temp (bool): True means use /tmp directory
         .headDirPath is head directory path
         .path is full directory path
@@ -151,13 +152,13 @@ class Filer():
         .filed (bool): True means .path ends in file.
                        False means .path ends in directory
         .mode (str): file open mode if filed
-        .ext (str): file extension if filed
+        .fext (str): file extension if filed
         .file (File)
         .opened is Boolean, True means directory created and if file then file
                 is opened. False otherwise
 
 
-    Fire/Directory Creation Mode Notes:
+    File/Directory Creation Mode Notes:
         .Perm provides default restricted access permissions to directory and/or files
         stat.S_ISVTX | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
         0o1700==960
@@ -185,7 +186,7 @@ class Filer():
 
     def __init__(self, name='main', base="", temp=False, headDirPath=None,
                  perm=None, reopen=True, clear=False, reuse=False, clean=False,
-                 filed=False, mode=None, fext=None):
+                 filed=False, mode=None, fext=None, **kwa):
         """
         Setup directory of file at .path
 
@@ -230,15 +231,13 @@ class Filer():
         self.opened = False
 
         if reopen:
-            self.reopen(clear=clear, reuse=reuse, clean=clean)
+            self.reopen(clear=clear, reuse=reuse, clean=clean, **kwa)
 
 
     def reopen(self, temp=None, headDirPath=None, perm=None, clear=False,
-               reuse=False, clean=False, mode=None, fext=None):
+               reuse=False, clean=False, mode=None, fext=None, **kwa):
         """
         Open if closed or close and reopen if opened or create and open if not
-        if not preexistent, directory path for lmdb at .path and then
-        Open lmdb and assign to .env
 
         Parameters:
             temp (bool): assign to .temp
@@ -279,18 +278,21 @@ class Filer():
                                                clean=clean,
                                                filed=self.filed,
                                                mode=self.mode,
-                                               fext=self.fext)
+                                               fext=self.fext,
+                                               **kwa)
         elif self.filed:
             self.file = ocfn(self.path, mode=self.mode)
 
-        self.opened = True
+        self.opened = True if not self.filed else not self.file.closed
+        
+        return self.opened
 
 
-    def remake(self, *, name="", base="", temp=None, headDirPath=None, perm=None, clean=False,
-                 filed=False, mode=None, fext=None):
+    def remake(self, *, name="", base="", temp=None, headDirPath=None, perm=None,
+                clean=False, filed=False, mode=None, fext=None, **kwa):
         """
-        Make .path by opening or creating and opening if not preexistent, directory
-        path for lmdb and assigning to .path
+        Make and return (path. file) by opening or creating and opening if not
+        preexistent, directory or file at  path
 
         Parameters:
             name (str): unique name alias portion of path
@@ -450,6 +452,8 @@ class Filer():
 
         if clear:
             self._cleaPath()
+            
+        return self.opened
 
 
     def _cleaPath(self):
