@@ -6,7 +6,7 @@ tests.help.test_filing module
 import pytest
 import os
 
-
+from hio.base import doing
 from hio.help import filing
 
 def test_ocfn():
@@ -165,6 +165,128 @@ def test_filing():
     """Done Test"""
 
 
+def test_filer_doer():
+    """
+    Test FilerDoer
+    """
+    filer0 = filing.Filer(name='test0', temp=True, reopen=False)
+    assert filer0.opened == False
+    assert filer0.path == None
+    assert filer0.file == None
+
+    filerDoer0 = filing.FilerDoer(filer=filer0)
+    assert filerDoer0.filer == filer0
+    assert filerDoer0.filer.opened == False
+
+    filer1 = filing.Filer(name='test1', temp=True, reopen=False)
+    assert filer1.opened == False
+    assert filer1.path == None
+    assert filer0.file == None
+
+    filerDoer1 = filing.FilerDoer(filer=filer1)
+    assert filerDoer1.filer == filer1
+    assert filerDoer1.filer.opened == False
+
+    limit = 0.25
+    tock = 0.03125
+    doist = doing.Doist(limit=limit, tock=tock)
+
+    doers = [filerDoer0, filerDoer1]
+
+    doist.doers = doers
+    doist.enter()
+    assert len(doist.deeds) == 2
+    assert [val[1] for val in doist.deeds] == [0.0, 0.0]  #  retymes
+    for doer in doers:
+        assert doer.filer.opened
+        assert "_test/hio/test" in doer.filer.path
+
+    doist.recur()
+    assert doist.tyme == 0.03125  # on next cycle
+    assert len(doist.deeds) == 2
+    for doer in doers:
+        assert doer.filer.opened == True
+
+    for dog, retyme, index in doist.deeds:
+        dog.close()
+
+    for doer in doers:
+        assert doer.filer.opened == False
+        assert not os.path.exists(doer.filer.path)
+
+    # start over
+    doist.tyme = 0.0
+    doist.do(doers=doers)
+    assert doist.tyme == limit
+    for doer in doers:
+        assert doer.filer.opened == False
+        assert not os.path.exists(doer.filer.path)
+
+    # test with filed == True
+    filer0 = filing.Filer(name='test0', temp=True, reopen=False, filed=True)
+    assert filer0.opened == False
+    assert filer0.path == None
+    assert filer0.file == None
+
+    filerDoer0 = filing.FilerDoer(filer=filer0)
+    assert filerDoer0.filer == filer0
+    assert filerDoer0.filer.opened == False
+
+    filer1 = filing.Filer(name='test1', temp=True, reopen=False, filed=True)
+    assert filer1.opened == False
+    assert filer1.path == None
+    assert filer0.file == None
+
+    filerDoer1 = filing.FilerDoer(filer=filer1)
+    assert filerDoer1.filer == filer1
+    assert filerDoer1.filer.opened == False
+
+    limit = 0.25
+    tock = 0.03125
+    doist = doing.Doist(limit=limit, tock=tock)
+
+    doers = [filerDoer0, filerDoer1]
+
+    doist.doers = doers
+    doist.enter()
+    assert len(doist.deeds) == 2
+    assert [val[1] for val in doist.deeds] == [0.0, 0.0]  #  retymes
+    for doer in doers:
+        assert doer.filer.opened
+        assert "_test/hio/test" in doer.filer.path
+        assert  doer.filer.path.endswith(".txt")
+        assert doer.filer.file is not None
+        assert not doer.filer.file.closed
+
+    doist.recur()
+    assert doist.tyme == 0.03125  # on next cycle
+    assert len(doist.deeds) == 2
+    for doer in doers:
+        assert doer.filer.opened
+        assert doer.filer.file is not None
+        assert not doer.filer.file.closed
+
+    for dog, retyme, index in doist.deeds:
+        dog.close()
+
+    for doer in doers:
+        assert doer.filer.opened == False
+        assert not os.path.exists(doer.filer.path)
+        assert doer.filer.file is None
+
+    # start over
+    doist.tyme = 0.0
+    doist.do(doers=doers)
+    assert doist.tyme == limit
+    for doer in doers:
+        assert doer.filer.opened == False
+        assert not os.path.exists(doer.filer.path)
+        assert doer.filer.file is None
+
+    """End Test"""
+
+
+
 if __name__ == "__main__":
-    test_filing()
+    test_filer_doer()
 

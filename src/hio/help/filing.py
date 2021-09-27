@@ -16,6 +16,7 @@ import json
 import msgpack
 
 from .. import help
+from .. import base
 
 logger = help.ogler.getLogger()
 
@@ -284,7 +285,7 @@ class Filer():
             self.file = ocfn(self.path, mode=self.mode)
 
         self.opened = True if not self.filed else not self.file.closed
-        
+
         return self.opened
 
 
@@ -452,7 +453,7 @@ class Filer():
 
         if clear:
             self._cleaPath()
-            
+
         return self.opened
 
 
@@ -462,11 +463,75 @@ class Filer():
         """
         if self.path and os.path.exists(self.path):
             if os.path.isfile(self.path):
-                if self.filed and not self.temp:
-                    os.remove(self.path)  # rm only file not dir
-                else:
+                if self.filed:
+                    self.file = None
+                    os.remove(self.path)  # rm only file not head dir
+
+                if self.temp:  # remove head directory anyway
                     head, tail = os.path.split(self.path)
                     shutil.rmtree(head)  # rm directory and all files
             else:
                 shutil.rmtree(self.path)
 
+
+
+class FilerDoer(base.Doer):
+    """
+    Basic Baser Doer ( LMDB Database )
+
+    Attributes:  (inherited)
+        done (bool): completion state:
+            True means completed
+            Otherwise incomplete. Incompletion maybe due to close or abort.
+
+    Attributes:
+        .filer is Filer subclass
+
+    Properties:  (inherited)
+        .tyme is float relative cycle time of associated Tymist .tyme obtained
+            via injected .tymth function wrapper closure.
+        .tymth is function wrapper closure returned by Tymist .tymeth() method.
+            When .tymth is called it returns associated Tymist .tyme.
+            .tymth provides injected dependency on Tymist tyme base.
+        .tock is float, desired time in seconds between runs or until next run,
+                 non negative, zero means run asap
+
+    Properties:
+
+    Methods:
+        .wind  injects ._tymth dependency from associated Tymist to get its .tyme
+        .__call__ makes instance callable
+            Appears as generator function that returns generator
+        .do is generator method that returns generator
+        .enter is enter context action method
+        .recur is recur context action method or generator method
+        .exit is exit context method
+        .close is close context method
+        .abort is abort context method
+
+    Hidden:
+       ._tymth is injected function wrapper closure returned by .tymen() of
+            associated Tymist instance that returns Tymist .tyme. when called.
+       ._tock is hidden attribute for .tock property
+    """
+
+    def __init__(self, filer, **kwa):
+        """
+        Inherited Parameters:
+           tymist is Tymist instance
+           tock is float seconds initial value of .tock
+
+        Parameters:
+           filer is Filer instance
+        """
+        super(FilerDoer, self).__init__(**kwa)
+        self.filer = filer
+
+    def enter(self):
+        """"""
+        if not self.filer.opened:
+            self.filer.reopen()
+
+    def exit(self):
+        """"""
+        self.filer.close(clear=self.filer.temp)
