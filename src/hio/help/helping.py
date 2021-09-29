@@ -363,8 +363,7 @@ def dump(data, path):
     """
 
     if ' ' in path:
-        raise IOError("Invalid file path '{0}' "
-                                "contains space".format(path))
+        raise IOError(f"Invalid file path '{path}' contains space.")
 
     root, ext = os.path.splitext(path)
     if ext == '.json':
