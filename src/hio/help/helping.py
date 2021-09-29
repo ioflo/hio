@@ -355,9 +355,12 @@ def ocfn(path, mode='r+'):
 
 
 def dump(data, path):
-    '''
-    Write data as as type self.ext to path as either json or msgpack
-    '''
+    """
+    Serialize data dict and write to file given by path where serialization is
+    given by path's extension of either JSON, MsgPack, or CBOR for extension
+    .json, .mgpk, or .cbor respectively
+    """
+
     if ' ' in path:
         raise IOError("Invalid file path '{0}' "
                                 "contains space".format(path))
@@ -390,33 +393,31 @@ def dump(data, path):
 
 
 def load(path):
-    '''
+    """
     Return data read from file path as dict
-    file may be either json or msgpack given by extension .json or .msgpack
-    Otherwise return None
-    '''
-    try:
-        root, ext = os.path.splitext(path)
-        if ext == '.json':
-            with ocfn(path, "rb") as f:
-                it = json.load(f)
-        elif ext == '.mgpk':
-            if not msgpack:
-                raise IOError(f"Invalid file path ext '{path}' "
-                              f"needs msgpack installed.")
-            with ocfn(path, "rb") as f:
-                it = msgpack.load(f)
-        elif ext == '.cbor':
-            if not cbor:
-                raise IOError(f"Invalid file path ext '{path}' "
-                              f"needs cbor installed.")
-            with ocfn(path, "rb") as f:
-                it = cbor.load(f)
-        else:
-            it = None
-    except EOFError:
-        return None
-    except ValueError:
-        return None
+    file may be either json, msgpack, or cbor given by extension .json, .mgpk, or
+    .cbor respectively
+    Otherwise raise IOError
+    """
+    root, ext = os.path.splitext(path)
+    if ext == '.json':
+        with ocfn(path, "rb") as f:
+            it = json.load(f)
+    elif ext == '.mgpk':
+        if not msgpack:
+            raise IOError(f"Invalid file path ext '{path}' "
+                          f"needs msgpack installed.")
+        with ocfn(path, "rb") as f:
+            it = msgpack.load(f)
+    elif ext == '.cbor':
+        if not cbor:
+            raise IOError(f"Invalid file path ext '{path}' "
+                          f"needs cbor installed.")
+        with ocfn(path, "rb") as f:
+            it = cbor.load(f)
+    else:
+        raise IOError(f"Invalid file path ext '{path}' "
+                     f"not '.json', '.mgpk', or 'cbor'.")
+
     return it
 
