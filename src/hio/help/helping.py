@@ -14,6 +14,7 @@ from collections.abc import Iterable, Sequence, Generator
 from abc import ABCMeta
 
 import msgpack
+import cbor2 as cbor
 
 
 def copyfunc(f, name=None):
@@ -372,17 +373,11 @@ def dump(data, path):
             f.flush()
             os.fsync(f.fileno())
     elif ext == '.mgpk':
-        if not msgpack:
-            raise IOError(f"Invalid file path ext '{path}' "
-                          f"needs msgpack installed.")
         with ocfn(path, "w+b") as f:
             msgpack.dump(data, f)
             f.flush()
             os.fsync(f.fileno())
     elif ext == '.cbor':
-        if not cbor:
-            raise IOError(f"Invalid file path ext '{path}' "
-                          f"needs cbor installed.")
         with ocfn(path, "w+b") as f:
             cbor.dump(data, f)
             f.flush()
@@ -404,15 +399,9 @@ def load(path):
         with ocfn(path, "rb") as f:
             it = json.load(f)
     elif ext == '.mgpk':
-        if not msgpack:
-            raise IOError(f"Invalid file path ext '{path}' "
-                          f"needs msgpack installed.")
         with ocfn(path, "rb") as f:
             it = msgpack.load(f)
     elif ext == '.cbor':
-        if not cbor:
-            raise IOError(f"Invalid file path ext '{path}' "
-                          f"needs cbor installed.")
         with ocfn(path, "rb") as f:
             it = cbor.load(f)
     else:

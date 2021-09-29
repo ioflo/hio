@@ -86,7 +86,6 @@ setup(
         'pysodium>=0.7.9',
         'blake3>=0.2.0',
         'msgpack>=1.0.2',
-        'simplejson>=3.17.5',
         'cbor2>=5.4.1',
         'multidict>=5.1.0',
         'orderedset>=2.0.3',
