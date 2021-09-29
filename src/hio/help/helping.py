@@ -364,21 +364,29 @@ def dump(data, path):
 
     root, ext = os.path.splitext(path)
     if ext == '.json':
-        with ocfn(path, "w+") as f:
+        with ocfn(path, "w+b") as f:
             json.dump(data, f, indent=2)
             f.flush()
             os.fsync(f.fileno())
     elif ext == '.mgpk':
         if not msgpack:
-            raise IOError("Invalid file path ext '{0}' "
-                        "needs msgpack installed".format(path))
+            raise IOError(f"Invalid file path ext '{path}' "
+                          f"needs msgpack installed.")
         with ocfn(path, "w+b") as f:
             msgpack.dump(data, f)
             f.flush()
             os.fsync(f.fileno())
+    elif ext == '.cbor':
+        if not cbor:
+            raise IOError(f"Invalid file path ext '{path}' "
+                          f"needs cbor installed.")
+        with ocfn(path, "w+b") as f:
+            cbor.dump(data, f)
+            f.flush()
+            os.fsync(f.fileno())
     else:
-        raise IOError("Invalid file path ext '{0}' "
-                    "not '.json' or '.mgpk'".format(path))
+        raise IOError(f"Invalid file path ext '{path}' "
+                      f"not '.json', '.mgpk', or 'cbor'.")
 
 
 def load(path):
@@ -390,14 +398,20 @@ def load(path):
     try:
         root, ext = os.path.splitext(path)
         if ext == '.json':
-            with ocfn(path, "r") as f:
+            with ocfn(path, "rb") as f:
                 it = json.load(f)
         elif ext == '.mgpk':
             if not msgpack:
-                raise IOError("Invalid file path ext '{0}' "
-                            "needs msgpack installed".format(path))
+                raise IOError(f"Invalid file path ext '{path}' "
+                              f"needs msgpack installed.")
             with ocfn(path, "rb") as f:
                 it = msgpack.load(f)
+        elif ext == '.cbor':
+            if not cbor:
+                raise IOError(f"Invalid file path ext '{path}' "
+                              f"needs cbor installed.")
+            with ocfn(path, "rb") as f:
+                it = cbor.load(f)
         else:
             it = None
     except EOFError:

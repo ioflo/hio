@@ -59,18 +59,18 @@ class Filer():
 
 
     Attributes:
-        .name (str): unique path component used in directory or file path name
-        .base (str): another unique path component inserted before name
-        .temp (bool): True means use /tmp directory
-        .headDirPath is head directory path
-        .path is full directory path
-        .perm is numeric os permissions for directory and/or file(s)
-        .filed (bool): True means .path ends in file.
+        name (str): unique path component used in directory or file path name
+        base (str): another unique path component inserted before name
+        temp (bool): True means use /tmp directory
+        headDirPath is head directory path
+        path is full directory path
+        perm is numeric os permissions for directory and/or file(s)
+        filed (bool): True means .path ends in file.
                        False means .path ends in directory
-        .mode (str): file open mode if filed
-        .fext (str): file extension if filed
-        .file (File)
-        .opened is Boolean, True means directory created and if file then file
+        mode (str): file open mode if filed
+        fext (str): file extension if filed
+        file (File)
+        opened is Boolean, True means directory created and if file then file
                 is opened. False otherwise
 
 
@@ -118,7 +118,7 @@ class Filer():
                 Otherwise then open persistent directory, do not clear on close
             headDirPath (str): optional head directory pathname for main database
                 Default .HeadDirPath
-            mode (int): optional numeric os dir permissions for database
+            perm (int): optional numeric os dir permissions for database
                 directory and database files. Default .DirMode
             reopen (bool): True means (re)opened by this init
                            False  means not (re)opened by this init but later
@@ -392,52 +392,31 @@ class Filer():
 
 class FilerDoer(doing.Doer):
     """
-    Basic Baser Doer ( LMDB Database )
+    Basic Filer Doer
 
-    Attributes:  (inherited)
+    Attributes: 
         done (bool): completion state:
             True means completed
             Otherwise incomplete. Incompletion maybe due to close or abort.
+        filer (Filer): instance 
 
-    Attributes:
-        .filer is Filer subclass
-
-    Properties:  (inherited)
-        .tyme is float relative cycle time of associated Tymist .tyme obtained
+    Properties:  
+        tyme (float): relative cycle time of associated Tymist .tyme obtained
             via injected .tymth function wrapper closure.
-        .tymth is function wrapper closure returned by Tymist .tymeth() method.
+        tymth (func): closure returned by Tymist .tymeth() method.
             When .tymth is called it returns associated Tymist .tyme.
             .tymth provides injected dependency on Tymist tyme base.
-        .tock is float, desired time in seconds between runs or until next run,
+        tock (float)): desired time in seconds between runs or until next run,
                  non negative, zero means run asap
 
-    Properties:
-
-    Methods:
-        .wind  injects ._tymth dependency from associated Tymist to get its .tyme
-        .__call__ makes instance callable
-            Appears as generator function that returns generator
-        .do is generator method that returns generator
-        .enter is enter context action method
-        .recur is recur context action method or generator method
-        .exit is exit context method
-        .close is close context method
-        .abort is abort context method
-
-    Hidden:
-       ._tymth is injected function wrapper closure returned by .tymen() of
-            associated Tymist instance that returns Tymist .tyme. when called.
-       ._tock is hidden attribute for .tock property
     """
 
     def __init__(self, filer, **kwa):
         """
-        Inherited Parameters:
-           tymist is Tymist instance
-           tock is float seconds initial value of .tock
-
         Parameters:
-           filer is Filer instance
+           tymist (Tymist): instance
+           tock (float): initial value of .tock in seconds
+           filer (Filer): instance
         """
         super(FilerDoer, self).__init__(**kwa)
         self.filer = filer
