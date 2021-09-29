@@ -7,14 +7,7 @@ import pytest
 import os
 
 from hio.base import doing
-from hio.help import filing
-
-def test_ocfn():
-    """
-    Test ocfn
-    """
-
-    """Done Test"""
+from hio.base import filing
 
 
 def test_filing():

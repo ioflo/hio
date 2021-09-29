@@ -16,3 +16,5 @@ ogler = ogling.initOgler(prefix='hio')  # init only runs  once on import
 
 from .decking import Deck
 from .hicting import Hict, Mict
+from .timing import Timer, MonoTimer, TimerError, RetroTimerError
+
