@@ -85,7 +85,7 @@ def test_filing():
 
 
     # Test Filer with file not dir
-    filepath = '/usr/local/var/hio/conf/test.txt'
+    filepath = '/usr/local/var/hio/conf/test.text'
 
     filer = filing.Filer(name="test", base="conf", filed=True)  # defaults
     assert filer.path == filepath
@@ -145,9 +145,9 @@ def test_filing():
 
     #test openfiler with filed == True but otherwise defaults temp == True
     with filing.openFiler(filed=True) as filer:
-        dirpath = '/tmp/hio_6t3vlv7c_test/hio/test.txt'
+        dirpath = '/tmp/hio_6t3vlv7c_test/hio/test.text'
         assert filer.path.startswith('/tmp/hio_')
-        assert filer.path.endswith('_test/hio/test.txt')
+        assert filer.path.endswith('_test/hio/test.text')
         assert filer.opened
         assert os.path.exists(filer.path)
         assert filer.file
@@ -247,7 +247,7 @@ def test_filer_doer():
     for doer in doers:
         assert doer.filer.opened
         assert "_test/hio/test" in doer.filer.path
-        assert  doer.filer.path.endswith(".txt")
+        assert  doer.filer.path.endswith(".text")
         assert doer.filer.file is not None
         assert not doer.filer.file.closed
 

@@ -98,7 +98,7 @@ class Filer():
     TempSuffix = "_test"
     Perm = stat.S_ISVTX | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR  # 0o1700==960
     Mode = "w+"
-    Fext = "txt"
+    Fext = "text"
 
     def __init__(self, name='main', base="", temp=False, headDirPath=None,
                  perm=None, reopen=True, clear=False, reuse=False, clean=False,
@@ -390,17 +390,18 @@ class Filer():
 
 
 
+
 class FilerDoer(doing.Doer):
     """
     Basic Filer Doer
 
-    Attributes: 
+    Attributes:
         done (bool): completion state:
             True means completed
             Otherwise incomplete. Incompletion maybe due to close or abort.
-        filer (Filer): instance 
+        filer (Filer): instance
 
-    Properties:  
+    Properties:
         tyme (float): relative cycle time of associated Tymist .tyme obtained
             via injected .tymth function wrapper closure.
         tymth (func): closure returned by Tymist .tymeth() method.
