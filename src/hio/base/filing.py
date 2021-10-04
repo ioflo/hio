@@ -367,12 +367,12 @@ class Filer():
         self.opened = False
 
         if clear:
-            self._cleaPath()
+            self._clearPath()
 
         return self.opened
 
 
-    def _cleaPath(self):
+    def _clearPath(self):
         """
         Remove directory/file at end of .path
         """

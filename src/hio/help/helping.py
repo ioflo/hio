@@ -343,13 +343,13 @@ def ocfn(path, mode='r+'):
         # 436 == octal 0664
         newfd = os.open(path, os.O_EXCL | os.O_CREAT | os.O_RDWR, 436)
         if "b" in mode:
-            file = os.fdopen(newfd,"w+b")
+            file = os.fdopen(newfd,"w+b")  # w+ truncate read and/or write
         else:
-            file = os.fdopen(newfd,"w+")
+            file = os.fdopen(newfd,"w+")  # w+ truncate read and/or write
 
     except OSError as ex:
         if ex.errno == errno.EEXIST:
-            file = open(path, mode)
+            file = open(path, mode)  # r+ do not truncate read and/or write
         else:
             raise
     return file
