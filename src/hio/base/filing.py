@@ -200,7 +200,7 @@ class Filer():
         elif self.filed:
             self.file = ocfn(self.path, mode=self.mode)
 
-        self.opened = True if not self.filed else not self.file.closed
+        self.opened = True if not self.filed else self.file and not self.file.closed
 
         return self.opened
 
