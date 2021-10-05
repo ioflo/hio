@@ -40,6 +40,7 @@ def openFiler(cls=None, name="test", temp=True, **kwa):
     with openFiler(name="eve", cls=FilerSubClass) as filer:
 
     """
+    filer = None
     if cls is None:
         cls = Filer
     try:

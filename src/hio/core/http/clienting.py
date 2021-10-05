@@ -615,6 +615,7 @@ def openClient(cls=None, **kwa):
             client0.accept()
 
     """
+    client = None
     if cls is None:
         cls = Client
     try:

@@ -35,6 +35,7 @@ def openWL(cls=None, name="test", temp=True, **kwa):
     with openWL(name="eve", cls=SubclassedWireLog)
 
     """
+    wl = None
     if cls is None:
         cls = WireLog
     try:

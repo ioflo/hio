@@ -517,6 +517,7 @@ def openServer(cls=None, **kwa):
             server0.
 
     """
+    server = None
     cls = cls if cls is not None else Server
 
     try:

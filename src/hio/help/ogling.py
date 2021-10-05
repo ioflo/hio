@@ -59,6 +59,7 @@ def openOgler(cls=None, name="test", temp=True, **kwa):
     with openOgler(name="eve", cls=SubclassedOgler)
 
     """
+    ogler = None
     if cls is None:
         cls = Ogler
     try:
