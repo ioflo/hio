@@ -8,6 +8,7 @@ import functools
 import inspect
 import os
 import errno
+import stat
 import json
 
 from collections.abc import Iterable, Sequence, Generator
@@ -328,7 +329,7 @@ def isIterator(obj):
     return False
 
 
-def ocfn(path, mode='r+'):
+def ocfn(path, mode='r+', perms=(stat.S_IRUSR | stat.S_IWUSR)):
     """
     Atomically open or create file from filepath.
 
@@ -338,10 +339,14 @@ def ocfn(path, mode='r+'):
     Returns file object
 
     If binary Then If new file open with write update binary mode
+
+    x = stat.S_IRUSR | stat.S_IWUSR
+    384 == 0o600
+    436 == octal 0664
     """
     try:
-        # 436 == octal 0664
-        newfd = os.open(path, os.O_EXCL | os.O_CREAT | os.O_RDWR, 436)
+
+        newfd = os.open(path, os.O_EXCL | os.O_CREAT | os.O_RDWR, perms)
         if "b" in mode:
             file = os.fdopen(newfd,"w+b")  # w+ truncate read and/or write
         else:

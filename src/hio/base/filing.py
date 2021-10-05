@@ -98,7 +98,7 @@ class Filer():
     TempPrefix = "hio_"
     TempSuffix = "_test"
     Perm = stat.S_ISVTX | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR  # 0o1700==960
-    Mode = "w+"
+    Mode = "r+"
     Fext = "text"
 
     def __init__(self, name='main', base="", temp=False, headDirPath=None,
@@ -331,7 +331,7 @@ class Filer():
                             os.makedirs(path)
 
             else:  # verify access
-                if not os.access(path, os.R_OK | os.W_OK): # use alt instead
+                if not os.access(path, os.F_OK | os.R_OK | os.W_OK): # use alt instead
                     headDirPath = self.AltHeadDirPath
                     path = os.path.abspath(
                                 os.path.expanduser(
