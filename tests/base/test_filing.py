@@ -16,7 +16,6 @@ def test_filing():
     """
     dirpath = '/usr/local/var/hio/test'
     filer = filing.Filer(name="test")  # defaults
-    # assert filer.path == dirpath
     assert filer.path.endswith("hio/test")
     assert filer.opened
     assert os.path.exists(filer.path)
@@ -28,25 +27,21 @@ def test_filing():
 
     filer.reopen()  # reuse False so remake
     assert filer.opened
-    # assert filer.path == dirpath
     assert filer.path.endswith("hio/test")
     assert os.path.exists(filer.path)
 
     filer.reopen(reuse=True)  # reuse True and clear False so don't remake
     assert filer.opened
-    # assert filer.path == dirpath
     assert filer.path.endswith("hio/test")
     assert os.path.exists(filer.path)
 
     filer.reopen(reuse=True, clear=True)  # clear True so remake even if reuse
     assert filer.opened
-    # assert filer.path == dirpath
     assert filer.path.endswith("hio/test")
     assert os.path.exists(filer.path)
 
     filer.reopen(clear=True)  # clear True so remake
     assert filer.opened
-    # assert filer.path == dirpath
     assert filer.path.endswith("hio/test")
     assert os.path.exists(filer.path)
 
@@ -56,7 +51,6 @@ def test_filing():
     # Test with clean
     dirpath = '/usr/local/var/hio/clean/test'
     filer = filing.Filer(name="test", clean="true")  # defaults
-    # assert filer.path == dirpath
     assert filer.path.endswith("hio/clean/test")
     assert filer.opened
     assert os.path.exists(filer.path)
@@ -68,25 +62,21 @@ def test_filing():
 
     filer.reopen(clean=True)  # reuse False so remake
     assert filer.opened
-    # assert filer.path == dirpath
     assert filer.path.endswith("hio/clean/test")
     assert os.path.exists(filer.path)
 
     filer.reopen(reuse=True, clean=True)  # reuse True and clear False so don't remake
     assert filer.opened
-    # assert filer.path == dirpath
     assert filer.path.endswith("hio/clean/test")
     assert os.path.exists(filer.path)
 
     filer.reopen(reuse=True, clear=True, clean=True)  # clear True so remake even if reuse
     assert filer.opened
-    # assert filer.path == dirpath
     assert filer.path.endswith("hio/clean/test")
     assert os.path.exists(filer.path)
 
     filer.reopen(clear=True, clean=True)  # clear True so remake
     assert filer.opened
-    # assert filer.path == dirpath
     assert filer.path.endswith("hio/clean/test")
     assert os.path.exists(filer.path)
 
@@ -97,38 +87,32 @@ def test_filing():
     dirpath = '/Users/samuel/.hio/test'
     # headDirPath that is not permitted to force using AltPath
     filer = filing.Filer(name="test", headDirPath="/opt/hio")
-    # assert filer.path == dirpath
     assert filer.path.endswith(".hio/test")
     assert filer.opened
     assert os.path.exists(filer.path)
     assert not filer.file
     filer.close()
     assert not filer.opened
-    #assert filer.path == dirpath
     assert filer.path.endswith(".hio/test")
     assert os.path.exists(filer.path)
 
     filer.reopen()  # reuse False so remake
     assert filer.opened
-    # assert filer.path == dirpath
     assert filer.path.endswith(".hio/test")
     assert os.path.exists(filer.path)
 
     filer.reopen(reuse=True)  # reuse True and clear False so don't remake
     assert filer.opened
-    # assert filer.path == dirpath
     assert filer.path.endswith(".hio/test")
     assert os.path.exists(filer.path)
 
     filer.reopen(reuse=True, clear=True)  # clear True so remake even if reuse
     assert filer.opened
-    # assert filer.path == dirpath
     assert filer.path.endswith(".hio/test")
     assert os.path.exists(filer.path)
 
     filer.reopen(clear=True)  # clear True so remake
     assert filer.opened
-    # assert filer.path == dirpath
     assert filer.path.endswith(".hio/test")
     assert os.path.exists(filer.path)
 
@@ -138,8 +122,7 @@ def test_filing():
     # Test Filer with file not dir
     filepath = '/usr/local/var/hio/conf/test.text'
 
-    filer = filing.Filer(name="test", base="conf", filed=True)  # defaults
-    # assert filer.path == filepath
+    filer = filing.Filer(name="test", base="conf", filed=True)
     assert filer.path.endswith("hio/conf/test.text")
     assert filer.opened
     assert os.path.exists(filer.path)
@@ -154,36 +137,79 @@ def test_filing():
     filer.close()
     assert not filer.opened
     assert filer.file.closed
-    # assert filer.path == filepath
     assert filer.path.endswith("hio/conf/test.text")
     assert os.path.exists(filer.path)
 
     filer.reopen()  # reuse False so remake
     assert filer.opened
     assert not filer.file.closed
-    # assert filer.path == filepath
     assert filer.path.endswith("hio/conf/test.text")
     assert os.path.exists(filer.path)
 
     filer.reopen(reuse=True)  # reuse True and clear False so don't remake
     assert filer.opened
     assert not filer.file.closed
-    # assert filer.path == filepath
     assert filer.path.endswith("hio/conf/test.text")
     assert os.path.exists(filer.path)
 
     filer.reopen(reuse=True, clear=True)  # clear True so remake even if reuse
     assert filer.opened
     assert not filer.file.closed
-    # assert filer.path == filepath
     assert filer.path.endswith("hio/conf/test.text")
     assert os.path.exists(filer.path)
 
     filer.reopen(clear=True)  # clear True so remake
     assert filer.opened
     assert not filer.file.closed
-    # assert filer.path == filepath
     assert filer.path.endswith("hio/conf/test.text")
+    assert os.path.exists(filer.path)
+
+    filer.close(clear=True)
+    assert not os.path.exists(filer.path)
+
+    # Test Filer with file not dir and with Alt path
+    filepath = '/Users/samuel/.hio/conf/test.text'
+    # force altPath by using headDirPath of "/opt/hio" which is not permitted
+    filer = filing.Filer(name="test", base="conf", headDirPath="/opt/hio", filed=True)
+    assert filer.path.endswith(".hio/conf/test.text")
+    assert filer.opened
+    assert os.path.exists(filer.path)
+    assert filer.file
+    assert not filer.file.closed
+    assert not filer.file.read()
+    msg = f"Hello Jim\n"
+    assert len(msg) == filer.file.write(msg)
+    assert 0 == filer.file.seek(0)
+    assert  msg == filer.file.read()
+
+    filer.close()
+    assert not filer.opened
+    assert filer.file.closed
+    assert filer.path.endswith(".hio/conf/test.text")
+    assert os.path.exists(filer.path)
+
+    filer.reopen()  # reuse False so remake but file exists so opens not creates
+    assert filer.opened
+    assert not filer.file.closed
+    assert filer.path.endswith(".hio/conf/test.text")
+    assert os.path.exists(filer.path)
+
+    filer.reopen(reuse=True)  # reuse True and clear False so don't remake
+    assert filer.opened
+    assert not filer.file.closed
+    assert filer.path.endswith(".hio/conf/test.text")
+    assert os.path.exists(filer.path)
+
+    filer.reopen(reuse=True, clear=True)  # clear True so remake even if reuse
+    assert filer.opened
+    assert not filer.file.closed
+    assert filer.path.endswith(".hio/conf/test.text")
+    assert os.path.exists(filer.path)
+
+    filer.reopen(clear=True)  # clear True so remake
+    assert filer.opened
+    assert not filer.file.closed
+    assert filer.path.endswith(".hio/conf/test.text")
     assert os.path.exists(filer.path)
 
     filer.close(clear=True)

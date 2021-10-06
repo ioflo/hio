@@ -329,6 +329,9 @@ class Filer():
                             file = ocfn(path, mode=mode, perm=perm)
                         else:
                             os.makedirs(path)
+                    else:
+                        if filed:
+                            file = ocfn(path, mode=mode, perm=perm)                    
 
             else:  # verify access
                 if not os.access(path, os.F_OK | os.R_OK | os.W_OK): # use alt instead
