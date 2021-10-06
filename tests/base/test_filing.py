@@ -104,7 +104,8 @@ def test_filing():
     assert not filer.file
     filer.close()
     assert not filer.opened
-    assert filer.path == dirpath
+    #assert filer.path == dirpath
+    assert filer.path.endswith(".hio/test")
     assert os.path.exists(filer.path)
 
     filer.reopen()  # reuse False so remake
