@@ -18,7 +18,7 @@ logger = help.ogler.getLogger()
 
 
 @contextmanager
-def openFiler(cls=None, name="test", temp=True, **kwa):
+def openFiler(cls=None, name="test", temp=True, reopen=True, clear=False, **kwa):
     """
     Context manager wrapper Filer instances for managing a filesystem directory
     and or files in a directory.
@@ -44,12 +44,12 @@ def openFiler(cls=None, name="test", temp=True, **kwa):
     if cls is None:
         cls = Filer
     try:
-        filer = cls(name=name, temp=temp, reopen=True, **kwa)
+        filer = cls(name=name, temp=temp, reopen=reopen, clear=clear, **kwa)
         yield filer
 
     finally:
         if filer:
-            filer.close(clear=filer.temp)  # clears if filer.temp
+            filer.close(clear=filer.temp or clear)  # clears if filer.temp
 
 
 
@@ -281,7 +281,7 @@ class Filer():
                 head, tail = os.path.split(path)
                 if not os.path.exists(head):
                     os.makedirs(head)
-                file = ocfn(path, mode=mode)
+                file = ocfn(path, mode=mode, perm=perm)
             else:
                 os.makedirs(path)
 
@@ -309,7 +309,7 @@ class Filer():
                         head, tail = os.path.split(path)
                         if not os.path.exists(head):
                             os.makedirs(head)
-                        file = ocfn(path, mode=mode)
+                        file = ocfn(path, mode=mode, perm=perm)
                     else:
                         os.makedirs(path)
 
@@ -326,7 +326,7 @@ class Filer():
                             head, tail = os.path.split(path)
                             if not os.path.exists(head):
                                 os.makedirs(head)
-                            file = ocfn(path, mode=mode)
+                            file = ocfn(path, mode=mode, perm=perm)
                         else:
                             os.makedirs(path)
 
@@ -344,12 +344,12 @@ class Filer():
                             head, tail = os.path.split(path)
                             if not os.path.exists(head):
                                 os.makedirs(head)
-                            file = ocfn(path, mode=mode)
+                            file = ocfn(path, mode=mode, perm=perm)
                         else:
                             os.makedirs(path)
                 else:
                     if filed:
-                        file = ocfn(path, mode=mode)
+                        file = ocfn(path, mode=mode, perm=perm)
 
             os.chmod(path, perm)  # set dir/file permissions
 

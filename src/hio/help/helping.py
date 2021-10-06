@@ -329,7 +329,7 @@ def isIterator(obj):
     return False
 
 
-def ocfn(path, mode='r+', perms=(stat.S_IRUSR | stat.S_IWUSR)):
+def ocfn(path, mode='r+', perm=(stat.S_IRUSR | stat.S_IWUSR)):
     """
     Atomically open or create file from filepath.
 
@@ -346,7 +346,7 @@ def ocfn(path, mode='r+', perms=(stat.S_IRUSR | stat.S_IWUSR)):
     """
     try:
 
-        newfd = os.open(path, os.O_EXCL | os.O_CREAT | os.O_RDWR, perms)
+        newfd = os.open(path, os.O_EXCL | os.O_CREAT | os.O_RDWR, perm)
         if "b" in mode:
             file = os.fdopen(newfd,"w+b")  # w+ truncate read and/or write
         else:
