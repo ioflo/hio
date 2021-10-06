@@ -86,7 +86,7 @@ def test_filing():
     # test with alt
     dirpath = '/Users/samuel/.hio/test'
     # headDirPath that is not permitted to force using AltPath
-    filer = filing.Filer(name="test", headDirPath="/opt/hio")
+    filer = filing.Filer(name="test", headDirPath="/root/hio")
     assert filer.path.endswith(".hio/test")
     assert filer.opened
     assert os.path.exists(filer.path)
@@ -169,8 +169,8 @@ def test_filing():
 
     # Test Filer with file not dir and with Alt path
     filepath = '/Users/samuel/.hio/conf/test.text'
-    # force altPath by using headDirPath of "/opt/hio" which is not permitted
-    filer = filing.Filer(name="test", base="conf", headDirPath="/opt/hio", filed=True)
+    # force altPath by using headDirPath of "/root/hio" which is not permitted
+    filer = filing.Filer(name="test", base="conf", headDirPath="/root/hio", filed=True)
     assert filer.path.endswith(".hio/conf/test.text")
     assert filer.opened
     assert os.path.exists(filer.path)
@@ -237,7 +237,7 @@ def test_filing():
     assert not os.path.exists(filer.path)  # if temp clears
 
     # test alternate path use headDirPath not permitted to force use altPath
-    with filing.openFiler(filed=True, temp=False, headDirPath="/opt/hio", clear=True) as  filer:
+    with filing.openFiler(filed=True, temp=False, headDirPath="/root/hio", clear=True) as  filer:
         assert filer.path.endswith(".hio/test.text")  # uses altpath
         assert filer.opened
         assert os.path.exists(filer.path)
