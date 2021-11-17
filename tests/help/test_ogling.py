@@ -7,6 +7,7 @@ import pytest
 
 import os
 import logging
+from hio import hioing
 from hio import help
 from hio.help import ogling
 
@@ -209,6 +210,71 @@ def test_ogler():
                             'hio: Test logger at info level\n'
                             'hio: Test logger at error level\n'
                             'hio: Test logger at debug level\n'
+                            'hio: Test logger at info level\n'
+                            'hio: Test logger at error level\n')
+
+
+    path = ogler.path
+    ogler.close(clear=True)
+    assert not os.path.exists(path)
+    assert ogler.opened == False
+
+    # test selective ogler handlers
+    with pytest.raises(hioing.OglerError):
+        ogler = ogling.Ogler(name="test", consoled=False, syslogged=False, filed=False)
+
+
+    # Only console
+    # create ogler with opened path
+    ogler = ogling.Ogler(name="test", level=logging.DEBUG, temp=True,
+                         reopen=True, clear=True, syslogged=False, filed=False)
+    assert ogler.level == logging.DEBUG
+    assert ogler.dirPath.startswith("/tmp/hio/logs/test_")
+    assert ogler.dirPath.endswith("_temp")
+    assert ogler.path.endswith("/test.log")
+    assert ogler.opened == True
+    with open(ogler.path, 'r') as logfile:
+        contents = logfile.read()
+        assert contents == ''
+
+    # logger console: All should log  because level DEBUG
+    # logger file: All should log because path created and DEBUG
+    logger = ogler.getLogger()
+    assert len(logger.handlers) == 1
+    assert logger.handlers[0] == ogler.baseConsoleHandler
+    logger.debug("Test logger at debug level")
+    logger.info("Test logger at info level")
+    logger.error("Test logger at error level")
+
+    with open(ogler.path, 'r') as logfile:
+        contents = logfile.read()
+        assert contents == ''
+
+    # Only file
+    # create ogler with opened path
+    ogler = ogling.Ogler(name="test", level=logging.DEBUG, temp=True,
+                         reopen=True, clear=True, syslogged=False, consoled=False)
+    assert ogler.level == logging.DEBUG
+    assert ogler.dirPath.startswith("/tmp/hio/logs/test_")
+    assert ogler.dirPath.endswith("_temp")
+    assert ogler.path.endswith("/test.log")
+    assert ogler.opened == True
+    with open(ogler.path, 'r') as logfile:
+        contents = logfile.read()
+        assert contents == ''
+
+    # logger console: All should log  because level DEBUG
+    # logger file: All should log because path created and DEBUG
+    logger = ogler.getLogger()
+    assert len(logger.handlers) == 1
+    assert logger.handlers[0] == ogler.baseFileHandler
+    logger.debug("Test logger at debug level")
+    logger.info("Test logger at info level")
+    logger.error("Test logger at error level")
+
+    with open(ogler.path, 'r') as logfile:
+        contents = logfile.read()
+        assert contents == ('hio: Test logger at debug level\n'
                             'hio: Test logger at info level\n'
                             'hio: Test logger at error level\n')
 

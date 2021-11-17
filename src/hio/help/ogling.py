@@ -158,9 +158,11 @@ class Ogler():
             address = '/var/run/syslog'
         else:
             address = '/dev/log'
-        self.baseSysLogHandler = logging.handlers.SysLogHandler(address=address)
+        facility = logging.handlers.SysLogHandler.LOG_USER  # LOG_DAEMON
+        self.baseSysLogHandler = logging.handlers.SysLogHandler(address=address,
+                                                                facility=facility)
         self.baseSysLogHandler.setFormatter(self.baseFormatter)
-        # SysLogHandler only appears to log a ERROR level despite the set level
+        # SysLogHandler only appears to log at ERROR level despite the set level
         #self.baseSysLogHandler.encodePriority(self.baseSysLogHandler.LOG_USER,
                                               #self.baseSysLogHandler.LOG_DEBUG)
         if reopen:
@@ -201,72 +203,72 @@ class Ogler():
             headDirPath = None  # don't need to recreate path because of headDirPath change
 
         # always recreates if path is empty or if path part has changed
-        if self.filed:
-            if (not self.dirPath or
-                 temp is not None or
-                 headDirPath is not None or
-                 name is not None):  # need to recreate path
 
-                if temp is not None:
-                    self.temp = True if temp else False
-                if headDirPath is not None:
-                    self.headDirpath = headDirPath
-                if name is not None:  # used below for filename
-                    self.name = name
+        if (not self.dirPath or
+             temp is not None or
+             headDirPath is not None or
+             name is not None):  # need to recreate path
 
-                if self.temp:
-                    dirPath = os.path.abspath(
-                                            os.path.join(self.TempHeadDir,
-                                                        self.prefix,
-                                                        self.TailDirPath))
-                    if not os.path.exists(dirPath):
-                        os.makedirs(dirPath)  # mkdtemp only makes last dir
-                    self.dirPath = tempfile.mkdtemp(prefix=self.TempPrefix,
-                                                    suffix=self.TempSuffix,
-                                                    dir=dirPath)
+            if temp is not None:
+                self.temp = True if temp else False
+            if headDirPath is not None:
+                self.headDirpath = headDirPath
+            if name is not None:  # used below for filename
+                self.name = name
 
-                else:
-                    self.dirPath = os.path.abspath(
-                            os.path.expanduser(
-                                                os.path.join(self.headDirPath,
-                                                             self.prefix,
-                                                             self.TailDirPath)))
+            if self.temp:
+                dirPath = os.path.abspath(
+                                        os.path.join(self.TempHeadDir,
+                                                    self.prefix,
+                                                    self.TailDirPath))
+                if not os.path.exists(dirPath):
+                    os.makedirs(dirPath)  # mkdtemp only makes last dir
+                self.dirPath = tempfile.mkdtemp(prefix=self.TempPrefix,
+                                                suffix=self.TempSuffix,
+                                                dir=dirPath)
 
-                    if not os.path.exists(self.dirPath):
-                        try:
+            else:
+                self.dirPath = os.path.abspath(
+                        os.path.expanduser(
+                                            os.path.join(self.headDirPath,
+                                                         self.prefix,
+                                                         self.TailDirPath)))
+
+                if not os.path.exists(self.dirPath):
+                    try:
+                        os.makedirs(self.dirPath)
+                    except OSError as ex:  # can't make dir
+                        # use alt=user's directory instead
+                        prefix = ".{}".format(self.prefix)  # hide it
+                        self.dirPath = os.path.abspath(
+                                                os.path.expanduser(
+                                                                os.path.join(self.AltHeadDirPath,
+                                                                             prefix,
+                                                                            self.TailDirPath)))
+                        if not os.path.exists(self.dirPath):
                             os.makedirs(self.dirPath)
-                        except OSError as ex:  # can't make dir
-                            # use alt=user's directory instead
-                            prefix = ".{}".format(self.prefix)  # hide it
-                            self.dirPath = os.path.abspath(
-                                                    os.path.expanduser(
-                                                                    os.path.join(self.AltHeadDirPath,
-                                                                                 prefix,
-                                                                                self.TailDirPath)))
-                            if not os.path.exists(self.dirPath):
-                                os.makedirs(self.dirPath)
-                    else:  # path exists
-                        if not os.access(self.dirPath, os.R_OK | os.W_OK):
-                            # but can't access it
-                            # use alt=user's directory instead
-                            prefix = ".{}".format(self.prefix)  # hide it
-                            self.dirPath = os.path.abspath(
-                                                    os.path.expanduser(
-                                                                    os.path.join(self.AltHeadDirPath,
-                                                                                 prefix,
-                                                                                 self.TailDirPath)))
-                            if not os.path.exists(self.dirPath):
-                                os.makedirs(self.dirPath)
+                else:  # path exists
+                    if not os.access(self.dirPath, os.R_OK | os.W_OK):
+                        # but can't access it
+                        # use alt=user's directory instead
+                        prefix = ".{}".format(self.prefix)  # hide it
+                        self.dirPath = os.path.abspath(
+                                                os.path.expanduser(
+                                                                os.path.join(self.AltHeadDirPath,
+                                                                             prefix,
+                                                                             self.TailDirPath)))
+                        if not os.path.exists(self.dirPath):
+                            os.makedirs(self.dirPath)
 
-                fileName = "{}.log".format(self.name)
-                self.path = os.path.join(self.dirPath, fileName)
+            fileName = "{}.log".format(self.name)
+            self.path = os.path.join(self.dirPath, fileName)
 
-                #create file handlers and assign formatters
-                self.baseFileHandler = logging.handlers.TimedRotatingFileHandler(
-                    self.path, when='H', interval=1, backupCount=48)
-                self.baseFileHandler.setFormatter(self.baseFormatter)
+            #create file handlers and assign formatters
+            self.baseFileHandler = logging.handlers.TimedRotatingFileHandler(
+                self.path, when='H', interval=1, backupCount=48)
+            self.baseFileHandler.setFormatter(self.baseFormatter)
 
-            self.opened = True
+        self.opened = True
 
 
     def close(self, clear=False):
