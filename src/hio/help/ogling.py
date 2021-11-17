@@ -91,6 +91,9 @@ class Ogler():
         consoled (bool): True means log to console (stderr), False do not
         syslogged (bool): True means log to syslog, False do not
         filed (bool): True means log to rotating file at .path, False do not
+        when (str): interval type for timed rotating file handler
+        interval (int): length of interval of type when
+        count (int): backup count number of backups to keep
     """
     Prefix = "hio"
     HeadDirPath = "/usr/local/var"  # default in /usr/local/var
@@ -102,7 +105,8 @@ class Ogler():
 
     def __init__(self, name='main', level=logging.ERROR, temp=False,
                  prefix=None, headDirPath=None, reopen=False, clear=False,
-                 consoled=True, syslogged=True, filed=True):
+                 consoled=True, syslogged=True, filed=True,
+                 when='H', interval=1, count=48):
         """
         Init Loggery factory instance
 
@@ -146,6 +150,10 @@ class Ogler():
         self.consoled = True if consoled else False
         self.syslogged = True if syslogged else False
         self.filed = True if filed else False
+
+        self.when = when
+        self.interval = interval
+        self.count = count
 
         #create formatters
         fmt = "{}: %(message)s".format(self.prefix)
@@ -265,7 +273,10 @@ class Ogler():
 
             #create file handlers and assign formatters
             self.baseFileHandler = logging.handlers.TimedRotatingFileHandler(
-                self.path, when='H', interval=1, backupCount=48)
+                                                        self.path,
+                                                        when=self.when,
+                                                        interval=self.interval,
+                                                        backupCount=self.count)
             self.baseFileHandler.setFormatter(self.baseFormatter)
 
         self.opened = True
