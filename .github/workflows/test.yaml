@@ -1,0 +1,28 @@
+name: hio
+
+on: [ push ]
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ macos-latest, ubuntu-latest ]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install dependencies
+        run: |
+          sudo mkdir -p /usr/local/var/hio/logs
+          sudo mkdir -p /usr/local/var/hio/wirelogs
+          sudo chown -R $USER /usr/local/var/hio/logs
+          sudo chown -R $USER /usr/local/var/hio/wirelogs
+          python -m pip install --upgrade pip
+          pip install pytest
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Run hio tests
+        run: |
+          pytest
