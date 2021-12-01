@@ -6,12 +6,17 @@ hio.help.helping module
 import types
 import functools
 import inspect
+import os
+import errno
+import stat
+import json
 
 from collections.abc import Iterable, Sequence, Generator
 from abc import ABCMeta
 
-from multidict import MultiDict, CIMultiDict
-from orderedset import OrderedSet as oset
+import msgpack
+import cbor2 as cbor
+
 
 def copyfunc(f, name=None):
     """
@@ -322,4 +327,90 @@ def isIterator(obj):
        ):
         return True
     return False
+
+
+def ocfn(path, mode='r+', perm=(stat.S_IRUSR | stat.S_IWUSR)):
+    """
+    Atomically open or create file from filepath.
+
+    If file already exists, Then open file using openMode
+    Else create file using write update mode If not binary Else
+        write update binary mode
+    Returns file object
+
+    If binary Then If new file open with write update binary mode
+
+    x = stat.S_IRUSR | stat.S_IWUSR
+    384 == 0o600
+    436 == octal 0664
+    """
+    try:
+
+        newfd = os.open(path, os.O_EXCL | os.O_CREAT | os.O_RDWR, perm)
+        if "b" in mode:
+            file = os.fdopen(newfd,"w+b")  # w+ truncate read and/or write
+        else:
+            file = os.fdopen(newfd,"w+")  # w+ truncate read and/or write
+
+    except OSError as ex:
+        if ex.errno == errno.EEXIST:
+            file = open(path, mode)  # r+ do not truncate read and/or write
+        else:
+            raise
+    return file
+
+
+def dump(data, path):
+    """
+    Serialize data dict and write to file given by path where serialization is
+    given by path's extension of either JSON, MsgPack, or CBOR for extension
+    .json, .mgpk, or .cbor respectively
+    """
+
+    if ' ' in path:
+        raise IOError(f"Invalid file path '{path}' contains space.")
+
+    root, ext = os.path.splitext(path)
+    if ext == '.json':
+        with ocfn(path, "w+b") as f:
+            json.dump(data, f, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+    elif ext == '.mgpk':
+        with ocfn(path, "w+b") as f:
+            msgpack.dump(data, f)
+            f.flush()
+            os.fsync(f.fileno())
+    elif ext == '.cbor':
+        with ocfn(path, "w+b") as f:
+            cbor.dump(data, f)
+            f.flush()
+            os.fsync(f.fileno())
+    else:
+        raise IOError(f"Invalid file path ext '{path}' "
+                      f"not '.json', '.mgpk', or 'cbor'.")
+
+
+def load(path):
+    """
+    Return data read from file path as dict
+    file may be either json, msgpack, or cbor given by extension .json, .mgpk, or
+    .cbor respectively
+    Otherwise raise IOError
+    """
+    root, ext = os.path.splitext(path)
+    if ext == '.json':
+        with ocfn(path, "rb") as f:
+            it = json.load(f)
+    elif ext == '.mgpk':
+        with ocfn(path, "rb") as f:
+            it = msgpack.load(f)
+    elif ext == '.cbor':
+        with ocfn(path, "rb") as f:
+            it = cbor.load(f)
+    else:
+        raise IOError(f"Invalid file path ext '{path}' "
+                     f"not '.json', '.mgpk', or 'cbor'.")
+
+    return it
 

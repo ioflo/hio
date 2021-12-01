@@ -615,6 +615,7 @@ def openClient(cls=None, **kwa):
             client0.accept()
 
     """
+    client = None
     if cls is None:
         cls = Client
     try:
@@ -624,7 +625,8 @@ def openClient(cls=None, **kwa):
         yield client
 
     finally:
-        client.close()
+        if client:
+            client.close()
 
 
 class Client():

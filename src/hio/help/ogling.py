@@ -13,6 +13,7 @@ import tempfile
 import shutil
 from contextlib import contextmanager
 
+from ..hioing import OglerError
 
 def initOgler(level=logging.CRITICAL, **kwa):
     """
@@ -59,6 +60,7 @@ def openOgler(cls=None, name="test", temp=True, **kwa):
     with openOgler(name="eve", cls=SubclassedOgler)
 
     """
+    ogler = None
     if cls is None:
         cls = Ogler
     try:
@@ -66,29 +68,32 @@ def openOgler(cls=None, name="test", temp=True, **kwa):
         yield ogler
 
     finally:
-        ogler.close()  # if .temp also clears
+        if ogler:
+            ogler.close()  # if .temp also clears
 
 
 class Ogler():
-    """
-    Olgery instances retreive and configure loggers from global logging facility
+    """Olger instances provide loggers as global logging facility
     Only need one Ogler per application
-
     Uses python stdlib logging module, logging.getLogger(name).
-    Multiple calls to .getLogger() with the same name
-    will always return a reference to the same Logger object.
+    Multiple calls to .getLogger() with the same name will always return a
+       reference to the same Logger object.
 
     Attributes:
-        .name is str used in file name
-        .level is logging severity level
-        .temp is Boolean True means use /tmp directory
-        .prefix is str used as part of path prefix and formating
-        .headDirPath is str used as head of path
-        .tailDirpath is str used as tail of path
-        .altTailDirPath is str used a alternate tail of path
-        .dirPath is full directory path
-        .path is full file path
-        .opened is Boolean, True means file is opened Otherwise False
+        name (str): usage specific component used in file name
+        level (int): logging severity level
+        temp (bool): True means use /tmp directory
+        prefix (str): application specific path prefix and formating
+        headDirPath (str): head of path
+        dirPath (str): full directory path
+        path (str): full file path
+        opened (bool): True means file is opened, False not opened
+        consoled (bool): True means log to console (stderr), False do not
+        syslogged (bool): True means log to syslog, False do not
+        filed (bool): True means log to rotating file at .path, False do not
+        when (str): interval type for timed rotating file handler
+        interval (int): length of interval of type when
+        count (int): backup count number of backups to keep
     """
     Prefix = "hio"
     HeadDirPath = "/usr/local/var"  # default in /usr/local/var
@@ -99,13 +104,15 @@ class Ogler():
     TempSuffix = "_temp"
 
     def __init__(self, name='main', level=logging.ERROR, temp=False,
-                 prefix=None, headDirPath=None, reopen=False, clear=False):
+                 prefix=None, headDirPath=None, reopen=False, clear=False,
+                 consoled=True, syslogged=True, filed=True,
+                 when='H', interval=1, count=48):
         """
         Init Loggery factory instance
 
         Parameters:
-            name is application specific log file name
-            level is int logging level from logging. Higher is more restrictive.
+            name (str): application specific log file name
+            level (int):  logging level from logging. Higher is more restrictive.
                 This sets the minimum level of the baseLogger and failLogger
                 relative to the global level.
                 Logs will output if action level is at or above set level.
@@ -118,12 +125,15 @@ class Ogler():
                 DEBUG    10
                 NOTSET    0
 
-            temp is Boolean True means use /tmp directory If .filed and clear on close
-                            False means use  headDirpath If .filed
-            prefix is str to include in path and logging template
-            headDirPath is str for custom headDirPath for log file
-            reopen is Booblean True means reopen path if anything changed
-            clear is Boolean True means clear .dirPath when closing in reopen
+            temp (bool): True means use /tmp directory and clear on close
+                         False means use  headDirpath
+            prefix (str): application specific path prefix and logging template
+            headDirPath (str): custom headDirPath for log file
+            reopen (str); True means reopen path if anything changed
+            clear (bool): True means clear .dirPath when closing in reopen
+            consoled (bool): True means log to console (stderr), False do not
+            syslogged (bool): True means log to syslog, False do not
+            filed (bool): True means log to rotating file in .dirPath, False do not
         """
         self.name = name if name else 'main'  # for file name
         self.level = level  # basic logger level
@@ -133,6 +143,17 @@ class Ogler():
         self.dirPath = None
         self.path = None
         self.opened = False
+
+        if not (consoled or syslogged or filed):
+            raise OglerError("One of consoled, syslogged, or filed must be True.")
+
+        self.consoled = True if consoled else False
+        self.syslogged = True if syslogged else False
+        self.filed = True if filed else False
+
+        self.when = when
+        self.interval = interval
+        self.count = count
 
         #create formatters
         fmt = "{}: %(message)s".format(self.prefix)
@@ -145,9 +166,11 @@ class Ogler():
             address = '/var/run/syslog'
         else:
             address = '/dev/log'
-        self.baseSysLogHandler = logging.handlers.SysLogHandler(address=address)
+        facility = logging.handlers.SysLogHandler.LOG_USER  # LOG_DAEMON
+        self.baseSysLogHandler = logging.handlers.SysLogHandler(address=address,
+                                                                facility=facility)
         self.baseSysLogHandler.setFormatter(self.baseFormatter)
-        # SysLogHandler only appears to log a ERROR level despite the set level
+        # SysLogHandler only appears to log at ERROR level despite the set level
         #self.baseSysLogHandler.encodePriority(self.baseSysLogHandler.LOG_USER,
                                               #self.baseSysLogHandler.LOG_DEBUG)
         if reopen:
@@ -156,7 +179,7 @@ class Ogler():
 
     def reopen(self, name=None, temp=None, headDirPath=None, clear=False):
         """
-        Use or Create if not preexistent, directory path for file .path
+        Use or Create if not preexistent, directory path .dirPath for file .path
         First closes .path if already opened. If clear is True then also clears
         .path before reopening
 
@@ -188,10 +211,11 @@ class Ogler():
             headDirPath = None  # don't need to recreate path because of headDirPath change
 
         # always recreates if path is empty or if path part has changed
+
         if (not self.dirPath or
-            temp is not None or
-            headDirPath is not None or
-            name is not None):  # need to recreate self.dirPath, self.path, self.trPath
+             temp is not None or
+             headDirPath is not None or
+             name is not None):  # need to recreate path
 
             if temp is not None:
                 self.temp = True if temp else False
@@ -249,7 +273,10 @@ class Ogler():
 
             #create file handlers and assign formatters
             self.baseFileHandler = logging.handlers.TimedRotatingFileHandler(
-                self.path, when='H', interval=1, backupCount=48)
+                                                        self.path,
+                                                        when=self.when,
+                                                        interval=self.interval,
+                                                        backupCount=self.count)
             self.baseFileHandler.setFormatter(self.baseFormatter)
 
         self.opened = True
@@ -257,7 +284,7 @@ class Ogler():
 
     def close(self, clear=False):
         """
-        Close lmdb at .env and if clear or self.temp then remove directory at .path
+        Set .opened to False and remove directory at .path
         Parameters:
            clear is boolean, True means clear directory
         """
@@ -297,9 +324,11 @@ class Ogler():
         logger.setLevel(level)
         for handler in list(logger.handlers):  # remove so no duplicate handlers
             logger.removeHandler(handler)
-        logger.addHandler(self.baseConsoleHandler)
-        logger.addHandler(self.baseSysLogHandler)
-        if self.opened:
+        if self.consoled:
+            logger.addHandler(self.baseConsoleHandler)
+        if self.syslogged:
+            logger.addHandler(self.baseSysLogHandler)
+        if self.filed and self.opened:
             logger.addHandler(self.baseFileHandler)
         return logger
 

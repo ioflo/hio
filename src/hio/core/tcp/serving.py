@@ -44,6 +44,7 @@ def openServer(cls=None, **kwa):
             server0.
 
     """
+    server = None
     cls = cls if cls is not None else Server
 
     try:
@@ -53,7 +54,8 @@ def openServer(cls=None, **kwa):
         yield server
 
     finally:
-        server.close()
+        if server:
+            server.close()
 
 
 class Acceptor(tyming.Tymee):

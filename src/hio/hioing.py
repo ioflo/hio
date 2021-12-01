@@ -42,6 +42,14 @@ class VersionError(ValidationError):
         raise VersionError("error message")
     """
 
+class OglerError(HioError):
+    """
+    Error using or configuring Ogler
+
+    Usage:
+        raise OglerError("error message")
+    """
+
 
 class Mixin():
     """

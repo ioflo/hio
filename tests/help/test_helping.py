@@ -277,6 +277,17 @@ def test_attributize():
     assert msgs == ['400', 'example=Hi', b'Hello There Peter', b'Goodbye', b'']
 
 
+def test_ocfn_load_dump():
+    """
+    Test ocfn
+    """
+    #create temp file
+    # helping.ocfn(path)
+
+    """Done Test"""
+
+
+
 
 
 if __name__ == "__main__":
