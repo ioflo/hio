@@ -802,7 +802,7 @@ def test_doist_dos():
 
     assert doer0 is not doer1
 
-    doer2 = doing.doizeExDo
+    doer2 = doing.doify(doing.doizeExDo, tock=0, states=None)
     assert inspect.isgeneratorfunction(doer2)
     assert doer2.opts["states"] == None
     doer2.opts["states"] = []
