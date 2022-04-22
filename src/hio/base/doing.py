@@ -238,7 +238,7 @@ class Doist(tyming.Tymist):
         return deeds
 
 
-    def recur(self, deeds = None):
+    def recur(self, deeds=None):
         """
         Recur once through deeds deque of tuples (triples) of form
         (dog, retyme, doer) and update in place
@@ -290,7 +290,7 @@ class Doist(tyming.Tymist):
         self.tick()  # advance .tyme by one doist .tock
 
 
-    def exit(self, deeds = None):
+    def exit(self, deeds=None):
         """
         Force exit each still opened deed calling .close on the dog generator
         which throws a GeneratorExit to the generator.

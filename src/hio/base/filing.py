@@ -104,8 +104,7 @@ class Filer():
     def __init__(self, name='main', base="", temp=False, headDirPath=None,
                  perm=None, reopen=True, clear=False, reuse=False, clean=False,
                  filed=False, mode=None, fext=None, **kwa):
-        """
-        Setup directory of file at .path
+        """Setup directory of file at .path
 
         Parameters:
             name (str): directory path name differentiator directory/file
@@ -123,8 +122,8 @@ class Filer():
                 directory and database files. Default .DirMode
             reopen (bool): True means (re)opened by this init
                            False  means not (re)opened by this init but later
-            clear (bool): True means remove directory upon close if reopon
-                          False means do not remove directory upon close if reopen
+            clear (bool): True means remove directory upon close when reopening
+                          False means do not remove directory upon close when reopening
             reuse (bool): True means reuse self.path if already exists
                           False means do not reuse but remake self.path
             clean (bool): True means path uses clean tail variant
@@ -391,8 +390,6 @@ class Filer():
                     shutil.rmtree(head)  # rm directory and all files
             else:
                 shutil.rmtree(self.path)
-
-
 
 
 class FilerDoer(doing.Doer):
