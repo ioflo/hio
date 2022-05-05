@@ -37,7 +37,7 @@ from setuptools import setup
 
 setup(
     name='hio',
-    version='0.5.9',  #  also change in src/hio/__init__.py
+    version='0.6.0',  #  also change in src/hio/__init__.py
     license='Apache Software License 2.0',
     description='Hierarchical Concurrency with Async IO',
     long_description=("HIO Hierarchical Concurrency and Asynchronous IO Library. "
@@ -79,18 +79,17 @@ setup(
                "structured concurrency",
         # eg: 'keyword1', 'keyword2', 'keyword3',
     ],
-    python_requires='>=3.9.7',
+    python_requires='>=3.10.4',
     install_requires=[
         'netifaces>=0.11.0',
-        'lmdb>=1.2.1',
-        'pysodium>=0.7.9',
-        'blake3>=0.2.0',
-        'msgpack>=1.0.2',
-        'cbor2>=5.4.1',
-        'multidict>=5.1.0',
-        'falcon>=3.0.1',
+        'lmdb>=1.3.0',
+        'pysodium>=0.7.11',
+        'blake3>=0.3.1',
+        'msgpack>=1.0.3',
+        'cbor2>=5.4.3',
+        'multidict>=6.0.2',
+        'falcon>=3.1.0',
         'ordered-set>=4.1.0',
-        #'orderedset>=2.0.3',
 
     ],
     extras_require={
@@ -99,8 +98,8 @@ setup(
         #   ':python_version=="2.6"': ['argparse'],
     },
     tests_require=[
-                    'coverage>=5.5',
-                    'pytest>=6.2.5',
+                    'coverage>=6.3.2',
+                    'pytest>=7.1.2',
                   ],
     setup_requires=[
     ],

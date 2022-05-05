@@ -4,10 +4,7 @@ hio.help.hicting module
 
 """
 from multidict import MultiDict, CIMultiDict
-try:
-    from orderedset import OrderedSet as oset
-except ImportError:
-    from  ordered_set import OrderedSet as oset
+from  ordered_set import OrderedSet as oset
 
 
 
