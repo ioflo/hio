@@ -59,7 +59,7 @@ setup(
         'Operating System :: Unix',
         'Operating System :: POSIX',
         'Operating System :: Microsoft :: Windows',
-        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: Implementation :: CPython',
         # uncomment if you test on these interpreters:
         #'Programming Language :: Python :: Implementation :: PyPy',
