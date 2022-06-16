@@ -594,7 +594,7 @@ class ServerTls(Server):
 class Remoter(tyming.Tymee):
     """
     Class to service an incoming nonblocking TCP connection from a remote client.
-    Should only be used from Acceptor subclass
+    Should only be used by an Acceptor subclass such as Server
     """
     Tymeout = 0.0  # virtual tymeout in seconds
 
@@ -929,21 +929,6 @@ class RemoterTls(Remoter):
             raise  # unexpected Exception so bubble up
 
         self.connected = True  # handshake completed successfully
-
-
-
-    #def serviceHandshake(self):
-        #"""
-        #Service connection and handshake attempt
-        #If not already accepted and handshaked  Then
-             #make nonblocking attempt
-        #Returns .handshaked
-        #"""
-        #if not self.connected:
-            #self.handshake()
-
-
-        #return self.connected
 
 
     def receive(self):
