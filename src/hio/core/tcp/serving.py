@@ -270,9 +270,10 @@ class Server(Acceptor):
         self.serviceAccepts()  # populate .axes
         while self.axes:
             cs, ca = self.axes.popleft()
-            if ca != cs.getpeername(): #or self.eha[1] != cs.getsockname()[1] only port here
+            if ca != cs.getpeername() or self.eha[1] != cs.getsockname()[1]: # only port on eha
                 raise ValueError("Accepted socket host addresses malformed for "
-                                 "peer. ca {0} != {1}\n".format(ca, cs.getpeername()))
+                                 "peer. ca {0} != {1} or ha port {2} != {3}\n"
+                                 "".format(ca, cs.getpeername(), self.eha, cs.getsockname()))
             remoter = Remoter(tymth=self.tymth,
                               ha=cs.getsockname(),
                               ca=ca,
@@ -541,9 +542,10 @@ class ServerTls(Server):
         self.serviceAccepts()  # populate .axes
         while self.axes:
             cs, ca = self.axes.popleft()
-            if ca != cs.getpeername(): # or self.eha[1] != cs.getsockname()[1] only port here
+            if ca != cs.getpeername() or self.eha[1] != cs.getsockname()[1]: # only port on eha
                 raise ValueError("Accepted socket host addresses malformed for "
-                                 "peer. ca {0} != {1}\n".format(ca, cs.getpeername()))
+                                 "peer. ca {0} != {1} or ha port {2} != {3}\n"
+                                 "".format(ca, cs.getpeername(), self.eha, cs.getsockname()))
             remoter = RemoterTls(tymth=self.tymth,
                                  ha=cs.getsockname(),
                                  ca=ca,
