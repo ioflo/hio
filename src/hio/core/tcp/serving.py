@@ -572,10 +572,12 @@ class ServerTls(Server):
         for ca, cx in list(self.cxes.items()):
             cx.handshake()
             if cx.connected:  # handshake completed successfully
-                self.ixes[ca] = cx  # add to incoming connections
                 del self.cxes[ca]
-            elif cx.aborted:  # connection was closed on client side
+                self.ixes[ca] = cx  # add to incoming connections
+                continue
+            if cx.aborted:  # handshake completed unsuccessfully
                 del self.cxes[ca] # remove and let client startover
+                continue
 
 
 
