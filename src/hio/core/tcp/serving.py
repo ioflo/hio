@@ -137,16 +137,15 @@ class Acceptor(tyming.Tymee):
         if self.ss.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF) < bs:
             self.ss.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self.bs)
 
-        self.ss.setblocking(0) #non blocking socket
-        # bind to listen socket (host, port) to receive connections
-        self.ss.bind(self.ha)
-        self.ss.listen(5)
+        self.ss.setblocking(0)  # non blocking socket
 
-        #try:  # bind to listen socket (host, port) to receive connections
-            #self.ss.bind(self.ha)
-            #self.ss.listen(5)
-        #except OSError as ex:
-            #return False
+        try:  # bind to listen socket (host, port) to receive connections
+            self.ss.bind(self.ha)
+            self.ss.listen(5)
+        except OSError as ex:
+            self.close()
+            logger.error("Error binding server listen socket.\n%s\n", ex)
+            return False
 
         self.ha = self.ss.getsockname()  # get resolved ha after bind
         self.opened = True
@@ -368,15 +367,26 @@ class Server(Acceptor):
         if ca not in self.ixes:
             emsg = "Invalid connection address '{0}'".format(ca)
             raise ValueError(emsg)
-        self.ixes[ca].serviceReceives()
+
+        try:
+            self.ixes[ca].serviceReceives()
+        except OSError as ex:
+            logger.error("Closing incoming socket on %s.\n%s\n", ix.cs.getpeername(), ex)
+            self.removeIx(ca=ca)  # also closes ix
 
 
     def serviceReceivesAllIx(self):
         """
         Service receives for all remoters in .ixes
         """
-        for ix in self.ixes.values():
-            ix.serviceReceives()
+        for ca, ix in list(self.ixes.items()):  # list so can remove while iterating
+            try:
+                ix.serviceReceives()
+            except OSError as ex:
+                logger.error("Closing incoming socket on %s.\n%s\n", ix.cs.getpeername(), ex)
+                self.removeIx(ca=ca)  # also closes ix
+
+
 
 
     def transmitIx(self, data, ca):
@@ -569,7 +579,7 @@ class ServerTls(Server):
         Service handshakes for every remoter in .cxes
         If successful move to .ixes
         """
-        for ca, cx in list(self.cxes.items()):
+        for ca, cx in list(self.cxes.items()):  # list so can remove during iteration
             cx.handshake()
             if cx.connected:  # handshake completed successfully
                 del self.cxes[ca]
@@ -726,7 +736,8 @@ class Remoter(tyming.Tymee):
                                 errno.ECONNREFUSED):
                 self.cutoff = True  # this signals need to close/reopen connection
                 return bytes()  # data empty
-            else:
+            else:  # unexpected error
+                logger.error("Unexpected error on receive on %s.\n%s\n", self.cs.getpeername(), ex)
                 raise  # re-raise
 
         if data:  # connection open
@@ -911,20 +922,24 @@ class RemoterTls(Remoter):
                 return  # in progress try again later
 
             elif ex.errno in (ssl.SSL_ERROR_EOF, ):  # give up client terminated
+                logger.error("Error aborted tls handshake on %s.\n%s\n", self.cs.getpeername(), ex)
                 self.close()
                 self.aborted = True  # indicate client aborted handshake
                 return  # caller checks .aborted
 
             else:
+                logger.error("Error during tls handshake on %s.\n%s\n", self.cs.getpeername(), ex)
                 self.close()
-                raise # unexpected SSLError so bubble up
+                self.aborted = True  # indicate client aborted handshake
+                return  # caller checks .aborted
 
         except OSError as ex:
+            logger.error("OSError on tls handshake closing %s.\n%s\n", self.cs.getpeername(), ex)
             self.close()
+            self.aborted = True  # indicate client aborted handshake
             if ex.errno in (errno.ECONNABORTED, ): #  give up client aborted
-                self.aborted = True  # indicate client aborted handshake
-                return   # caller checks .aborted
-            raise  # unexpected OSError so bubble up
+                logger.error("Client aborted.\n%s\n", ex)
+            return   # caller checks .aborted
 
         except Exception as ex:
             self.close()
@@ -962,6 +977,7 @@ class RemoterTls(Remoter):
                 self.cutoff = True  # this signals need to close/reopen connection
                 return bytes()  # data empty
             else:
+                logger.error("Unexpected error on receive on %s.\n%s\n", self.cs.getpeername(), ex)
                 raise  # re-raise
 
         if data:  # connection open
