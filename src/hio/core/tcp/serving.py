@@ -897,18 +897,18 @@ class RemoterTls(Remoter):
             if ex.errno in (ssl.SSL_ERROR_WANT_READ, ssl.SSL_ERROR_WANT_WRITE):
                 return False
             elif ex.errno in (ssl.SSL_ERROR_EOF, ):
-                self.shutclose()
+                self.close()
                 raise   # should give up here nicely
             else:
-                self.shutclose()
+                self.close()
                 raise
         except OSError as ex:
-            self.shutclose()
+            self.close()
             if ex.errno in (errno.ECONNABORTED, ):
                 raise  # should give up here nicely
             raise
         except Exception as ex:
-            self.shutclose()
+            self.close()
             raise
 
         self.connected = True
