@@ -1361,7 +1361,7 @@ def test_tcp_tls_server_with_client_abort_handshake():
 
         # now beta tries again
         # Connect beta to server
-        while not(beta.connected and len(server.ixes) >= 1):
+        while not(beta.connected and server.ixes):
             beta.serviceConnect()
             server.serviceConnects()
             time.sleep(0.01)
