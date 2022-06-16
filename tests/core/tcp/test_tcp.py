@@ -1277,6 +1277,136 @@ def test_tcp_tls_verify_both_tlsv12():
     assert server.opened == False
     """Done Test"""
 
+def test_tcp_tls_server_with_client_abort_handshake():
+    """
+    Test TCP TLS client server connection with verify certs for server not client
+    but test that server stays up in spite of client
+    """
+
+    certDirPath = localTestCertDirPath()
+    assert os.path.exists(certDirPath)
+
+    serverKeyPath = os.path.join(certDirPath, 'server_key.pem')  # local server private key
+    serverCertPath = os.path.join(certDirPath, 'server_cert.pem')  # local server public cert
+    clientCaPath = os.path.join(certDirPath, 'client.pem') # remote client public cert
+
+    clientKeyPath = os.path.join(certDirPath, 'client_key.pem')  # local client private key
+    clientCertPath = os.path.join(certDirPath, 'client_cert.pem')  # local client public cert
+    serverCaPath = os.path.join(certDirPath, 'server.pem') # remote server public cert
+
+    assert os.path.exists(serverKeyPath)
+    assert os.path.exists(serverCertPath)
+    assert os.path.exists(clientCaPath)
+    assert os.path.exists(clientKeyPath)
+    assert os.path.exists(clientCertPath)
+    assert os.path.exists(serverCaPath)
+
+    serverCertCommonName = 'localhost' # match hostname uses servers's cert commonname
+
+    tymist = tyming.Tymist()
+    with ( tcp.openServer(cls=tcp.ServerTls,
+                    tymth=tymist.tymen(),
+                    ha=("", 6101),
+                    bs=16192,
+                    keypath=serverKeyPath,
+                    certpath=serverCertPath,
+                    cafilepath=clientCaPath,
+                    certify=ssl.CERT_NONE ,) as server,
+          tcp.openClient(cls=tcp.ClientTls,
+                    tymth=tymist.tymen(),
+                    ha=("127.0.0.1", 6101),
+                    bs=16192,
+                    certedhost=serverCertCommonName,
+                    keypath=clientKeyPath,
+                    certpath=clientCertPath,
+                    cafilepath=serverCaPath,
+                    certify=ssl.CERT_REQUIRED,
+                    hostify=True,) as beta
+         ):
+
+        assert server.opened == True
+        assert server.eha == ('127.0.0.1', 6101)
+        assert server.ha == ('0.0.0.0', 6101)
+
+        assert beta.opened == True
+        assert beta.accepted == False
+        assert beta.connected == False
+        assert beta.cutoff == False
+
+
+        # Begine connection of client beta to server
+
+        while not beta.connected and not server.cxes:
+            beta.serviceConnect()
+            server.serviceConnects()
+            time.sleep(0.01)
+
+        ca, cx = list(server.cxes.items())[0]  # handshake started
+        assert not cx.connected  # handshake not completed success
+        assert not cx.aborted  # handshake not completed fail
+
+        beta.close()  # prematurely close client side of handshake
+        time.sleep(0.01)
+        assert not beta.opened
+        server.serviceConnects()
+        time.sleep(0.01)
+
+        assert not server.cxes  # handshake aborted
+        assert not server.ixes  # no incoming connection
+
+        assert not beta.accepted
+        assert not beta.connected
+        assert not beta.cutoff
+        assert not beta.cs
+
+        # now beta tries again
+        # Connect beta to server
+        while not(beta.connected and len(server.ixes) >= 1):
+            beta.serviceConnect()
+            server.serviceConnects()
+            time.sleep(0.01)
+
+        assert beta.accepted == True
+        assert beta.connected == True
+        assert beta.cutoff == False
+
+        assert beta.ca == beta.cs.getsockname()
+        assert beta.ha == beta.cs.getpeername()
+
+        ixBeta = server.ixes[beta.ca]
+        assert ixBeta.cs.getsockname() == beta.cs.getpeername()
+        assert ixBeta.cs.getpeername() == beta.cs.getsockname()
+        assert ixBeta.ca == beta.ca
+        assert ixBeta.ha == beta.ha
+
+        msgOut = b"Beta sends to Server\n"
+        beta.tx(msgOut)
+        while not( not beta.txbs and ixBeta.rxbs):
+            beta.serviceSends()
+            server.serviceReceivesAllIx()
+            time.sleep(0.01)
+
+        time.sleep(0.05)
+        server.serviceReceivesAllIx()
+
+        msgIn = bytes(ixBeta.rxbs)
+        assert msgIn == msgOut
+        ixBeta.clearRxbs()
+
+        msgOut = b'Server sends to Beta\n'
+        ixBeta.tx(msgOut)
+        while not (not ixBeta.txbs and beta.rxbs):
+            server.serviceSendsAllIx()
+            beta.serviceReceives()
+            time.sleep(0.01)
+
+        msgIn = bytes(beta.rxbs)
+        assert msgIn == msgOut
+        beta.clearRxbs()
+
+    assert beta.opened == False
+    assert server.opened == False
+    """Done Test"""
 
 
 def test_server_client_doers():
@@ -1375,4 +1505,4 @@ def test_echo_server_client_doers():
 
 
 if __name__ == "__main__":
-    test_server_client()
+    test_tcp_tls_server_with_client_abort_handshake()
