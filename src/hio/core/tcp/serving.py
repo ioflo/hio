@@ -573,6 +573,9 @@ class ServerTls(Server):
             if cx.serviceHandshake():
                 self.ixes[ca] = cx
                 del self.cxes[ca]
+            elif cx.cs == None:  # connection was closed on client side
+                del self.cxes[ca] # silently ignore and let client reconnect
+
 
 
     def serviceConnects(self):
@@ -896,16 +899,17 @@ class RemoterTls(Remoter):
         except ssl.SSLError as ex:
             if ex.errno in (ssl.SSL_ERROR_WANT_READ, ssl.SSL_ERROR_WANT_WRITE):
                 return False
-            elif ex.errno in (ssl.SSL_ERROR_EOF, ):
-                self.close()
-                raise   # should give up here nicely
+            elif ex.errno in (ssl.SSL_ERROR_EOF, ):  # client aborted
+                self.close()  # give up on this end and let client reconnect
+                # raise   # should give up here nicely
             else:
                 self.close()
                 raise
         except OSError as ex:
             self.close()
             if ex.errno in (errno.ECONNABORTED, ):
-                raise  # should give up here nicely
+                pass #  give up client aborted let client reconnect
+                #raise  # should give up here nicely
             raise
         except Exception as ex:
             self.close()
@@ -924,6 +928,7 @@ class RemoterTls(Remoter):
         """
         if not self.connected:
             self.handshake()
+
 
         return self.connected
 
