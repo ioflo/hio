@@ -570,11 +570,12 @@ class ServerTls(Server):
         If successful move to .ixes
         """
         for ca, cx in list(self.cxes.items()):
-            if cx.serviceHandshake():
-                self.ixes[ca] = cx
+            cx.handshake()
+            if cx.connected:  # handshake completed successfully
+                self.ixes[ca] = cx  # add to incoming connections
                 del self.cxes[ca]
-            elif cx.cs == None:  # connection was closed on client side
-                del self.cxes[ca] # silently ignore and let client reconnect
+            elif cx.aborted:  # connection was closed on client side
+                del self.cxes[ca] # remove and let client startover
 
 
 
@@ -593,7 +594,7 @@ class ServerTls(Server):
 class Remoter(tyming.Tymee):
     """
     Class to service an incoming nonblocking TCP connection from a remote client.
-    Should only be used from Acceptor subclass
+    Should only be used by an Acceptor subclass such as Server
     """
     Tymeout = 0.0  # virtual tymeout in seconds
 
@@ -829,6 +830,10 @@ class RemoterTls(Remoter):
     Class to service an incoming nonblocking TCP/TLS connection from a remote client.
     Should only be used from Acceptor subclass
     Provides nonblocking TLS/SSL support
+
+    Attributes:
+        connected (bool): True means TLS handshake completed False otherwise
+        aborted (bool): True means client aborted TLS handshake False otherwise
     """
     def __init__(self,
                  context=None,
@@ -857,6 +862,7 @@ class RemoterTls(Remoter):
         super(RemoterTls, self).__init__(**kwa)
 
         self.connected = False  # True once ssl handshake completed
+        self.aborted = False # True if client aborts TLS handshake prematurely
 
         self.context = initServerContext(context=context,
                                     version=version,
@@ -891,46 +897,38 @@ class RemoterTls(Remoter):
     def handshake(self):
         """
         Attempt nonblocking ssl handshake to .ha
-        Returns True if successful
-        Returns False if not so try again later
+        Sets .connected when complete successfully
+        Sets .aborted when client terminates prematurely
+        Keep trying while not connected and not aborted
         """
         try:
             self.cs.do_handshake()
+
         except ssl.SSLError as ex:
             if ex.errno in (ssl.SSL_ERROR_WANT_READ, ssl.SSL_ERROR_WANT_WRITE):
-                return False
-            elif ex.errno in (ssl.SSL_ERROR_EOF, ):  # client aborted
-                self.close()  # give up on this end and let client reconnect
-                # raise   # should give up here nicely
+                return  # in progress try again later
+
+            elif ex.errno in (ssl.SSL_ERROR_EOF, ):  # give up client terminated
+                self.close()
+                self.aborted = True  # indicate client aborted handshake
+                return  # caller checks .aborted
+
             else:
                 self.close()
-                raise
+                raise # unexpected SSLError so bubble up
+
         except OSError as ex:
             self.close()
-            if ex.errno in (errno.ECONNABORTED, ):
-                pass #  give up client aborted let client reconnect
-                #raise  # should give up here nicely
-            raise
+            if ex.errno in (errno.ECONNABORTED, ): #  give up client aborted
+                self.aborted = True  # indicate client aborted handshake
+                return   # caller checks .aborted
+            raise  # unexpected OSError so bubble up
+
         except Exception as ex:
             self.close()
-            raise
+            raise  # unexpected Exception so bubble up
 
-        self.connected = True
-        return True
-
-
-    def serviceHandshake(self):
-        """
-        Service connection and handshake attempt
-        If not already accepted and handshaked  Then
-             make nonblocking attempt
-        Returns .handshaked
-        """
-        if not self.connected:
-            self.handshake()
-
-
-        return self.connected
+        self.connected = True  # handshake completed successfully
 
 
     def receive(self):
