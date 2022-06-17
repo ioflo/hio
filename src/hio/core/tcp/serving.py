@@ -922,19 +922,19 @@ class RemoterTls(Remoter):
                 return  # in progress try again later
 
             elif ex.errno in (ssl.SSL_ERROR_EOF, ):  # give up client terminated
-                logger.error("Error aborted tls handshake on %s.\n%s\n", self.cs.getpeername(), ex)
+                logger.error("SSLError aborted tls handshake of %s with %s.\n%s\n", self.ha, self.ca, ex)
                 self.close()
                 self.aborted = True  # indicate client aborted handshake
                 return  # caller checks .aborted
 
             else:
-                logger.error("Error during tls handshake on %s.\n%s\n", self.cs.getpeername(), ex)
+                logger.error("SSLError during tls handshake of %s with %s.\n%s\n", self.ha, self.ca, ex)
                 self.close()
                 self.aborted = True  # indicate client aborted handshake
                 return  # caller checks .aborted
 
         except OSError as ex:
-            logger.error("OSError on tls handshake closing %s.\n%s\n", self.cs.getpeername(), ex)
+            logger.error("OSError during tls handshake of %s with %s.\n%s\n", self.ha, self.ca, ex)
             self.close()
             self.aborted = True  # indicate client aborted handshake
             if ex.errno in (errno.ECONNABORTED, ): #  give up client aborted
