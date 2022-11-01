@@ -1009,7 +1009,7 @@ class Client():
                                       "host '{0}'".format(location))
                 self.connector.close()
                 if secured:
-                    context = getattr(self.connector, 'context')
+                    context = getattr(self.connector, 'context') if hasattr(self.connector, 'context') else None
                     connector = tcp.ClientTls(tymth=self.connector.tymth,
                                            ha=(hostname, port),
                                            bufsize=self.connector.bs,
