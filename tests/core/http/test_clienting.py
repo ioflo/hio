@@ -2309,6 +2309,57 @@ def test_query_quoting():
                         '&oauth_signature=KBD3DdNVZBjyOd0fqQ9X17ack%3D')
 
 
+def test_client_port_options():
+    beta = clienting.Client(hostname="127.0.0.1",
+                            port=4321,
+                            scheme='https')
+    beta.requester.build()
+    assert beta.requester.lines[1] == b'Host: 127.0.0.1:4321'
+    beta = clienting.Client(hostname="127.0.0.1",
+                            port=443,
+                            scheme='https')
+    beta.requester.build()
+    assert beta.requester.lines[1] == b'Host: 127.0.0.1:443'
+    beta = clienting.Client(hostname="127.0.0.1",
+                            port=443,
+                            scheme='https',
+                            portOptional=True)
+    beta.requester.build()
+    assert beta.requester.lines[1] == b'Host: 127.0.0.1'
+
+    beta = clienting.Client(hostname="127.0.0.1",
+                            port=80,
+                            scheme='http')
+    beta.requester.build()
+    assert beta.requester.lines[1] == b'Host: 127.0.0.1:80'
+    beta = clienting.Client(hostname="127.0.0.1",
+                            port=80,
+                            scheme='http',
+                            portOptional=True)
+    beta.requester.build()
+    assert beta.requester.lines[1] == b'Host: 127.0.0.1'
+
+    beta = clienting.Client(hostname="127.0.0.1",
+                            port=443,
+                            scheme='http',
+                            portOptional=True)
+    beta.requester.build()
+    assert beta.requester.lines[1] == b'Host: 127.0.0.1:443'
+
+    beta = clienting.Client(hostname="127.0.0.1",
+                            port=5564,
+                            scheme='https',
+                            portOptional=True)
+    beta.requester.build()
+    assert beta.requester.lines[1] == b'Host: 127.0.0.1:5564'
+
+    beta = clienting.Client(hostname="127.0.0.1",
+                            port=1234,
+                            scheme='http',
+                            portOptional=True)
+    beta.requester.build()
+    assert beta.requester.lines[1] == b'Host: 127.0.0.1:1234'
+
 
 if __name__ == '__main__':
     test_query_quoting()
