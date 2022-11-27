@@ -65,7 +65,8 @@ class Requester(object):
         body = http request body
         data = dict to jsonify as body if provided
         fargs = dict to url form encode as body if provided
-        portOptional = True indicates to leave off port 80 for http or 443 for https in Host header to support
+        portOptional = True indicates to leave off port 80 for http or
+                        443 for https in Host header to support
                         non-compliant server implementations.
         """
         self.hostname, self.port = httping.normalizeHostPort(hostname, port, 80)
@@ -98,7 +99,8 @@ class Requester(object):
                headers=None,
                body=None,
                data=None,
-               fargs=None):
+               fargs=None,
+               portOptional=None):
         """
         Reinitialize anything that is not None
         This enables creating another request on a connection to the same host port
@@ -135,6 +137,9 @@ class Requester(object):
         else:
             self.fargs = None
 
+        if portOptional is not None:
+            self.portOptional = True if portOptional else False
+
     def rebuild(self,
                 method=None,
                 path=None,
@@ -143,7 +148,8 @@ class Requester(object):
                 headers=None,
                 body=None,
                 data=None,
-                fargs=None):
+                fargs=None,
+                portOptional=None):
         """
         Reinit then build and return request message
         This allows sending another request to same destination
@@ -155,7 +161,8 @@ class Requester(object):
                     headers=headers,
                     body=body,
                     data=data,
-                    fargs=fargs)
+                    fargs=fargs,
+                    portOptional=portOptional)
 
         return self.build()
 
@@ -217,7 +224,7 @@ class Requester(object):
                 host = u'[' + host + u']'
 
             if self.portOptional and (self.scheme, port) in (("http", 80), ("https", 443)):
-                value = host
+                value = host # leave port empty when portOptional and one of defaults
             else:
                 value = "{0}:{1}".format(host, port)
 

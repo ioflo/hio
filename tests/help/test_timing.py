@@ -129,4 +129,4 @@ def test_monotimer():
     """End Test """
 
 if __name__ == "__main__":
-    test_monotimer()
+    test_timer()
