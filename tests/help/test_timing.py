@@ -15,12 +15,14 @@ def test_timer():
     Test Timer class
     """
     timer = Timer()
+    time.sleep(0.0001)
     assert timer.duration == 0.0
     assert timer.elapsed > 0.0
     assert timer.remaining < 0.0
     assert timer.expired == True
 
     timer.restart(duration=0.125)
+    time.sleep(0.0001)
     assert timer.duration == 0.125
     assert timer.elapsed > 0.0
     assert timer.remaining > 0.0
@@ -29,6 +31,7 @@ def test_timer():
     assert timer.expired == True
 
     timer.start(duration = 0.125)
+    time.sleep(0.0001)
     assert timer.duration == 0.125
     assert timer.elapsed < 0.125
     assert timer.remaining > 0.0
@@ -37,6 +40,7 @@ def test_timer():
     assert timer.expired == True
 
     timer = Timer(duration=0.125)
+    time.sleep(0.0001)
     assert timer.duration == 0.125
     assert timer.elapsed > 0.0
     assert timer.remaining > 0.0
@@ -45,6 +49,7 @@ def test_timer():
     assert timer.expired == True
 
     timer = Timer(duration=0.125, start=time.time() + 0.05)
+    time.sleep(0.0001)
     assert timer.duration == 0.125
     assert timer.elapsed < 0.0
     assert timer.remaining > 0.125
@@ -53,6 +58,7 @@ def test_timer():
     assert timer.expired == True
 
     timer = Timer(duration=0.125, start=time.time() - 0.05)
+    time.sleep(0.0001)
     assert timer.duration == 0.125
     assert timer.elapsed > 0.0
     assert timer.remaining < 0.075

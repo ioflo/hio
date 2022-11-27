@@ -374,9 +374,12 @@ def test_client_request_echo_port_empty():
     Uses port 80 so may cause problems when testing
     """
     with tcp.openServer(port = 80, bufsize=131072) as alpha:
-
-        assert alpha.ha == ('0.0.0.0', 80)
-        assert alpha.eha == ('127.0.0.1', 80)
+        if sys.platform == "linux":
+            assert alpha.ha == ('', 80)
+            assert alpha.eha == ('127.0.0.1', 80)
+        else:
+            assert alpha.ha == ('0.0.0.0', 80)
+            assert alpha.eha == ('127.0.0.1', 80)
 
         host = alpha.eha[0]
         port = alpha.eha[1]
