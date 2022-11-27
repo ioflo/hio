@@ -49,7 +49,8 @@ class Requester(object):
                  headers=None,
                  body=b'',
                  data=None,
-                 fargs=None):
+                 fargs=None,
+                 portOptional=False):
         """
         Initialize Instance
 
@@ -64,6 +65,8 @@ class Requester(object):
         body = http request body
         data = dict to jsonify as body if provided
         fargs = dict to url form encode as body if provided
+        portOptional = True indicates to leave off port 80 for http or 443 for https in Host header to support
+                        non-compliant server implementations.
         """
         self.hostname, self.port = httping.normalizeHostPort(hostname, port, 80)
         self.scheme = scheme
@@ -78,6 +81,7 @@ class Requester(object):
         self.body = body or b''
         self.data = data
         self.fargs = fargs
+        self.portOptional = True if portOptional else False
 
         self.lines = []  # keep around for testing
         self.head = b""  # keep around for testing
@@ -212,7 +216,10 @@ class Requester(object):
             if host.find(u':') >= 0:
                 host = u'[' + host + u']'
 
-            value = "{0}:{1}".format(host, port)
+            if self.portOptional and (self.scheme, port) in (("http", 80), ("https", 443)):
+                value = host
+            else:
+                value = "{0}:{1}".format(host, port)
 
             try:
                 value = value.encode("ascii")
@@ -660,6 +667,7 @@ class Client():
                  redirectable=True,
                  redirects=None,
                  responses=None,
+                 portOptional=False,
                  **kwa):
         """
         Initialization method for instance.
@@ -700,6 +708,8 @@ class Client():
                 each redirect is dict
             responses is deque of responses if any processed by respondent
                  each response is dict
+            portOptional = True indicates to leave off port 80 for http or
+                 443 for https in Host header to support non-compliant server implementations.
 
             **kwa are passed through to init .connector tcp.Client or tcp.ClientTLS
         """
@@ -798,7 +808,8 @@ class Client():
                                   fragment=fragment,
                                   body=body,
                                   data=data,
-                                  fargs=fargs)
+                                  fargs=fargs,
+                                  portOptional=portOptional)
         else:
             requester.reinit(hostname=self.connector.hostname,
                              port=self.connector.port,
