@@ -77,12 +77,13 @@ class Acceptor(tyming.Tymee):
         .opened is boolean, True if listen socket .ss opened. False otherwise
     """
 
-    def __init__(self, ha=None, bs=8096, **kwa):
+    def __init__(self, ha=None, bs=8096, bl=128, **kwa):
         """
         Initialization method for instance.
         ha is host address duple (host, port) listen interfaces
               host = "" or "0.0.0.0" means listen on all interfaces
         bs = buffer size
+        bl (int): backlog size of not yet accepted concurrent tcp connections
 
         """
         super(Acceptor, self).__init__(**kwa)
@@ -96,6 +97,7 @@ class Acceptor(tyming.Tymee):
             host = "::1" # need specific interface for tls
         self.eha = (host, port)
         self.bs = bs
+        self.bl = bl
         self.ss = None  # listen socket for accepts
         self.axes = deque()  # deque of duple (ca, cs) accepted connections
         self.opened = False
@@ -141,7 +143,7 @@ class Acceptor(tyming.Tymee):
 
         try:  # bind to listen socket (host, port) to receive connections
             self.ss.bind(self.ha)
-            self.ss.listen(5)
+            self.ss.listen(self.bl)  # this determines number of concurrent connections
         except OSError as ex:
             self.close()
             logger.error("Error binding server listen socket.\n%s\n", ex)
