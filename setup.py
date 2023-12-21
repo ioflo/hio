@@ -82,8 +82,6 @@ setup(
     python_requires='>=3.10.4',
     install_requires=[
         'lmdb>=1.3.0',
-        'pysodium>=0.7.12',
-        'blake3>=0.3.1',
         'msgpack>=1.0.4',
         'cbor2>=5.4.3',
         'multidict>=6.0.2',
