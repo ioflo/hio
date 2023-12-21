@@ -81,11 +81,11 @@ setup(
     ],
     python_requires='>=3.10.4',
     install_requires=[
-        'lmdb>=1.3.0',
-        'msgpack>=1.0.4',
-        'cbor2>=5.4.3',
-        'multidict>=6.0.2',
-        'falcon>=3.1.0',
+        'lmdb>=1.4.1',
+        'msgpack>=1.0.7',
+        'cbor2>=5.5.1',
+        'multidict>=6.0.4',
+        'falcon>=3.1.3',
         'ordered-set>=4.1.0',
 
     ],
@@ -95,8 +95,8 @@ setup(
         #   ':python_version=="2.6"': ['argparse'],
     },
     tests_require=[
-                    'coverage>=6.5.0',
-                    'pytest>=7.2.0',
+                    'coverage>=7.3.4',
+                    'pytest>=7.4.3',
                   ],
     setup_requires=[
     ],
