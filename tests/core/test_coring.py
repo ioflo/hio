@@ -6,8 +6,7 @@ tests.core.test_coring module
 
 import pytest
 
-from hio.core.coring import (normalizeHost, getDefaultHost, getDefaultBroadcast,
-                             arpCreate, arpDelete)
+from hio.core.coring import (normalizeHost, arpCreate, arpDelete)
 
 def test_ip_utils():
     """
@@ -16,11 +15,12 @@ def test_ip_utils():
     host = normalizeHost("localhost")
     assert host == "127.0.0.1"
 
-    host = getDefaultHost()
-    assert host != ""
+    # netifaces not fully supported on macos only linux now
+    #host = getDefaultHost()
+    #assert host != ""
 
-    bcast = getDefaultBroadcast()
-    assert bcast.endswith(".255") or bcast.endswith(".127") or bcast.endswith(".63")
+    #bcast = getDefaultBroadcast()
+    #assert bcast.endswith(".255") or bcast.endswith(".127") or bcast.endswith(".63")
 
     """Done Test"""
 

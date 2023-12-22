@@ -6,7 +6,7 @@ hio.core.coring Module
 import subprocess
 import socket
 
-import netifaces
+#import netifaces  # netifaces2
 
 from ..hioing import ValidationError
 
@@ -42,26 +42,27 @@ def normalizeHost(host):
     host = info[0][4][0]
     return host
 
+# netifaces not fully supported on macos anymore only linux
+#def getDefaultHost():
+    #"""
+    #Returns host ip address of default interface using netifaces
+    #"""
+    ##iface = netifaces.gateways()['default'][netifaces.AF_INET][1]
+    #iface = netifaces.default_gateway(old_api=True)[netifaces.AF_INET][1]
+    #info = netifaces.ifaddresses(iface)[netifaces.AF_INET][0]
+    #host = info['addr']
+    #return host
 
-def getDefaultHost():
-    """
-    Returns host ip address of default interface using netifaces
-    """
-    iface = netifaces.gateways()['default'][netifaces.AF_INET][1]
-    info = netifaces.ifaddresses(iface)[netifaces.AF_INET][0]
-    host = info['addr']
-    return host
 
+#def getDefaultBroadcast():
+    #"""
+    #Returns broadcast ip address of default interface using netifaces
 
-def getDefaultBroadcast():
-    """
-    Returns broadcast ip address of default interface using netifaces
-
-    """
-    iface =  netifaces.gateways()['default'][netifaces.AF_INET][1]
-    info = netifaces.ifaddresses(iface)[netifaces.AF_INET][0]
-    bcast = info['broadcast']
-    return bcast
+    #"""
+    #iface =  netifaces.gateways()['default'][netifaces.AF_INET][1]
+    #info = netifaces.ifaddresses(iface)[netifaces.AF_INET][0]
+    #bcast = info['broadcast']
+    #return bcast
 
 
 def arpCreate(ether, host, interface="en0", temp=True):
