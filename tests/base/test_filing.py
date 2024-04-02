@@ -3,6 +3,8 @@
 tests.help.test_filing module
 
 """
+import shutil
+
 import pytest
 import os
 
@@ -15,6 +17,9 @@ def test_filing():
     Test Filer class
     """
     dirpath = '/usr/local/var/hio/test'
+    if os.path.exists(dirpath):
+        shutil.rmtree(dirpath)
+
     filer = filing.Filer(name="test", reopen=False)  # defaults
     assert filer.exists(name="test") is False
 
@@ -54,6 +59,9 @@ def test_filing():
 
     # Test with clean
     dirpath = '/usr/local/var/hio/clean/test'
+    if os.path.exists(dirpath):
+        shutil.rmtree(dirpath)
+
     filer = filing.Filer(name="test", clean="true", reopen=False)  # defaults
     assert filer.exists(name="test", clean="true") is False
 
@@ -94,6 +102,9 @@ def test_filing():
 
     # test with alt
     dirpath = '/Users/samuel/.hio/test'
+    if os.path.exists(dirpath):
+        shutil.rmtree(dirpath)
+
     # headDirPath that is not permitted to force using AltPath
     filer = filing.Filer(name="test", headDirPath="/root/hio", reopen=False)
     assert filer.exists(name="test", headDirPath="/root/hio") is False
@@ -134,6 +145,9 @@ def test_filing():
 
     # Test Filer with file not dir
     filepath = '/usr/local/var/hio/conf/test.text'
+    if os.path.exists(filepath):
+        os.remove(filepath)
+
     assert os.path.exists(filepath) is False
     filer = filing.Filer(name="test", base="conf", filed=True, reopen=False)
     assert filer.exists(name="test", base="conf", filed=True) is False
@@ -186,6 +200,9 @@ def test_filing():
 
     # Test Filer with file not dir and with Alt path
     filepath = '/Users/samuel/.hio/conf/test.text'
+    if os.path.exists(filepath):
+        os.remove(filepath)
+
     # force altPath by using headDirPath of "/root/hio" which is not permitted
     filer = filing.Filer(name="test", base="conf", headDirPath="/root/hio", filed=True, reopen=False)
     assert filer.exists(name="test", base="conf", headDirPath="/root/hio", filed=True) is False
