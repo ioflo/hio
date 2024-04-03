@@ -196,7 +196,7 @@ class Filer():
                                                mode=self.mode,
                                                fext=self.fext,
                                                **kwa)
-        elif self.filed:
+        elif self.filed:  # self.path exists
             self.file = ocfn(self.path, mode=self.mode)
 
         self.opened = True if not self.filed else self.file and not self.file.closed
@@ -330,7 +330,7 @@ class Filer():
                             os.makedirs(path)
                     else:
                         if filed:
-                            file = ocfn(path, mode=mode, perm=perm)                    
+                            file = ocfn(path, mode=mode, perm=perm)
 
             else:  # verify access
                 if not os.access(path, os.F_OK | os.R_OK | os.W_OK): # use alt instead
