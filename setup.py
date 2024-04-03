@@ -24,7 +24,8 @@ $ make html
 $ git tag # lists all tags
 $ git tag -a v0.6.11 -m "new feature"
 $ git show v0.6.11
-$ git push --tags $ pushes tags to remote
+$ git push --tags # pushes tags to default remote
+$ git push ioflo --tags   # pushes tags to ioflo remote
 
 
 Best practices for setup.py and requirements.txt
