@@ -355,8 +355,66 @@ class Filer():
 
             os.chmod(path, perm)  # set dir/file permissions
 
-        return (path, file)
+        return path, file
 
+    def exists(self, name="", base="", headDirPath=None, clean=False, filed=False, fext=None):
+        """
+        Check if (path. file) exists for a given set of parameters for remake.  Temp is not allowed.
+
+        Parameters:
+            name (str): unique name alias portion of path
+            base (str): optional base inserted before name in path
+
+            headDirPath (str): optional head directory pathname of main database
+
+            clean (bool): True means make path for cleaned version and  remove
+                          old directory or file at clean path if any.
+                          False means make path normally (not clean)
+
+            filed (bool): True means .path is file path not directory path
+                          False means .path is directiory path not file path
+            fext (str): File extension when .filed
+
+        Returns:
+            bool: True means path or alt path exists, false means neither exists
+
+        """
+
+        # use class defaults here so can use makePath for other dirs and files
+        if headDirPath is None:
+            headDirPath = self.HeadDirPath
+
+        if fext is None:
+            fext = self.Fext
+
+        tailDirPath = self.CleanTailDirPath if clean else self.TailDirPath
+        altTailDirPath = self.AltCleanTailDirPath if clean else self.AltTailDirPath
+
+        if filed:
+            root, ext = os.path.splitext(name)
+            if not ext:
+                name = f"{name}.{fext}"
+
+        path = os.path.abspath(
+            os.path.expanduser(
+                os.path.join(headDirPath,
+                             tailDirPath,
+                             base,
+                             name)))
+
+        # Check non-alt, if exists return True
+        if os.path.exists(path):
+            return True
+
+        # Now we must check the alt path to see if that exists.
+        headDirPath = self.AltHeadDirPath
+        path = os.path.abspath(
+            os.path.expanduser(
+                os.path.join(headDirPath,
+                             altTailDirPath,
+                             base,
+                             name)))
+        return os.path.exists(path)
 
     def close(self, clear=False):
         """
