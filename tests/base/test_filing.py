@@ -57,13 +57,13 @@ def test_filing():
     filer.close(clear=True)
     assert not os.path.exists(filer.path)
 
-    # Test with clean
+    # Test with clean not same as clear
     dirpath = '/usr/local/var/hio/clean/test'
     if os.path.exists(dirpath):
         shutil.rmtree(dirpath)
 
     filer = filing.Filer(name="test", clean="true", reopen=False)  # defaults
-    assert filer.exists(name="test", clean="true") is False
+    assert filer.exists(name="test", clean="true") is True
 
     filer = filing.Filer(name="test", clean="true")  # defaults
     assert filer.exists(name="test", clean="true") is True
