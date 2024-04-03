@@ -411,11 +411,11 @@ class Filer():
         # Now we must check the alt path to see if that exists.
         headDirPath = self.AltHeadDirPath
         path = os.path.abspath(
-            os.path.expanduser(
-                os.path.join(headDirPath,
-                             altTailDirPath,
-                             base,
-                             name)))
+                os.path.expanduser(
+                    os.path.join(headDirPath,
+                                altTailDirPath,
+                                base,
+                                name)))
         return os.path.exists(path)
 
     def close(self, clear=False):
