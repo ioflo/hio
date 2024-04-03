@@ -378,6 +378,8 @@ class Filer():
         Returns:
             bool: True means path or alt path exists, false means neither exists
 
+
+
         """
 
         # use class defaults here so can use makePath for other dirs and files
