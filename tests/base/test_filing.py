@@ -57,7 +57,21 @@ def test_filing():
     filer.close(clear=True)
     assert not os.path.exists(filer.path)
 
-    # Test with clean
+    # Test with clean not same as clear
+    # remove both clean and not clean
+
+    # remove both alt not clean and alt clean
+    dirpath = os.path.abspath(os.path.expanduser('~/.hio/test'))
+    if os.path.exists(dirpath):
+        shutil.rmtree(dirpath)
+    dirpath = os.path.abspath(os.path.expanduser('~/.hio/clean/test'))
+    if os.path.exists(dirpath):
+        shutil.rmtree(dirpath)
+    dirpath = '/usr/local/var/hio/test'  # remove both clean and not clean
+    if os.path.exists(dirpath):
+        shutil.rmtree(dirpath)
+
+
     dirpath = '/usr/local/var/hio/clean/test'
     if os.path.exists(dirpath):
         shutil.rmtree(dirpath)
@@ -101,7 +115,8 @@ def test_filing():
     assert not os.path.exists(filer.path)
 
     # test with alt
-    dirpath = '/Users/samuel/.hio/test'
+    #dirpath = '/Users/samuel/.hio/test'
+    dirpath = os.path.abspath(os.path.expanduser('~/.hio/test'))
     if os.path.exists(dirpath):
         shutil.rmtree(dirpath)
 
