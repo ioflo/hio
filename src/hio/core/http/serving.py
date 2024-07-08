@@ -298,7 +298,7 @@ class Responder():
         """
         Close any resources
         """
-        if not self.closed and not self.ended:
+        if self.started and not self.closed and not self.ended:
             self.write(b'')  # in case chunked send empty chunk to terminate
         self.ended = True
         self.closed = True
@@ -355,7 +355,8 @@ class Responder():
         if u'date' not in self.headers:  # create Date header
             self.headers[u'date'] = httping.httpDate1123(datetime.datetime.utcnow())
 
-        if self.chunkable and 'transfer-encoding' not in self.headers:
+        if self.chunkable and ('transfer-encoding' not in self.headers or
+                               self.headers['transfer-encoding'] == 'chunked'):
             self.chunked = True
             self.headers[u'transfer-encoding'] = u'chunked'
 
@@ -606,7 +607,7 @@ class Server():
                 defaultPort = 443
             elif isinstance(servant, tcp.Server):
                 if scheme and scheme != u'http':
-                    raise  ValueError("Provided scheme '{0}' incompatible with servant".format(scheme))
+                    raise ValueError("Provided scheme '{0}' incompatible with servant".format(scheme))
                 secured = False
                 scheme = 'http'
                 defaultPort = 80
@@ -797,12 +798,11 @@ class Server():
                         self.closeConnection(ca)
                         continue
 
-                    logger.info("Parsed Request:\n%s %s {%s\n"
-                                    "%s\n%s\n", requestant.method,
-                                                        requestant.path,
-                                                        requestant.version,
-                                                        requestant.headers,
-                                                        requestant.body)
+                    logger.info("Parsed Request: %s %s %s", requestant.method,
+                                requestant.path,
+                                requestant.version)
+                    logger.debug("Headers/Body: %s -- %s", requestant.headers,
+                                 requestant.body)
                     # create or restart wsgi app responder here
                     environ = self.buildEnviron(requestant)
                     if ca not in self.reps:
@@ -1035,7 +1035,7 @@ class Steward():
         fragment = pathSplits.fragment
         data['fragment'] = fragment
 
-        data['headers'] = list(self.requestant.headers.items()) # copy.copy(self.requestant.headers)  # make copy
+        data['headers'] = list(self.requestant.headers.items())  # copy.copy(self.requestant.headers)  # make copy
         data['body'] = self.requestant.body.decode('utf-8')
         data['data'] = copy.copy(self.requestant.data)  # make copy
 
