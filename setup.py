@@ -24,7 +24,8 @@ $ make html
 $ git tag # lists all tags
 $ git tag -a v0.6.11 -m "new feature"
 $ git show v0.6.11
-$ git push --tags $ pushes tags to remote
+$ git push --tags # pushes tags to default remote
+$ git push ioflo --tags   # pushes tags to ioflo remote
 
 
 Best practices for setup.py and requirements.txt
@@ -43,7 +44,7 @@ from setuptools import setup
 
 setup(
     name='hio',
-    version='0.6.12',  #  also change in src/hio/__init__.py
+    version='0.6.13',  #  also change in src/hio/__init__.py
     license='Apache Software License 2.0',
     description='Hierarchical Concurrency with Async IO',
     long_description=("HIO Hierarchical Concurrency and Asynchronous IO Library. "
