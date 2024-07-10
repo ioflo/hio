@@ -316,6 +316,44 @@ exapp.add_route('/example/pause', examplePause)
 exampleBackend = ExampleBackendEnd(tymth=tymist.tymen())
 exapp.add_route('/example/backend', exampleBackend)
 
+def test_get_request_with_utf8():
+    """
+    Test a request with a utf-8 character
+    """
+    tymist.tyme = 0.0  # reset for each test
+    with http.openServer(port=8101, bufsize=131072, app=exapp, \
+                         tymth=tymist.tymen()) as server:
+
+        assert server.servant.ha == ('0.0.0.0', 8101)
+        assert server.servant.eha == ('127.0.0.1', 8101)
+
+        # request containing utf-8 character
+        path = "http://{}:{}{}".format('localhost',
+                                       server.servant.eha[1],
+                                       "/�")
+        headers = help.Hict([('Accept', 'application/json'),
+                                ('Content-Length', 0)])
+
+        with http.openClient(bufsize=131072, method='GET', path=path, \
+                        headers=headers, reconnectable=True, \
+                        tymth=tymist.tymen()) as client:
+
+            client.transmit()
+            while (client.requests or client.connector.txbs or not client.responses or
+                       not server.idle()):
+                server.service()
+                time.sleep(0.05)
+                client.service()
+                time.sleep(0.05)
+                tymist.tick(tock=0.1)
+
+            assert len(client.responses) == 1
+            rep = client.responses.popleft()
+
+            # utf-8 character is not supported in the path
+            assert rep['status'] == 404
+            
+    """Done Test """
 
 
 def test_get_backend():
