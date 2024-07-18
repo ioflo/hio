@@ -12,7 +12,7 @@ import copy
 import datetime
 import mimetypes
 
-from urllib.parse import urlsplit, unquote
+from urllib.parse import urlsplit, unquote, quote
 from contextlib import contextmanager
 
 from ... import help
@@ -725,7 +725,7 @@ class Server():
         environ['SERVER_PORT'] = str(self.servant.eha[1])  # 8888
         environ['SERVER_PROTOCOL'] = "HTTP/{0}.{1}".format(*requestant.version)  # used by request http/1.1
         environ['SCRIPT_NAME'] = u''
-        environ['PATH_INFO'] = requestant.path        # /hello?name=john
+        environ['PATH_INFO'] = quote(requestant.path)        # /hello?name=john
 
         # Optional CGI variables
         environ['QUERY_STRING'] = requestant.query        # name=john
