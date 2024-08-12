@@ -9,7 +9,7 @@ import shutil
 import tempfile
 from contextlib import contextmanager
 
-
+from .. import hioing
 from . import doing
 from .. import help
 from ..help.helping import ocfn
@@ -234,6 +234,9 @@ class Filer():
             mode (str): file open mode when .filed such as "w+"
             fext (str): File extension when .filed
         """
+        if os.path.isabs(base):
+            raise hioing.FilerError(f"Invalid {base=} not relative path.")
+
         file = None
         temp = True if temp else False
 
@@ -254,6 +257,9 @@ class Filer():
             root, ext = os.path.splitext(name)
             if not ext:
                 name = f"{name}.{fext}"
+
+        if os.path.isabs(name):
+            raise hioing.FilerError(f"Invalid {name=} not relative path.")
 
         if temp:
             headDirPath = tempfile.mkdtemp(prefix=self.TempPrefix,
@@ -381,6 +387,8 @@ class Filer():
 
 
         """
+        if os.path.isabs(base):
+            raise hioing.FilerError(f"Invalid {base=} not relative path.")
 
         # use class defaults here so can use makePath for other dirs and files
         if headDirPath is None:
@@ -396,6 +404,9 @@ class Filer():
             root, ext = os.path.splitext(name)
             if not ext:
                 name = f"{name}.{fext}"
+
+        if os.path.isabs(name):
+                    raise hioing.FilerError(f"Invalid {name=} not relative path.")
 
         path = os.path.abspath(
             os.path.expanduser(
