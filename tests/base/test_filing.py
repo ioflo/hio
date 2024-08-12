@@ -426,4 +426,5 @@ def test_filer_doer():
 
 if __name__ == "__main__":
     test_filing()
+    test_filer_doer()
 

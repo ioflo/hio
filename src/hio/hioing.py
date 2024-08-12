@@ -50,6 +50,14 @@ class OglerError(HioError):
         raise OglerError("error message")
     """
 
+class FilerError(HioError):
+    """
+    Error using or configuring Filer
+
+    Usage:
+        raise FilerError("error message")
+    """
+
 
 class Mixin():
     """
