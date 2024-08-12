@@ -8,6 +8,7 @@ import shutil
 import pytest
 import os
 
+from hio import hioing
 from hio.base import doing
 from hio.base import filing
 
@@ -298,6 +299,13 @@ def test_filing():
         assert not filer.file.closed
     assert not os.path.exists(filer.path)  # not temp but clear=True
 
+
+    # Test bad file path components
+    with pytest.raises(hioing.FilerError):
+        filer = filing.Filer(name="/test", base="conf", filed=True)
+
+    with pytest.raises(hioing.FilerError):
+        filer = filing.Filer(name="test", base="/conf", filed=True)
 
     """Done Test"""
 

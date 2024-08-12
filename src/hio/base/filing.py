@@ -253,11 +253,6 @@ class Filer():
         tailDirPath = self.CleanTailDirPath if clean else self.TailDirPath
         altTailDirPath = self.AltCleanTailDirPath if clean else self.AltTailDirPath
 
-        if os.path.isabs(tailDirPath):
-            raise hioing.FilerError(f"Invalid {tailDirPath=} not relative path.")
-        if os.path.isabs(altTailDirPath):
-            raise hioing.FilerError(f"Invalid {altTailDirPath=} not relative path.")
-
         if filed:
             root, ext = os.path.splitext(name)
             if not ext:
@@ -404,11 +399,6 @@ class Filer():
 
         tailDirPath = self.CleanTailDirPath if clean else self.TailDirPath
         altTailDirPath = self.AltCleanTailDirPath if clean else self.AltTailDirPath
-
-        if os.path.isabs(tailDirPath):
-            raise hioing.FilerError(f"Invalid {tailDirPath=} not relative path.")
-        if os.path.isabs(altTailDirPath):
-            raise hioing.FilerError(f"Invalid {altTailDirPath=} not relative path.")
 
         if filed:
             root, ext = os.path.splitext(name)
