@@ -11,6 +11,7 @@ import tempfile
 import shutil
 from contextlib import contextmanager
 
+from .. import hioing
 from ..base import doing
 
 @contextmanager
@@ -159,6 +160,9 @@ class WireLog():
         if self.opened:
             self.close(clear=clear)
 
+        if self.prefix and os.path.isabs(self.prefix):
+            raise hioing.FilerError(f"Invalid .prefix={self.prefix} not relative path.")
+
         # check for changes in creation parameters if need to recreate
         if rxed is not None and rxed == self.rxed:
             rxed = None  # don't need to recreate  because of rxed change
@@ -176,6 +180,9 @@ class WireLog():
             temp = None  # don't need to recreate path because of temp change
         if headDirPath is not None and headDirPath == self.headDirPath:
             headDirPath = None  # don't need to recreate path because of headDirPath change
+
+        if name and os.path.isabs(name):
+            raise hioing.FilerError(f"Invalid {name=} not relative path.")
 
         # always recreates if dirPath is empty or if some creation parameter has changed
         if (not self.dirPath or

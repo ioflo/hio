@@ -392,6 +392,8 @@ class Filer():
 
 
         """
+        if os.path.isabs(base):
+            raise hioing.FilerError(f"Invalid {base=} not relative path.")
 
         # use class defaults here so can use makePath for other dirs and files
         if headDirPath is None:
@@ -403,10 +405,18 @@ class Filer():
         tailDirPath = self.CleanTailDirPath if clean else self.TailDirPath
         altTailDirPath = self.AltCleanTailDirPath if clean else self.AltTailDirPath
 
+        if os.path.isabs(tailDirPath):
+            raise hioing.FilerError(f"Invalid {tailDirPath=} not relative path.")
+        if os.path.isabs(altTailDirPath):
+            raise hioing.FilerError(f"Invalid {altTailDirPath=} not relative path.")
+
         if filed:
             root, ext = os.path.splitext(name)
             if not ext:
                 name = f"{name}.{fext}"
+
+        if os.path.isabs(name):
+                    raise hioing.FilerError(f"Invalid {name=} not relative path.")
 
         path = os.path.abspath(
             os.path.expanduser(
