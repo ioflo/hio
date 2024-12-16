@@ -69,21 +69,26 @@ class Peer(object):
            OSError: (48, 'Address already in use')
         """
         #create socket ss = server socket
-        self.ss = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.ss = socket.socket(socket.AF_INET,
+                                socket.SOCK_DGRAM,
+                                socket.IPPROTO_UDP)
 
-        if self.bcast:  # enable sending to broadcast addresses
+        if self.bcast:  # needed to send broadcast, not needed to receive
             self.ss.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
-        # make socket address reusable. doesn't seem to have an effect.
+        # make socket address and port reusable. doesn't seem to have an effect.
         # the SO_REUSEADDR flag tells the kernel to reuse a local socket in
         # TIME_WAIT state, without waiting for its natural timeout to expire.
         # may want to look at SO_REUSEPORT
+        # https://stackoverflow.com/questions/14388706/how-do-so-reuseaddr-and-so-reuseport-differ
+
         self.ss.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.ss.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         if self.ss.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF) <  self.bs:
             self.ss.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self.bs)
         if self.ss.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF) < self.bs:
             self.ss.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self.bs)
-        self.ss.setblocking(0) #non blocking socket
+        self.ss.setblocking(0)  # non blocking socket
 
         #bind to Host Address Port
         try:
@@ -92,7 +97,7 @@ class Peer(object):
             logger.error("Error opening UDP %s\n %s\n", self.ha, ex)
             return False
 
-        self.ha = self.ss.getsockname() #get resolved ha after bind
+        self.ha = self.ss.getsockname()  # get resolved ha after bind
         self.opened = True
         return True
 
