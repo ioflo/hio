@@ -559,6 +559,8 @@ class ClientTls(Client):
         if context is None:  # create context
             if not version:  # use default context
                 context = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH)
+                context.verify_flags &= ~ssl.VERIFY_X509_STRICT  # XXXX new with python 3.13
+                # XXXX ToDo create new test certificates that are RFC 5280 compliant
                 hostify = hostify if hostify is not None else context.check_hostname
                 context.check_hostname = hostify
                 certify = certify if certify is not None else context.verify_mode

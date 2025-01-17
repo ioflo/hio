@@ -6,6 +6,7 @@ tests.core.test_doing module
 import pytest
 
 import os
+import sys
 import inspect
 import types
 
@@ -239,12 +240,14 @@ def test_doer():
     assert doer.tock == 0.0
     assert doer.tymth == None
 
+
     tymist = tyming.Tymist()
     doer = doing.Doer(tymth=tymist.tymen(), tock=tock)
     assert doer.tock == tock == 1.0
     doer.tock = 0.0
     assert doer.tock ==  0.0
 
+    # test Doer.__call__ method on instance
     # create generator use send and explicit close
     args = {}
     dog = doer(tymth=doer.tymth, tock=doer.tock, **args)
@@ -255,8 +258,9 @@ def test_doer():
     assert result == doer.tock == 0.0
     result = dog.send("Hi")
     assert result == doer.tock == 0.0
-    result = dog.close()
-    assert result == None  # no yielded value on close
+    result = dog.close() # raises GeneratorExit which triggers Finally
+    if sys.version_info.major == 3 and sys.version_info.minor >= 13:
+        assert result == False == doer.done  # no yielded value on close but Finally returns .done
     with pytest.raises(StopIteration):  # send after close
         try:
             result = dog.send("what?")
@@ -273,8 +277,9 @@ def test_doer():
     assert result == doer.tock == 0.0
     result = next(dog)
     assert result == doer.tock == 0.0
-    result = dog.close()
-    assert result == None
+    result = dog.close() # raises GeneratorExit which triggers Finally
+    if sys.version_info.major == 3 and sys.version_info.minor >= 13:
+        assert result == False == doer.done  # no yielded value on close but Finally returns .done
     with pytest.raises(StopIteration):  # send after close
         try:
             result = dog.send("what?")
@@ -291,8 +296,9 @@ def test_doer():
     assert result == tock == 1.0
     result = next(dog)
     assert result == tock == 1.0
-    result = dog.close()
-    assert result == None
+    result = dog.close() # raises GeneratorExit which triggers Finally
+    if sys.version_info.major == 3 and sys.version_info.minor >= 13:
+        assert result == False == doer.done  # no yielded value on close but Finally returns .done
 
     with pytest.raises(StopIteration):
         result = dog.send("what?")
@@ -307,8 +313,9 @@ def test_doer():
     assert result == 1.0
     result = next(dog)
     assert result == 1.0
-    result = dog.close()
-    assert result == None
+    result = dog.close() # raises GeneratorExit which triggers Finally
+    if sys.version_info.major == 3 and sys.version_info.minor >= 13:
+        assert result == False == doer.done  # no yielded value on close but Finally returns .done
     with pytest.raises(StopIteration):  # send after close
         try:
             result = dog.send("what?")
@@ -406,8 +413,10 @@ def test_redoer():
     result = dog.send(tymist.tyme)
     assert result == redoer.tock == 0.0
 
-    result = dog.close()
-    assert result == None  # no yielded value on close
+
+    result = dog.close() # raises GeneratorExit which triggers Finally
+    if sys.version_info.major == 3 and sys.version_info.minor >= 13:
+        assert result == False == redoer.done  # no yielded value on close but Finally returns .done
 
     tymist.tick()
     with pytest.raises(StopIteration):  # send after close
@@ -429,8 +438,9 @@ def test_redoer():
     result = next(dog)
     assert result == redoer.tock == 0.0
 
-    result = dog.close()
-    assert result == None  # no yielded value on close
+    result = dog.close() # raises GeneratorExit which triggers Finally
+    if sys.version_info.major == 3 and sys.version_info.minor >= 13:
+        assert result == False == redoer.done  # no yielded value on close but Finally returns .done
 
     tymist.tick()
     with pytest.raises(StopIteration):  # send after close
@@ -507,8 +517,9 @@ def test_dodoer():
     result = dog.send(tymist.tyme)
     assert result == dodoer.tock == 0.0
 
-    result = dog.close()
-    assert result == None  # no yielded value on close
+    result = dog.close() # raises GeneratorExit which triggers Finally
+    if sys.version_info.major == 3 and sys.version_info.minor >= 13:
+        assert result == False == dodoer.done  # no yielded value on close but Finally returns .done
 
     tymist.tick()
     with pytest.raises(StopIteration):  # send after close
@@ -972,8 +983,9 @@ def test_exDo():
     assert tock == 0.0
     tock = dog.send("Hi")
     assert tock == 0.0
-    tock = dog.close()
-    assert tock == None
+    result = dog.close()  # raises GeneratorExit which triggers Finally
+    if sys.version_info.major == 3 and sys.version_info.minor >= 13:
+        assert result == True  # return from do method
     with pytest.raises(StopIteration):
         tock = dog.send("what?")
     assert doizeExDo.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
@@ -991,8 +1003,9 @@ def test_exDo():
     assert tock == 1.0
     tock = dog.send("Hi")
     assert tock == 1.0
-    tock = dog.close()
-    assert tock == None
+    result = dog.close()  # raises GeneratorExit which triggers Finally
+    if sys.version_info.major == 3 and sys.version_info.minor >= 13:
+        assert result == True  # return from do method
     with pytest.raises(StopIteration):
         tock = dog.send("what?")
     assert doizeExDo.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
@@ -1011,8 +1024,9 @@ def test_exDo():
     assert tock == 1.0
     tock = next(dog)
     assert tock == 1.0
-    tock = dog.close()
-    assert tock == None
+    result = dog.close()  # raises GeneratorExit which triggers Finally
+    if sys.version_info.major == 3 and sys.version_info.minor >= 13:
+        assert result == True  # return from do method
     with pytest.raises(StopIteration):
         tock = dog.send("what?")
     assert doizeExDo.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
@@ -1114,8 +1128,9 @@ def test_trydoer_close():
                            State(tyme=0.0, context='recur', feed='Hello', count=1),
                            State(tyme=0.125, context='recur', feed='Hi', count=2)]
     tymist.tick()
-    result = do.close()
-    assert result == None  # not clean return no return from close
+    result = do.close()  # raises GeneratorExit which triggers Finally
+    if sys.version_info.major == 3 and sys.version_info.minor >= 13:
+        assert result == False == doer.done  # return from do method
     assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                            State(tyme=0.0, context='recur', feed='Hello', count=1),
                            State(tyme=0.125, context='recur', feed='Hi', count=2),
@@ -1276,8 +1291,9 @@ def test_trydo_close():
                            State(tyme=0.0, context='recur', feed='Hello', count=1),
                            State(tyme=0.125, context='recur', feed='Hi', count=2)]
     tymist.tick()
-    result = do.close()
-    assert result == None
+    result = do.close()  # raises GeneratorExit which triggers finally
+    if sys.version_info.major == 3 and sys.version_info.minor >= 13:
+        assert result == True  # return from do method
     assert states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                            State(tyme=0.0, context='recur', feed='Hello', count=1),
                            State(tyme=0.125, context='recur', feed='Hi', count=2),
@@ -1477,3 +1493,8 @@ def test_decoration():
 
 if __name__ == "__main__":
     test_doer()
+    test_redoer()
+    test_dodoer()
+    test_exDo()
+    test_trydoer_close()
+    test_trydo_close()
