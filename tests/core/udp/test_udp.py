@@ -137,12 +137,16 @@ def test_udp_basic():
         #msgOut = b"alpha broadcasts to beta"
         #msgIn = b""
         #src = None
-        #tries = 0
-        #while not msgIn and tries < 10:
-            #alpha.send(msgOut, bha)
-            #time.sleep(0.05)
-            #msgIn, src = beta.receive()
-            #tries += 1
+        #alpha.send(msgOut, bha)
+        #time.sleep(0.05)
+        #msgIn, src = beta.receive()
+
+        ##tries = 0
+        ##while not msgIn and tries < 10:
+            ##alpha.send(msgOut, bha)
+            ##time.sleep(0.05)
+            ##msgIn, src = beta.receive()
+            ##tries += 1
 
         #assert msgIn == msgOut
         #assert src == alpha.ha
@@ -175,6 +179,8 @@ def test_udp_basic():
         #assert not beta.opened
 
     #"""Done Test"""
+
+
 
 
 if __name__ == "__main__":

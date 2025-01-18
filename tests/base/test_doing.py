@@ -259,6 +259,8 @@ def test_doer():
     result = dog.send("Hi")
     assert result == doer.tock == 0.0
     result = dog.close() # raises GeneratorExit which triggers Finally
+    # python 3.13 gh-104770: If a generator returns a value upon being
+    # closed, the value is now returned by generator.close().
     if sys.version_info.major == 3 and sys.version_info.minor >= 13:
         assert result == False == doer.done  # no yielded value on close but Finally returns .done
     with pytest.raises(StopIteration):  # send after close
@@ -439,6 +441,8 @@ def test_redoer():
     assert result == redoer.tock == 0.0
 
     result = dog.close() # raises GeneratorExit which triggers Finally
+    # python 3.13 gh-104770: If a generator returns a value upon being
+    # closed, the value is now returned by generator.close().
     if sys.version_info.major == 3 and sys.version_info.minor >= 13:
         assert result == False == redoer.done  # no yielded value on close but Finally returns .done
 
@@ -518,6 +522,8 @@ def test_dodoer():
     assert result == dodoer.tock == 0.0
 
     result = dog.close() # raises GeneratorExit which triggers Finally
+    # python 3.13 gh-104770: If a generator returns a value upon being
+    # closed, the value is now returned by generator.close().
     if sys.version_info.major == 3 and sys.version_info.minor >= 13:
         assert result == False == dodoer.done  # no yielded value on close but Finally returns .done
 
@@ -984,6 +990,8 @@ def test_exDo():
     tock = dog.send("Hi")
     assert tock == 0.0
     result = dog.close()  # raises GeneratorExit which triggers Finally
+    # python 3.13 gh-104770: If a generator returns a value upon being
+    # closed, the value is now returned by generator.close().
     if sys.version_info.major == 3 and sys.version_info.minor >= 13:
         assert result == True  # return from do method
     with pytest.raises(StopIteration):
@@ -1129,6 +1137,8 @@ def test_trydoer_close():
                            State(tyme=0.125, context='recur', feed='Hi', count=2)]
     tymist.tick()
     result = do.close()  # raises GeneratorExit which triggers Finally
+    # python 3.13 gh-104770: If a generator returns a value upon being
+    # closed, the value is now returned by generator.close().
     if sys.version_info.major == 3 and sys.version_info.minor >= 13:
         assert result == False == doer.done  # return from do method
     assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0),
@@ -1292,6 +1302,8 @@ def test_trydo_close():
                            State(tyme=0.125, context='recur', feed='Hi', count=2)]
     tymist.tick()
     result = do.close()  # raises GeneratorExit which triggers finally
+    # python 3.13 gh-104770: If a generator returns a value upon being
+    # closed, the value is now returned by generator.close().
     if sys.version_info.major == 3 and sys.version_info.minor >= 13:
         assert result == True  # return from do method
     assert states == [State(tyme=0.0, context='enter', feed='Default', count=0),

@@ -581,6 +581,8 @@ class Doer(tyming.Tymee):
             self.exit()
 
         # return value of yield from or StopIteration.value indicates completion
+        # python 3.13 gh-104770: If a generator returns a value upon being
+        # closed, the value is now returned by generator.close().
         return self.done  # Only returns done state if normal return or close not abort raise
 
 

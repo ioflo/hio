@@ -761,7 +761,7 @@ class ClientTls(Client):
 
 class ClientDoer(doing.Doer):
     """
-    Basic TCP Client
+    Basic TCP Client Doer
 
     See Doer for inherited attributes, properties, and methods.
 
