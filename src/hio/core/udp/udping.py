@@ -10,7 +10,7 @@ import socket
 from contextlib import contextmanager
 
 from ... import help
-from ...base import doing
+from ...base import tyming, doing
 
 logger = help.ogler.getLogger()
 
@@ -52,17 +52,21 @@ def openPeer(cls=None, **kwa):
 
 
 
-class Peer(object):
+class Peer(tyming.Tymee):
     """Class to manage non blocking I/O on UDP socket.
+    SubClass of Tymee to enable support for retry tymers as UDP is unreliable.
     """
+    Tymeout = 0.0  # tymeout in seconds, tymeout of 0.0 means ignore tymeout
 
-    def __init__(self,
+    def __init__(self, *,
+                 tymeout=None,
                  ha=None,
                  host='',
                  port=55000,
                  bufsize=1024,
                  wl=None,
-                 bcast=False):
+                 bcast=False,
+                 **kwa):
         """
         Initialization method for instance.
 
@@ -74,6 +78,10 @@ class Peer(object):
         wl = WireLog instance ref for debug logging or over the wire tx and rx
         bcast = Flag if True enables sending to broadcast addresses on socket
         """
+        super(Peer, self).__init__(**kwa)
+        self.tymeout = tymeout if tymeout is not None else self.Tymeout
+        #self.tymer = tyming.Tymer(tymth=self.tymth, duration=self.tymeout) # retry tymer
+
         self.ha = ha or (host, port)  # ha = host address duple (host, port)
         self.bs = bufsize
         self.wl = wl
@@ -81,6 +89,16 @@ class Peer(object):
 
         self.ss = None  # server's socket needs to be opened
         self.opened = False
+
+
+    def wind(self, tymth):
+        """
+        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+        Updates winds .tymer .tymth
+        """
+        super(Peer, self).wind(tymth)
+        #self.tymer.wind(tymth)
+
 
     def actualBufSizes(self):
         """Returns duple of the the actual socket send and receive buffer size

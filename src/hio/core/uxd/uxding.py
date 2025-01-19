@@ -49,6 +49,8 @@ def openPeer(cls=None, **kwa):
 class Peer(object):
     """Class to manage non blocking io on UXD (unix domain) socket.
     Use instance method .close() to close socket
+
+    Because Unix Domain Sockets are reliable no need for retry tymer.
     """
 
     def __init__(self, ha=None, umask=None, bufsize = 1024, wl=None):
@@ -60,7 +62,7 @@ class Peer(object):
         bufsize = buffer size
         wl = WireLog instance ref for debug logging or over the wire tx and rx
         """
-        self.ha = ha  # uxd host address string name
+        self.ha = ha  # uxd file path
         self.umask = umask
         self.bs = bufsize
         self.wl = wl
@@ -203,10 +205,13 @@ class Peer(object):
 
 
 
-
 class PeerDoer(doing.Doer):
     """
     Basic UXD Peer Doer
+    Because Unix Domain Sockets are reliable no need for retry tymer.
+
+    To test in WingIde must configure Debug I/O to use external console
+    See Doer for inherited attributes, properties, and methods.
 
     See Doer for inherited attributes, properties, and methods.
 
@@ -224,17 +229,6 @@ class PeerDoer(doing.Doer):
         """
         super(PeerDoer, self).__init__(**kwa)
         self.peer = peer
-        if self.tymth:
-            self.peer.wind(self.tymth)
-
-
-    def wind(self, tymth):
-        """
-        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
-        Updates winds .tymer .tymth
-        """
-        super(PeerDoer, self).wind(tymth)
-        self.peer.wind(tymth)
 
 
     def enter(self):

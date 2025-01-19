@@ -85,6 +85,31 @@ def test_udp_basic():
         assert wl.readTx() == wl.readRx()
         """Done Test"""
 
+def test_peer_doer():
+    """
+    Test PeerDoer class
+
+    Must run in WingIDE with Debug I/O configured as external console
+    """
+    tock = 0.03125
+    ticks = 8
+    limit = tock * ticks
+    doist = doing.Doist(tock=tock, real=True, limit=limit)
+    assert doist.tyme == 0.0  # on next cycle
+    assert doist.tock == tock == 0.03125
+    assert doist.real == True
+    assert doist.limit == limit
+    assert doist.doers == []
+
+    peer = udping.Peer(port = 6101)
+    doer = udping.PeerDoer(tymth=doist.tymen(), peer=peer)
+
+    doers = [doer]
+    doist.do(doers=doers)
+    assert doist.tyme == limit
+    assert peer.opened == False
+
+    """Done Test"""
 
 #def test_udp_broadcast():
     #""" Test the udp connection between two peers for broadcast
@@ -185,4 +210,5 @@ def test_udp_basic():
 
 if __name__ == "__main__":
     test_udp_basic()
+    test_peer_doer()
     #test_udp_broadcast()
