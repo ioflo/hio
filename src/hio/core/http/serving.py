@@ -801,7 +801,7 @@ class Server():
                     logger.info("Parsed Request: %s %s %s", requestant.method,
                                 requestant.path,
                                 requestant.version)
-                    logger.debug("Headers/Body: %s -- %s", requestant.headers,
+                    logger.debug("Headers/Body:\n%s\n%s\n", requestant.headers,
                                  requestant.body)
                     # create or restart wsgi app responder here
                     environ = self.buildEnviron(requestant)
@@ -1013,12 +1013,13 @@ class Steward():
         Respond to request  Override in subclass
         Echo request
         """
-        logger.info("Responding to Request:\n%s %s %s\n"
-                                "%s\n%s\n", self.requestant.method,
-                                                    self.requestant.path,
-                                                    self.requestant.version,
-                                                    self.requestant.headers,
-                                                    self.requestant.body)
+        logger.info("Responding to Request: %s %s %s",
+                    self.requestant.method,
+                    self.requestant.path,
+                    self.requestant.version)
+        logger.debug("Headers/Body:\n%s\n%s\n",
+                    self.requestant.headers,
+                    self.requestant.body)
         data = dict()
         data['version'] = "HTTP/{0}.{1}".format(*self.requestant.version)
         data['method'] = self.requestant.method
@@ -1226,12 +1227,13 @@ class BareServer():
 
                 if steward.requestant.ended:
                     steward.requestant.dictify()
-                    logger.info("Parsed Request:\n%s %s %s\n"
-                                    "%s\n%s\n", steward.requestant.method,
-                                                        steward.requestant.path,
-                                                        steward.requestant.version,
-                                                        steward.requestant.headers,
-                                                        steward.requestant.body)
+                    logger.info("Parsed Request: %s %s %s",
+                                steward.requestant.method,
+                                steward.requestant.path,
+                                steward.requestant.version)
+                    logger.debug("Headers/Body:\n%s\n%s\n",
+                                steward.requestant.headers,
+                                steward.requestant.body)
                     steward.respond()
 
             if steward.waited:
