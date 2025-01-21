@@ -94,7 +94,7 @@ class Client(tyming.Tymee):
         super(Client, self).__init__(**kwa)
         self.tymeout = tymeout if tymeout is not None else self.Tymeout
         self.tymer = tyming.Tymer(tymth=self.tymth, duration=self.tymeout)  # reconnect retry timer
-        self.reinitHostPort(ha=ha, hostname=host, port=port)
+
         self.ha = ha or (host, port)
         host, port = self.ha
         self.hostname = host  # host domain name
@@ -186,20 +186,6 @@ class Client(tyming.Tymee):
         """
         super(Client, self).wind(tymth)
         self.tymer.wind(tymth)
-
-
-    def reinitHostPort(self, ha=None, hostname=u'127.0.0.1', port=56000):
-        """
-        Reinit self.ha and self.hostname from ha = (host, port) or hostname port
-        self.ha is of form (host, port) where host is either dns name or ip address
-        self.hostname is hostname as dns name
-        host eventually is host ip address output from normalizeHost()
-        """
-        self.ha = ha or (hostname, port)
-        hostname, port = self.ha
-        self.hostname = hostname  # host domain name
-        host = coring.normalizeHost(hostname)  # ip host address
-        self.ha = (host, port)
 
 
     def actualBufSizes(self):
@@ -559,6 +545,8 @@ class ClientTls(Client):
         if context is None:  # create context
             if not version:  # use default context
                 context = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH)
+                context.verify_flags &= ~ssl.VERIFY_X509_STRICT  # XXXX new with python 3.13
+                # XXXX ToDo create new test certificates that are RFC 5280 compliant
                 hostify = hostify if hostify is not None else context.check_hostname
                 context.check_hostname = hostify
                 certify = certify if certify is not None else context.verify_mode
@@ -759,7 +747,7 @@ class ClientTls(Client):
 
 class ClientDoer(doing.Doer):
     """
-    Basic TCP Client
+    Basic TCP Client Doer
 
     See Doer for inherited attributes, properties, and methods.
 

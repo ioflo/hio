@@ -21,6 +21,12 @@ def test_filing():
     if os.path.exists(dirpath):
         shutil.rmtree(dirpath)
 
+    altdirpath = '~/.hio/test'
+    altdirpath = os.path.abspath(
+                os.path.expanduser(altdirpath))
+    if os.path.exists(altdirpath):
+        shutil.rmtree(altdirpath)
+
     filer = filing.Filer(name="test", reopen=False)  # defaults
     assert filer.exists(name="test") is False
 

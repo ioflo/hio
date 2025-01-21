@@ -2492,4 +2492,6 @@ def test_client_port_options():
 
 
 if __name__ == '__main__':
+    test_client_request_echo()
     test_client_request_echo_port_empty()
+    test_client_pipline_echo_simple_tls()

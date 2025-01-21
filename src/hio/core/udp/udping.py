@@ -3,12 +3,15 @@
 hio.core.udping Module
 """
 import sys
+import platform
 import os
 import errno
 import socket
-
+from contextlib import contextmanager
 
 from ... import help
+from ...base import tyming, doing
+from .. import coring
 
 logger = help.ogler.getLogger()
 
@@ -19,18 +22,52 @@ UDP_MAX_SAFE_PAYLOAD = 548  # IPV4 MTU 576 - udp headers 28
 UDP_MAX_PACKET_SIZE = min(1024, UDP_MAX_DATAGRAM_SIZE)  # assumes IPV6 capable equipment
 
 
-class Peer(object):
-    """
-    Class to manage non blocking I/O on UDP socket.
-    """
 
-    def __init__(self,
+@contextmanager
+def openPeer(cls=None, **kwa):
+    """
+    Wrapper to create and open UDP Peer instances
+    When used in with statement block, calls .close() on exit of with block
+
+    Parameters:
+        cls is Class instance of subclass instance
+
+    Usage:
+        with openPeer() as peer0:
+            peer0.receive()
+
+        with openPeer(cls=PeerBig) as peer0:
+            peer0.receive()
+
+    """
+    if cls is None:
+        cls = Peer
+    try:
+        peer = cls(**kwa)
+        peer.reopen()
+
+        yield peer
+
+    finally:
+        peer.close()
+
+
+
+class Peer(tyming.Tymee):
+    """Class to manage non blocking I/O on UDP socket.
+    SubClass of Tymee to enable support for retry tymers as UDP is unreliable.
+    """
+    Tymeout = 0.0  # tymeout in seconds, tymeout of 0.0 means ignore tymeout
+
+    def __init__(self, *,
+                 tymeout=None,
                  ha=None,
                  host='',
                  port=55000,
                  bufsize=1024,
                  wl=None,
-                 bcast=False):
+                 bcast=False,
+                 **kwa):
         """
         Initialization method for instance.
 
@@ -42,17 +79,66 @@ class Peer(object):
         wl = WireLog instance ref for debug logging or over the wire tx and rx
         bcast = Flag if True enables sending to broadcast addresses on socket
         """
+        super(Peer, self).__init__(**kwa)
+        self.tymeout = tymeout if tymeout is not None else self.Tymeout
+        #self.tymer = tyming.Tymer(tymth=self.tymth, duration=self.tymeout) # retry tymer
+
         self.ha = ha or (host, port)  # ha = host address duple (host, port)
+        host, port = self.ha
+        host = coring.normalizeHost(host)  # ip host address
+        self.ha = (host, port)
+
         self.bs = bufsize
         self.wl = wl
         self.bcast = bcast
 
-        self.ss = None #server's socket needs to be opened
+        self.ss = None  # server's socket needs to be opened
         self.opened = False
 
-    def actualBufSizes(self):
+    @property
+    def host(self):
         """
-        Returns duple of the the actual socket send and receive buffer size
+        Property that returns host in .ha duple
+        """
+        return self.ha[0]
+
+
+    @host.setter
+    def host(self, value):
+        """
+        setter for host property
+        """
+        self.ha = (value, self.port)
+
+
+    @property
+    def port(self):
+        """
+        Property that returns port in .ha duple
+        """
+        return self.ha[1]
+
+
+    @port.setter
+    def port(self, value):
+        """
+        setter for port property
+        """
+        self.ha = (self.host, value)
+
+
+
+    def wind(self, tymth):
+        """
+        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+        Updates winds .tymer .tymth
+        """
+        super(Peer, self).wind(tymth)
+        #self.tymer.wind(tymth)
+
+
+    def actualBufSizes(self):
+        """Returns duple of the the actual socket send and receive buffer size
         (send, receive)
         """
         if not self.ss:
@@ -62,8 +148,7 @@ class Peer(object):
                 self.ss.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF))
 
     def open(self):
-        """
-        Opens socket in non blocking mode.
+        """Opens socket in non blocking mode.
 
         if socket not closed properly, binding socket gets error
            OSError: (48, 'Address already in use')
@@ -79,11 +164,14 @@ class Peer(object):
         # make socket address and port reusable. doesn't seem to have an effect.
         # the SO_REUSEADDR flag tells the kernel to reuse a local socket in
         # TIME_WAIT state, without waiting for its natural timeout to expire.
-        # may want to look at SO_REUSEPORT
+        # Also use SO_REUSEPORT on linux and darwin
         # https://stackoverflow.com/questions/14388706/how-do-so-reuseaddr-and-so-reuseport-differ
 
         self.ss.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.ss.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        if platform.system() != 'Windows':
+            self.ss.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+
+        # setup buffers
         if self.ss.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF) <  self.bs:
             self.ss.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self.bs)
         if self.ss.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF) < self.bs:
@@ -102,15 +190,13 @@ class Peer(object):
         return True
 
     def reopen(self):
-        """
-        Idempotently open socket
+        """Idempotently open socket
         """
         self.close()
         return self.open()
 
     def close(self):
-        """
-        Closes  socket and logs if any
+        """Closes  socket.
         """
         if self.ss:
             self.ss.close() #close socket
@@ -118,12 +204,12 @@ class Peer(object):
             self.opened = False
 
     def receive(self):
-        """
-        Perform non blocking read on  socket.
+        """Perform non blocking read on  socket.
 
-        returns tuple of form (data, sa)
-        if no data then returns (b'',None)
-        but always returns a tuple with two elements
+        Returns:
+            tuple of form (data, sa)
+            if no data then returns (b'',None)
+            but always returns a tuple with two elements
         """
         try:
             data, sa = self.ss.recvfrom(self.bs)  # sa is source (host, port)
@@ -136,7 +222,7 @@ class Peer(object):
                 return (b'', None) #receive has nothing empty string for data
             else:
                 logger.error("Error receive on UDP %s\n %s\n", self.ha, ex)
-                raise #re raise exception ex1
+                raise #re raise exception ex
 
         if self.wl:  # log over the wire receive
             self.wl.writeRx(data, who=sa)
@@ -144,8 +230,7 @@ class Peer(object):
         return (data, sa)
 
     def send(self, data, da):
-        """
-        Perform non blocking send on  socket.
+        """Perform non blocking send on  socket.
 
         data is string in python2 and bytes in python3
         da is destination address tuple (destHost, destPort)
@@ -163,3 +248,55 @@ class Peer(object):
         return result
 
 
+    def service(self):
+        """
+        Service sends and receives
+        """
+
+
+class PeerDoer(doing.Doer):
+    """
+    Basic UDP Peer Doer
+
+    See Doer for inherited attributes, properties, and methods.
+
+    Attributes:
+       .peer is UDP Peer instance
+
+    """
+
+    def __init__(self, peer, **kwa):
+        """
+        Initialize instance.
+
+        Parameters:
+           peer is UDP Peer instance
+        """
+        super(PeerDoer, self).__init__(**kwa)
+        self.peer = peer
+        if self.tymth:
+            self.peer.wind(self.tymth)
+
+
+    def wind(self, tymth):
+        """
+        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+        Updates winds .tymer .tymth
+        """
+        super(PeerDoer, self).wind(tymth)
+        self.peer.wind(tymth)
+
+
+    def enter(self):
+        """"""
+        self.peer.reopen()
+
+
+    def recur(self, tyme):
+        """"""
+        self.peer.service()
+
+
+    def exit(self):
+        """"""
+        self.peer.close()

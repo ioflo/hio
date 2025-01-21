@@ -451,6 +451,8 @@ def initServerContext(context=None,
     if context is None:  # create context
         if not version:  # use default context with default protocol version
             context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
+            context.verify_flags &= ~ssl.VERIFY_X509_STRICT  # XXXX new with python 3.13
+            # XXXX ToDo create new test certificates that are RFC 5280 compliant
             context.verify_mode = certify if certify is not None else ssl.CERT_REQUIRED
 
         else:  # create context with specified protocol version

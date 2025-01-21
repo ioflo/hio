@@ -512,7 +512,7 @@ class Doer(tyming.Tymee):
         """
         Returns generator
         Does not advance to first yield.
-        The advance to first yield effectively invodes the enter or open context
+        The advance to first yield effectively invokes the enter or open context
         on the generator.
         To enter either call .next or .send(None) on generator
         """
@@ -567,8 +567,8 @@ class Doer(tyming.Tymee):
                     tyme = (yield (self.tock))  # yields .tock then waits for next send
                     self.done = self.recur(tyme=tyme)
 
-        except GeneratorExit:  # close context, forced exit due to .close
-            self.close()
+        except GeneratorExit:  # close context, forced exit due to .close on generator
+            self.close() # close method on instance not generator
 
         except Exception as ex:  # abort context, forced exit due to uncaught exception
             self.abort(ex=ex)
@@ -581,7 +581,9 @@ class Doer(tyming.Tymee):
             self.exit()
 
         # return value of yield from or StopIteration.value indicates completion
-        return self.done  # Only returns done state if normal return not close or abort raise
+        # python 3.13 gh-104770: If a generator returns a value upon being
+        # closed, the value is now returned by generator.close().
+        return self.done  # Only returns done state if normal return or close not abort raise
 
 
     def enter(self):

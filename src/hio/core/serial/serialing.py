@@ -165,6 +165,12 @@ class Console():
         return line
 
 
+    def service(self):
+        """
+        Service puts and gets
+        """
+
+
 class ConsoleDoer(doing.Doer):
     """
     Basic Console Doer. Wraps console in doer context so opens and closes console
@@ -192,6 +198,11 @@ class ConsoleDoer(doing.Doer):
     def enter(self):
         """"""
         result = self.console.reopen()
+
+
+    def recur(self, tyme):
+        """"""
+        self.console.service()
 
 
     def exit(self):
