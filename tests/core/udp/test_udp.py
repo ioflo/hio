@@ -83,7 +83,9 @@ def test_udp_basic():
                             b'eta\n')
 
         assert wl.readTx() == wl.readRx()
-        """Done Test"""
+
+    assert not wl.opened
+    """Done Test"""
 
 def test_open_peer():
     """ Test the udp openPeer context manager viewtopic connection between two peers
@@ -150,9 +152,11 @@ def test_open_peer():
 
         assert wl.readTx() == wl.readRx()
 
+    assert not alpha.opened
+    assert not beta.opened
+    assert not wl.opened
 
-
-        """Done Test"""
+    """Done Test"""
 
 def test_peer_doer():
     """
