@@ -37,28 +37,28 @@ def test_udp_basic():
         time.sleep(0.05)
         msgIn, src = beta.receive()
         assert msgOut == msgIn
-        assert src[1] == alpha.ha[1]  # ports equal
+        assert src[1] == alpha.port  # ports equal
 
         msgOut = b"alpha sends to alpha"
         alpha.send(msgOut, alpha.ha)
         time.sleep(0.05)
         msgIn, src = alpha.receive()
         assert msgOut == msgIn
-        assert src[1] == alpha.ha[1]  # ports equal
+        assert src[1] == alpha.port  # ports equal
 
         msgOut = b"beta sends to alpha"
         beta.send(msgOut, alpha.ha)
         time.sleep(0.05)
         msgIn, src = alpha.receive()
         assert msgOut == msgIn
-        assert src[1] == beta.ha[1]  # ports equal
+        assert src[1] == beta.port  # ports equal
 
         msgOut = b"beta sends to beta"
         beta.send(msgOut, beta.ha)
         time.sleep(0.05)
         msgIn, src = beta.receive()
         assert msgOut == msgIn
-        assert src[1] == beta.ha[1]  # ports equal
+        assert src[1] == beta.port  # ports equal
 
         alpha.close()
         beta.close()
@@ -83,6 +83,75 @@ def test_udp_basic():
                             b'eta\n')
 
         assert wl.readTx() == wl.readRx()
+        """Done Test"""
+
+def test_open_peer():
+    """ Test the udp openPeer context manager viewtopic connection between two peers
+
+    """
+    tymist = tyming.Tymist()
+    with (wiring.openWL(samed=True, filed=True) as wl,
+          udping.openPeer(port = 6101, wl=wl) as alpha, # any interface on port 6101
+          udping.openPeer(port = 6102, wl=wl) as beta):  # any interface on port 6102
+
+        assert alpha.opened
+        assert alpha.ha == ('0.0.0.0', 6101)
+
+        assert beta.opened
+        assert beta.ha == ('0.0.0.0', 6102)
+
+        msgOut = b"alpha sends to beta"
+        alpha.send(msgOut, beta.ha)
+        time.sleep(0.05)
+        msgIn, src = beta.receive()
+        assert msgOut == msgIn
+        assert src[1] == alpha.port  # ports equal
+
+        msgOut = b"alpha sends to alpha"
+        alpha.send(msgOut, alpha.ha)
+        time.sleep(0.05)
+        msgIn, src = alpha.receive()
+        assert msgOut == msgIn
+        assert src[1] == alpha.port  # ports equal
+
+        msgOut = b"beta sends to alpha"
+        beta.send(msgOut, alpha.ha)
+        time.sleep(0.05)
+        msgIn, src = alpha.receive()
+        assert msgOut == msgIn
+        assert src[1] == beta.port  # ports equal
+
+        msgOut = b"beta sends to beta"
+        beta.send(msgOut, beta.ha)
+        time.sleep(0.05)
+        msgIn, src = beta.receive()
+        assert msgOut == msgIn
+        assert src[1] == beta.port  # ports equal
+
+
+
+
+
+        wl.flush()  #  just to test
+        assert wl.samed  # rx and tx same buffer
+
+        assert wl.readRx() == (b"\nTx ('0.0.0.0', 6102):\nalpha sends to beta\n\nRx ('127.0.0.1', 6101):\n"
+                                b"alpha sends to beta\n\nTx ('0.0.0.0', 6101):\nalpha sends to alpha\n\nRx "
+                                b"('127.0.0.1', 6101):\nalpha sends to alpha\n\nTx ('0.0.0.0', 6101):\nbeta se"
+                                b"nds to alpha\n\nRx ('127.0.0.1', 6102):\nbeta sends to alpha\n\nTx ('0.0."
+                                b"0.0', 6102):\nbeta sends to beta\n\nRx ('127.0.0.1', 6102):\nbeta sends to b"
+                                b'eta\n')
+        assert wl.readTx() == (b"\nTx ('0.0.0.0', 6102):\nalpha sends to beta\n\nRx ('127.0.0.1', 6101):\n"
+                            b"alpha sends to beta\n\nTx ('0.0.0.0', 6101):\nalpha sends to alpha\n\nRx "
+                            b"('127.0.0.1', 6101):\nalpha sends to alpha\n\nTx ('0.0.0.0', 6101):\nbeta se"
+                            b"nds to alpha\n\nRx ('127.0.0.1', 6102):\nbeta sends to alpha\n\nTx ('0.0."
+                            b"0.0', 6102):\nbeta sends to beta\n\nRx ('127.0.0.1', 6102):\nbeta sends to b"
+                            b'eta\n')
+
+        assert wl.readTx() == wl.readRx()
+
+
+
         """Done Test"""
 
 def test_peer_doer():
@@ -210,5 +279,6 @@ def test_peer_doer():
 
 if __name__ == "__main__":
     test_udp_basic()
+    test_open_peer()
     test_peer_doer()
     #test_udp_broadcast()

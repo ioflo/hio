@@ -11,6 +11,7 @@ from contextlib import contextmanager
 
 from ... import help
 from ...base import tyming, doing
+from .. import coring
 
 logger = help.ogler.getLogger()
 
@@ -83,12 +84,48 @@ class Peer(tyming.Tymee):
         #self.tymer = tyming.Tymer(tymth=self.tymth, duration=self.tymeout) # retry tymer
 
         self.ha = ha or (host, port)  # ha = host address duple (host, port)
+        host, port = self.ha
+        host = coring.normalizeHost(host)  # ip host address
+        self.ha = (host, port)
+
         self.bs = bufsize
         self.wl = wl
         self.bcast = bcast
 
         self.ss = None  # server's socket needs to be opened
         self.opened = False
+
+    @property
+    def host(self):
+        """
+        Property that returns host in .ha duple
+        """
+        return self.ha[0]
+
+
+    @host.setter
+    def host(self, value):
+        """
+        setter for host property
+        """
+        self.ha = (value, self.port)
+
+
+    @property
+    def port(self):
+        """
+        Property that returns port in .ha duple
+        """
+        return self.ha[1]
+
+
+    @port.setter
+    def port(self, value):
+        """
+        setter for port property
+        """
+        self.ha = (self.host, value)
+
 
 
     def wind(self, tymth):
