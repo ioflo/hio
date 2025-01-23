@@ -134,6 +134,12 @@ class Filer():
             fext (str): File extension when filed
 
         """
+        # ensure relative path parts are relative because of odd path.join behavior
+        if os.path.isabs(name):
+            raise hioing.FilerError(f"Not relative {name=} path.")
+        if os.path.isabs(base):
+            raise hioing.FilerError(f"Not relative {base=} path.")
+
         self.name = name
         self.base = base
         self.temp = True if temp else False
@@ -234,8 +240,11 @@ class Filer():
             mode (str): file open mode when .filed such as "w+"
             fext (str): File extension when .filed
         """
+        if os.path.isabs(name):
+            raise hioing.FilerError(f"Not relative {name=} path.")
+
         if os.path.isabs(base):
-            raise hioing.FilerError(f"Invalid {base=} not relative path.")
+            raise hioing.FilerError(f"Not relative {base=} path.")
 
         file = None
         temp = True if temp else False
@@ -259,7 +268,7 @@ class Filer():
                 name = f"{name}.{fext}"
 
         if os.path.isabs(name):
-            raise hioing.FilerError(f"Invalid {name=} not relative path.")
+            raise hioing.FilerError(f"Not relative {name=} path.")
 
         if temp:
             headDirPath = tempfile.mkdtemp(prefix=self.TempPrefix,
@@ -363,6 +372,7 @@ class Filer():
 
         return path, file
 
+
     def exists(self, name="", base="", headDirPath=None, clean=False, filed=False, fext=None):
         """
         Check if (path. file) exists for a given set of parameters for remake.  Temp is not allowed.
@@ -387,8 +397,11 @@ class Filer():
 
 
         """
+        if os.path.isabs(name):
+            raise hioing.FilerError(f"Not relative {name=} path.")
+
         if os.path.isabs(base):
-            raise hioing.FilerError(f"Invalid {base=} not relative path.")
+            raise hioing.FilerError(f"Not relative {base=} path.")
 
         # use class defaults here so can use makePath for other dirs and files
         if headDirPath is None:
@@ -406,7 +419,7 @@ class Filer():
                 name = f"{name}.{fext}"
 
         if os.path.isabs(name):
-                    raise hioing.FilerError(f"Invalid {name=} not relative path.")
+            raise hioing.FilerError(f"Not relative {name=} path.")
 
         path = os.path.abspath(
             os.path.expanduser(
@@ -428,6 +441,7 @@ class Filer():
                                 base,
                                 name)))
         return os.path.exists(path)
+
 
     def close(self, clear=False):
         """
@@ -454,13 +468,13 @@ class Filer():
             if os.path.isfile(self.path):
                 if self.filed:
                     self.file = None
-                    os.remove(self.path)  # rm only file not head dir
+                    os.remove(self.path)  # rm only file at end of path
 
-                if self.temp:  # remove head directory anyway
+                if self.temp:  # remove head dir of path which removes file below it
                     head, tail = os.path.split(self.path)
-                    shutil.rmtree(head)  # rm directory and all files
+                    shutil.rmtree(head)  # rm dir head as root and all below head
             else:
-                shutil.rmtree(self.path)
+                shutil.rmtree(self.path)  # remove tail dir of path (and all below)
 
 
 class FilerDoer(doing.Doer):

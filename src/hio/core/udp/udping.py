@@ -40,6 +40,8 @@ def openPeer(cls=None, **kwa):
             peer0.receive()
 
     """
+    peer = None
+
     if cls is None:
         cls = Peer
     try:
@@ -49,7 +51,8 @@ def openPeer(cls=None, **kwa):
         yield peer
 
     finally:
-        peer.close()
+        if peer:
+            peer.close()
 
 
 

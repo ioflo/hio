@@ -88,7 +88,7 @@ def test_udp_basic():
     """Done Test"""
 
 def test_open_peer():
-    """ Test the udp openPeer context manager viewtopic connection between two peers
+    """Test the udp openPeer context manager connection between two peers
 
     """
     tymist = tyming.Tymist()

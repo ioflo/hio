@@ -34,6 +34,7 @@ def openPeer(cls=None, **kwa):
             peer0.receive()
 
     """
+    peer = None
     if cls is None:
         cls = Peer
     try:
@@ -43,36 +44,50 @@ def openPeer(cls=None, **kwa):
         yield peer
 
     finally:
-        peer.close()
+        if peer:
+            peer.close()
 
 
 class Peer(object):
-    """Class to manage non blocking io on UXD (unix domain) socket.
+    """Class to manage non-blocking io on UXD (unix domain) socket.
     Use instance method .close() to close socket
 
     Because Unix Domain Sockets are reliable no need for retry tymer.
+
+    Instance Attributes:
+        path (str): uxd file path
+        umask (int): unpermission mask for uxd file, usually octal 0o022
+        bs (int): buffer size
+        wl (WireLog): instance ref for debug logging of over the wire tx and rx
+        ss (socket.socket): own socket
+        opened (bool): True means socket is opened. False otherwise.
+
     """
+    Umask = 0o022  # default
 
-    def __init__(self, ha=None, umask=None, bufsize = 1024, wl=None):
-        """
-        Initialization method for instance.
+    def __init__(self, path=None, umask=None, bs = 1024, wl=None):
+        """Initialization method for instance.
 
-        ha = uxd file name
-        umask = umask for uxd file
-        bufsize = buffer size
-        wl = WireLog instance ref for debug logging or over the wire tx and rx
+        Parameters:
+            path (str): uxd file path
+            umask (int): unpermission mask for uxd file, usually octal 0o022
+            bs (int): buffer size
+            wl (WireLog): instance ref for debug logging of over the wire tx and rx
         """
-        self.ha = ha  # uxd file path
-        self.umask = umask
-        self.bs = bufsize
+        self.path = path  # uxd file path
+        self.umask = umask  # only change umask if umask is not None below
+        self.bs = bs
         self.wl = wl
 
-        self.ss = None  # server's socket needs to be opened
+        self.ss = None  # own self socket needs to be opened
         self.opened = False
 
+
     def actualBufSizes(self):
-        """Returns duple of the the actual socket send and receive buffer size
-        (send, receive)
+        """Returns:
+            sizes (tuple); duple of the form (int, int) of the (tx, rx)
+                actual socket send and receive buffer size
+
         """
         if not self.ss:
             return (0, 0)
@@ -80,8 +95,12 @@ class Peer(object):
         return (self.ss.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF),
                 self.ss.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF))
 
+
     def open(self):
         """Opens socket in non blocking mode.
+
+        Returns:
+            result (bool): True of opened successfully. False otherwise
 
         if socket not closed properly, binding socket gets error
             OSError: (48, 'Address already in use')
@@ -108,31 +127,35 @@ class Peer(object):
 
         #bind to Host Address Port
         try:
-            self.ss.bind(self.ha)
+            self.ss.bind(self.path)
         except OSError as ex:
             if not ex.errno == errno.ENOENT: # No such file or directory
-                logger.error("Error opening UxD %s\n %s\n", self.ha, ex)
+                logger.error("Error opening UxD %s\n %s\n", self.path, ex)
                 return False
             try:
-                os.makedirs(os.path.dirname(self.ha))
+                os.makedirs(os.path.dirname(self.path))
             except OSError as ex:
-                logger.error("Error making UXD %s\n %s\n", self.ha, ex)
+                logger.error("Error making UXD %s\n %s\n", self.path, ex)
                 return False
             try:
-                self.ss.bind(self.ha)
+                self.ss.bind(self.path)
             except OSError as ex:
-                logger.error("Error binding UXD %s\n %s\n", self.ha, ex)
+                logger.error("Error binding UXD %s\n %s\n", self.path, ex)
                 return False
 
         if oldumask is not None: # restore old umask
             os.umask(oldumask)
 
-        self.ha = self.ss.getsockname() #get resolved ha after bind
+        self.path = self.ss.getsockname()  # get resolved ha after bind
         self.opened = True
         return True
 
+
     def reopen(self):
         """Idempotently open socket by closing first if need be
+
+        Returns:
+            result (bool): True of opened successfully. False otherwise
         """
         self.close()
         return self.open()
@@ -147,23 +170,23 @@ class Peer(object):
             self.opened = False
 
         try:
-            os.unlink(self.ha)
+            os.unlink(self.path)  # removes uxd file at end of path only
         except OSError:
-            if os.path.exists(self.ha):
+            if os.path.exists(self.path):
                 raise
+
 
     def receive(self):
         """Perform non blocking receive on  socket.
 
         Returns:
-            tuple of form (data, sa) where sa is source address tuple
-            (sourcehost, sourceport)
-            If no data then returns ('',None)
-            but always returns a tuple with two elements
+            result (tuple): of form (bytes, str | None) labeled (data, src) where
+                data is bytes of data received
+                src is str uxd source path or None
+                If data empty then returns (b'', None) but always returns duple
         """
         try:
-            #sa = source address tuple (sourcehost, sourceport)
-            data, sa = self.ss.recvfrom(self.bs)
+            data, src = self.ss.recvfrom(self.bs)  # data, uxd source path
         except socket.error as ex:
             # ex.args[0] is always ex.errno for better compat
             # the value of a given errno.XXXXX may be different on each os
@@ -172,31 +195,36 @@ class Peer(object):
             if ex.args[0]  in (errno.EAGAIN, errno.EWOULDBLOCK):
                 return (b'', None) #receive has nothing empty string for data
             else:
-                logger.error("Error receive on UXD %s\n %s\n", self.ha, ex)
+                logger.error("Error receive on UXD %s\n %s\n", self.path, ex)
                 raise #re raise exception ex
 
         if self.wl:
-            self.wl.writeRx(data, who=sa)
+            self.wl.writeRx(data, who=src)
 
-        return (data, sa)
+        return (data, src)
 
-    def send(self, data, da):
-        """Perform non blocking send on  socket.
 
-           data is string in python2 and bytes in python3
-           da is destination address tuple (destHost, destPort)
+    def send(self, data, dst):
+        """Perform non blocking send on socket.
+
+        Returns:
+            cnt (int): number of bytes actually sent
+
+        Parameters:
+           data (bytes): payload to send
+           dst (str):  uxd destination path
         """
         try:
-            result = self.ss.sendto(data, da) #result is number of bytes sent
+            cnt = self.ss.sendto(data, dst)  # count is int number of bytes sent
         except OSError as ex:
-            logger.error("Error send UXD from %s to %s.\n %s\n", self.ha, da, ex)
-            result = 0
+            logger.error("Error send UXD from %s to %s.\n %s\n", self.path, dst, ex)
+            cnt = 0
             raise
 
         if self.wl:# log over the wire send
-            self.wl.writeTx(data[:result], who=da)
+            self.wl.writeTx(data[:cnt], who=dst)
 
-        return result
+        return cnt
 
     def service(self):
         """
