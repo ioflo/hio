@@ -33,78 +33,78 @@ def test_uxd_basic():
         if not os.path.exists(sockDirpath):
             os.makedirs(sockDirpath)
 
-        ha = os.path.join(sockDirpath, 'alpha.uxd')
-        assert ha.endswith("/uxd/alpha.uxd")
+        path = os.path.join(sockDirpath, 'alpha.uxd')
+        assert path.endswith("/uxd/alpha.uxd")
 
-        alpha = uxding.Peer(path=ha, umask=0o077, wl=wl)
+        alpha = uxding.Peer(path=path, umask=0o077, wl=wl)
         assert not alpha.opened
         assert alpha.reopen()
         assert alpha.opened
-        assert alpha.path == ha
+        assert alpha.path == path
 
-        ha = os.path.join(sockDirpath, 'beta.uxd')
-        beta = uxding.Peer(path=ha, umask=0o077)
+        path = os.path.join(sockDirpath, 'beta.uxd')
+        beta = uxding.Peer(path=path, umask=0o077)
         assert beta.reopen()
-        assert beta.path == ha
+        assert beta.path == path
 
-        ha = os.path.join(sockDirpath, 'gamma.uxd')
-        gamma = uxding.Peer(path=ha, umask=0o077)
+        path = os.path.join(sockDirpath, 'gamma.uxd')
+        gamma = uxding.Peer(path=path, umask=0o077)
         assert gamma.reopen()
-        assert gamma.path == ha
+        assert gamma.path == path
 
         txMsg = b"Alpha sends to Beta"
         alpha.send(txMsg, beta.path)
-        rxMsg, sa = beta.receive()
+        rxMsg, src = beta.receive()
         assert txMsg == rxMsg
-        assert sa == alpha.path
+        assert src == alpha.path
 
         txMsg = b"Alpha sends to Gamma"
         alpha.send(txMsg, gamma.path)
-        rxMsg, sa = gamma.receive()
+        rxMsg, src = gamma.receive()
         assert txMsg == rxMsg
-        assert sa == alpha.path
+        assert src == alpha.path
 
         txMsg = b"Alpha sends to Alpha"
         alpha.send(txMsg, alpha.path)
-        rxMsg, sa = alpha.receive()
+        rxMsg, src = alpha.receive()
         assert txMsg == rxMsg
-        assert sa == alpha.path
+        assert src == alpha.path
 
         txMsg = b"Beta sends to Alpha"
         beta.send(txMsg, alpha.path)
-        rxMsg, sa = alpha.receive()
+        rxMsg, src = alpha.receive()
         assert txMsg == rxMsg
-        assert sa == beta.path
+        assert src == beta.path
 
         txMsg = b"Beta sends to Gamma"
         beta.send(txMsg, gamma.path)
-        rxMsg, sa = gamma.receive()
+        rxMsg, src = gamma.receive()
         assert txMsg == rxMsg
-        assert sa == beta.path
+        assert src == beta.path
 
         txMsg = b"Beta sends to Beta"
         beta.send(txMsg, beta.path)
-        rxMsg, sa = beta.receive()
+        rxMsg, src = beta.receive()
         assert txMsg == rxMsg
-        assert sa == beta.path
+        assert src == beta.path
 
         txMsg = b"Gamma sends to Alpha"
         gamma.send(txMsg, alpha.path)
-        rxMsg, sa = alpha.receive()
+        rxMsg, src = alpha.receive()
         assert txMsg == rxMsg
-        assert sa == gamma.path
+        assert src == gamma.path
 
         txMsg = b"Gamma sends to Beta"
         gamma.send(txMsg, beta.path)
-        rxMsg, sa = beta.receive()
+        rxMsg, src = beta.receive()
         assert txMsg == rxMsg
-        assert sa == gamma.path
+        assert src == gamma.path
 
         txMsg = b"Gamma sends to Gamma"
         gamma.send(txMsg, gamma.path)
-        rxMsg, sa = gamma.receive()
+        rxMsg, src = gamma.receive()
         assert txMsg == rxMsg
-        assert sa == gamma.path
+        assert src == gamma.path
 
 
         pairs = [(alpha, beta), (alpha, gamma), (alpha, alpha),
@@ -120,21 +120,21 @@ def test_uxd_basic():
             #converts to bytes
             txMsg = f"{txName.capitalize()} sends to {rxName.capitalize()} again".encode()
             txer.send(txMsg, rxer.path)
-            rxMsg, sa = rxer.receive()
+            rxMsg, src = rxer.receive()
             assert txMsg == rxMsg
-            assert sa == txer.path
+            assert src == txer.path
 
-        rxMsg, sa = alpha.receive()
+        rxMsg, src = alpha.receive()
         assert b'' == rxMsg
-        assert None == sa
+        assert None == src
 
-        rxMsg, sa = beta.receive()
+        rxMsg, src = beta.receive()
         assert b'' == rxMsg
-        assert None == sa
+        assert None == src
 
-        rxMsg, sa = gamma.receive()
+        rxMsg, src = gamma.receive()
         assert b'' == rxMsg
-        assert None == sa
+        assert None == src
 
         alpha.close()
         assert not alpha.opened
@@ -202,57 +202,57 @@ def test_open_peer():
 
         txMsg = b"Alpha sends to Beta"
         alpha.send(txMsg, beta.path)
-        rxMsg, sa = beta.receive()
+        rxMsg, src = beta.receive()
         assert txMsg == rxMsg
-        assert sa == alpha.path
+        assert src == alpha.path
 
         txMsg = b"Alpha sends to Gamma"
         alpha.send(txMsg, gamma.path)
-        rxMsg, sa = gamma.receive()
+        rxMsg, src = gamma.receive()
         assert txMsg == rxMsg
-        assert sa == alpha.path
+        assert src == alpha.path
 
         txMsg = b"Alpha sends to Alpha"
         alpha.send(txMsg, alpha.path)
-        rxMsg, sa = alpha.receive()
+        rxMsg, src = alpha.receive()
         assert txMsg == rxMsg
-        assert sa == alpha.path
+        assert src == alpha.path
 
         txMsg = b"Beta sends to Alpha"
         beta.send(txMsg, alpha.path)
-        rxMsg, sa = alpha.receive()
+        rxMsg, src = alpha.receive()
         assert txMsg == rxMsg
-        assert sa == beta.path
+        assert src == beta.path
 
         txMsg = b"Beta sends to Gamma"
         beta.send(txMsg, gamma.path)
-        rxMsg, sa = gamma.receive()
+        rxMsg, src = gamma.receive()
         assert txMsg == rxMsg
-        assert sa == beta.path
+        assert src == beta.path
 
         txMsg = b"Beta sends to Beta"
         beta.send(txMsg, beta.path)
-        rxMsg, sa = beta.receive()
+        rxMsg, src = beta.receive()
         assert txMsg == rxMsg
-        assert sa == beta.path
+        assert src == beta.path
 
         txMsg = b"Gamma sends to Alpha"
         gamma.send(txMsg, alpha.path)
-        rxMsg, sa = alpha.receive()
+        rxMsg, src = alpha.receive()
         assert txMsg == rxMsg
-        assert sa == gamma.path
+        assert src == gamma.path
 
         txMsg = b"Gamma sends to Beta"
         gamma.send(txMsg, beta.path)
-        rxMsg, sa = beta.receive()
+        rxMsg, src = beta.receive()
         assert txMsg == rxMsg
-        assert sa == gamma.path
+        assert src == gamma.path
 
         txMsg = b"Gamma sends to Gamma"
         gamma.send(txMsg, gamma.path)
-        rxMsg, sa = gamma.receive()
+        rxMsg, src = gamma.receive()
         assert txMsg == rxMsg
-        assert sa == gamma.path
+        assert src == gamma.path
 
 
         pairs = [(alpha, beta), (alpha, gamma), (alpha, alpha),
@@ -268,21 +268,21 @@ def test_open_peer():
             #converts to bytes
             txMsg = f"{txName.capitalize()} sends to {rxName.capitalize()} again".encode()
             txer.send(txMsg, rxer.path)
-            rxMsg, sa = rxer.receive()
+            rxMsg, src = rxer.receive()
             assert txMsg == rxMsg
-            assert sa == txer.path
+            assert src == txer.path
 
-        rxMsg, sa = alpha.receive()
+        rxMsg, src = alpha.receive()
         assert b'' == rxMsg
-        assert None == sa
+        assert None == src
 
-        rxMsg, sa = beta.receive()
+        rxMsg, src = beta.receive()
         assert b'' == rxMsg
-        assert None == sa
+        assert None == src
 
-        rxMsg, sa = gamma.receive()
+        rxMsg, src = gamma.receive()
         assert b'' == rxMsg
-        assert None == sa
+        assert None == src
 
         wl.flush()  #  just to test
         assert wl.samed  # rx and tx same buffer
