@@ -148,7 +148,7 @@ class Peer(object):
             self.opened = False
 
         try:
-            os.unlink(self.ha)
+            os.unlink(self.ha)  # removes uxd file at end of path only
         except OSError:
             if os.path.exists(self.ha):
                 raise

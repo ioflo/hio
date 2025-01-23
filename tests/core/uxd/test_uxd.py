@@ -151,6 +151,7 @@ def test_uxd_basic():
         assert wl.readTx()
         assert wl.readTx() == wl.readRx()
 
+        # rmtree removes dir at tail of path (and all below tail)
         shutil.rmtree(testDirpath)  # and all dependent paths
 
     assert not os.path.exists(testDirpath)
@@ -296,8 +297,8 @@ def test_open_peer():
 
     assert not wl.opened
 
+    # rmtree removes dir at tail of path (and all below tail)
     shutil.rmtree(testDirpath)  # and all dependent paths
-
     assert not os.path.exists(testDirpath)
     assert not os.path.exists(tempDirpath)
     assert not os.path.exists(sockDirpath)
@@ -338,6 +339,7 @@ def test_peer_doer():
     assert doist.tyme == limit
     assert peer.opened == False
 
+    # rmtree removes dir at tail of path (and all below tail)
     shutil.rmtree(testDirpath)  # and all dependent paths
     assert not os.path.exists(testDirpath)
     assert not os.path.exists(tempDirpath)

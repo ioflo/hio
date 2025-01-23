@@ -454,13 +454,13 @@ class Filer():
             if os.path.isfile(self.path):
                 if self.filed:
                     self.file = None
-                    os.remove(self.path)  # rm only file not head dir
+                    os.remove(self.path)  # rm only file at end of path
 
-                if self.temp:  # remove head directory anyway
+                if self.temp:  # remove head dir of path which removes file below it
                     head, tail = os.path.split(self.path)
-                    shutil.rmtree(head)  # rm directory and all files
+                    shutil.rmtree(head)  # rm dir head as root and all below head
             else:
-                shutil.rmtree(self.path)
+                shutil.rmtree(self.path)  # remove tail dir of path (and all below)
 
 
 class FilerDoer(doing.Doer):
