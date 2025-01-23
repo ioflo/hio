@@ -52,6 +52,7 @@ class Peer(object):
 
     Because Unix Domain Sockets are reliable no need for retry tymer.
     """
+    Umask = 0o022  # default
 
     def __init__(self, ha=None, umask=None, bufsize = 1024, wl=None):
         """
@@ -63,7 +64,7 @@ class Peer(object):
         wl = WireLog instance ref for debug logging or over the wire tx and rx
         """
         self.ha = ha  # uxd file path
-        self.umask = umask
+        self.umask = umask  # only change umask if umask is not None below
         self.bs = bufsize
         self.wl = wl
 
@@ -127,7 +128,7 @@ class Peer(object):
         if oldumask is not None: # restore old umask
             os.umask(oldumask)
 
-        self.ha = self.ss.getsockname() #get resolved ha after bind
+        self.ha = self.ss.getsockname()  # get resolved ha after bind
         self.opened = True
         return True
 
@@ -151,6 +152,7 @@ class Peer(object):
         except OSError:
             if os.path.exists(self.ha):
                 raise
+
 
     def receive(self):
         """Perform non blocking receive on  socket.

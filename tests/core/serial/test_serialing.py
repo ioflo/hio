@@ -100,7 +100,7 @@ def test_echo_console():
     """
     Test EchoConsoleDoer class
 
-    Must run in WindIDE with Debug I/O configured as external console
+    Must run in WingIDE with Debug I/O configured as external console
     """
     port = os.ctermid()  # default to console
 
