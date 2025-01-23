@@ -48,7 +48,20 @@ def openPeer(cls=None, **kwa):
             peer.close()
 
 
-class Peer(object):
+
+#HeadDirPath = "/usr/local/var"  # default in /usr/local/var
+#TailDirPath = "keri/db"
+#CleanTailDirPath = "keri/clean/db"
+#AltHeadDirPath = "~"  # put in ~ as fallback when desired not permitted
+#AltTailDirPath = ".keri/db"
+#AltCleanTailDirPath = ".keri/clean/db"
+#TempHeadDir = "/tmp"
+#TempPrefix = "keri_lmdb_"
+#TempSuffix = "_test"
+#Perm = stat.S_ISVTX | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR  # 0o1700==960
+
+
+class Peer():
     """Class to manage non-blocking io on UXD (unix domain) socket.
     Use instance method .close() to close socket
 
