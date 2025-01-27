@@ -22,35 +22,33 @@ def test_uxd_basic():
     """
     tymist = tyming.Tymist()
     with (wiring.openWL(samed=True, filed=True) as wl):
-        testDirpath = os.path.join('~', '.hio', 'test')
-        testDirpath = os.path.abspath(os.path.expanduser(testDirpath))
-        if not os.path.exists(testDirpath):
-            os.makedirs(testDirpath)
+        #testDirpath = os.path.join('~', '.hio', 'test')
+        #testDirpath = os.path.abspath(os.path.expanduser(testDirpath))
+        #if not os.path.exists(testDirpath):
+            #os.makedirs(testDirpath)
 
-        tempDirpath = tempfile.mkdtemp(prefix="test", suffix="uxd", dir=testDirpath)
+        #tempDirpath = tempfile.mkdtemp(prefix="test", suffix="uxd", dir=testDirpath)
 
-        sockDirpath = os.path.join(tempDirpath, 'uxd')
-        if not os.path.exists(sockDirpath):
-            os.makedirs(sockDirpath)
+        #sockDirpath = os.path.join(tempDirpath, 'uxd')
+        #if not os.path.exists(sockDirpath):
+            #os.makedirs(sockDirpath)
 
-        path = os.path.join(sockDirpath, 'alpha.uxd')
-        assert path.endswith("/uxd/alpha.uxd")
+        #path = os.path.join(sockDirpath, 'alpha.uxd')
+        #assert path.endswith("/uxd/alpha.uxd")
 
-        alpha = uxding.Peer(path=path, umask=0o077, wl=wl)
+        alpha = uxding.Peer(name="alpha", temp=True, umask=0o077, wl=wl)
         assert not alpha.opened
         assert alpha.reopen()
         assert alpha.opened
-        assert alpha.path == path
+        assert alpha.path.endswith("alpha.uxd")
 
-        path = os.path.join(sockDirpath, 'beta.uxd')
-        beta = uxding.Peer(path=path, umask=0o077)
+        beta = uxding.Peer(name="beta", temp=True, umask=0o077)
         assert beta.reopen()
-        assert beta.path == path
+        assert beta.path.endswith("beta.uxd")
 
-        path = os.path.join(sockDirpath, 'gamma.uxd')
-        gamma = uxding.Peer(path=path, umask=0o077)
+        gamma = uxding.Peer(name="gamma", temp=True, umask=0o077)
         assert gamma.reopen()
-        assert gamma.path == path
+        assert gamma.path.endswith("gamma.uxd")
 
         txMsg = b"Alpha sends to Beta"
         alpha.send(txMsg, beta.path)
@@ -138,10 +136,13 @@ def test_uxd_basic():
 
         alpha.close()
         assert not alpha.opened
+        assert not os.path.exists(alpha.path)
         beta.close()
         assert not beta.opened
+        assert not os.path.exists(beta.path)
         gamma.close()
         assert not gamma.opened
+        assert not os.path.exists(gamma.path)
 
 
         wl.flush()  #  just to test
@@ -151,12 +152,12 @@ def test_uxd_basic():
         assert wl.readTx()
         assert wl.readTx() == wl.readRx()
 
-        # rmtree removes dir at tail of path (and all below tail)
-        shutil.rmtree(testDirpath)  # and all dependent paths
+        ## rmtree removes dir at tail of path (and all below tail)
+        #shutil.rmtree(testDirpath)  # and all dependent paths
 
-    assert not os.path.exists(testDirpath)
-    assert not os.path.exists(tempDirpath)
-    assert not os.path.exists(sockDirpath)
+    #assert not os.path.exists(testDirpath)
+    #assert not os.path.exists(tempDirpath)
+    #assert not os.path.exists(sockDirpath)
 
     """Done Test"""
 

@@ -9,8 +9,9 @@ import shutil
 import tempfile
 from contextlib import contextmanager
 
-from .. import hioing
+
 from . import doing
+from .. import hioing
 from .. import help
 from ..help.helping import ocfn
 
@@ -58,20 +59,39 @@ class Filer():
     Filer instances manage file directories and files to hold keri installation
     specific resources like databases and configuration files.
 
+    Class Attributes:
+        HeadDirPath (str): default abs dir path head such as "/usr/local/var"
+        TailDirPath (str): default rel dir path tail when using head
+        CleanTailDirPath (str): default rel dir path tail when creating clean
+        AltHeadDirPath (str): default alt dir path head such as  "~"
+                              as fallback when desired head not permitted.
+        AltTailDirPath (str): default alt rel dir path tail as fallback
+                              when using alt head.
+        AltCleanTailDirPath (str): default alt rel path tail when creating clean
+        TempHeadDir (str): default temp abs dir path head such as "/tmp"
+        TempPrefix (str): default rel dir path prefix when using temp head
+        TempSuffix (str): default rel dir path suffix when using temp head and tail
+        Perm (int): explicit default octal perms such as 0o1700
+        Mode (str): open mode such as "r+"
+        Fext (str): default file extension such as "text" for "fname.text"
+
 
     Attributes:
         name (str): unique path component used in directory or file path name
         base (str): another unique path component inserted before name
-        temp (bool): True means use /tmp directory
-        headDirPath is head directory path
-        path is full directory path
-        perm is numeric os permissions for directory and/or file(s)
+        temp (bool): True means use TempHeadDir in /tmp directory
+        headDirPath (str): head directory path
+        path (str | None):  full directory or file path once created else None
+        perm (int):  octal OS permissions for path directory and/or file
         filed (bool): True means .path ends in file.
                        False means .path ends in directory
+        extensioned (bool): When not filed:
+                                True means ensure .path ends with fext
+                                False means do not ensure .path ends with fext
         mode (str): file open mode if filed
         fext (str): file extension if filed
-        file (File)
-        opened is Boolean, True means directory created and if file then file
+        file (File | None): File instance when filed and created.
+        opened (bool): True means directory created and if filed then file
                 is opened. False otherwise
 
 
@@ -103,7 +123,7 @@ class Filer():
 
     def __init__(self, name='main', base="", temp=False, headDirPath=None,
                  perm=None, reopen=True, clear=False, reuse=False, clean=False,
-                 filed=False, mode=None, fext=None, **kwa):
+                 filed=False, extensioned=False, mode=None, fext=None, **kwa):
         """Setup directory of file at .path
 
         Parameters:
@@ -120,8 +140,8 @@ class Filer():
                 Default .HeadDirPath
             perm (int): optional numeric os dir permissions for database
                 directory and database files. Default .DirMode
-            reopen (bool): True means (re)opened by this init
-                           False  means not (re)opened by this init but later
+            reopen (bool): True (re)open with this init
+                           False not (re)open with this init but later (default)
             clear (bool): True means remove directory upon close when reopening
                           False means do not remove directory upon close when reopening
             reuse (bool): True means reuse self.path if already exists
@@ -130,8 +150,11 @@ class Filer():
                              False means path uses normal tail variant
             filed (bool): True means .path is file path not directory path
                           False means .path is directiory path not file path
+            extensioned (bool): When not filed:
+                                True means ensure .path ends with fext
+                                False means do not ensure .path ends with fext
             mode (str): File open mode when filed
-            fext (str): File extension when filed
+            fext (str): File extension when filed or extensioned
 
         """
         # ensure relative path parts are relative because of odd path.join behavior
@@ -147,6 +170,7 @@ class Filer():
         self.perm = perm if perm is not None else self.Perm
         self.path = None
         self.filed = True if filed else False
+        self.extensioned = True if extensioned else False
         self.mode = mode if mode is not None else self.Mode
         self.fext = fext if fext is not None else self.Fext
         self.file = None
@@ -199,10 +223,11 @@ class Filer():
                                                perm=self.perm,
                                                clean=clean,
                                                filed=self.filed,
+                                               extensioned=self.extensioned,
                                                mode=self.mode,
                                                fext=self.fext,
                                                **kwa)
-        elif self.filed:  # self.path exists
+        elif self.filed:  # assumes dir in self.path exists
             self.file = ocfn(self.path, mode=self.mode)
 
         self.opened = True if not self.filed else self.file and not self.file.closed
@@ -211,7 +236,8 @@ class Filer():
 
 
     def remake(self, *, name="", base="", temp=None, headDirPath=None, perm=None,
-                clean=False, filed=False, mode=None, fext=None, **kwa):
+                clean=False, filed=False, extensioned=False, mode=None,
+                fext=None, **kwa):
         """
         Make and return (path. file) by opening or creating and opening if not
         preexistent, directory or file at  path
@@ -237,6 +263,9 @@ class Filer():
 
             filed (bool): True means .path is file path not directory path
                           False means .path is directiory path not file path
+            extensioned (bool): When not filed:
+                                True means ensure .path ends with fext
+                                False means do not ensure .path ends with fext
             mode (str): file open mode when .filed such as "w+"
             fext (str): File extension when .filed
         """
@@ -262,7 +291,7 @@ class Filer():
         tailDirPath = self.CleanTailDirPath if clean else self.TailDirPath
         altTailDirPath = self.AltCleanTailDirPath if clean else self.AltTailDirPath
 
-        if filed:
+        if filed or extensioned:
             root, ext = os.path.splitext(name)
             if not ext:
                 name = f"{name}.{fext}"
@@ -283,7 +312,7 @@ class Filer():
 
             if clean and os.path.exists(path):
                 if os.path.isfile(path):
-                    if filed:
+                    if filed or extensioned:
                         os.remove(path)  # rm only file not dir
                     else:
                         head, tail = os.path.split(path)
@@ -291,11 +320,12 @@ class Filer():
                 else:
                     shutil.rmtree(path)
 
-            if filed:
+            if filed or extensioned:
                 head, tail = os.path.split(path)
                 if not os.path.exists(head):
                     os.makedirs(head)
-                file = ocfn(path, mode=mode, perm=perm)
+                if filed:
+                    file = ocfn(path, mode=mode, perm=perm)
             else:
                 os.makedirs(path)
 
@@ -319,11 +349,12 @@ class Filer():
 
             if not os.path.exists(path):  # no path so attempt to create
                 try:
-                    if filed:
+                    if filed or extensioned:
                         head, tail = os.path.split(path)
                         if not os.path.exists(head):
                             os.makedirs(head)
-                        file = ocfn(path, mode=mode, perm=perm)
+                        if filed:
+                            file = ocfn(path, mode=mode, perm=perm)
                     else:
                         os.makedirs(path)
 
@@ -336,11 +367,12 @@ class Filer():
                                                  base,
                                                  name)))
                     if not os.path.exists(path):
-                        if filed:
+                        if filed or extensioned:
                             head, tail = os.path.split(path)
                             if not os.path.exists(head):
                                 os.makedirs(head)
-                            file = ocfn(path, mode=mode, perm=perm)
+                            if filed:
+                                file = ocfn(path, mode=mode, perm=perm)
                         else:
                             os.makedirs(path)
                     else:
@@ -357,11 +389,12 @@ class Filer():
                                                  base,
                                                  name)))
                     if not os.path.exists(path):
-                        if filed:
+                        if filed or extensioned:
                             head, tail = os.path.split(path)
                             if not os.path.exists(head):
                                 os.makedirs(head)
-                            file = ocfn(path, mode=mode, perm=perm)
+                            if filed:
+                                file = ocfn(path, mode=mode, perm=perm)
                         else:
                             os.makedirs(path)
                 else:
@@ -373,9 +406,11 @@ class Filer():
         return path, file
 
 
-    def exists(self, name="", base="", headDirPath=None, clean=False, filed=False, fext=None):
+    def exists(self, name="", base="", headDirPath=None, clean=False,
+               filed=False, extensioned=False, fext=None):
         """
-        Check if (path. file) exists for a given set of parameters for remake.  Temp is not allowed.
+        Check if (path. file) exists for a given set of parameters for remake.
+        Temp is not allowed.
 
         Parameters:
             name (str): unique name alias portion of path
@@ -389,12 +424,13 @@ class Filer():
 
             filed (bool): True means .path is file path not directory path
                           False means .path is directiory path not file path
+            extensioned (bool): When not filed:
+                                True means ensure .path ends with fext
+                                False means do not ensure .path ends with fext
             fext (str): File extension when .filed
 
         Returns:
             bool: True means path or alt path exists, false means neither exists
-
-
 
         """
         if os.path.isabs(name):
@@ -413,7 +449,7 @@ class Filer():
         tailDirPath = self.CleanTailDirPath if clean else self.TailDirPath
         altTailDirPath = self.AltCleanTailDirPath if clean else self.AltTailDirPath
 
-        if filed:
+        if filed or extensioned:
             root, ext = os.path.splitext(name)
             if not ext:
                 name = f"{name}.{fext}"
@@ -465,16 +501,25 @@ class Filer():
         Remove directory/file at end of .path
         """
         if self.path and os.path.exists(self.path):
-            if os.path.isfile(self.path):
-                if self.filed:
-                    self.file = None
-                    os.remove(self.path)  # rm only file at end of path
+            if os.path.isfile(self.path):  # self.path points to File instance
+                os.remove(self.path)  # rm only file at end of path
 
-                if self.temp:  # remove head dir of path which removes file below it
+                if self.file:  # self.file is File instance
+                    self.file = None  #
+
+                if self.temp:  # remove trailing dir of path as well
                     head, tail = os.path.split(self.path)
                     shutil.rmtree(head)  # rm dir head as root and all below head
+
+            elif self.extensioned:  # path end has file extension
+                os.remove(self.path)  # rm only extensioned end of path
+
+                if self.temp:  # remove trailing dir of path as well
+                    head, tail = os.path.split(self.path)
+                    shutil.rmtree(head)  # rm dir head as root and all below head
+
             else:
-                shutil.rmtree(self.path)  # remove tail dir of path (and all below)
+                shutil.rmtree(self.path)  # remove trailing dir of path (and all below)
 
 
 class FilerDoer(doing.Doer):

@@ -5,6 +5,7 @@ hio.core.uxding Module
 import sys
 import platform
 import os
+import stat
 import errno
 import socket
 import shutil
@@ -12,7 +13,8 @@ from contextlib import contextmanager
 
 
 from ... import help
-from ...base import doing
+from ... import hioing
+from ...base import doing, filing
 
 logger = help.ogler.getLogger()
 
@@ -49,51 +51,99 @@ def openPeer(cls=None, **kwa):
 
 
 
-#HeadDirPath = "/usr/local/var"  # default in /usr/local/var
-#TailDirPath = "keri/db"
-#CleanTailDirPath = "keri/clean/db"
-#AltHeadDirPath = "~"  # put in ~ as fallback when desired not permitted
-#AltTailDirPath = ".keri/db"
-#AltCleanTailDirPath = ".keri/clean/db"
-#TempHeadDir = "/tmp"
-#TempPrefix = "keri_lmdb_"
-#TempSuffix = "_test"
-#Perm = stat.S_ISVTX | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR  # 0o1700==960
 
 
-class Peer():
+class Peer(filing.Filer):
     """Class to manage non-blocking io on UXD (unix domain) socket.
     Use instance method .close() to close socket
 
     Because Unix Domain Sockets are reliable no need for retry tymer.
 
-    Instance Attributes:
-        path (str): uxd file path
+
+    Inherited Class Attributes:
+        HeadDirPath (str): default abs dir path head such as "/usr/local/var"
+        TailDirPath (str): default rel dir path tail when using head
+        CleanTailDirPath (str): default rel dir path tail when creating clean
+        AltHeadDirPath (str): default alt dir path head such as  "~"
+                              as fallback when desired head not permitted.
+        AltTailDirPath (str): default alt rel dir path tail as fallback
+                              when using alt head.
+        AltCleanTailDirPath (str): default alt rel path tail when creating clean
+        TempHeadDir (str): default temp abs dir path head such as "/tmp"
+        TempPrefix (str): default rel dir path prefix when using temp head
+        TempSuffix (str): default rel dir path suffix when using temp head and tail
+        Perm (int): explicit default octal perms such as 0o1700
+        Mode (str): open mode such as "r+"
+        Fext (str): default file extension such as "text" for "fname.text"
+
+    Inherited Attributes:
+        name (str): unique path component used in directory or file path name
+        base (str): another unique path component inserted before name
+        temp (bool): True means use TempHeadDir in /tmp directory
+        headDirPath (str): head directory path
+        path (str | None):  full directory or file path once created else None
+        perm (int):  numeric os permissions for directory and/or file(s)
+        filed (bool): True means .path ends in file.
+                       False means .path ends in directory
+        mode (str): file open mode if filed
+        fext (str): file extension if filed
+        file (File | None): File instance when filed and created.
+        opened (bool): True means directory path, uxd file, and socket are
+                created and opened. False otherwise
+
+    Class Attributes:
+        Umask (int): octal default umask permissions such as 0o022
+
+    Attributes:
         umask (int): unpermission mask for uxd file, usually octal 0o022
+                     .umask is applied after .perm is set if any
         bs (int): buffer size
         wl (WireLog): instance ref for debug logging of over the wire tx and rx
         ss (socket.socket): own socket
-        opened (bool): True means socket is opened. False otherwise.
 
     """
+    HeadDirPath = "/usr/local/var"  # default in /usr/local/var
+    TailDirPath = "hio/uxd"
+    CleanTailDirPath = "hio/clean/uxd"
+    AltHeadDirPath = "~"  # put in ~ as fallback when desired not permitted
+    AltTailDirPath = ".hio/uxd"
+    AltCleanTailDirPath = ".hio/clean/uxd"
+    TempHeadDir = "/tmp"
+    TempPrefix = "hio_uxd_"
+    TempSuffix = "_test"
+    Perm = stat.S_ISVTX | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR  # 0o1700==960
+    Mode = "r+"
+    Fext = "uxd"
     Umask = 0o022  # default
 
-    def __init__(self, path=None, umask=None, bs = 1024, wl=None):
+    def __init__(self, *, umask=None, bs = 1024, wl=None,
+                 reopen=False, filed=False, extensioned=True, **kwa):
         """Initialization method for instance.
+        Inherited Parameters:
+            reopen (bool): True (re)open with this init
+                           False not (re)open with this init but later (default)
+            filed (bool): True means .path is file path not directory path
+                          False means .path is directiory path not file path
+            extensioned (bool): When not filed:
+                                True means ensure .path ends with fext
+                                False means do not ensure .path ends with fext
+            See Filing.Filer for other inherited paramters
+
 
         Parameters:
-            path (str): uxd file path
             umask (int): unpermission mask for uxd file, usually octal 0o022
             bs (int): buffer size
             wl (WireLog): instance ref for debug logging of over the wire tx and rx
         """
-        self.path = path  # uxd file path
         self.umask = umask  # only change umask if umask is not None below
         self.bs = bs
         self.wl = wl
-
         self.ss = None  # own self socket needs to be opened
-        self.opened = False
+
+        super(Peer, self).__init__(reopen=reopen,
+                                   filed=filed,
+                                   extensioned=extensioned,
+                                   **kwa)
 
 
     def actualBufSizes(self):
@@ -138,7 +188,7 @@ class Peer():
         if self.umask is not None: # change umask for the uxd file
             oldumask = os.umask(self.umask) # set new and return old
 
-        #bind to Host Address Port
+        #bind to file path
         try:
             self.ss.bind(self.path)
         except OSError as ex:
@@ -159,23 +209,38 @@ class Peer():
         if oldumask is not None: # restore old umask
             os.umask(oldumask)
 
-        self.path = self.ss.getsockname()  # get resolved ha after bind
+        self.path = self.ss.getsockname()  # get resolved path after bind
         self.opened = True
-        return True
+        return self.opened
 
 
-    def reopen(self):
+    def reopen(self, clear=True, **kwa):
         """Idempotently open socket by closing first if need be
 
         Returns:
             result (bool): True of opened successfully. False otherwise
+
+        Inherited Parameters:
+            clear (bool): True means remove directory and uxd file upon close
+                          False means do not remove directory and uxd file upon close
+            See filing.Filer for other inherited parameters
         """
-        self.close()
+        #self.close(clear=clear)
+
+        opened = super(Peer, self).reopen(clear=clear, **kwa)
+        if not opened:
+            raise hioing.FilerError(f"Failure opening uxd path {self.path}.")
+
         return self.open()
 
 
-    def close(self):
+    def close(self, clear=True):
         """Closes  socket and unlinks UXD file.
+
+        Inherited Parameters:
+            clear (bool): True means remove directory/uxd file upon close
+                          False means do not remove directory/uxd file upon close
+            See filing.Filer for other inherited parameters
         """
         if self.ss:
             self.ss.close() #close socket
@@ -183,10 +248,12 @@ class Peer():
             self.opened = False
 
         try:
-            os.unlink(self.path)  # removes uxd file at end of path only
+            super(Peer, self).close(clear=clear)  # removes uxd file at end of path only
         except OSError:
             if os.path.exists(self.path):
                 raise
+
+        return self.opened
 
 
     def receive(self):
