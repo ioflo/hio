@@ -29,10 +29,15 @@ def openFiler(cls=None, name="test", temp=True, reopen=True, clear=False, **kwa)
 
     Parameters:
         cls is Class instance of subclass instance
-        name is str name of ogler instance for filename so can have multiple oglers
-             at different paths thar each use different log file directories
+        name is str name of Filer instance path part so can have multiple Filers
+             at different paths that each use different dirs or files
         temp is Boolean, True means open in temporary directory, clear on close
                 Otherwise open in persistent directory, do not clear on close
+        reopen (bool): True (re)open with this init
+                           False not (re)open with this init but later (default)
+        clear (bool): True means remove directory upon close when reopening
+                          False means do not remove directory upon close when reopening
+    See filing.Filer for other keyword parameter passthroughs
 
     Usage:
 
@@ -121,7 +126,7 @@ class Filer():
     Mode = "r+"
     Fext = "text"
 
-    def __init__(self, name='main', base="", temp=False, headDirPath=None,
+    def __init__(self, *, name='main', base="", temp=False, headDirPath=None,
                  perm=None, reopen=True, clear=False, reuse=False, clean=False,
                  filed=False, extensioned=False, mode=None, fext=None, **kwa):
         """Setup directory of file at .path
