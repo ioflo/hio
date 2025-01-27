@@ -22,35 +22,20 @@ def test_uxd_basic():
     """
     tymist = tyming.Tymist()
     with (wiring.openWL(samed=True, filed=True) as wl):
-        testDirpath = os.path.join('~', '.hio', 'test')
-        testDirpath = os.path.abspath(os.path.expanduser(testDirpath))
-        if not os.path.exists(testDirpath):
-            os.makedirs(testDirpath)
 
-        tempDirpath = tempfile.mkdtemp(prefix="test", suffix="uxd", dir=testDirpath)
-
-        sockDirpath = os.path.join(tempDirpath, 'uxd')
-        if not os.path.exists(sockDirpath):
-            os.makedirs(sockDirpath)
-
-        path = os.path.join(sockDirpath, 'alpha.uxd')
-        assert path.endswith("/uxd/alpha.uxd")
-
-        alpha = uxding.Peer(path=path, umask=0o077, wl=wl)
+        alpha = uxding.Peer(name="alpha", temp=True, umask=0o077, wl=wl)
         assert not alpha.opened
         assert alpha.reopen()
         assert alpha.opened
-        assert alpha.path == path
+        assert alpha.path.endswith("alpha.uxd")
 
-        path = os.path.join(sockDirpath, 'beta.uxd')
-        beta = uxding.Peer(path=path, umask=0o077)
+        beta = uxding.Peer(name="beta", temp=True, umask=0o077)
         assert beta.reopen()
-        assert beta.path == path
+        assert beta.path.endswith("beta.uxd")
 
-        path = os.path.join(sockDirpath, 'gamma.uxd')
-        gamma = uxding.Peer(path=path, umask=0o077)
+        gamma = uxding.Peer(name="gamma", temp=True, umask=0o077)
         assert gamma.reopen()
-        assert gamma.path == path
+        assert gamma.path.endswith("gamma.uxd")
 
         txMsg = b"Alpha sends to Beta"
         alpha.send(txMsg, beta.path)
@@ -138,10 +123,13 @@ def test_uxd_basic():
 
         alpha.close()
         assert not alpha.opened
+        assert not os.path.exists(alpha.path)
         beta.close()
         assert not beta.opened
+        assert not os.path.exists(beta.path)
         gamma.close()
         assert not gamma.opened
+        assert not os.path.exists(gamma.path)
 
 
         wl.flush()  #  just to test
@@ -151,12 +139,6 @@ def test_uxd_basic():
         assert wl.readTx()
         assert wl.readTx() == wl.readRx()
 
-        # rmtree removes dir at tail of path (and all below tail)
-        shutil.rmtree(testDirpath)  # and all dependent paths
-
-    assert not os.path.exists(testDirpath)
-    assert not os.path.exists(tempDirpath)
-    assert not os.path.exists(sockDirpath)
 
     """Done Test"""
 
@@ -164,41 +146,22 @@ def test_open_peer():
     """Test the uxd openPeer context manager connection between two peers
 
     """
-    testDirpath = os.path.join('~', '.hio', 'test')
-    testDirpath = os.path.abspath(os.path.expanduser(testDirpath))
-    if not os.path.exists(testDirpath):
-        os.makedirs(testDirpath)
-    tempDirpath = tempfile.mkdtemp(prefix="test", suffix="uxd", dir=testDirpath)
-    sockDirpath = os.path.join(tempDirpath, 'uxd')
-    if not os.path.exists(sockDirpath):
-        os.makedirs(sockDirpath)
-
-    aha = os.path.join(sockDirpath, 'alpha.uxd')
-    assert aha.endswith("/uxd/alpha.uxd")
-    bha = os.path.join(sockDirpath, 'beta.uxd')
-    assert bha.endswith("/uxd/beta.uxd")
-    gha = os.path.join(sockDirpath, 'gamma.uxd')
-    assert gha.endswith("/uxd/gamma.uxd")
-
 
     tymist = tyming.Tymist()
     with (wiring.openWL(samed=True, filed=True) as wl,
-          uxding.openPeer(path = aha, umask=0o077, wl=wl) as alpha,
-          uxding.openPeer(path = bha, umask=0o077, wl=wl) as beta,
-          uxding.openPeer(path = gha, umask=0o077, wl=wl) as gamma):
+          uxding.openPeer(name ="alpha", umask=0o077, wl=wl) as alpha,
+          uxding.openPeer(name = "beta", umask=0o077, wl=wl) as beta,
+          uxding.openPeer(name = "gamma", umask=0o077, wl=wl) as gamma):
 
 
-        #alpha = uxding.Peer(ha=ha, umask=0x077, wl=wl)
         assert alpha.opened
-        assert alpha.path == aha
+        assert alpha.path.endswith("alpha.uxd")
 
-        #beta = uxding.Peer(ha=bha, umask=0x077)
         assert beta.opened
-        assert beta.path == bha
+        assert beta.path.endswith("beta.uxd")
 
-        #gamma = uxding.Peer(ha=gha, umask=0x077)
         assert gamma.opened
-        assert gamma.path == gha
+        assert gamma.path.endswith("gamma.uxd")
 
         txMsg = b"Alpha sends to Beta"
         alpha.send(txMsg, beta.path)
@@ -292,16 +255,13 @@ def test_open_peer():
         assert wl.readTx() == wl.readRx()
 
     assert not alpha.opened
+    assert not os.path.exists(alpha.path)
     assert not beta.opened
+    assert not os.path.exists(beta.path)
     assert not gamma.opened
+    assert not os.path.exists(gamma.path)
 
     assert not wl.opened
-
-    # rmtree removes dir at tail of path (and all below tail)
-    shutil.rmtree(testDirpath)  # and all dependent paths
-    assert not os.path.exists(testDirpath)
-    assert not os.path.exists(tempDirpath)
-    assert not os.path.exists(sockDirpath)
 
     """Done Test"""
 
@@ -321,30 +281,23 @@ def test_peer_doer():
     assert doist.limit == limit
     assert doist.doers == []
 
-    testDirpath = os.path.join('~', '.hio', 'test')
-    testDirpath = os.path.abspath(os.path.expanduser(testDirpath))
-    if not os.path.exists(testDirpath):
-        os.makedirs(testDirpath)
-    tempDirpath = tempfile.mkdtemp(prefix="test", suffix="uxd", dir=testDirpath)
-    sockDirpath = os.path.join(tempDirpath, 'uxd')
-    if not os.path.exists(sockDirpath):
-        os.makedirs(sockDirpath)
-    aha = os.path.join(sockDirpath, 'alpha.uxd')
 
-    peer = uxding.Peer(path=aha, umask=0o077)
+    peer = uxding.Peer(name="test", temp=True, reopen=False, umask=0o077)
+    assert peer.opened == False
+    assert peer.path == None
+    assert peer.filed == False
+    assert peer.extensioned == True
+
     doer = uxding.PeerDoer(peer=peer)
+    assert doer.peer == peer
+    assert doer.peer.opened == False
 
     doers = [doer]
     doist.do(doers=doers)
     assert doist.tyme == limit
     assert peer.opened == False
-
-    # rmtree removes dir at tail of path (and all below tail)
-    shutil.rmtree(testDirpath)  # and all dependent paths
-    assert not os.path.exists(testDirpath)
-    assert not os.path.exists(tempDirpath)
-    assert not os.path.exists(sockDirpath)
-
+    assert not os.path.exists(peer.path)
+    """Done Test"""
 
 
 
