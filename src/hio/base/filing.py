@@ -59,7 +59,7 @@ def openFiler(cls=None, name="test", temp=True, reopen=True, clear=False, **kwa)
 
 
 
-class Filer():
+class Filer(hioing.Mixin):
     """
     Filer instances manage file directories and files to hold keri installation
     specific resources like databases and configuration files.
@@ -162,6 +162,8 @@ class Filer():
             fext (str): File extension when filed or extensioned
 
         """
+        super(Filer, self).__init__(**kwa)  # Mixin for Mult-inheritance MRO
+
         # ensure relative path parts are relative because of odd path.join behavior
         if os.path.isabs(name):
             raise hioing.FilerError(f"Not relative {name=} path.")

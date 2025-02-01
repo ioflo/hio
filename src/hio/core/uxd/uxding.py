@@ -115,7 +115,7 @@ class Peer(filing.Filer):
                      .umask is applied after .perm is set if any
         bs (int): buffer size
         wl (WireLog): instance ref for debug logging of over the wire tx and rx
-        ss (socket.socket): own socket
+        ls (socket.socket): local socket of this Peer
 
     """
     HeadDirPath = "/usr/local/var"  # default in /usr/local/var
@@ -157,7 +157,7 @@ class Peer(filing.Filer):
         self.umask = umask  # only change umask if umask is not None below
         self.bs = bs
         self.wl = wl
-        self.ss = None  # own self socket needs to be opened
+        self.ls = None  # local socket of this Peer, needs to be opened/bound
 
         super(Peer, self).__init__(reopen=reopen,
                                    clear=clear,
@@ -172,11 +172,11 @@ class Peer(filing.Filer):
                 actual socket send and receive buffer size
 
         """
-        if not self.ss:
+        if not self.ls:
             return (0, 0)
 
-        return (self.ss.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF),
-                self.ss.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF))
+        return (self.ls.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF),
+                self.ls.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF))
 
 
     def open(self):
@@ -189,19 +189,19 @@ class Peer(filing.Filer):
             OSError: (48, 'Address already in use')
         """
         #create socket ss = server socket
-        self.ss = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+        self.ls = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
 
         # make socket address reusable.
         # the SO_REUSEADDR flag tells the kernel to reuse a local socket in
         # TIME_WAIT state, without waiting for its natural timeout to expire.
-        self.ss.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.ls.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
         # setup buffers
-        if self.ss.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF) <  self.bs:
-            self.ss.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self.bs)
-        if self.ss.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF) < self.bs:
-            self.ss.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self.bs)
-        self.ss.setblocking(0) #non blocking socket
+        if self.ls.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF) <  self.bs:
+            self.ls.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self.bs)
+        if self.ls.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF) < self.bs:
+            self.ls.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self.bs)
+        self.ls.setblocking(0) #non blocking socket
 
         # setup umask
         oldumask = None
@@ -210,7 +210,7 @@ class Peer(filing.Filer):
 
         #bind to file path
         try:
-            self.ss.bind(self.path)
+            self.ls.bind(self.path)
         except OSError as ex:
             if not ex.errno == errno.ENOENT: # No such file or directory
                 logger.error("Error opening UxD %s\n %s\n", self.path, ex)
@@ -221,7 +221,7 @@ class Peer(filing.Filer):
                 logger.error("Error making UXD %s\n %s\n", self.path, ex)
                 return False
             try:
-                self.ss.bind(self.path)
+                self.ls.bind(self.path)
             except OSError as ex:
                 logger.error("Error binding UXD %s\n %s\n", self.path, ex)
                 return False
@@ -229,7 +229,7 @@ class Peer(filing.Filer):
         if oldumask is not None: # restore old umask
             os.umask(oldumask)
 
-        self.path = self.ss.getsockname()  # get resolved path after bind
+        self.path = self.ls.getsockname()  # get resolved path after bind
         self.opened = True
         return self.opened
 
@@ -262,9 +262,9 @@ class Peer(filing.Filer):
                           False means do not remove directory/uxd file upon close
             See filing.Filer for other inherited parameters
         """
-        if self.ss:
-            self.ss.close() #close socket
-            self.ss = None
+        if self.ls:
+            self.ls.close() #close socket
+            self.ls = None
             self.opened = False
 
         try:
@@ -286,7 +286,7 @@ class Peer(filing.Filer):
                 If data empty then returns (b'', None) but always returns duple
         """
         try:
-            data, src = self.ss.recvfrom(self.bs)  # data, uxd source path
+            data, src = self.ls.recvfrom(self.bs)  # data, uxd source path
         except socket.error as ex:
             # ex.args[0] is always ex.errno for better compat
             # the value of a given errno.XXXXX may be different on each os
@@ -315,7 +315,7 @@ class Peer(filing.Filer):
            dst (str):  uxd destination path
         """
         try:
-            cnt = self.ss.sendto(data, dst)  # count is int number of bytes sent
+            cnt = self.ls.sendto(data, dst)  # count is int number of bytes sent
         except OSError as ex:
             logger.error("Error send UXD from %s to %s.\n %s\n", self.path, dst, ex)
             cnt = 0

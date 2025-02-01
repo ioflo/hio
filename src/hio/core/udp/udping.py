@@ -95,7 +95,7 @@ class Peer(tyming.Tymee):
         self.wl = wl
         self.bcast = bcast
 
-        self.ss = None  # server's socket needs to be opened
+        self.ls = None  # local socket for this Peer
         self.opened = False
 
     @property
@@ -144,11 +144,11 @@ class Peer(tyming.Tymee):
         """Returns duple of the the actual socket send and receive buffer size
         (send, receive)
         """
-        if not self.ss:
+        if not self.ls:
             return (0, 0)
 
-        return (self.ss.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF),
-                self.ss.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF))
+        return (self.ls.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF),
+                self.ls.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF))
 
     def open(self):
         """Opens socket in non blocking mode.
@@ -157,12 +157,12 @@ class Peer(tyming.Tymee):
            OSError: (48, 'Address already in use')
         """
         #create socket ss = server socket
-        self.ss = socket.socket(socket.AF_INET,
+        self.ls = socket.socket(socket.AF_INET,
                                 socket.SOCK_DGRAM,
                                 socket.IPPROTO_UDP)
 
         if self.bcast:  # needed to send broadcast, not needed to receive
-            self.ss.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+            self.ls.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
         # make socket address and port reusable. doesn't seem to have an effect.
         # the SO_REUSEADDR flag tells the kernel to reuse a local socket in
@@ -170,25 +170,25 @@ class Peer(tyming.Tymee):
         # Also use SO_REUSEPORT on linux and darwin
         # https://stackoverflow.com/questions/14388706/how-do-so-reuseaddr-and-so-reuseport-differ
 
-        self.ss.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.ls.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         if platform.system() != 'Windows':
-            self.ss.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+            self.ls.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
 
         # setup buffers
-        if self.ss.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF) <  self.bs:
-            self.ss.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self.bs)
-        if self.ss.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF) < self.bs:
-            self.ss.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self.bs)
-        self.ss.setblocking(0)  # non blocking socket
+        if self.ls.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF) <  self.bs:
+            self.ls.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self.bs)
+        if self.ls.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF) < self.bs:
+            self.ls.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self.bs)
+        self.ls.setblocking(0)  # non blocking socket
 
         #bind to Host Address Port
         try:
-            self.ss.bind(self.ha)
+            self.ls.bind(self.ha)
         except OSError as ex:
             logger.error("Error opening UDP %s\n %s\n", self.ha, ex)
             return False
 
-        self.ha = self.ss.getsockname()  # get resolved ha after bind
+        self.ha = self.ls.getsockname()  # get resolved ha after bind
         self.opened = True
         return True
 
@@ -201,9 +201,9 @@ class Peer(tyming.Tymee):
     def close(self):
         """Closes  socket.
         """
-        if self.ss:
-            self.ss.close() #close socket
-            self.ss = None
+        if self.ls:
+            self.ls.close() #close socket
+            self.ls = None
             self.opened = False
 
     def receive(self):
@@ -215,7 +215,7 @@ class Peer(tyming.Tymee):
             but always returns a tuple with two elements
         """
         try:
-            data, sa = self.ss.recvfrom(self.bs)  # sa is source (host, port)
+            data, sa = self.ls.recvfrom(self.bs)  # sa is source (host, port)
         except OSError as ex:
             # ex.args[0] == ex.errno for better compat
             # the value of a given errno.XXXXX may be different on each os
@@ -239,7 +239,7 @@ class Peer(tyming.Tymee):
         da is destination address tuple (destHost, destPort)
         """
         try:
-            result = self.ss.sendto(data, da) #result is number of bytes sent
+            result = self.ls.sendto(data, da) #result is number of bytes sent
         except OSError as ex:
             logger.error("Error send UDP from %s to %s.\n %s\n", self.ha, da, ex)
             result = 0
