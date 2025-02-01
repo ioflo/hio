@@ -27,17 +27,17 @@ def openPeer(cls=None, name="test", temp=True, reopen=True, clear=True,
     When used in with statement block, calls .close() on exit of with block
 
     Parameters:
-        cls is Class instance of subclass instance
-        name is str name of Peer instance path part so can have multiple Peers
+        cls (Class): instance of subclass instance
+        name (str): path part so can have multiple Peers
              at different paths that each use different dirs or files
-        temp is Boolean, True means open in temporary directory, clear on close
-                Otherwise open in persistent directory, do not clear on close
+        temp (bool): True means open in temporary directory, clear on close
+                     Otherwise open in persistent directory, do not clear on close
         reopen (bool): True (re)open with this init
-                           False not (re)open with this init but later (default)
+                       False not (re)open with this init but later (default)
         clear (bool): True means remove directory upon close when reopening
-                          False means do not remove directory upon close when reopening
+                      False means do not remove directory upon close when reopening
         filed (bool): True means .path is file path not directory path
-                          False means .path is directiory path not file path
+                      False means .path is directiory path not file path
         extensioned (bool): When not filed:
                             True means ensure .path ends with fext
                             False means do not ensure .path ends with fext

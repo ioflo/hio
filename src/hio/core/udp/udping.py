@@ -30,7 +30,7 @@ def openPeer(cls=None, **kwa):
     When used in with statement block, calls .close() on exit of with block
 
     Parameters:
-        cls is Class instance of subclass instance
+        cls (Class): instance of subclass instance
 
     Usage:
         with openPeer() as peer0:
@@ -59,6 +59,34 @@ def openPeer(cls=None, **kwa):
 class Peer(tyming.Tymee):
     """Class to manage non blocking I/O on UDP socket.
     SubClass of Tymee to enable support for retry tymers as UDP is unreliable.
+
+    Class Attributes:
+        Tymeout (float): default timeout for retry tymer(s) if any
+
+    Inherited Properties:
+         .tyme is float relative cycle time of associated Tymist .tyme obtained
+            via injected .tymth function wrapper closure.
+        .tymth is function wrapper closure returned by Tymist .tymeth() method.
+            When .tymth is called it returns associated Tymist .tyme.
+            .tymth provides injected dependency on Tymist tyme base.
+
+    Attributes:
+        tymeout (float): timeout for retry tymer(s) if any
+
+        ha (tuple): host address of form (host,port) of type (str, int) of this
+                peer's socket address.
+        bs (int): buffer size
+        wl (WireLog): instance ref for debug logging of over the wire tx and rx
+        bcast (bool): True enables sending to broadcast addresses from local socket
+                      False otherwise
+        ls (socket.socket): local socket of this Peer
+        opened (bool): True local socket is created and opened. False otherwise
+
+    Properties:
+        host (str): element of .ha duple
+        port (int): element of .ha duple
+
+
     """
     Tymeout = 0.0  # tymeout in seconds, tymeout of 0.0 means ignore tymeout
 
@@ -73,14 +101,14 @@ class Peer(tyming.Tymee):
                  **kwa):
         """
         Initialization method for instance.
-
-        ha = host address duple (host, port)
-        host = '' equivalant to any interface on host
-        port = socket port
-        bs = buffer size
-        path = path to log file directory
-        wl = WireLog instance ref for debug logging or over the wire tx and rx
-        bcast = Flag if True enables sending to broadcast addresses on socket
+        tymeout (float): default for retry tymer if any
+        ha (tuple): local socket (host, port) address duple of type (str, int)
+        host (str): address where '' means any interface on host
+        port (int): socket port
+        bs (int):  buffer size
+        wl (WireLog): instance to log over the wire tx and rx
+        bcast (bool): True enables sending to broadcast addresses from local socket
+                      False otherwise
         """
         super(Peer, self).__init__(**kwa)
         self.tymeout = tymeout if tymeout is not None else self.Tymeout
@@ -273,7 +301,7 @@ class PeerDoer(doing.Doer):
         Initialize instance.
 
         Parameters:
-           peer is UDP Peer instance
+           peer (Peer):  UDP instance
         """
         super(PeerDoer, self).__init__(**kwa)
         self.peer = peer
