@@ -58,6 +58,14 @@ class FilerError(HioError):
         raise FilerError("error message")
     """
 
+class NamerError(HioError):
+    """
+    Error using or configuring Remoter
+
+    Usage:
+        raise NamerError("error message")
+    """
+
 
 class Mixin():
     """

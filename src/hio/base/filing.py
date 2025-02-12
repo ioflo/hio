@@ -132,7 +132,8 @@ class Filer(hioing.Mixin):
         """Setup directory of file at .path
 
         Parameters:
-            name (str): directory path name differentiator directory/file
+            name (str): Unique identifier of file. Unique directory path name
+                differentiator directory/file
                 When system employs more than one keri installation, name allows
                 differentiating each instance by name
             base (str): optional directory path segment inserted before name

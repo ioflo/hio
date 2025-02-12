@@ -22,12 +22,14 @@ def test_udp_basic():
 
         alpha = udping.Peer(port = 6101, wl=wl)  # any interface on port 6101
         assert not alpha.opened
+        assert alpha.name == 'main'  # default
         assert alpha.reopen()
         assert alpha.opened
         assert alpha.ha == ('0.0.0.0', 6101)
 
-        beta = udping.Peer(port = 6102, wl=wl)  # any interface on port 6102
+        beta = udping.Peer(name='beta', port = 6102, wl=wl)  # any interface on port 6102
         assert not beta.opened
+        assert beta.name == 'beta'
         assert beta.reopen()
         assert beta.opened
         assert beta.ha == ('0.0.0.0', 6102)
@@ -93,13 +95,15 @@ def test_open_peer():
     """
     tymist = tyming.Tymist()
     with (wiring.openWL(samed=True, filed=True) as wl,
-          udping.openPeer(port = 6101, wl=wl) as alpha, # any interface on port 6101
-          udping.openPeer(port = 6102, wl=wl) as beta):  # any interface on port 6102
+          udping.openPeer(name='alpha', port = 6101, wl=wl) as alpha, # any interface on port 6101
+          udping.openPeer(name='beta', port = 6102, wl=wl) as beta):  # any interface on port 6102
 
         assert alpha.opened
+        assert alpha.name == 'alpha'
         assert alpha.ha == ('0.0.0.0', 6101)
 
         assert beta.opened
+        assert beta.name == 'beta'
         assert beta.ha == ('0.0.0.0', 6102)
 
         msgOut = b"alpha sends to beta"

@@ -28,8 +28,8 @@ def openPeer(cls=None, name="test", temp=True, reopen=True, clear=True,
 
     Parameters:
         cls (Class): instance of subclass instance
-        name (str): path part so can have multiple Peers
-             at different paths that each use different dirs or files
+        name (str): unique identifer of peer. Unique path part so can have many
+            Peers each at different paths that each use different dirs or files
         temp (bool): True means open in temporary directory, clear on close
                      Otherwise open in persistent directory, do not clear on close
         reopen (bool): True (re)open with this init
@@ -315,7 +315,7 @@ class Peer(filing.Filer):
            dst (str):  uxd destination path
         """
         try:
-            cnt = self.ls.sendto(data, dst)  # count is int number of bytes sent
+            cnt = self.ls.sendto(data, dst)  # count == int number of bytes sent
         except OSError as ex:
             logger.error("Error send UXD from %s to %s.\n %s\n", self.path, dst, ex)
             cnt = 0

@@ -292,7 +292,7 @@ class NonStringSequence(metaclass=ABCMeta):
         return NotImplemented
 
 
-def nonStringIterable(obj):
+def isNonStringIterable(obj):
     """
     Returns: (bool) True if obj is non-string iterable, False otherwise
 
@@ -301,12 +301,16 @@ def nonStringIterable(obj):
     """
     return (not isinstance(obj, (str, bytes)) and isinstance(obj, Iterable))
 
+nonStringIterable = isNonStringIterable  # legacy interface
 
-def nonStringSequence(obj):
+
+def isNonStringSequence(obj):
     """
     Returns: (bool) True if obj is non-string sequence, False otherwise
     """
     return (not isinstance(obj, (str, bytes)) and isinstance(obj, Sequence) )
+
+nonStringSequence = isNonStringSequence  # legacy interface
 
 
 def isIterator(obj):

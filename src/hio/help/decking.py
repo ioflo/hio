@@ -13,7 +13,7 @@ class Deck(deque):
     Extends deque to support deque access convenience methods .push and .pull
     to remove confusion  about which side of the deque to use (left or right).
 
-    Extends deque with .push an .pull methods to support a different pattern for
+    Extends deque with .push and .pull methods to support a different pattern for
     access. .push does not allow  a value of None to be added to the Deck. This
     enables retrieval  with .pull(emptive=True) which returns None when empty
     instead of raising IndexError. This allows use of the walrus operator on
