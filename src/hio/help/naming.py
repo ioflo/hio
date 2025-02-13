@@ -194,8 +194,8 @@ class Namer(hioing.Mixin):
         return False  # nothing deleted neither name nor addr provided
 
 
-    def updateAddrAtName(self, *, name=None, addr=None):
-        """Updates existing name to addr mapping with new addr. Replaces
+    def changeAddrAtName(self, *, name=None, addr=None):
+        """Changes existing name to addr mapping to new addr. Replaces
         inverse mapping of addr to name.
         All mappings must be one-to-one
 
@@ -231,8 +231,8 @@ class Namer(hioing.Mixin):
         return True  # updated entries
 
 
-    def updateNameAtAddr(self, *, addr=None, name=None):
-        """Updates existing addr to name mapping with new name. Replaces
+    def changeNameAtAddr(self, *, addr=None, name=None):
+        """Changes existing addr to name mapping to new name. Replaces
         inverse mapping of name to addr.
         All mappings must be one-to-one
 
