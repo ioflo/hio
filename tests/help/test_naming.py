@@ -101,6 +101,11 @@ def test_namer():
                                 '/path/to/delta': 'delta',
                                 '/alt/path/to/alpha': 'alpha'}
 
+    namer.clearEntries()
+    assert not namer.addrByName
+    assert not namer.nameByAddr
+
+
 
     """End Test"""
 

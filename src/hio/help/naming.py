@@ -98,7 +98,7 @@ class Namer(hioing.Mixin):
         """Returns name for given addr or None if non-existant
 
         Parameters:
-            name (str): address
+            addr (str): address
         """
         return self._nameByAddr.get(addr)
 
@@ -192,6 +192,14 @@ class Namer(hioing.Mixin):
             return True
 
         return False  # nothing deleted neither name nor addr provided
+
+
+    def clearEntries(self):
+        """Clears all entries
+
+        """
+        self._addrByName = dict()
+        self._nameByAddr = dict()
 
 
     def changeAddrAtName(self, *, name=None, addr=None):

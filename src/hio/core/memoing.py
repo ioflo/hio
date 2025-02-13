@@ -38,14 +38,12 @@ class MemoirBase(hioing.Mixin):
 
     def __init__(self,
                  version=None,
-                 remotes=None,
                  rxbs=None,
                  rxPkts=None,
                  rxMsgs=None,
                  txbs=None,
                  txPkts=None,
                  txMsgs=None,
-                 remotes=None,
                  **kwa
                 ):
         """
@@ -56,9 +54,6 @@ class MemoirBase(hioing.Mixin):
 
         Parameters:
             version is version tuple or string for this memoir instance
-            remotes is odict of of remote (name, addr) pairs to  bulk initialize
-                the mappings between remote addresses and remote names using the
-                methods .addrByName and .nameByAddr
             rxbs is bytearray buffer to hold rx data stream if any
             rxPkts is deque to hold received packet if any
             rxMsgs is deque to hold received msgs if any
@@ -70,7 +65,6 @@ class MemoirBase(hioing.Mixin):
 
         Attributes:
             .version is version tuple or string for this stack
-            .remotes is odict to hold remotes keyed by uid if any
             .rxbs is bytearray buffer to hold input data stream
             .rxPkts is deque to hold received packets
             .rxMsgs is to hold received msgs
@@ -85,14 +79,8 @@ class MemoirBase(hioing.Mixin):
 
         """
         super(MemoirBase, self).__init__(**kwa)
-        self._remoteNames = dict()
-        self._remoteAddrs = dict()
 
         self.version = version
-
-        for name, addr in remotes.items():
-            self.addEntry(name=name, addr=addr)
-
 
         self.rxbs = rxbs if rxbs is not None else bytearray()
         self.rxPkts = rxPkts if rxPkts is not None else deque()
@@ -100,17 +88,6 @@ class MemoirBase(hioing.Mixin):
         self.txbs = txbs if txbs is not None else bytearray()
         self.txPkts = txPkts if txPkts is not None else deque()
         self.txMsgs = txMsgs if txMsgs is not None else deque()
-
-
-    def addrByName(self, name):
-        """
-        tymth property getter, get ._tymth
-        returns own copy of tymist.tynth function wrapper closure for subsequent
-        injection into related objects that want to be on same tymist tyme base.
-        """
-        return self._tymth
-
-
 
 
     def clearTxbs(self):
