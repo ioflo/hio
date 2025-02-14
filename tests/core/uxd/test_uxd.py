@@ -157,7 +157,7 @@ def test_open_peer():
 
         assert alpha.opened
         assert alpha.path.endswith("alpha.uxd")
-        assert alpha.actualBufSizes() == (64535, 64535) == (alpha.UxdBufSize, alpha.UxdBufSize)
+        assert alpha.actualBufSizes() == (65535, 65535) == (alpha.UxdBufSize, alpha.UxdBufSize)
 
         assert beta.opened
         assert beta.path.endswith("beta.uxd")

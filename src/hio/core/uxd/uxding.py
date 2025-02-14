@@ -135,8 +135,8 @@ class Peer(filing.Filer):
     Fext = "uxd"
     Umask = 0o022  # default
     MaxUxdPathSize = 108
-    UxdBufSize = 64535
-    MaxUxdPayloadSize = UxdBufSize
+    UxdBufSize = 65535  # 2 ** 16 - 1
+    MaxUxdGramSize = UxdBufSize
 
     def __init__(self, *, umask=None, bs = None, wl=None,
                  reopen=False, clear=True,
