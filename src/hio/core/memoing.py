@@ -131,10 +131,12 @@ class Memoir(hioing.Mixin):
     the constraints of non-blocking asynchronous IO with datagram transports.
 
     On the transmit side memos are placed in a deque (double ended queue). Each
-    memor is then segmented into grams (datagrams) the respect the size constraints
-    of the underlying datagram transport. These grams are placed in another deque.
-    Each gram in its deque is then places in a transmit buffer to be sent over the
-    transport. When using non-blocking IO, asynchronous datagram transport
+    memo is then segmented into grams (datagrams) that respect the size constraints
+    of the underlying datagram transport. These grams are placed in a gram deque.
+    Each gram in this deque is then placed in a transmit buffer dict whose key
+    is the destination and value is the gram. Each item is to be sent
+    over the transport. One item buffer per unique destination.
+    When using non-blocking IO, asynchronous datagram transport
     protocols may have hidden buffering constraints that result in fragmentation
     of the sent datagram which means the whole datagram is not sent at once via
     a non-blocking send call. This means that the remainer of the datagram must
@@ -143,7 +145,9 @@ class Memoir(hioing.Mixin):
     depends on the sender repeated attempts to send the reaminder of the
     full datagram. This is ensured with the final tier with a raw transmit
     buffer that waits until it is empty before attempting to send another
-    gram.
+    gram. Because sending to different destinations may fail for different reasons
+    such as bad addresses or bad routing each destination gets its own buffer
+    so that a bad destination does not block other destinations.
 
     On the receive the raw data is received into the raw data buffer. This is then
     converted into a gram and queued in the gram receive deque as a seqment of
@@ -161,12 +165,21 @@ class Memoir(hioing.Mixin):
     Attributes:
         version (Versionage): version for this memoir instance consisting of
                 namedtuple of form (major: int, minor: int)
-        rxbs (bytearray): buffer holding rx (receive) data from raw transport
-        txbs (bytearray): buffer holding tx (transmit) raw data to raw transport
-        rxgs (deque): holding rx (receive) (data) grams (segments) recieved via rxbs raw
-        txgs (deque): holding tx (transmit) (data) grams (segments) to be sent via txbs raw
-        rxms (deque): holding rx (receive) memos desegmented from rxgs grams
-        txms (deque): holding tx (transmit) memos to be segmented into txgs grams
+        txms (deque): holding tx (transmit) memo tuples to be segmented into
+                txgs grams where each entry in deque is duple of form
+                (memo: str, dst: str)
+        txgs (dict): holding tx (transmit) (data) gram deques of grams.
+            Each item in dict has key=dst and value=deque of grams to be
+            sent via txbs of form (dst: str, grams: deque). Each entry
+            in deque is bytes of gram.
+        txbs (dict): holding tx (transmit) raw data items to transport.
+            Each item in dict has key=dst and value=bytearray holding
+            unsent portion of gram bytes of form (dst: str, gram: bytearray).
+        rxbs (bytearray): buffer holding rx (receive) raw bytes from transport
+        rxgs (deque): holding rx (receive) (data) gram tuples recieved via rxbs raw
+            each entry in deque is duple of form (gram: bytes, dst: str)
+        rxms (deque): holding rx (receive) memo tuples desegmented from rxgs grams
+            each entry in deque is duple of form (memo: str, dst: str)
 
 
     Properties:
@@ -178,12 +191,12 @@ class Memoir(hioing.Mixin):
 
     def __init__(self,
                  version=None,
-                 rxbs=None,
-                 txbs=None,
-                 rxgs=None,
-                 txgs=None,
-                 rxms=None,
                  txms=None,
+                 txgs=None,
+                 txbs=None,
+                 rxbs=None,
+                 rxgs=None,
+                 rxms=None,
                  **kwa
                 ):
         """Setup instance
@@ -194,31 +207,33 @@ class Memoir(hioing.Mixin):
         Parameters:
             version (Versionage): version for this memoir instance consisting of
                 namedtuple of form (major: int, minor: int)
-
-            txbs (bytearray): buffer holding tx (transmit) raw data to raw transport
-            rxbs (bytearray): buffer holding rx (receive) data from raw transport
-
-            txgs (deque): holding tx (transmit) (data) grams to be sent via txbs raw
-            rxgs (deque): holding rx (receive) (data) grams recieved via rxbs raw
-
-            txms (deque): holding tx (transmit) memos to be segmented into txgs grams
-            rxms (deque): holding rx (receive) memos desegmented from rxgs grams
-
+            txms (deque): holding tx (transmit) memo tuples to be segmented into
+                txgs grams where each entry in deque is duple of form
+                (memo: str, dst: str)
+            txgs (dict): holding tx (transmit) (data) gram deques of grams.
+                Each item in dict has key=dst and value=deque of grams to be
+                sent via txbs of form (dst: str, grams: deque). Each entry
+                in deque is bytes of gram.
+            txbs (dict): holding tx (transmit) raw data items to transport.
+                Each item in dict has key=dst and value=bytearray holding
+                unsent portion of gram bytes of form (dst: str, gram: bytearray).
+            rxbs (bytearray): buffer holding rx (receive) raw bytes from transport
+            rxgs (deque): holding rx (receive) (data) gram tuples recieved via rxbs raw
+                each entry in deque is duple of form (gram: bytes, dst: str)
+            rxms (deque): holding rx (receive) memo tuples desegmented from rxgs grams
+                each entry in deque is duple of form (memo: str, dst: str)
 
 
         """
         # initialize attributes
         self.version = version if version is not None else self.Version
 
-
-        self.txbs = txbs if txbs is not None else bytearray()
-        self.rxbs = rxbs if rxbs is not None else bytearray()
-
-        self.txgs = txgs if txgs is not None else deque()
-        self.rxgs = rxgs if rxgs is not None else deque()
-
-
         self.txms = txms if txms is not None else deque()
+        self.txgs = txgs if txgs is not None else dict()
+        self.txbs = txbs if txbs is not None else dict()
+
+        self.rxbs = rxbs if rxbs is not None else bytearray()
+        self.rxgs = rxgs if rxgs is not None else deque()
         self.rxms = rxms if rxms is not None else deque()
 
         super(Memoir, self).__init__(**kwa)
@@ -239,12 +254,6 @@ class Memoir(hioing.Mixin):
             dst (str): remote destination address
         """
         return 0
-
-    def clearTxbs(self):
-        """
-        Clear .txbs
-        """
-        self.txbs.clear()
 
 
     def clearRxbs(self):
@@ -269,7 +278,7 @@ class Memoir(hioing.Mixin):
         This is a stub method meant to be overridden in subclass
 
         Returns:
-            grams (list): packed segments of memo
+            grams (list[bytes]): packed segments of memo, each seqment is bytes
 
         Parameters:
             memo (str): to be segmented into grams
@@ -290,7 +299,9 @@ class Memoir(hioing.Mixin):
         memo, dst = self.txms.popleft()  # duple (msg, destination addr)
         grams = self.segment(memo)
         for gram in grams:
-            self.txgs.append((gram, dst))
+            if dst not in self.txgs:
+                self.txgs[dst] = deque()
+            self.txgs[dst].append(gram)
 
 
     def serviceTxMemosOnce(self):
@@ -317,127 +328,114 @@ class Memoir(hioing.Mixin):
         self.txgs.append((gram, dst))
 
 
-    def _serviceOneTxGram(self):
-        """Service one (gram, dst) duple from .txgs deque for each unique dst
-        if more than one, where duple is of form
-            (gram: str, dst: str) where:
-                gram is outgoing gram segment from associated memo
-                dst is destination address
+    def _serviceOnceTxGrams(self):
+        """Service one pass over .txgs dict for each unique dst in .txgs and then
+        services one pass over the .txbs of those outgoing grams
+
+        Each item in.txgs is (key: dst, val: deque of grams)
+        where:
+            dst is destination address
+            gram is outgoing gram segment from associated memo
+
+        Each item in.txbs is (key: dst, val: buf of gram)
+        where:
+            dst (str): destination address
+            buf (bytearray): outgoing gram segment or remainder of segment
 
         Returns:
-            result (bool): True means full gram sent so can send another
-                           False means full gram not sent so try again later
+            result (bool):  True means at least one destination is unblocked
+                                so can keep sending. Unblocked at destination means
+                                last full gram sent with another sitting in deque.
+                            False means all destinations blocked so try again later.
 
-        Copies gram to .txbs buffer and sends to dst keeping track of the actual
-        portion sent and then deletes the sent portion from .txbs leaving the
-        remainder.
+        For each destination, if .txbs item is empty creates new item at destination
+        and copies gram to bytearray.
+
+        Once it has serviced each item in .txgs then services each items in .txbs.
+        For each destination in .txbs, attempts to send bytearray to dst
+        keeping track of the actual portion sent and then deletes the sent
+        portion from item in .txbs leaving the remainder.
 
         When there is a remainder each subsequent call of this method
         will attempt to send the remainder until the the full gram has been sent.
-        This accounts for datagramprotocols that expect continuing attempts to
+        This accounts for datagram protocols that expect continuing attempts to
         send remainder of a datagram when using nonblocking sends.
 
-        When there is no remainder then takes a gram from .txgs and sends it.
+        When there is no remainder then removes .txbs buffer at dst so that
+        subsequent grams are reordered with respect to dst.
 
-        Internally, an empty .txbs indicates its ok to take another gram from
-        .txgs and start sending it.
+        Internally, an empty .txbs at a destination indicates its ok to take
+        another gram from its .txgs deque if any and start sending it.
 
-        The return value True or False enables backpressure on greedy callers
-        to block waiting for current gram to be fully sent.
+        The return value True or False enables back pressure on greedy callers
+        so they know when to block waiting for at least one unblocked destination
+        with a pending gram.
+
+        Deleting an item from a dict at a key (since python dicts are key creation
+        ordered) means that the next time an item is created at that key, that
+        item will be last in order. In order to dynamically change the ordering
+        of iteration over destinations,  when there are no pending grams for a
+        given destination we remove its dict item. This reorders the destination
+        as last when a new gram is created and avoids iterating over destinations
+        with no pending grams.
         """
-        if not self.txbs:  # everything sent last time
-            gram, dst = self.txgs.popleft()
-            self.txbs.extend(gram)
+        # service grams by reloading buffers from grams
+        for dst in list(self.txgs.keys()):  # list since items may be deleted in loop
+             # if dst then grams deque at dst must not be empty
+            if dst not in self.txbs:  # no transmit buffer
+                self.txbs[dst] = bytearray(self.txgs[dst].popleft())  # new gram
+                if not self.txgs[dst]:  # deque at dst empty so remove deque
+                    del self.txgs[dst]  # makes dst unordered until next memo at dst
 
-        count = self.send(self.txbs, dst)  # assumes opened
 
-        if count < len(self.txbs):  # delete sent portion
-            del self.txbs[:count]
-            return False  # partially blocked try send of remainder later
+        # service buffers by attempting to send
+        sents = [False] * len(self.txbs)  # list of sent states True unblocked False blocked
+        for i, dst in enumerate(list(self.txbs.keys())):  # list since items may be deleted in loop
+            # if dst then bytearray at dst must not be empty
+            try:
+                count = self.send(self.txbs[dst], dst)  # assumes .opened == True
+            except socket.error as ex:  # OSError.errno always .args[0] for compat
+                if (ex.args[0] in (errno.ECONNREFUSED,
+                                   errno.ECONNRESET,
+                                   errno.ENETRESET,
+                                   errno.ENETUNREACH,
+                                   errno.EHOSTUNREACH,
+                                   errno.ENETDOWN,
+                                   errno.EHOSTDOWN,
+                                   errno.ETIMEDOUT,
+                                   errno.ETIME,
+                                   errno.ENOBUFS,
+                                   errno.ENOMEM)):  # problem sending try again later
+                    count = 0  # nothing sent
+                else:
+                    raise
 
-        self.clearTxbs()
-        return True  # fully sent so can sent another gramm, not blocked
+            del self.txbs[dst][:count]  # remove from buffer those bytes sent
+            if not self.txbs[dst]:  # empty buffer so gram fully sent
+                if dst in self.txgs:  # another gram waiting
+                    sents[i] = True  # not blocked with waiting gram
+                del self.txbs[dst]  # remove so dst is unordered until next gram
 
-    def _serviceOneTxPkt(self, laters, blockeds):
-        """
-        Service one (packet, ha) duple on .txPkts deque
-        Packet is assumed to be packed already in .packed
-        Assumes there is a duple on the deque
-        laters is deque of packed packets to try again later
-        blockeds is list of ha destinations that have already blocked on this pass
-        Override in subclass
-        """
-        pkt, ha = self.txPkts.popleft()  # duple = (packet, destination address)
+        return any(sents)  # at least one unblocked destingation with waiting gram
 
-        if ha in blockeds: # already blocked on this iteration
-            laters.append((pkt, ha)) # keep sequential
-            return False  # blocked
-
-        try:
-            count = self.handler.send(pkt.packed, ha)  # datagram always sends all
-        except socket.error as ex:
-            # ex.args[0] is always ex.errno for better compat
-            if (ex.args[0] in (errno.ECONNREFUSED,
-                               errno.ECONNRESET,
-                               errno.ENETRESET,
-                               errno.ENETUNREACH,
-                               errno.EHOSTUNREACH,
-                               errno.ENETDOWN,
-                               errno.EHOSTDOWN,
-                               errno.ETIMEDOUT,
-                               errno.ETIME)):  # ENOBUFS  ENOMEM
-                # problem sending such as busy with last message. save it for later
-                laters.append((pkt, ha))
-                blockeds.append(ha)
-            else:
-                raise
-
-        console.profuse("{0}: sent to {1}\n    0x{2}\n".format(self.name,
-                                                          ha,
-                                                          hexlify(pkt.packed).decode('ascii')))
-        return True  # not blocked
-
-    def serviceTxPkts(self):
-        """
-        Service the .txPcks deque to send packets through server
-        Override in subclass
-        """
-        if self.handler.opened:
-            laters = deque()
-            blockeds = []
-            while self.txPkts:
-                again = self._serviceOneTxPkt(laters, blockeds)
-                if not again:
-                    break
-            while laters:
-                self.txPkts.append(laters.popleft())
-
-    def serviceTxPktsOnce(self):
-        '''
-        Service .txPkts deque once (one pkt)
-        '''
-        if self.handler.opened:
-            laters = deque()
-            blockeds = [] # will always be empty since only once
-            if self.txPkts:
-                self._serviceOneTxPkt(laters, blockeds)
-            while laters:
-                self.txPkts.append(laters.popleft())
 
     def serviceTxGramsOnce(self):
-        """Service one outgoing gram from .txgs deque if any (non-greedy)
+        """Service one pass (non-greedy) over all unique destinations in .txgs
+        dict if any for blocked destination or unblocked with pending outgoing
+        grams.
         """
         if self.opened and self.txgs:
-            self._serviceOneTxGram()
+            self._serviceOnceTxGrams()
 
 
     def serviceTxGrams(self):
-        """Service all outgoing grams in .txgs deque if any (greedy) until
-        blocked by pending transmissions on transport.
+        """Service multiple passes (greedy) over all unqique destinations in
+        .txgs dict if any for blocked destinations or unblocked with pending
+        outgoing grams until there is no unblocked destination with a pending gram.
         """
         while self.opened and self.txgs:
-            if not self._serviceOneTxGram():
-                break  # blocked try again later
+            if not self._serviceOnceTxGrams():  # no pending gram on any unblocked dst,
+                break  # so try again later
 
 
     def serviceAllTxOnce(self):
