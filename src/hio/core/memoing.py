@@ -78,14 +78,21 @@ For datagram sockets, the SO_SNDBUF value imposes an upper limit on the size
 of outgoing datagrams.
 This limit is calculated as the doubled (see socket(7)) option value less 32 bytes used for overhead.
 
-
+Doubling accounts for the overhead.
 SO_SNDBUF
-              Sets  or  gets  the  maximum socket send buffer in bytes.  The kernel doubles this value (to allow
-              space for bookkeeping overhead) when it is set using setsockopt(2),  and  this  doubled  value  is
-              returned  by  getsockopt(2).  The default value is set by the /proc/sys/net/core/wmem_default file
-              and the maximum allowed value  is  set  by  the  /proc/sys/net/core/wmem_max  file.   The  minimum
-              (doubled) value for this option is 2048.
+              Sets or gets the maximum socket send buffer in bytes.  The
+              kernel doubles this value (to allow space for bookkeeping
+              overhead) when it is set using setsockopt(2), and this
+              doubled value is returned by getsockopt(2).  The default
+              value is set by the /proc/sys/net/core/wmem_default file
+              and the maximum allowed value is set by the
+              /proc/sys/net/core/wmem_max file.  The minimum (doubled)
+              value for this option is 2048.
 
+In python the getsockopt apparently does not return the doubled value but
+the undoubled value.
+
+https://unix.stackexchange.com/questions/38043/size-of-data-that-can-be-written-to-read-from-sockets
 https://stackoverflow.com/questions/21856517/whats-the-practical-limit-on-the-size-of-single-packet-transmitted-over-domain
 
 """
