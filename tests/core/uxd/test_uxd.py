@@ -11,6 +11,7 @@ import os
 import tempfile
 import shutil
 
+from hio import hioing
 from hio.base import tyming, doing
 from hio.core import wiring
 from hio.core.uxd import uxding
@@ -156,6 +157,7 @@ def test_open_peer():
 
         assert alpha.opened
         assert alpha.path.endswith("alpha.uxd")
+        assert alpha.actualBufSizes() == (64535, 64535) == (alpha.UxdBufSize, alpha.UxdBufSize)
 
         assert beta.opened
         assert beta.path.endswith("beta.uxd")
@@ -265,6 +267,17 @@ def test_open_peer():
 
     """Done Test"""
 
+def test_uxd_path_len():
+    """ Test the uxd path length
+
+    """
+    with pytest.raises(hioing.SizeError):
+        name = "alpha" * 25
+        assert len(name) > uxding.Peer.MaxUxdPathSize
+        alpha = uxding.Peer(name=name, temp=True, reopen=True)
+    """Done Test"""
+
+
 def test_peer_doer():
     """
     Test PeerDoer class
@@ -304,4 +317,5 @@ def test_peer_doer():
 if __name__ == "__main__":
     test_uxd_basic()
     test_open_peer()
+    test_uxd_path_len()
     test_peer_doer()

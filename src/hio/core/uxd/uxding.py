@@ -109,6 +109,9 @@ class Peer(filing.Filer):
 
     Class Attributes:
         Umask (int): octal default umask permissions such as 0o022
+        MaxUxdPathSize (int:) max characters in uxd file path
+        UxdBufSize (int): used to set buffer size for UXD datagram buffers
+        MaxUxdPayloadSize (int): limit datagram payload to this size
 
     Attributes:
         umask (int): unpermission mask for uxd file, usually octal 0o022
@@ -131,11 +134,15 @@ class Peer(filing.Filer):
     Mode = "r+"
     Fext = "uxd"
     Umask = 0o022  # default
+    MaxUxdPathSize = 108
+    UxdBufSize = 64535
+    MaxUxdPayloadSize = UxdBufSize
 
-    def __init__(self, *, umask=None, bs = 1024, wl=None,
+    def __init__(self, *, umask=None, bs = None, wl=None,
                  reopen=False, clear=True,
                  filed=False, extensioned=True, **kwa):
         """Initialization method for instance.
+
         Inherited Parameters:
             reopen (bool): True (re)open with this init
                            False not (re)open with this init but later (default)
@@ -155,7 +162,7 @@ class Peer(filing.Filer):
             wl (WireLog): instance ref for debug logging of over the wire tx and rx
         """
         self.umask = umask  # only change umask if umask is not None below
-        self.bs = bs
+        self.bs = bs if bs is not None else self.UxdBufSize
         self.wl = wl
         self.ls = None  # local socket of this Peer, needs to be opened/bound
 
@@ -164,6 +171,7 @@ class Peer(filing.Filer):
                                    filed=filed,
                                    extensioned=extensioned,
                                    **kwa)
+
 
 
     def actualBufSizes(self):
@@ -188,6 +196,11 @@ class Peer(filing.Filer):
         if socket not closed properly, binding socket gets error
             OSError: (48, 'Address already in use')
         """
+        if len(self.path) > self.MaxUxdPathSize:
+            self.close()
+            raise hioing.SizeError(f"UXD path={self.path} too long, > "
+                                   f"{self.MaxUxdPathSize}.")
+
         #create socket ss = server socket
         self.ls = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
 
@@ -196,7 +209,8 @@ class Peer(filing.Filer):
         # TIME_WAIT state, without waiting for its natural timeout to expire.
         self.ls.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-        # setup buffers
+        # setup buffers. With uxd sockets only the SO_SNDBUF matters, but set
+        # both anyway
         if self.ls.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF) <  self.bs:
             self.ls.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self.bs)
         if self.ls.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF) < self.bs:

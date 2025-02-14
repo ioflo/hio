@@ -25,6 +25,12 @@ class HioError(Exception):
     To use   raise HioError("Error: message")
     """
 
+class SizeError(HioError):
+    """
+    Resource size related errors
+    Usage:
+        raise SizeError("error message")
+    """
 
 class ValidationError(HioError):
     """
