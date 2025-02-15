@@ -127,8 +127,14 @@ class Memoir(hioing.Mixin):
         transport class. For example MemoirUdp or MemoGramUdp or MemoirUxd or
         MemoGramUXD
 
-    Each direction of dataflow uses a triple-tiered set of buffers that respect
+    Each direction of dataflow uses a tiered set of buffers that respect
     the constraints of non-blocking asynchronous IO with datagram transports.
+
+    On the receive side each complete datagram (gram) is put in a gram receive
+    deque as a segment of a memo. These deques are indexed by the sender's
+    source addr. The grams in the gram recieve deque are then desegmented into a memo
+    and placed in the memo deque for consumption by the application or some other
+    higher level protocol.
 
     On the transmit side memos are placed in a deque (double ended queue). Each
     memo is then segmented into grams (datagrams) that respect the size constraints
@@ -149,12 +155,6 @@ class Memoir(hioing.Mixin):
     such as bad addresses or bad routing each destination gets its own buffer
     so that a bad destination does not block other destinations.
 
-    On the receive the raw data is received into the raw data buffer. This is then
-    converted into a gram and queued in the gram receive deque as a seqment of
-    a memo. The grams in the gram recieve deque are then desegmented into a memo
-    and placed in the memo deque for consumption by the application or some other
-    higher level protocol.
-
     Memo segmentation information is embedded in the grams.
 
 
@@ -165,21 +165,21 @@ class Memoir(hioing.Mixin):
     Attributes:
         version (Versionage): version for this memoir instance consisting of
                 namedtuple of form (major: int, minor: int)
+        rxgs (dict): holding rx (receive) (data) gram deques of grams.
+            Each item in dict has key=src and val=deque of grames received
+            from transport. Each item of form (src: str, gram: deque)
+        rxms (deque): holding rx (receive) memo tuples desegmented from rxgs grams
+            each entry in deque is duple of form (memo: str, dst: str)
         txms (deque): holding tx (transmit) memo tuples to be segmented into
                 txgs grams where each entry in deque is duple of form
                 (memo: str, dst: str)
         txgs (dict): holding tx (transmit) (data) gram deques of grams.
-            Each item in dict has key=dst and value=deque of grams to be
+            Each item in dict has key=dst and val=deque of grams to be
             sent via txbs of form (dst: str, grams: deque). Each entry
             in deque is bytes of gram.
         txbs (dict): holding tx (transmit) raw data items to transport.
             Each item in dict has key=dst and value=bytearray holding
             unsent portion of gram bytes of form (dst: str, gram: bytearray).
-        rxbs (bytearray): buffer holding rx (receive) raw bytes from transport
-        rxgs (deque): holding rx (receive) (data) gram tuples recieved via rxbs raw
-            each entry in deque is duple of form (gram: bytes, dst: str)
-        rxms (deque): holding rx (receive) memo tuples desegmented from rxgs grams
-            each entry in deque is duple of form (memo: str, dst: str)
 
 
     Properties:
@@ -191,12 +191,11 @@ class Memoir(hioing.Mixin):
 
     def __init__(self,
                  version=None,
+                 rxgs=None,
+                 rxms=None,
                  txms=None,
                  txgs=None,
                  txbs=None,
-                 rxbs=None,
-                 rxgs=None,
-                 rxms=None,
                  **kwa
                 ):
         """Setup instance
@@ -207,6 +206,11 @@ class Memoir(hioing.Mixin):
         Parameters:
             version (Versionage): version for this memoir instance consisting of
                 namedtuple of form (major: int, minor: int)
+            rxgs (dict): holding rx (receive) (data) gram deques of grams.
+                Each item in dict has key=src and val=deque of grames received
+                from transport. Each item of form (src: str, gram: deque)
+            rxms (deque): holding rx (receive) memo tuples desegmented from rxgs grams
+                each entry in deque is duple of form (memo: str, dst: str)
             txms (deque): holding tx (transmit) memo tuples to be segmented into
                 txgs grams where each entry in deque is duple of form
                 (memo: str, dst: str)
@@ -217,30 +221,214 @@ class Memoir(hioing.Mixin):
             txbs (dict): holding tx (transmit) raw data items to transport.
                 Each item in dict has key=dst and value=bytearray holding
                 unsent portion of gram bytes of form (dst: str, gram: bytearray).
-            rxbs (bytearray): buffer holding rx (receive) raw bytes from transport
-            rxgs (deque): holding rx (receive) (data) gram tuples recieved via rxbs raw
-                each entry in deque is duple of form (gram: bytes, dst: str)
-            rxms (deque): holding rx (receive) memo tuples desegmented from rxgs grams
-                each entry in deque is duple of form (memo: str, dst: str)
 
 
         """
         # initialize attributes
         self.version = version if version is not None else self.Version
 
+        self.rxgs = rxgs if rxgs is not None else dict()
+        self.rxms = rxms if rxms is not None else deque()
+
         self.txms = txms if txms is not None else deque()
         self.txgs = txgs if txgs is not None else dict()
         self.txbs = txbs if txbs is not None else dict()
-
-        self.rxbs = rxbs if rxbs is not None else bytearray()
-        self.rxgs = rxgs if rxgs is not None else deque()
-        self.rxms = rxms if rxms is not None else deque()
 
         super(Memoir, self).__init__(**kwa)
 
 
         if not hasattr(self, "opened"):  # stub so mixin works in isolation
             self.opened = False  # mixed with subclass should provide this.
+
+
+
+
+    def receive(self):
+        """Attemps to send bytes in txbs to remote destination dst. Must be
+        overridden in subclass. This is a stub to define mixin interface.
+
+        Returns:
+            duple (tuple): of form (data: bytes, src: str) where data is the
+                bytes of received data and src is the source address.
+                When no data the duple is (b'', None)
+        """
+        return (b'', None)
+
+
+    def _serviceOneReceived(self):
+        """Service one received duple (raw, src) raw packet data. Always returns
+        complete datagram.
+
+        Returns:
+            result (bool):  True means data received from source over transport
+                            False means no data so try again later
+
+                        return enables greedy callers to keep calling until no
+                        more data to receive from transport
+        """
+        try:
+            gram, src = self.receive()  # if no data the duple is (b'', None)
+        except socket.error as ex:  # OSError.errno always .args[0] for compat
+            if (ex.args[0] == (errno.ECONNREFUSED,
+                               errno.ECONNRESET,
+                               errno.ENETRESET,
+                               errno.ENETUNREACH,
+                               errno.EHOSTUNREACH,
+                               errno.ENETDOWN,
+                               errno.EHOSTDOWN,
+                               errno.ETIMEDOUT,
+                               errno.ETIME,
+                               errno.ENOBUFS,
+                               errno.ENOMEM)):
+                return False  # no received data
+            else:
+                raise
+
+        if not gram:  # no received data
+            return False
+
+        if src not in self.rxgs:
+            self.rxgs[src] = deque()
+
+        self.rxgs[src].append(fram)
+        return True  # received data
+
+
+    def serviceReceivesOnce(self):
+        """Service receives once (non-greedy) and queue up
+        """
+        if self.opened:
+            self._serviceOneReceived()
+
+
+    def serviceReceives(self):
+        """Service all receives (greedy) and queue up
+        """
+        while self.opened:
+            if not self._serviceOneReceived():
+                break
+
+
+    def desegment(self, grams):
+        """Desegment deque of grams as segments into whole memo. If grams is
+        missing all the segments then returns None.
+
+        Returns:
+            memo (str | None): desegmented memo or None if incomplete.
+
+        Override in subclass
+
+        Parameters:
+            grams (deque): gram segments
+        """
+        return ""
+
+
+    def _serviceOnceRxGrams(self):
+        """Service one pass over .rxgs dict for each unique src in .rxgs
+
+        Returns:
+            result (bool):  True means at least one src has received a memo and
+                                has writing grams so can keep desegmenting.
+                            False means all sources waiting for more grams
+                                so try again later.
+
+        The return value True or False enables back pressure on greedy callers
+        so they know when to block waiting for at least one source with received
+        memo and additional grams to desegment.
+
+        Deleting an item from a dict at a key (since python dicts are key creation
+        ordered) means that the next time an item is created at that key, that
+        item will be last in order. In order to dynamically change the ordering
+        of iteration over sources,  when there are no received grams from a
+        given source we remove its dict item. This reorders the source
+        as last when a new gram is received and avoids iterating over sources
+        with no received grams.
+
+        """
+        goods = [False] * len(self.rxgs)  # list by src, True memo False no-memo
+        # service grams to desegment
+        for i, src in enumerate(list(self.rxgs.keys())):  # list since items may be deleted in loop
+            # if src then grams deque at src must not be empty
+            memo = self.desegment(self.rxgs[src])
+            if memo is not None:  # could be empty memo for some src
+                self.rxms.append((memo, src))
+
+            if not self.txgs[src]:  # deque at src empty so remove deque
+                del self.txgs[src]  # makes src unordered until next memo at src
+
+            if memo is not None:  # recieved and desegmented memo
+                if src in self.txgs:  # more received gram(s) at src
+                    goods[i] = True  # indicate memo recieved with more received gram(s)
+
+        return any(goods)  # at least one memo from a source with more received grams
+
+
+
+
+    def serviceRxGramsOnce(self):
+        """Service one pass (non-greedy) over all unique sources in .rxgs
+        dict if any for received incoming grams.
+        """
+        if self.rxgs:
+            self._serviceOnceRxGrams()
+
+
+    def serviceRxGrams(self):
+        """Service multiple passes (greedy) over all unqique sources in
+        .rxgs dict if any for sources with complete desegmented memos and more
+        incoming grams.
+        """
+        while self.rxgs:
+            if not self._serviceOnceRxGrams():
+                break
+
+
+    def _serviceOneRxMemo(self):
+        """Service one duple from .rxMsgs deque
+
+        Returns:
+            duple (tuple | None): of form (memo: str, src: str) if any
+                                  otherwise None
+
+        Override in subclass to consume
+        """
+        return (self.rxms.popleft())
+
+
+    def serviceRxMemosOnce(self):
+        """Service memos in .rxms deque once (non-greedy one memo) if any
+
+        Override in subclass to handle result and put it somewhere
+        """
+        if self.rxms:
+            result = self._serviceOneRxMemo()
+
+
+    def serviceRxMemos(self):
+        """Service all memos in .rxms (greedy) if any
+
+        Override in subclass to handle result(s) and put them somewhere
+        """
+        while self.rxms:
+            result = self._serviceOneRxMsg()
+
+
+    def serviceAllRxOnce(self):
+        """Service receive side of stack once (non-greedy)
+        """
+        self.serviceReceivesOnce()
+        self.serviceRxGramsOnce()
+        self.serviceRxMemosOnce()
+
+
+    def serviceAllRx(self):
+        """Service receive side of stack (greedy) until empty or waiting for more
+        """
+        self.serviceReceives()
+        self.serviceRxGrams()
+        self.serviceRxMemos()
+
 
     def send(self, txbs, dst):
         """Attemps to send bytes in txbs to remote destination dst. Must be
@@ -253,14 +441,8 @@ class Memoir(hioing.Mixin):
             txbs (bytes | bytearray): of bytes to send
             dst (str): remote destination address
         """
-        return 0
+        return len(txbs)  # all sent
 
-
-    def clearRxbs(self):
-        """
-        Clear .rxbs
-        """
-        del self.rxbs.clear()
 
 
     def memoit(self, memo, dst):
@@ -348,6 +530,10 @@ class Memoir(hioing.Mixin):
                                 last full gram sent with another sitting in deque.
                             False means all destinations blocked so try again later.
 
+        The return value True or False enables back pressure on greedy callers
+        so they know when to block waiting for at least one unblocked destination
+        with a pending gram.
+
         For each destination, if .txbs item is empty creates new item at destination
         and copies gram to bytearray.
 
@@ -367,10 +553,6 @@ class Memoir(hioing.Mixin):
         Internally, an empty .txbs at a destination indicates its ok to take
         another gram from its .txgs deque if any and start sending it.
 
-        The return value True or False enables back pressure on greedy callers
-        so they know when to block waiting for at least one unblocked destination
-        with a pending gram.
-
         Deleting an item from a dict at a key (since python dicts are key creation
         ordered) means that the next time an item is created at that key, that
         item will be last in order. In order to dynamically change the ordering
@@ -389,7 +571,7 @@ class Memoir(hioing.Mixin):
 
 
         # service buffers by attempting to send
-        sents = [False] * len(self.txbs)  # list of sent states True unblocked False blocked
+        goods = [False] * len(self.txbs)  # list by dst, True unblocked False blocked
         for i, dst in enumerate(list(self.txbs.keys())):  # list since items may be deleted in loop
             # if dst then bytearray at dst must not be empty
             try:
@@ -413,10 +595,10 @@ class Memoir(hioing.Mixin):
             del self.txbs[dst][:count]  # remove from buffer those bytes sent
             if not self.txbs[dst]:  # empty buffer so gram fully sent
                 if dst in self.txgs:  # another gram waiting
-                    sents[i] = True  # not blocked with waiting gram
+                    goods[i] = True  # idicate not blocked and with waiting gram
                 del self.txbs[dst]  # remove so dst is unordered until next gram
 
-        return any(sents)  # at least one unblocked destingation with waiting gram
+        return any(goods)  # at least one unblocked destingation with waiting gram
 
 
     def serviceTxGramsOnce(self):
@@ -453,174 +635,27 @@ class Memoir(hioing.Mixin):
         self.serviceTxGrams()
 
 
-    def _serviceOneReceived(self):
-        """
-        Service one received raw packet data or chunk from .handler
-        assumes that there is a .handler
-        Override in subclass
-        """
-        while True:  # keep receiving until empty
-            try:
-                raw = self.receive()
-            except Exception as ex:
-                raise
-
-            if not raw:
-                return False  # no received data
-            self.rxbs.extend(raw)
-
-        packet = self.parserize(self.rxbs[:])
-
-        if packet is not None:  # queue packet
-            console.profuse("{0}: received\n    0x{1}\n".format(self.name,
-                                        hexlify(self.rxbs[:packet.size]).decode('ascii')))
-            del self.rxbs[:packet.size]
-            self.rxPkts.append(packet)
-        return True  # received data
-
-    def _serviceOneReceived(self):
-        '''
-        Service one received duple (raw, ha) raw packet data or chunk from server
-        assumes that there is a server
-        Override in subclass
-        '''
-        try:
-            raw, ha = self.handler.receive()  # if no data the duple is (b'', None)
-        except socket.error as ex:
-            # ex.args[0] always ex.errno for compat
-            if (ex.args[0] == (errno.ECONNREFUSED,
-                               errno.ECONNRESET,
-                               errno.ENETRESET,
-                               errno.ENETUNREACH,
-                               errno.EHOSTUNREACH,
-                               errno.ENETDOWN,
-                               errno.EHOSTDOWN,
-                               errno.ETIMEDOUT,
-                               errno.ETIME)):
-                return False  # no received data
-            else:
-                raise
-
-        if not raw:  # no received data
-            return False
-
-        packet = self.parserize(raw, ha)
-        if packet is not None:
-            console.profuse("{0}: received\n    0x{1}\n".format(self.name,
-                                        hexlify(raw).decode('ascii')))
-            self.rxPkts.append((packet, ha))     # duple = ( packed, source address)
-        return True  # received data
-
-    def serviceReceives(self):
-        """
-        Retrieve from server all received and queue up
-        """
-        while self.opened:
-            if not self._serviceOneReceived():
-                break
-
-    def serviceReceivesOnce(self):
-        """
-        Service receives once (one reception) and queue up
-        """
-        if self.opened:
-            self._serviceOneReceived()
-
-    def messagize(self, pkt, ha):
-        """
-        Returns duple of (message, remote) converted from rx packet pkt and ha
-        Override in subclass
-        """
-        msg = pkt.packed.decode("ascii")
-        try:
-            remote = self.haRemotes[ha]
-        except KeyError as ex:
-            console.verbose(("{0}: Dropping packet received from unknown remote "
-                             "ha '{1}'.\n{2}\n".format(self.name, ha, pkt.packed)))
-            return (None, None)
-        return (msg, remote)
-
-
-
-    def _serviceOneRxPkt(self):
-        """
-        Service pkt from .rxPkts deque
-        Assumes that there is a message on the .rxes deque
-        """
-        pkt = self.rxPkts.popleft()
-        console.verbose("{0} received packet\n{1}\n".format(self.name, pkt.show()))
-        self.incStat("pkt_received")
-        message = self.messagize(pkt)
-        if message is not None:
-            self.rxMsgs.append(message)
-
-    def serviceRxPkts(self):
-        """
-        Process all duples  in .rxPkts deque
-        """
-        while self.rxPkts:
-            self._serviceOneRxPkt()
-
-    def serviceRxPktsOnce(self):
-        """
-        Service .rxPkts deque once (one pkt)
-        """
-        if self.rxPkts:
-            self._serviceOneRxPkt()
-
-    def _serviceOneRxMsg(self):
-        """
-        Service one duple from .rxMsgs deque
-        """
-        msg = self.rxMsgs.popleft()
-
-
-    def serviceRxMsgs(self):
-        """
-        Service .rxMsgs deque of duples
-        """
-        while self.rxMsgs:
-            self._serviceOneRxMsg()
-
-    def serviceRxMsgsOnce(self):
-        """
-        Service .rxMsgs deque once (one msg)
-        """
-        if self.rxMsgs:
-            self._serviceOneRxMsg()
-
-
-    def serviceAllRx(self):
-        """
-        Service receive side of stack
+    def serviceLocal(self):
+        """Service the local Peer's receive and transmit queues
         """
         self.serviceReceives()
-        self.serviceRxPkts()
-        self.serviceRxMsgs()
-        self.serviceTimers()
+        self.serviceTxGrams()
 
-    def serviceAllRxOnce(self):
+
+    def serviceAllOnce(self):
+        """Service all Rx and Tx Once (non-greedy)
         """
-        Service receive side of stack once (one reception)
-        """
-        self.serviceReceivesOnce()
-        self.serviceRxPktsOnce()
-        self.serviceRxMsgsOnce()
-        self.serviceTimers()
+        self.serviceAllRxOnce()
+        self.serviceAllTxOnce()
+
 
     def serviceAll(self):
-        """
-        Service all Rx and Tx
+        """Service all Rx and Tx (greedy)
         """
         self.serviceAllRx()
         self.serviceAllTx()
 
-    def serviceLocal(self):
-        """
-        Service the local Peer's receive and transmit queues
-        """
-        self.serviceReceives()
-        self.serviceTxPkts()
+
 
 
 
