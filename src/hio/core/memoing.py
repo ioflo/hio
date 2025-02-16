@@ -351,7 +351,7 @@ class Memoir(hioing.Mixin):
         for i, src in enumerate(list(self.rxgs.keys())):  # list since items may be deleted in loop
             # if src then grams deque at src must not be empty
             memo = self.desegment(self.rxgs[src])
-            if memo is not None:  # could be empty memo for some src
+            if memo is not None:  # allows for empty "" memo for some src
                 self.rxms.append((memo, src))
 
             if not self.txgs[src]:  # deque at src empty so remove deque
@@ -391,9 +391,8 @@ class Memoir(hioing.Mixin):
             duple (tuple | None): of form (memo: str, src: str) if any
                                   otherwise None
 
-        Override in subclass to consume
         """
-        return (self.rxms.popleft())
+        return (self.rxms.popleft())  # raises IndexError if empty deque
 
 
     def serviceRxMemosOnce(self):
@@ -401,8 +400,11 @@ class Memoir(hioing.Mixin):
 
         Override in subclass to handle result and put it somewhere
         """
-        if self.rxms:
-            result = self._serviceOneRxMemo()
+        try:
+            pass
+            #memo, src = self._serviceOneRxMemo()
+        except IndexError:
+            pass
 
 
     def serviceRxMemos(self):
@@ -411,7 +413,8 @@ class Memoir(hioing.Mixin):
         Override in subclass to handle result(s) and put them somewhere
         """
         while self.rxms:
-            result = self._serviceOneRxMsg()
+            break
+            # memo, src = self._serviceOneRxMsg()
 
 
     def serviceAllRxOnce(self):
@@ -478,7 +481,7 @@ class Memoir(hioing.Mixin):
         appropriate to convert memo into gram(s).
         Appends duples of (gram, dst) from grams to .txgs deque.
         """
-        memo, dst = self.txms.popleft()  # duple (msg, destination addr)
+        memo, dst = self.txms.popleft()  # raises IndexError if empty deque
         grams = self.segment(memo)
         for gram in grams:
             if dst not in self.txgs:
@@ -489,8 +492,11 @@ class Memoir(hioing.Mixin):
     def serviceTxMemosOnce(self):
         """Service one outgoing memo from .txms deque if any (non-greedy)
         """
-        if self.txms:
+
+        try:
             self._serviceOneTxMemo()
+        except IndexError:
+            pass
 
 
     def serviceTxMemos(self):

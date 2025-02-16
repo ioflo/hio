@@ -21,10 +21,19 @@ class Deck(deque):
 
     deck.extend([False, "", []])  # falsy elements but not None
     stuff = []
+    if x := deck.pull(emptive=True)) is not None:
+        stuff.append(x)  # do something with x
+    assert stuff == [False]
+
+
+    deck.extend([False, "", []])  # falsy elements but not None
+    stuff = []
     while (x := deck.pull(emptive=True)) is not None:
         stuff.append(x)
     assert stuff == [False, "", []]
     assert not deck
+
+
 
     Local methods:
     .push(x) = add x if x is not None to the right side of deque (like append)
