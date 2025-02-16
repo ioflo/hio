@@ -9,9 +9,10 @@ import errno
 import socket
 from contextlib import contextmanager
 
-from ... import help
-from ...base import tyming, doing
+from ... import hioing
 from .. import coring
+from ...base import tyming, doing
+from ... import help
 
 logger = help.ogler.getLogger()
 
@@ -57,23 +58,11 @@ def openPeer(cls=None, name="test", **kwa):
 
 
 
-class Peer(tyming.Tymee):
+class Peer(hioing.Mixin):
     """Class to manage non blocking I/O on UDP socket.
-    SubClass of Tymee to enable support for retry tymers as UDP is unreliable.
-
-    Class Attributes:
-        Tymeout (float): default timeout for retry tymer(s) if any
-
-    Inherited Properties:
-         .tyme is float relative cycle time of associated Tymist .tyme obtained
-            via injected .tymth function wrapper closure.
-        .tymth is function wrapper closure returned by Tymist .tymeth() method.
-            When .tymth is called it returns associated Tymist .tyme.
-            .tymth provides injected dependency on Tymist tyme base.
 
     Attributes:
         name (str): unique identifier of peer for managment purposes
-        tymeout (float): timeout for retry tymer(s) if any
         ha (tuple): host address of form (host,port) of type (str, int) of this
                 peer's socket address.
         bs (int): buffer size
@@ -89,11 +78,9 @@ class Peer(tyming.Tymee):
 
 
     """
-    Tymeout = 0.0  # tymeout in seconds, tymeout of 0.0 means ignore tymeout
 
     def __init__(self, *,
                  name='main',
-                 tymeout=None,
                  ha=None,
                  host='',
                  port=55000,
@@ -105,7 +92,6 @@ class Peer(tyming.Tymee):
         Initialization method for instance.
         Parameters:
             name (str): unique identifier of peer for managment purposes
-            tymeout (float): default for retry tymer if any
             ha (tuple): local socket (host, port) address duple of type (str, int)
             host (str): address where '' means any interface on host
             port (int): socket port
@@ -116,9 +102,6 @@ class Peer(tyming.Tymee):
         """
         super(Peer, self).__init__(**kwa)
         self.name = name
-        self.tymeout = tymeout if tymeout is not None else self.Tymeout
-        #self.tymer = tyming.Tymer(tymth=self.tymth, duration=self.tymeout) # retry tymer
-
         self.ha = ha or (host, port)  # ha = host address duple (host, port)
         host, port = self.ha
         host = coring.normalizeHost(host)  # ip host address
@@ -161,16 +144,6 @@ class Peer(tyming.Tymee):
         setter for port property
         """
         self.ha = (self.host, value)
-
-
-
-    def wind(self, tymth):
-        """
-        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
-        Updates winds .tymer .tymth
-        """
-        super(Peer, self).wind(tymth)
-        #self.tymer.wind(tymth)
 
 
     def actualBufSizes(self):
@@ -290,14 +263,19 @@ class Peer(tyming.Tymee):
         """
 
 
+
 class PeerDoer(doing.Doer):
     """
-    Basic UDP Peer Doer
+    Basic UXD Peer Doer
+    Because Unix Domain Sockets are reliable no need for retry tymer.
+
+    To test in WingIde must configure Debug I/O to use external console
+    See Doer for inherited attributes, properties, and methods.
 
     See Doer for inherited attributes, properties, and methods.
 
     Attributes:
-       .peer is UDP Peer instance
+       .peer is UXD Peer instance
 
     """
 
@@ -306,21 +284,10 @@ class PeerDoer(doing.Doer):
         Initialize instance.
 
         Parameters:
-           peer (Peer):  UDP instance
+           peer is UXD Peer instance
         """
         super(PeerDoer, self).__init__(**kwa)
         self.peer = peer
-        if self.tymth:
-            self.peer.wind(self.tymth)
-
-
-    def wind(self, tymth):
-        """
-        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
-        Updates winds .tymer .tymth
-        """
-        super(PeerDoer, self).wind(tymth)
-        self.peer.wind(tymth)
 
 
     def enter(self):
@@ -336,3 +303,4 @@ class PeerDoer(doing.Doer):
     def exit(self):
         """"""
         self.peer.close()
+
