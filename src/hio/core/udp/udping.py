@@ -114,6 +114,7 @@ class Peer(hioing.Mixin):
         self.ls = None  # local socket for this Peer
         self.opened = False
 
+
     @property
     def host(self):
         """
@@ -227,7 +228,8 @@ class Peer(hioing.Mixin):
             # the value of a given errno.XXXXX may be different on each os
             # EAGAIN: BSD 35, Linux 11, Windows 11
             # EWOULDBLOCK: BSD 35 Linux 11 Windows 140
-            if ex.args[0] in (errno.EAGAIN, errno.EWOULDBLOCK):
+            if (ex.args[0] in (errno.EAGAIN,
+                              errno.EWOULDBLOCK)):
                 return (b'', None) #receive has nothing empty string for data
             else:
                 logger.error("Error receive on UDP %s\n %s\n", self.ha, ex)
@@ -238,29 +240,47 @@ class Peer(hioing.Mixin):
 
         return (data, sa)
 
-    def send(self, data, da):
+    def send(self, data, dst):
         """Perform non blocking send on  socket.
 
-        data is string in python2 and bytes in python3
-        da is destination address tuple (destHost, destPort)
+        Returns:
+            cnt (int): count of bytes actually sent, may be less than len(data).
+
+        Parameters:
+            data (bytes):  payload to send
+            dst (str): udp destination addr duple of form (host: str, port: int)
         """
         try:
-            cnt = self.ls.sendto(data, da)  # count == int number of bytes sent
+            cnt = self.ls.sendto(data, dst)  # count == int number of bytes sent
         except OSError as ex:
-            logger.error("Error send UDP from %s to %s.\n %s\n", self.ha, da, ex)
-            cnt = 0
+            # ex.args[0] == ex.errno for better compat
+            # the value of a given errno.XXXXX may be different on each os
+            # EAGAIN: BSD 35, Linux 11, Windows 11
+            # EWOULDBLOCK: BSD 35 Linux 11 Windows 140
+            if (ex.args[0] in (errno.EAGAIN,
+                               errno.EWOULDBLOCK,
+                               errno.ENOBUFS,
+                               errno.ENOMEM)):
+                # not enough buffer space to send, do not consume data
+                return 0  # try again later with same data
+
+            else:
+                logger.error("Error send UDP from %s to %s.\n %s\n", self.ha, dst, ex)
+                cnt = 0
             raise
 
-        if self.wl:  # log over the wire send
-            self.wl.writeTx(data[:cnt], who=da)
+        if self.wl:  # log over the wire actually sent data portion
+            self.wl.writeTx(data[:cnt], who=dst)
 
         return cnt
 
 
     def service(self):
+        """Service sends and receives
+
+        Stub Override in subclass
         """
-        Service sends and receives
-        """
+        pass
 
 
 

@@ -322,7 +322,7 @@ class Peer(filing.Filer):
         """Perform non blocking send on socket.
 
         Returns:
-            cnt (int): number of bytes actually sent
+            cnt (int): number of bytes actually sent, may be less than len(data).
 
         Parameters:
            data (bytes): payload to send
@@ -331,9 +331,21 @@ class Peer(filing.Filer):
         try:
             cnt = self.ls.sendto(data, dst)  # count == int number of bytes sent
         except OSError as ex:
-            logger.error("Error send UXD from %s to %s.\n %s\n", self.path, dst, ex)
-            cnt = 0
-            raise
+            # ex.args[0] == ex.errno for better compat
+            # the value of a given errno.XXXXX may be different on each os
+            # EAGAIN: BSD 35, Linux 11, Windows 11
+            # EWOULDBLOCK: BSD 35 Linux 11 Windows 140
+            if (ex.args[0] in (errno.EAGAIN,
+                               errno.EWOULDBLOCK,
+                               errno.ENOBUFS,
+                               errno.ENOMEM)):
+                # not enough buffer space to send, do not consume data
+                return 0  # try again later with same data
+
+            else:
+                logger.error("Error send UXD from %s to %s.\n %s\n", self.path, dst, ex)
+                cnt = 0
+                raise
 
         if self.wl:# log over the wire send
             self.wl.writeTx(data[:cnt], who=dst)
@@ -341,10 +353,11 @@ class Peer(filing.Filer):
         return cnt
 
     def service(self):
-        """
-        Service sends and receives
-        """
+        """Service sends and receives
 
+        Stub Override in subclass
+        """
+        pass
 
 
 class PeerDoer(doing.Doer):

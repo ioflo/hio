@@ -101,15 +101,20 @@ import errno
 
 from collections import deque, namedtuple
 
+
 from .. import hioing
+from ...base import tyming, doing
+from ... import help
+
+logger = help.ogler.getLogger()
 
 # namedtuple of ints (major: int, minor: int)
 Versionage = namedtuple("Versionage", "major minor")
 
-class Memoir(hioing.Mixin):
+class Memogram(hioing.Mixin):
     """
-    Memoir mixin base class to adds memogram support to a transport class.
-    Memoir supports asynchronous memograms. Provides common methods for subclasses.
+    Memogram mixin base class to adds memogram support to a transport class.
+    Memogram supports asynchronous memograms. Provides common methods for subclasses.
 
     A memogram is a higher level construct that sits on top of a datagram.
     A memogram supports the segmentation and desegmentation of memos to
@@ -124,8 +129,7 @@ class Memoir(hioing.Mixin):
     Usage:
         Do not instantiate directly but use as a mixin with a transport class
         in order to create a new subclass that adds memogram support to the
-        transport class. For example MemoirUdp or MemoGramUdp or MemoirUxd or
-        MemoGramUXD
+        transport class. For example MemogramUdp or MemoGramUxd
 
     Each direction of dataflow uses a tiered set of buffers that respect
     the constraints of non-blocking asynchronous IO with datagram transports.
@@ -138,10 +142,11 @@ class Memoir(hioing.Mixin):
 
     On the transmit side memos are placed in a deque (double ended queue). Each
     memo is then segmented into grams (datagrams) that respect the size constraints
-    of the underlying datagram transport. These grams are placed in a gram deque.
-    Each gram in this deque is then placed in a transmit buffer dict whose key
-    is the destination and value is the gram. Each item is to be sent
-    over the transport. One item buffer per unique destination.
+    of the underlying datagram transport. These grams are placed in the outgoing
+    gram deque. Each entry in this deque is a duple of form:
+    (gram: bytes, dst: str). Each  duple is pulled off the deque and its
+    gram is put in bytearray for transport.
+
     When using non-blocking IO, asynchronous datagram transport
     protocols may have hidden buffering constraints that result in fragmentation
     of the sent datagram which means the whole datagram is not sent at once via
@@ -155,7 +160,7 @@ class Memoir(hioing.Mixin):
     such as bad addresses or bad routing each destination gets its own buffer
     so that a bad destination does not block other destinations.
 
-    Memo segmentation information is embedded in the grams.
+    Memo segmentation/desegmentation information is embedded in the grams.
 
 
     Class Attributes:
@@ -168,18 +173,19 @@ class Memoir(hioing.Mixin):
         rxgs (dict): holding rx (receive) (data) gram deques of grams.
             Each item in dict has key=src and val=deque of grames received
             from transport. Each item of form (src: str, gram: deque)
-        rxms (deque): holding rx (receive) memo tuples desegmented from rxgs grams
-            each entry in deque is duple of form (memo: str, dst: str)
+        rxms (deque): holding rx (receive) memo duples desegmented from rxgs grams
+                each entry in deque is duple of form (memo: str, dst: str)
         txms (deque): holding tx (transmit) memo tuples to be segmented into
                 txgs grams where each entry in deque is duple of form
                 (memo: str, dst: str)
-        txgs (dict): holding tx (transmit) (data) gram deques of grams.
-            Each item in dict has key=dst and val=deque of grams to be
-            sent via txbs of form (dst: str, grams: deque). Each entry
-            in deque is bytes of gram.
-        txbs (dict): holding tx (transmit) raw data items to transport.
-            Each item in dict has key=dst and value=bytearray holding
-            unsent portion of gram bytes of form (dst: str, gram: bytearray).
+        txgs (deque): grams to transmit, each entry is duple of form:
+                (gram: bytes, dst: str).
+        txbs (tuple): current transmisstion duple of form:
+            (gram: bytearray, dst: str). gram bytearray may hold untransmitted
+            portion when datagram is not able to be sent all at once so can
+            keep trying. Nothing to send indicated by (bytearray(), None)
+            for (gram, dst)
+
 
 
     Properties:
@@ -207,20 +213,20 @@ class Memoir(hioing.Mixin):
             version (Versionage): version for this memoir instance consisting of
                 namedtuple of form (major: int, minor: int)
             rxgs (dict): holding rx (receive) (data) gram deques of grams.
-                Each item in dict has key=src and val=deque of grames received
+                Each item in dict has key=src and val=deque of grams received
                 from transport. Each item of form (src: str, gram: deque)
-            rxms (deque): holding rx (receive) memo tuples desegmented from rxgs grams
+            rxms (deque): holding rx (receive) memo duples desegmented from rxgs grams
                 each entry in deque is duple of form (memo: str, dst: str)
             txms (deque): holding tx (transmit) memo tuples to be segmented into
                 txgs grams where each entry in deque is duple of form
                 (memo: str, dst: str)
-            txgs (dict): holding tx (transmit) (data) gram deques of grams.
-                Each item in dict has key=dst and value=deque of grams to be
-                sent via txbs of form (dst: str, grams: deque). Each entry
-                in deque is bytes of gram.
-            txbs (dict): holding tx (transmit) raw data items to transport.
-                Each item in dict has key=dst and value=bytearray holding
-                unsent portion of gram bytes of form (dst: str, gram: bytearray).
+            txgs (deque): grams to transmit, each entry is duple of form:
+                (gram: bytes, dst: str).
+            txbs (tuple): current transmisstion duple of form:
+                (gram: bytearray, dst: str). gram bytearray may hold untransmitted
+                portion when datagram is not able to be sent all at once so can
+                keep trying. Nothing to send indicated by (bytearray(), None)
+                for (gram, dst)
 
 
         """
@@ -231,10 +237,10 @@ class Memoir(hioing.Mixin):
         self.rxms = rxms if rxms is not None else deque()
 
         self.txms = txms if txms is not None else deque()
-        self.txgs = txgs if txgs is not None else dict()
-        self.txbs = txbs if txbs is not None else dict()
+        self.txgs = txgs if txgs is not None else deque()
+        self.txbs = txbs if txbs is not None else (bytearray(), None)
 
-        super(Memoir, self).__init__(**kwa)
+        super(Memogram, self).__init__(**kwa)
 
 
         if not hasattr(self, "opened"):  # stub so mixin works in isolation
@@ -269,20 +275,20 @@ class Memoir(hioing.Mixin):
         try:
             gram, src = self.receive()  # if no data the duple is (b'', None)
         except socket.error as ex:  # OSError.errno always .args[0] for compat
-            if (ex.args[0] == (errno.ECONNREFUSED,
-                               errno.ECONNRESET,
-                               errno.ENETRESET,
-                               errno.ENETUNREACH,
-                               errno.EHOSTUNREACH,
-                               errno.ENETDOWN,
-                               errno.EHOSTDOWN,
-                               errno.ETIMEDOUT,
-                               errno.ETIME,
-                               errno.ENOBUFS,
-                               errno.ENOMEM)):
-                return False  # no received data
-            else:
-                raise
+            #if (ex.args[0] == (errno.ECONNREFUSED,
+                               #errno.ECONNRESET,
+                               #errno.ENETRESET,
+                               #errno.ENETUNREACH,
+                               #errno.EHOSTUNREACH,
+                               #errno.ENETDOWN,
+                               #errno.EHOSTDOWN,
+                               #errno.ETIMEDOUT,
+                               #errno.ETIME,
+                               #errno.ENOBUFS,
+                               #errno.ENOMEM)):
+                #return False  # no received data
+            #else:
+            raise
 
         if not gram:  # no received data
             return False
@@ -290,7 +296,8 @@ class Memoir(hioing.Mixin):
         if src not in self.rxgs:
             self.rxgs[src] = deque()
 
-        self.rxgs[src].append(fram)
+        self.rxgs[src].append(gram)
+
         return True  # received data
 
 
@@ -357,13 +364,11 @@ class Memoir(hioing.Mixin):
             if not self.txgs[src]:  # deque at src empty so remove deque
                 del self.txgs[src]  # makes src unordered until next memo at src
 
-            if memo is not None:  # recieved and desegmented memo
+            if memo is not None:  # received and desegmented memo
                 if src in self.txgs:  # more received gram(s) at src
                     goods[i] = True  # indicate memo recieved with more received gram(s)
 
         return any(goods)  # at least one memo from a source with more received grams
-
-
 
 
     def serviceRxGramsOnce(self):
@@ -484,9 +489,7 @@ class Memoir(hioing.Mixin):
         memo, dst = self.txms.popleft()  # raises IndexError if empty deque
         grams = self.segment(memo)
         for gram in grams:
-            if dst not in self.txgs:
-                self.txgs[dst] = deque()
-            self.txgs[dst].append(gram)
+            self.txgs.append((gram, dst))  # append duples (gram: bytes, dst: str)
 
 
     def serviceTxMemosOnce(self):
@@ -520,91 +523,75 @@ class Memoir(hioing.Mixin):
         """Service one pass over .txgs dict for each unique dst in .txgs and then
         services one pass over the .txbs of those outgoing grams
 
-        Each item in.txgs is (key: dst, val: deque of grams)
+        Each entry in.txgs is duple of form: (gram: bytes, dst: str)
         where:
-            dst is destination address
-            gram is outgoing gram segment from associated memo
+            gram (bytes): is outgoing gram segment from associated memo
+            dst (str): is far peer destination address
 
-        Each item in.txbs is (key: dst, val: buf of gram)
+        .txbs is duple of form: (gram: bytearray, dst: str)
         where:
-            dst (str): destination address
-            buf (bytearray): outgoing gram segment or remainder of segment
+            gram (bytearray): holds incompletly sent gram portion if any
+            dst (str | None): destination or None if last completely sent
 
         Returns:
-            result (bool):  True means at least one destination is unblocked
-                                so can keep sending. Unblocked at destination means
-                                last full gram sent with another sitting in deque.
-                            False means all destinations blocked so try again later.
+            result (bool):  True means greedy callers can keep sending since
+                                last gram sent completely.
+                            False means either last gram send was incomplete and
+                                or there are no more grams in .txgs deque. In
+                                either case greedy callers need to wait and
+                                try again later.
 
         The return value True or False enables back pressure on greedy callers
-        so they know when to block waiting for at least one unblocked destination
-        with a pending gram.
+        so they know when to block waiting.
 
-        For each destination, if .txbs item is empty creates new item at destination
-        and copies gram to bytearray.
-
-        Once it has serviced each item in .txgs then services each items in .txbs.
-        For each destination in .txbs, attempts to send bytearray to dst
-        keeping track of the actual portion sent and then deletes the sent
-        portion from item in .txbs leaving the remainder.
-
-        When there is a remainder each subsequent call of this method
+        When there is a remainder in .txbs each subsequent call of this method
         will attempt to send the remainder until the the full gram has been sent.
         This accounts for datagram protocols that expect continuing attempts to
         send remainder of a datagram when using nonblocking sends.
 
-        When there is no remainder then removes .txbs buffer at dst so that
-        subsequent grams are reordered with respect to dst.
+        When the far side peer is unavailable the gram is dropped. This means
+        that unreliable transports need to have a timeour retry mechanism.
 
-        Internally, an empty .txbs at a destination indicates its ok to take
-        another gram from its .txgs deque if any and start sending it.
+        Internally, a dst of None in the .txbs duple indicates its ok to take
+        another gram from the .txgs deque if any and start sending it.
 
-        Deleting an item from a dict at a key (since python dicts are key creation
-        ordered) means that the next time an item is created at that key, that
-        item will be last in order. In order to dynamically change the ordering
-        of iteration over destinations,  when there are no pending grams for a
-        given destination we remove its dict item. This reorders the destination
-        as last when a new gram is created and avoids iterating over destinations
-        with no pending grams.
         """
-        # service grams by reloading buffers from grams
-        for dst in list(self.txgs.keys()):  # list since items may be deleted in loop
-             # if dst then grams deque at dst must not be empty
-            if dst not in self.txbs:  # no transmit buffer
-                self.txbs[dst] = bytearray(self.txgs[dst].popleft())  # new gram
-                if not self.txgs[dst]:  # deque at dst empty so remove deque
-                    del self.txgs[dst]  # makes dst unordered until next memo at dst
-
-
-        # service buffers by attempting to send
-        goods = [False] * len(self.txbs)  # list by dst, True unblocked False blocked
-        for i, dst in enumerate(list(self.txbs.keys())):  # list since items may be deleted in loop
-            # if dst then bytearray at dst must not be empty
+        gram, dst = self.txbs
+        if dst == None:
             try:
-                count = self.send(self.txbs[dst], dst)  # assumes .opened == True
-            except socket.error as ex:  # OSError.errno always .args[0] for compat
-                if (ex.args[0] in (errno.ECONNREFUSED,
-                                   errno.ECONNRESET,
-                                   errno.ENETRESET,
-                                   errno.ENETUNREACH,
-                                   errno.EHOSTUNREACH,
-                                   errno.ENETDOWN,
-                                   errno.EHOSTDOWN,
-                                   errno.ETIMEDOUT,
-                                   errno.ETIME,
-                                   errno.ENOBUFS,
-                                   errno.ENOMEM)):  # problem sending try again later
-                    count = 0  # nothing sent
-                else:
-                    raise
+                gram, dst = self.txgs.popleft()
+                gram = bytearray(gram)
+            except IndexError:
+                return False  # nothing more to send, return False to try later
 
-            del self.txbs[dst][:count]  # remove from buffer those bytes sent
-            if not self.txbs[dst]:  # empty buffer so gram fully sent
-                if dst in self.txgs:  # another gram waiting
-                    goods[i] = True  # idicate not blocked and with waiting gram
-                del self.txbs[dst]  # remove so dst is unordered until next gram
 
-        return any(goods)  # at least one unblocked destingation with waiting gram
+        try:
+            cnt = self.send(gram, dst)  # assumes .opened == True
+        except socket.error as ex:  # OSError.errno always .args[0] for compat
+            if (ex.args[0] in (errno.ECONNREFUSED,
+                               errno.ECONNRESET,
+                               errno.ENETRESET,
+                               errno.ENETUNREACH,
+                               errno.EHOSTUNREACH,
+                               errno.ENETDOWN,
+                               errno.EHOSTDOWN,
+                               errno.ETIMEDOUT,
+                               errno.ETIME)):  # far peer problem
+                # try again later usually won't work here so we log error
+                # and drop gram so as to allow grams to other destinations
+                # to get sent.
+                logger.error("Error send from %s to %s\n %s\n",
+                                                         self.name, dst, ex)
+                self.txbs = (bytearray(), None) # far peer unavailable, so drop.
+            else:
+                raise  # unexpected error
+
+        del gram[:cnt]  # remove from buffer those bytes sent
+        if not gram:  # all sent
+            dst = None  # indicate by setting dst to None
+        self.txbs = (gram, dst)
+
+        return (False if dst else True)  # incomplete return False, else True
 
 
     def serviceTxGramsOnce(self):
@@ -661,115 +648,81 @@ class Memoir(hioing.Mixin):
         self.serviceAllRx()
         self.serviceAllTx()
 
+    service = serviceAll  # alias override peer service method
 
 
 
+class MemogramDoer(doing.Doer):
+    """Memogram Doer for reliable transports that do not require retry tymers.
 
-class Peer(tyming.Tymee):
-    """Class to manage non blocking I/O on UDP socket.
-    SubClass of Tymee to enable support for retry tymers as UDP is unreliable.
+    See Doer for inherited attributes, properties, and methods.
+
+    Attributes:
+       .peer (Memogram): underlying transport instance subclass of Memogram
+
+    """
+
+    def __init__(self, peer, **kwa):
+        """Initialize instance.
+
+        Parameters:
+           peer (Peer): is Memogram Subclass instance
+        """
+        super(MemogramDoer, self).__init__(**kwa)
+        self.peer = peer
+
+
+    def enter(self):
+        """"""
+        self.peer.reopen()
+
+
+    def recur(self, tyme):
+        """"""
+        self.peer.service()
+
+
+    def exit(self):
+        """"""
+        self.peer.close()
+
+
+
+class TymeeMemogram(tyming.Tymee):
+    """TymeeMemogram mixin base class to add tymer support for unreliable transports
+    that need retry tymers. Subclass of tyming.Tymee
+
+
+    Inherited Class Attributes:
+        see superclass
 
     Class Attributes:
         Tymeout (float): default timeout for retry tymer(s) if any
 
-    Inherited Properties:
-         .tyme is float relative cycle time of associated Tymist .tyme obtained
-            via injected .tymth function wrapper closure.
-        .tymth is function wrapper closure returned by Tymist .tymeth() method.
-            When .tymth is called it returns associated Tymist .tyme.
-            .tymth provides injected dependency on Tymist tyme base.
+    Inherited Attributes:
+        see superclass
 
     Attributes:
-        name (str): unique identifier of peer for managment purposes
-        tymeout (float): timeout for retry tymer(s) if any
-        ha (tuple): host address of form (host,port) of type (str, int) of this
-                peer's socket address.
-        bs (int): buffer size
-        wl (WireLog): instance ref for debug logging of over the wire tx and rx
-        bcast (bool): True enables sending to broadcast addresses from local socket
-                      False otherwise
-        ls (socket.socket): local socket of this Peer
-        opened (bool): True local socket is created and opened. False otherwise
+        tymeout (float): default timeout for retry tymer(s) if any
 
-    Properties:
-        host (str): element of .ha duple
-        port (int): element of .ha duple
 
 
     """
     Tymeout = 0.0  # tymeout in seconds, tymeout of 0.0 means ignore tymeout
 
-    def __init__(self, *,
-                 name='main',
-                 tymeout=None,
-                 ha=None,
-                 host='',
-                 port=55000,
-                 bufsize=1024,
-                 wl=None,
-                 bcast=False,
-                 **kwa):
+    def __init__(self, *, tymeout=None, **kwa):
         """
         Initialization method for instance.
+        Inherited Parameters:
+            see superclass
+
         Parameters:
-            name (str): unique identifier of peer for managment purposes
             tymeout (float): default for retry tymer if any
-            ha (tuple): local socket (host, port) address duple of type (str, int)
-            host (str): address where '' means any interface on host
-            port (int): socket port
-            bs (int):  buffer size
-            wl (WireLog): instance to log over the wire tx and rx
-            bcast (bool): True enables sending to broadcast addresses from local socket
-                          False otherwise
+
         """
-        super(Peer, self).__init__(**kwa)
-        self.name = name
+        super(TymeeMemogram, self).__init__(**kwa)
         self.tymeout = tymeout if tymeout is not None else self.Tymeout
         #self.tymer = tyming.Tymer(tymth=self.tymth, duration=self.tymeout) # retry tymer
-
-        self.ha = ha or (host, port)  # ha = host address duple (host, port)
-        host, port = self.ha
-        host = coring.normalizeHost(host)  # ip host address
-        self.ha = (host, port)
-
-        self.bs = bufsize
-        self.wl = wl
-        self.bcast = bcast
-
-        self.ls = None  # local socket for this Peer
-        self.opened = False
-
-    @property
-    def host(self):
-        """
-        Property that returns host in .ha duple
-        """
-        return self.ha[0]
-
-
-    @host.setter
-    def host(self, value):
-        """
-        setter for host property
-        """
-        self.ha = (value, self.port)
-
-
-    @property
-    def port(self):
-        """
-        Property that returns port in .ha duple
-        """
-        return self.ha[1]
-
-
-    @port.setter
-    def port(self, value):
-        """
-        setter for port property
-        """
-        self.ha = (self.host, value)
-
 
 
     def wind(self, tymth):
@@ -777,160 +730,67 @@ class Peer(tyming.Tymee):
         Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
         Updates winds .tymer .tymth
         """
-        super(Peer, self).wind(tymth)
+        super(TymeeMemogram, self).wind(tymth)
         #self.tymer.wind(tymth)
 
+    def serviceTymers(self):
+        """Service all retry tymers
 
-    def actualBufSizes(self):
-        """Returns duple of the the actual socket send and receive buffer size
-        (send, receive)
+        Stub override in subclass
         """
-        if not self.ls:
-            return (0, 0)
+        pass
 
-        return (self.ls.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF),
-                self.ls.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF))
 
-    def open(self):
-        """Opens socket in non blocking mode.
-
-        if socket not closed properly, binding socket gets error
-           OSError: (48, 'Address already in use')
+    def serviceLocal(self):
+        """Service the local Peer's receive and transmit queues
         """
-        #create socket ss = server socket
-        self.ls = socket.socket(socket.AF_INET,
-                                socket.SOCK_DGRAM,
-                                socket.IPPROTO_UDP)
+        self.serviceReceives()
+        self.serviceTxGrams()
 
-        if self.bcast:  # needed to send broadcast, not needed to receive
-            self.ls.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
-        # make socket address and port reusable. doesn't seem to have an effect.
-        # the SO_REUSEADDR flag tells the kernel to reuse a local socket in
-        # TIME_WAIT state, without waiting for its natural timeout to expire.
-        # Also use SO_REUSEPORT on linux and darwin
-        # https://stackoverflow.com/questions/14388706/how-do-so-reuseaddr-and-so-reuseport-differ
-
-        self.ls.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        if platform.system() != 'Windows':
-            self.ls.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-
-        # setup buffers
-        if self.ls.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF) <  self.bs:
-            self.ls.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self.bs)
-        if self.ls.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF) < self.bs:
-            self.ls.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self.bs)
-        self.ls.setblocking(0)  # non blocking socket
-
-        #bind to Host Address Port
-        try:
-            self.ls.bind(self.ha)
-        except OSError as ex:
-            logger.error("Error opening UDP %s\n %s\n", self.ha, ex)
-            return False
-
-        self.ha = self.ls.getsockname()  # get resolved ha after bind
-        self.opened = True
-        return True
-
-    def reopen(self):
-        """Idempotently open socket
+    def serviceAllOnce(self):
+        """Service all Rx and Tx Once (non-greedy)
         """
-        self.close()
-        return self.open()
+        self.serviceAllRxOnce()
+        self.serviceTymers()
+        self.serviceAllTxOnce()
 
-    def close(self):
-        """Closes  socket.
+
+    def serviceAll(self):
+        """Service all Rx and Tx (greedy)
         """
-        if self.ls:
-            self.ls.close() #close socket
-            self.ls = None
-            self.opened = False
-
-    def receive(self):
-        """Perform non blocking read on  socket.
-
-        Returns:
-            tuple of form (data, sa)
-            if no data then returns (b'',None)
-            but always returns a tuple with two elements
-        """
-        try:
-            data, sa = self.ls.recvfrom(self.bs)  # sa is source (host, port)
-        except OSError as ex:
-            # ex.args[0] == ex.errno for better compat
-            # the value of a given errno.XXXXX may be different on each os
-            # EAGAIN: BSD 35, Linux 11, Windows 11
-            # EWOULDBLOCK: BSD 35 Linux 11 Windows 140
-            if ex.args[0] in (errno.EAGAIN, errno.EWOULDBLOCK):
-                return (b'', None) #receive has nothing empty string for data
-            else:
-                logger.error("Error receive on UDP %s\n %s\n", self.ha, ex)
-                raise #re raise exception ex
-
-        if self.wl:  # log over the wire receive
-            self.wl.writeRx(data, who=sa)
-
-        return (data, sa)
-
-    def send(self, data, da):
-        """Perform non blocking send on  socket.
-
-        data is string in python2 and bytes in python3
-        da is destination address tuple (destHost, destPort)
-        """
-        try:
-            cnt = self.ls.sendto(data, da)  # count == int number of bytes sent
-        except OSError as ex:
-            logger.error("Error send UDP from %s to %s.\n %s\n", self.ha, da, ex)
-            cnt = 0
-            raise
-
-        if self.wl:  # log over the wire send
-            self.wl.writeTx(data[:cnt], who=da)
-
-        return cnt
+        self.serviceAllRx()
+        self.serviceTymers()
+        self.serviceAllTx()
 
 
-    def service(self):
-        """
-        Service sends and receives
-        """
-
-
-
-
-
-class TymeeMemoirDoer(doing.Doer):
-    """
-    TymeeMemorir Doer for unreliable transports that require retry tymers.
+class TymeeMemogramDoer(doing.Doer):
+    """TymeeMemogram Doer for unreliable transports that require retry tymers.
 
     See Doer for inherited attributes, properties, and methods.
 
     Attributes:
-       .peer is underlying transport instance subclass of Memoir
+       .peer (TymeeMemogram) is underlying transport instance subclass of TymeeMemogram
 
     """
 
     def __init__(self, peer, **kwa):
-        """
-        Initialize instance.
+        """Initialize instance.
 
         Parameters:
-           peer (Peer):  UDP instance
+           peer (TymeeMemogram):  subclass instance
         """
-        super(TymeeMemoirDoer, self).__init__(**kwa)
+        super(TymeeMemogramDoer, self).__init__(**kwa)
         self.peer = peer
         if self.tymth:
             self.peer.wind(self.tymth)
 
 
     def wind(self, tymth):
-        """
-        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+        """Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
         Updates winds .tymer .tymth
         """
-        super(TymeeMemoirDoer, self).wind(tymth)
+        super(TymeeMemogramDoer, self).wind(tymth)
         self.peer.wind(tymth)
 
 
