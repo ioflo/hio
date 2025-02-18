@@ -122,11 +122,11 @@ def openMG(cls=None, name="test", **kwa):
         name (str): unique identifer of MemoGram peer.
             Enables management of transport by name.
     Usage:
-        with openMemoGram() as mg:
-            mg.receive()
+        with openMemoGram() as peer:
+            peer.receive()
 
-        with openMemoGram(cls=MemoGramSub) as mg:
-            mg.receive()
+        with openMemoGram(cls=MemoGramSub) as peer:
+            peer.receive()
 
     """
     peer = None
@@ -565,7 +565,7 @@ class MemoGram(hioing.Mixin):
         Parameters:
             memo (str): to be segmented into grams
         """
-        grams = [memo]
+        grams = [memo.encode()]
         return grams
 
 
@@ -605,7 +605,7 @@ class MemoGram(hioing.Mixin):
         """Append (gram, dst) duple to .txgs deque
 
         Parameters:
-            gram (str): gram to be sent
+            gram (bytes): gram to be sent
             dst (str): address of remote destination of gram
         """
         self.txgs.append((gram, dst))
@@ -652,7 +652,7 @@ class MemoGram(hioing.Mixin):
         if dst == None:
             try:
                 gram, dst = self.txgs.popleft()
-                gram = bytearray(gram.encode())
+                gram = bytearray(gram)
             except IndexError:
                 return False  # nothing more to send, return False to try later
 
@@ -778,9 +778,40 @@ class MemoGramDoer(doing.Doer):
         """"""
         self.peer.close()
 
+@contextmanager
+def openTMG(cls=None, name="test", **kwa):
+    """
+    Wrapper to create and open TymeeMemoGram instances
+    When used in with statement block, calls .close() on exit of with block
+
+    Parameters:
+        cls (Class): instance of subclass instance
+        name (str): unique identifer of MemoGram peer.
+            Enables management of transport by name.
+    Usage:
+        with openMemoGram() as peer:
+            peer.receive()
+
+        with openMemoGram(cls=MemoGramSub) as peer:
+            peer.receive()
+
+    """
+    peer = None
+
+    if cls is None:
+        cls = TymeeMemoGram
+    try:
+        peer = cls(name=name, **kwa)
+        peer.reopen()
+
+        yield peer
+
+    finally:
+        if peer:
+            peer.close()
 
 
-class TymeeMemoGram(tyming.Tymee):
+class TymeeMemoGram(tyming.Tymee, MemoGram):
     """TymeeMemoGram mixin base class to add tymer support for unreliable transports
     that need retry tymers. Subclass of tyming.Tymee
 
