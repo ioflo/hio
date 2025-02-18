@@ -100,21 +100,54 @@ import socket
 import errno
 
 from collections import deque, namedtuple
+from contextlib import contextmanager
 
-
-from .. import hioing
-from ...base import tyming, doing
-from ... import help
+from hio import hioing, help
+from hio.base import tyming, doing
 
 logger = help.ogler.getLogger()
 
 # namedtuple of ints (major: int, minor: int)
 Versionage = namedtuple("Versionage", "major minor")
 
-class Memogram(hioing.Mixin):
+
+@contextmanager
+def openMG(cls=None, name="test", **kwa):
     """
-    Memogram mixin base class to adds memogram support to a transport class.
-    Memogram supports asynchronous memograms. Provides common methods for subclasses.
+    Wrapper to create and open MemoGram instances
+    When used in with statement block, calls .close() on exit of with block
+
+    Parameters:
+        cls (Class): instance of subclass instance
+        name (str): unique identifer of MemoGram peer.
+            Enables management of transport by name.
+    Usage:
+        with openMemoGram() as mg:
+            mg.receive()
+
+        with openMemoGram(cls=MemoGramSub) as mg:
+            mg.receive()
+
+    """
+    peer = None
+
+    if cls is None:
+        cls = MemoGram
+    try:
+        peer = cls(name=name, **kwa)
+        peer.reopen()
+
+        yield peer
+
+    finally:
+        if peer:
+            peer.close()
+
+
+class MemoGram(hioing.Mixin):
+    """
+    MemoGram mixin base class to adds memogram support to a transport class.
+    MemoGram supports asynchronous memograms. Provides common methods for subclasses.
 
     A memogram is a higher level construct that sits on top of a datagram.
     A memogram supports the segmentation and desegmentation of memos to
@@ -129,7 +162,7 @@ class Memogram(hioing.Mixin):
     Usage:
         Do not instantiate directly but use as a mixin with a transport class
         in order to create a new subclass that adds memogram support to the
-        transport class. For example MemogramUdp or MemoGramUxd
+        transport class. For example MemoGramUdp or MemoGramUxd
 
     Each direction of dataflow uses a tiered set of buffers that respect
     the constraints of non-blocking asynchronous IO with datagram transports.
@@ -167,6 +200,11 @@ class Memogram(hioing.Mixin):
         Version (Versionage): default version consisting of namedtuple of form
             (major: int, minor: int)
 
+    Inherited Attributes:
+        name (str):  unique name for MemoGram transport. Used to manage.
+        opened (bool):  True means transport open for use
+                        False otherwise
+
     Attributes:
         version (Versionage): version for this memoir instance consisting of
                 namedtuple of form (major: int, minor: int)
@@ -196,6 +234,7 @@ class Memogram(hioing.Mixin):
     Version = Versionage(major=0, minor=0)  # default version
 
     def __init__(self,
+                 name='main',
                  version=None,
                  rxgs=None,
                  rxms=None,
@@ -207,7 +246,7 @@ class Memogram(hioing.Mixin):
         """Setup instance
 
         Inherited Parameters:
-
+            name (str): unique name for MemoGram transport. Used to manage.
 
         Parameters:
             version (Versionage): version for this memoir instance consisting of
@@ -240,28 +279,60 @@ class Memogram(hioing.Mixin):
         self.txgs = txgs if txgs is not None else deque()
         self.txbs = txbs if txbs is not None else (bytearray(), None)
 
-        super(Memogram, self).__init__(**kwa)
+        super(MemoGram, self).__init__(name=name, **kwa)
+
+
+
+        if not hasattr(self, "name"):  # stub so mixin works in isolation
+            self.name = name  # mixed with subclass should provide this.
 
 
         if not hasattr(self, "opened"):  # stub so mixin works in isolation
             self.opened = False  # mixed with subclass should provide this.
 
 
+    def open(self):
+        """Opens transport in nonblocking mode
+
+        This is a stub. Override in transport specific subclass
+        """
+        self.opened = True
+        return True
 
 
-    def receive(self):
+    def reopen(self):
+        """Idempotently open transport
+        """
+        self.close()
+        return self.open()
+
+
+    def close(self):
+        """Closes  transport
+
+        This is a stub. Override in transport subclass
+        """
+        self.opened = False
+
+
+    def receive(self, *, echo=None):
         """Attemps to send bytes in txbs to remote destination dst. Must be
         overridden in subclass. This is a stub to define mixin interface.
+
+        Parameters:
+            echo (tuple):  returns echo for debugging purposes where echo is
+                duple of form (gram: bytes, src: str) otherwise returns duple
+                that indicates nothing to receive of form (b'', None)
 
         Returns:
             duple (tuple): of form (data: bytes, src: str) where data is the
                 bytes of received data and src is the source address.
                 When no data the duple is (b'', None)
         """
-        return (b'', None)
+        return echo if echo else (b'', None)
 
 
-    def _serviceOneReceived(self):
+    def _serviceOneReceived(self, *, echo=None):
         """Service one received duple (raw, src) raw packet data. Always returns
         complete datagram.
 
@@ -271,9 +342,15 @@ class Memogram(hioing.Mixin):
 
                         return enables greedy callers to keep calling until no
                         more data to receive from transport
+
+        Parameters:
+            echo (tuple):  returns echo for debugging purposes where echo is
+                duple of form (gram: bytes, src: str) otherwise returns duple
+                that indicates nothing to receive of form (b'', None)
+
         """
         try:
-            gram, src = self.receive()  # if no data the duple is (b'', None)
+            gram, src = self.receive(echo=echo)  # if no data the duple is (b'', None)
         except socket.error as ex:  # OSError.errno always .args[0] for compat
             #if (ex.args[0] == (errno.ECONNREFUSED,
                                #errno.ECONNRESET,
@@ -301,19 +378,30 @@ class Memogram(hioing.Mixin):
         return True  # received data
 
 
-    def serviceReceivesOnce(self):
+    def serviceReceivesOnce(self, *, echo=None):
         """Service receives once (non-greedy) and queue up
+
+        Parameters:
+            echo (tuple):  returns echo for debugging purposes where echo is
+                duple of form (gram: bytes, src: str) otherwise returns duple
+                that indicates nothing to receive of form (b'', None)
         """
         if self.opened:
-            self._serviceOneReceived()
+            self._serviceOneReceived(echo=echo)
 
 
-    def serviceReceives(self):
+    def serviceReceives(self, *, echo=None):
         """Service all receives (greedy) and queue up
+
+        Parameters:
+            echo (tuple):  returns echo for debugging purposes where echo is
+                duple of form (gram: bytes, src: str) otherwise returns duple
+                that indicates nothing to receive of form (b'', None)
         """
         while self.opened:
-            if not self._serviceOneReceived():
+            if not self._serviceOneReceived(echo=echo):
                 break
+            echo = None  # only echo once
 
 
     def desegment(self, grams):
@@ -328,7 +416,13 @@ class Memogram(hioing.Mixin):
         Parameters:
             grams (deque): gram segments
         """
-        return ""
+        try:
+            gram = grams.popleft()
+            memo = gram.decode()
+        except IndexError:
+            return None
+
+        return memo
 
 
     def _serviceOnceRxGrams(self):
@@ -361,11 +455,11 @@ class Memogram(hioing.Mixin):
             if memo is not None:  # allows for empty "" memo for some src
                 self.rxms.append((memo, src))
 
-            if not self.txgs[src]:  # deque at src empty so remove deque
-                del self.txgs[src]  # makes src unordered until next memo at src
+            if not self.rxgs[src]:  # deque at src empty so remove deque
+                del self.rxgs[src]  # makes src unordered until next memo at src
 
             if memo is not None:  # received and desegmented memo
-                if src in self.txgs:  # more received gram(s) at src
+                if src in self.rxgs:  # more received gram(s) at src
                     goods[i] = True  # indicate memo recieved with more received gram(s)
 
         return any(goods)  # at least one memo from a source with more received grams
@@ -406,8 +500,7 @@ class Memogram(hioing.Mixin):
         Override in subclass to handle result and put it somewhere
         """
         try:
-            pass
-            #memo, src = self._serviceOneRxMemo()
+            memo, src = self._serviceOneRxMemo()
         except IndexError:
             pass
 
@@ -418,8 +511,7 @@ class Memogram(hioing.Mixin):
         Override in subclass to handle result(s) and put them somewhere
         """
         while self.rxms:
-            break
-            # memo, src = self._serviceOneRxMsg()
+            memo, src = self._serviceOneRxMemo()
 
 
     def serviceAllRxOnce(self):
@@ -473,7 +565,7 @@ class Memogram(hioing.Mixin):
         Parameters:
             memo (str): to be segmented into grams
         """
-        grams = []
+        grams = [memo]
         return grams
 
 
@@ -560,7 +652,7 @@ class Memogram(hioing.Mixin):
         if dst == None:
             try:
                 gram, dst = self.txgs.popleft()
-                gram = bytearray(gram)
+                gram = bytearray(gram.encode())
             except IndexError:
                 return False  # nothing more to send, return False to try later
 
@@ -652,13 +744,13 @@ class Memogram(hioing.Mixin):
 
 
 
-class MemogramDoer(doing.Doer):
-    """Memogram Doer for reliable transports that do not require retry tymers.
+class MemoGramDoer(doing.Doer):
+    """MemoGram Doer for reliable transports that do not require retry tymers.
 
     See Doer for inherited attributes, properties, and methods.
 
     Attributes:
-       .peer (Memogram): underlying transport instance subclass of Memogram
+       .peer (MemoGram): underlying transport instance subclass of MemoGram
 
     """
 
@@ -666,9 +758,9 @@ class MemogramDoer(doing.Doer):
         """Initialize instance.
 
         Parameters:
-           peer (Peer): is Memogram Subclass instance
+           peer (Peer): is MemoGram Subclass instance
         """
-        super(MemogramDoer, self).__init__(**kwa)
+        super(MemoGramDoer, self).__init__(**kwa)
         self.peer = peer
 
 
@@ -688,8 +780,8 @@ class MemogramDoer(doing.Doer):
 
 
 
-class TymeeMemogram(tyming.Tymee):
-    """TymeeMemogram mixin base class to add tymer support for unreliable transports
+class TymeeMemoGram(tyming.Tymee):
+    """TymeeMemoGram mixin base class to add tymer support for unreliable transports
     that need retry tymers. Subclass of tyming.Tymee
 
 
@@ -720,7 +812,7 @@ class TymeeMemogram(tyming.Tymee):
             tymeout (float): default for retry tymer if any
 
         """
-        super(TymeeMemogram, self).__init__(**kwa)
+        super(TymeeMemoGram, self).__init__(**kwa)
         self.tymeout = tymeout if tymeout is not None else self.Tymeout
         #self.tymer = tyming.Tymer(tymth=self.tymth, duration=self.tymeout) # retry tymer
 
@@ -730,7 +822,7 @@ class TymeeMemogram(tyming.Tymee):
         Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
         Updates winds .tymer .tymth
         """
-        super(TymeeMemogram, self).wind(tymth)
+        super(TymeeMemoGram, self).wind(tymth)
         #self.tymer.wind(tymth)
 
     def serviceTymers(self):
@@ -764,13 +856,13 @@ class TymeeMemogram(tyming.Tymee):
         self.serviceAllTx()
 
 
-class TymeeMemogramDoer(doing.Doer):
-    """TymeeMemogram Doer for unreliable transports that require retry tymers.
+class TymeeMemoGramDoer(doing.Doer):
+    """TymeeMemoGram Doer for unreliable transports that require retry tymers.
 
     See Doer for inherited attributes, properties, and methods.
 
     Attributes:
-       .peer (TymeeMemogram) is underlying transport instance subclass of TymeeMemogram
+       .peer (TymeeMemoGram) is underlying transport instance subclass of TymeeMemoGram
 
     """
 
@@ -778,9 +870,9 @@ class TymeeMemogramDoer(doing.Doer):
         """Initialize instance.
 
         Parameters:
-           peer (TymeeMemogram):  subclass instance
+           peer (TymeeMemoGram):  subclass instance
         """
-        super(TymeeMemogramDoer, self).__init__(**kwa)
+        super(TymeeMemoGramDoer, self).__init__(**kwa)
         self.peer = peer
         if self.tymth:
             self.peer.wind(self.tymth)
@@ -790,7 +882,7 @@ class TymeeMemogramDoer(doing.Doer):
         """Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
         Updates winds .tymer .tymth
         """
-        super(TymeeMemogramDoer, self).wind(tymth)
+        super(TymeeMemoGramDoer, self).wind(tymth)
         self.peer.wind(tymth)
 
 
