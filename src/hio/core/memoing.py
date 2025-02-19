@@ -661,6 +661,7 @@ class MemoGram(hioing.Mixin):
             cnt = self.send(gram, dst)  # assumes .opened == True
         except socket.error as ex:  # OSError.errno always .args[0] for compat
             if (ex.args[0] in (errno.ECONNREFUSED,
+                               errno.ENOENT,
                                errno.ECONNRESET,
                                errno.ENETRESET,
                                errno.ENETUNREACH,
@@ -671,7 +672,8 @@ class MemoGram(hioing.Mixin):
                                errno.ETIME)):  # far peer problem
                 # try again later usually won't work here so we log error
                 # and drop gram so as to allow grams to other destinations
-                # to get sent.
+                # to get sent. When uxd, ECONNREFUSED and ENOENT means dest
+                # uxd file path is not available to send to.
                 logger.error("Error send from %s to %s\n %s\n",
                                                          self.name, dst, ex)
                 self.txbs = (bytearray(), None) # far peer unavailable, so drop.
