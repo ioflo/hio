@@ -366,6 +366,7 @@ class MemoGram(hioing.Mixin):
         # initialize attributes
         self.version = version if version is not None else self.Version
 
+        self.echos = deque()  # only used in testing as echoed tx
         self.rxgs = rxgs if rxgs is not None else dict()
         self.rxms = rxms if rxms is not None else deque()
 
@@ -408,24 +409,35 @@ class MemoGram(hioing.Mixin):
         self.opened = False
 
 
-    def receive(self, *, echo=None):
+    def receive(self, *, echoic=False):
         """Attemps to send bytes in txbs to remote destination dst. Must be
         overridden in subclass. This is a stub to define mixin interface.
 
         Parameters:
-            echo (tuple):  returns echo for debugging purposes where echo is
-                duple of form (gram: bytes, src: str) otherwise returns duple
-                that indicates nothing to receive of form (b'', None)
+            echoic (bool): True means use .echos in .receive debugging purposes
+                            where echo is duple of form: (gram: bytes, src: str)
+                           False means do not use .echos default is duple that
+                            indicates nothing to receive of form (b'', None)
 
         Returns:
             duple (tuple): of form (data: bytes, src: str) where data is the
                 bytes of received data and src is the source address.
-                When no data the duple is (b'', None)
+                When no data the duple is (b'', None) unless echoic is True
+                then pop off echo from .echos
         """
-        return echo if echo else (b'', None)
+
+        if echoic:
+            try:
+                result = self.echos.popleft()
+            except IndexError:
+                result = (b'', None)
+        else:
+            result = (b'', None)
+
+        return result
 
 
-    def _serviceOneReceived(self, *, echo=None):
+    def _serviceOneReceived(self, *, echoic=False):
         """Service one received duple (raw, src) raw packet data. Always returns
         complete datagram.
 
@@ -437,13 +449,14 @@ class MemoGram(hioing.Mixin):
                         more data to receive from transport
 
         Parameters:
-            echo (tuple):  returns echo for debugging purposes where echo is
-                duple of form (gram: bytes, src: str) otherwise returns duple
-                that indicates nothing to receive of form (b'', None)
+            echoic (bool): True means use .echos in .receive debugging purposes
+                            where echo is duple of form: (gram: bytes, src: str)
+                           False means do not use .echos default is duple that
+                            indicates nothing to receive of form (b'', None)
 
         """
         try:
-            gram, src = self.receive(echo=echo)  # if no data the duple is (b'', None)
+            gram, src = self.receive(echoic=echoic)  # if no data the duple is (b'', None)
         except socket.error as ex:  # OSError.errno always .args[0] for compat
             #if (ex.args[0] == (errno.ECONNREFUSED,
                                #errno.ECONNRESET,
@@ -471,28 +484,30 @@ class MemoGram(hioing.Mixin):
         return True  # received data
 
 
-    def serviceReceivesOnce(self, *, echo=None):
+    def serviceReceivesOnce(self, *, echoic=False):
         """Service receives once (non-greedy) and queue up
 
         Parameters:
-            echo (tuple):  returns echo for debugging purposes where echo is
-                duple of form (gram: bytes, src: str) otherwise returns duple
-                that indicates nothing to receive of form (b'', None)
+            echoic (bool): True means use .echos in .receive debugging purposes
+                            where echo is duple of form: (gram: bytes, src: str)
+                           False means do not use .echos default is duple that
+                            indicates nothing to receive of form (b'', None)
         """
         if self.opened:
-            self._serviceOneReceived(echo=echo)
+            self._serviceOneReceived(echoic=echoic)
 
 
-    def serviceReceives(self, *, echo=None):
+    def serviceReceives(self, *, echoic=False):
         """Service all receives (greedy) and queue up
 
         Parameters:
-            echo (tuple):  returns echo for debugging purposes where echo is
-                duple of form (gram: bytes, src: str) otherwise returns duple
-                that indicates nothing to receive of form (b'', None)
+            echoic (bool): True means use .echos in .receive debugging purposes
+                            where echo is duple of form: (gram: bytes, src: str)
+                           False means do not use .echos default is duple that
+                            indicates nothing to receive of form (b'', None)
         """
         while self.opened:
-            if not self._serviceOneReceived(echo=echo):
+            if not self._serviceOneReceived(echoic=echoic):
                 break
             echo = None  # only echo once
 
@@ -623,7 +638,7 @@ class MemoGram(hioing.Mixin):
         self.serviceRxMemos()
 
 
-    def send(self, txbs, dst):
+    def send(self, txbs, dst, *, echoic=False):
         """Attemps to send bytes in txbs to remote destination dst. Must be
         overridden in subclass. This is a stub to define mixin interface.
 
@@ -633,7 +648,11 @@ class MemoGram(hioing.Mixin):
         Parameters:
             txbs (bytes | bytearray): of bytes to send
             dst (str): remote destination address
+            echoic (bool): True means echo sends into receives via. echos
+                           False measn do not echo
         """
+        if echoic:
+            self.echos.append((bytes(txbs), dst))  # make copy
         return len(txbs)  # all sent
 
 
@@ -704,9 +723,13 @@ class MemoGram(hioing.Mixin):
         self.txgs.append((gram, dst))
 
 
-    def _serviceOnceTxGrams(self):
+    def _serviceOnceTxGrams(self, *, echoic=False):
         """Service one pass over .txgs dict for each unique dst in .txgs and then
         services one pass over the .txbs of those outgoing grams
+
+        Parameters:
+           echoic (bool): True means echo sends into receives via. echos
+                           False measn do not echo
 
         Each entry in.txgs is duple of form: (gram: bytes, dst: str)
         where:
@@ -751,7 +774,7 @@ class MemoGram(hioing.Mixin):
 
 
         try:
-            cnt = self.send(gram, dst)  # assumes .opened == True
+            cnt = self.send(gram, dst, echoic=echoic)  # assumes .opened == True
         except socket.error as ex:  # OSError.errno always .args[0] for compat
             if (ex.args[0] in (errno.ECONNREFUSED,
                                errno.ENOENT,
@@ -776,28 +799,36 @@ class MemoGram(hioing.Mixin):
         del gram[:cnt]  # remove from buffer those bytes sent
         if not gram:  # all sent
             dst = None  # indicate by setting dst to None
-        self.txbs = (gram, dst)
+        self.txbs = (gram, dst)  # update txbs to indicate if completely sent
 
         return (False if dst else True)  # incomplete return False, else True
 
 
-    def serviceTxGramsOnce(self):
+    def serviceTxGramsOnce(self, *, echoic=False):
         """Service one pass (non-greedy) over all unique destinations in .txgs
         dict if any for blocked destination or unblocked with pending outgoing
         grams.
+
+        Parameters:
+           echoic (bool): True means echo sends into receives via. echos
+                           False measn do not echo
         """
         if self.opened and self.txgs:
-            self._serviceOnceTxGrams()
+            self._serviceOnceTxGrams(echoic=echoic)
 
 
-    def serviceTxGrams(self):
+    def serviceTxGrams(self, *, echoic=False):
         """Service multiple passes (greedy) over all unqique destinations in
         .txgs dict if any for blocked destinations or unblocked with pending
         outgoing grams until there is no unblocked destination with a pending gram.
+
+        Parameters:
+           echoic (bool): True means echo sends into receives via. echos
+                           False measn do not echo
         """
-        while self.opened and self.txgs:
-            if not self._serviceOnceTxGrams():  # no pending gram on any unblocked dst,
-                break  # so try again later
+        while self.opened and self.txgs:  # pending gram(s)
+            if not self._serviceOnceTxGrams(echoic=echoic):  # send incomplete
+                break  # try again later
 
 
     def serviceAllTxOnce(self):

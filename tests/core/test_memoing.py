@@ -40,7 +40,8 @@ def test_memogram_basic():
     assert not peer.rxgs
     assert not peer.rxms
     echo = (b"Bye yall", "beta")
-    peer.serviceReceives(echo=echo)
+    peer.echos.append(echo)
+    peer.serviceReceives(echoic=True)
     assert peer.rxgs["beta"][0] == b"Bye yall"
     peer.serviceRxGrams()
     assert not peer.rxgs
@@ -124,7 +125,8 @@ def test_tymeememogram_basic():
     assert not peer.rxgs
     assert not peer.rxms
     echo = (b"Bye yall", "beta")
-    peer.serviceReceives(echo=echo)
+    peer.echos.append(echo)
+    peer.serviceReceives(echoic=True)
     assert peer.rxgs["beta"][0] == b"Bye yall"
     peer.serviceRxGrams()
     assert not peer.rxgs
