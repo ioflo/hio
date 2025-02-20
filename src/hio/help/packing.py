@@ -43,15 +43,13 @@ def packify(fmt=u'8', fields=[0x00], size=None, reverse=False):
     bu = 0  # bits used
 
     for i, bfmt in enumerate(fmt.split()):
-        bits = 0x00
+        bits = 0x0
         bfl = int(bfmt)
         bu += bfl
 
         if bfl == 1:
-            if fields[i]:
-                bits = 0x01
-            else:
-                bits = 0x00
+            bits = 0x1 if fields[i] else 0x0
+
         else:
             bits = fields[i] & (2**bfl - 1)  # bit-and mask out high order bits
 
@@ -61,6 +59,7 @@ def packify(fmt=u'8', fields=[0x00], size=None, reverse=False):
         bfp -= bfl #adjust bit field position for next element
 
     return bytify(n=n, size=size, reverse=reverse, strict=True)  # use int.to_bytes
+
 
 def packifyInto(b, fmt=u'8', fields=[0x00], size=None, offset=0, reverse=False):
     """
@@ -103,15 +102,12 @@ def packifyInto(b, fmt=u'8', fields=[0x00], size=None, offset=0, reverse=False):
     bu = 0  # bits used
 
     for i, bfmt in enumerate(fmt.split()):
-        bits = 0x00
+        bits = 0x0
         bfl = int(bfmt)
         bu += bfl
 
         if bfl == 1:
-            if fields[i]:
-                bits = 0x01
-            else:
-                bits = 0x00
+            bits = 0x1 if fields[i] else 0x0
         else:
             bits = fields[i] & (2**bfl - 1)  # bit-and mask out high order bits
 
@@ -124,13 +120,8 @@ def packifyInto(b, fmt=u'8', fields=[0x00], size=None, offset=0, reverse=False):
 
     b[offset:offset + len(bp)] = bp
 
-    #count = 0
-    #while n or (count < size):
-        #b[offset + size - 1 - count] = n & 0xFF
-        #count += 1
-        #n >>=  8
-
     return size
+
 
 def unpackify(fmt=u'1 1 1 1 1 1 1 1',
               b=bytearray([0x00]),
@@ -187,10 +178,8 @@ def unpackify(fmt=u'1 1 1 1 1 1 1 1',
         bits = n & mask  # mask off other bits
         bits >>= (bfp - bfl)  # right shift to low order bits
         if bfl == 1 and boolean: #convert to boolean
-            if bits:
-                bits = True
-            else:
-                bits = False
+            bits = True if bits else False
+
         fields.append(bits) #assign to fields list
         bfp -= bfl #adjust bit field position for next element
 
@@ -199,10 +188,8 @@ def unpackify(fmt=u'1 1 1 1 1 1 1 1',
         mask = (2**bfl - 1) # make mask
         bits = n & mask  # mask off other bits
         if bfl == 1 and boolean: #convert to boolean
-            if bits:
-                bits = True
-            else:
-                bits = False
+            bits = True if bits else False
+
         fields.append(bits) #assign to fields list
     return tuple(fields) #convert to tuple
 
