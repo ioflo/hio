@@ -283,7 +283,7 @@ def test_tcp_basic():
         msgIn = gamma.receive()
         assert msgOut == msgIn
         msgIn = gamma.receive()
-        if 'linux' in sys.platform:
+        if 'linux' or 'windows' in sys.platform:
             assert msgIn ==  b''  # server shutdown detected not None
             assert gamma.cutoff == True
         else:
@@ -291,7 +291,7 @@ def test_tcp_basic():
             assert gamma.cutoff == False
         time.sleep(0.05)
         msgIn = gamma.receive()
-        if 'linux' in sys.platform:
+        if 'linux' or 'windows' in sys.platform:
             assert msgIn == b''  # server shutdown detected not None
             assert gamma.cutoff == True
         else:
@@ -371,7 +371,7 @@ def test_tcp_basic():
         assert msgOut == msgIn
         time.sleep(0.05)
         msgIn = ixBeta.receive()
-        if 'linux' in sys.platform:
+        if 'linux' or 'windows' in sys.platform:
             assert ixBeta.cutoff == True
             assert msgIn == b''  # server does detect shutdown
         else:

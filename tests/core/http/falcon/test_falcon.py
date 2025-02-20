@@ -501,35 +501,35 @@ def test_get_static_sink():
     assert rep.status == falcon.HTTP_OK
     assert rep.headers['content-type'] == 'text/html; charset=UTF-8'
     assert len(rep.text) > 0
-    assert rep.text == index
+    assert rep.text.replace('\r\n', '\n') == index
 
     # get default at /static  which is index.html
     rep = client.simulate_get('/static')
     assert rep.status == falcon.HTTP_OK
     assert rep.headers['content-type'] == 'text/html; charset=UTF-8'
     assert len(rep.text) > 0
-    assert rep.text == index
+    assert rep.text.replace('\r\n', '\n') == index
 
     # get default at /static/  e.g. trailing / which is index.html
     rep = client.simulate_get('/static/')
     assert rep.status == falcon.HTTP_OK
     assert rep.headers['content-type'] == 'text/html; charset=UTF-8'
     assert len(rep.text) > 0
-    assert rep.text == index
+    assert rep.text.replace('\r\n', '\n') == index
 
     # get index.html
     rep = client.simulate_get('/index.html')
     assert rep.status == falcon.HTTP_OK
     assert rep.headers['content-type'] == 'text/html; charset=UTF-8'
     assert len(rep.text) > 0
-    assert rep.text == index
+    assert rep.text.replace('\r\n', '\n') == index
 
     # get /static/index.html
     rep = client.simulate_get('/static/index.html')
     assert rep.status == falcon.HTTP_OK
     assert rep.headers['content-type'] == 'text/html; charset=UTF-8'
     assert len(rep.text) > 0
-    assert rep.text == index
+    assert rep.text.replace('\r\n', '\n') == index
 
     # attempt missing file
     rep = client.simulate_get('/static/missing.txt')
@@ -541,7 +541,7 @@ def test_get_static_sink():
     rep = client.simulate_get('/static/robots.txt')
     assert rep.status == falcon.HTTP_OK
     assert rep.headers['content-type'] == 'text/plain; charset=UTF-8'
-    assert rep.text == '# robotstxt.org\n\nUser-agent: *\n'
+    assert rep.text.replace('\r\n', '\n') == '# robotstxt.org\n\nUser-agent: *\n'
 
     # get trial.js
     rep = client.simulate_get('/static/index.js')
@@ -549,7 +549,7 @@ def test_get_static_sink():
     assert (rep.headers['content-type'] == 'application/javascript; charset=UTF-8' or
             rep.headers['content-type'] == 'text/javascript; charset=UTF-8')
     assert len(rep.text) > 0
-    assert rep.text == '// vanilla index.js\n\nm.render(document.body, "Hello world")\n'
+    assert rep.text.replace('\r\n', '\n') == '// vanilla index.js\n\nm.render(document.body, "Hello world")\n'
 
 
 def test_get_example():

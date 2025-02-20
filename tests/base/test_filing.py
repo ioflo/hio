@@ -3,10 +3,12 @@
 tests.help.test_filing module
 
 """
+import platform
 import shutil
 
 import pytest
 import os
+from unittest import mock
 
 from hio import hioing
 from hio.base import doing
@@ -17,11 +19,13 @@ def test_filing():
     """
     Test Filer class
     """
-    dirpath = '/usr/local/var/hio/test'
+
+    dirpath = os.path.join(os.path.sep, 'usr', 'local', 'var', 'hio', 'test')
+
     if os.path.exists(dirpath):
         shutil.rmtree(dirpath)
 
-    altdirpath = '~/.hio/test'
+    altdirpath = os.path.join(os.path.expanduser('~'), '.hio', 'test')
     altdirpath = os.path.abspath(
                 os.path.expanduser(altdirpath))
     if os.path.exists(altdirpath):
@@ -32,33 +36,37 @@ def test_filing():
 
     filer = filing.Filer(name="test")  # defaults
     assert filer.exists(name="test") is True
-    assert filer.path.endswith("hio/test")
+    assert filer.path.endswith(os.path.join("hio", "test"))
     assert filer.opened
     assert os.path.exists(filer.path)
     assert not filer.file
     filer.close()
     assert not filer.opened
-    assert filer.path == dirpath
+
+    _, pathFiler = os.path.splitdrive(os.path.normpath(filer.path))
+    _, pathTest = os.path.splitdrive(os.path.normpath(dirpath))
+
+    assert pathFiler == pathTest
     assert os.path.exists(filer.path)
 
     filer.reopen()  # reuse False so remake
     assert filer.opened
-    assert filer.path.endswith("hio/test")
+    assert filer.path.endswith(os.path.join("hio", "test"))
     assert os.path.exists(filer.path)
 
     filer.reopen(reuse=True)  # reuse True and clear False so don't remake
     assert filer.opened
-    assert filer.path.endswith("hio/test")
+    assert filer.path.endswith(os.path.join("hio", "test"))
     assert os.path.exists(filer.path)
 
     filer.reopen(reuse=True, clear=True)  # clear True so remake even if reuse
     assert filer.opened
-    assert filer.path.endswith("hio/test")
+    assert filer.path.endswith(os.path.join("hio", "test"))
     assert os.path.exists(filer.path)
 
     filer.reopen(clear=True)  # clear True so remake
     assert filer.opened
-    assert filer.path.endswith("hio/test")
+    assert filer.path.endswith(os.path.join("hio", "test"))
     assert os.path.exists(filer.path)
 
     filer.close(clear=True)
@@ -68,18 +76,16 @@ def test_filing():
     # remove both clean and not clean
 
     # remove both alt not clean and alt clean
-    dirpath = os.path.abspath(os.path.expanduser('~/.hio/test'))
+    dirpath = os.path.join(os.path.expanduser('~'), '.hio', 'test')
     if os.path.exists(dirpath):
         shutil.rmtree(dirpath)
-    dirpath = os.path.abspath(os.path.expanduser('~/.hio/clean/test'))
+    dirpath = os.path.join(os.path.expanduser('~'), '.hio', 'clean', 'test')
     if os.path.exists(dirpath):
         shutil.rmtree(dirpath)
-    dirpath = '/usr/local/var/hio/test'  # remove both clean and not clean
+    dirpath = os.path.join(os.path.sep, 'usr', 'local', 'var', 'hio', 'test')  # remove both clean and not clean
     if os.path.exists(dirpath):
         shutil.rmtree(dirpath)
-
-
-    dirpath = '/usr/local/var/hio/clean/test'
+    dirpath = os.path.join(os.path.sep, 'usr', 'local', 'var', 'hio', 'clean', 'test')
     if os.path.exists(dirpath):
         shutil.rmtree(dirpath)
 
@@ -89,33 +95,39 @@ def test_filing():
     filer = filing.Filer(name="test", clean="true")  # defaults
     assert filer.exists(name="test", clean="true") is True
 
-    assert filer.path.endswith("hio/clean/test")
+    assert filer.path.endswith(os.path.join("hio", "clean", "test"))
     assert filer.opened
     assert os.path.exists(filer.path)
     assert not filer.file
     filer.close()
     assert not filer.opened
-    assert filer.path == dirpath
+
+    dirpath = os.path.join(os.path.sep, 'usr', 'local', 'var', 'hio', 'clean', 'test')
+
+    _, pathFiler = os.path.splitdrive(os.path.normpath(filer.path))
+    _, pathTest = os.path.splitdrive(os.path.normpath(dirpath))
+
+    assert pathFiler == pathTest
     assert os.path.exists(filer.path)
 
     filer.reopen(clean=True)  # reuse False so remake
     assert filer.opened
-    assert filer.path.endswith("hio/clean/test")
+    assert filer.path.endswith(os.path.join("hio", "clean", "test"))
     assert os.path.exists(filer.path)
 
     filer.reopen(reuse=True, clean=True)  # reuse True and clear False so don't remake
     assert filer.opened
-    assert filer.path.endswith("hio/clean/test")
+    assert filer.path.endswith(os.path.join("hio", "clean", "test"))
     assert os.path.exists(filer.path)
 
     filer.reopen(reuse=True, clear=True, clean=True)  # clear True so remake even if reuse
     assert filer.opened
-    assert filer.path.endswith("hio/clean/test")
+    assert filer.path.endswith(os.path.join("hio", "clean", "test"))
     assert os.path.exists(filer.path)
 
     filer.reopen(clear=True, clean=True)  # clear True so remake
     assert filer.opened
-    assert filer.path.endswith("hio/clean/test")
+    assert filer.path.endswith(os.path.join("hio", "clean", "test"))
     assert os.path.exists(filer.path)
 
     filer.close(clear=True)
@@ -123,50 +135,71 @@ def test_filing():
 
     # test with alt
     #dirpath = '/Users/samuel/.hio/test'
-    dirpath = os.path.abspath(os.path.expanduser('~/.hio/test'))
+    dirpath = os.path.join(os.path.expanduser('~'), '.hio', 'test')
     if os.path.exists(dirpath):
         shutil.rmtree(dirpath)
 
-    # headDirPath that is not permitted to force using AltPath
-    filer = filing.Filer(name="test", headDirPath="/root/hio", reopen=False)
-    assert filer.exists(name="test", headDirPath="/root/hio") is False
+    headDirPath = os.path.join(os.path.sep, 'root', 'hio')
 
-    filer = filing.Filer(name="test", headDirPath="/root/hio")
-    assert filer.exists(name="test", headDirPath="/root/hio") is True
-    assert filer.path.endswith(".hio/test")
+    # Compute the target path that Filer will attempt to create.
+    expectedPath = os.path.abspath(os.path.join(headDirPath, filing.Filer.TailDirPath, "test"))
+
+    # Save the original os.makedirs function.
+    originalMakedirs = os.makedirs
+
+    def conditionalMakedirs(path, *args, **kwargs):
+        # Check if the path being created matches the expected path
+        if os.path.abspath(path) == expectedPath:
+            raise OSError("Permission denied")
+        return originalMakedirs(path, *args, **kwargs)
+
+    # headDirPath that is not permitted to force using AltPath
+    filer = filing.Filer(name="test", headDirPath=headDirPath, reopen=False)
+    assert filer.exists(name="test", headDirPath=headDirPath) is False
+
+    with mock.patch("os.makedirs", side_effect=conditionalMakedirs) as mocked_makedirs:
+        filer = filing.Filer(name="test", headDirPath=headDirPath, reopen=True)
+
+    assert filer.exists(name="test", headDirPath=headDirPath) is True
+    assert filer.path.endswith(os.path.join(".hio", "test"))
+
+    assert filer.path.endswith(os.path.join(".hio", "test"))
     assert filer.opened
     assert os.path.exists(filer.path)
     assert not filer.file
     filer.close()
     assert not filer.opened
-    assert filer.path.endswith(".hio/test")
+    assert filer.path.endswith(os.path.join(".hio", "test"))
     assert os.path.exists(filer.path)
 
-    filer.reopen()  # reuse False so remake
+    with mock.patch("os.makedirs", side_effect=conditionalMakedirs) as mocked_makedirs:
+        filer.reopen()  # reuse False so remake
     assert filer.opened
-    assert filer.path.endswith(".hio/test")
+    assert filer.path.endswith(os.path.join(".hio", "test"))
     assert os.path.exists(filer.path)
 
     filer.reopen(reuse=True)  # reuse True and clear False so don't remake
     assert filer.opened
-    assert filer.path.endswith(".hio/test")
+    assert filer.path.endswith(os.path.join(".hio", "test"))
     assert os.path.exists(filer.path)
 
-    filer.reopen(reuse=True, clear=True)  # clear True so remake even if reuse
+    with mock.patch("os.makedirs", side_effect=conditionalMakedirs) as mocked_makedirs:
+        filer.reopen(reuse=True, clear=True)  # clear True so remake even if reuse
     assert filer.opened
-    assert filer.path.endswith(".hio/test")
+    assert filer.path.endswith(os.path.join(".hio", "test"))
     assert os.path.exists(filer.path)
 
-    filer.reopen(clear=True)  # clear True so remake
+    with mock.patch("os.makedirs", side_effect=conditionalMakedirs) as mocked_makedirs:
+        filer.reopen(clear=True)  # clear True so remake
     assert filer.opened
-    assert filer.path.endswith(".hio/test")
+    assert filer.path.endswith(os.path.join(".hio", "test"))
     assert os.path.exists(filer.path)
 
     filer.close(clear=True)
     assert not os.path.exists(filer.path)
 
     # Test Filer with file not dir
-    filepath = '/usr/local/var/hio/conf/test.text'
+    filepath = os.path.join(os.path.sep, 'usr', 'local', 'var', 'hio', 'conf', 'test.text')
     if os.path.exists(filepath):
         os.remove(filepath)
 
@@ -176,7 +209,7 @@ def test_filing():
 
     filer = filing.Filer(name="test", base="conf", filed=True)
     assert filer.exists(name="test", base="conf", filed=True) is True
-    assert filer.path.endswith("hio/conf/test.text")
+    assert filer.path.endswith(os.path.join("hio", "conf", "test.text"))
     assert filer.opened
     assert os.path.exists(filer.path)
     assert filer.file
@@ -190,47 +223,62 @@ def test_filing():
     filer.close()
     assert not filer.opened
     assert filer.file.closed
-    assert filer.path.endswith("hio/conf/test.text")
+    assert filer.path.endswith(os.path.join("hio", "conf", "test.text"))
     assert os.path.exists(filer.path)
 
     filer.reopen()  # reuse False so remake
     assert filer.opened
     assert not filer.file.closed
-    assert filer.path.endswith("hio/conf/test.text")
+    assert filer.path.endswith(os.path.join("hio", "conf", "test.text"))
     assert os.path.exists(filer.path)
 
     filer.reopen(reuse=True)  # reuse True and clear False so don't remake
     assert filer.opened
     assert not filer.file.closed
-    assert filer.path.endswith("hio/conf/test.text")
+    assert filer.path.endswith(os.path.join("hio", "conf", "test.text"))
     assert os.path.exists(filer.path)
 
     filer.reopen(reuse=True, clear=True)  # clear True so remake even if reuse
     assert filer.opened
     assert not filer.file.closed
-    assert filer.path.endswith("hio/conf/test.text")
+    assert filer.path.endswith(os.path.join("hio", "conf", "test.text"))
     assert os.path.exists(filer.path)
 
     filer.reopen(clear=True)  # clear True so remake
     assert filer.opened
     assert not filer.file.closed
-    assert filer.path.endswith("hio/conf/test.text")
+    assert filer.path.endswith(os.path.join("hio", "conf", "test.text"))
     assert os.path.exists(filer.path)
 
     filer.close(clear=True)
     assert not os.path.exists(filer.path)
 
     # Test Filer with file not dir and with Alt path
-    filepath = '/Users/samuel/.hio/conf/test.text'
+    filepath = os.path.join(os.path.expanduser('~'), '.hio', 'conf', 'test.text')
     if os.path.exists(filepath):
         os.remove(filepath)
 
-    # force altPath by using headDirPath of "/root/hio" which is not permitted
-    filer = filing.Filer(name="test", base="conf", headDirPath="/root/hio", filed=True, reopen=False)
-    assert filer.exists(name="test", base="conf", headDirPath="/root/hio", filed=True) is False
+    headDirPath = os.path.join(os.path.sep, 'root', 'hio')
+    expectedPath = os.path.abspath(os.path.join(headDirPath, filing.Filer.TailDirPath, "conf"))
+    print(expectedPath)
+    print(headDirPath)
+    originalMakedirs = os.makedirs
+    def conditionalMakedir(path, *args, **kwargs):
+        # Check if the path being created matches the expected path
+        print(os.path.abspath(path))
+        if os.path.abspath(path) == expectedPath:
+            raise OSError("Permission denied")
+        return originalMakedirs(path, *args, **kwargs)
 
-    filer = filing.Filer(name="test", base="conf", headDirPath="/root/hio", filed=True)
-    assert filer.exists(name="test", base="conf", headDirPath="/root/hio", filed=True) is True
+    # force altPath by using headDirPath of "/root/hio" which is not permitted
+    with mock.patch("os.makedirs", side_effect=conditionalMakedir) as mocked_makedirs:
+        filer = filing.Filer(name="test", base="conf", headDirPath=headDirPath, filed=True, reopen=False)
+    assert filer.exists(name="test", base="conf", headDirPath=headDirPath, filed=True) is False
+
+    with mock.patch("os.makedirs", side_effect=conditionalMakedir) as mocked_makedirs:
+        filer = filing.Filer(name="test", base="conf", headDirPath=headDirPath, filed=True)
+
+    assert filer.exists(name="test", base="conf", headDirPath=headDirPath, filed=True) is True
     assert filer.path.endswith(".hio/conf/test.text")
     assert filer.opened
     assert os.path.exists(filer.path)
@@ -350,7 +398,7 @@ def test_filer_doer():
     assert [val[1] for val in doist.deeds] == [0.0, 0.0]  #  retymes
     for doer in doers:
         assert doer.filer.opened
-        assert "_test/hio/test" in doer.filer.path
+        assert '_test' + os.path.join(os.path.sep, 'hio', 'test') in doer.filer.path
 
     doist.recur()
     assert doist.tyme == 0.03125  # on next cycle
@@ -404,7 +452,7 @@ def test_filer_doer():
     assert [val[1] for val in doist.deeds] == [0.0, 0.0]  #  retymes
     for doer in doers:
         assert doer.filer.opened
-        assert "_test/hio/test" in doer.filer.path
+        assert '_test' + os.path.join(os.path.sep, 'hio', 'test') in doer.filer.path
         assert  doer.filer.path.endswith(".text")
         assert doer.filer.file is not None
         assert not doer.filer.file.closed
@@ -435,8 +483,6 @@ def test_filer_doer():
         assert doer.filer.file is None
 
     """End Test"""
-
-
 
 if __name__ == "__main__":
     test_filing()

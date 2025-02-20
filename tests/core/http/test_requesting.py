@@ -140,7 +140,8 @@ def test_requester_respondent_echo_tls():
     Test NonBlocking HTTPS (TLS/SSL) client
     """
     #'/Users/Load/Data/Code/public/hio/tests/core/tls/certs'
-    assert certdirpath.endswith('/hio/tests/core/tls/certs')
+    assert certdirpath.endswith(os.path.join(os.path.sep, 'hio', 'tests', 'core', 'tls', 'certs'))
+
 
     #serverKeypath = '/etc/pki/tls/certs/server_key.pem'  # local server private key
     #serverCertpath = '/etc/pki/tls/certs/server_cert.pem'  # local server public cert

@@ -29,7 +29,7 @@ def test_openWL():
         assert wl.name == "test"
         assert wl.temp == True
         assert wl.prefix == 'hio'
-        assert wl.headDirPath == wl.HeadDirPath == "/usr/local/var"
+        assert wl.headDirPath == wl.HeadDirPath == os.path.join(os.path.sep, 'usr', 'local', 'var')
         assert wl.dirPath is None  # filed == False
         assert not wl.rxl.closed
         assert not wl.txl.closed
@@ -74,7 +74,7 @@ def test_openWL():
         assert wl.name == "test"
         assert wl.temp == True
         assert wl.prefix == 'hio'
-        assert wl.headDirPath == wl.HeadDirPath == "/usr/local/var"
+        assert wl.headDirPath == wl.HeadDirPath == os.path.join(os.path.sep, 'usr', 'local', 'var')
         assert wl.dirPath is None  # filed == False
         assert not wl.rxl.closed
         assert not wl.txl.closed
@@ -132,9 +132,10 @@ def test_openWL():
         assert wl.name == "test"
         assert wl.temp == True
         assert wl.prefix == 'hio'
-        assert wl.headDirPath == wl.HeadDirPath == "/usr/local/var"
+        assert wl.headDirPath == wl.HeadDirPath == os.path.join(os.path.sep, 'usr', 'local', 'var')
         assert os.path.exists(wl.dirPath)
-        assert wl.dirPath.startswith("/tmp/hio/wirelogs/test_")
+        _, pathWl = os.path.splitdrive(os.path.normpath(wl.dirPath))
+        assert pathWl.startswith(os.path.join(os.path.sep, 'tmp', 'hio', 'wirelogs', 'test_'))
         assert wl.dirPath.endswith("_temp")
         assert not wl.rxl.closed
         assert wl.rxl.name.endswith(".rx.log")
@@ -182,9 +183,10 @@ def test_openWL():
         assert wl.name == "test"
         assert wl.temp == True
         assert wl.prefix == 'hio'
-        assert wl.headDirPath == wl.HeadDirPath == "/usr/local/var"
+        assert wl.headDirPath == wl.HeadDirPath == os.path.join(os.path.sep, 'usr', 'local', 'var')
         assert os.path.exists(wl.dirPath)
-        assert wl.dirPath.startswith("/tmp/hio/wirelogs/test_")
+        _, pathWl = os.path.splitdrive(os.path.normpath(wl.dirPath))
+        assert pathWl.startswith(os.path.join(os.path.sep, 'tmp', 'hio', 'wirelogs', 'test_'))
         assert wl.dirPath.endswith("_temp")
         assert wl.rxl is wl.txl
         assert not wl.rxl.closed
@@ -230,7 +232,6 @@ def test_openWL():
                                b'\nTx eve:\n789012\n'
                                b'\nRx bob:\nTSRWPO\n'
                                b'\nTx bob:\n321098\n')
-
     assert wl.rxl.closed
     assert wl.txl.closed
     assert not os.path.exists(wl.dirPath)
@@ -247,14 +248,17 @@ def test_openWL():
         assert wl.name == "test"
         assert wl.temp == False
         assert wl.prefix == 'hio'
-        assert wl.headDirPath == wl.HeadDirPath == "/usr/local/var"
+        assert wl.headDirPath == wl.HeadDirPath == os.path.join(os.path.sep, 'usr', 'local', 'var')
         assert os.path.exists(wl.dirPath)
-        assert wl.dirPath == '/usr/local/var/hio/wirelogs'
+        _, pathWl = os.path.splitdrive(os.path.normpath(wl.dirPath))
+        assert pathWl == os.path.join(os.path.sep, 'usr', 'local', 'var', 'hio', 'wirelogs')
         assert not wl.rxl.closed
-        assert wl.rxl.name.startswith('/usr/local/var/hio/wirelogs/test.')
+        _, pathWlRxl = os.path.splitdrive(os.path.normpath(wl.rxl.name))
+        assert pathWlRxl.startswith(os.path.join(os.path.sep, 'usr', 'local', 'var', 'hio', 'wirelogs', 'test.'))
         assert wl.rxl.name.endswith('.rx.log')
         assert not wl.txl.closed
-        assert wl.txl.name.startswith('/usr/local/var/hio/wirelogs/test.')
+        _, pathWlTxl = os.path.splitdrive(os.path.normpath(wl.txl.name))
+        assert pathWlTxl.startswith(os.path.join(os.path.sep, 'usr', 'local', 'var', 'hio', 'wirelogs', 'test.'))
         assert wl.txl.name.endswith('.tx.log')
         assert wl.opened
 
@@ -309,15 +313,19 @@ def test_openWL():
         assert wl.name == "test"
         assert wl.temp == False
         assert wl.prefix == 'hio'
-        assert wl.headDirPath == wl.HeadDirPath == "/usr/local/var"
+        assert wl.headDirPath == wl.HeadDirPath == os.path.join(os.path.sep, 'usr', 'local', 'var')
         assert os.path.exists(wl.dirPath)
-        assert wl.dirPath == '/usr/local/var/hio/wirelogs'
+
+        _, pathWl = os.path.splitdrive(os.path.normpath(wl.dirPath))
+        assert pathWl == os.path.join(os.path.sep, 'usr', 'local', 'var', 'hio', 'wirelogs')
         assert wl.rxl is wl.txl
         assert not wl.rxl.closed
-        assert wl.rxl.name.startswith('/usr/local/var/hio/wirelogs/test.')
+        _, pathWlRxl = os.path.splitdrive(os.path.normpath(wl.rxl.name))
+        assert pathWlRxl.startswith(os.path.join(os.path.sep, 'usr', 'local', 'var', 'hio', 'wirelogs', 'test.'))
         assert wl.rxl.name.endswith('.log')
         assert not wl.txl.closed
-        assert wl.txl.name.startswith('/usr/local/var/hio/wirelogs/test.')
+        _, pathWlTxl = os.path.splitdrive(os.path.normpath(wl.txl.name))
+        assert pathWlTxl.startswith(os.path.join(os.path.sep, 'usr', 'local', 'var', 'hio', 'wirelogs', 'test.'))
         assert wl.txl.name.endswith('.log')
         assert wl.opened
 
