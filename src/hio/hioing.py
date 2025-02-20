@@ -11,11 +11,22 @@ from collections import namedtuple
 
 Versionage = namedtuple("Versionage", "major minor")
 
-Version = Versionage(major=1, minor=0)  # KERI Protocol Version
+Version = Versionage(major=1, minor=0)  # Protocol Version
 
 SEPARATOR =  "\r\n\r\n"
 SEPARATOR_BYTES = SEPARATOR.encode("utf-8")
 
+
+class Mixin():
+    """
+    Base class to enable consistent MRO for mixin multiple inheritance
+    Allows each subclass to call
+    super(MixinSubClass, self).__init__(*pa, **kwa)
+    So the __init__ propagates to common top of Tree
+    https://medium.com/geekculture/cooperative-multiple-inheritance-in-python-practice-60e3ac5f91cc
+    """
+    def __init__(self, *pa, **kwa):
+        pass
 
 
 class HioError(Exception):
@@ -72,14 +83,3 @@ class NamerError(HioError):
         raise NamerError("error message")
     """
 
-
-class Mixin():
-    """
-    Base class to enable consistent MRO for mixin multiple inheritance
-    Allows each subclass to call
-    super(MixinSubClass, self).__init__(*pa, **kwa)
-    So the __init__ propagates to common top of Tree
-    https://medium.com/geekculture/cooperative-multiple-inheritance-in-python-practice-60e3ac5f91cc
-    """
-    def __init__(self, *pa, **kwa):
-        pass

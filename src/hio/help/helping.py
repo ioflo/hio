@@ -11,6 +11,10 @@ import errno
 import stat
 import json
 
+import base64
+import re
+
+from collections import deque
 from collections.abc import Iterable, Sequence, Generator
 from abc import ABCMeta
 
@@ -418,3 +422,59 @@ def load(path):
 
     return it
 
+
+# Base64 utilities
+
+# Mappings between Base64 Encode Index and Decode Characters
+#  B64ChrByIdx is dict where each key is a B64 index and each value is the B64 char
+#  B64IdxByChr is dict where each key is a B64 char and each value is the B64 index
+# Map Base64 index to char
+B64ChrByIdx = dict((index, char) for index, char in enumerate([chr(x) for x in range(65, 91)]))
+B64ChrByIdx.update([(index + 26, char) for index, char in enumerate([chr(x) for x in range(97, 123)])])
+B64ChrByIdx.update([(index + 52, char) for index, char in enumerate([chr(x) for x in range(48, 58)])])
+B64ChrByIdx[62] = '-'
+B64ChrByIdx[63] = '_'
+# Map char to Base64 index
+B64IdxByChr = {char: index for index, char in B64ChrByIdx.items()}
+
+B64REX = rb'^[0-9A-Za-z_-]*\Z'   # [A-Za-z0-9\-\_]  bytes
+# Usage: if Reb64.match(bext): or if not Reb64.match(bext): bext is bytes
+Reb64 = re.compile(B64REX)  # compile is faster
+
+def intToB64(i, l=1):
+    """
+    Returns conversion of int i to Base64 str
+    l is min number of b64 digits left padded with Base64 0 == "A" char
+    """
+    d = deque()  # deque of characters base64
+
+    while l:
+        d.appendleft(B64ChrByIdx[i % 64])
+        i = i // 64
+        if not i:
+            break
+    for j in range(l - len(d)):  # range(x)  x <= 0 means do not iterate
+        d.appendleft("A")
+    return ("".join(d))
+
+
+def intToB64b(i, l=1):
+    """
+    Returns conversion of int i to Base64 bytes
+    l is min number of b64 digits left padded with Base64 0 == "A" char
+    """
+    return (intToB64(i=i, l=l).encode("utf-8"))
+
+
+def b64ToInt(s):
+    """
+    Returns conversion of Base64 str s or bytes to int
+    """
+    if not s:
+        raise ValueError("Empty string, conversion undefined.")
+    if hasattr(s, 'decode'):
+        s = s.decode("utf-8")
+    i = 0
+    for e, c in enumerate(reversed(s)):
+        i |= B64IdxByChr[c] << (e * 6)  # same as i += B64IdxByChr[c] * (64 ** e)
+    return i

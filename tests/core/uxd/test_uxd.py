@@ -23,12 +23,13 @@ def test_uxd_basic():
     """
     tymist = tyming.Tymist()
     with (wiring.openWL(samed=True, filed=True) as wl):
-
-        alpha = uxding.Peer(name="alpha", temp=True, umask=0o077, wl=wl)
+        bc = 64
+        alpha = uxding.Peer(name="alpha", temp=True, umask=0o077, bc=bc, wl=wl)
         assert not alpha.opened
         assert alpha.reopen()
         assert alpha.opened
         assert alpha.path.endswith("alpha.uxd")
+        assert alpha.actualBufSizes() == (4194240, 4194240) == (bc * alpha.MaxGramSize, bc * alpha.MaxGramSize)
 
         beta = uxding.Peer(name="beta", temp=True, umask=0o077)
         assert beta.reopen()
@@ -157,7 +158,7 @@ def test_open_peer():
 
         assert alpha.opened
         assert alpha.path.endswith("alpha.uxd")
-        assert alpha.actualBufSizes() == (65535, 65535) == (alpha.UxdBufSize, alpha.UxdBufSize)
+        assert alpha.actualBufSizes() == (65535, 65535) == (alpha.BufSize, alpha.BufSize)
 
         assert beta.opened
         assert beta.path.endswith("beta.uxd")

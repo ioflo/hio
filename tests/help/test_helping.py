@@ -288,7 +288,110 @@ def test_ocfn_load_dump():
 
 
 
+def test_b64_helpers():
+    """
+    Test Base64 conversion utility routines
+    """
+
+    cs = helping.intToB64(0)
+    assert cs == "A"
+    i = helping.b64ToInt(cs)
+    assert i == 0
+
+    cs = helping.intToB64(0, l=0)
+    assert cs == ""
+    with pytest.raises(ValueError):
+        i = helping.b64ToInt(cs)
+
+    cs = helping.intToB64(None, l=0)
+    assert cs == ""
+    with pytest.raises(ValueError):
+        i = helping.b64ToInt(cs)
+
+    cs = helping.intToB64b(0)
+    assert cs == b"A"
+    i = helping.b64ToInt(cs)
+    assert i == 0
+
+    cs = helping.intToB64(27)
+    assert cs == "b"
+    i = helping.b64ToInt(cs)
+    assert i == 27
+
+    cs = helping.intToB64b(27)
+    assert cs == b"b"
+    i = helping.b64ToInt(cs)
+    assert i == 27
+
+    cs = helping.intToB64(27, l=2)
+    assert cs == "Ab"
+    i = helping.b64ToInt(cs)
+    assert i == 27
+
+    cs = helping.intToB64b(27, l=2)
+    assert cs == b"Ab"
+    i = helping.b64ToInt(cs)
+    assert i == 27
+
+    cs = helping.intToB64(80)
+    assert cs == "BQ"
+    i = helping.b64ToInt(cs)
+    assert i == 80
+
+    cs = helping.intToB64b(80)
+    assert cs == b"BQ"
+    i = helping.b64ToInt(cs)
+    assert i == 80
+
+    cs = helping.intToB64(4095)
+    assert cs == '__'
+    i = helping.b64ToInt(cs)
+    assert i == 4095
+
+    cs = helping.intToB64b(4095)
+    assert cs == b'__'
+    i = helping.b64ToInt(cs)
+    assert i == 4095
+
+    cs = helping.intToB64(4096)
+    assert cs == 'BAA'
+    i = helping.b64ToInt(cs)
+    assert i == 4096
+
+    cs = helping.intToB64b(4096)
+    assert cs == b'BAA'
+    i = helping.b64ToInt(cs)
+    assert i == 4096
+
+    cs = helping.intToB64(6011)
+    assert cs == "Bd7"
+    i = helping.b64ToInt(cs)
+    assert i == 6011
+
+    cs = helping.intToB64b(6011)
+    assert cs == b"Bd7"
+    i = helping.b64ToInt(cs)
+    assert i == 6011
+
+    text = b"-A-Bg-1-3-cd"
+    match = helping.Reb64.match(text)
+    assert match
+    assert match is not None
+
+    text = b''
+    match = helping.Reb64.match(text)
+    assert match
+    assert match is not None
+
+    text = b'123#$'
+    match = helping.Reb64.match(text)
+    assert not match
+    assert match is None
+
+    """End Test"""
+
 
 
 if __name__ == "__main__":
     test_attributize()
+    test_b64_helpers()

@@ -61,6 +61,9 @@ IP header and the 8-byte UDP header. As others have mentioned, additional
 protocol headers could be added in some circumstances. A more conservative
 value of around 300-400 bytes may be preferred instead.
 
+Usually ip headers are only 20 bytes so with UDP header (src, dst) of 8 bytes
+the maximum allowed payload is 576 - 28 = 548
+
 Any UDP payload this size or smaller is guaranteed to be deliverable over IP
 (though not guaranteed to be delivered). Anything larger is allowed to be
 outright dropped by any router for any reason.
@@ -95,12 +98,88 @@ the undoubled value.
 https://unix.stackexchange.com/questions/38043/size-of-data-that-can-be-written-to-read-from-sockets
 https://stackoverflow.com/questions/21856517/whats-the-practical-limit-on-the-size-of-single-packet-transmitted-over-domain
 
+Memo
+Memo partitioning into parts.
+
+Default part is of form  part = head + sep + body.
+Some subclasses might have part of form part = head + sep + body + tail.
+In that case encoding of body + tail must provide a way to separate body from tail.
+Typically tail would be a signature on the fore part = head + sep + body
+
+
+Separator sep is b'|' must not be a base64 character.
+
+The head consists of three fields in base64
+mid = memo ID
+pn = part number of part in memo zero based
+pc = part count of total parts in memo may be zero when body is empty
+
+Sep = b'|'
+assert not helping.Reb64.match(Sep)
+
+body = b"demogram"
+pn = 0
+pc = 12
+
+pn = helping.intToB64b(pn, l=4)
+pc = helping.intToB64b(pc, l=4)
+
+PartLeader = struct.Struct('!16s4s4s')
+PartLeader.size  == 24
+head = PartLeader.pack(mid, pn, pc)
+part = Sep.join(head, body)
+
+
+head, sep, body = part.partition(Sep)
+assert helping.Reb64.match(head)
+mid, pn, pc = PartLeader.unpack(head)
+pn = helping.b64ToInt(pn)
+pc = helping.b64ToInt(pc)
+
+# test PartHead
+code = MtrDex.PartHead
+assert code == '0P'
+codeb = code.encode()
+
+mid = 1
+midb = mid.to_bytes(16)
+assert midb == b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01'
+pn = 1
+pnb = pn.to_bytes(3)
+assert pnb == b'\x00\x00\x01'
+pc = 2
+pcb = pc.to_bytes(3)
+assert pcb == b'\x00\x00\x02'
+raw = midb + pnb + pcb
+assert raw == (b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01'
+               b'\x00\x00\x01\x00\x00\x02')
+
+assert mid == int.from_bytes(raw[:16])
+assert pn == int.from_bytes(raw[16:19])
+assert pc == int.from_bytes(raw[19:22])
+
+midb64 = encodeB64(bytes([0] * 2) + midb) # prepad
+pnb64 = encodeB64(pnb)
+pcb64 = encodeB64(pcb)
+
+qb64b = codeb + midb64[2:] + pnb64 + pcb64
+assert qb64b == b'0PAAAAAAAAAAAAAAAAAAAAABAAABAAAC'
+qb64 = qb64b.decode()
+qb2 = decodeB64(qb64b)
+
+assert mid == int.from_bytes(decodeB64(b'AA' + qb64b[2:24]))
+assert pn == int.from_bytes(decodeB64(qb64b[24:28]))
+assert pc == int.from_bytes(decodeB64(qb64b[28:32]))
+
 """
 import socket
 import errno
+import struct
 
 from collections import deque, namedtuple
 from contextlib import contextmanager
+from base64 import urlsafe_b64encode as encodeB64
+from base64 import urlsafe_b64decode as decodeB64
 
 from hio import hioing, help
 from hio.base import tyming, doing
@@ -204,6 +283,7 @@ class MemoGram(hioing.Mixin):
         name (str):  unique name for MemoGram transport. Used to manage.
         opened (bool):  True means transport open for use
                         False otherwise
+        bc (int | None): count of transport buffers of MaxGramSize
 
     Attributes:
         version (Versionage): version for this memoir instance consisting of
@@ -225,16 +305,28 @@ class MemoGram(hioing.Mixin):
             for (gram, dst)
 
 
+        .rxgs dict keyed by mid (memo id) that holds incomplete memo parts.
+            The mid appears in every gram part from the same memo.
+            each val is dict of received gram parts keyed by part number.
+
+        srcs is dict keyed by mid that holds the src for that mid. This allows
+            reattaching src to memo when placing in rxms deque
+
+
+        .mids is dict of dicts keyed by src and each value dict keyed by
 
     Properties:
 
 
-    """
 
+
+    """
     Version = Versionage(major=0, minor=0)  # default version
+    BufCount = 64  # default bufcount bc for transport
 
     def __init__(self,
                  name='main',
+                 bc=None,
                  version=None,
                  rxgs=None,
                  rxms=None,
@@ -247,6 +339,7 @@ class MemoGram(hioing.Mixin):
 
         Inherited Parameters:
             name (str): unique name for MemoGram transport. Used to manage.
+            bc (int | None): count of transport buffers of MaxGramSize
 
         Parameters:
             version (Versionage): version for this memoir instance consisting of
@@ -254,9 +347,9 @@ class MemoGram(hioing.Mixin):
             rxgs (dict): holding rx (receive) (data) gram deques of grams.
                 Each item in dict has key=src and val=deque of grams received
                 from transport. Each item of form (src: str, gram: deque)
-            rxms (deque): holding rx (receive) memo duples desegmented from rxgs grams
+            rxms (deque): holding rx (receive) memo duples fused from rxgs grams
                 each entry in deque is duple of form (memo: str, dst: str)
-            txms (deque): holding tx (transmit) memo tuples to be segmented into
+            txms (deque): holding tx (transmit) memo tuples to be partitioned into
                 txgs grams where each entry in deque is duple of form
                 (memo: str, dst: str)
             txgs (deque): grams to transmit, each entry is duple of form:
@@ -266,6 +359,7 @@ class MemoGram(hioing.Mixin):
                 portion when datagram is not able to be sent all at once so can
                 keep trying. Nothing to send indicated by (bytearray(), None)
                 for (gram, dst)
+
 
 
         """
@@ -279,15 +373,14 @@ class MemoGram(hioing.Mixin):
         self.txgs = txgs if txgs is not None else deque()
         self.txbs = txbs if txbs is not None else (bytearray(), None)
 
-        super(MemoGram, self).__init__(name=name, **kwa)
+        bc = bc if bc is not None else self.BufCount  # use bufcount to calc .bs
 
+        super(MemoGram, self).__init__(name=name, bc=bc, **kwa)
 
-
-        if not hasattr(self, "name"):  # stub so mixin works in isolation
+        if not hasattr(self, "name"):  # stub so mixin works in isolation.
             self.name = name  # mixed with subclass should provide this.
 
-
-        if not hasattr(self, "opened"):  # stub so mixin works in isolation
+        if not hasattr(self, "opened"):  # stub so mixin works in isolation.
             self.opened = False  # mixed with subclass should provide this.
 
 
@@ -404,17 +497,17 @@ class MemoGram(hioing.Mixin):
             echo = None  # only echo once
 
 
-    def desegment(self, grams):
-        """Desegment deque of grams as segments into whole memo. If grams is
-        missing all the segments then returns None.
+    def fuse(self, grams):
+        """Fuse gram parts from frams deque into whole memo. If grams is
+        missing any the parts for a whole memo then returns None.
 
         Returns:
-            memo (str | None): desegmented memo or None if incomplete.
+            memo (str | None): fused memo or None if incomplete.
 
         Override in subclass
 
         Parameters:
-            grams (deque): gram segments
+            grams (deque): gram segments from which to fuse memo parts.
         """
         try:
             gram = grams.popleft()
@@ -451,7 +544,7 @@ class MemoGram(hioing.Mixin):
         # service grams to desegment
         for i, src in enumerate(list(self.rxgs.keys())):  # list since items may be deleted in loop
             # if src then grams deque at src must not be empty
-            memo = self.desegment(self.rxgs[src])
+            memo = self.fuse(self.rxgs[src])
             if memo is not None:  # allows for empty "" memo for some src
                 self.rxms.append((memo, src))
 
@@ -555,8 +648,8 @@ class MemoGram(hioing.Mixin):
         self.txms.append((memo, dst))
 
 
-    def segment(self, memo):
-        """Segment and package up memo into grams.
+    def part(self, memo):
+        """Partition memo into parts as grams.
         This is a stub method meant to be overridden in subclass
 
         Returns:
@@ -579,7 +672,7 @@ class MemoGram(hioing.Mixin):
         Appends duples of (gram, dst) from grams to .txgs deque.
         """
         memo, dst = self.txms.popleft()  # raises IndexError if empty deque
-        grams = self.segment(memo)
+        grams = self.part(memo)
         for gram in grams:
             self.txgs.append((gram, dst))  # append duples (gram: bytes, dst: str)
 

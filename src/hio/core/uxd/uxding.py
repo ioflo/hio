@@ -110,13 +110,17 @@ class Peer(filing.Filer):
     Class Attributes:
         Umask (int): octal default umask permissions such as 0o022
         MaxUxdPathSize (int:) max characters in uxd file path
-        UxdBufSize (int): used to set buffer size for UXD datagram buffers
-        MaxUxdPayloadSize (int): limit datagram payload to this size
+        MaxGramSize (int): max bytes in in datagram for this transport
+        BufSize (int): used to set buffer size for transport datagram buffers
+
 
     Attributes:
         umask (int): unpermission mask for uxd file, usually octal 0o022
                      .umask is applied after .perm is set if any
-        bs (int): buffer size
+        bc (int | None): count of transport buffers of MaxGramSize
+        bs (int): buffer size of transport buffers. When .bc then .bs is calculated
+            by multiplying, .bs = .bc * .MaxGramSize. When .bc is None then .bs
+            is provided value or default .BufSize
         wl (WireLog): instance ref for debug logging of over the wire tx and rx
         ls (socket.socket): local socket of this Peer
 
@@ -135,10 +139,11 @@ class Peer(filing.Filer):
     Fext = "uxd"
     Umask = 0o022  # default
     MaxUxdPathSize = 108
-    UxdBufSize = 65535  # 2 ** 16 - 1
-    MaxUxdGramSize = UxdBufSize
+    MaxGramSize = 65535  # 2 ** 16 - 1  default gram size override in subclass
+    BufSize = 65535  # 2 ** 16 - 1  default buffersize
 
-    def __init__(self, *, umask=None, bs = None, wl=None,
+
+    def __init__(self, *, umask=None, bc=None, bs=None, wl=None,
                  reopen=False, clear=True,
                  filed=False, extensioned=True, **kwa):
         """Initialization method for instance.
@@ -158,11 +163,21 @@ class Peer(filing.Filer):
 
         Parameters:
             umask (int): unpermission mask for uxd file, usually octal 0o022
-            bs (int): buffer size
+            bc (int | None): count of transport buffers of MaxGramSize
+            bs (int | None): buffer size of transport buffers. When .bc is provided
+                then .bs is calculated by multiplying, .bs = .bc * .MaxGramSize.
+                When .bc is not provided, then if .bs is provided use provided
+                value else use default .BufSize
             wl (WireLog): instance ref for debug logging of over the wire tx and rx
         """
         self.umask = umask  # only change umask if umask is not None below
-        self.bs = bs if bs is not None else self.UxdBufSize
+        self.bc = bc
+        if self.bc:
+            self.bs = self.MaxGramSize * self.bc
+        else:
+            self.bs = bs if bs is not None else self.BufSize
+
+
         self.wl = wl
         self.ls = None  # local socket of this Peer, needs to be opened/bound
 
