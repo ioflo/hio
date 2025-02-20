@@ -49,6 +49,31 @@ def test_memogram_basic():
     peer.serviceRxMemos()
     assert not peer.rxms
 
+    memo = "See ya later!"
+    dst = "beta"
+    peer.memoit(memo, dst)
+    assert peer.txms[0] == ('See ya later!', 'beta')
+    peer.serviceTxMemos()
+    assert not peer.txms
+    assert peer.txgs[0] == (b'See ya later!', 'beta')
+    peer.serviceTxGrams(echoic=True)
+    assert not peer.txgs
+    assert peer.txbs == (b'', None)
+    assert peer.echos
+
+    assert not peer.rxgs
+    assert not peer.rxms
+    peer.serviceReceives(echoic=True)
+    assert peer.rxgs["beta"][0] == b"See ya later!"
+    assert not peer.echos
+    peer.serviceRxGrams()
+    assert not peer.rxgs
+    assert peer.rxms[0] == ('See ya later!', 'beta')
+    peer.serviceRxMemos()
+    assert not peer.rxms
+
+
+
     peer.close()
     assert peer.opened == False
     """ End Test """
@@ -131,6 +156,29 @@ def test_tymeememogram_basic():
     peer.serviceRxGrams()
     assert not peer.rxgs
     assert peer.rxms[0] == ('Bye yall', 'beta')
+    peer.serviceRxMemos()
+    assert not peer.rxms
+
+    memo = "See ya later!"
+    dst = "beta"
+    peer.memoit(memo, dst)
+    assert peer.txms[0] == ('See ya later!', 'beta')
+    peer.serviceTxMemos()
+    assert not peer.txms
+    assert peer.txgs[0] == (b'See ya later!', 'beta')
+    peer.serviceTxGrams(echoic=True)
+    assert not peer.txgs
+    assert peer.txbs == (b'', None)
+    assert peer.echos
+
+    assert not peer.rxgs
+    assert not peer.rxms
+    peer.serviceReceives(echoic=True)
+    assert peer.rxgs["beta"][0] == b"See ya later!"
+    assert not peer.echos
+    peer.serviceRxGrams()
+    assert not peer.rxgs
+    assert peer.rxms[0] == ('See ya later!', 'beta')
     peer.serviceRxMemos()
     assert not peer.rxms
 
