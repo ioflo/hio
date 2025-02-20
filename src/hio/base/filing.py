@@ -332,13 +332,11 @@ class Filer(hioing.Mixin):
 
             if filed or extensioned:
                 head, tail = os.path.split(path)
-                print(head)
                 if not os.path.exists(head):
                     os.makedirs(head)
                 if filed:
                     file = ocfn(path, mode=mode, perm=perm)
             else:
-                print(path)
                 os.makedirs(path)
 
         else:
@@ -363,13 +361,11 @@ class Filer(hioing.Mixin):
                 try:
                     if filed or extensioned:
                         head, tail = os.path.split(path)
-                        print(head)
                         if not os.path.exists(head):
                             os.makedirs(head)
                         if filed:
                             file = ocfn(path, mode=mode, perm=perm)
                     else:
-                        print(path)
                         os.makedirs(path)
 
                 except OSError as ex:  # use alt instead should always succeed
@@ -383,13 +379,11 @@ class Filer(hioing.Mixin):
                     if not os.path.exists(path):
                         if filed or extensioned:
                             head, tail = os.path.split(path)
-                            print(head)
                             if not os.path.exists(head):
                                 os.makedirs(head)
                             if filed:
                                 file = ocfn(path, mode=mode, perm=perm)
                         else:
-                            print(path)
                             os.makedirs(path)
                     else:
                         if filed:
@@ -407,13 +401,11 @@ class Filer(hioing.Mixin):
                     if not os.path.exists(path):
                         if filed or extensioned:
                             head, tail = os.path.split(path)
-                            print(head)
                             if not os.path.exists(head):
                                 os.makedirs(head)
                             if filed:
                                 file = ocfn(path, mode=mode, perm=perm)
                         else:
-                            print(path)
                             os.makedirs(path)
                 else:
                     if filed:
