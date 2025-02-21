@@ -44,7 +44,8 @@ Every call to send must send less that sf::UdpSocket::MaxDatagramSize bytes --
 which is a little less than 2^16 (65536) bytes.
 
 https://people.computing.clemson.edu/~westall/853/notes/udpsend.pdf
-However, the existence of the UDP and IP
+However, the existence of the UDP and IPmid = uuid.uuid4().bytes  # 16 byte random uuid
+
 headers should also limit.
 
 Maximum IPV4 header size is 60 bytes and UDP header is 8 bytes so maximum UDP
@@ -58,7 +59,8 @@ https://stackoverflow.com/questions/1098897/what-is-the-largest-safe-udp-packet-
 The maximum safe UDP payload is 508 bytes. This is a packet size of 576
 (the "minimum maximum reassembly buffer size"), minus the maximum 60-byte
 IP header and the 8-byte UDP header. As others have mentioned, additional
-protocol headers could be added in some circumstances. A more conservative
+protocol headers could be added in some circumstances. A more conservamid = uuid.uuid4().bytes  # 16 byte random uuid
+tive
 value of around 300-400 bytes may be preferred instead.
 
 Usually ip headers are only 20 bytes so with UDP header (src, dst) of 8 bytes
@@ -96,7 +98,8 @@ In python the getsockopt apparently does not return the doubled value but
 the undoubled value.
 
 https://unix.stackexchange.com/questions/38043/size-of-data-that-can-be-written-to-read-from-sockets
-https://stackoverflow.com/questions/21856517/whats-the-practical-limit-on-the-size-of-single-packet-transmitted-over-domain
+https://stackoverflow.com/questions/21856517/whats-the-practical-limitmid = uuid.uuid4().bytes  # 16 byte random uuid
+-on-the-size-of-single-packet-transmitted-over-domain
 
 Memo
 Memo partitioning into parts.
@@ -110,7 +113,8 @@ Typically tail would be a signature on the fore part = head + sep + body
 Separator sep is b'|' must not be a base64 character.
 
 The head consists of three fields in base64
-mid = memo ID
+mid = memo IDmid = uuid.uuid4().bytes  # 16 byte random uuid
+
 pn = part number of part in memo zero based
 pc = part count of total parts in memo may be zero when body is empty
 
@@ -139,7 +143,12 @@ pc = helping.b64ToInt(pc)
 # test PartHead
 code = MtrDex.PartHead
 assert code == '0P'
-codeb = code.encode()
+codeb = code.encode()mid = uuid.uuid4().bytes  # 16 byte random uuid
+
+
+
+mid = uuid.uuid4().bytes  # 16 byte random uuid
+
 
 mid = 1
 midb = mid.to_bytes(16)
@@ -152,17 +161,18 @@ pcb = pc.to_bytes(3)
 assert pcb == b'\x00\x00\x02'
 raw = midb + pnb + pcb
 assert raw == (b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01'
-               b'\x00\x00\x01\x00\x00\x02')
+               b'\x00\x00\x01\x00\x00\x02')mid = uuid.uuid4().bytes  # 16 byte random uuid
+
 
 assert mid == int.from_bytes(raw[:16])
 assert pn == int.from_bytes(raw[16:19])
 assert pc == int.from_bytes(raw[19:22])
 
-midb64 = encodeB64(bytes([0] * 2) + midb) # prepad
-pnb64 = encodeB64(pnb)
-pcb64 = encodeB64(pcb)
+midb64b = encodeB64(bytes([0] * 2) + midb)[2:] # prepad ans strip
+pnb64b = encodeB64(pnb)
+pcb64b = encodeB64(pcb)
 
-qb64b = codeb + midb64[2:] + pnb64 + pcb64
+qb64b = codeb + midb64b + pnb64b + pcb64b
 assert qb64b == b'0PAAAAAAAAAAAAAAAAAAAAABAAABAAAC'
 qb64 = qb64b.decode()
 qb2 = decodeB64(qb64b)
@@ -170,6 +180,123 @@ qb2 = decodeB64(qb64b)
 assert mid == int.from_bytes(decodeB64(b'AA' + qb64b[2:24]))
 assert pn == int.from_bytes(decodeB64(qb64b[24:28]))
 assert pc == int.from_bytes(decodeB64(qb64b[28:32]))
+
+
+codeb64b = b'__"
+
+# 16 byte random uuid
+midb64b = encodeB64(bytes([0] * 2) + uuid.uuid4().bytes)[2:] # prepad then strip
+pn = 1
+pnb64b = helping.intToB64b(pn, l=3)
+pc = 2
+pcb64b = helping.intToB64b(pc, l=3)
+
+headb64b = codeb64b + midb64b + pnb64b + pcb64b
+
+fmt = '!2s22s4s4s'
+PartLeader = struct.Struct(fmt)
+PartLeader.size  == 32
+head = PartLeader.pack(codeb64b, midb64b, pnb64b, pcb64b)
+
+assert helping.Reb64.match(head)
+codeb64b, midb64b, pnb64b, pcb64b = PartLeader.unpack(head)
+codeb64b, midb64b, pnb64b, pcb64b = PartLeader unpack_from(fmt, part)
+
+
+mid = helping.b64ToInt(b'AA' + midb64b))
+pn = helping.b64ToInt(pnb64b))
+pc = helping.b64ToInt(pcb64b))
+
+HeadSize = 32  # base64 chars
+codeb64b = b'__"
+midb64b = encodeB64(bytes([0] * 2) + uuid.uuid4().bytes)[2:] # prepad, convert,  and strip
+pn = 1
+pnb64b = helping.intToB64b(pn, l=3)
+pc = 2
+pcb64b = helping.intToB64b(pc, l=3)
+
+headb64b = codeb64b + midb64b + pnb64b + pcb64b
+assert helping.Reb64.match(headb64b)
+
+codeb64b = headb64b[:2]
+mid = helping.b64ToInt(b'AA' + headb64b[2:24]))  # prepad and convert
+pn = helping.b64ToInt(headb64b[24:28]))
+pc = helping.b64ToInt(headb64b[28:32]))
+
+
+PartCode Typing/Versions uses a different base64 two char code.
+Codes always start with `_` and second char in code starts at `_`
+and walks backwards through B64 code table for each part type-version (tv) code.
+Total head length including code must be a multiple of 4 characters so
+converts to/from B2 without padding. So to change length in order to change
+field lengths or add or remove fields need a new part (tv) code.
+
+To reiterate, if ever need to change anything ned a new part tv code. There are
+no versions per type.  This is deemed sufficient because anticipate a very
+limited set of possible fields ever needed for memogram transport types.
+
+tv 0 is '__'
+tv 1 is '_-'
+tv 3 is '_9'
+
+Because the part headers are valid mid-pad B64 primitives then can be losslessly
+transformed to/from CESR primitives merely by translated the part tv code to
+an  equivalent entry in the  two char cesr primitive code table.
+The CESR codes albeit different are one-to-one. This enables representing headers
+as CESR primitives for management but not over the wire. I.e. can transform
+Memogram Parts to CESR primitives to tunnel in some CESR stream.
+
+Normally CESR streams are tunneled inside Memograms sent over-the-wire. When
+the MemoGram is the wrapper then use the part tv code not the equivalent CESR code.
+By using so the far reserved and unused '_' CESR op code table selector char
+from CESR it makes it obvious that its a Memogram
+tv Part Code not a CESR code when debugging. Even when the op codes are defined
+its not likely to be confusing since the context of CESR op codes is different.
+Morover when the MemoGram is a CESR Stream, a memogram parser will parse and
+strip the MemoGram wrappers to construct the MemoGram, so no collisions.
+
+
+
+HeadCode hc = b'__'
+HeadCodeSize hcs = 2
+MemoIDSize mis = 22
+PartNumSize pns = 4
+PartCntSize pcs = 4
+PartHeadSize phs  = 32
+
+
+MaxPartBodySize = ()2** 16 -1) - HeadSize
+PartBodySize pbs = something <= MaxBodySize
+PartSize = PartHeadSize + PartBodySize
+PartSize <= 2**16 -1
+
+MaxMemoSize = (2**16-1)**2
+MaxPartCount for UDP PartSize of 508 is ceil(MaxMemoSize/508) = 8454403  which is < 2**24-1
+not partsize includes head
+MaxPartCount for UXD PartSize of 2**16 -1  is ceil(MaxMemoSize/(2**16-1))= 2**16-1
+MinPartSize = MaxMemoSize // (2**24-1) = 255  = 2**8-1
+MaxPartSize = (2**16-1)
+For any given PartSize  there is a MaxPartCount of 2**24-1 so if fix the PartSize
+this limits the effective
+mms = min((2**16-1)**2), (PartSize - PartHeadSize) * (2**24-1))
+mms = min((2**16-1)**2), (PartBodySize) * (2**24-1))
+
+so ps, pbs, and mms are variables specific to transport
+PHS is fixed for the transport type reliable unreliable with header fields as defined
+The desired ps for a given transport instance may be smaller than the allowed
+maximum to accomodate buffers etc.
+Given the fixed part head size PHS once can calculate the maximum memo size
+that includes the header overhead given the contraint of no more than 2**24-1
+parts in a given memo.
+
+So for a given transport:
+ps == min(ps, 2**16-1)
+pbs = ps - PHS
+
+mms = min((2**16-1)**2), pbs * (2**24-1))
+So compare memo size to mms and if greater raise error and drop memo
+otherwise partition (part) memo into parts with headers and transmit
+
 
 """
 import socket
@@ -188,6 +315,15 @@ logger = help.ogler.getLogger()
 
 # namedtuple of ints (major: int, minor: int)
 Versionage = namedtuple("Versionage", "major minor")
+
+# namedtuple for size entries in MemoGram Pizes (part sizes) table
+# cs is the part head size int number of chars in part code
+# phs is the soft size int number of chars in soft (unstable) part of code
+# xs is the xtra size into number of xtra (pre-pad) chars as part of soft
+# fs is the full size int number of chars in code plus appended material if any
+# ls is the lead size int number of bytes to pre-pad pre-converted raw binary
+Sizage = namedtuple("Sizage", "hs ss xs fs ls")
+
 
 
 @contextmanager
@@ -300,12 +436,19 @@ class MemoGram(hioing.Mixin):
                 (gram: bytes, dst: str).
         txbs (tuple): current transmisstion duple of form:
             (gram: bytearray, dst: str). gram bytearray may hold untransmitted
-            portion when datagram is not able to be sent all at once so can
+            portion when datagram is not able to be sent all at once so can# namedtuple for size entries in Matter  and Counter derivation code tables
+# hs is the hard size int number of chars in hard (stable) part of code
+# ss is the soft size int number of chars in soft (unstable) part of code
+# xs is the xtra size into number of xtra (pre-pad) chars as part of soft
+# fs is the full size int number of chars in code plus appended material if any
+# ls is the lead size int number of bytes to pre-pad pre-converted raw binary
+Sizage = namedtuple("Sizage", "hs ss xs fs ls")
+
             keep trying. Nothing to send indicated by (bytearray(), None)
             for (gram, dst)
 
 
-        .rxgs dict keyed by mid (memo id) that holds incomplete memo parts.
+        rxgs dict keyed by mid (memo id) that holds incomplete memo parts.
             The mid appears in every gram part from the same memo.
             each val is dict of received gram parts keyed by part number.
 
@@ -313,7 +456,18 @@ class MemoGram(hioing.Mixin):
             reattaching src to memo when placing in rxms deque
 
 
-        .mids is dict of dicts keyed by src and each value dict keyed by
+        mids (dict): of dicts keyed by src and each value dict keyed by
+
+        echos (deque): holding echo receive duples for testing. Each duple of
+
+        pc (bytes | None): part code for part header
+                        form: (gram: bytes, dst: str).
+        ps (int): part size for this instance for transport. Part size
+                   = part head size  + part body size. Part size limited by
+                   MaxPartSize and PartHeadSize + 1
+        mms (int): max memo size relative to part size. Limited by MaxMemoSize
+                    and MaxPartCount for the part size.
+
 
     Properties:
 
@@ -323,6 +477,12 @@ class MemoGram(hioing.Mixin):
     """
     Version = Versionage(major=0, minor=0)  # default version
     BufCount = 64  # default bufcount bc for transport
+    PartCode = b'__'  # default part type-version code for head
+    MaxMemoSize = 4294836225 # (2**16-1)**2 absolute max memo size
+    MaxPartSize = 65535 # (2**16-1) absolute max part size
+    MaxPartCount = 16777215 # (2**24-1) absolute max part count
+    PartHeadSizes = {b'__': 32}  # dict of part head sizes keyed by part codes
+
 
     def __init__(self,
                  name='main',
@@ -333,6 +493,8 @@ class MemoGram(hioing.Mixin):
                  txms=None,
                  txgs=None,
                  txbs=None,
+                 pc=None,
+                 ps=None,
                  **kwa
                 ):
         """Setup instance
@@ -359,14 +521,21 @@ class MemoGram(hioing.Mixin):
                 portion when datagram is not able to be sent all at once so can
                 keep trying. Nothing to send indicated by (bytearray(), None)
                 for (gram, dst)
+            pc (bytes | None): part code for part header
+            ps (int): part size for this instance for transport. Part size
+                   = part head size  + part body size. Part size limited by
+                   MaxPartSize and MaxPartCount relative to MaxMemoSize as well
+                   as minimum part body size of 1
+            pbs (int): part body size = part size - part head size for given
+                       part code. Part body size must be at least 1.
+            mms (int): max memo size relative to part size and limited by
+                        MaxMemoSize and MaxPartCount for given part size.
 
 
 
         """
         # initialize attributes
         self.version = version if version is not None else self.Version
-
-        self.echos = deque()  # only used in testing as echoed tx
         self.rxgs = rxgs if rxgs is not None else dict()
         self.rxms = rxms if rxms is not None else deque()
 
@@ -375,6 +544,15 @@ class MemoGram(hioing.Mixin):
         self.txbs = txbs if txbs is not None else (bytearray(), None)
 
         bc = bc if bc is not None else self.BufCount  # use bufcount to calc .bs
+
+        self.echos = deque()  # only used in testing as echoed tx
+
+        self.pc = pc if pc is not None else self.PartCode
+        phs = self.PartHeadSizes[self.pc] # part head size
+        ps = ps if ps is not None else self.MaxPartSize
+        self.ps = max(min(ps, self.MaxPartSize), phs + 1)
+        self.pbs = (self.ps - phs)  # part body size
+        self.mms = min(self.MaxMemoSize, self.pbs * self.MaxPartCount)
 
         super(MemoGram, self).__init__(name=name, bc=bc, **kwa)
 

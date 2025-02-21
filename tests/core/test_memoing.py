@@ -17,6 +17,11 @@ def test_memogram_basic():
     peer = memoing.MemoGram()
     assert peer.name == "main"
     assert peer.opened == False
+    assert peer.pc == b'__' == peer.PartCode
+    assert peer.ps == peer.MaxPartSize
+    assert peer.pbs == peer.ps - peer.PartHeadSizes[peer.pc]
+    assert peer.mms == peer.MaxMemoSize
+
     peer.reopen()
     assert peer.opened == True
 
@@ -127,6 +132,11 @@ def test_tymeememogram_basic():
     assert peer.tymeout == 0.0
     assert peer.name == "main"
     assert peer.opened == False
+    assert peer.pc == b'__' == peer.PartCode
+    assert peer.ps == peer.MaxPartSize
+    assert peer.pbs == peer.ps - peer.PartHeadSizes[peer.pc]
+    assert peer.mms == peer.MaxMemoSize
+
     peer.reopen()
     assert peer.opened == True
 
