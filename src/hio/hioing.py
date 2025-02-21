@@ -83,3 +83,10 @@ class NamerError(HioError):
         raise NamerError("error message")
     """
 
+class MemoGramError(HioError):
+    """
+    Error using or configuring Remoter
+
+    Usage:
+        raise MemoGramError("error message")
+    """

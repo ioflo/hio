@@ -316,14 +316,8 @@ logger = help.ogler.getLogger()
 # namedtuple of ints (major: int, minor: int)
 Versionage = namedtuple("Versionage", "major minor")
 
-# namedtuple for size entries in MemoGram Pizes (part sizes) table
-# cs is the part head size int number of chars in part code
-# phs is the soft size int number of chars in soft (unstable) part of code
-# xs is the xtra size into number of xtra (pre-pad) chars as part of soft
-# fs is the full size int number of chars in code plus appended material if any
-# ls is the lead size int number of bytes to pre-pad pre-converted raw binary
-Sizage = namedtuple("Sizage", "hs ss xs fs ls")
-
+Encodage = namedtuple("Encodage", 'txt bny')  # part head encoding
+Encodes = Encodage(txt='txt', bny='bny')
 
 
 @contextmanager
@@ -436,14 +430,7 @@ class MemoGram(hioing.Mixin):
                 (gram: bytes, dst: str).
         txbs (tuple): current transmisstion duple of form:
             (gram: bytearray, dst: str). gram bytearray may hold untransmitted
-            portion when datagram is not able to be sent all at once so can# namedtuple for size entries in Matter  and Counter derivation code tables
-# hs is the hard size int number of chars in hard (stable) part of code
-# ss is the soft size int number of chars in soft (unstable) part of code
-# xs is the xtra size into number of xtra (pre-pad) chars as part of soft
-# fs is the full size int number of chars in code plus appended material if any
-# ls is the lead size int number of bytes to pre-pad pre-converted raw binary
-Sizage = namedtuple("Sizage", "hs ss xs fs ls")
-
+            portion when Encodesdatagram is not able to be sent all at once so can
             keep trying. Nothing to send indicated by (bytearray(), None)
             for (gram, dst)
 
@@ -527,7 +514,7 @@ Sizage = namedtuple("Sizage", "hs ss xs fs ls")
                    MaxPartSize and MaxPartCount relative to MaxMemoSize as well
                    as minimum part body size of 1
             pbs (int): part body size = part size - part head size for given
-                       part code. Part body size must be at least 1.
+                       paEncodesrt code. Part body size must be at least 1.
             mms (int): max memo size relative to part size and limited by
                         MaxMemoSize and MaxPartCount for given part size.
 
@@ -585,6 +572,29 @@ Sizage = namedtuple("Sizage", "hs ss xs fs ls")
         This is a stub. Override in transport subclass
         """
         self.opened = False
+
+
+    def wiff(self, part):
+        """
+        Returns encoding format of part bytes header as either base64 text 'txt'
+        or base2 binary 'bny' from first 6 bits (sextet) of first byte in part.
+        All part head codes start with '_' in base64 text or in base2 binary.
+        Given only allowed chars are from the set of base64 then can determine
+        if header is in base64 or base2.
+
+        First sextet:
+
+        0o2 = 010 means first sextet of '_' in base64  =>'txt'
+        0o7 = 111 means frist sextet of '_' in base2  => 'bny'
+        """
+
+        sextet = part[0] >> 2
+        if sextet == 0o123:
+            return Encodes.txt # 'txt'
+        if sextet == 0o321:
+            return Encodes.bny  # 'bny'
+
+        raise hioing.MemoGramError(f"Unexpected {sextet=} at part head start.")
 
 
     def receive(self, *, echoic=False):
