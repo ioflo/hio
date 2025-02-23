@@ -12,10 +12,10 @@ from hio.base import doing, tyming
 from hio.core import memoing
 
 
-def test_memogram_basic():
-    """Test MemoGram class basic
+def test_memoer_basic():
+    """Test Memoer class basic
     """
-    peer = memoing.MemoGram()
+    peer = memoing.Memoer()
     assert peer.name == "main"
     assert peer.opened == False
     assert peer.code == '__' == peer.Code
@@ -147,14 +147,14 @@ def test_memogram_basic():
 def test_memogram_small_part_size():
     """Test MemoGram class with small part size
     """
-    peer = memoing.MemoGram(size=6)
+    peer = memoing.Memoer(size=6)
     assert peer.name == "main"
     assert peer.opened == False
     assert peer.code == '__' == peer.Code
     assert peer.Sizes[peer.code] == (2, 22, 4, 28)  # (code, mid, neck, head) size
     assert peer.size == 33  # can't be smaller than head + neck + 1
 
-    peer = memoing.MemoGram(size=38)
+    peer = memoing.Memoer(size=38)
     assert peer.size == 38
     peer.reopen()
     assert peer.opened == True
@@ -308,10 +308,10 @@ def test_memogram_small_part_size():
     """ End Test """
 
 
-def test_memogram_multiples():
-    """Test MemoGram class with small part size and multiple queued memos
+def test_memoer_multiple():
+    """Test Memoer class with small part size and multiple queued memos
     """
-    peer = memoing.MemoGram(size=38)
+    peer = memoing.Memoer(size=38)
     assert peer.size == 38
     assert peer.name == "main"
     assert peer.opened == False
@@ -380,7 +380,7 @@ def test_memogram_multiples():
 def test_open_mg():
     """Test contextmanager decorator openMG
     """
-    with (memoing.openMG(name='zeta') as zeta):
+    with (memoing.openMemoer(name='zeta') as zeta):
 
         assert zeta.opened
         assert zeta.name == 'zeta'
@@ -404,9 +404,9 @@ def test_memogram_doer():
     assert doist.limit == limit == 0.125
     assert doist.doers == []
 
-    peer = memoing.MemoGram()
+    peer = memoing.Memoer()
 
-    mgdoer = memoing.MemoGramDoer(peer=peer)
+    mgdoer = memoing.MemoerDoer(peer=peer)
     assert mgdoer.peer == peer
     assert not mgdoer.peer.opened
     assert mgdoer.tock == 0.0  # ASAP
@@ -421,7 +421,7 @@ def test_memogram_doer():
 def test_tymeememogram_basic():
     """Test TymeeMemoGram class basic
     """
-    peer = memoing.TymeeMemoGram()
+    peer = memoing.TymeeMemoer()
     assert peer.tymeout == 0.0
     assert peer.name == "main"
     assert peer.opened == False
@@ -560,7 +560,7 @@ def test_tymeememogram_basic():
 def test_open_tmg():
     """Test contextmanager decorator openTMG
     """
-    with (memoing.openTMG(name='zeta') as zeta):
+    with (memoing.openTM(name='zeta') as zeta):
 
         assert zeta.opened
         assert zeta.name == 'zeta'
@@ -585,9 +585,9 @@ def test_tymeememogram_doer():
     assert doist.limit == limit == 0.125
     assert doist.doers == []
 
-    peer = memoing.TymeeMemoGram()
+    peer = memoing.TymeeMemoer()
 
-    tmgdoer = memoing.TymeeMemoGramDoer(peer=peer)
+    tmgdoer = memoing.TymeeMemoerDoer(peer=peer)
     assert tmgdoer.peer == peer
     assert not tmgdoer.peer.opened
     assert tmgdoer.tock == 0.0  # ASAP
@@ -610,9 +610,9 @@ def test_tymeememogram_doer():
 
 
 if __name__ == "__main__":
-    test_memogram_basic()
+    test_memoer_basic()
     test_memogram_small_part_size()
-    test_memogram_multiples()
+    test_memoer_multiple()
     test_open_mg()
     test_memogram_doer()
     test_tymeememogram_basic()

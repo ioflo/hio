@@ -2,7 +2,10 @@
 """
 hio.core.memoing Module
 
-Mixin Base Classes that add support for MemoGrams to datagram based transports.
+Mixin Base Classes that add support for  memograms over datagram based transports.
+In this context, a memogram is a larger memogram that is partitioned into
+smaller parts as transport specific datagrams. This allows larger messages to
+be transported over datagram transports than the underlying transport can support.
 
 Provide mixin classes.
 Takes of advantage of multiple inheritance to enable mixtures of behaviors
@@ -260,14 +263,20 @@ The CESR codes albeit different are one-to-one. This enables representing header
 as CESR primitives for management but not over the wire. I.e. can transform
 Memogram Parts to CESR primitives to tunnel in some CESR stream.
 
-Normally CESR streams are tunneled inside Memograms sent over-the-wire. When
-the MemoGram is the wrapper then use the part tv code not the equivalent CESR code.
-By using so the far reserved and unused '_' CESR op code table selector char
-from CESR it makes it obvious that its a Memogram
-tv Part Code not a CESR code when debugging. Even when the op codes are defined
-its not likely to be confusing since the context of CESR op codes is different.
-Morover when the MemoGram is a CESR Stream, a memogram parser will parse and
-strip the MemoGram wrappers to construct the MemoGram, so no collisions.
+Normally CESR streams are tunneled inside Memoer memograms sent over-the-wire.
+In this case, the memogram is the wrapper and each part uses the part tv code
+defined herein not the equivalent CESR code.
+Using  so far reserved and unused '_' code which is reserved as the selector
+for theCESR op code table for memogram parts makes it more apparent that a part
+belongs to a memogram and not a CESR stream.
+Eventually when CESR op codes eventually become defined, it's not likely to be
+confusing since the context of CESR op codes is different that transport
+wrappers.
+
+Morover when a MemoGram payload is a tunneled CESR Stream, the memogram parser
+will parse and strip the MemoGram part wrappers to construct the tunneled,
+stream so the wrapper is transarent to the CESR stream and the CESR stream
+payload is opaque to the memogram wrapper, i.e. no ambiguity.
 
 
 
@@ -356,6 +365,16 @@ but it is a hard limit for UDP datagrams
 
 It is unlikely we would ever reach those limits in a practical application.
 
+ToDo:
+change maxmemosize to accomodate big group + code
+Change mode to boolean b2mode True False no more Wiffs
+Add code '_-' for signed parts   vs verification id size ss signatures size
+expanes Sizes for vs and ss
+Signed first part  code + mid + vid + pn + pc + body + sig
+Signed other parts  code + mid + vid + pn + body + sig
+Add sign and verify methods
+Change name of MemoGram to Memoer to match convention
+
 
 """
 import socket
@@ -383,7 +402,7 @@ Wiffage = namedtuple("Wiffage", 'txt bny')  # part head encoding
 Wiffs = Wiffage(txt='txt', bny='bny')
 
 
-# namedtuple for size entries in MemoGram code tables
+# namedtuple for size entries in Memoer code tables
 # cs is the code size int number of chars in code portion
 # ms is the mid size int number of chars in the mid portion (memoID)
 # ns is the neck size int number of chars for the part number in all parts and
@@ -410,10 +429,10 @@ class PartCodex:
 PartDex = PartCodex()  # Make instance
 
 
-class MemoGram(hioing.Mixin):
+class Memoer(hioing.Mixin):
     """
-    MemoGram mixin base class to adds memogram support to a transport class.
-    MemoGram supports asynchronous memograms. Provides common methods for subclasses.
+    Memoer mixin base class to adds memogram support to a transport class.
+    Memoer supports asynchronous memograms. Provides common methods for subclasses.
 
     A memogram is a higher level construct that sits on top of a datagram.
     A memogram supports the segmentation and desegmentation of memos to
@@ -428,7 +447,7 @@ class MemoGram(hioing.Mixin):
     Usage:
         Do not instantiate directly but use as a mixin with a transport class
         in order to create a new subclass that adds memogram support to the
-        transport class. For example MemoGramUdp or MemoGramUxd
+        transport class. For example MemoerUdp or MemoerUxd
 
     Each direction of dataflow uses a tiered set of buffers that respect
     the constraints of non-blocking asynchronous IO with datagram transports.
@@ -474,7 +493,7 @@ class MemoGram(hioing.Mixin):
         Mode (str): default encoding mode for tx part header b64 'txt' Wiffs.txt
 
     Inherited Attributes:
-        name (str):  unique name for MemoGram transport. Used to manage.
+        name (str):  unique name for Memoer transport. Used to manage.
         opened (bool):  True means transport open for use
                         False otherwise
         bc (int | None): count of transport buffers of MaxGramSize
@@ -549,7 +568,7 @@ class MemoGram(hioing.Mixin):
         """Setup instance
 
         Inherited Parameters:
-            name (str): unique name for MemoGram transport. Used to manage.
+            name (str): unique name for Memoer transport. Used to manage.
             bc (int | None): count of transport buffers of MaxGramSize
 
         Parameters:
@@ -611,7 +630,7 @@ class MemoGram(hioing.Mixin):
         self.size = max(min(size, self.MaxPartSize), hs + ns + 1)
         self.mode = mode if mode is not None else self.Mode
 
-        super(MemoGram, self).__init__(name=name, bc=bc, **kwa)
+        super(Memoer, self).__init__(name=name, bc=bc, **kwa)
 
         if not hasattr(self, "name"):  # stub so mixin works in isolation.
             self.name = name  # mixed with subclass should provide this.
@@ -650,7 +669,7 @@ class MemoGram(hioing.Mixin):
 
         Returns:
             wiff (Wiffs): Wiffs.txt if B64 text, Wiffs.bny if B2 binary
-                                Otherwise raises hioing.MemoGramError
+                                Otherwise raises hioing.MemoerError
 
         All part head codes start with '_' in base64 text or in base2 binary.
         Given only allowed chars are from the set of base64 then can determine
@@ -688,13 +707,13 @@ class MemoGram(hioing.Mixin):
         if sextet == 0o77:
             return Wiffs.bny  # 'bny'
 
-        raise hioing.MemoGramError(f"Unexpected {sextet=} at part head start.")
+        raise hioing.Memoer(f"Unexpected {sextet=} at part head start.")
 
 
     def parse(self, part):
         """Parse and strips header from gram part bytearray and returns
         (mid, pn, pc) when first part, (mid, pn, None) when other part
-        Otherwise raises MemoGramError is unrecognized header
+        Otherwise raises MemoerError is unrecognized header
 
         Returns:
             result (tuple): tuple of form:
@@ -718,20 +737,20 @@ class MemoGram(hioing.Mixin):
             bhs = 3 * (hs) // 4  # binary head size
             head = part[:bhs]  # slice takes a copy
             if len(head) < bhs:  # not enough bytes for head
-                raise hioing.MemoGramError(f"Part size b2 too small < {bhs}"
+                raise hioing.Memoer(f"Part size b2 too small < {bhs}"
                                            f" for head.")
             head = encodeB64(head)  # convert to Base64
             del part[:bhs]  # strip head off part
         else:  # wiff == Wiffs.txt:
             head = part[:hs]  # slice takes a copy
             if len(head) < hs:  # not enough bytes for head
-                raise hioing.MemoGramError(f"Part size b64 too small < {hs} for"
+                raise hioing.Memoer(f"Part size b64 too small < {hs} for"
                                            f"head.")
             del part[:hs]  # strip off head off
 
         code = head[:cs].decode()
         if code != self.code:
-            raise hioing.MemoGramError(f"Unrecognized part {code=}.")
+            raise hioing.Memoer(f"Unrecognized part {code=}.")
 
         mid = head[cs:cs+ms].decode()
         pn = helping.b64ToInt(head[cs+ms:cs+ms+ns])
@@ -742,14 +761,14 @@ class MemoGram(hioing.Mixin):
                 bns = 3 * (ns) // 4  # binary neck size
                 neck = part[:bns]  # slice takes a copy
                 if len(neck) < bns:  # not enough bytes for neck
-                    raise hioing.MemoGramError(f"Part size b2 too small < {bns}"
+                    raise hioing.Memoer(f"Part size b2 too small < {bns}"
                                                f" for neck.")
                 neck = encodeB64(neck)  # convert to Base64
                 del part[:bns]  # strip off neck
             else:  # wiff == Wiffs.txt:
                 neck = part[:ns]  # slice takes a copy
                 if len(neck) < ns:  # not enough bytes for neck
-                    raise hioing.MemoGramError(f"Part size b64 too small < {ns}"
+                    raise hioing.Memoer(f"Part size b64 too small < {ns}"
                                                f" for neck.")
                 del part[:ns]  # strip off neck
 
@@ -829,8 +848,8 @@ class MemoGram(hioing.Mixin):
 
         try:
             mid, pn, pc = self.parse(part)  # parse and strip off head leaving body
-        except hioing.MemoGramError as ex: # invalid part so drop
-            logger.error("Unrecognized MemoGram part from %s.\n %s.", src, ex)
+        except hioing.Memoer as ex: # invalid part so drop
+            logger.error("Unrecognized Memoer part from %s.\n %s.", src, ex)
             return True  # did receive data to can keep receiving
 
         if mid not in self.rxgs:
@@ -1038,7 +1057,7 @@ class MemoGram(hioing.Mixin):
         mms = min(self.MaxMemoSize, (bs * self.MaxPartCount) - ns)  # max memo payload
         ml = len(memo)
         if ml > mms:
-            raise hioing.MemoGramError(f"Memo length={ml} exceeds max={mms}.")
+            raise hioing.Memoer(f"Memo length={ml} exceeds max={mms}.")
 
         # memo ID is 16 byte random UUID converted to 22 char Base64 right aligned
         midb = encodeB64(bytes([0] * 2) + uuid.uuid4().bytes)[2:] # prepad, convert, and strip
@@ -1256,27 +1275,27 @@ class MemoGram(hioing.Mixin):
 
 
 @contextmanager
-def openMG(cls=None, name="test", **kwa):
+def openMemoer(cls=None, name="test", **kwa):
     """
-    Wrapper to create and open MemoGram instances
+    Wrapper to create and open Memoer instances
     When used in with statement block, calls .close() on exit of with block
 
     Parameters:
         cls (Class): instance of subclass instance
-        name (str): unique identifer of MemoGram peer.
+        name (str): unique identifer of Memoer peer.
             Enables management of transport by name.
     Usage:
-        with openMemoGram() as peer:
+        with openMemoer() as peer:
             peer.receive()
 
-        with openMemoGram(cls=MemoGramSub) as peer:
+        with openMemoer(cls=MemoerSub) as peer:
             peer.receive()
 
     """
     peer = None
 
     if cls is None:
-        cls = MemoGram
+        cls = Memoer
     try:
         peer = cls(name=name, **kwa)
         peer.reopen()
@@ -1288,13 +1307,13 @@ def openMG(cls=None, name="test", **kwa):
             peer.close()
 
 
-class MemoGramDoer(doing.Doer):
-    """MemoGram Doer for reliable transports that do not require retry tymers.
+class MemoerDoer(doing.Doer):
+    """Memoer Doer for reliable transports that do not require retry tymers.
 
     See Doer for inherited attributes, properties, and methods.
 
     Attributes:
-       .peer (MemoGram): underlying transport instance subclass of MemoGram
+       .peer (Memoer): underlying transport instance subclass of Memoer
 
     """
 
@@ -1302,9 +1321,9 @@ class MemoGramDoer(doing.Doer):
         """Initialize instance.
 
         Parameters:
-           peer (Peer): is MemoGram Subclass instance
+           peer (Peer): is Memoer Subclass instance
         """
-        super(MemoGramDoer, self).__init__(**kwa)
+        super(MemoerDoer, self).__init__(**kwa)
         self.peer = peer
 
 
@@ -1324,8 +1343,8 @@ class MemoGramDoer(doing.Doer):
 
 
 
-class TymeeMemoGram(tyming.Tymee, MemoGram):
-    """TymeeMemoGram mixin base class to add tymer support for unreliable transports
+class TymeeMemoer(tyming.Tymee, Memoer):
+    """TymeeMemoer mixin base class to add tymer support for unreliable transports
     that need retry tymers. Subclass of tyming.Tymee
 
 
@@ -1356,7 +1375,7 @@ class TymeeMemoGram(tyming.Tymee, MemoGram):
             tymeout (float): default for retry tymer if any
 
         """
-        super(TymeeMemoGram, self).__init__(**kwa)
+        super(TymeeMemoer, self).__init__(**kwa)
         self.tymeout = tymeout if tymeout is not None else self.Tymeout
         #self.tymer = tyming.Tymer(tymth=self.tymth, duration=self.tymeout) # retry tymer
 
@@ -1366,7 +1385,7 @@ class TymeeMemoGram(tyming.Tymee, MemoGram):
         Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
         Updates winds .tymer .tymth
         """
-        super(TymeeMemoGram, self).wind(tymth)
+        super(TymeeMemoer, self).wind(tymth)
         #self.tymer.wind(tymth)
 
     def serviceTymers(self):
@@ -1401,27 +1420,27 @@ class TymeeMemoGram(tyming.Tymee, MemoGram):
 
 
 @contextmanager
-def openTMG(cls=None, name="test", **kwa):
+def openTM(cls=None, name="test", **kwa):
     """
-    Wrapper to create and open TymeeMemoGram instances
+    Wrapper to create and open TymeeMemoer instances
     When used in with statement block, calls .close() on exit of with block
 
     Parameters:
         cls (Class): instance of subclass instance
-        name (str): unique identifer of MemoGram peer.
+        name (str): unique identifer of Memoer peer.
             Enables management of transport by name.
     Usage:
-        with openMemoGram() as peer:
+        with openTM() as peer:
             peer.receive()
 
-        with openMemoGram(cls=MemoGramSub) as peer:
+        with openTM(cls=MemoerSub) as peer:
             peer.receive()
 
     """
     peer = None
 
     if cls is None:
-        cls = TymeeMemoGram
+        cls = TymeeMemoer
     try:
         peer = cls(name=name, **kwa)
         peer.reopen()
@@ -1433,13 +1452,13 @@ def openTMG(cls=None, name="test", **kwa):
             peer.close()
 
 
-class TymeeMemoGramDoer(doing.Doer):
-    """TymeeMemoGram Doer for unreliable transports that require retry tymers.
+class TymeeMemoerDoer(doing.Doer):
+    """TymeeMemoer Doer for unreliable transports that require retry tymers.
 
     See Doer for inherited attributes, properties, and methods.
 
     Attributes:
-       .peer (TymeeMemoGram) is underlying transport instance subclass of TymeeMemoGram
+       .peer (TymeeMemoer) is underlying transport instance subclass of TymeeMemoer
 
     """
 
@@ -1447,9 +1466,9 @@ class TymeeMemoGramDoer(doing.Doer):
         """Initialize instance.
 
         Parameters:
-           peer (TymeeMemoGram):  subclass instance
+           peer (TymeeMemoer):  subclass instance
         """
-        super(TymeeMemoGramDoer, self).__init__(**kwa)
+        super(TymeeMemoerDoer, self).__init__(**kwa)
         self.peer = peer
         if self.tymth:
             self.peer.wind(self.tymth)
@@ -1459,7 +1478,7 @@ class TymeeMemoGramDoer(doing.Doer):
         """Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
         Updates winds .tymer .tymth
         """
-        super(TymeeMemoGramDoer, self).wind(tymth)
+        super(TymeeMemoerDoer, self).wind(tymth)
         self.peer.wind(tymth)
 
 
