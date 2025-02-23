@@ -207,28 +207,40 @@ mid = helping.b64ToInt(b'AA' + midb64b))
 pn = helping.b64ToInt(pnb64b))
 pc = helping.b64ToInt(pcb64b))
 
-HeadSize = 32  # base64 chars
+Standard header in all parts consists of
+code + mid + pn
+
+The first part with pn == 0 also has an additional field called the neck
+that is the total part count pc
+
+Standard
+HeadSize = 28  # base64 chars or 21 base2 bytes
+NeckSize = 4 # base  64 chars or 21 base2 bytes
+
 codeb64b = b'__"
 midb64b = encodeB64(bytes([0] * 2) + uuid.uuid4().bytes)[2:] # prepad, convert,  and strip
 pn = 1
-pnb64b = helping.intToB64b(pn, l=3)
+pnb64b = helping.intToB64b(pn, l=4)
 pc = 2
-pcb64b = helping.intToB64b(pc, l=3)
+pcb64b = helping.intToB64b(pc, l=4)
 
-headb64b = codeb64b + midb64b + pnb64b + pcb64b
+headb64b = codeb64b + midb64b + pnb64b
+neckb64b = pcb64b
 assert helping.Reb64.match(headb64b)
+assert helping.Reb64.match(neckb64b)
 
 codeb64b = headb64b[:2]
 mid = helping.b64ToInt(b'AA' + headb64b[2:24]))  # prepad and convert
 pn = helping.b64ToInt(headb64b[24:28]))
-pc = helping.b64ToInt(headb64b[28:32]))
+pc = helping.b64ToInt(neckb64b[28:32]))
 
 
 PartCode Typing/Versions uses a different base64 two char code.
 Codes always start with `_` and second char in code starts at `_`
 and walks backwards through B64 code table for each part type-version (tv) code.
-Total head length including code must be a multiple of 4 characters so
-converts to/from B2 without padding. So to change length in order to change
+Each of total head length including code and total neck length must be a
+multiple of 4 characters.  so eacch converts to/from B2 without padding.
+Head type-version code governs the neck as well. So to change length in order to change
 field lengths or add or remove fields need a new part (tv) code.
 
 To reiterate, if ever need to change anything ned a new part tv code. There are
@@ -239,9 +251,11 @@ tv 0 is '__'
 tv 1 is '_-'
 tv 3 is '_9'
 
-Because the part headers are valid mid-pad B64 primitives then can be losslessly
+Because the part head and neck are valid mid-pad B64 primitives then can be losslessly
 transformed to/from CESR primitives merely by translated the part tv code to
-an  equivalent entry in the  two char cesr primitive code table.
+an  equivalent entry in the  two char cesr primitive code table. When doing so
+The neck is always attached and then stripped when not needed.
+
 The CESR codes albeit different are one-to-one. This enables representing headers
 as CESR primitives for management but not over the wire. I.e. can transform
 Memogram Parts to CESR primitives to tunnel in some CESR stream.
@@ -262,7 +276,8 @@ HeadCodeSize hcs = 2
 MemoIDSize mis = 22
 PartNumSize pns = 4
 PartCntSize pcs = 4
-PartHeadSize phs  = 32
+PartHeadSize phs  = 28
+PartHeadNeckSize phns = 28 + 4 = 32
 
 
 MaxPartBodySize = ()2** 16 -1) - HeadSize
@@ -280,6 +295,7 @@ For any given PartSize  there is a MaxPartCount of 2**24-1 so if fix the PartSiz
 this limits the effective
 mms = min((2**16-1)**2), (PartSize - PartHeadSize) * (2**24-1))
 mms = min((2**16-1)**2), (PartBodySize) * (2**24-1))
+Note there is an extra 4 characters in first part for the neck
 
 so ps, pbs, and mms are variables specific to transport
 PHS is fixed for the transport type reliable unreliable with header fields as defined
@@ -298,59 +314,100 @@ So compare memo size to mms and if greater raise error and drop memo
 otherwise partition (part) memo into parts with headers and transmit
 
 
+Note max memo size is (2**16-1)**2 = 4294836225.
+But accounting for the part header overhead the largest payload max memo size is
+max part size = (2**16-1) == 65535
+max part count = (2**24-1) == 16777215
+standard header size hs = 28
+neck size ns = 4
+bs = maxpartsize - hs = (65535 - hs) = 65507  # max standard part body size
+max theoretical memogram payload size mms is
+mms = (bs * maxpartcount) - ns  = 65507 * 16777215 - 4 = 1099025023001
+but this is too big so we limit it to 4294836225 but we can have a payload
+of 4294836225 when using the maxpartsize for each part.
+
+The maximum number of bytes in a CESR big group frame body is
+(2**30-1)*4 = 4294967292.
+The maximum group count is (2**30-1) == 1073741823
+Groups code count in quadlets (4) and the max count value is (2**30-1) for 5
+6 bit b64 digits.
+The group code is not part of the counted quadlets so the largest group
+with its group code of length 8 is 4294967292 + 8 = 4294967300
+which is (2**30-1)*4 + 8.
+
+This is bigger than the max effective MemoGram payload size by
+4294967300 - 4294836225 = 131075
+
+
+So when sending via segmented MemoGram parts the maximum big group count frame
+with code as payload is
+
+(4294836225 - 8) // 4 = 1073709054
+
+This is less than the absolute max group count by
+1073741823 - 1073709054 = 32769
+
+So biggest memogram payload is relatively slightly smaller than the max group
+frame size with group code.
+
+To fix this we would have to allow for a bigger part gram size than 2**16-1
+For UXD datagrams this is not a hard limit
+but it is a hard limit for UDP datagrams
+
+It is unlikely we would ever reach those limits in a practical application.
+
+
 """
 import socket
 import errno
-import struct
+import math
+import uuid
+#import struct
 
 from collections import deque, namedtuple
 from contextlib import contextmanager
 from base64 import urlsafe_b64encode as encodeB64
 from base64 import urlsafe_b64decode as decodeB64
+from dataclasses import dataclass, astuple
 
-from hio import hioing, help
-from hio.base import tyming, doing
+from .. import hioing, help
+from ..base import tyming, doing
+from ..help import helping
 
 logger = help.ogler.getLogger()
 
 # namedtuple of ints (major: int, minor: int)
 Versionage = namedtuple("Versionage", "major minor")
 
-Encodage = namedtuple("Encodage", 'txt bny')  # part head encoding
-Encodes = Encodage(txt='txt', bny='bny')
+Wiffage = namedtuple("Wiffage", 'txt bny')  # part head encoding
+Wiffs = Wiffage(txt='txt', bny='bny')
 
 
-@contextmanager
-def openMG(cls=None, name="test", **kwa):
+# namedtuple for size entries in MemoGram code tables
+# cs is the code size int number of chars in code portion
+# ms is the mid size int number of chars in the mid portion (memoID)
+# ns is the neck size int number of chars for the part number in all parts and
+#       the additional neck that also appears in first part
+# hs is the head size int number of chars hs = cs + ms + ns and for the first
+#       part the head of size hs is followed by a neck of size ns. So the total
+#       overhead on first part is os = hs + ns
+
+Sizage = namedtuple("Sizage", "cs ms ns hs")
+
+@dataclass(frozen=True)
+class PartCodex:
     """
-    Wrapper to create and open MemoGram instances
-    When used in with statement block, calls .close() on exit of with block
-
-    Parameters:
-        cls (Class): instance of subclass instance
-        name (str): unique identifer of MemoGram peer.
-            Enables management of transport by name.
-    Usage:
-        with openMemoGram() as peer:
-            peer.receive()
-
-        with openMemoGram(cls=MemoGramSub) as peer:
-            peer.receive()
-
+    PartCodex is codex of all Part Head Codes.
+    Only provide defined codes.
+    Undefined are left out so that inclusion(exclusion) via 'in' operator works.
     """
-    peer = None
+    Basic:     str = '__'  # Basic Part Head Code
 
-    if cls is None:
-        cls = MemoGram
-    try:
-        peer = cls(name=name, **kwa)
-        peer.reopen()
+    def __iter__(self):
+        return iter(astuple(self))
 
-        yield peer
 
-    finally:
-        if peer:
-            peer.close()
+PartDex = PartCodex()  # Make instance
 
 
 class MemoGram(hioing.Mixin):
@@ -408,6 +465,13 @@ class MemoGram(hioing.Mixin):
     Class Attributes:
         Version (Versionage): default version consisting of namedtuple of form
             (major: int, minor: int)
+        BufCount (int):  default bufcount bc for transport 64
+        Code (str):  default part type-version head code '__'
+        MaxMemoSize (int): absolute max memo size  4294836225
+        MaxPartSize (int): absolute max part size  65535
+        MaxPartCount (int): absolute max part count  16777215
+        Sizes (dict): part sizes Sizage instances keyed by part codes
+        Mode (str): default encoding mode for tx part header b64 'txt' Wiffs.txt
 
     Inherited Attributes:
         name (str):  unique name for MemoGram transport. Used to manage.
@@ -420,7 +484,16 @@ class MemoGram(hioing.Mixin):
                 namedtuple of form (major: int, minor: int)
         rxgs (dict): holding rx (receive) (data) gram deques of grams.
             Each item in dict has key=src and val=deque of grames received
-            from transport. Each item of form (src: str, gram: deque)
+        rxgs (dict): keyed by mid (memoID) with value of dict where each deque
+            holds incomplete memo part grams for that mid.
+            The mid appears in every gram part from the same memo.
+            The value dict is keyed by the part number pn, with value
+            that is the part bytes.
+        sources (dict): keyed by mid (memoID) that holds the src for the memo.
+            This enables reattaching src to fused memo in rxms deque tuple.
+        counts (dict): keyed by mid (memoID) that holds the part count (pc) from
+            the first part for the memo. This enables lookup of the pc when
+            fusing its parts.
         rxms (deque): holding rx (receive) memo duples desegmented from rxgs grams
                 each entry in deque is duple of form (memo: str, dst: str)
         txms (deque): holding tx (transmit) memo tuples to be segmented into
@@ -433,42 +506,28 @@ class MemoGram(hioing.Mixin):
             portion when Encodesdatagram is not able to be sent all at once so can
             keep trying. Nothing to send indicated by (bytearray(), None)
             for (gram, dst)
-
-
-        rxgs dict keyed by mid (memo id) that holds incomplete memo parts.
-            The mid appears in every gram part from the same memo.
-            each val is dict of received gram parts keyed by part number.
-
-        srcs is dict keyed by mid that holds the src for that mid. This allows
-            reattaching src to memo when placing in rxms deque
-
-
-        mids (dict): of dicts keyed by src and each value dict keyed by
-
         echos (deque): holding echo receive duples for testing. Each duple of
+                       form: (gram: bytes, dst: str).
+        code (bytes | None): part head code for part header
+        size (int): part size for this instance for transport. Part size
+                   = head size  + body size. Part size limited by
+                   MaxPartSize and head size + 1
+        mode (str): encoding mode for part header when transmitting,
+                b64 'txt' or b2 'bny'
 
-        pc (bytes | None): part code for part header
-                        form: (gram: bytes, dst: str).
-        ps (int): part size for this instance for transport. Part size
-                   = part head size  + part body size. Part size limited by
-                   MaxPartSize and PartHeadSize + 1
-        mms (int): max memo size relative to part size. Limited by MaxMemoSize
-                    and MaxPartCount for the part size.
 
 
     Properties:
 
-
-
-
     """
     Version = Versionage(major=0, minor=0)  # default version
     BufCount = 64  # default bufcount bc for transport
-    PartCode = b'__'  # default part type-version code for head
+    Code = PartDex.Basic  # default part type-version head code '__'
     MaxMemoSize = 4294836225 # (2**16-1)**2 absolute max memo size
     MaxPartSize = 65535 # (2**16-1) absolute max part size
     MaxPartCount = 16777215 # (2**24-1) absolute max part count
-    PartHeadSizes = {b'__': 32}  # dict of part head sizes keyed by part codes
+    Sizes = {'__': Sizage(cs=2, ms=22, ns=4, hs=28)}  # dict of part sizes keyed by part codes
+    Mode = Wiffs.txt  # encoding mode for tx part header b64 'txt' or b2 'bny'
 
 
     def __init__(self,
@@ -476,12 +535,15 @@ class MemoGram(hioing.Mixin):
                  bc=None,
                  version=None,
                  rxgs=None,
+                 sources=None,
+                 counts=None,
                  rxms=None,
                  txms=None,
                  txgs=None,
                  txbs=None,
-                 pc=None,
-                 ps=None,
+                 code=None,
+                 size=None,
+                 mode=None,
                  **kwa
                 ):
         """Setup instance
@@ -493,9 +555,17 @@ class MemoGram(hioing.Mixin):
         Parameters:
             version (Versionage): version for this memoir instance consisting of
                 namedtuple of form (major: int, minor: int)
-            rxgs (dict): holding rx (receive) (data) gram deques of grams.
-                Each item in dict has key=src and val=deque of grams received
-                from transport. Each item of form (src: str, gram: deque)
+            rxgs (dict): keyed by mid (memoID) with value of dict where each deque
+                holds incomplete memo part grams for that mid.
+                The mid appears in every gram part from the same memo.
+                The value dict is keyed by the part number pn, with value
+                that is the part bytes.
+            sources (dict): keyed by mid that holds the src for the memo indexed by its
+                mid (memoID). This enables reattaching src to memo when
+                placing fused memo in rxms deque.
+            counts (dict): keyed by mid that holds the part count (pc) for the
+                memo indexed by its mid (memoID). This enables lookup of the pc
+                to memo when fusing its parts.
             rxms (deque): holding rx (receive) memo duples fused from rxgs grams
                 each entry in deque is duple of form (memo: str, dst: str)
             txms (deque): holding tx (transmit) memo tuples to be partitioned into
@@ -508,15 +578,14 @@ class MemoGram(hioing.Mixin):
                 portion when datagram is not able to be sent all at once so can
                 keep trying. Nothing to send indicated by (bytearray(), None)
                 for (gram, dst)
-            pc (bytes | None): part code for part header
-            ps (int): part size for this instance for transport. Part size
-                   = part head size  + part body size. Part size limited by
-                   MaxPartSize and MaxPartCount relative to MaxMemoSize as well
-                   as minimum part body size of 1
-            pbs (int): part body size = part size - part head size for given
-                       paEncodesrt code. Part body size must be at least 1.
-            mms (int): max memo size relative to part size and limited by
-                        MaxMemoSize and MaxPartCount for given part size.
+            code (bytes | None): part code for part header
+            size (int): part size for this instance for transport. Part size
+                = head size + body size. Part size limited by
+                MaxPartSize and MaxPartCount relative to MaxMemoSize as well
+                as minimum part body size of 1
+            mode (str): encoding mode for part header when transmitting,
+                b64 'txt' or b2 'bny'
+
 
 
 
@@ -524,6 +593,8 @@ class MemoGram(hioing.Mixin):
         # initialize attributes
         self.version = version if version is not None else self.Version
         self.rxgs = rxgs if rxgs is not None else dict()
+        self.sources = sources if sources is not None else dict()
+        self.counts = counts if counts is not None else dict()
         self.rxms = rxms if rxms is not None else deque()
 
         self.txms = txms if txms is not None else deque()
@@ -534,12 +605,11 @@ class MemoGram(hioing.Mixin):
 
         self.echos = deque()  # only used in testing as echoed tx
 
-        self.pc = pc if pc is not None else self.PartCode
-        phs = self.PartHeadSizes[self.pc] # part head size
-        ps = ps if ps is not None else self.MaxPartSize
-        self.ps = max(min(ps, self.MaxPartSize), phs + 1)
-        self.pbs = (self.ps - phs)  # part body size
-        self.mms = min(self.MaxMemoSize, self.pbs * self.MaxPartCount)
+        self.code = code if code is not None else self.Code
+        _, _, ns, hs = self.Sizes[self.code]
+        size = size if size is not None else self.MaxPartSize
+        self.size = max(min(size, self.MaxPartSize), hs + ns + 1)
+        self.mode = mode if mode is not None else self.Mode
 
         super(MemoGram, self).__init__(name=name, bc=bc, **kwa)
 
@@ -575,26 +645,117 @@ class MemoGram(hioing.Mixin):
 
 
     def wiff(self, part):
-        """
-        Returns encoding format of part bytes header as either base64 text 'txt'
-        or base2 binary 'bny' from first 6 bits (sextet) of first byte in part.
+        """Determines encoding format of part bytes header as either base64 text
+        'txt' or base2 binary 'bny' from first 6 bits (sextet) in part.
+
+        Returns:
+            wiff (Wiffs): Wiffs.txt if B64 text, Wiffs.bny if B2 binary
+                                Otherwise raises hioing.MemoGramError
+
         All part head codes start with '_' in base64 text or in base2 binary.
         Given only allowed chars are from the set of base64 then can determine
         if header is in base64 or base2.
 
-        First sextet:
+        First sextet:  (0b is binary, 0o is octal, 0x is hexadecimal)
 
-        0o2 = 010 means first sextet of '_' in base64  =>'txt'
-        0o7 = 111 means frist sextet of '_' in base2  => 'bny'
+        0o27 = 0b010111 means first sextet of '_' in base64  => 'txt'
+        0o77 = 0b111111 means first sextet of '_' in base2  => 'bny'
+
+        Assuming that only '_' is allowed as the first char of a valid part head,
+        in either Base64 or Base2 encoding, a parser can unambiguously determine
+        if the part header encoding is binary Base2 or text Base64 because
+        0o27 != 0o77.
+
+        Furthermore, it just so happens that 0o27 is a unique first sextet
+        among Base64 ascii chars. So an invalid part header when in Base64 encoding
+        is detectable. However, there is one collision (see below) with invalid
+        part headers in Base2 encoding. So an erroneously constructed part might
+        not be detected merely by looking at the first sextet. Therefore
+        unreliable transports must provide some additional mechanism such as a
+        hash or signature on the part.
+
+        All Base2 codes for Base64 chars are unique since the B2 codes are just
+        the count from 0 to 63. There is one collision, however, between Base2 and
+        Base 64 for invalid part headers. This is because 0o27 is the
+        base2 code for ascii 'V'. This means that Base2 encodings
+        that begin 0o27 witch is the Base2 encoding of the ascii 'V, would be
+        incorrectly detected as text not binary.
         """
 
         sextet = part[0] >> 2
-        if sextet == 0o123:
-            return Encodes.txt # 'txt'
-        if sextet == 0o321:
-            return Encodes.bny  # 'bny'
+        if sextet == 0o27:
+            return Wiffs.txt  # 'txt'
+        if sextet == 0o77:
+            return Wiffs.bny  # 'bny'
 
         raise hioing.MemoGramError(f"Unexpected {sextet=} at part head start.")
+
+
+    def parse(self, part):
+        """Parse and strips header from gram part bytearray and returns
+        (mid, pn, pc) when first part, (mid, pn, None) when other part
+        Otherwise raises MemoGramError is unrecognized header
+
+        Returns:
+            result (tuple): tuple of form:
+                (mid: str, pn: int, pc: int | None) where:
+                mid is memoID, pn is part number, pc is part count.
+                When first first part (zeroth) returns (mid, 0, pc).
+                When other part returns (mid, pn, None)
+                Otherwise raises memogram error.
+
+        When valid recognized header, strips header bytes from front of part
+        leaving the part body part bytearray.
+
+        Parameters:
+            part (bytearray): memo part gram from which to parse and strip its header.
+
+        """
+        cs, ms, ns, hs = self.Sizes[self.code]
+
+        wiff = self.wiff(part)
+        if wiff == Wiffs.bny:
+            bhs = 3 * (hs) // 4  # binary head size
+            head = part[:bhs]  # slice takes a copy
+            if len(head) < bhs:  # not enough bytes for head
+                raise hioing.MemoGramError(f"Part size b2 too small < {bhs}"
+                                           f" for head.")
+            head = encodeB64(head)  # convert to Base64
+            del part[:bhs]  # strip head off part
+        else:  # wiff == Wiffs.txt:
+            head = part[:hs]  # slice takes a copy
+            if len(head) < hs:  # not enough bytes for head
+                raise hioing.MemoGramError(f"Part size b64 too small < {hs} for"
+                                           f"head.")
+            del part[:hs]  # strip off head off
+
+        code = head[:cs].decode()
+        if code != self.code:
+            raise hioing.MemoGramError(f"Unrecognized part {code=}.")
+
+        mid = head[cs:cs+ms].decode()
+        pn = helping.b64ToInt(head[cs+ms:cs+ms+ns])
+
+        pc = None
+        if pn == 0:  # first (zeroth) part so get neck
+            if wiff == Wiffs.bny:
+                bns = 3 * (ns) // 4  # binary neck size
+                neck = part[:bns]  # slice takes a copy
+                if len(neck) < bns:  # not enough bytes for neck
+                    raise hioing.MemoGramError(f"Part size b2 too small < {bns}"
+                                               f" for neck.")
+                neck = encodeB64(neck)  # convert to Base64
+                del part[:bns]  # strip off neck
+            else:  # wiff == Wiffs.txt:
+                neck = part[:ns]  # slice takes a copy
+                if len(neck) < ns:  # not enough bytes for neck
+                    raise hioing.MemoGramError(f"Part size b64 too small < {ns}"
+                                               f" for neck.")
+                del part[:ns]  # strip off neck
+
+            pc = helping.b64ToInt(neck)
+
+        return (mid, pn, pc)
 
 
     def receive(self, *, echoic=False):
@@ -664,12 +825,32 @@ class MemoGram(hioing.Mixin):
         if not gram:  # no received data
             return False
 
-        if src not in self.rxgs:
-            self.rxgs[src] = deque()
+        part = bytearray(gram)# make copy bytearray so can strip off header
 
-        self.rxgs[src].append(gram)
+        try:
+            mid, pn, pc = self.parse(part)  # parse and strip off head leaving body
+        except hioing.MemoGramError as ex: # invalid part so drop
+            logger.error("Unrecognized MemoGram part from %s.\n %s.", src, ex)
+            return True  # did receive data to can keep receiving
 
-        return True  # received data
+        if mid not in self.rxgs:
+            self.rxgs[mid] = dict()
+
+        # save stripped part gram to be fused later
+        if pn not in self.rxgs[mid]:  # make idempotent first only no replay
+            self.rxgs[mid][pn] = part  # index body by its part number
+
+        if pc is not None:
+            if mid not in self.counts:  # make idempotent first only no replay
+                self.counts[mid] = pc  # save part count for mid
+
+        # assumes unique mid across all possible sources. No replay by different
+        # source only first source for a given mid is ever recognized
+        if mid not in self.sources:  # make idempotent first only no replay
+            self.sources[mid] = src  # save source for later
+
+
+        return True  # received valid
 
 
     def serviceReceivesOnce(self, *, echoic=False):
@@ -697,12 +878,11 @@ class MemoGram(hioing.Mixin):
         while self.opened:
             if not self._serviceOneReceived(echoic=echoic):
                 break
-            echo = None  # only echo once
 
 
-    def fuse(self, grams):
-        """Fuse gram parts from frams deque into whole memo. If grams is
-        missing any the parts for a whole memo then returns None.
+    def fuse(self, parts, cnt):
+        """Fuse cnt gram part bodies from parts dict into whole memo . If any
+        parts are missing then returns None.
 
         Returns:
             memo (str | None): fused memo or None if incomplete.
@@ -710,55 +890,38 @@ class MemoGram(hioing.Mixin):
         Override in subclass
 
         Parameters:
-            grams (deque): gram segments from which to fuse memo parts.
+            parts (dict): memo part bodies each keyed by part number from which
+                          to fuse memo.
+            cnt (int): part count for mid
         """
-        try:
-            gram = grams.popleft()
-            memo = gram.decode()
-        except IndexError:
+        if len(parts) < cnt:  # must be missing one or more parts
             return None
 
-        return memo
+        memo = bytearray()
+        for i in range(cnt):  # iterate in numeric order, items are insertion ordered
+            memo.extend(parts[i])  # extend memo with part body at part i
+
+        return memo.decode()  # convert bytearray to str
+
 
 
     def _serviceOnceRxGrams(self):
-        """Service one pass over .rxgs dict for each unique src in .rxgs
+        """Service one pass over .rxgs dict for each unique mid in .rxgs
 
-        Returns:
-            result (bool):  True means at least one src has received a memo and
-                                has writing grams so can keep desegmenting.
-                            False means all sources waiting for more grams
-                                so try again later.
-
-        The return value True or False enables back pressure on greedy callers
-        so they know when to block waiting for at least one source with received
-        memo and additional grams to desegment.
-
-        Deleting an item from a dict at a key (since python dicts are key creation
-        ordered) means that the next time an item is created at that key, that
-        item will be last in order. In order to dynamically change the ordering
-        of iteration over sources,  when there are no received grams from a
-        given source we remove its dict item. This reorders the source
-        as last when a new gram is received and avoids iterating over sources
-        with no received grams.
-
+        Deleting an item from a dict at a key (since python dicts are key
+        insertion ordered) means that the next time an item is created it will
+        be last.
         """
-        goods = [False] * len(self.rxgs)  # list by src, True memo False no-memo
-        # service grams to desegment
-        for i, src in enumerate(list(self.rxgs.keys())):  # list since items may be deleted in loop
-            # if src then grams deque at src must not be empty
-            memo = self.fuse(self.rxgs[src])
+        for i, mid in enumerate(list(self.rxgs.keys())):  # items may be deleted in loop
+            # if mid then parts dict at mid must not be empty
+            if not mid in self.counts:  # missing first part so skip
+                continue
+            memo = self.fuse(self.rxgs[mid], self.counts[mid])
             if memo is not None:  # allows for empty "" memo for some src
-                self.rxms.append((memo, src))
-
-            if not self.rxgs[src]:  # deque at src empty so remove deque
-                del self.rxgs[src]  # makes src unordered until next memo at src
-
-            if memo is not None:  # received and desegmented memo
-                if src in self.rxgs:  # more received gram(s) at src
-                    goods[i] = True  # indicate memo recieved with more received gram(s)
-
-        return any(goods)  # at least one memo from a source with more received grams
+                self.rxms.append((memo, self.sources[mid]))
+                del self.rxgs[mid]
+                del self.counts[mid]
+                del self.sources[mid]
 
 
     def serviceRxGramsOnce(self):
@@ -770,13 +933,12 @@ class MemoGram(hioing.Mixin):
 
 
     def serviceRxGrams(self):
-        """Service multiple passes (greedy) over all unqique sources in
-        .rxgs dict if any for sources with complete desegmented memos and more
-        incoming grams.
+        """Service one pass (non-greedy) over all unique sources in .rxgs
+        dict if any for received incoming grams.  No different from
+        serviceRxGramsOnce because service all mids each pass.
         """
-        while self.rxgs:
-            if not self._serviceOnceRxGrams():
-                break
+        if self.rxgs:
+            self._serviceOnceRxGrams()
 
 
     def _serviceOneRxMemo(self):
@@ -855,18 +1017,54 @@ class MemoGram(hioing.Mixin):
         self.txms.append((memo, dst))
 
 
-    def part(self, memo):
-        """Partition memo into parts as grams.
-        This is a stub method meant to be overridden in subclass
+    def rend(self, memo):
+        """Partition memo into packed part grams with headers.
 
         Returns:
-            grams (list[bytes]): packed segments of memo, each seqment is bytes
+            parts (list[bytes]): list of part grams with headers.
 
         Parameters:
-            memo (str): to be segmented into grams
+            memo (str): to be partitioned into gram parts with headers
+
+        Note first part has head + neck overhead, hs + ns so bs is smaller by ns
+             non-first parts have just head overhead hs so bs is bigger by ns
         """
-        grams = [memo.encode()]
-        return grams
+        parts = []
+        memo = bytearray(memo.encode()) # convert and copy to bytearray
+
+        cs, ms, ns, hs = self.Sizes[self.code]
+        # self.size is max part size
+        bs = (self.size - hs)  # max standard part body size,
+        mms = min(self.MaxMemoSize, (bs * self.MaxPartCount) - ns)  # max memo payload
+        ml = len(memo)
+        if ml > mms:
+            raise hioing.MemoGramError(f"Memo length={ml} exceeds max={mms}.")
+
+        # memo ID is 16 byte random UUID converted to 22 char Base64 right aligned
+        midb = encodeB64(bytes([0] * 2) + uuid.uuid4().bytes)[2:] # prepad, convert, and strip
+        #mid = midb.decode()
+        # compute part count account for added neck overhead in first part
+        pc = math.ceil((ml + ns - bs)/bs + 1)  # includes added neck ns overhead
+        neck = helping.intToB64b(pc, l=ns)
+        if self.mode == Wiffs.bny:
+            neck = decodeB64(neck)
+        pn = 0
+        while memo:
+            pnb = helping.intToB64b(pn, l=ns)  # pn size always == neck size
+            head = self.code.encode() + midb + pnb
+            if self.mode == Wiffs.bny:
+                head = decodeB64(head)
+            if pn == 0:
+                part = head + neck + memo[:bs-ns]  # copy slice past end just copies to end
+                del memo[:bs-ns]  # del slice past end just deletes to end
+            else:
+                part = head + memo[:bs]  # copy slice past end just copies to end
+                del memo[:bs]  # del slice past end just deletes to end
+            parts.append(part)
+
+            pn += 1
+
+        return parts
 
 
     def _serviceOneTxMemo(self):
@@ -879,9 +1077,9 @@ class MemoGram(hioing.Mixin):
         Appends duples of (gram, dst) from grams to .txgs deque.
         """
         memo, dst = self.txms.popleft()  # raises IndexError if empty deque
-        grams = self.part(memo)
-        for gram in grams:
-            self.txgs.append((gram, dst))  # append duples (gram: bytes, dst: str)
+
+        for part in self.rend(memo):  # partition memo into gram parts with head
+            self.txgs.append((part, dst))  # append duples (gram: bytes, dst: str)
 
 
     def serviceTxMemosOnce(self):
@@ -1057,6 +1255,38 @@ class MemoGram(hioing.Mixin):
     service = serviceAll  # alias override peer service method
 
 
+@contextmanager
+def openMG(cls=None, name="test", **kwa):
+    """
+    Wrapper to create and open MemoGram instances
+    When used in with statement block, calls .close() on exit of with block
+
+    Parameters:
+        cls (Class): instance of subclass instance
+        name (str): unique identifer of MemoGram peer.
+            Enables management of transport by name.
+    Usage:
+        with openMemoGram() as peer:
+            peer.receive()
+
+        with openMemoGram(cls=MemoGramSub) as peer:
+            peer.receive()
+
+    """
+    peer = None
+
+    if cls is None:
+        cls = MemoGram
+    try:
+        peer = cls(name=name, **kwa)
+        peer.reopen()
+
+        yield peer
+
+    finally:
+        if peer:
+            peer.close()
+
 
 class MemoGramDoer(doing.Doer):
     """MemoGram Doer for reliable transports that do not require retry tymers.
@@ -1092,37 +1322,6 @@ class MemoGramDoer(doing.Doer):
         """"""
         self.peer.close()
 
-@contextmanager
-def openTMG(cls=None, name="test", **kwa):
-    """
-    Wrapper to create and open TymeeMemoGram instances
-    When used in with statement block, calls .close() on exit of with block
-
-    Parameters:
-        cls (Class): instance of subclass instance
-        name (str): unique identifer of MemoGram peer.
-            Enables management of transport by name.
-    Usage:
-        with openMemoGram() as peer:
-            peer.receive()
-
-        with openMemoGram(cls=MemoGramSub) as peer:
-            peer.receive()
-
-    """
-    peer = None
-
-    if cls is None:
-        cls = TymeeMemoGram
-    try:
-        peer = cls(name=name, **kwa)
-        peer.reopen()
-
-        yield peer
-
-    finally:
-        if peer:
-            peer.close()
 
 
 class TymeeMemoGram(tyming.Tymee, MemoGram):
@@ -1199,6 +1398,39 @@ class TymeeMemoGram(tyming.Tymee, MemoGram):
         self.serviceAllRx()
         self.serviceTymers()
         self.serviceAllTx()
+
+
+@contextmanager
+def openTMG(cls=None, name="test", **kwa):
+    """
+    Wrapper to create and open TymeeMemoGram instances
+    When used in with statement block, calls .close() on exit of with block
+
+    Parameters:
+        cls (Class): instance of subclass instance
+        name (str): unique identifer of MemoGram peer.
+            Enables management of transport by name.
+    Usage:
+        with openMemoGram() as peer:
+            peer.receive()
+
+        with openMemoGram(cls=MemoGramSub) as peer:
+            peer.receive()
+
+    """
+    peer = None
+
+    if cls is None:
+        cls = TymeeMemoGram
+    try:
+        peer = cls(name=name, **kwa)
+        peer.reopen()
+
+        yield peer
+
+    finally:
+        if peer:
+            peer.close()
 
 
 class TymeeMemoGramDoer(doing.Doer):

@@ -442,9 +442,15 @@ B64REX = rb'^[0-9A-Za-z_-]*\Z'   # [A-Za-z0-9\-\_]  bytes
 Reb64 = re.compile(B64REX)  # compile is faster
 
 def intToB64(i, l=1):
-    """
-    Returns conversion of int i to Base64 str
+    """Converts int i to at least l Base64 chars as str.
+    Returns:
+        b64 (str): Base64 converstion of i of length minimum l. If more than
+                    l chars are needed to represent i in Base64 then returned
+                    str is lengthed appropriately. When less then l chars is
+                    needed then returned str is prepadded with 'A' character.
+
     l is min number of b64 digits left padded with Base64 0 == "A" char
+    The length of return bytes extended to accomodate full Base64 encoding of i
     """
     d = deque()  # deque of characters base64
 
@@ -459,9 +465,16 @@ def intToB64(i, l=1):
 
 
 def intToB64b(i, l=1):
-    """
-    Returns conversion of int i to Base64 bytes
-    l is min number of b64 digits left padded with Base64 0 == "A" char
+    """Converts int i to at least l Base64 chars as bytes.
+
+    Returns:
+        b64 (bytes): Base64 converstion of i of length minimum l. If more than
+                     l bytes are needed to represent i in Base64 then returned
+                     bytes is lengthed appropriately. When less then l bytes
+                     is needed then returned bytes is prepadded with b'A' bytes.
+
+    l is min number of b64 digits left padded with Base64 0 == b"A" bytes
+    The length of return bytes extended to accomodate full Base64 encoding of i
     """
     return (intToB64(i=i, l=l).encode("utf-8"))
 
