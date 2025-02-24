@@ -18,10 +18,11 @@ def test_memoer_basic():
     peer = memoing.Memoer()
     assert peer.name == "main"
     assert peer.opened == False
-    assert peer.code == '__' == peer.Code
+    assert peer.bc == 64
+    assert peer.code == memoing.GramDex.Basic == '__'
+    assert not peer.mode
     assert peer.Sizes[peer.code] == (2, 22, 4, 28)  # (code, mid, neck, head) size
-    assert peer.size == peer.MaxPartSize
-
+    assert peer.size == peer.MaxGramSize
 
     peer.reopen()
     assert peer.opened == True
@@ -39,7 +40,7 @@ def test_memoer_basic():
     peer.serviceTxMemos()
     assert not peer.txms
     m, d = peer.txgs[0]
-    assert peer.wiff(m) == memoing.Wiffs.txt
+    assert not peer.wiff(m)  # base64
     assert m.endswith(memo.encode())
     assert d == dst == 'beta'
     peer.serviceTxGrams()
@@ -74,7 +75,7 @@ def test_memoer_basic():
     peer.serviceTxMemos()
     assert not peer.txms
     m, d = peer.txgs[0]
-    assert peer.wiff(m) == memoing.Wiffs.txt
+    assert not peer.wiff(m)  # base64
     assert m.endswith(memo.encode())
     assert d == dst == 'beta'
     peer.serviceTxGrams(echoic=True)
@@ -101,8 +102,8 @@ def test_memoer_basic():
     peer.serviceRxMemos()
     assert not peer.rxms
 
-    # test binary q2 encoding of transmission part header
-    peer.mode = memoing.Wiffs.bny
+    # test binary q2 encoding of transmission gram header
+    peer.mode = True  # set to binary base2
     memo = "Hello There"
     dst = "beta"
     peer.memoit(memo, dst)
@@ -110,7 +111,7 @@ def test_memoer_basic():
     peer.serviceTxMemos()
     assert not peer.txms
     m, d = peer.txgs[0]
-    assert peer.wiff(m) == memoing.Wiffs.bny
+    assert peer.wiff(m)  # base2
     assert m.endswith(memo.encode())
     assert d == dst == 'beta'
     peer.serviceTxGrams()
@@ -124,7 +125,7 @@ def test_memoer_basic():
     mid = 'ALBI68S1ZIxqwFOSWFF1L2'
     headneck = decodeB64(('__' + mid + 'AAAA' + 'AAAB').encode())
     gram = headneck + b"Hello There"
-    assert peer.wiff(gram) == memoing.Wiffs.bny
+    assert peer.wiff(gram)  # base2
     echo = (gram, "beta")
     peer.echos.append(echo)
     peer.serviceReceives(echoic=True)
@@ -144,13 +145,15 @@ def test_memoer_basic():
     """ End Test """
 
 
-def test_memogram_small_part_size():
-    """Test MemoGram class with small part size
+def test_memogram_small_gram_size():
+    """Test MemoGram class with small gram size
     """
     peer = memoing.Memoer(size=6)
     assert peer.name == "main"
     assert peer.opened == False
-    assert peer.code == '__' == peer.Code
+    assert peer.bc == 64
+    assert peer.code == memoing.GramDex.Basic == '__'
+    assert not peer.mode
     assert peer.Sizes[peer.code] == (2, 22, 4, 28)  # (code, mid, neck, head) size
     assert peer.size == 33  # can't be smaller than head + neck + 1
 
@@ -173,7 +176,7 @@ def test_memogram_small_part_size():
     assert not peer.txms
     assert len(peer.txgs) == 2
     for m, d in peer.txgs:
-        assert peer.wiff(m) == memoing.Wiffs.txt
+        assert not peer.wiff(m)  # base64
         assert d == dst == 'beta'
     peer.serviceTxGrams()
     assert not peer.txgs
@@ -215,7 +218,7 @@ def test_memogram_small_part_size():
     assert not peer.txms
     assert len(peer.txgs) == 2
     for m, d in peer.txgs:
-        assert peer.wiff(m) == memoing.Wiffs.txt
+        assert not peer.wiff(m)  # base64
         assert d == dst == 'beta'
     peer.serviceTxGrams(echoic=True)
     assert not peer.txgs
@@ -243,8 +246,8 @@ def test_memogram_small_part_size():
     peer.serviceRxMemos()
     assert not peer.rxms
 
-    # test binary q2 encoding of transmission part header
-    peer.mode = memoing.Wiffs.bny
+    # test binary q2 encoding of transmission gram header
+    peer.mode =  True  # set to binary base2
     memo = "Hello There"
     dst = "beta"
     peer.memoit(memo, dst)
@@ -253,7 +256,7 @@ def test_memogram_small_part_size():
     assert not peer.txms
     assert len(peer.txgs) == 2
     for m, d in peer.txgs:
-        assert peer.wiff(m) == memoing.Wiffs.bny
+        assert peer.wiff(m)   # base2
         assert d == dst == 'beta'
     peer.serviceTxGrams()
     assert not peer.txgs
@@ -266,7 +269,7 @@ def test_memogram_small_part_size():
 
     headneck = decodeB64(('__' + mid + 'AAAA' + 'AAAB').encode())
     gram = headneck + b"Hello There"
-    assert peer.wiff(gram) == memoing.Wiffs.bny
+    assert peer.wiff(gram)   # base2
     echo = (gram, "beta")
     peer.echos.append(echo)
 
@@ -275,12 +278,12 @@ def test_memogram_small_part_size():
     mid = 'DFymLrtlZG6bp0HhlUsR6u'
     headneck = decodeB64(('__' + mid + 'AAAA' + 'AAAC').encode())
     gram = headneck + b"Hello "
-    assert peer.wiff(gram) == memoing.Wiffs.bny
+    assert peer.wiff(gram)   # base2
     echo = (gram, "beta")
     peer.echos.append(echo)
     head = decodeB64(('__' + mid + 'AAAB').encode())
     gram = head + b"There"
-    assert peer.wiff(gram) == memoing.Wiffs.bny
+    assert peer.wiff(gram)  # base2
     echo = (gram, "beta")
     peer.echos.append(echo)
     peer.serviceReceives(echoic=True)
@@ -309,14 +312,16 @@ def test_memogram_small_part_size():
 
 
 def test_memoer_multiple():
-    """Test Memoer class with small part size and multiple queued memos
+    """Test Memoer class with small gram size and multiple queued memos
     """
     peer = memoing.Memoer(size=38)
     assert peer.size == 38
     assert peer.name == "main"
     assert peer.opened == False
-    assert peer.code == '__' == peer.Code
-    assert peer.Sizes[peer.code] == (2, 22, 4, 28)  # (code, mid, neck, head) size
+    assert peer.bc == 64
+    assert peer.code == memoing.GramDex.Basic == '__'
+    assert not peer.mode
+
     peer.reopen()
     assert peer.opened == True
 
@@ -328,7 +333,7 @@ def test_memoer_multiple():
     assert not peer.txms
     assert len(peer.txgs) == 4
     for m, d in peer.txgs:
-        assert peer.wiff(m) == memoing.Wiffs.txt
+        assert not peer.wiff(m)  # base64
         assert d in ("alpha", "beta")
     peer.serviceTxGrams(echoic=True)
     assert not peer.txgs
@@ -377,8 +382,8 @@ def test_memoer_multiple():
 
 
 
-def test_open_mg():
-    """Test contextmanager decorator openMG
+def test_open_memoer():
+    """Test contextmanager decorator openMemoer
     """
     with (memoing.openMemoer(name='zeta') as zeta):
 
@@ -425,9 +430,10 @@ def test_tymeememogram_basic():
     assert peer.tymeout == 0.0
     assert peer.name == "main"
     assert peer.opened == False
-    assert peer.code == '__' == peer.Code
+    assert peer.code == memoing.GramDex.Basic == '__'
+    assert not peer.mode
     assert peer.Sizes[peer.code] == (2, 22, 4, 28)  # (code, mid, neck, head) size
-    assert peer.size == peer.MaxPartSize
+    assert peer.size == peer.MaxGramSize
 
     peer.reopen()
     assert peer.opened == True
@@ -445,7 +451,7 @@ def test_tymeememogram_basic():
     peer.serviceTxMemos()
     assert not peer.txms
     m, d = peer.txgs[0]
-    assert peer.wiff(m) == memoing.Wiffs.txt
+    assert not peer.wiff(m)  # base64
     assert m.endswith(memo.encode())
     assert d == dst == 'beta'
     peer.serviceTxGrams()
@@ -480,7 +486,7 @@ def test_tymeememogram_basic():
     peer.serviceTxMemos()
     assert not peer.txms
     m, d = peer.txgs[0]
-    assert peer.wiff(m) == memoing.Wiffs.txt
+    assert not peer.wiff(m)   # base64
     assert m.endswith(memo.encode())
     assert d == dst == 'beta'
     peer.serviceTxGrams(echoic=True)
@@ -507,8 +513,8 @@ def test_tymeememogram_basic():
     peer.serviceRxMemos()
     assert not peer.rxms
 
-    # test binary q2 encoding of transmission part header
-    peer.mode = memoing.Wiffs.bny
+    # test binary q2 encoding of transmission gram header
+    peer.mode = True  # set to binary base2
     memo = "Hello There"
     dst = "beta"
     peer.memoit(memo, dst)
@@ -516,7 +522,7 @@ def test_tymeememogram_basic():
     peer.serviceTxMemos()
     assert not peer.txms
     m, d = peer.txgs[0]
-    assert peer.wiff(m) == memoing.Wiffs.bny
+    assert peer.wiff(m)   # base2
     assert m.endswith(memo.encode())
     assert d == dst == 'beta'
     peer.serviceTxGrams()
@@ -530,7 +536,7 @@ def test_tymeememogram_basic():
     mid = 'ALBI68S1ZIxqwFOSWFF1L2'
     headneck = decodeB64(('__' + mid + 'AAAA' + 'AAAB').encode())
     gram = headneck + b"Hello There"
-    assert peer.wiff(gram) == memoing.Wiffs.bny
+    assert peer.wiff(gram)   # base2
     echo = (gram, "beta")
     peer.echos.append(echo)
     peer.serviceReceives(echoic=True)
@@ -557,8 +563,8 @@ def test_tymeememogram_basic():
     """ End Test """
 
 
-def test_open_tmg():
-    """Test contextmanager decorator openTMG
+def test_open_tm():
+    """Test contextmanager decorator openTM for openTymeeMemoer
     """
     with (memoing.openTM(name='zeta') as zeta):
 
@@ -611,11 +617,11 @@ def test_tymeememogram_doer():
 
 if __name__ == "__main__":
     test_memoer_basic()
-    test_memogram_small_part_size()
+    test_memogram_small_gram_size()
     test_memoer_multiple()
-    test_open_mg()
+    test_open_memoer()
     test_memogram_doer()
     test_tymeememogram_basic()
-    test_open_tmg()
+    test_open_tm()
     test_tymeememogram_doer()
 

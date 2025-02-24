@@ -105,12 +105,12 @@ https://stackoverflow.com/questions/21856517/whats-the-practical-limitmid = uuid
 -on-the-size-of-single-packet-transmitted-over-domain
 
 Memo
-Memo partitioning into parts.
+Memo partitioning into grams.
 
-Default part is of form  part = head + sep + body.
-Some subclasses might have part of form part = head + sep + body + tail.
+Default gram is of form  gram = head + sep + body.
+Some subclasses might have gram of form gram = head + sep + body + tail.
 In that case encoding of body + tail must provide a way to separate body from tail.
-Typically tail would be a signature on the fore part = head + sep + body
+Typically tail would be a signature on the fore gram = head + sep + body
 
 
 Separator sep is b'|' must not be a base64 character.
@@ -118,33 +118,33 @@ Separator sep is b'|' must not be a base64 character.
 The head consists of three fields in base64
 mid = memo IDmid = uuid.uuid4().bytes  # 16 byte random uuid
 
-pn = part number of part in memo zero based
-pc = part count of total parts in memo may be zero when body is empty
+gn = gram number of gram in memo zero based
+gc = gram count of total grams in memo may be zero when body is empty
 
 Sep = b'|'
 assert not helping.Reb64.match(Sep)
 
 body = b"demogram"
-pn = 0
-pc = 12
+gn = 0
+gc = 12
 
-pn = helping.intToB64b(pn, l=4)
-pc = helping.intToB64b(pc, l=4)
+gn = helping.intToB64b(gn, l=4)
+gc = helping.intToB64b(gc, l=4)
 
-PartLeader = struct.Struct('!16s4s4s')
-PartLeader.size  == 24
-head = PartLeader.pack(mid, pn, pc)
-part = Sep.join(head, body)
+GramLeader = struct.Struct('!16s4s4s')
+GramLeader.size  == 24
+head = GramLeader.pack(mid, gn, gc)
+gram = Sep.join(head, body)
 
 
-head, sep, body = part.partition(Sep)
+head, sep, body = gram.partition(Sep)
 assert helping.Reb64.match(head)
-mid, pn, pc = PartLeader.unpack(head)
-pn = helping.b64ToInt(pn)
-pc = helping.b64ToInt(pc)
+mid, gn, gc = GramLeader.unpack(head)
+gn = helping.b64ToInt(gn)
+gc = helping.b64ToInt(gc)
 
-# test PartHead
-code = MtrDex.PartHead
+# test GramHead
+code = MtrDex.GramHead
 assert code == '0P'
 codeb = code.encode()mid = uuid.uuid4().bytes  # 16 byte random uuid
 
@@ -156,65 +156,65 @@ mid = uuid.uuid4().bytes  # 16 byte random uuid
 mid = 1
 midb = mid.to_bytes(16)
 assert midb == b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01'
-pn = 1
-pnb = pn.to_bytes(3)
-assert pnb == b'\x00\x00\x01'
-pc = 2
-pcb = pc.to_bytes(3)
-assert pcb == b'\x00\x00\x02'
-raw = midb + pnb + pcb
+gn = 1
+gnb = gn.to_bytes(3)
+assert gnb == b'\x00\x00\x01'
+gc = 2
+gcb = gc.to_bytes(3)
+assert gcb == b'\x00\x00\x02'
+raw = midb + gnb + gcb
 assert raw == (b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01'
                b'\x00\x00\x01\x00\x00\x02')mid = uuid.uuid4().bytes  # 16 byte random uuid
 
 
 assert mid == int.from_bytes(raw[:16])
-assert pn == int.from_bytes(raw[16:19])
-assert pc == int.from_bytes(raw[19:22])
+assert gn == int.from_bytes(raw[16:19])
+assert gc == int.from_bytes(raw[19:22])
 
 midb64b = encodeB64(bytes([0] * 2) + midb)[2:] # prepad ans strip
-pnb64b = encodeB64(pnb)
-pcb64b = encodeB64(pcb)
+gnb64b = encodeB64(gnb)
+gcb64b = encodeB64(gcb)
 
-qb64b = codeb + midb64b + pnb64b + pcb64b
+qb64b = codeb + midb64b + gnb64b + gcb64b
 assert qb64b == b'0PAAAAAAAAAAAAAAAAAAAAABAAABAAAC'
 qb64 = qb64b.decode()
 qb2 = decodeB64(qb64b)
 
 assert mid == int.from_bytes(decodeB64(b'AA' + qb64b[2:24]))
-assert pn == int.from_bytes(decodeB64(qb64b[24:28]))
-assert pc == int.from_bytes(decodeB64(qb64b[28:32]))
+assert gn == int.from_bytes(decodeB64(qb64b[24:28]))
+assert gc == int.from_bytes(decodeB64(qb64b[28:32]))
 
 
 codeb64b = b'__"
 
 # 16 byte random uuid
 midb64b = encodeB64(bytes([0] * 2) + uuid.uuid4().bytes)[2:] # prepad then strip
-pn = 1
-pnb64b = helping.intToB64b(pn, l=3)
-pc = 2
-pcb64b = helping.intToB64b(pc, l=3)
+gn = 1
+gnb64b = helping.intToB64b(gn, l=3)
+gc = 2
+gcb64b = helping.intToB64b(gc, l=3)
 
-headb64b = codeb64b + midb64b + pnb64b + pcb64b
+headb64b = codeb64b + midb64b + gnb64b + gcb64b
 
 fmt = '!2s22s4s4s'
-PartLeader = struct.Struct(fmt)
-PartLeader.size  == 32
-head = PartLeader.pack(codeb64b, midb64b, pnb64b, pcb64b)
+GramLeader = struct.Struct(fmt)
+GramLeader.size  == 32
+head = GramLeader.pack(codeb64b, midb64b, gnb64b, gcb64b)
 
 assert helping.Reb64.match(head)
-codeb64b, midb64b, pnb64b, pcb64b = PartLeader.unpack(head)
-codeb64b, midb64b, pnb64b, pcb64b = PartLeader unpack_from(fmt, part)
+codeb64b, midb64b, gnb64b, gcb64b = GramLeader.unpack(head)
+codeb64b, midb64b, gnb64b, gcb64b = GramLeader unpack_from(fmt, gram)
 
 
 mid = helping.b64ToInt(b'AA' + midb64b))
-pn = helping.b64ToInt(pnb64b))
-pc = helping.b64ToInt(pcb64b))
+gn = helping.b64ToInt(gnb64b))
+gc = helping.b64ToInt(gcb64b))
 
-Standard header in all parts consists of
-code + mid + pn
+Standard header in all grams consists of
+code + mid + gn
 
-The first part with pn == 0 also has an additional field called the neck
-that is the total part count pc
+The first gram with gn == 0 also has an additional field called the neck
+that is the total gram count gc
 
 Standard
 HeadSize = 28  # base64 chars or 21 base2 bytes
@@ -222,31 +222,31 @@ NeckSize = 4 # base  64 chars or 21 base2 bytes
 
 codeb64b = b'__"
 midb64b = encodeB64(bytes([0] * 2) + uuid.uuid4().bytes)[2:] # prepad, convert,  and strip
-pn = 1
-pnb64b = helping.intToB64b(pn, l=4)
-pc = 2
-pcb64b = helping.intToB64b(pc, l=4)
+gn = 1
+gnb64b = helping.intToB64b(gn, l=4)
+gc = 2
+gcb64b = helping.intToB64b(gc, l=4)
 
-headb64b = codeb64b + midb64b + pnb64b
-neckb64b = pcb64b
+headb64b = codeb64b + midb64b + gnb64b
+neckb64b = gcb64b
 assert helping.Reb64.match(headb64b)
 assert helping.Reb64.match(neckb64b)
 
 codeb64b = headb64b[:2]
 mid = helping.b64ToInt(b'AA' + headb64b[2:24]))  # prepad and convert
-pn = helping.b64ToInt(headb64b[24:28]))
-pc = helping.b64ToInt(neckb64b[28:32]))
+gn = helping.b64ToInt(headb64b[24:28]))
+gc = helping.b64ToInt(neckb64b[28:32]))
 
 
-PartCode Typing/Versions uses a different base64 two char code.
+GramCode Typing/Versions uses a different base64 two char code.
 Codes always start with `_` and second char in code starts at `_`
-and walks backwards through B64 code table for each part type-version (tv) code.
+and walks backwards through B64 code table for each gram type-version (tv) code.
 Each of total head length including code and total neck length must be a
 multiple of 4 characters.  so eacch converts to/from B2 without padding.
 Head type-version code governs the neck as well. So to change length in order to change
-field lengths or add or remove fields need a new part (tv) code.
+field lengths or add or remove fields need a new gram (tv) code.
 
-To reiterate, if ever need to change anything ned a new part tv code. There are
+To reiterate, if ever need to change anything ned a new gram tv code. There are
 no versions per type.  This is deemed sufficient because anticipate a very
 limited set of possible fields ever needed for memogram transport types.
 
@@ -254,27 +254,27 @@ tv 0 is '__'
 tv 1 is '_-'
 tv 3 is '_9'
 
-Because the part head and neck are valid mid-pad B64 primitives then can be losslessly
-transformed to/from CESR primitives merely by translated the part tv code to
+Because the gram head and neck are valid mid-pad B64 primitives then can be losslessly
+transformed to/from CESR primitives merely by translated the gram tv code to
 an  equivalent entry in the  two char cesr primitive code table. When doing so
 The neck is always attached and then stripped when not needed.
 
 The CESR codes albeit different are one-to-one. This enables representing headers
 as CESR primitives for management but not over the wire. I.e. can transform
-Memogram Parts to CESR primitives to tunnel in some CESR stream.
+Memogram Grams to CESR primitives to tunnel in some CESR stream.
 
 Normally CESR streams are tunneled inside Memoer memograms sent over-the-wire.
-In this case, the memogram is the wrapper and each part uses the part tv code
+In this case, the memogram is the wrapper and each gram uses the gram tv code
 defined herein not the equivalent CESR code.
 Using  so far reserved and unused '_' code which is reserved as the selector
-for theCESR op code table for memogram parts makes it more apparent that a part
+for theCESR op code table for memogram grams makes it more apparent that a gram
 belongs to a memogram and not a CESR stream.
 Eventually when CESR op codes eventually become defined, it's not likely to be
 confusing since the context of CESR op codes is different that transport
 wrappers.
 
 Morover when a MemoGram payload is a tunneled CESR Stream, the memogram parser
-will parse and strip the MemoGram part wrappers to construct the tunneled,
+will parse and strip the MemoGram gram wrappers to construct the tunneled,
 stream so the wrapper is transarent to the CESR stream and the CESR stream
 payload is opaque to the memogram wrapper, i.e. no ambiguity.
 
@@ -283,36 +283,36 @@ payload is opaque to the memogram wrapper, i.e. no ambiguity.
 HeadCode hc = b'__'
 HeadCodeSize hcs = 2
 MemoIDSize mis = 22
-PartNumSize pns = 4
-PartCntSize pcs = 4
-PartHeadSize phs  = 28
-PartHeadNeckSize phns = 28 + 4 = 32
+GramNumSize gns = 4
+GramCntSize gcs = 4
+GramHeadSize phs  = 28
+GramHeadNeckSize phns = 28 + 4 = 32
 
 
-MaxPartBodySize = ()2** 16 -1) - HeadSize
-PartBodySize pbs = something <= MaxBodySize
-PartSize = PartHeadSize + PartBodySize
-PartSize <= 2**16 -1
+MaxGramBodySize = ()2** 16 -1) - HeadSize
+GramBodySize pbs = something <= MaxBodySize
+GramSize = GramHeadSize + GramBodySize
+GramSize <= 2**16 -1
 
 MaxMemoSize = (2**16-1)**2
-MaxPartCount for UDP PartSize of 508 is ceil(MaxMemoSize/508) = 8454403  which is < 2**24-1
-not partsize includes head
-MaxPartCount for UXD PartSize of 2**16 -1  is ceil(MaxMemoSize/(2**16-1))= 2**16-1
-MinPartSize = MaxMemoSize // (2**24-1) = 255  = 2**8-1
-MaxPartSize = (2**16-1)
-For any given PartSize  there is a MaxPartCount of 2**24-1 so if fix the PartSize
+MaxGramCount for UDP GramSize of 508 is ceil(MaxMemoSize/508) = 8454403  which is < 2**24-1
+not gramsize includes head
+MaxGramCount for UXD GramSize of 2**16 -1  is ceil(MaxMemoSize/(2**16-1))= 2**16-1
+MinGramSize = MaxMemoSize // (2**24-1) = 255  = 2**8-1
+MaxGramSize = (2**16-1)
+For any given GramSize  there is a MaxGramCount of 2**24-1 so if fix the GramSize
 this limits the effective
-mms = min((2**16-1)**2), (PartSize - PartHeadSize) * (2**24-1))
-mms = min((2**16-1)**2), (PartBodySize) * (2**24-1))
-Note there is an extra 4 characters in first part for the neck
+mms = min((2**16-1)**2), (GramSize - GramHeadSize) * (2**24-1))
+mms = min((2**16-1)**2), (GramBodySize) * (2**24-1))
+Note there is an extra 4 characters in first gram for the neck
 
 so ps, pbs, and mms are variables specific to transport
 PHS is fixed for the transport type reliable unreliable with header fields as defined
 The desired ps for a given transport instance may be smaller than the allowed
 maximum to accomodate buffers etc.
-Given the fixed part head size PHS once can calculate the maximum memo size
+Given the fixed gram head size PHS once can calculate the maximum memo size
 that includes the header overhead given the contraint of no more than 2**24-1
-parts in a given memo.
+grams in a given memo.
 
 So for a given transport:
 ps == min(ps, 2**16-1)
@@ -320,60 +320,66 @@ pbs = ps - PHS
 
 mms = min((2**16-1)**2), pbs * (2**24-1))
 So compare memo size to mms and if greater raise error and drop memo
-otherwise partition (part) memo into parts with headers and transmit
+otherwise partition (gram) memo into grams with headers and transmit
 
 
 Note max memo size is (2**16-1)**2 = 4294836225.
-But accounting for the part header overhead the largest payload max memo size is
-max part size = (2**16-1) == 65535
-max part count = (2**24-1) == 16777215
+But accounting for the gram header overhead the largest payload max memo size is
+max gram size = (2**16-1) == 65535
+max gram count = (2**24-1) == 16777215
 standard header size hs = 28
 neck size ns = 4
-bs = maxpartsize - hs = (65535 - hs) = 65507  # max standard part body size
+bs = maxgramsize - hs = (65535 - hs) = 65507  # max standard gram body size
 max theoretical memogram payload size mms is
-mms = (bs * maxpartcount) - ns  = 65507 * 16777215 - 4 = 1099025023001
+mms = (bs * maxgramcount) - ns  = 65507 * 16777215 - 4 = 1099025023001
 but this is too big so we limit it to 4294836225 but we can have a payload
-of 4294836225 when using the maxpartsize for each part.
+of 4294836225 when using the maxgramsize for each gram.
 
-The maximum number of bytes in a CESR big group frame body is
+CESR groups code count in quadlets (4 chars).
+The big group count codes have five digits of 6 bits each or 30 bits to count the
+size of the following framed chars.
+The max count value is therefore (2**30-1). Cesr group codes count the number
+of quadlets (4 chars) in the framed group. The maximum number of bytes in a
+CESR big group frame body is therefore:
 (2**30-1)*4 = 4294967292.
+The group code is not gram of the counted quadlets in the frame body.
+The big group codes are 8 chars long. Thus with its group code the total big
+frame size is:
+(2**30-1)*4 + 8 = 4294967300
+
+The largest value for a 32 bit number is
+(2 ** 32 - 1) = 4294967295 which is 5 less than the largest group frame size with code.
+4294967300 - 4294967295 = 5
+Largest total frame size with group code = 2**32+4 which exceeds the largest
+value of a 32 bit number.
+
+Restricting the largest memogram payload to be 2**32-1 should be sufficient.
+It is anticipated that other limits such as memory or processing power will
+constrain memogram sizes to be much smaller than 2**32-1 much less 2**32+4.
+So MaximumMemoSize is 2**32-1 = 4294967295
+MaxGramSize with overhead is 2**16-1 = 65535 which is a limit on some datagram
+transports for the maximum sized datagram. This is true of UDP although the
+UDP MTU size is much smaller than this. It may not longer be true on some
+OSes that the maximum datagram size for UXD transports is 65535. On some
+OSes it may be bigger. But this seems like a good practical limit nonetheless
+as OS buffer sizes are usually in the order of magnitude of 65535.
+
+
 The maximum group count is (2**30-1) == 1073741823
-Groups code count in quadlets (4) and the max count value is (2**30-1) for 5
-6 bit b64 digits.
-The group code is not part of the counted quadlets so the largest group
-with its group code of length 8 is 4294967292 + 8 = 4294967300
-which is (2**30-1)*4 + 8.
-
-This is bigger than the max effective MemoGram payload size by
-4294967300 - 4294836225 = 131075
 
 
-So when sending via segmented MemoGram parts the maximum big group count frame
-with code as payload is
 
-(4294836225 - 8) // 4 = 1073709054
-
-This is less than the absolute max group count by
-1073741823 - 1073709054 = 32769
-
-So biggest memogram payload is relatively slightly smaller than the max group
-frame size with group code.
-
-To fix this we would have to allow for a bigger part gram size than 2**16-1
-For UXD datagrams this is not a hard limit
-but it is a hard limit for UDP datagrams
-
-It is unlikely we would ever reach those limits in a practical application.
 
 ToDo:
-change maxmemosize to accomodate big group + code
-Change mode to boolean b2mode True False no more Wiffs
-Add code '_-' for signed parts   vs verification id size ss signatures size
+Make gram body size calculation a function of the current .mode for header
+encoding as b2 headers are smaller so the body payload is bigger.
+
+Add code '_-' for signed grams   vs verification id size ss signatures size
 expanes Sizes for vs and ss
-Signed first part  code + mid + vid + pn + pc + body + sig
-Signed other parts  code + mid + vid + pn + body + sig
+Signed first gram  code + mid + vid + gn + gc + body + sig
+Signed other grams  code + mid + vid + gn + body + sig
 Add sign and verify methods
-Change name of MemoGram to Memoer to match convention
+
 
 
 """
@@ -398,35 +404,33 @@ logger = help.ogler.getLogger()
 # namedtuple of ints (major: int, minor: int)
 Versionage = namedtuple("Versionage", "major minor")
 
-Wiffage = namedtuple("Wiffage", 'txt bny')  # part head encoding
-Wiffs = Wiffage(txt='txt', bny='bny')
-
 
 # namedtuple for size entries in Memoer code tables
 # cs is the code size int number of chars in code portion
 # ms is the mid size int number of chars in the mid portion (memoID)
-# ns is the neck size int number of chars for the part number in all parts and
-#       the additional neck that also appears in first part
+# ns is the neck size int number of chars for the gram number in all grams and
+#       the additional neck that also appears in first gram
 # hs is the head size int number of chars hs = cs + ms + ns and for the first
-#       part the head of size hs is followed by a neck of size ns. So the total
-#       overhead on first part is os = hs + ns
+#       gram the head of size hs is followed by a neck of size ns. So the total
+#       overhead on first gram is os = hs + ns
 
 Sizage = namedtuple("Sizage", "cs ms ns hs")
 
 @dataclass(frozen=True)
-class PartCodex:
+class GramCodes:
     """
-    PartCodex is codex of all Part Head Codes.
+    GramCodes is codex of all Gram Codes.
     Only provide defined codes.
     Undefined are left out so that inclusion(exclusion) via 'in' operator works.
     """
-    Basic:     str = '__'  # Basic Part Head Code
+    Basic:     str = '__'  # Basic gram code for basic overhead parts
+    Signed:    str = '_-'  # Basic gram code for signed overhead parts
 
     def __iter__(self):
         return iter(astuple(self))
 
 
-PartDex = PartCodex()  # Make instance
+GramDex = GramCodes()  # Make instance
 
 
 class Memoer(hioing.Mixin):
@@ -484,13 +488,10 @@ class Memoer(hioing.Mixin):
     Class Attributes:
         Version (Versionage): default version consisting of namedtuple of form
             (major: int, minor: int)
-        BufCount (int):  default bufcount bc for transport 64
-        Code (str):  default part type-version head code '__'
-        MaxMemoSize (int): absolute max memo size  4294836225
-        MaxPartSize (int): absolute max part size  65535
-        MaxPartCount (int): absolute max part count  16777215
-        Sizes (dict): part sizes Sizage instances keyed by part codes
-        Mode (str): default encoding mode for tx part header b64 'txt' Wiffs.txt
+        MaxMemoSize (int): absolute max memo size
+        MaxGramSize (int): absolute max gram size on tx with overhead
+        MaxGramCount (int): absolute max gram count
+        Sizes (dict): gram head part sizes Sizage instances keyed by gram codes
 
     Inherited Attributes:
         name (str):  unique name for Memoer transport. Used to manage.
@@ -504,15 +505,15 @@ class Memoer(hioing.Mixin):
         rxgs (dict): holding rx (receive) (data) gram deques of grams.
             Each item in dict has key=src and val=deque of grames received
         rxgs (dict): keyed by mid (memoID) with value of dict where each deque
-            holds incomplete memo part grams for that mid.
-            The mid appears in every gram part from the same memo.
-            The value dict is keyed by the part number pn, with value
-            that is the part bytes.
+            holds incomplete memo grams for that mid.
+            The mid appears in every gram from the same memo.
+            The value dict is keyed by the gram number with value
+            that is the gram bytes.
         sources (dict): keyed by mid (memoID) that holds the src for the memo.
             This enables reattaching src to fused memo in rxms deque tuple.
-        counts (dict): keyed by mid (memoID) that holds the part count (pc) from
-            the first part for the memo. This enables lookup of the pc when
-            fusing its parts.
+        counts (dict): keyed by mid (memoID) that holds the gram count from
+            the first gram for the memo. This enables lookup of the gram count when
+            fusing its grams.
         rxms (deque): holding rx (receive) memo duples desegmented from rxgs grams
                 each entry in deque is duple of form (memo: str, dst: str)
         txms (deque): holding tx (transmit) memo tuples to be segmented into
@@ -527,12 +528,15 @@ class Memoer(hioing.Mixin):
             for (gram, dst)
         echos (deque): holding echo receive duples for testing. Each duple of
                        form: (gram: bytes, dst: str).
-        code (bytes | None): part head code for part header
-        size (int): part size for this instance for transport. Part size
-                   = head size  + body size. Part size limited by
-                   MaxPartSize and head size + 1
-        mode (str): encoding mode for part header when transmitting,
-                b64 'txt' or b2 'bny'
+        code (bytes | None): gram code for gram header when rending for tx
+        mode (bool): True means when rending for tx encode header in base2
+                     False means when rending for tx encode header in base64
+        size (int): gram size when rending for tx.
+            first gram size = over head size + neck size + body size.
+            other gram size = over head size + body size.
+            Min gram body size is one.
+            Gram size also limited by MaxGramSize and MaxGramCount relative to
+            MaxMemoSize.
 
 
 
@@ -540,17 +544,15 @@ class Memoer(hioing.Mixin):
 
     """
     Version = Versionage(major=0, minor=0)  # default version
-    BufCount = 64  # default bufcount bc for transport
-    Code = PartDex.Basic  # default part type-version head code '__'
-    MaxMemoSize = 4294836225 # (2**16-1)**2 absolute max memo size
-    MaxPartSize = 65535 # (2**16-1) absolute max part size
-    MaxPartCount = 16777215 # (2**24-1) absolute max part count
-    Sizes = {'__': Sizage(cs=2, ms=22, ns=4, hs=28)}  # dict of part sizes keyed by part codes
-    Mode = Wiffs.txt  # encoding mode for tx part header b64 'txt' or b2 'bny'
+    MaxMemoSize = 4294967295 # (2**32-1) absolute max memo payload size
+    MaxGramSize = 65535 # (2**16-1) absolute max gram size
+    MaxGramCount = 16777215 # (2**24-1) absolute max gram count
+    # dict of gram header part sizes keyed by gram codes
+    Sizes = {'__': Sizage(cs=2, ms=22, ns=4, hs=28)}
 
 
     def __init__(self,
-                 name='main',
+                 name=None,
                  bc=None,
                  version=None,
                  rxgs=None,
@@ -560,55 +562,59 @@ class Memoer(hioing.Mixin):
                  txms=None,
                  txgs=None,
                  txbs=None,
-                 code=None,
+                 code=GramDex.Basic,
+                 mode=False,
                  size=None,
-                 mode=None,
                  **kwa
                 ):
         """Setup instance
 
         Inherited Parameters:
             name (str): unique name for Memoer transport. Used to manage.
+            opened (bool): True means opened for transport
+                           False otherwise
             bc (int | None): count of transport buffers of MaxGramSize
 
         Parameters:
             version (Versionage): version for this memoir instance consisting of
                 namedtuple of form (major: int, minor: int)
-            rxgs (dict): keyed by mid (memoID) with value of dict where each deque
-                holds incomplete memo part grams for that mid.
-                The mid appears in every gram part from the same memo.
-                The value dict is keyed by the part number pn, with value
-                that is the part bytes.
-            sources (dict): keyed by mid that holds the src for the memo indexed by its
-                mid (memoID). This enables reattaching src to memo when
+            rxgs (dict): keyed by mid (memoID) with value of dict where each
+                value dict holds grams from memo keyed by gram number.
+                Grams have been stripped of their headers.
+                The mid appears in every gram from the same memo.
+                The value dict is keyed by the gram number gn, with value bytes.
+            sources (dict): keyed by mid that holds the src for the memo indexed
+                by its mid (memoID). This enables reattaching src to memo when
                 placing fused memo in rxms deque.
-            counts (dict): keyed by mid that holds the part count (pc) for the
-                memo indexed by its mid (memoID). This enables lookup of the pc
-                to memo when fusing its parts.
+            counts (dict): keyed by mid that holds the gram count for the
+                memo indexed by its mid (memoID). This enables lookup of the
+                gram count for a given memo to know when it has received all its
+                constituent grams in order to fuse back into the memo.
             rxms (deque): holding rx (receive) memo duples fused from rxgs grams
                 each entry in deque is duple of form (memo: str, dst: str)
             txms (deque): holding tx (transmit) memo tuples to be partitioned into
                 txgs grams where each entry in deque is duple of form
                 (memo: str, dst: str)
             txgs (deque): grams to transmit, each entry is duple of form:
-                (gram: bytes, dst: str).
+                (gram: bytes, dst: str). Grams include gram headers.
             txbs (tuple): current transmisstion duple of form:
                 (gram: bytearray, dst: str). gram bytearray may hold untransmitted
                 portion when datagram is not able to be sent all at once so can
                 keep trying. Nothing to send indicated by (bytearray(), None)
                 for (gram, dst)
-            code (bytes | None): part code for part header
-            size (int): part size for this instance for transport. Part size
-                = head size + body size. Part size limited by
-                MaxPartSize and MaxPartCount relative to MaxMemoSize as well
-                as minimum part body size of 1
-            mode (str): encoding mode for part header when transmitting,
-                b64 'txt' or b2 'bny'
-
-
+            code (bytes | None): gram code for gram header
+            mode (bool): True means when rending for tx encode header in base2
+                         False means when rending for tx encode header in base64
+            size (int): gram size when rending for tx.
+                first gram size = head size + neck size + body size.
+                other gram size = head size + body size.
+                Min gram body size is one.
+                Gram size also limited by MaxGramSize and MaxGramCount relative to
+                MaxMemoSize.
 
 
         """
+
         # initialize attributes
         self.version = version if version is not None else self.Version
         self.rxgs = rxgs if rxgs is not None else dict()
@@ -620,23 +626,27 @@ class Memoer(hioing.Mixin):
         self.txgs = txgs if txgs is not None else deque()
         self.txbs = txbs if txbs is not None else (bytearray(), None)
 
-        bc = bc if bc is not None else self.BufCount  # use bufcount to calc .bs
+
 
         self.echos = deque()  # only used in testing as echoed tx
 
         self.code = code if code is not None else self.Code
         _, _, ns, hs = self.Sizes[self.code]
-        size = size if size is not None else self.MaxPartSize
-        self.size = max(min(size, self.MaxPartSize), hs + ns + 1)
-        self.mode = mode if mode is not None else self.Mode
+        self.mode = mode
+        size = size if size is not None else self.MaxGramSize
+        self.size = max(min(size, self.MaxGramSize), hs + ns + 1)
 
-        super(Memoer, self).__init__(name=name, bc=bc, **kwa)
+
+        super(Memoer, self).__init__(name, bc, **kwa)
 
         if not hasattr(self, "name"):  # stub so mixin works in isolation.
-            self.name = name  # mixed with subclass should provide this.
+            self.name = name if name is not None else "main"  # mixed with subclass should provide this.
 
         if not hasattr(self, "opened"):  # stub so mixin works in isolation.
             self.opened = False  # mixed with subclass should provide this.
+
+        if not hasattr(self, "bc"):  # stub so mixin works in isolation.
+            self.bc = bc if bc is not None else 64  # mixed with subclass should provide this.
 
 
     def open(self):
@@ -663,118 +673,119 @@ class Memoer(hioing.Mixin):
         self.opened = False
 
 
-    def wiff(self, part):
-        """Determines encoding format of part bytes header as either base64 text
-        'txt' or base2 binary 'bny' from first 6 bits (sextet) in part.
+    def wiff(self, gram):
+        """Determines encoding mode of gram bytes header when parsing grams.
+        The mode maybe either base2 or base64.
+
 
         Returns:
-            wiff (Wiffs): Wiffs.txt if B64 text, Wiffs.bny if B2 binary
-                                Otherwise raises hioing.MemoerError
+            mode (bool):    True means base2
+                            False means base64
+                            Otherwise raises hioing.MemoerError
 
-        All part head codes start with '_' in base64 text or in base2 binary.
+        All gram head codes start with '_' in base64 text or in base2 binary.
         Given only allowed chars are from the set of base64 then can determine
         if header is in base64 or base2.
 
         First sextet:  (0b is binary, 0o is octal, 0x is hexadecimal)
 
-        0o27 = 0b010111 means first sextet of '_' in base64  => 'txt'
-        0o77 = 0b111111 means first sextet of '_' in base2  => 'bny'
+        0o27 = 0b010111 means first sextet of '_' in base64
+        0o77 = 0b111111 means first sextet of '_' in base2
 
-        Assuming that only '_' is allowed as the first char of a valid part head,
+        Assuming that only '_' is allowed as the first char of a valid gram head,
         in either Base64 or Base2 encoding, a parser can unambiguously determine
-        if the part header encoding is binary Base2 or text Base64 because
+        if the gram header encoding is binary Base2 or text Base64 because
         0o27 != 0o77.
 
         Furthermore, it just so happens that 0o27 is a unique first sextet
-        among Base64 ascii chars. So an invalid part header when in Base64 encoding
+        among Base64 ascii chars. So an invalid gram header when in Base64 encoding
         is detectable. However, there is one collision (see below) with invalid
-        part headers in Base2 encoding. So an erroneously constructed part might
+        gram headers in Base2 encoding. So an erroneously constructed gram might
         not be detected merely by looking at the first sextet. Therefore
         unreliable transports must provide some additional mechanism such as a
-        hash or signature on the part.
+        hash or signature on the gram.
 
         All Base2 codes for Base64 chars are unique since the B2 codes are just
         the count from 0 to 63. There is one collision, however, between Base2 and
-        Base 64 for invalid part headers. This is because 0o27 is the
+        Base 64 for invalid gram headers. This is because 0o27 is the
         base2 code for ascii 'V'. This means that Base2 encodings
         that begin 0o27 witch is the Base2 encoding of the ascii 'V, would be
         incorrectly detected as text not binary.
         """
 
-        sextet = part[0] >> 2
+        sextet = gram[0] >> 2
         if sextet == 0o27:
-            return Wiffs.txt  # 'txt'
+            return False  # base64 text mode
         if sextet == 0o77:
-            return Wiffs.bny  # 'bny'
+            return True  # base2 binary mode
 
-        raise hioing.Memoer(f"Unexpected {sextet=} at part head start.")
+        raise hioing.MemoerError(f"Unexpected {sextet=} at gram head start.")
 
 
-    def parse(self, part):
-        """Parse and strips header from gram part bytearray and returns
-        (mid, pn, pc) when first part, (mid, pn, None) when other part
-        Otherwise raises MemoerError is unrecognized header
+    def parse(self, gram):
+        """Parse and strips header from gram bytearray and returns
+        (mid, gn, gc). Raises MemoerError is unrecognized header
 
         Returns:
             result (tuple): tuple of form:
-                (mid: str, pn: int, pc: int | None) where:
-                mid is memoID, pn is part number, pc is part count.
-                When first first part (zeroth) returns (mid, 0, pc).
-                When other part returns (mid, pn, None)
-                Otherwise raises memogram error.
+                (mid: str, gn: int, gc: int | None) where:
+                mid is memoID, gn is gram number, gc is gram count.
+                When first gram (zeroth) returns (mid, 0, gc).
+                When other gram returns (mid, gn, None)
+                Otherwise raises MemoerError error.
 
-        When valid recognized header, strips header bytes from front of part
-        leaving the part body part bytearray.
+        When valid recognized header, strips header bytes from front of gram
+        leaving the gram body part bytearray.
 
         Parameters:
-            part (bytearray): memo part gram from which to parse and strip its header.
+            gram (bytearray): memo gram from which to parse and strip its header.
 
         """
         cs, ms, ns, hs = self.Sizes[self.code]
 
-        wiff = self.wiff(part)
-        if wiff == Wiffs.bny:
+        wiff = self.wiff(gram)
+        if wiff:  # base2 binary mode
             bhs = 3 * (hs) // 4  # binary head size
-            head = part[:bhs]  # slice takes a copy
+            head = gram[:bhs]  # slice takes a copy
             if len(head) < bhs:  # not enough bytes for head
-                raise hioing.Memoer(f"Part size b2 too small < {bhs}"
-                                           f" for head.")
+                raise hioing.MemoerError(f"Not enough rx bytes for base2 gram"
+                                    f"header < {bhs}.")
             head = encodeB64(head)  # convert to Base64
-            del part[:bhs]  # strip head off part
-        else:  # wiff == Wiffs.txt:
-            head = part[:hs]  # slice takes a copy
+            del gram[:bhs]  # strip head off gram
+        else:  # base64 text mode
+            head = gram[:hs]  # slice takes a copy
             if len(head) < hs:  # not enough bytes for head
-                raise hioing.Memoer(f"Part size b64 too small < {hs} for"
-                                           f"head.")
-            del part[:hs]  # strip off head off
+                raise hioing.MemoerError(f"Not enough rx chars for base64 gram "
+                                    f"header < {hs}.")
+            del gram[:hs]  # strip off head off
 
         code = head[:cs].decode()
         if code != self.code:
-            raise hioing.Memoer(f"Unrecognized part {code=}.")
+            raise hioing.MemoerError(f"Unrecognized gram {code=}.")
 
         mid = head[cs:cs+ms].decode()
-        pn = helping.b64ToInt(head[cs+ms:cs+ms+ns])
+        gn = helping.b64ToInt(head[cs+ms:cs+ms+ns])
 
-        pc = None
-        if pn == 0:  # first (zeroth) part so get neck
-            if wiff == Wiffs.bny:
+        gc = None
+        if gn == 0:  # first (zeroth) gram so get neck
+            if wiff:  # base2 binary mode
                 bns = 3 * (ns) // 4  # binary neck size
-                neck = part[:bns]  # slice takes a copy
+                neck = gram[:bns]  # slice takes a copy
                 if len(neck) < bns:  # not enough bytes for neck
-                    raise hioing.Memoer(f"Part size b2 too small < {bns}"
-                                               f" for neck.")
+                    raise hioing.MemoerError(f"Not enough rx bytes for base2"
+                                             f" gram neck < {bns}.")
                 neck = encodeB64(neck)  # convert to Base64
-                del part[:bns]  # strip off neck
-            else:  # wiff == Wiffs.txt:
-                neck = part[:ns]  # slice takes a copy
+                del gram[:bns]  # strip off neck
+            else:  # # base64 text mode
+                neck = gram[:ns]  # slice takes a copy
                 if len(neck) < ns:  # not enough bytes for neck
-                    raise hioing.Memoer(f"Part size b64 too small < {ns}"
-                                               f" for neck.")
-                del part[:ns]  # strip off neck
+                    raise hioing.MemoerError(f"Not enough rx chars for base64"
+                                             f" gram neck < {ns}.")
+                del gram[:ns]  # strip off neck
 
-            pc = helping.b64ToInt(neck)
+            gc = helping.b64ToInt(neck)
 
-        return (mid, pn, pc)
+        return (mid, gn, gc)
 
 
     def receive(self, *, echoic=False):
@@ -844,30 +855,29 @@ class Memoer(hioing.Mixin):
         if not gram:  # no received data
             return False
 
-        part = bytearray(gram)# make copy bytearray so can strip off header
+        gram = bytearray(gram)# make copy bytearray so can strip off header
 
         try:
-            mid, pn, pc = self.parse(part)  # parse and strip off head leaving body
-        except hioing.Memoer as ex: # invalid part so drop
-            logger.error("Unrecognized Memoer part from %s.\n %s.", src, ex)
+            mid, gn, gc = self.parse(gram)  # parse and strip off head leaving body
+        except hioing.MemoerError as ex: # invalid gram so drop
+            logger.error("Unrecognized Memoer gram from %s.\n %s.", src, ex)
             return True  # did receive data to can keep receiving
 
         if mid not in self.rxgs:
             self.rxgs[mid] = dict()
 
-        # save stripped part gram to be fused later
-        if pn not in self.rxgs[mid]:  # make idempotent first only no replay
-            self.rxgs[mid][pn] = part  # index body by its part number
+        # save stripped gram to be fused later
+        if gn not in self.rxgs[mid]:  # make idempotent first only no replay
+            self.rxgs[mid][gn] = gram  # index body by its gram number
 
-        if pc is not None:
+        if gc is not None:
             if mid not in self.counts:  # make idempotent first only no replay
-                self.counts[mid] = pc  # save part count for mid
+                self.counts[mid] = gc  # save gram count for mid
 
         # assumes unique mid across all possible sources. No replay by different
         # source only first source for a given mid is ever recognized
         if mid not in self.sources:  # make idempotent first only no replay
             self.sources[mid] = src  # save source for later
-
 
         return True  # received valid
 
@@ -899,9 +909,9 @@ class Memoer(hioing.Mixin):
                 break
 
 
-    def fuse(self, parts, cnt):
-        """Fuse cnt gram part bodies from parts dict into whole memo . If any
-        parts are missing then returns None.
+    def fuse(self, grams, cnt):
+        """Fuse cnt gram body parts from grams dict into whole memo . If any
+        grams are missing then returns None.
 
         Returns:
             memo (str | None): fused memo or None if incomplete.
@@ -909,16 +919,16 @@ class Memoer(hioing.Mixin):
         Override in subclass
 
         Parameters:
-            parts (dict): memo part bodies each keyed by part number from which
-                          to fuse memo.
-            cnt (int): part count for mid
+            grams (dict): memo gram body parts each keyed by gram number from which
+                          to fuse memo. Headers have been stripped.
+            cnt (int): gram count for mid
         """
-        if len(parts) < cnt:  # must be missing one or more parts
+        if len(grams) < cnt:  # must be missing one or more grams
             return None
 
         memo = bytearray()
         for i in range(cnt):  # iterate in numeric order, items are insertion ordered
-            memo.extend(parts[i])  # extend memo with part body at part i
+            memo.extend(grams[i])  # extend memo with gram body part at gram i
 
         return memo.decode()  # convert bytearray to str
 
@@ -932,8 +942,8 @@ class Memoer(hioing.Mixin):
         be last.
         """
         for i, mid in enumerate(list(self.rxgs.keys())):  # items may be deleted in loop
-            # if mid then parts dict at mid must not be empty
-            if not mid in self.counts:  # missing first part so skip
+            # if mid then grams dict at mid must not be empty
+            if not mid in self.counts:  # missing first gram so skip
                 continue
             memo = self.fuse(self.rxgs[mid], self.counts[mid])
             if memo is not None:  # allows for empty "" memo for some src
@@ -1037,53 +1047,53 @@ class Memoer(hioing.Mixin):
 
 
     def rend(self, memo):
-        """Partition memo into packed part grams with headers.
+        """Partition memo into packed grams with headers.
 
         Returns:
-            parts (list[bytes]): list of part grams with headers.
+            grams (list[bytes]): list of grams with headers.
 
         Parameters:
-            memo (str): to be partitioned into gram parts with headers
+            memo (str): to be partitioned into grams with headers
 
-        Note first part has head + neck overhead, hs + ns so bs is smaller by ns
-             non-first parts have just head overhead hs so bs is bigger by ns
+        Note first gram has head + neck overhead, hs + ns so bs is smaller by ns
+             non-first grams have just head overhead hs so bs is bigger by ns
         """
-        parts = []
+        grams = []
         memo = bytearray(memo.encode()) # convert and copy to bytearray
 
         cs, ms, ns, hs = self.Sizes[self.code]
-        # self.size is max part size
-        bs = (self.size - hs)  # max standard part body size,
-        mms = min(self.MaxMemoSize, (bs * self.MaxPartCount) - ns)  # max memo payload
+        # self.size is max gram size
+        bs = (self.size - hs)  # max standard gram body size,
+        mms = min(self.MaxMemoSize, (bs * self.MaxGramCount) - ns)  # max memo payload
         ml = len(memo)
         if ml > mms:
-            raise hioing.Memoer(f"Memo length={ml} exceeds max={mms}.")
+            raise hioing.MemoerError(f"Memo length={ml} exceeds max={mms}.")
 
         # memo ID is 16 byte random UUID converted to 22 char Base64 right aligned
         midb = encodeB64(bytes([0] * 2) + uuid.uuid4().bytes)[2:] # prepad, convert, and strip
         #mid = midb.decode()
-        # compute part count account for added neck overhead in first part
-        pc = math.ceil((ml + ns - bs)/bs + 1)  # includes added neck ns overhead
-        neck = helping.intToB64b(pc, l=ns)
-        if self.mode == Wiffs.bny:
+        # compute gram count account for added neck overhead in first gram
+        gc = math.ceil((ml + ns - bs)/bs + 1)  # includes added neck ns overhead
+        neck = helping.intToB64b(gc, l=ns)
+        if self.mode:  # b2 mode binary
             neck = decodeB64(neck)
-        pn = 0
+        gn = 0
         while memo:
-            pnb = helping.intToB64b(pn, l=ns)  # pn size always == neck size
-            head = self.code.encode() + midb + pnb
-            if self.mode == Wiffs.bny:
+            gnb = helping.intToB64b(gn, l=ns)  # gn size always == neck size
+            head = self.code.encode() + midb + gnb
+            if self.mode:  # b2 binary
                 head = decodeB64(head)
-            if pn == 0:
-                part = head + neck + memo[:bs-ns]  # copy slice past end just copies to end
+            if gn == 0:
+                gram = head + neck + memo[:bs-ns]  # copy slice past end just copies to end
                 del memo[:bs-ns]  # del slice past end just deletes to end
             else:
-                part = head + memo[:bs]  # copy slice past end just copies to end
+                gram = head + memo[:bs]  # copy slice past end just copies to end
                 del memo[:bs]  # del slice past end just deletes to end
-            parts.append(part)
+            grams.append(gram)
 
-            pn += 1
+            gn += 1
 
-        return parts
+        return grams
 
 
     def _serviceOneTxMemo(self):
@@ -1091,14 +1101,14 @@ class Memoer(hioing.Mixin):
             (memo: str, dst: str) where:
                 memo is outgoing memo
                 dst is destination address
-        Calls .segment method to process the segmentation and packing as
-        appropriate to convert memo into gram(s).
+        Calls .rent method to process the partitioning and packing as
+        appropriate to convert memo into grams with headers.
         Appends duples of (gram, dst) from grams to .txgs deque.
         """
         memo, dst = self.txms.popleft()  # raises IndexError if empty deque
 
-        for part in self.rend(memo):  # partition memo into gram parts with head
-            self.txgs.append((part, dst))  # append duples (gram: bytes, dst: str)
+        for gram in self.rend(memo):  # partition memo into gram parts with head
+            self.txgs.append((gram, dst))  # append duples (gram: bytes, dst: str)
 
 
     def serviceTxMemosOnce(self):
