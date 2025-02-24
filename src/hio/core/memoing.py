@@ -405,16 +405,18 @@ logger = help.ogler.getLogger()
 Versionage = namedtuple("Versionage", "major minor")
 
 
-# namedtuple for size entries in Memoer code tables
-# cs is the code size int number of chars in code portion
-# ms is the mid size int number of chars in the mid portion (memoID)
-# ns is the neck size int number of chars for the gram number in all grams and
-#       the additional neck that also appears in first gram
+# namedtuple for gram header part size entries in Memoer code tables
+# cs is the code part size int number of chars in code part
+# ms is the mid part size int number of chars in the mid part (memoID)
+# ns is the neck part size int number of chars for the gram number in all grams
+#        and the additional neck that also appears in first gram
 # hs is the head size int number of chars hs = cs + ms + ns and for the first
 #       gram the head of size hs is followed by a neck of size ns. So the total
 #       overhead on first gram is os = hs + ns
+# vs is the vid  part size int number of chars in the vid part (verification ID)
+# ss is the signature part size int number of chars in the signature part.
 
-Sizage = namedtuple("Sizage", "cs ms ns hs")
+Sizage = namedtuple("Sizage", "cs ms vs ns hs ss")
 
 @dataclass(frozen=True)
 class GramCodes:
@@ -528,6 +530,15 @@ class Memoer(hioing.Mixin):
             for (gram, dst)
         echos (deque): holding echo receive duples for testing. Each duple of
                        form: (gram: bytes, dst: str).
+
+
+    Hidden:
+        _code (bytes | None): see size property
+        _mode (bool): see mode property
+        _size (int): see size property
+
+
+    Properties:
         code (bytes | None): gram code for gram header when rending for tx
         mode (bool): True means when rending for tx encode header in base2
                      False means when rending for tx encode header in base64
@@ -538,17 +549,16 @@ class Memoer(hioing.Mixin):
             Gram size also limited by MaxGramSize and MaxGramCount relative to
             MaxMemoSize.
 
-
-
-    Properties:
-
     """
     Version = Versionage(major=0, minor=0)  # default version
     MaxMemoSize = 4294967295 # (2**32-1) absolute max memo payload size
     MaxGramSize = 65535 # (2**16-1) absolute max gram size
     MaxGramCount = 16777215 # (2**24-1) absolute max gram count
     # dict of gram header part sizes keyed by gram codes
-    Sizes = {'__': Sizage(cs=2, ms=22, ns=4, hs=28)}
+    Sizes = {
+                '__': Sizage(cs=2, ms=22, vs=0, ns=4, hs=28, ss=0),
+                '_-': Sizage(cs=2, ms=22, vs=44, ns=4, hs=72, ss=88),
+             }
 
 
     def __init__(self,
@@ -602,7 +612,7 @@ class Memoer(hioing.Mixin):
                 portion when datagram is not able to be sent all at once so can
                 keep trying. Nothing to send indicated by (bytearray(), None)
                 for (gram, dst)
-            code (bytes | None): gram code for gram header
+            code (bytes): gram code for gram header
             mode (bool): True means when rending for tx encode header in base2
                          False means when rending for tx encode header in base64
             size (int): gram size when rending for tx.
@@ -626,16 +636,11 @@ class Memoer(hioing.Mixin):
         self.txgs = txgs if txgs is not None else deque()
         self.txbs = txbs if txbs is not None else (bytearray(), None)
 
-
-
         self.echos = deque()  # only used in testing as echoed tx
 
-        self.code = code if code is not None else self.Code
-        _, _, ns, hs = self.Sizes[self.code]
-        self.mode = mode
-        size = size if size is not None else self.MaxGramSize
-        self.size = max(min(size, self.MaxGramSize), hs + ns + 1)
-
+        self._code = code
+        self._mode = mode
+        self.size = size  # property sets size given .code and constraints
 
         super(Memoer, self).__init__(name, bc, **kwa)
 
@@ -647,6 +652,63 @@ class Memoer(hioing.Mixin):
 
         if not hasattr(self, "bc"):  # stub so mixin works in isolation.
             self.bc = bc if bc is not None else 64  # mixed with subclass should provide this.
+
+
+    @property
+    def code(self):
+        """Property getter for ._code
+
+        Returns:
+            code (str): two char base64 gram code
+        """
+        return self._code
+
+    @property
+    def mode(self):
+        """Property getter for ._mode
+
+        Returns:
+            mode (bool): True means when rending for tx encode header in base2
+                         False means when rending for tx encode header in base64
+        """
+        return self._mode
+
+    @mode.setter
+    def mode(self, mode):
+        """Property setter for ._mode
+
+        Paramaters:
+            mode (bool): True means when rending for tx encode header in base2
+                         False means when rending for tx encode header in base64
+        """
+        self._mode = mode
+
+    @property
+    def size(self):
+        """Property getter for ._size
+
+        Returns:
+            size (int): gram size when rending for tx.
+                        First gram size = head size + neck size + body size.
+                        Other gram size = head size + body size.
+                        Min gram body size is one.
+                        Gram size also limited by MaxGramSize and MaxGramCount
+                        relative to MaxMemoSize.
+        """
+        return self._size
+
+    @size.setter
+    def size(self, size):
+        """Property setter for ._size
+
+        Parameters:
+            size (int | None): gram size for rending memo
+
+        """
+        _, _, _, ns, hs, ss = self.Sizes[self.code]  # "cs ms vs ns hs ss"
+        size = size if size is not None else self.MaxGramSize
+        # mininum size must be big enough for first gram header and 1 body byte
+        self._size = max(min(size, self.MaxGramSize), hs + ns + ss + 1)
 
 
     def open(self):
@@ -741,7 +803,7 @@ class Memoer(hioing.Mixin):
             gram (bytearray): memo gram from which to parse and strip its header.
 
         """
-        cs, ms, ns, hs = self.Sizes[self.code]
+        cs, ms, vs, ns, hs, ss = self.Sizes[self.code]  #"cs ms vs ns hs ss"
 
         wiff = self.wiff(gram)
         if wiff:  # base2 binary mode
@@ -1061,7 +1123,7 @@ class Memoer(hioing.Mixin):
         grams = []
         memo = bytearray(memo.encode()) # convert and copy to bytearray
 
-        cs, ms, ns, hs = self.Sizes[self.code]
+        cs, ms, vs, ns, hs, ss = self.Sizes[self.code]  # "cs ms vs ns hs ss"
         # self.size is max gram size
         bs = (self.size - hs)  # max standard gram body size,
         mms = min(self.MaxMemoSize, (bs * self.MaxGramCount) - ns)  # max memo payload

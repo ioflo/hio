@@ -21,7 +21,8 @@ def test_memoer_basic():
     assert peer.bc == 64
     assert peer.code == memoing.GramDex.Basic == '__'
     assert not peer.mode
-    assert peer.Sizes[peer.code] == (2, 22, 4, 28)  # (code, mid, neck, head) size
+    # (code, mid, vid, neck, head, sig) part sizes
+    assert peer.Sizes[peer.code] == (2, 22, 0, 4, 28, 0)
     assert peer.size == peer.MaxGramSize
 
     peer.reopen()
@@ -154,7 +155,8 @@ def test_memogram_small_gram_size():
     assert peer.bc == 64
     assert peer.code == memoing.GramDex.Basic == '__'
     assert not peer.mode
-    assert peer.Sizes[peer.code] == (2, 22, 4, 28)  # (code, mid, neck, head) size
+    # (code, mid, vid, neck, head, sig) part sizes
+    assert peer.Sizes[peer.code] == (2, 22, 0, 4, 28, 0)
     assert peer.size == 33  # can't be smaller than head + neck + 1
 
     peer = memoing.Memoer(size=38)
@@ -432,7 +434,8 @@ def test_tymeememogram_basic():
     assert peer.opened == False
     assert peer.code == memoing.GramDex.Basic == '__'
     assert not peer.mode
-    assert peer.Sizes[peer.code] == (2, 22, 4, 28)  # (code, mid, neck, head) size
+    # (code, mid, vid, neck, head, sig) part sizes
+    assert peer.Sizes[peer.code] == (2, 22, 0, 4, 28, 0)
     assert peer.size == peer.MaxGramSize
 
     peer.reopen()
