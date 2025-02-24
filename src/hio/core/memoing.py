@@ -408,15 +408,18 @@ Versionage = namedtuple("Versionage", "major minor")
 # namedtuple for gram header part size entries in Memoer code tables
 # cs is the code part size int number of chars in code part
 # ms is the mid part size int number of chars in the mid part (memoID)
-# ns is the neck part size int number of chars for the gram number in all grams
-#        and the additional neck that also appears in first gram
-# hs is the head size int number of chars hs = cs + ms + ns and for the first
-#       gram the head of size hs is followed by a neck of size ns. So the total
-#       overhead on first gram is os = hs + ns
 # vs is the vid  part size int number of chars in the vid part (verification ID)
+# ns is the neck part size int number of chars for the gram number in all grams
+#       and the additional neck that also appears in first gram for gram count
 # ss is the signature part size int number of chars in the signature part.
+#       the signature part is discontinuously attached after the body part but
+#       its size is included in over head computation for the body size
+# hs is the head size int number of chars for other grams no-neck.
+#       hs = cs + ms + vs + ns + ss. The size for the first gram with neck is
+#       hs + ns
 
-Sizage = namedtuple("Sizage", "cs ms vs ns hs ss")
+
+Sizage = namedtuple("Sizage", "cs ms vs ss ns hs")
 
 @dataclass(frozen=True)
 class GramCodes:
@@ -554,10 +557,10 @@ class Memoer(hioing.Mixin):
     MaxMemoSize = 4294967295 # (2**32-1) absolute max memo payload size
     MaxGramSize = 65535 # (2**16-1) absolute max gram size
     MaxGramCount = 16777215 # (2**24-1) absolute max gram count
-    # dict of gram header part sizes keyed by gram codes
+    # dict of gram header part sizes keyed by gram codes: cs ms vs ss ns hs
     Sizes = {
-                '__': Sizage(cs=2, ms=22, vs=0, ns=4, hs=28, ss=0),
-                '_-': Sizage(cs=2, ms=22, vs=44, ns=4, hs=72, ss=88),
+                '__': Sizage(cs=2, ms=22, vs=0, ss=0, ns=4, hs=28),
+                '_-': Sizage(cs=2, ms=22, vs=44, ss=88, ns=4, hs=160),
              }
 
 
@@ -705,10 +708,10 @@ class Memoer(hioing.Mixin):
             size (int | None): gram size for rending memo
 
         """
-        _, _, _, ns, hs, ss = self.Sizes[self.code]  # "cs ms vs ns hs ss"
+        _, _, _, _, ns, hs = self.Sizes[self.code]  # cs ms vs ss ns hs
         size = size if size is not None else self.MaxGramSize
         # mininum size must be big enough for first gram header and 1 body byte
-        self._size = max(min(size, self.MaxGramSize), hs + ns + ss + 1)
+        self._size = max(min(size, self.MaxGramSize), hs + ns + 1)
 
 
     def open(self):
@@ -803,7 +806,7 @@ class Memoer(hioing.Mixin):
             gram (bytearray): memo gram from which to parse and strip its header.
 
         """
-        cs, ms, vs, ns, hs, ss = self.Sizes[self.code]  #"cs ms vs ns hs ss"
+        cs, ms, vs, ss, ns, hs = self.Sizes[self.code]  # cs ms vs ss ns hs
 
         wiff = self.wiff(gram)
         if wiff:  # base2 binary mode
@@ -1122,34 +1125,63 @@ class Memoer(hioing.Mixin):
         """
         grams = []
         memo = bytearray(memo.encode()) # convert and copy to bytearray
-
-        cs, ms, vs, ns, hs, ss = self.Sizes[self.code]  # "cs ms vs ns hs ss"
         # self.size is max gram size
-        bs = (self.size - hs)  # max standard gram body size,
-        mms = min(self.MaxMemoSize, (bs * self.MaxGramCount) - ns)  # max memo payload
+        cs, ms, vs, ss, ns, hs = self.Sizes[self.code]  # cs ms vs ss ns hs
+        ps = (3 - ((ms) % 3)) % 3  # net pad size for mid
+        if ps != (cs % 4):  #  code + mid must lie on 24 bit boundary
+            raise hioing.MemoerError(f"Invalid combination of code size={cs}"
+                                     f" and mid size={ms}.")
+
+        # memo ID is 16 byte random UUID converted to 22 char Base64 right aligned
+        mid = encodeB64(bytes([0] * ps) + uuid.uuid4().bytes)[ps:] # prepad, convert, and strip
+        fore = self.code.encode() + mid  # forehead of header
+        vid = b'A' * vs
+        sig = b'A' * ss
         ml = len(memo)
+
+        if self.mode:  # rend header parts in base2 instead of base64
+            hs = 3 * hs // 4  # mode b2 means head part sizes smaller by 3/4
+            ns = 3 * ns // 4  # mode b2 means head part sizes smaller by 3/4
+            vs = 3 * vs // 4  # mode b2 means head part sizes smaller by 3/4
+            ss = 3 * ss // 4  # mode b2 means head part sizes smaller by 3/4
+            fore = decodeB64(fore)
+            vid = decodeB64(vid)
+            sig = decodeB64(sig)
+
+        bs = (self.size - hs)  # max standard gram body size without neck
+        # compute gram count based on overhead note added neck overhead in first gram
+        # first gram is special its header is longer by ns than the other grams
+        # which means its payload body is shorter by ns than the other gram bodies
+        # so take ml and subtract first payload size = ml - (bs-ns) to get the
+        # portion of memo carried by other grams. Divide this by bs rounded up
+        # (ceil) to get cnt of other grams and add 1 for the first gram to get
+        # total gram cnt.
+        # gc = ceil((ml-(bs-ns))/bs + 1) = ceil((ml-bs+ns)/bs + 1)
+        gc = math.ceil((ml-bs+ns)/bs+1)  # includes added neck ns overhead
+        mms = min(self.MaxMemoSize, (bs * self.MaxGramCount) - ns)  # max memo payload
+
         if ml > mms:
             raise hioing.MemoerError(f"Memo length={ml} exceeds max={mms}.")
 
-        # memo ID is 16 byte random UUID converted to 22 char Base64 right aligned
-        midb = encodeB64(bytes([0] * 2) + uuid.uuid4().bytes)[2:] # prepad, convert, and strip
-        #mid = midb.decode()
-        # compute gram count account for added neck overhead in first gram
-        gc = math.ceil((ml + ns - bs)/bs + 1)  # includes added neck ns overhead
-        neck = helping.intToB64b(gc, l=ns)
-        if self.mode:  # b2 mode binary
-            neck = decodeB64(neck)
+        if self.mode:
+            neck = gc.to_bytes(ns)
+        else:
+            neck = helping.intToB64b(gc, l=ns)
+
         gn = 0
         while memo:
-            gnb = helping.intToB64b(gn, l=ns)  # gn size always == neck size
-            head = self.code.encode() + midb + gnb
-            if self.mode:  # b2 binary
-                head = decodeB64(head)
+            if self.mode:
+                num = gn.to_bytes(ns)  # num size must always be neck size
+            else:
+                num = helping.intToB64b(gn, l=ns)  # num size must always be neck size
+
+            head = fore + vid + num
+
             if gn == 0:
-                gram = head + neck + memo[:bs-ns]  # copy slice past end just copies to end
+                gram = head + neck + memo[:bs-ns] + sig  # copy slice past end just copies to end
                 del memo[:bs-ns]  # del slice past end just deletes to end
             else:
-                gram = head + memo[:bs]  # copy slice past end just copies to end
+                gram = head + memo[:bs] + sig  # copy slice past end just copies to end
                 del memo[:bs]  # del slice past end just deletes to end
             grams.append(gram)
 

@@ -22,7 +22,7 @@ def test_memoer_basic():
     assert peer.code == memoing.GramDex.Basic == '__'
     assert not peer.mode
     # (code, mid, vid, neck, head, sig) part sizes
-    assert peer.Sizes[peer.code] == (2, 22, 0, 4, 28, 0)
+    assert peer.Sizes[peer.code] == (2, 22, 0, 0, 4, 28)  # cs ms vs ss ns hs
     assert peer.size == peer.MaxGramSize
 
     peer.reopen()
@@ -156,7 +156,7 @@ def test_memogram_small_gram_size():
     assert peer.code == memoing.GramDex.Basic == '__'
     assert not peer.mode
     # (code, mid, vid, neck, head, sig) part sizes
-    assert peer.Sizes[peer.code] == (2, 22, 0, 4, 28, 0)
+    assert peer.Sizes[peer.code] == (2, 22, 0, 0, 4, 28)  # cs ms vs ss ns hs
     assert peer.size == 33  # can't be smaller than head + neck + 1
 
     peer = memoing.Memoer(size=38)
@@ -210,6 +210,7 @@ def test_memogram_small_gram_size():
     assert peer.rxms[0] == ('Hello There', 'beta')
     peer.serviceRxMemos()
     assert not peer.rxms
+    assert not peer.echos
 
     # send and receive via echo
     memo = "See ya later!"
@@ -232,6 +233,7 @@ def test_memogram_small_gram_size():
     assert not peer.counts
     assert not peer.sources
     peer.serviceReceives(echoic=True)
+    assert not peer.echos
     mid = list(peer.rxgs.keys())[0]
     assert len(peer.rxgs[mid]) == 2
     assert peer.counts[mid] == 2
@@ -250,10 +252,10 @@ def test_memogram_small_gram_size():
 
     # test binary q2 encoding of transmission gram header
     peer.mode =  True  # set to binary base2
-    memo = "Hello There"
+    memo = 'See ya later alligator!'
     dst = "beta"
     peer.memoit(memo, dst)
-    assert peer.txms[0] == ('Hello There', 'beta')
+    assert peer.txms[0] == ('See ya later alligator!', 'beta')
     peer.serviceTxMemos()
     assert not peer.txms
     assert len(peer.txgs) == 2
@@ -268,43 +270,34 @@ def test_memogram_small_gram_size():
     assert not peer.counts
     assert not peer.sources
     assert not peer.rxms
-
-    headneck = decodeB64(('__' + mid + 'AAAA' + 'AAAB').encode())
-    gram = headneck + b"Hello There"
-    assert peer.wiff(gram)   # base2
-    echo = (gram, "beta")
-    peer.echos.append(echo)
+    assert not peer.echos
 
     b'__DFymLrtlZG6bp0HhlUsR6uAAAAAAACHello '
     b'__DFymLrtlZG6bp0HhlUsR6uAAABThere'
     mid = 'DFymLrtlZG6bp0HhlUsR6u'
     headneck = decodeB64(('__' + mid + 'AAAA' + 'AAAC').encode())
-    gram = headneck + b"Hello "
+    gram = headneck + b"See ya later a"
     assert peer.wiff(gram)   # base2
     echo = (gram, "beta")
     peer.echos.append(echo)
     head = decodeB64(('__' + mid + 'AAAB').encode())
-    gram = head + b"There"
+    gram = head + b"lligator!"
     assert peer.wiff(gram)  # base2
     echo = (gram, "beta")
     peer.echos.append(echo)
+
     peer.serviceReceives(echoic=True)
+    assert not peer.echos
     assert len(peer.rxgs[mid]) == 2
     assert peer.counts[mid] == 2
     assert peer.sources[mid] == 'beta'
-    assert peer.rxgs[mid][0] == bytearray(b'Hello ')
-    assert peer.rxgs[mid][1] == bytearray(b'There')
-    peer.serviceReceives(echoic=True)
-    assert len(peer.rxgs[mid]) == 2
-    assert peer.counts[mid] == 2
-    assert peer.sources[mid] == 'beta'
-    assert peer.rxgs[mid][0] == bytearray(b'Hello ')
-    assert peer.rxgs[mid][1] == bytearray(b'There')
+    assert peer.rxgs[mid][0] == bytearray(b'See ya later a')
+    assert peer.rxgs[mid][1] == bytearray(b'lligator!')
     peer.serviceRxGrams()
     assert not peer.rxgs
     assert not peer.counts
     assert not peer.sources
-    assert peer.rxms[0] == ('Hello There', 'beta')
+    assert peer.rxms[0] == ('See ya later alligator!', 'beta')
     peer.serviceRxMemos()
     assert not peer.rxms
 
@@ -435,7 +428,7 @@ def test_tymeememogram_basic():
     assert peer.code == memoing.GramDex.Basic == '__'
     assert not peer.mode
     # (code, mid, vid, neck, head, sig) part sizes
-    assert peer.Sizes[peer.code] == (2, 22, 0, 4, 28, 0)
+    assert peer.Sizes[peer.code] == (2, 22, 0, 0, 4, 28)  # cs ms vs ss ns hs
     assert peer.size == peer.MaxGramSize
 
     peer.reopen()
