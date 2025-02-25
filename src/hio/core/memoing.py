@@ -545,6 +545,7 @@ class Memoer(hioing.Mixin):
         _size (int): see size property
 
 
+
     Properties:
         code (bytes | None): gram code for gram header when rending for tx
         mode (bool): True means when rending for tx encode header in base2
@@ -555,6 +556,7 @@ class Memoer(hioing.Mixin):
             Min gram body size is one.
             Gram size also limited by MaxGramSize and MaxGramCount relative to
             MaxMemoSize.
+
 
     """
     Version = Versionage(major=0, minor=0)  # default version
@@ -632,8 +634,6 @@ class Memoer(hioing.Mixin):
                 Min gram body size is one.
                 Gram size also limited by MaxGramSize and MaxGramCount relative to
                 MaxMemoSize.
-
-
         """
 
         # initialize attributes
@@ -649,8 +649,8 @@ class Memoer(hioing.Mixin):
 
         self.echos = deque()  # only used in testing as echoed tx
 
-        self._code = code
-        self._mode = mode
+        self.code = code
+        self.mode = mode
         self.size = size  # property sets size given .code and constraints
 
         super(Memoer, self).__init__(name, bc, **kwa)
@@ -674,6 +674,20 @@ class Memoer(hioing.Mixin):
         """
         return self._code
 
+    @code.setter
+    def code(self, code):
+        """Property setter for ._code
+
+        Paramaters:
+            code (str): two char base64 gram code
+        """
+        if code not in self.Codex:
+            raise hioing.MemoerError(f"Invalid {code=}.")
+
+        self._code = code
+        if hasattr(self, "_size"):
+            self.size = self._size  # refresh size given new code
+
     @property
     def mode(self):
         """Property getter for ._mode
@@ -693,6 +707,8 @@ class Memoer(hioing.Mixin):
                          False means when rending for tx encode header in base64
         """
         self._mode = mode
+        if hasattr(self, "_size"):
+            self.size = self._size  # refresh size given new mode
 
     @property
     def size(self):
@@ -718,6 +734,10 @@ class Memoer(hioing.Mixin):
         """
         _, _, _, _, ns, hs = self.Sizes[self.code]  # cs ms vs ss ns hs
         size = size if size is not None else self.MaxGramSize
+        if self.mode:  # minimum header smaller when in base2 mode
+            hs = 3 * hs // 4
+            ns = 3 * ns // 4
+
         # mininum size must be big enough for first gram header and 1 body byte
         self._size = max(min(size, self.MaxGramSize), hs + ns + 1)
 
@@ -1261,7 +1281,7 @@ class Memoer(hioing.Mixin):
 
             if ss:  # sign
                 sig = self.sign(gram, vid)
-                if mode:
+                if self.mode:
                     sig = decodeB64(sig)
                 gram = gram + sig
 
