@@ -10,8 +10,8 @@ import pytest
 
 from hio.help import helping
 from hio.base import doing, tyming
-from hio.core import memoing
-from hio.core.memoing import Memoer, Versionage, Sizage, GramDex
+from hio.core.memo import memoing
+from hio.core.memo import Versionage, Sizage, GramDex, Memoer
 
 def test_memoer_class():
     """Test class attributes of Memoer class"""
@@ -66,7 +66,7 @@ def test_memoer_basic():
     assert peer.opened == False
     assert peer.bc == 64
     assert peer.code == memoing.GramDex.Basic == '__'
-    assert not peer.mode
+    assert not peer.curt
     # (code, mid, vid, sig, neck, head) part sizes
     assert peer.Sizes[peer.code] == (2, 22, 0, 0, 4, 28)  # cs ms vs ss ns hs
     assert peer.size == peer.MaxGramSize
@@ -150,8 +150,8 @@ def test_memoer_basic():
     assert not peer.rxms
 
     # test binary q2 encoding of transmission gram header
-    peer.mode = True  # set to binary base2
-    assert peer.mode
+    peer.curt = True  # set to binary base2
+    assert peer.curt
     memo = "Hello There"
     dst = "beta"
     peer.memoit(memo, dst)
@@ -201,7 +201,7 @@ def test_memogram_small_gram_size():
     assert peer.opened == False
     assert peer.bc == 64
     assert peer.code == memoing.GramDex.Basic == '__'
-    assert not peer.mode
+    assert not peer.curt
     # (code, mid, vid, sig, neck, head) part sizes
     assert peer.Sizes[peer.code] == (2, 22, 0, 0, 4, 28)  # cs ms vs ss ns hs
     assert peer.size == 33  # can't be smaller than head + neck + 1
@@ -298,8 +298,8 @@ def test_memogram_small_gram_size():
     assert not peer.rxms
 
     # test binary q2 encoding of transmission gram header
-    peer.mode =  True  # set to binary base2
-    assert peer.mode
+    peer.curt =  True  # set to binary base2
+    assert peer.curt
     assert peer.size == 38
     memo = 'See ya later alligator!'
     dst = "beta"
@@ -364,7 +364,7 @@ def test_memoer_multiple():
     assert peer.opened == False
     assert peer.bc == 64
     assert peer.code == memoing.GramDex.Basic == '__'
-    assert not peer.mode
+    assert not peer.curt
 
     peer.reopen()
     assert peer.opened == True
@@ -431,7 +431,7 @@ def test_memoer_basic_signed():
     assert peer.opened == False
     assert peer.bc == 64
     assert peer.code == memoing.GramDex.Signed == '_-'
-    assert not peer.mode
+    assert not peer.curt
     # (code, mid, vid, sig, neck, head) part sizes
     assert peer.Sizes[peer.code] == (2, 22, 44, 88, 4, 160)  # cs ms vs ss ns hs
     assert peer.size == peer.MaxGramSize
@@ -519,7 +519,7 @@ def test_memoer_basic_signed():
     assert not peer.rxms
 
     # test binary q2 encoding of transmission gram header
-    peer.mode = True  # set to binary base2
+    peer.curt = True  # set to binary base2
     memo = "Hello There"
     dst = "beta"
     peer.memoit(memo, dst)
@@ -573,7 +573,7 @@ def test_memoer_multiple_signed():
     assert peer.opened == False
     assert peer.bc == 64
     assert peer.code == memoing.GramDex.Signed == '_-'
-    assert not peer.mode
+    assert not peer.curt
 
     peer.reopen()
     assert peer.opened == True
@@ -628,8 +628,8 @@ def test_memoer_multiple_signed():
     assert not peer.rxms
 
     # test in base2 mode
-    peer.mode = True
-    assert peer.mode
+    peer.curt = True
+    assert peer.curt
     peer.size = 129
     assert peer.size == 129
 
@@ -737,7 +737,7 @@ def test_tymeememogram_basic():
     assert peer.name == "main"
     assert peer.opened == False
     assert peer.code == memoing.GramDex.Basic == '__'
-    assert not peer.mode
+    assert not peer.curt
     # (code, mid, vid, neck, head, sig) part sizes
     assert peer.Sizes[peer.code] == (2, 22, 0, 0, 4, 28)  # cs ms vs ss ns hs
     assert peer.size == peer.MaxGramSize
@@ -821,7 +821,7 @@ def test_tymeememogram_basic():
     assert not peer.rxms
 
     # test binary q2 encoding of transmission gram header
-    peer.mode = True  # set to binary base2
+    peer.curt = True  # set to binary base2
     memo = "Hello There"
     dst = "beta"
     peer.memoit(memo, dst)

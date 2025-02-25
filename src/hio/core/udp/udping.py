@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-hio.core.udping Module
+hio.core.udp.udping Module
 """
 import sys
 import platform
@@ -213,7 +213,9 @@ class Peer(hioing.Mixin):
             self.ls = None
             self.opened = False
 
-    def receive(self):
+        return not self.opened  # True means closed successfully
+
+    def receive(self, **kwa):
         """Perform non blocking read on  socket.
 
         Returns:
@@ -240,7 +242,7 @@ class Peer(hioing.Mixin):
 
         return (data, sa)
 
-    def send(self, data, dst):
+    def send(self, data, dst, **kwa):
         """Perform non blocking send on  socket.
 
         Returns:

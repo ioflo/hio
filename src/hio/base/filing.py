@@ -381,6 +381,7 @@ class Filer(hioing.Mixin):
                                 os.makedirs(head)
                             if filed:
                                 file = ocfn(path, mode=mode, perm=perm)
+
                         else:
                             os.makedirs(path)
                     else:
@@ -403,13 +404,15 @@ class Filer(hioing.Mixin):
                                 os.makedirs(head)
                             if filed:
                                 file = ocfn(path, mode=mode, perm=perm)
+
                         else:
                             os.makedirs(path)
                 else:
                     if filed:
                         file = ocfn(path, mode=mode, perm=perm)
 
-            os.chmod(path, perm)  # set dir/file permissions
+            if not extensioned:
+                os.chmod(path, perm)  # set dir/file permissions
 
         return path, file
 
@@ -501,7 +504,7 @@ class Filer(hioing.Mixin):
         if clear:
             self._clearPath()
 
-        return self.opened
+        return not self.opened  # True means closed False means still opened
 
 
     def _clearPath(self):

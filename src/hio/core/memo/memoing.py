@@ -371,7 +371,7 @@ The maximum group count is (2**30-1) == 1073741823
 
 
 ToDo:
-Make gram body size calculation a function of the current .mode for header
+Make gram body size calculation a function of the current .curt for header
 encoding as b2 headers are smaller so the body payload is bigger.
 
 Add code '_-' for signed grams   vs verification id size ss signatures size
@@ -395,9 +395,9 @@ from base64 import urlsafe_b64encode as encodeB64
 from base64 import urlsafe_b64decode as decodeB64
 from dataclasses import dataclass, astuple, asdict
 
-from .. import hioing, help
-from ..base import tyming, doing
-from ..help import helping
+from ... import hioing, help
+from ...base import tyming, doing
+from ...help import helping
 
 logger = help.ogler.getLogger()
 
@@ -489,6 +489,8 @@ class Memoer(hioing.Mixin):
 
     Memo segmentation/desegmentation information is embedded in the grams.
 
+    Inherited Class Attributes:
+        MaxGramSize (int): absolute max gram size on tx with overhead
 
     Class Attributes:
         Version (Versionage): default version consisting of namedtuple of form
@@ -498,7 +500,6 @@ class Memoer(hioing.Mixin):
         Names (dict): maps codex values to codex names
         Sizes (dict): gram head part sizes Sizage instances keyed by gram codes
         MaxMemoSize (int): absolute max memo size
-        MaxGramSize (int): absolute max gram size on tx with overhead
         MaxGramCount (int): absolute max gram count
 
 
@@ -541,14 +542,14 @@ class Memoer(hioing.Mixin):
 
     Hidden:
         _code (bytes | None): see size property
-        _mode (bool): see mode property
+        _curt (bool): see curt property
         _size (int): see size property
 
 
 
     Properties:
         code (bytes | None): gram code for gram header when rending for tx
-        mode (bool): True means when rending for tx encode header in base2
+        curt (bool): True means when rending for tx encode header in base2
                      False means when rending for tx encode header in base64
         size (int): gram size when rending for tx.
             first gram size = over head size + neck size + body size.
@@ -570,11 +571,11 @@ class Memoer(hioing.Mixin):
              }
     #Bodes = ({helping.codeB64ToB2(c): c for n, c in Codes.items()})
     MaxMemoSize = 4294967295 # (2**32-1) absolute max memo payload size
-    MaxGramSize = 65535 # (2**16-1) absolute max gram size
     MaxGramCount = 16777215 # (2**24-1) absolute max gram count
+    MaxGramSize = 65535  # (2**16-1)  Overridden in subclass
 
 
-    def __init__(self,
+    def __init__(self, *,
                  name=None,
                  bc=None,
                  version=None,
@@ -586,7 +587,7 @@ class Memoer(hioing.Mixin):
                  txgs=None,
                  txbs=None,
                  code=GramDex.Basic,
-                 mode=False,
+                 curt=False,
                  size=None,
                  **kwa
                 ):
@@ -626,7 +627,7 @@ class Memoer(hioing.Mixin):
                 keep trying. Nothing to send indicated by (bytearray(), None)
                 for (gram, dst)
             code (bytes): gram code for gram header
-            mode (bool): True means when rending for tx encode header in base2
+            curt (bool): True means when rending for tx encode header in base2
                          False means when rending for tx encode header in base64
             size (int): gram size when rending for tx.
                 first gram size = head size + neck size + body size.
@@ -650,10 +651,10 @@ class Memoer(hioing.Mixin):
         self.echos = deque()  # only used in testing as echoed tx
 
         self.code = code
-        self.mode = mode
+        self.curt = curt
         self.size = size  # property sets size given .code and constraints
 
-        super(Memoer, self).__init__(name, bc, **kwa)
+        super(Memoer, self).__init__(name=name, bc=bc, **kwa)
 
         if not hasattr(self, "name"):  # stub so mixin works in isolation.
             self.name = name if name is not None else "main"  # mixed with subclass should provide this.
@@ -689,26 +690,26 @@ class Memoer(hioing.Mixin):
             self.size = self._size  # refresh size given new code
 
     @property
-    def mode(self):
-        """Property getter for ._mode
+    def curt(self):
+        """Property getter for ._curt
 
         Returns:
-            mode (bool): True means when rending for tx encode header in base2
+            curt (bool): True means when rending for tx encode header in base2
                          False means when rending for tx encode header in base64
         """
-        return self._mode
+        return self._curt
 
-    @mode.setter
-    def mode(self, mode):
-        """Property setter for ._mode
+    @curt.setter
+    def curt(self, curt):
+        """Property setter for ._curt
 
         Paramaters:
-            mode (bool): True means when rending for tx encode header in base2
+            curt (bool): True means when rending for tx encode header in base2
                          False means when rending for tx encode header in base64
         """
-        self._mode = mode
+        self._curt = curt
         if hasattr(self, "_size"):
-            self.size = self._size  # refresh size given new mode
+            self.size = self._size  # refresh size given new curt
 
     @property
     def size(self):
@@ -734,7 +735,7 @@ class Memoer(hioing.Mixin):
         """
         _, _, _, _, ns, hs = self.Sizes[self.code]  # cs ms vs ss ns hs
         size = size if size is not None else self.MaxGramSize
-        if self.mode:  # minimum header smaller when in base2 mode
+        if self.curt:  # minimum header smaller when in base2 curt
             hs = 3 * hs // 4
             ns = 3 * ns // 4
 
@@ -753,6 +754,8 @@ class Memoer(hioing.Mixin):
 
     def reopen(self):
         """Idempotently open transport
+
+        This is a stub. Override in transport specific subclass
         """
         self.close()
         return self.open()
@@ -767,13 +770,13 @@ class Memoer(hioing.Mixin):
 
 
     def wiff(self, gram):
-        """Determines encoding mode of gram bytes header when parsing grams.
-        The mode maybe either base2 or base64.
+        """Determines encoding of gram bytes header when parsing grams.
+        The encoding maybe either base2 or base64.
 
 
         Returns:
-            mode (bool):    True means base2
-                            False means base64
+            curt (bool):    True means base2 encoding
+                            False means base64 encoding
                             Otherwise raises hioing.MemoerError
 
         All gram head codes start with '_' in base64 text or in base2 binary.
@@ -808,16 +811,17 @@ class Memoer(hioing.Mixin):
 
         sextet = gram[0] >> 2
         if sextet == 0o27:
-            return False  # base64 text mode
+            return False  # base64 text encoding
         if sextet == 0o77:
-            return True  # base2 binary mode
+            return True  # base2 binary encoding
 
         raise hioing.MemoerError(f"Unexpected {sextet=} at gram head start.")
 
 
     def verify(self, sig, ser, vid):
         """Verify signature sig on signed part of gram, ser, using key from vid.
-        Stub override in subclass to perform real signature verification
+        Must be overriden in subclass to perform real signature verification.
+        This is a stub.
 
         Returns:
             result (bool): True if signature verifies
@@ -857,8 +861,8 @@ class Memoer(hioing.Mixin):
 
 
         """
-        mode = self.wiff(gram)  # rx gram encoding mode True=B2 or False=B64
-        if mode:  # base2 binary mode
+        curt = self.wiff(gram)  # rx gram encoding True=B2 or False=B64
+        if curt:  # base2 binary encoding
             if len(gram) < 2:  # assumes len(code) must be 2
                 raise hioing.MemoerError(f"Gram length={len(gram)} to short to "
                                          f"hold code.")
@@ -866,10 +870,10 @@ class Memoer(hioing.Mixin):
             cs, ms, vs, ss, ns, hs = self.Sizes[code]  # cs ms vs ss ns hs
             ps = (3 - ((ms) % 3)) % 3  # net pad size for mid
             cms = 3 * (cs + ms) // 4  # cs + ms are aligned on 24 bit boundary
-            hs = 3 * hs // 4  # mode b2 means head part sizes smaller by 3/4
-            ns = 3 * ns // 4  # mode b2 means head part sizes smaller by 3/4
-            vs = 3 * vs // 4  # mode b2 means head part sizes smaller by 3/4
-            ss = 3 * ss // 4  # mode b2 means head part sizes smaller by 3/4
+            hs = 3 * hs // 4  # encoding b2 means head part sizes smaller by 3/4
+            ns = 3 * ns // 4  # encoding b2 means head part sizes smaller by 3/4
+            vs = 3 * vs // 4  # encoding b2 means head part sizes smaller by 3/4
+            ss = 3 * ss // 4  # encoding b2 means head part sizes smaller by 3/4
 
             if len(gram) < (hs + 1):  # not big enough for non-first gram
                 raise hioing.MemoerError(f"Not enough rx bytes for b2 gram"
@@ -895,7 +899,7 @@ class Memoer(hioing.Mixin):
                 signed = bytes(gram[:])  # copy signed portion of gram
                 del gram[:hs-ss]  # strip of fore head leaving body in gram
 
-        else:  # base64 text mode
+        else:  # base64 text encoding
             if len(gram) < 2:  # assumes len(code) must be 2
                 raise hioing.MemoerError(f"Gram length={len(gram)} to short to "
                                          f"hold code.")
@@ -935,8 +939,9 @@ class Memoer(hioing.Mixin):
 
 
     def receive(self, *, echoic=False):
-        """Attemps to send bytes in txbs to remote destination dst. Must be
-        overridden in subclass. This is a stub to define mixin interface.
+        """Attemps to send bytes in txbs to remote destination dst.
+        Must be overridden in subclass.
+        This is a stub to define mixin interface.
 
         Parameters:
             echoic (bool): True means use .echos in .receive debugging purposes
@@ -1164,8 +1169,9 @@ class Memoer(hioing.Mixin):
 
 
     def send(self, txbs, dst, *, echoic=False):
-        """Attemps to send bytes in txbs to remote destination dst. Must be
-        overridden in subclass. This is a stub to define mixin interface.
+        """Attemps to send bytes in txbs to remote destination dst.
+        Must be overridden in subclass.
+        This is a stub to define mixin interface.
 
         Returns:
             count (int): bytes actually sent
@@ -1194,7 +1200,8 @@ class Memoer(hioing.Mixin):
 
     def sign(self, ser, vid):
         """Sign serialization ser using private key for verifier ID vid
-        Stub override in subclass to fetch private key for vid and sign
+        Must be overriden in subclass to fetch private key for vid and sign.
+        This is a stub.
 
         Returns:
             sig(bytes): qb64b qualified base64 representation of signature
@@ -1235,11 +1242,11 @@ class Memoer(hioing.Mixin):
         fore = self.code.encode() + mid  # forehead of header
         ml = len(memo)
 
-        if self.mode:  # rend header parts in base2 instead of base64
-            hs = 3 * hs // 4  # mode b2 means head part sizes smaller by 3/4
-            ns = 3 * ns // 4  # mode b2 means head part sizes smaller by 3/4
-            vs = 3 * vs // 4  # mode b2 means head part sizes smaller by 3/4
-            ss = 3 * ss // 4  # mode b2 means head part sizes smaller by 3/4
+        if self.curt:  # rend header parts in base2 instead of base64
+            hs = 3 * hs // 4  # encoding b2 means head part sizes smaller by 3/4
+            ns = 3 * ns // 4  # encoding b2 means head part sizes smaller by 3/4
+            vs = 3 * vs // 4  # encoding b2 means head part sizes smaller by 3/4
+            ss = 3 * ss // 4  # encoding b2 means head part sizes smaller by 3/4
             fore = decodeB64(fore)
             vid = decodeB64(vid)
 
@@ -1258,14 +1265,14 @@ class Memoer(hioing.Mixin):
         if ml > mms:
             raise hioing.MemoerError(f"Memo length={ml} exceeds max={mms}.")
 
-        if self.mode:
+        if self.curt:
             neck = gc.to_bytes(ns)
         else:
             neck = helping.intToB64b(gc, l=ns)
 
         gn = 0
         while memo:
-            if self.mode:
+            if self.curt:
                 num = gn.to_bytes(ns)  # num size must always be neck size
             else:
                 num = helping.intToB64b(gn, l=ns)  # num size must always be neck size
@@ -1281,7 +1288,7 @@ class Memoer(hioing.Mixin):
 
             if ss:  # sign
                 sig = self.sign(gram, vid)
-                if self.mode:
+                if self.curt:
                     sig = decodeB64(sig)
                 gram = gram + sig
 
@@ -1383,7 +1390,7 @@ class Memoer(hioing.Mixin):
             except IndexError:
                 return False  # nothing more to send, return False to try later
 
-
+        cnt = 0
         try:
             cnt = self.send(gram, dst, echoic=echoic)  # assumes .opened == True
         except socket.error as ex:  # OSError.errno always .args[0] for compat
@@ -1404,13 +1411,15 @@ class Memoer(hioing.Mixin):
                 logger.error("Error send from %s to %s\n %s\n",
                                                          self.name, dst, ex)
                 self.txbs = (bytearray(), None) # far peer unavailable, so drop.
+                dst = None  # dropped is same as all sent
             else:
                 raise  # unexpected error
 
-        del gram[:cnt]  # remove from buffer those bytes sent
-        if not gram:  # all sent
-            dst = None  # indicate by setting dst to None
-        self.txbs = (gram, dst)  # update txbs to indicate if completely sent
+        if cnt:
+            del gram[:cnt]  # remove from buffer those bytes sent
+            if not gram:  # all sent
+                dst = None  # indicate by setting dst to None
+            self.txbs = (gram, dst)  # update txbs to indicate if completely sent
 
         return (False if dst else True)  # incomplete return False, else True
 
@@ -1597,7 +1606,8 @@ class TymeeMemoer(tyming.Tymee, Memoer):
     def serviceTymers(self):
         """Service all retry tymers
 
-        Stub override in subclass
+        Must be overriden in subclass.
+        This is a stub.
         """
         pass
 
@@ -1701,3 +1711,4 @@ class TymeeMemoerDoer(doing.Doer):
     def exit(self):
         """"""
         self.peer.close()
+

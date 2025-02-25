@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-hio.core.uxding Module
+hio.core.uxd.uxding Module
 """
 import sys
 import platform
@@ -17,55 +17,6 @@ from ... import hioing
 from ...base import doing, filing
 
 logger = help.ogler.getLogger()
-
-
-@contextmanager
-def openPeer(cls=None, name="test", temp=True, reopen=True, clear=True,
-             filed=False, extensioned=True, **kwa):
-    """
-    Wrapper to create and open UXD Peer instances
-    When used in with statement block, calls .close() on exit of with block
-
-    Parameters:
-        cls (Class): instance of subclass instance
-        name (str): unique identifer of peer. Unique path part so can have many
-            Peers each at different paths that each use different dirs or files
-        temp (bool): True means open in temporary directory, clear on close
-                     Otherwise open in persistent directory, do not clear on close
-        reopen (bool): True (re)open with this init
-                       False not (re)open with this init but later (default)
-        clear (bool): True means remove directory upon close when reopening
-                      False means do not remove directory upon close when reopening
-        filed (bool): True means .path is file path not directory path
-                      False means .path is directiory path not file path
-        extensioned (bool): When not filed:
-                            True means ensure .path ends with fext
-                            False means do not ensure .path ends with fext
-
-    See filing.Filer and uxding.Peer for other keyword parameter passthroughs
-
-    Usage:
-        with openPeer() as peer0:
-            peer0.receive()
-
-        with openPeer(cls=PeerBig) as peer0:
-            peer0.receive()
-
-    """
-    peer = None
-    if cls is None:
-        cls = Peer
-    try:
-        peer = cls(name=name, temp=temp, reopen=reopen, clear=clear,
-                   filed=filed, extensioned=extensioned, **kwa)
-
-        yield peer
-
-    finally:
-        if peer:
-            peer.close(clear=peer.temp or clear)
-
-
 
 
 
@@ -297,15 +248,15 @@ class Peer(filing.Filer):
             self.opened = False
 
         try:
-            super(Peer, self).close(clear=clear)  # removes uxd file at end of path only
+            result = super(Peer, self).close(clear=clear)  # removes uxd file at end of path only
         except OSError:
             if os.path.exists(self.path):
                 raise
 
-        return self.opened
+        return result  # True means closed successfully
 
 
-    def receive(self):
+    def receive(self, **kwa):
         """Perform non blocking receive on  socket.
 
         Returns:
@@ -333,7 +284,7 @@ class Peer(filing.Filer):
         return (data, src)
 
 
-    def send(self, data, dst):
+    def send(self, data, dst, **kwa):
         """Perform non blocking send on socket.
 
         Returns:
@@ -375,6 +326,56 @@ class Peer(filing.Filer):
         pass
 
 
+
+@contextmanager
+def openPeer(cls=None, name="test", temp=True, reopen=True, clear=True,
+             filed=False, extensioned=True, **kwa):
+    """
+    Wrapper to create and open UXD Peer instances
+    When used in with statement block, calls .close() on exit of with block
+
+    Parameters:
+        cls (Class): instance of subclass instance
+        name (str): unique identifer of peer. Unique path part so can have many
+            Peers each at different paths that each use different dirs or files
+        temp (bool): True means open in temporary directory, clear on close
+                     Otherwise open in persistent directory, do not clear on close
+        reopen (bool): True (re)open with this init
+                       False not (re)open with this init but later (default)
+        clear (bool): True means remove directory upon close when reopening
+                      False means do not remove directory upon close when reopening
+        filed (bool): True means .path is file path not directory path
+                      False means .path is directiory path not file path
+        extensioned (bool): When not filed:
+                            True means ensure .path ends with fext
+                            False means do not ensure .path ends with fext
+
+    See filing.Filer and uxding.Peer for other keyword parameter passthroughs
+
+    Usage:
+        with openPeer() as peer0:
+            peer0.receive()
+
+        with openPeer(cls=PeerBig) as peer0:
+            peer0.receive()
+
+    """
+    peer = None
+    if cls is None:
+        cls = Peer
+    try:
+        peer = cls(name=name, temp=temp, reopen=reopen, clear=clear,
+                   filed=filed, extensioned=extensioned, **kwa)
+
+        yield peer
+
+    finally:
+        if peer:
+            peer.close(clear=peer.temp or clear)
+
+
+
+
 class PeerDoer(doing.Doer):
     """
     Basic UXD Peer Doer
@@ -414,3 +415,4 @@ class PeerDoer(doing.Doer):
     def exit(self):
         """"""
         self.peer.close(clear=True)
+
