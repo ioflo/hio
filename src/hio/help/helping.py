@@ -22,6 +22,32 @@ import msgpack
 import cbor2 as cbor
 
 
+# Utilities
+def isign(i):
+    """
+    Integer sign function
+    Returns:
+        (int): 1 if i > 0, -1 if i < 0, 0 otherwise
+
+    """
+    return (1 if i > 0 else -1 if i < 0 else 0)
+
+
+def sceil(r):
+    """
+    Symmetric ceiling function
+    Returns:
+       sceil (int): value that is symmetric ceiling of r away from zero
+
+    Because int() provides a symmetric floor towards zero, just inc int(r) by:
+     1 when r - int(r) >  0  (r positive)
+    -1 when r - int(r) <  0  (r negative)
+     0 when r - int(r) == 0  (r integral already)
+    abs(r) > abs(int(r) or 0 when abs(r)
+    """
+    return (int(r) + isign(r - int(r)))
+
+
 def copyfunc(f, name=None):
     """
     Copy a function in detail.
@@ -470,18 +496,26 @@ def intToB64b(i, l=1):
     Returns:
         b64 (bytes): Base64 converstion of i of length minimum l. If more than
                      l bytes are needed to represent i in Base64 then returned
-                     bytes is lengthed appropriately. When less then l bytes
+                     bytes is extended appropriately. When less then l bytes
                      is needed then returned bytes is prepadded with b'A' bytes.
 
-    l is min number of b64 digits left padded with Base64 0 == b"A" bytes
-    The length of return bytes extended to accomodate full Base64 encoding of i
+    Parameters:
+        i (int): to be converted
+        l (int): min number of b64 digits. When empty these are left padded with
+                 Base64 0 == b'A' digits.
+                 The length of return bytes is extended to accomodate full
+                 Base64 encoding of i regardless of l.
     """
-    return (intToB64(i=i, l=l).encode("utf-8"))
+    return (intToB64(i=i, l=l).encode())
 
 
 def b64ToInt(s):
-    """
-    Returns conversion of Base64 str s or bytes to int
+    """Converts Base64 to int
+    Returns:
+        i (int): conversion s (str | bytes) to int
+
+    Parameters:
+        s (str | bytes): to be converted
     """
     if not s:
         raise ValueError("Empty string, conversion undefined.")
@@ -491,3 +525,83 @@ def b64ToInt(s):
     for e, c in enumerate(reversed(s)):
         i |= B64IdxByChr[c] << (e * 6)  # same as i += B64IdxByChr[c] * (64 ** e)
     return i
+
+
+
+def codeB64ToB2(s):
+    """Convert Base64 chars in s to B2 bytes
+
+    Returns:
+        bs (bytes): conversion (decode) of s Base64 chars to Base2 bytes.
+        Where the number of total bytes returned is equal to the minimun number of
+        chars (octet) sufficient to hold the total converted concatenated chars from s,
+        with one sextet per each Base64 char of s. Assumes no pad chars in s.
+
+
+    Sextets are left aligned with pad bits in last (rightmost) byte to support
+    mid padding of code portion with respect to rest of primitive.
+    This is useful for decoding as bytes, code characters from the front of
+    a Base64 encoded string of characters.
+
+    Parameters:
+        s (str | bytes): Base64 str or bytes to convert
+
+    """
+    i = b64ToInt(s)
+    i <<= 2 * (len(s) % 4)  # add 2 bits right zero padding for each sextet
+    n = sceil(len(s) * 3 / 4)  # compute min number of ocetets to hold all sextets
+    return (i.to_bytes(n, 'big'))
+
+
+def codeB2ToB64(b, l):
+    """Convert l sextets from base2 b to base64 str
+
+    Returns:
+        code (str): conversion (encode) of l Base2 sextets from front of b
+        to Base64 chars.
+
+    One char for each of l sextets from front (left) of b.
+    This is useful for encoding as code characters, sextets from the front of
+    a Base2 bytes (byte string). Must provide l because of ambiguity between l=3
+    and l=4. Both require 3 bytes in b. Trailing pad bits are removed so
+    returned sextets as characters are right aligned .
+
+    Parameters:
+        b (bytes | str): target from which to nab sextets
+        l (int): number of sextets to convert from front of b
+    """
+    if hasattr(b, 'encode'):
+        b = b.encode("utf-8")  # convert to bytes
+    n = sceil(l * 3 / 4)  # number of bytes needed for l sextets
+    if n > len(b):
+        raise ValueError("Not enough bytes in {} to nab {} sextets.".format(b, l))
+    i = int.from_bytes(b[:n], 'big')  # convert only first n bytes to int
+    # check if prepad bits are zero
+    tbs = 2 * (l % 4)  # trailing bit size in bits
+    i >>= tbs  # right shift out trailing bits to make right aligned
+    return (intToB64(i, l))  # return as B64
+
+
+def nabSextets(b, l):
+    """Nab l sextets from front of b
+    Returns:
+        sextets (bytes): first l sextets from front (left) of b as bytes
+        (byte string). Length of bytes returned is minimum sufficient to hold
+        all l sextets. Last byte returned is right bit padded with zeros which
+        is compatible with mid padded codes on front of primitives
+
+    Parameters:
+        b (bytes | str): target from which to nab sextets
+        l (int): number of sextets to nab from front of b
+
+    """
+    if hasattr(b, 'encode'):
+        b = b.encode()  # convert to bytes
+    n = sceil(l * 3 / 4)  # number of bytes needed for l sextets
+    if n > len(b):
+        raise ValueError("Not enough bytes in {} to nab {} sextets.".format(b, l))
+    i = int.from_bytes(b[:n], 'big')
+    p = 2 * (l % 4)
+    i >>= p  # strip of last bits
+    i <<= p  # pad with empty bits
+    return (i.to_bytes(n, 'big'))

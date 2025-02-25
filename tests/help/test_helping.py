@@ -3,9 +3,50 @@
 tests.help.test_helping module
 
 """
+import fractions
+
 import pytest
 
 from hio.help import helping, Hict
+from hio.help.helping import isign, sceil
+
+def test_utilities():
+    """
+    Test utility functions
+    """
+    assert isign(1) == 1
+    assert isign(-1) == -1
+    assert isign(0) == 0
+    assert isign(2) == 1
+    assert isign(-1) == -1
+
+    assert isign(1.0) == 1
+    assert isign(-1.0) == -1
+    assert isign(0.0) == 0
+
+    assert isign(1.5) == 1
+    assert isign(-1.5) == -1
+    assert isign(0.5) == 1
+    assert isign(-0.5) == -1
+
+
+    assert sceil(0.5) == 1
+    assert sceil(-0.5) == -1
+    assert sceil(1) == 1
+    assert sceil(-1) == -1
+    assert sceil(0) == 0
+    assert sceil(0.0) == 0
+
+    assert sceil(1.1) == 2
+    assert sceil(-1.1) == -2
+    assert sceil(2.8) == 3
+    assert sceil(-2.8) == -3
+
+    assert sceil(fractions.Fraction(3, 2)) == 2
+    assert sceil(fractions.Fraction(-3, 2)) == -2
+    assert sceil(fractions.Fraction(0)) == 0
+
+
 
 def test_copy_func():
     """
@@ -373,6 +414,57 @@ def test_b64_helpers():
     i = helping.b64ToInt(cs)
     assert i == 6011
 
+    s = "-BAC"
+    b = helping.codeB64ToB2(s[:])
+    assert len(b) == 3
+    assert b == b'\xf8\x10\x02'
+    t = helping.codeB2ToB64(b, 4)
+    assert t == s[:]
+    i = int.from_bytes(b, 'big')
+    assert i == 0o76010002
+    i >>= 2 * (len(s) % 4)
+    assert i == 0o76010002
+    p = helping.nabSextets(b, 4)
+    assert p == b'\xf8\x10\x02'
+
+    b = helping.codeB64ToB2(s[:3])
+    assert len(b) == 3
+    assert b == b'\xf8\x10\x00'
+    t = helping.codeB2ToB64(b, 3)
+    assert t == s[:3]
+    i = int.from_bytes(b, 'big')
+    assert i == 0o76010000
+    i >>= 2 * (len(s[:3]) % 4)
+    assert i == 0o760100
+    p = helping.nabSextets(b, 3)
+    assert p == b'\xf8\x10\x00'
+
+    b = helping.codeB64ToB2(s[:2])
+    assert len(b) == 2
+    assert b == b'\xf8\x10'
+    t = helping.codeB2ToB64(b, 2)
+    assert t == s[:2]
+    i = int.from_bytes(b, 'big')
+    assert i == 0o174020
+    i >>= 2 * (len(s[:2]) % 4)
+    assert i == 0o7601
+    p = helping.nabSextets(b, 2)
+    assert p == b'\xf8\x10'
+
+    b = helping.codeB64ToB2(s[:1])
+    assert len(b) == 1
+    assert b == b'\xf8'
+    t = helping.codeB2ToB64(b, 1)
+    assert t == s[:1]
+    i = int.from_bytes(b, 'big')
+    assert i == 0o370
+    i >>= 2 * (len(s[:1]) % 4)
+    assert i == 0o76
+    p = helping.nabSextets(b, 1)
+    assert p == b'\xf8'
+
+
+
     text = b"-A-Bg-1-3-cd"
     match = helping.Reb64.match(text)
     assert match
@@ -393,5 +485,6 @@ def test_b64_helpers():
 
 
 if __name__ == "__main__":
+    test_utilities()
     test_attributize()
     test_b64_helpers()

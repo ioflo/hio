@@ -393,7 +393,7 @@ from collections import deque, namedtuple
 from contextlib import contextmanager
 from base64 import urlsafe_b64encode as encodeB64
 from base64 import urlsafe_b64decode as decodeB64
-from dataclasses import dataclass, astuple
+from dataclasses import dataclass, astuple, asdict
 
 from .. import hioing, help
 from ..base import tyming, doing
@@ -422,9 +422,9 @@ Versionage = namedtuple("Versionage", "major minor")
 Sizage = namedtuple("Sizage", "cs ms vs ss ns hs")
 
 @dataclass(frozen=True)
-class GramCodes:
+class GramCodex:
     """
-    GramCodes is codex of all Gram Codes.
+    GramCodex is codex of all Gram Codes.
     Only provide defined codes.
     Undefined are left out so that inclusion(exclusion) via 'in' operator works.
     """
@@ -435,7 +435,7 @@ class GramCodes:
         return iter(astuple(self))
 
 
-GramDex = GramCodes()  # Make instance
+GramDex = GramCodex()  # Make instance
 
 
 class Memoer(hioing.Mixin):
@@ -493,10 +493,14 @@ class Memoer(hioing.Mixin):
     Class Attributes:
         Version (Versionage): default version consisting of namedtuple of form
             (major: int, minor: int)
+        Codex (GramDex): dataclass ref to gram codex
+        Codes (dict): maps codex names to codex values
+        Names (dict): maps codex values to codex names
+        Sizes (dict): gram head part sizes Sizage instances keyed by gram codes
         MaxMemoSize (int): absolute max memo size
         MaxGramSize (int): absolute max gram size on tx with overhead
         MaxGramCount (int): absolute max gram count
-        Sizes (dict): gram head part sizes Sizage instances keyed by gram codes
+
 
     Inherited Attributes:
         name (str):  unique name for Memoer transport. Used to manage.
@@ -554,14 +558,18 @@ class Memoer(hioing.Mixin):
 
     """
     Version = Versionage(major=0, minor=0)  # default version
-    MaxMemoSize = 4294967295 # (2**32-1) absolute max memo payload size
-    MaxGramSize = 65535 # (2**16-1) absolute max gram size
-    MaxGramCount = 16777215 # (2**24-1) absolute max gram count
+    Codex = GramDex
+    Codes = asdict(Codex)  # map code name to code
+    Names = {val : key for key, val in Codes.items()} # invert map code to code name
     # dict of gram header part sizes keyed by gram codes: cs ms vs ss ns hs
     Sizes = {
                 '__': Sizage(cs=2, ms=22, vs=0, ss=0, ns=4, hs=28),
                 '_-': Sizage(cs=2, ms=22, vs=44, ss=88, ns=4, hs=160),
              }
+    #Bodes = ({helping.codeB64ToB2(c): c for n, c in Codes.items()})
+    MaxMemoSize = 4294967295 # (2**32-1) absolute max memo payload size
+    MaxGramSize = 65535 # (2**16-1) absolute max gram size
+    MaxGramCount = 16777215 # (2**24-1) absolute max gram count
 
 
     def __init__(self,
@@ -787,9 +795,31 @@ class Memoer(hioing.Mixin):
         raise hioing.MemoerError(f"Unexpected {sextet=} at gram head start.")
 
 
-    def parse(self, gram):
-        """Parse and strips header from gram bytearray and returns
-        (mid, gn, gc). Raises MemoerError is unrecognized header
+    def verify(self, sig, ser, vid):
+        """Verify signature sig on signed part of gram, ser, using key from vid.
+        Stub override in subclass to perform real signature verification
+
+        Returns:
+            result (bool): True if signature verifies
+                           False otherwise
+
+        Parameters:
+            sig (bytes | str): qualified base64 qb64b
+            ser (bytes): signed portion of gram in delivered format
+            vid (bytes | str): qualified base64 qb64b of verifier ID
+        """
+        if hasattr(sig, 'encode'):
+            sig = sig.encode()
+
+        if hasattr(vid, 'encode'):
+            vid = vid.encode()
+
+        return True
+
+
+    def pick(self, gram):
+        """Strips header from gram bytearray leaving only gram body in gram and
+        returns (mid, gn, gc). Raises MemoerError if unrecognized header
 
         Returns:
             result (tuple): tuple of form:
@@ -805,50 +835,81 @@ class Memoer(hioing.Mixin):
         Parameters:
             gram (bytearray): memo gram from which to parse and strip its header.
 
+
         """
-        cs, ms, vs, ss, ns, hs = self.Sizes[self.code]  # cs ms vs ss ns hs
+        mode = self.wiff(gram)  # rx gram encoding mode True=B2 or False=B64
+        if mode:  # base2 binary mode
+            if len(gram) < 2:  # assumes len(code) must be 2
+                raise hioing.MemoerError(f"Gram length={len(gram)} to short to "
+                                         f"hold code.")
+            code = helping.codeB2ToB64(gram, 2)  # assumes len(code) must be 2
+            cs, ms, vs, ss, ns, hs = self.Sizes[code]  # cs ms vs ss ns hs
+            ps = (3 - ((ms) % 3)) % 3  # net pad size for mid
+            cms = 3 * (cs + ms) // 4  # cs + ms are aligned on 24 bit boundary
+            hs = 3 * hs // 4  # mode b2 means head part sizes smaller by 3/4
+            ns = 3 * ns // 4  # mode b2 means head part sizes smaller by 3/4
+            vs = 3 * vs // 4  # mode b2 means head part sizes smaller by 3/4
+            ss = 3 * ss // 4  # mode b2 means head part sizes smaller by 3/4
 
-        wiff = self.wiff(gram)
-        if wiff:  # base2 binary mode
-            bhs = 3 * (hs) // 4  # binary head size
-            head = gram[:bhs]  # slice takes a copy
-            if len(head) < bhs:  # not enough bytes for head
-                raise hioing.MemoerError(f"Not enough rx bytes for base2 gram"
-                                    f"header < {bhs}.")
-            head = encodeB64(head)  # convert to Base64
-            del gram[:bhs]  # strip head off gram
+            if len(gram) < (hs + 1):  # not big enough for non-first gram
+                raise hioing.MemoerError(f"Not enough rx bytes for b2 gram"
+                                         f" < {hs + 1}.")
+
+            mid = encodeB64(bytes([0] * ps) + gram[cs:cms])[ps:].decode()  # prepad, convert, strip
+            vid = encodeB64(gram[cms:cms+vs])  # must be on 24 bit boundary
+            gn = int.from_bytes(gram[cms+vs:cms+vs+ns])
+            if gn == 0:  # first (zeroth) gram so get neck
+                if len(gram) < hs + ns + 1:
+                    raise hioing.MemoerError(f"Not enough rx bytes for b2 "
+                                             f"gram < {hs + ns + 1}.")
+                neck = gram[cms+vs+ns:cms+vs+2*ns]  # slice takes a copy
+                gc = int.from_bytes(neck)  # convert to int
+                sig = encodeB64(gram[-ss if ss else len(gram):])   # last ss bytes are signature
+                del gram[-ss if ss else len(gram):]  # strip sig
+                signed = bytes(gram[:])  # copy signed portion of gram
+                del gram[:hs-ss+ns]  # strip of fore head leaving body in gram
+            else:  # non-first gram no neck
+                gc = None
+                sig = encodeB64(gram[-ss if ss else len(gram):])
+                del gram[-ss if ss else len(gram):]  # strip sig
+                signed = bytes(gram[:])  # copy signed portion of gram
+                del gram[:hs-ss]  # strip of fore head leaving body in gram
+
         else:  # base64 text mode
-            head = gram[:hs]  # slice takes a copy
-            if len(head) < hs:  # not enough bytes for head
-                raise hioing.MemoerError(f"Not enough rx chars for base64 gram "
-                                    f"header < {hs}.")
-            del gram[:hs]  # strip off head off
+            if len(gram) < 2:  # assumes len(code) must be 2
+                raise hioing.MemoerError(f"Gram length={len(gram)} to short to "
+                                         f"hold code.")
+            code = gram[:2].decode()  # assumes len(code) must be 2
+            cs, ms, vs, ss, ns, hs = self.Sizes[code]  # cs ms vs ss ns hs
 
-        code = head[:cs].decode()
-        if code != self.code:
-            raise hioing.MemoerError(f"Unrecognized gram {code=}.")
+            if len(gram) < (hs + 1):  # not big enough for non-first gram
+                raise hioing.MemoerError(f"Not enough rx bytes for b64 gram"
+                                         f" < {hs + 1}.")
 
-        mid = head[cs:cs+ms].decode()
-        gn = helping.b64ToInt(head[cs+ms:cs+ms+ns])
+            mid = bytes(gram[cs:cs+ms]).decode()
+            vid = bytes(gram[cs+ms:cs+ms+vs]) # must be on 24 bit boundary
+            gn = helping.b64ToInt(gram[cs+ms+vs:cs+ms+vs+ns])
+            if gn == 0:  # first (zeroth) gram so get neck
+                if len(gram) < hs + ns + 1:
+                    raise hioing.MemoerError(f"Not enough rx bytes for b64 "
+                                             f"gram < {hs + ns + 1}.")
+                neck = gram[cs+ms+vs+ns:cs+ms+vs+2*ns]  # slice takes a copy
+                gc = helping.b64ToInt(neck)  # convert to int
+                sig = bytes(gram[-ss if ss else len(gram):])   # last ss bytes are signature
+                del gram[-ss if ss else len(gram):]  # strip sig
+                signed = bytes(gram[:])  # copy signed portion of gram
+                del gram[:hs-ss+ns]  # strip of fore head leaving body in gram
+            else:  # non-first gram no neck
+                gc = None
+                sig = bytes(gram[-ss if ss else len(gram):])
+                del gram[-ss if ss else len(gram):]  # strip sig
+                signed = bytes(gram[:])  # copy signed portion of gram
+                del gram[:hs-ss]  # strip of fore head leaving body in gram
 
-        gc = None
-        if gn == 0:  # first (zeroth) gram so get neck
-            if wiff:  # base2 binary mode
-                bns = 3 * (ns) // 4  # binary neck size
-                neck = gram[:bns]  # slice takes a copy
-                if len(neck) < bns:  # not enough bytes for neck
-                    raise hioing.MemoerError(f"Not enough rx bytes for base2"
-                                             f" gram neck < {bns}.")
-                neck = encodeB64(neck)  # convert to Base64
-                del gram[:bns]  # strip off neck
-            else:  # # base64 text mode
-                neck = gram[:ns]  # slice takes a copy
-                if len(neck) < ns:  # not enough bytes for neck
-                    raise hioing.MemoerError(f"Not enough rx chars for base64"
-                                             f" gram neck < {ns}.")
-                del gram[:ns]  # strip off neck
-
-            gc = helping.b64ToInt(neck)
+        if sig:  # signature not empty
+            if not self.verify(sig, signed, vid):
+                raise hioing.MemoerError(f"Invalid signature on gram from "
+                                         f"verifier {vid=}.")
 
         return (mid, gn, gc)
 
@@ -923,7 +984,7 @@ class Memoer(hioing.Mixin):
         gram = bytearray(gram)# make copy bytearray so can strip off header
 
         try:
-            mid, gn, gc = self.parse(gram)  # parse and strip off head leaving body
+            mid, gn, gc = self.pick(gram)  # parse and strip off head leaving body
         except hioing.MemoerError as ex: # invalid gram so drop
             logger.error("Unrecognized Memoer gram from %s.\n %s.", src, ex)
             return True  # did receive data to can keep receiving
@@ -1111,7 +1172,25 @@ class Memoer(hioing.Mixin):
         self.txms.append((memo, dst))
 
 
-    def rend(self, memo):
+    def sign(self, ser, vid):
+        """Sign serialization ser using private key for verifier ID vid
+        Stub override in subclass to fetch private key for vid and sign
+
+        Returns:
+            sig(bytes): qb64b qualified base64 representation of signature
+
+        Parameters:
+            ser (bytes): signed portion of gram is delivered format
+            vid (str | bytes): qualified base64 qb64 of verifier ID
+
+        """
+        if hasattr(vid, 'encode'):
+            vid = vid.encode()
+        cs, ms, vs, ss, ns, hs = self.Sizes[self.code]  # cs ms vs ss ns hs
+        return b'A' * ss
+
+
+    def rend(self, memo, *, vid=None):
         """Partition memo into packed grams with headers.
 
         Returns:
@@ -1119,6 +1198,7 @@ class Memoer(hioing.Mixin):
 
         Parameters:
             memo (str): to be partitioned into grams with headers
+            vid (str)
 
         Note first gram has head + neck overhead, hs + ns so bs is smaller by ns
              non-first grams have just head overhead hs so bs is bigger by ns
@@ -1128,15 +1208,11 @@ class Memoer(hioing.Mixin):
         # self.size is max gram size
         cs, ms, vs, ss, ns, hs = self.Sizes[self.code]  # cs ms vs ss ns hs
         ps = (3 - ((ms) % 3)) % 3  # net pad size for mid
-        if ps != (cs % 4):  #  code + mid must lie on 24 bit boundary
-            raise hioing.MemoerError(f"Invalid combination of code size={cs}"
-                                     f" and mid size={ms}.")
+        vid = vid if vid is not None else b'A' * vs
 
         # memo ID is 16 byte random UUID converted to 22 char Base64 right aligned
         mid = encodeB64(bytes([0] * ps) + uuid.uuid4().bytes)[ps:] # prepad, convert, and strip
         fore = self.code.encode() + mid  # forehead of header
-        vid = b'A' * vs
-        sig = b'A' * ss
         ml = len(memo)
 
         if self.mode:  # rend header parts in base2 instead of base64
@@ -1146,7 +1222,6 @@ class Memoer(hioing.Mixin):
             ss = 3 * ss // 4  # mode b2 means head part sizes smaller by 3/4
             fore = decodeB64(fore)
             vid = decodeB64(vid)
-            sig = decodeB64(sig)
 
         bs = (self.size - hs)  # max standard gram body size without neck
         # compute gram count based on overhead note added neck overhead in first gram
@@ -1178,11 +1253,18 @@ class Memoer(hioing.Mixin):
             head = fore + vid + num
 
             if gn == 0:
-                gram = head + neck + memo[:bs-ns] + sig  # copy slice past end just copies to end
+                gram = head + neck + memo[:bs-ns]  # copy slice past end just copies to end
                 del memo[:bs-ns]  # del slice past end just deletes to end
             else:
-                gram = head + memo[:bs] + sig  # copy slice past end just copies to end
+                gram = head + memo[:bs]  # copy slice past end just copies to end
                 del memo[:bs]  # del slice past end just deletes to end
+
+            if ss:  # sign
+                sig = self.sign(gram, vid)
+                if mode:
+                    sig = decodeB64(sig)
+                gram = gram + sig
+
             grams.append(gram)
 
             gn += 1

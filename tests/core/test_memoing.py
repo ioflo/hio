@@ -10,6 +10,51 @@ import pytest
 
 from hio.base import doing, tyming
 from hio.core import memoing
+from hio.core.memoing import Memoer, Versionage, Sizage
+
+def test_memoer_class():
+    """Test class attributes of Memoer class"""
+
+    assert Memoer.Version == Versionage(major=0, minor=0)
+    assert Memoer.Codex == memoing.GramDex
+
+    assert Memoer.Codes == {'Basic': '__', 'Signed': '_-'}
+    assert Memoer.Names == {'__': 'Basic', '_-': 'Signed'}
+
+
+    # Codes table with sizes of code (hard) and full primitive material
+    assert Memoer.Sizes == {'__': Sizage(cs=2, ms=22, vs=0, ss=0, ns=4, hs=28),
+                            '_-': Sizage(cs=2, ms=22, vs=44, ss=88, ns=4, hs=160)}
+
+
+    #  verify all Codes
+    for code, val in Memoer.Sizes.items():
+        cs = val.cs
+        ms = val.ms
+        vs = val.vs
+        ss = val.ss
+        ns = val.ns
+        hs = val.hs
+
+        assert len(code) == cs == 2
+        assert code[0] == '_'
+        code[1] in 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234567890-_'
+        assert hs > 0
+        assert hs == cs + ms + vs + ss + ns
+        ps = (3 - ((ms) % 3)) % 3  # net pad size for mid
+        assert ps == (cs % 4)  #  combined code + mid size must lie on 24 bit boundary
+        assert not vs % 4   # vid size must be on 24 bit boundary
+        assert not ss % 4   # sig size must be on 24 bit boundary
+        assert not ns % 4   # neck (num or cnt) size must be on 24 bit boundary
+        assert not hs % 4   # head size must be on 24 bit boundary
+
+    #assert Memoer.Bodes == {b'\xff\xf0': '__', b'\xff\xe0': '_-'}
+
+    assert Memoer.MaxMemoSize == (2**32-1)  # absolute max memo payload size
+    assert Memoer.MaxGramSize == (2**16-1)  # absolute max gram size
+    assert Memoer.MaxGramCount == (2**24-1)  # absolute max gram count
+
+    """Done Test"""
 
 
 def test_memoer_basic():
@@ -612,6 +657,7 @@ def test_tymeememogram_doer():
 
 
 if __name__ == "__main__":
+    test_memoer_class()
     test_memoer_basic()
     test_memogram_small_gram_size()
     test_memoer_multiple()
