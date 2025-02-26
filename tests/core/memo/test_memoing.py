@@ -98,8 +98,8 @@ def test_memoer_basic():
     assert not peer.counts
     assert not peer.sources
     assert not peer.rxms
-    mid = 'ALBI68S1ZIxqwFOSWFF1L2'
-    gram = ('__' + mid + 'AAAA' + 'AAAB' + "Hello There").encode()
+    mid = '__ALBI68S1ZIxqwFOSWFF1L2'
+    gram = (mid + 'AAAA' + 'AAAB' + "Hello There").encode()
     echo = (gram, "beta")
     peer.echos.append(echo)
     peer.serviceReceives(echoic=True)
@@ -110,7 +110,7 @@ def test_memoer_basic():
     assert not peer.rxgs
     assert not peer.counts
     assert not peer.sources
-    assert peer.rxms[0] == ('Hello There', 'beta')
+    assert peer.rxms[0] == ('Hello There', 'beta', None)
     peer.serviceRxMemos()
     assert not peer.rxms
 
@@ -145,7 +145,7 @@ def test_memoer_basic():
     assert not peer.counts
     assert not peer.sources
     peer.rxms[0]
-    assert peer.rxms[0] == ('See ya later!', 'beta')
+    assert peer.rxms[0] == ('See ya later!', 'beta', None)
     peer.serviceRxMemos()
     assert not peer.rxms
 
@@ -170,8 +170,8 @@ def test_memoer_basic():
     assert not peer.counts
     assert not peer.sources
     assert not peer.rxms
-    mid = 'ALBI68S1ZIxqwFOSWFF1L2'
-    headneck = decodeB64(('__' + mid + 'AAAA' + 'AAAB').encode())
+    mid = '__ALBI68S1ZIxqwFOSWFF1L2'
+    headneck = decodeB64((mid + 'AAAA' + 'AAAB').encode())
     gram = headneck + b"Hello There"
     assert peer.wiff(gram)  # base2
     echo = (gram, "beta")
@@ -184,7 +184,7 @@ def test_memoer_basic():
     assert not peer.rxgs
     assert not peer.counts
     assert not peer.sources
-    assert peer.rxms[0] == ('Hello There', 'beta')
+    assert peer.rxms[0] == ('Hello There', 'beta', None)
     peer.serviceRxMemos()
     assert not peer.rxms
 
@@ -237,11 +237,11 @@ def test_memogram_small_gram_size():
     assert not peer.rxms
     b'__DFymLrtlZG6bp0HhlUsR6uAAAAAAACHello '
     b'__DFymLrtlZG6bp0HhlUsR6uAAABThere'
-    mid = 'DFymLrtlZG6bp0HhlUsR6u'
-    gram = ('__' + mid + 'AAAA' + 'AAAC' + "Hello ").encode()
+    mid = '__DFymLrtlZG6bp0HhlUsR6u'
+    gram = (mid + 'AAAA' + 'AAAC' + "Hello ").encode()
     echo = (gram, "beta")
     peer.echos.append(echo)
-    gram = ('__' + mid + 'AAAB' + "There").encode()
+    gram = (mid + 'AAAB' + "There").encode()
     echo = (gram, "beta")
     peer.echos.append(echo)
     peer.serviceReceives(echoic=True)
@@ -254,7 +254,7 @@ def test_memogram_small_gram_size():
     assert not peer.rxgs
     assert not peer.counts
     assert not peer.sources
-    assert peer.rxms[0] == ('Hello There', 'beta')
+    assert peer.rxms[0] == ('Hello There', 'beta', None)
     peer.serviceRxMemos()
     assert not peer.rxms
     assert not peer.echos
@@ -293,7 +293,7 @@ def test_memogram_small_gram_size():
     assert not peer.counts
     assert not peer.sources
     peer.rxms[0]
-    assert peer.rxms[0] == ('See ya later!', 'beta')
+    assert peer.rxms[0] == ('See ya later!', 'beta', None)
     peer.serviceRxMemos()
     assert not peer.rxms
 
@@ -323,13 +323,13 @@ def test_memogram_small_gram_size():
 
     b'__DFymLrtlZG6bp0HhlUsR6uAAAAAAACHello '
     b'__DFymLrtlZG6bp0HhlUsR6uAAABThere'
-    mid = 'DFymLrtlZG6bp0HhlUsR6u'
-    headneck = decodeB64(('__' + mid + 'AAAA' + 'AAAC').encode())
+    mid = '__DFymLrtlZG6bp0HhlUsR6u'
+    headneck = decodeB64((mid + 'AAAA' + 'AAAC').encode())
     gram = headneck + b"See ya later a"
     assert peer.wiff(gram)   # base2
     echo = (gram, "beta")
     peer.echos.append(echo)
-    head = decodeB64(('__' + mid + 'AAAB').encode())
+    head = decodeB64((mid + 'AAAB').encode())
     gram = head + b"lligator!"
     assert peer.wiff(gram)  # base2
     echo = (gram, "beta")
@@ -346,7 +346,7 @@ def test_memogram_small_gram_size():
     assert not peer.rxgs
     assert not peer.counts
     assert not peer.sources
-    assert peer.rxms[0] == ('See ya later alligator!', 'beta')
+    assert peer.rxms[0] == ('See ya later alligator!', 'beta', None)
     peer.serviceRxMemos()
     assert not peer.rxms
 
@@ -413,8 +413,8 @@ def test_memoer_multiple():
     assert not peer.counts
     assert not peer.sources
     assert len(peer.rxms) == 2
-    assert peer.rxms[0] == ('Hello there.', 'alpha')
-    assert peer.rxms[1] == ('How ya doing?', 'beta')
+    assert peer.rxms[0] == ('Hello there.', 'alpha', None)
+    assert peer.rxms[1] == ('How ya doing?', 'beta', None)
     peer.serviceRxMemos()
     assert not peer.rxms
 
@@ -465,8 +465,10 @@ def test_memoer_basic_signed():
     assert not peer.counts
     assert not peer.sources
     assert not peer.rxms
-    mid = 'ALBI68S1ZIxqwFOSWFF1L2'
-    gram = ('_-' + mid + 'AAAA' + ('A' * 44) + 'AAAB' + "Hello There" + ('A' * 88)).encode()
+    mid = '_-ALBI68S1ZIxqwFOSWFF1L2'
+    vid = ('A' * 44)
+    sig = ('A' * 88)
+    gram = (mid + vid + 'AAAA' + 'AAAB' + "Hello There" + sig).encode()
     echo = (gram, "beta")
     peer.echos.append(echo)
     peer.serviceReceives(echoic=True)
@@ -477,7 +479,7 @@ def test_memoer_basic_signed():
     assert not peer.rxgs
     assert not peer.counts
     assert not peer.sources
-    assert peer.rxms[0] == ('Hello There', 'beta')
+    assert peer.rxms[0] == ('Hello There', 'beta', vid)
     peer.serviceRxMemos()
     assert not peer.rxms
 
@@ -514,7 +516,7 @@ def test_memoer_basic_signed():
     assert not peer.counts
     assert not peer.sources
     peer.rxms[0]
-    assert peer.rxms[0] == ('See ya later!', 'beta')
+    assert peer.rxms[0] == ('See ya later!', 'beta', vid)
     peer.serviceRxMemos()
     assert not peer.rxms
 
@@ -540,9 +542,11 @@ def test_memoer_basic_signed():
     assert not peer.counts
     assert not peer.sources
     assert not peer.rxms
-    mid = 'ALBI68S1ZIxqwFOSWFF1L2'
-    head = decodeB64(('_-' + mid + 'AAAA' + ('A' * 44) + 'AAAB').encode())
-    tail = decodeB64(('A' * 88).encode())
+    mid = '_-ALBI68S1ZIxqwFOSWFF1L2'
+    vid = ('A' * 44)
+    sig = ('A' * 88)
+    head = decodeB64((mid + vid + 'AAAA' + 'AAAB').encode())
+    tail = decodeB64(sig.encode())
     gram = head + memo.encode() + tail
     assert peer.wiff(gram)  # base2
     assert len(gram) == 3 * (160 + 4) // 4 + len(memo)
@@ -556,7 +560,7 @@ def test_memoer_basic_signed():
     assert not peer.rxgs
     assert not peer.counts
     assert not peer.sources
-    assert peer.rxms[0] == ('Hello There', 'beta')
+    assert peer.rxms[0] == ('Hello There', 'beta', vid)
     peer.serviceRxMemos()
     assert not peer.rxms
 
@@ -579,6 +583,7 @@ def test_memoer_multiple_signed():
     assert peer.opened == True
 
     # send and receive multiple via echo
+    vid = ('A' * 44)
     peer.memoit("Hello there.", "alpha")
     peer.memoit("How ya doing?", "beta")
     assert len(peer.txms) == 2
@@ -622,8 +627,8 @@ def test_memoer_multiple_signed():
     assert not peer.counts
     assert not peer.sources
     assert len(peer.rxms) == 2
-    assert peer.rxms[0] == ('Hello there.', 'alpha')
-    assert peer.rxms[1] == ('How ya doing?', 'beta')
+    assert peer.rxms[0] == ('Hello there.', 'alpha', vid)
+    assert peer.rxms[1] == ('How ya doing?', 'beta', vid)
     peer.serviceRxMemos()
     assert not peer.rxms
 
@@ -634,6 +639,7 @@ def test_memoer_multiple_signed():
     assert peer.size == 129
 
     # send and receive multiple via echo
+    vid = ('A' * 44)
     peer.memoit("Hello there.", "alpha")
     peer.memoit("How ya doing?", "beta")
     assert len(peer.txms) == 2
@@ -677,8 +683,8 @@ def test_memoer_multiple_signed():
     assert not peer.counts
     assert not peer.sources
     assert len(peer.rxms) == 2
-    assert peer.rxms[0] == ('Hello there.', 'alpha')
-    assert peer.rxms[1] == ('How ya doing?', 'beta')
+    assert peer.rxms[0] == ('Hello there.', 'alpha', vid)
+    assert peer.rxms[1] == ('How ya doing?', 'beta', vid)
     peer.serviceRxMemos()
     assert not peer.rxms
 
@@ -769,8 +775,8 @@ def test_tymeememogram_basic():
     assert not peer.counts
     assert not peer.sources
     assert not peer.rxms
-    mid = 'ALBI68S1ZIxqwFOSWFF1L2'
-    gram = ('__' + mid + 'AAAA' + 'AAAB' + "Hello There").encode()
+    mid = '__ALBI68S1ZIxqwFOSWFF1L2'
+    gram = (mid + 'AAAA' + 'AAAB' + "Hello There").encode()
     echo = (gram, "beta")
     peer.echos.append(echo)
     peer.serviceReceives(echoic=True)
@@ -781,7 +787,7 @@ def test_tymeememogram_basic():
     assert not peer.rxgs
     assert not peer.counts
     assert not peer.sources
-    assert peer.rxms[0] == ('Hello There', 'beta')
+    assert peer.rxms[0] == ('Hello There', 'beta', None)
     peer.serviceRxMemos()
     assert not peer.rxms
 
@@ -816,7 +822,7 @@ def test_tymeememogram_basic():
     assert not peer.counts
     assert not peer.sources
     peer.rxms[0]
-    assert peer.rxms[0] == ('See ya later!', 'beta')
+    assert peer.rxms[0] == ('See ya later!', 'beta', None)
     peer.serviceRxMemos()
     assert not peer.rxms
 
@@ -840,8 +846,8 @@ def test_tymeememogram_basic():
     assert not peer.counts
     assert not peer.sources
     assert not peer.rxms
-    mid = 'ALBI68S1ZIxqwFOSWFF1L2'
-    headneck = decodeB64(('__' + mid + 'AAAA' + 'AAAB').encode())
+    mid = '__ALBI68S1ZIxqwFOSWFF1L2'
+    headneck = decodeB64((mid + 'AAAA' + 'AAAB').encode())
     gram = headneck + b"Hello There"
     assert peer.wiff(gram)   # base2
     echo = (gram, "beta")
@@ -854,7 +860,7 @@ def test_tymeememogram_basic():
     assert not peer.rxgs
     assert not peer.counts
     assert not peer.sources
-    assert peer.rxms[0] == ('Hello There', 'beta')
+    assert peer.rxms[0] == ('Hello There', 'beta', None)
     peer.serviceRxMemos()
     assert not peer.rxms
 

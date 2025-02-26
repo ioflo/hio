@@ -82,8 +82,8 @@ def test_memoer_peer_basic():
     assert not beta.counts
     assert not beta.sources
     assert len(beta.rxms) == 2
-    assert beta.rxms[0] == ('Hello there.', alpha.path)
-    assert beta.rxms[1] == ('How ya doing?', alpha.path)
+    assert beta.rxms[0] == ('Hello there.', alpha.path, None)
+    assert beta.rxms[1] == ('How ya doing?', alpha.path, None)
     beta.serviceRxMemos()
     assert not beta.rxms
 
@@ -123,8 +123,8 @@ def test_memoer_peer_basic():
     assert not alpha.counts
     assert not alpha.sources
     assert len(alpha.rxms) == 2
-    assert alpha.rxms[0] == ('Well is not this a fine day?', beta.path)
-    assert alpha.rxms[1] == ('Do you want to do lunch?', beta.path)
+    assert alpha.rxms[0] == ('Well is not this a fine day?', beta.path, None)
+    assert alpha.rxms[1] == ('Do you want to do lunch?', beta.path, None)
     alpha.serviceRxMemos()
     assert not alpha.rxms
 

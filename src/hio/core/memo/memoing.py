@@ -524,8 +524,14 @@ class Memoer(hioing.Mixin):
         counts (dict): keyed by mid (memoID) that holds the gram count from
             the first gram for the memo. This enables lookup of the gram count when
             fusing its grams.
-        rxms (deque): holding rx (receive) memo duples desegmented from rxgs grams
-                each entry in deque is duple of form (memo: str, dst: str)
+        vids (dict[mid: (vid | None)]): keyed by mid that holds the verification ID str for
+                the memo indexed by its mid (memoID). This enables reattaching
+                the vid to memo when placing fused memo in rxms deque.
+                Vid is only present when signed header otherwise vid is None
+        rxms (deque): holding rx (receive) memo tuples desegmented from rxgs grams
+                each entry in deque is tuple of form:
+                (memo: str, src: str, vid: str) where:
+                memo is fused memo, src is source addr, vid is verification ID
         txms (deque): holding tx (transmit) memo tuples to be segmented into
                 txgs grams where each entry in deque is duple of form
                 (memo: str, dst: str)
@@ -582,6 +588,7 @@ class Memoer(hioing.Mixin):
                  rxgs=None,
                  sources=None,
                  counts=None,
+                 vids=None,
                  rxms=None,
                  txms=None,
                  txgs=None,
@@ -614,8 +621,14 @@ class Memoer(hioing.Mixin):
                 memo indexed by its mid (memoID). This enables lookup of the
                 gram count for a given memo to know when it has received all its
                 constituent grams in order to fuse back into the memo.
-            rxms (deque): holding rx (receive) memo duples fused from rxgs grams
-                each entry in deque is duple of form (memo: str, dst: str)
+            vids (dict[mid: (vid | None)]): keyed by mid that holds the verification ID str for
+                the memo indexed by its mid (memoID). This enables reattaching
+                the vid to memo when placing fused memo in rxms deque.
+                Vid is only present when signed header otherwise vid is None
+            rxms (deque): holding rx (receive) memo tuples desegmented from rxgs grams
+                each entry in deque is tuple of form:
+                (memo: str, src: str, vid: str) where:
+                memo is fused memo, src is source addr, vid is verification ID
             txms (deque): holding tx (transmit) memo tuples to be partitioned into
                 txgs grams where each entry in deque is duple of form
                 (memo: str, dst: str)
@@ -642,6 +655,7 @@ class Memoer(hioing.Mixin):
         self.rxgs = rxgs if rxgs is not None else dict()
         self.sources = sources if sources is not None else dict()
         self.counts = counts if counts is not None else dict()
+        self.vids = vids if vids is not None else dict()
         self.rxms = rxms if rxms is not None else deque()
 
         self.txms = txms if txms is not None else deque()
@@ -847,10 +861,14 @@ class Memoer(hioing.Mixin):
 
         Returns:
             result (tuple): tuple of form:
-                (mid: str, gn: int, gc: int | None) where:
-                mid is memoID, gn is gram number, gc is gram count.
-                When first gram (zeroth) returns (mid, 0, gc).
-                When other gram returns (mid, gn, None)
+                (mid: str, vid: str, gn: int, gc: int | None) where:
+                mid is fully qualified memoID,
+                vid is verID,
+                gn is gram number,
+                gc is gram count.
+                When first gram (zeroth) returns (mid, vid, 0, gc).
+                When other gram returns (mid, vid, gn, None)
+                When code has empty vid then vid is None
                 Otherwise raises MemoerError error.
 
         When valid recognized header, strips header bytes from front of gram
@@ -879,8 +897,9 @@ class Memoer(hioing.Mixin):
                 raise hioing.MemoerError(f"Not enough rx bytes for b2 gram"
                                          f" < {hs + 1}.")
 
-            mid = encodeB64(bytes([0] * ps) + gram[cs:cms])[ps:].decode()  # prepad, convert, strip
-            vid = encodeB64(gram[cms:cms+vs])  # must be on 24 bit boundary
+            #mid = encodeB64(bytes([0] * ps) + gram[cs:cms])[ps:].decode()  # prepad, convert, strip
+            mid = encodeB64(gram[:cms]).decode()  # fully qualified with prefix code
+            vid = encodeB64(gram[cms:cms+vs]).decode()  # must be on 24 bit boundary
             gn = int.from_bytes(gram[cms+vs:cms+vs+ns])
             if gn == 0:  # first (zeroth) gram so get neck
                 if len(gram) < hs + ns + 1:
@@ -910,8 +929,8 @@ class Memoer(hioing.Mixin):
                 raise hioing.MemoerError(f"Not enough rx bytes for b64 gram"
                                          f" < {hs + 1}.")
 
-            mid = bytes(gram[cs:cs+ms]).decode()
-            vid = bytes(gram[cs+ms:cs+ms+vs]) # must be on 24 bit boundary
+            mid = bytes(gram[:cs+ms]).decode()  # fully qualified with prefix code
+            vid = bytes(gram[cs+ms:cs+ms+vs]).decode() # must be on 24 bit boundary
             gn = helping.b64ToInt(gram[cs+ms+vs:cs+ms+vs+ns])
             if gn == 0:  # first (zeroth) gram so get neck
                 if len(gram) < hs + ns + 1:
@@ -935,7 +954,7 @@ class Memoer(hioing.Mixin):
                 raise hioing.MemoerError(f"Invalid signature on gram from "
                                          f"verifier {vid=}.")
 
-        return (mid, gn, gc)
+        return (mid, vid if vid else None, gn, gc)
 
 
     def receive(self, *, echoic=False):
@@ -1009,7 +1028,7 @@ class Memoer(hioing.Mixin):
         gram = bytearray(gram)# make copy bytearray so can strip off header
 
         try:
-            mid, gn, gc = self.pick(gram)  # parse and strip off head leaving body
+            mid, vid, gn, gc = self.pick(gram)  # parse and strip off head leaving body
         except hioing.MemoerError as ex: # invalid gram so drop
             logger.error("Unrecognized Memoer gram from %s.\n %s.", src, ex)
             return True  # did receive data to can keep receiving
@@ -1024,6 +1043,9 @@ class Memoer(hioing.Mixin):
         if gc is not None:
             if mid not in self.counts:  # make idempotent first only no replay
                 self.counts[mid] = gc  # save gram count for mid
+
+        if mid not in self.vids:
+            self.vids[mid] = vid
 
         # assumes unique mid across all possible sources. No replay by different
         # source only first source for a given mid is ever recognized
@@ -1098,10 +1120,11 @@ class Memoer(hioing.Mixin):
                 continue
             memo = self.fuse(self.rxgs[mid], self.counts[mid])
             if memo is not None:  # allows for empty "" memo for some src
-                self.rxms.append((memo, self.sources[mid]))
+                self.rxms.append((memo, self.sources[mid], self.vids[mid]))
                 del self.rxgs[mid]
                 del self.counts[mid]
                 del self.sources[mid]
+                del self.vids[mid]
 
 
     def serviceRxGramsOnce(self):
@@ -1138,7 +1161,7 @@ class Memoer(hioing.Mixin):
         Override in subclass to handle result and put it somewhere
         """
         try:
-            memo, src = self._serviceOneRxMemo()
+            memo, src, vid = self._serviceOneRxMemo()
         except IndexError:
             pass
 
@@ -1149,7 +1172,7 @@ class Memoer(hioing.Mixin):
         Override in subclass to handle result(s) and put them somewhere
         """
         while self.rxms:
-            memo, src = self._serviceOneRxMemo()
+            memo, src, vid = self._serviceOneRxMemo()
 
 
     def serviceAllRxOnce(self):
@@ -1239,7 +1262,7 @@ class Memoer(hioing.Mixin):
 
         # memo ID is 16 byte random UUID converted to 22 char Base64 right aligned
         mid = encodeB64(bytes([0] * ps) + uuid.uuid4().bytes)[ps:] # prepad, convert, and strip
-        fore = self.code.encode() + mid  # forehead of header
+        mid = self.code.encode() + mid  # fully qualified mid with prefix code
         ml = len(memo)
 
         if self.curt:  # rend header parts in base2 instead of base64
@@ -1247,7 +1270,7 @@ class Memoer(hioing.Mixin):
             ns = 3 * ns // 4  # encoding b2 means head part sizes smaller by 3/4
             vs = 3 * vs // 4  # encoding b2 means head part sizes smaller by 3/4
             ss = 3 * ss // 4  # encoding b2 means head part sizes smaller by 3/4
-            fore = decodeB64(fore)
+            mid = decodeB64(mid)
             vid = decodeB64(vid)
 
         bs = (self.size - hs)  # max standard gram body size without neck
@@ -1277,7 +1300,7 @@ class Memoer(hioing.Mixin):
             else:
                 num = helping.intToB64b(gn, l=ns)  # num size must always be neck size
 
-            head = fore + vid + num
+            head = mid + vid + num
 
             if gn == 0:
                 gram = head + neck + memo[:bs-ns]  # copy slice past end just copies to end
