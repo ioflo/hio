@@ -11,7 +11,7 @@ import pytest
 from hio.help import helping
 from hio.base import doing, tyming
 from hio.core.memo import memoing
-from hio.core.memo import Versionage, Sizage, GramDex, Memoer
+from hio.core.memo import Versionage, Sizage, GramDex, SGDex, Memoer
 
 def test_memoer_class():
     """Test class attributes of Memoer class"""
@@ -42,13 +42,17 @@ def test_memoer_class():
         code[1] in 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234567890-_'
         assert hs > 0
         assert hs == cs + ms + vs + ss + ns
+        assert ms  # ms must not be empty
         ps = (3 - ((ms) % 3)) % 3  # net pad size for mid
         assert ps == (cs % 4)  #  combined code + mid size must lie on 24 bit boundary
         assert not vs % 4   # vid size must be on 24 bit boundary
         assert not ss % 4   # sig size must be on 24 bit boundary
-        assert not ns % 4   # neck (num or cnt) size must be on 24 bit boundary
-        assert not hs % 4   # head size must be on 24 bit boundary
+        assert ns and not ns % 4   # neck (num or cnt) size must be on 24 bit boundary
+        assert hs and not hs % 4   # head size must be on 24 bit boundary
+        if vs:
+            assert ss  # ss must not be empty if vs not empty
 
+    assert Memoer.Sodex == SGDex
     #assert Memoer.Bodes == {b'\xff\xf0': '__', b'\xff\xe0': '_-'}
 
     assert Memoer.MaxMemoSize == (2**32-1)  # absolute max memo payload size
@@ -70,6 +74,7 @@ def test_memoer_basic():
     # (code, mid, vid, sig, neck, head) part sizes
     assert peer.Sizes[peer.code] == (2, 22, 0, 0, 4, 28)  # cs ms vs ss ns hs
     assert peer.size == peer.MaxGramSize
+    assert not peer.verific
 
     peer.reopen()
     assert peer.opened == True
@@ -83,7 +88,7 @@ def test_memoer_basic():
     memo = "Hello There"
     dst = "beta"
     peer.memoit(memo, dst)
-    assert peer.txms[0] == ('Hello There', 'beta')
+    assert peer.txms[0] == ('Hello There', 'beta', None)
     peer.serviceTxMemos()
     assert not peer.txms
     m, d = peer.txgs[0]
@@ -118,7 +123,7 @@ def test_memoer_basic():
     memo = "See ya later!"
     dst = "beta"
     peer.memoit(memo, dst)
-    assert peer.txms[0] == ('See ya later!', 'beta')
+    assert peer.txms[0] == ('See ya later!', 'beta', None)
     peer.serviceTxMemos()
     assert not peer.txms
     m, d = peer.txgs[0]
@@ -155,7 +160,7 @@ def test_memoer_basic():
     memo = "Hello There"
     dst = "beta"
     peer.memoit(memo, dst)
-    assert peer.txms[0] == ('Hello There', 'beta')
+    assert peer.txms[0] == ('Hello There', 'beta', None)
     peer.serviceTxMemos()
     assert not peer.txms
     m, d = peer.txgs[0]
@@ -193,8 +198,8 @@ def test_memoer_basic():
     """ End Test """
 
 
-def test_memogram_small_gram_size():
-    """Test MemoGram class with small gram size
+def test_memoer_small_gram_size():
+    """Test Memoer class with small gram size
     """
     peer = memoing.Memoer(size=6)
     assert peer.name == "main"
@@ -205,6 +210,7 @@ def test_memogram_small_gram_size():
     # (code, mid, vid, sig, neck, head) part sizes
     assert peer.Sizes[peer.code] == (2, 22, 0, 0, 4, 28)  # cs ms vs ss ns hs
     assert peer.size == 33  # can't be smaller than head + neck + 1
+    assert not peer.verific
 
     peer = memoing.Memoer(size=38)
     assert peer.size == 38
@@ -220,7 +226,7 @@ def test_memogram_small_gram_size():
     memo = "Hello There"
     dst = "beta"
     peer.memoit(memo, dst)
-    assert peer.txms[0] == ('Hello There', 'beta')
+    assert peer.txms[0] == ('Hello There', 'beta', None)
     peer.serviceTxMemos()
     assert not peer.txms
     assert len(peer.txgs) == 2
@@ -263,7 +269,7 @@ def test_memogram_small_gram_size():
     memo = "See ya later!"
     dst = "beta"
     peer.memoit(memo, dst)
-    assert peer.txms[0] == ('See ya later!', 'beta')
+    assert peer.txms[0] == ('See ya later!', 'beta', None)
     peer.serviceTxMemos()
     assert not peer.txms
     assert len(peer.txgs) == 2
@@ -304,7 +310,7 @@ def test_memogram_small_gram_size():
     memo = 'See ya later alligator!'
     dst = "beta"
     peer.memoit(memo, dst)
-    assert peer.txms[0] == ('See ya later alligator!', 'beta')
+    assert peer.txms[0] == ('See ya later alligator!', 'beta', None)
     peer.serviceTxMemos()
     assert not peer.txms
     assert len(peer.txgs) == 2
@@ -365,6 +371,7 @@ def test_memoer_multiple():
     assert peer.bc == 4
     assert peer.code == memoing.GramDex.Basic == '__'
     assert not peer.curt
+    assert not peer.verific
 
     peer.reopen()
     assert peer.opened == True
@@ -435,6 +442,7 @@ def test_memoer_basic_signed():
     # (code, mid, vid, sig, neck, head) part sizes
     assert peer.Sizes[peer.code] == (2, 22, 44, 88, 4, 160)  # cs ms vs ss ns hs
     assert peer.size == peer.MaxGramSize
+    assert not peer.verific
 
     peer.reopen()
     assert peer.opened == True
@@ -447,8 +455,9 @@ def test_memoer_basic_signed():
 
     memo = "Hello There"
     dst = "beta"
-    peer.memoit(memo, dst)
-    assert peer.txms[0] == ('Hello There', 'beta')
+    vid = 'BKxy2sgzfplyr-tgwIxS19f2OchFHtLwPWD3v4oYimBx'
+    peer.memoit(memo, dst, vid)
+    assert peer.txms[0] == ('Hello There', 'beta', vid)
     peer.serviceTxMemos()
     assert not peer.txms
     g, d = peer.txgs[0]
@@ -466,7 +475,7 @@ def test_memoer_basic_signed():
     assert not peer.sources
     assert not peer.rxms
     mid = '_-ALBI68S1ZIxqwFOSWFF1L2'
-    vid = ('A' * 44)
+
     sig = ('A' * 88)
     gram = (mid + vid + 'AAAA' + 'AAAB' + "Hello There" + sig).encode()
     echo = (gram, "beta")
@@ -486,8 +495,9 @@ def test_memoer_basic_signed():
     # send and receive via echo
     memo = "See ya later!"
     dst = "beta"
-    peer.memoit(memo, dst)
-    assert peer.txms[0] == ('See ya later!', 'beta')
+    vid = 'BKxy2sgzfplyr-tgwIxS19f2OchFHtLwPWD3v4oYimBx'
+    peer.memoit(memo, dst, vid)
+    assert peer.txms[0] == ('See ya later!', 'beta', vid)
     peer.serviceTxMemos()
     assert not peer.txms
     g, d = peer.txgs[0]
@@ -524,8 +534,9 @@ def test_memoer_basic_signed():
     peer.curt = True  # set to binary base2
     memo = "Hello There"
     dst = "beta"
-    peer.memoit(memo, dst)
-    assert peer.txms[0] == ('Hello There', 'beta')
+    vid = 'BKxy2sgzfplyr-tgwIxS19f2OchFHtLwPWD3v4oYimBx'
+    peer.memoit(memo, dst, vid)
+    assert peer.txms[0] == ('Hello There', 'beta', vid)
     peer.serviceTxMemos()
     assert not peer.txms
     g, d = peer.txgs[0]
@@ -543,7 +554,7 @@ def test_memoer_basic_signed():
     assert not peer.sources
     assert not peer.rxms
     mid = '_-ALBI68S1ZIxqwFOSWFF1L2'
-    vid = ('A' * 44)
+    vid = 'BKxy2sgzfplyr-tgwIxS19f2OchFHtLwPWD3v4oYimBx'
     sig = ('A' * 88)
     head = decodeB64((mid + vid + 'AAAA' + 'AAAB').encode())
     tail = decodeB64(sig.encode())
@@ -578,14 +589,15 @@ def test_memoer_multiple_signed():
     assert peer.bc == 4
     assert peer.code == memoing.GramDex.Signed == '_-'
     assert not peer.curt
+    assert not peer.verific
 
     peer.reopen()
     assert peer.opened == True
 
     # send and receive multiple via echo
-    vid = ('A' * 44)
-    peer.memoit("Hello there.", "alpha")
-    peer.memoit("How ya doing?", "beta")
+    vid = 'BKxy2sgzfplyr-tgwIxS19f2OchFHtLwPWD3v4oYimBx'
+    peer.memoit("Hello there.", "alpha", vid)
+    peer.memoit("How ya doing?", "beta", vid)
     assert len(peer.txms) == 2
     peer.serviceTxMemos()
     assert not peer.txms
@@ -639,9 +651,9 @@ def test_memoer_multiple_signed():
     assert peer.size == 129
 
     # send and receive multiple via echo
-    vid = ('A' * 44)
-    peer.memoit("Hello there.", "alpha")
-    peer.memoit("How ya doing?", "beta")
+    vid = 'BKxy2sgzfplyr-tgwIxS19f2OchFHtLwPWD3v4oYimBx'
+    peer.memoit("Hello there.", "alpha", vid)
+    peer.memoit("How ya doing?", "beta", vid)
     assert len(peer.txms) == 2
     peer.serviceTxMemos()
     assert not peer.txms
@@ -694,6 +706,64 @@ def test_memoer_multiple_signed():
     """ End Test """
 
 
+def test_memoer_verific():
+    """Test Memoer class with verific (signed required)
+    """
+    peer = memoing.Memoer(verific=True)
+    assert peer.name == "main"
+    assert peer.opened == False
+    assert peer.bc == 4
+    assert peer.code == memoing.GramDex.Basic == '__'
+    assert not peer.curt
+    # (code, mid, vid, sig, neck, head) part sizes
+    assert peer.Sizes[peer.code] == (2, 22, 0, 0, 4, 28)  # cs ms vs ss ns hs
+    assert peer.size == peer.MaxGramSize
+    assert peer.verific
+
+    peer.reopen()
+    assert peer.opened == True
+
+    assert not peer.rxgs
+    assert not peer.counts
+    assert not peer.sources
+    assert not peer.rxms
+    mid = '__ALBI68S1ZIxqwFOSWFF1L2'  # not signed code
+    gram = (mid + 'AAAA' + 'AAAB' + "Hello There").encode()
+    echo = (gram, "beta")
+    peer.echos.append(echo)
+    peer.serviceReceives(echoic=True)
+    assert not peer.rxgs  # dropped gram
+    assert not peer.echos
+    assert not peer.rxms
+
+    assert not peer.rxgs
+    assert not peer.counts
+    assert not peer.sources
+    assert not peer.rxms
+    mid = '_-ALBI68S1ZIxqwFOSWFF1L2'
+    vid = 'BKxy2sgzfplyr-tgwIxS19f2OchFHtLwPWD3v4oYimBx'
+    sig = ('A' * 88)
+    gram = (mid + vid + 'AAAA' + 'AAAB' + "Hello There" + sig).encode()
+    echo = (gram, "beta")
+    peer.echos.append(echo)
+    peer.serviceReceives(echoic=True)
+    assert peer.rxgs[mid][0] == bytearray(b'Hello There')
+    assert peer.counts[mid] == 1
+    assert peer.sources[mid] == 'beta'
+    assert not peer.echos
+    peer.serviceRxGrams()
+    assert not peer.rxgs
+    assert not peer.counts
+    assert not peer.sources
+    assert peer.rxms[0] == ('Hello There', 'beta', vid)
+    peer.serviceRxMemos()
+    assert not peer.rxms
+
+    peer.close()
+    assert peer.opened == False
+    """ End Test """
+
+
 def test_open_memoer():
     """Test contextmanager decorator openMemoer
     """
@@ -708,8 +778,8 @@ def test_open_memoer():
     """ End Test """
 
 
-def test_memogram_doer():
-    """Test MemoGramDoer class
+def test_memoer_doer():
+    """Test MemoerDoer class
     """
     tock = 0.03125
     ticks = 4
@@ -735,8 +805,8 @@ def test_memogram_doer():
 
     """End Test """
 
-def test_tymeememogram_basic():
-    """Test TymeeMemoGram class basic
+def test_tymee_memoer_basic():
+    """Test TymeeMemoer class basic
     """
     peer = memoing.TymeeMemoer()
     assert peer.tymeout == 0.0
@@ -747,6 +817,7 @@ def test_tymeememogram_basic():
     # (code, mid, vid, neck, head, sig) part sizes
     assert peer.Sizes[peer.code] == (2, 22, 0, 0, 4, 28)  # cs ms vs ss ns hs
     assert peer.size == peer.MaxGramSize
+    assert not peer.verific
 
     peer.reopen()
     assert peer.opened == True
@@ -760,7 +831,7 @@ def test_tymeememogram_basic():
     memo = "Hello There"
     dst = "beta"
     peer.memoit(memo, dst)
-    assert peer.txms[0] == ('Hello There', 'beta')
+    assert peer.txms[0] == ('Hello There', 'beta', None)
     peer.serviceTxMemos()
     assert not peer.txms
     m, d = peer.txgs[0]
@@ -795,7 +866,7 @@ def test_tymeememogram_basic():
     memo = "See ya later!"
     dst = "beta"
     peer.memoit(memo, dst)
-    assert peer.txms[0] == ('See ya later!', 'beta')
+    assert peer.txms[0] == ('See ya later!', 'beta', None)
     peer.serviceTxMemos()
     assert not peer.txms
     m, d = peer.txgs[0]
@@ -831,7 +902,7 @@ def test_tymeememogram_basic():
     memo = "Hello There"
     dst = "beta"
     peer.memoit(memo, dst)
-    assert peer.txms[0] == ('Hello There', 'beta')
+    assert peer.txms[0] == ('Hello There', 'beta', None)
     peer.serviceTxMemos()
     assert not peer.txms
     m, d = peer.txgs[0]
@@ -891,8 +962,8 @@ def test_open_tm():
     """ End Test """
 
 
-def test_tymeememogram_doer():
-    """Test TymeeMemoGramDoer class
+def test_tymee_memoer_doer():
+    """Test TymeeMemoerDoer class
     """
     tock = 0.03125
     ticks = 4
@@ -931,13 +1002,14 @@ def test_tymeememogram_doer():
 if __name__ == "__main__":
     test_memoer_class()
     test_memoer_basic()
-    test_memogram_small_gram_size()
+    test_memoer_small_gram_size()
     test_memoer_multiple()
     test_memoer_basic_signed()
     test_memoer_multiple_signed()
+    test_memoer_verific()
     test_open_memoer()
-    test_memogram_doer()
-    test_tymeememogram_basic()
+    test_memoer_doer()
+    test_tymee_memoer_basic()
     test_open_tm()
-    test_tymeememogram_doer()
+    test_tymee_memoer_doer()
 

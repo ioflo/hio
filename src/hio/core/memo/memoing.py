@@ -437,6 +437,21 @@ class GramCodex:
 
 GramDex = GramCodex()  # Make instance
 
+@dataclass(frozen=True)
+class SignGramCodex:
+    """
+    SignGramCodex is codex of all Signed Gram Codes.
+    Only provide defined codes.
+    Undefined are left out so that inclusion(exclusion) via 'in' operator works.
+    """
+    Signed:    str = '_-'  # Basic gram code for signed overhead parts
+
+    def __iter__(self):
+        return iter(astuple(self))
+
+
+SGDex = SignGramCodex()  # Make instance
+
 
 class Memoer(hioing.Mixin):
     """
@@ -498,6 +513,7 @@ class Memoer(hioing.Mixin):
         Codex (GramDex): dataclass ref to gram codex
         Codes (dict): maps codex names to codex values
         Names (dict): maps codex values to codex names
+        Sodex (SGDex): dataclass ref to signed gram codex
         Sizes (dict): gram head part sizes Sizage instances keyed by gram codes
         MaxMemoSize (int): absolute max memo size
         MaxGramCount (int): absolute max gram count
@@ -533,8 +549,11 @@ class Memoer(hioing.Mixin):
                 (memo: str, src: str, vid: str) where:
                 memo is fused memo, src is source addr, vid is verification ID
         txms (deque): holding tx (transmit) memo tuples to be segmented into
-                txgs grams where each entry in deque is duple of form
-                (memo: str, dst: str)
+                txgs grams where each entry in deque is tuple of form
+                (memo: str, dst: str, vid: str | None)
+                memo is memo to be partitioned into gram
+                dst is dst addr for grams
+                vid is verification id when gram is to be signed or None otherwise
         txgs (deque): grams to transmit, each entry is duple of form:
                 (gram: bytes, dst: str).
         txbs (tuple): current transmisstion duple of form:
@@ -550,6 +569,7 @@ class Memoer(hioing.Mixin):
         _code (bytes | None): see size property
         _curt (bool): see curt property
         _size (int): see size property
+        _verific (bool): see verific property
 
 
 
@@ -563,6 +583,8 @@ class Memoer(hioing.Mixin):
             Min gram body size is one.
             Gram size also limited by MaxGramSize and MaxGramCount relative to
             MaxMemoSize.
+        verific (bool): True means any rx grams must be signed.
+                        False otherwise
 
 
     """
@@ -570,6 +592,7 @@ class Memoer(hioing.Mixin):
     Codex = GramDex
     Codes = asdict(Codex)  # map code name to code
     Names = {val : key for key, val in Codes.items()} # invert map code to code name
+    Sodex = SGDex  # signed gram codex
     # dict of gram header part sizes keyed by gram codes: cs ms vs ss ns hs
     Sizes = {
                 '__': Sizage(cs=2, ms=22, vs=0, ss=0, ns=4, hs=28),
@@ -596,6 +619,7 @@ class Memoer(hioing.Mixin):
                  code=GramDex.Basic,
                  curt=False,
                  size=None,
+                 verific=False,
                  **kwa
                 ):
         """Setup instance
@@ -629,9 +653,12 @@ class Memoer(hioing.Mixin):
                 each entry in deque is tuple of form:
                 (memo: str, src: str, vid: str) where:
                 memo is fused memo, src is source addr, vid is verification ID
-            txms (deque): holding tx (transmit) memo tuples to be partitioned into
-                txgs grams where each entry in deque is duple of form
-                (memo: str, dst: str)
+            txms (deque): holding tx (transmit) memo tuples to be segmented into
+                txgs grams where each entry in deque is tuple of form
+                (memo: str, dst: str, vid: str | None)
+                memo is memo to be partitioned into gram
+                dst is dst addr for grams
+                vid is verification id when gram is to be signed or None otherwise
             txgs (deque): grams to transmit, each entry is duple of form:
                 (gram: bytes, dst: str). Grams include gram headers.
             txbs (tuple): current transmisstion duple of form:
@@ -648,6 +675,8 @@ class Memoer(hioing.Mixin):
                 Min gram body size is one.
                 Gram size also limited by MaxGramSize and MaxGramCount relative to
                 MaxMemoSize.
+            verific (bool): True means any rx grams must be signed.
+                            False otherwise
         """
 
         # initialize attributes
@@ -667,6 +696,7 @@ class Memoer(hioing.Mixin):
         self.code = code
         self.curt = curt
         self.size = size  # property sets size given .code and constraints
+        self._verific = True if verific else False
 
         super(Memoer, self).__init__(name=name, bc=bc, **kwa)
 
@@ -689,6 +719,7 @@ class Memoer(hioing.Mixin):
         """
         return self._code
 
+
     @code.setter
     def code(self, code):
         """Property setter for ._code
@@ -703,6 +734,7 @@ class Memoer(hioing.Mixin):
         if hasattr(self, "_size"):
             self.size = self._size  # refresh size given new code
 
+
     @property
     def curt(self):
         """Property getter for ._curt
@@ -712,6 +744,7 @@ class Memoer(hioing.Mixin):
                          False means when rending for tx encode header in base64
         """
         return self._curt
+
 
     @curt.setter
     def curt(self, curt):
@@ -724,6 +757,7 @@ class Memoer(hioing.Mixin):
         self._curt = curt
         if hasattr(self, "_size"):
             self.size = self._size  # refresh size given new curt
+
 
     @property
     def size(self):
@@ -738,6 +772,7 @@ class Memoer(hioing.Mixin):
                         relative to MaxMemoSize.
         """
         return self._size
+
 
     @size.setter
     def size(self, size):
@@ -755,6 +790,17 @@ class Memoer(hioing.Mixin):
 
         # mininum size must be big enough for first gram header and 1 body byte
         self._size = max(min(size, self.MaxGramSize), hs + ns + 1)
+
+
+    @property
+    def verific(self):
+        """Property getter for ._verific
+
+        Returns:
+            verific (bool): True means any rx grams must be signed.
+                            False otherwise
+        """
+        return self._verific
 
 
     def open(self):
@@ -885,6 +931,10 @@ class Memoer(hioing.Mixin):
                 raise hioing.MemoerError(f"Gram length={len(gram)} to short to "
                                          f"hold code.")
             code = helping.codeB2ToB64(gram, 2)  # assumes len(code) must be 2
+            if self.verific and code not in self.Sodex:  # must be signed
+                raise hioing.MemoerError(f"Unsigned gram {code =} when signed "
+                                         f"required.")
+
             cs, ms, vs, ss, ns, hs = self.Sizes[code]  # cs ms vs ss ns hs
             ps = (3 - ((ms) % 3)) % 3  # net pad size for mid
             cms = 3 * (cs + ms) // 4  # cs + ms are aligned on 24 bit boundary
@@ -923,6 +973,9 @@ class Memoer(hioing.Mixin):
                 raise hioing.MemoerError(f"Gram length={len(gram)} to short to "
                                          f"hold code.")
             code = gram[:2].decode()  # assumes len(code) must be 2
+            if self.verific and code not in self.Sodex:  # must be signed
+                raise hioing.MemoerError(f"Unsigned gram {code =} when signed "
+                                         f"required.")
             cs, ms, vs, ss, ns, hs = self.Sizes[code]  # cs ms vs ss ns hs
 
             if len(gram) < (hs + 1):  # not big enough for non-first gram
@@ -1020,10 +1073,10 @@ class Memoer(hioing.Mixin):
                                #errno.ENOMEM)):
                 #return False  # no received data
             #else:
-            raise
+            raise  # should not happen
 
         if not gram:  # no received data
-            return False
+            return False  # so try again later
 
         gram = bytearray(gram)# make copy bytearray so can strip off header
 
@@ -1031,7 +1084,7 @@ class Memoer(hioing.Mixin):
             mid, vid, gn, gc = self.pick(gram)  # parse and strip off head leaving body
         except hioing.MemoerError as ex: # invalid gram so drop
             logger.error("Unrecognized Memoer gram from %s.\n %s.", src, ex)
-            return True  # did receive data to can keep receiving
+            return True  # did receive data so can try again now
 
         if mid not in self.rxgs:
             self.rxgs[mid] = dict()
@@ -1052,7 +1105,7 @@ class Memoer(hioing.Mixin):
         if mid not in self.sources:  # make idempotent first only no replay
             self.sources[mid] = src  # save source for later
 
-        return True  # received valid
+        return True  # received valid so can try again now
 
 
     def serviceReceivesOnce(self, *, echoic=False):
@@ -1211,14 +1264,15 @@ class Memoer(hioing.Mixin):
 
 
 
-    def memoit(self, memo, dst):
-        """Append (memo, dst) duple to .txms deque
+    def memoit(self, memo, dst, vid=None):
+        """Append (memo, dst, vid) tuple to .txms deque
 
         Parameters:
             memo (str): to be segmented and packed into gram(s)
             dst (str): address of remote destination of memo
+            vid (str | None): verifiable ID for signing grams
         """
-        self.txms.append((memo, dst))
+        self.txms.append((memo, dst, vid))
 
 
     def sign(self, ser, vid):
@@ -1240,7 +1294,7 @@ class Memoer(hioing.Mixin):
         return b'A' * ss
 
 
-    def rend(self, memo, *, vid=None):
+    def rend(self, memo, vid=None):
         """Partition memo into packed grams with headers.
 
         Returns:
@@ -1248,7 +1302,8 @@ class Memoer(hioing.Mixin):
 
         Parameters:
             memo (str): to be partitioned into grams with headers
-            vid (str)
+            vid (str | None): verification ID when gram is to be signed.
+                              None means not signable
 
         Note first gram has head + neck overhead, hs + ns so bs is smaller by ns
              non-first grams have just head overhead hs so bs is bigger by ns
@@ -1258,7 +1313,10 @@ class Memoer(hioing.Mixin):
         # self.size is max gram size
         cs, ms, vs, ss, ns, hs = self.Sizes[self.code]  # cs ms vs ss ns hs
         ps = (3 - ((ms) % 3)) % 3  # net pad size for mid
-        vid = vid if vid is not None else b'A' * vs
+        if vs and (not vid or len(vid) != vs):
+            raise hioing.MemoerError(f"Invalid {vid=} for size={vs}.")
+
+        vid = b"" if vid is None else vid[:vs].encode()
 
         # memo ID is 16 byte random UUID converted to 22 char Base64 right aligned
         mid = encodeB64(bytes([0] * ps) + uuid.uuid4().bytes)[ps:] # prepad, convert, and strip
@@ -1323,17 +1381,21 @@ class Memoer(hioing.Mixin):
 
 
     def _serviceOneTxMemo(self):
-        """Service one (memo, dst) duple from .txms deque where duple is of form
-            (memo: str, dst: str) where:
+        """Service one (memo, dst, vid) tuple from .txms deque where tuple is
+        of form: (memo: str, dst: str, vid: str) where:
                 memo is outgoing memo
                 dst is destination address
-        Calls .rent method to process the partitioning and packing as
-        appropriate to convert memo into grams with headers.
-        Appends duples of (gram, dst) from grams to .txgs deque.
-        """
-        memo, dst = self.txms.popleft()  # raises IndexError if empty deque
+                vid is verification ID
 
-        for gram in self.rend(memo):  # partition memo into gram parts with head
+        Calls .rend method to process the partitioning and packing as
+        appropriate to convert memo into grams with headers and sign when
+        indicated.
+
+        Appends (gram, dst) duple to .txgs deque.
+        """
+        memo, dst, vid = self.txms.popleft()  # raises IndexError if empty deque
+
+        for gram in self.rend(memo, vid):  # partition memo into gram parts with head
             self.txgs.append((gram, dst))  # append duples (gram: bytes, dst: str)
 
 
