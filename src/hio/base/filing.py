@@ -116,13 +116,13 @@ class Filer(hioing.Mixin):
     HeadDirPath = os.path.join(os.path.sep, 'usr', 'local', 'var')  # default in /usr/local/var
     TailDirPath = "hio"
     os.path.join(os.path.sep, 'usr', 'local', 'var')
-    CleanTailDirPath = "hio" + os.path.sep + "clean"
+    CleanTailDirPath = os.path.join("hio", "clean")
 
 
     AltHeadDirPath = os.path.expanduser("~")  # put in ~ as fallback when desired not permitted
     AltTailDirPath = ".hio"
-    AltCleanTailDirPath = ".hio" + os.path.sep + "clean"
-    TempHeadDir = os.path.sep + "tmp"
+    AltCleanTailDirPath = os.path.join(".hio", "clean")
+    TempHeadDir = os.path.join(os.path.sep, "tmp")
     TempPrefix = "hio_"
     TempSuffix = "_test"
     Perm = stat.S_ISVTX | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR  # 0o1700==960

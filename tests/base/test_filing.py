@@ -140,25 +140,16 @@ def test_filing():
         shutil.rmtree(dirpath)
 
     headDirPath = os.path.join(os.path.sep, 'root', 'hio')
+    if platform.system() == 'Windows':
+        headDirPath = os.path.join(headDirPath, 'hio')
 
-    # Compute the target path that Filer will attempt to create.
-    expectedPath = os.path.abspath(os.path.join(headDirPath, filing.Filer.TailDirPath, "test"))
-
-    # Save the original os.makedirs function.
-    originalMakedirs = os.makedirs
-
-    def conditionalMakedirs(path, *args, **kwargs):
-        # Check if the path being created matches the expected path
-        if os.path.abspath(path) == expectedPath:
-            raise OSError("Permission denied")
-        return originalMakedirs(path, *args, **kwargs)
 
     # headDirPath that is not permitted to force using AltPath
     filer = filing.Filer(name="test", headDirPath=headDirPath, reopen=False)
     assert filer.exists(name="test", headDirPath=headDirPath) is False
 
-    with mock.patch("os.makedirs", side_effect=conditionalMakedirs) as mocked_makedirs:
-        filer = filing.Filer(name="test", headDirPath=headDirPath, reopen=True)
+
+    filer = filing.Filer(name="test", headDirPath=headDirPath, reopen=True)
 
     assert filer.exists(name="test", headDirPath=headDirPath) is True
     assert filer.path.endswith(os.path.join(".hio", "test"))

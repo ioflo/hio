@@ -82,7 +82,7 @@ class WireLog():
 
     TailDirPath = "wirelogs"
     AltHeadDirPath = "~"  #  put in ~ as fallback when desired dir not permitted
-    TempHeadDir = os.path.sep + "tmp"
+    TempHeadDir = os.path.join(os.path.sep, "tmp")
     TempPrefix = "test_"
     TempSuffix = "_temp"
     Format = b'\n%(dx)b %(who)b:\n%(data)b\n'  # default format string as bytes

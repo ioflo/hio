@@ -5,6 +5,7 @@ hio.core.coring Module
 
 import subprocess
 import socket
+import platform
 
 #import netifaces  # netifaces2
 
@@ -20,6 +21,8 @@ def normalizeHost(host):
     """
     if host == "":
         host = "0.0.0.0"
+        if platform.system() == "Windows":
+            host = "127.0.0.1"
 
     try:  # try ipv4
         info =  socket.getaddrinfo(host,
@@ -28,7 +31,7 @@ def normalizeHost(host):
                                    socket.SOCK_DGRAM,
                                    socket.IPPROTO_IP, 0)
     except socket.gaierror as ex: # try ipv6
-        if host in ("", "0.0.0.0"):
+        if host in ("", "0.0.0.0", "127.0.0.1"):
             host = "::"
 
         info =  socket.getaddrinfo(host,

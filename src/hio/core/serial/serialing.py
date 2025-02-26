@@ -7,6 +7,7 @@ from __future__ import absolute_import, division, print_function
 import sys
 import os
 import errno
+import platform
 from collections import deque
 
 
@@ -87,12 +88,30 @@ class Console():
 
         To debug use os.isatty(fd) which returns True if the file descriptor
         fd is open and connected to a tty-like device, else False.
+        
+        On UNIX/macOS systems uses os.ctermid() to get console
+        On Windows systems uses console directly via msvcrt
         """
         if not port:
-            port = os.ctermid()  # default to console
+            system = platform.system()
+            if system == 'Windows':
+                # Windows doesn't need a specific port for console access via msvcrt
+                port = None
+            else:
+                # Unix/macOS use ctermid
+                port = os.ctermid()  # default to console
 
         try:
-            self.fd = os.open(port, os.O_NONBLOCK | os.O_RDWR | os.O_NOCTTY)
+            if platform.system() == 'Windows':
+                # Windows handling through msvcrt
+                import msvcrt
+                # For Windows, we'll use stdin/stdout file descriptors
+                # and rely on msvcrt for non-blocking operations
+                self.fd = 0  # Use 0 as a placeholder value for Windows console
+                # No specific open operation needed for Windows console via msvcrt
+            else:
+                # Unix/macOS handling
+                self.fd = os.open(port, os.O_NONBLOCK | os.O_RDWR | os.O_NOCTTY)
         except OSError as ex:
             logger.error("Error opening console serial port, %s\n", ex)
             return False
@@ -115,7 +134,7 @@ class Console():
         """
         if self.fd:
             os.close(self.fd)
-            self.fd = None
+        self.fd = None
         del self.rxbs[:]
         self.opened = False
 
@@ -124,7 +143,16 @@ class Console():
         """
         Writes data bytes to console and return number of bytes from data written.
         """
-        return (os.write(self.fd, data))  # returns number of bytes written
+        if platform.system() == 'Windows':
+            # Windows-specific console output
+            import msvcrt
+            # Write bytes to stdout
+            for b in data:
+                msvcrt.putch(bytes([b]))
+            return len(data)
+        else:
+            # Unix/macOS
+            return os.write(self.fd, data)  # returns number of bytes written
 
 
     def get(self, bs=None):
@@ -142,8 +170,19 @@ class Console():
         """
         bs = bs if bs is not None else self.bs
         line = bytearray()
+        
         try:
-            self.rxbs.extend(os.read(self.fd, bs))
+            if platform.system() == 'Windows':
+                # Windows-specific non-blocking read using msvcrt
+                import msvcrt
+                # Check if any keys are available
+                while msvcrt.kbhit():
+                    # Read a character and add it to our buffer
+                    char = msvcrt.getch()
+                    self.rxbs.extend(char)
+            else:
+                # Unix/macOS non-blocking read
+                self.rxbs.extend(os.read(self.fd, bs))
         except OSError as ex1:  # if no chars available generates exception
             # ex.args[0] == ex.errno for better os compatibility
             # the value of a given errno.XXXXX may be different on each os
@@ -156,11 +195,14 @@ class Console():
                               " '%s'\n", self.fd, ex1)
                 raise  # re-raise exception ex1
 
-
-        else:
-            if (idx := self.rxbs.find(ord(b'\n'))) != -1:
-                line.extend(self.rxbs[:idx])  # copy all but newline
-                del self.rxbs[:idx+1]  # delete including newline
+        # Process any complete lines in the buffer
+        if (idx := self.rxbs.find(ord(b'\n'))) != -1:
+            line.extend(self.rxbs[:idx])  # copy all but newline
+            del self.rxbs[:idx+1]  # delete including newline
+        elif platform.system() == 'Windows' and (idx := self.rxbs.find(ord(b'\r'))) != -1:
+            # On Windows, handle CR as line terminator too
+            line.extend(self.rxbs[:idx])  # copy all but CR
+            del self.rxbs[:idx+1]  # delete including CR
 
         return line
 
@@ -169,28 +211,15 @@ class Console():
         """
         Service puts and gets
         """
+        # Just get any available data to process it
+        self.get()
 
 
 class ConsoleDoer(doing.Doer):
-    """
-    Basic Console Doer. Wraps console in doer context so opens and closes console
 
-    To test in WingIde must configure Debug I/O to use external console
-    See Doer for inherited attributes, properties, and methods.
-
-    Attributes:
-       .console is serial Console instance
-
-    """
 
     def __init__(self, console, **kwa):
-        """
-        Initialize instance.
 
-        Parameters:
-           console is serial Console instance
-
-        """
         super(ConsoleDoer, self).__init__(**kwa)
         self.console = console
 
@@ -296,7 +325,6 @@ class Device():
     Use instance methods get & put to read & write to serial device
     Needs os module
     """
-
     def __init__(self, port=None, speed=9600, bs=1024):
         """
         Initialization method for instance.
@@ -306,7 +334,15 @@ class Device():
         bs = buffer size for reads
         """
         self.fd = None  # serial device port file descriptor, must be opened first
-        self.port = port or os.ctermid() #default to console
+        self.port = port
+        
+        if not self.port:
+            system = platform.system()
+            if system == 'Windows':
+                self.port = 'COM1'  # Default Windows serial port
+            else:
+                self.port = os.ctermid()  # Default to console on Unix/macOS
+                
         self.speed = speed or 9600
         self.bs = bs or 1024
         self.opened = False
@@ -372,9 +408,27 @@ class Device():
         if bs is not None:
             self.bs = bs
 
-        self.fd = os.open(self.port, os.O_NONBLOCK | os.O_RDWR | os.O_NOCTTY)
-
         system = platform.system()
+        
+        if system == 'Windows':
+            try:
+                # Try to use pyserial for COM ports on Windows for better handling
+                import serial
+                self._serial = serial.Serial(port=self.port,
+                                        baudrate=self.speed,
+                                        timeout=0)
+                # Placeholder for fd
+                self.fd = 0
+            except ImportError:
+                # Fall back to basic file operations if pyserial is not available
+                self.fd = os.open(self.port, os.O_RDWR | os.O_BINARY)
+                import msvcrt
+                msvcrt.setmode(self.fd, os.O_BINARY)
+                self._serial = None
+        else:
+            # Unix/macOS handling
+            self.fd = os.open(self.port, os.O_NONBLOCK | os.O_RDWR | os.O_NOCTTY)
+            self._serial = None
 
         if (system == 'Darwin') or (system == 'Linux'):  # use termios to set values
             import termios
@@ -419,12 +473,17 @@ class Device():
     def close(self):
         """
         Closes fd.
-
         """
-        if self.fd:
+        if self._serial:
+            self._serial.close()
+            self._serial = None
+        
+        if self.fd and platform.system() != 'Windows' or not self._serial:
+            # Close fd if not Windows or if we didn't use pyserial
             os.close(self.fd)
-            self.fd = None
-            self.opened = False
+        
+        self.fd = None
+        self.opened = False
 
 
     def receive(self):
@@ -435,13 +494,28 @@ class Device():
         """
         data = b''
         try:
-            data = os.read(self.fd, self.bs)  #if no chars available generates exception
+            if platform.system() == 'Windows':
+                if self._serial:
+                    # Use pyserial if available
+                    data = self._serial.read(self.bs)
+                else:
+                    # Fall back to msvcrt for console
+                    import msvcrt
+                    if msvcrt.kbhit():
+                        char = msvcrt.getch()
+                        data = char
+                    else:
+                        data = os.read(self.fd, self.bs)
+            else:
+                # Unix/macOS read
+                data = os.read(self.fd, self.bs)  #if no chars available generates exception
         except OSError as ex1:  # ex1 is the target instance of the exception
-            if ex1.errno == errno.EAGAIN: #BSD 35, Linux 11
+            # BSD 35, Linux 11
+            if ex1.errno == errno.EAGAIN or (platform.system() == 'Windows' and ex1.errno == errno.EWOULDBLOCK):
                 pass #No characters available
             else:
                 logger.error("Error: Receive on Device '%s'."
-                              " '%s'\n", self.port, ex)
+                              " '%s'\n", self.port, ex1)
                 raise #re raise exception ex1
 
         return data
@@ -452,27 +526,24 @@ class Device():
         Returns number of bytes sent
         """
         try:
-            count = os.write(self.fd, data)
+            if platform.system() == 'Windows' and self._serial:
+                # Use pyserial if available
+                count = self._serial.write(data)
+            else:
+                count = os.write(self.fd, data)
         except OSError as ex1:  # ex1 is the target instance of the exception
-            if ex1.errno == errno.EAGAIN:  # BSD 35, Linux 11
+            # BSD 35, Linux 11
+            if ex1.errno == errno.EAGAIN or (platform.system() == 'Windows' and ex1.errno == errno.EWOULDBLOCK):
                 count = 0  # buffer full can't write
             else:
                 logger.error("Error: Send on Device '%s'."
-                              " '%s'\n", self.port, ex)
+                              " '%s'\n", self.port, ex1)
                 raise #re raise exception ex1
 
         return count
 
 
 class Serial():
-    """
-    Class to manage non blocking IO on serial device port using pyserial
-
-    Opens non blocking read file descriptor on serial port
-    Use instance method close to close file descriptor
-    Use instance methods get & put to read & write to serial device
-    Needs os module
-    """
 
     def __init__(self, port=None, speed=9600, bs=1024):
         """
@@ -485,7 +556,15 @@ class Serial():
 
         """
         self.serial = None  # Serial instance
-        self.port = port or os.ctermid() #default to console
+        self.port = port
+        
+        if not self.port:
+            system = platform.system()
+            if system == 'Windows':
+                self.port = 'COM1'  # Default Windows serial port
+            else:
+                self.port = os.ctermid()  # Default to console on Unix/macOS
+                
         self.speed = speed or 9600
         self.bs = bs or 1024
         self.opened = False
@@ -540,11 +619,12 @@ class Serial():
         try:
             data = self.serial.read(self.bs)  #if no chars available generates exception
         except OSError as ex1:  # ex1 is the target instance of the exception
-            if ex1.errno == errno.EAGAIN: #BSD 35, Linux 11
+            # BSD 35, Linux 11
+            if ex1.errno == errno.EAGAIN or (platform.system() == 'Windows' and ex1.errno == errno.EWOULDBLOCK):
                 pass #No characters available
             else:
                 logger.error("Error: Receive on Serial '%s'."
-                              " '%s'\n", self.port, ex)
+                              " '%s'\n", self.port, ex1)
                 raise #re raise exception ex1
 
         return data
@@ -557,11 +637,12 @@ class Serial():
         try:
             count = self.serial.write(data)
         except OSError as ex1:  # ex1 is the target instance of the exception
-            if ex1.errno == errno.EAGAIN: #BSD 35, Linux 11
+            # BSD 35, Linux 11
+            if ex1.errno == errno.EAGAIN or (platform.system() == 'Windows' and ex1.errno == errno.EWOULDBLOCK):
                 count = 0  # buffer full can't write
             else:
                 logger.error("Error: Send on Serial '%s'."
-                              " '%s'\n", self.port, ex)
+                              " '%s'\n", self.port, ex1)
                 raise #re raise exception ex1
 
         return count
