@@ -35,7 +35,7 @@ class PeerMemoer(Peer, Memoer):
     """
 
 
-    def __init__(self, *, bc=64, **kwa):
+    def __init__(self, *, bc=4, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:

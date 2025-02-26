@@ -26,7 +26,7 @@ def test_memoer_peer_basic():
     assert alpha.Sizes[alpha.code] == (2, 22, 0, 0, 4, 28)  # cs ms vs ss ns hs
     assert alpha.size == 38
 
-    assert alpha.bc == 64
+    assert alpha.bc == 4
     assert not alpha.opened
     assert alpha.reopen()
     assert alpha.opened
