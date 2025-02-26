@@ -44,7 +44,7 @@ from setuptools import setup
 
 setup(
     name='hio',
-    version='0.6.14',  #  also change in src/hio/__init__.py
+    version='0.6.16',  #  also change in src/hio/__init__.py
     license='Apache Software License 2.0',
     description='Hierarchical Concurrency with Async IO',
     long_description=("HIO Hierarchical Concurrency and Asynchronous IO Library. "
@@ -66,7 +66,7 @@ setup(
         'Operating System :: Unix',
         'Operating System :: POSIX',
         'Operating System :: Microsoft :: Windows',
-        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.13',
         'Programming Language :: Python :: Implementation :: CPython',
         # uncomment if you test on these interpreters:
         #'Programming Language :: Python :: Implementation :: PyPy',
@@ -86,13 +86,13 @@ setup(
                "structured concurrency",
         # eg: 'keyword1', 'keyword2', 'keyword3',
     ],
-    python_requires='>=3.12.2',
+    python_requires='>=3.13.1',
     install_requires=[
-        'lmdb>=1.4.1',
-        'msgpack>=1.0.8',
-        'cbor2>=5.6.2',
-        'multidict>=6.0.5',
-        'falcon>=3.1.3',
+        'lmdb>=1.6.2',
+        'msgpack>=1.1.0',
+        'cbor2>=5.6.5',
+        'multidict>=6.1.0',
+        'falcon>=4.0.2',
         'ordered-set>=4.1.0',
 
     ],
@@ -102,8 +102,8 @@ setup(
         #   ':python_version=="2.6"': ['argparse'],
     },
     tests_require=[
-                    'coverage>=7.4.4',
-                    'pytest>=8.1.1',
+                    'coverage>=7.6.10',
+                    'pytest>=8.3.4',
                   ],
     setup_requires=[
     ],

@@ -13,7 +13,7 @@ class Deck(deque):
     Extends deque to support deque access convenience methods .push and .pull
     to remove confusion  about which side of the deque to use (left or right).
 
-    Extends deque with .push an .pull methods to support a different pattern for
+    Extends deque with .push and .pull methods to support a different pattern for
     access. .push does not allow  a value of None to be added to the Deck. This
     enables retrieval  with .pull(emptive=True) which returns None when empty
     instead of raising IndexError. This allows use of the walrus operator on
@@ -21,10 +21,19 @@ class Deck(deque):
 
     deck.extend([False, "", []])  # falsy elements but not None
     stuff = []
+    if x := deck.pull(emptive=True)) is not None:
+        stuff.append(x)  # do something with x
+    assert stuff == [False]
+
+
+    deck.extend([False, "", []])  # falsy elements but not None
+    stuff = []
     while (x := deck.pull(emptive=True)) is not None:
         stuff.append(x)
     assert stuff == [False, "", []]
     assert not deck
+
+
 
     Local methods:
     .push(x) = add x if x is not None to the right side of deque (like append)

@@ -11,6 +11,7 @@ import os
 import tempfile
 import shutil
 
+from hio import hioing
 from hio.base import tyming, doing
 from hio.core import wiring
 from hio.core.uxd import uxding
@@ -22,12 +23,13 @@ def test_uxd_basic():
     """
     tymist = tyming.Tymist()
     with (wiring.openWL(samed=True, filed=True) as wl):
-
-        alpha = uxding.Peer(name="alpha", temp=True, umask=0o077, wl=wl)
+        bc = 4
+        alpha = uxding.Peer(name="alpha", temp=True, umask=0o077, bc=bc, wl=wl)
         assert not alpha.opened
         assert alpha.reopen()
         assert alpha.opened
         assert alpha.path.endswith("alpha.uxd")
+        #assert alpha.actualBufSizes() == (4194240, 4194240) == (bc * alpha.MaxGramSize, bc * alpha.MaxGramSize)
 
         beta = uxding.Peer(name="beta", temp=True, umask=0o077)
         assert beta.reopen()
@@ -156,6 +158,7 @@ def test_open_peer():
 
         assert alpha.opened
         assert alpha.path.endswith("alpha.uxd")
+        #assert alpha.actualBufSizes() == (65535, 65535) == (alpha.BufSize, alpha.BufSize)
 
         assert beta.opened
         assert beta.path.endswith("beta.uxd")
@@ -265,6 +268,17 @@ def test_open_peer():
 
     """Done Test"""
 
+def test_uxd_path_len():
+    """ Test the uxd path length
+
+    """
+    with pytest.raises(hioing.SizeError):
+        name = "alpha" * 25
+        assert len(name) > uxding.Peer.MaxUxdPathSize
+        alpha = uxding.Peer(name=name, temp=True, reopen=True)
+    """Done Test"""
+
+
 def test_peer_doer():
     """
     Test PeerDoer class
@@ -304,4 +318,5 @@ def test_peer_doer():
 if __name__ == "__main__":
     test_uxd_basic()
     test_open_peer()
+    test_uxd_path_len()
     test_peer_doer()
