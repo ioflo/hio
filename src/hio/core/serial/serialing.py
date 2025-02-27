@@ -214,10 +214,25 @@ class Console():
 
 
 class ConsoleDoer(doing.Doer):
+    """
+    Basic Console Doer. Wraps console in doer context so opens and closes console
 
+    To test in WingIde must configure Debug I/O to use external console
+    See Doer for inherited attributes, properties, and methods.
+
+    Attributes:
+       .console is serial Console instance
+
+    """
 
     def __init__(self, console, **kwa):
+        """
+        Initialize instance.
 
+        Parameters:
+           console is serial Console instance
+
+        """
         super(ConsoleDoer, self).__init__(**kwa)
         self.console = console
 
@@ -542,7 +557,14 @@ class Device():
 
 
 class Serial():
+    """
+    Class to manage non blocking IO on serial device port using pyserial
 
+    Opens non blocking read file descriptor on serial port
+    Use instance method close to close file descriptor
+    Use instance methods get & put to read & write to serial device
+    Needs os module
+    """
     def __init__(self, port=None, speed=9600, bs=1024):
         """
         Initialization method for instance.
