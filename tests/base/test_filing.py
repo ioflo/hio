@@ -163,8 +163,7 @@ def test_filing():
     assert filer.path.endswith(os.path.join(".hio", "test"))
     assert os.path.exists(filer.path)
 
-    with mock.patch("os.makedirs", side_effect=conditionalMakedirs) as mocked_makedirs:
-        filer.reopen()  # reuse False so remake
+    filer.reopen()  # reuse False so remake
     assert filer.opened
     assert filer.path.endswith(os.path.join(".hio", "test"))
     assert os.path.exists(filer.path)
@@ -174,14 +173,12 @@ def test_filing():
     assert filer.path.endswith(os.path.join(".hio", "test"))
     assert os.path.exists(filer.path)
 
-    with mock.patch("os.makedirs", side_effect=conditionalMakedirs) as mocked_makedirs:
-        filer.reopen(reuse=True, clear=True)  # clear True so remake even if reuse
+    filer.reopen(reuse=True, clear=True)  # clear True so remake even if reuse
     assert filer.opened
     assert filer.path.endswith(os.path.join(".hio", "test"))
     assert os.path.exists(filer.path)
 
-    with mock.patch("os.makedirs", side_effect=conditionalMakedirs) as mocked_makedirs:
-        filer.reopen(clear=True)  # clear True so remake
+    filer.reopen(clear=True)  # clear True so remake
     assert filer.opened
     assert filer.path.endswith(os.path.join(".hio", "test"))
     assert os.path.exists(filer.path)
@@ -250,24 +247,12 @@ def test_filing():
         os.remove(filepath)
 
     headDirPath = os.path.join(os.path.sep, 'root', 'hio')
-    expectedPath = os.path.abspath(os.path.join(headDirPath, filing.Filer.TailDirPath, "conf"))
-    print(expectedPath)
-    print(headDirPath)
-    originalMakedirs = os.makedirs
-    def conditionalMakedir(path, *args, **kwargs):
-        # Check if the path being created matches the expected path
-        print(os.path.abspath(path))
-        if os.path.abspath(path) == expectedPath:
-            raise OSError("Permission denied")
-        return originalMakedirs(path, *args, **kwargs)
 
     # force altPath by using headDirPath of "/root/hio" which is not permitted
-    with mock.patch("os.makedirs", side_effect=conditionalMakedir) as mocked_makedirs:
-        filer = filing.Filer(name="test", base="conf", headDirPath=headDirPath, filed=True, reopen=False)
+    filer = filing.Filer(name="test", base="conf", headDirPath=headDirPath, filed=True, reopen=False)
     assert filer.exists(name="test", base="conf", headDirPath=headDirPath, filed=True) is False
 
-    with mock.patch("os.makedirs", side_effect=conditionalMakedir) as mocked_makedirs:
-        filer = filing.Filer(name="test", base="conf", headDirPath=headDirPath, filed=True)
+    filer = filing.Filer(name="test", base="conf", headDirPath=headDirPath, filed=True)
 
     assert filer.exists(name="test", base="conf", headDirPath=headDirPath, filed=True) is True
     assert filer.path.endswith(".hio/conf/test.text")
@@ -389,7 +374,7 @@ def test_filer_doer():
     assert [val[1] for val in doist.deeds] == [0.0, 0.0]  #  retymes
     for doer in doers:
         assert doer.filer.opened
-        assert '_test' + os.path.join(os.path.sep, 'hio', 'test') in doer.filer.path
+        assert os.path.join('_test', 'hio', 'test') in doer.filer.path
 
     doist.recur()
     assert doist.tyme == 0.03125  # on next cycle
@@ -443,8 +428,8 @@ def test_filer_doer():
     assert [val[1] for val in doist.deeds] == [0.0, 0.0]  #  retymes
     for doer in doers:
         assert doer.filer.opened
-        assert '_test' + os.path.join(os.path.sep, 'hio', 'test') in doer.filer.path
-        assert  doer.filer.path.endswith(".text")
+        assert os.path.join('_test', 'hio', 'test') in doer.filer.path
+        assert doer.filer.path.endswith(".text")
         assert doer.filer.file is not None
         assert not doer.filer.file.closed
 

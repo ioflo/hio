@@ -115,7 +115,6 @@ class Filer(hioing.Mixin):
     """
     HeadDirPath = os.path.join(os.path.sep, 'usr', 'local', 'var')  # default in /usr/local/var
     TailDirPath = "hio"
-    os.path.join(os.path.sep, 'usr', 'local', 'var')
     CleanTailDirPath = os.path.join("hio", "clean")
 
 

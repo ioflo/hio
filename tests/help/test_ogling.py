@@ -30,8 +30,8 @@ def test_openogler():
         assert ogler.temp == True
         assert ogler.prefix == 'hio'
         assert ogler.headDirPath == ogler.HeadDirPath == os.path.join(os.path.sep, 'usr', 'local', 'var')
-        _, pathDir = os.path.splitdrive(os.path.normpath(ogler.dirPath))
-        assert pathDir.startswith(os.path.join(os.path.sep, 'tmp', 'hio', 'logs', 'test_'))
+        _, path = os.path.splitdrive(os.path.normpath(ogler.dirPath))
+        assert path.startswith(os.path.join(os.path.sep, 'tmp', 'hio', 'logs', 'test_'))
         assert ogler.dirPath.endswith("_temp")
         assert ogler.path.endswith(os.path.join(os.path.sep, 'test.log'))
         assert ogler.opened
@@ -86,8 +86,8 @@ def test_openogler():
         assert ogler.temp == False
         assert ogler.prefix == 'hio'
         assert ogler.headDirPath == ogler.HeadDirPath == os.path.join(os.path.sep, 'usr', 'local', 'var')
-        _, pathDir = os.path.splitdrive(os.path.normpath(ogler.dirPath))
-        assert pathDir.startswith(os.path.join(os.path.sep, 'usr', 'local', 'var', 'hio', 'logs'))
+        _, path = os.path.splitdrive(os.path.normpath(ogler.dirPath))
+        assert path.startswith(os.path.join(os.path.sep, 'usr', 'local', 'var', 'hio', 'logs'))
         _, path = os.path.splitdrive(os.path.normpath(ogler.path))
         assert path == os.path.join(os.path.sep, 'usr', 'local', 'var', 'hio', 'logs', 'mine.log')
         assert ogler.opened
@@ -176,8 +176,8 @@ def test_ogler():
     ogler = ogling.Ogler(name="test", level=logging.DEBUG, temp=True,
                          reopen=True, clear=True)
     assert ogler.level == logging.DEBUG
-    _, pathDir = os.path.splitdrive(os.path.normpath(ogler.dirPath))
-    assert pathDir.startswith(os.path.join(os.path.sep, 'tmp', 'hio', 'logs', 'test_'))
+    _, path = os.path.splitdrive(os.path.normpath(ogler.dirPath))
+    assert path.startswith(os.path.join(os.path.sep, 'tmp', 'hio', 'logs', 'test_'))
     assert ogler.dirPath.endswith("_temp")
     assert ogler.path.endswith(os.path.join(os.path.sep, "test.log"))
     assert ogler.opened == True
@@ -210,8 +210,8 @@ def test_ogler():
 
     # Test reopen but not clear so file still there
     ogler.reopen(temp=True)
-    _, pathDir = os.path.splitdrive(os.path.normpath(ogler.dirPath))
-    assert pathDir.startswith(os.path.join(os.path.sep, 'tmp', 'hio', 'logs', 'test_'))
+    _, path = os.path.splitdrive(os.path.normpath(ogler.dirPath))
+    assert path.startswith(os.path.join(os.path.sep, 'tmp', 'hio', 'logs', 'test_'))
     assert ogler.dirPath.endswith("_temp")
     assert ogler.path.endswith(os.path.join(os.path.sep, "test.log"))
     assert ogler.opened == True
@@ -257,8 +257,8 @@ def test_ogler():
     ogler = ogling.Ogler(name="test", level=logging.DEBUG, temp=True,
                          reopen=True, clear=True, syslogged=False, filed=False)
     assert ogler.level == logging.DEBUG
-    _, pathDir = os.path.splitdrive(os.path.normpath(ogler.dirPath))
-    assert pathDir.startswith(os.path.join(os.path.sep, 'tmp', 'hio', 'logs', 'test_'))
+    _, path = os.path.splitdrive(os.path.normpath(ogler.dirPath))
+    assert path.startswith(os.path.join(os.path.sep, 'tmp', 'hio', 'logs', 'test_'))
     assert ogler.dirPath.endswith("_temp")
     assert ogler.path.endswith(os.path.join(os.path.sep, "test.log"))
     assert ogler.opened == True
@@ -284,8 +284,8 @@ def test_ogler():
     ogler = ogling.Ogler(name="test", level=logging.DEBUG, temp=True,
                          reopen=True, clear=True, syslogged=False, consoled=False)
     assert ogler.level == logging.DEBUG
-    _, pathDir = os.path.splitdrive(os.path.normpath(ogler.dirPath))
-    assert pathDir.startswith(os.path.join(os.path.sep, 'tmp', 'hio', 'logs', 'test_'))
+    _, path = os.path.splitdrive(os.path.normpath(ogler.dirPath))
+    assert path.startswith(os.path.join(os.path.sep, 'tmp', 'hio', 'logs', 'test_'))
     assert ogler.dirPath.endswith("_temp")
     assert ogler.path.endswith(os.path.join(os.path.sep, "test.log"))
     assert ogler.opened == True
@@ -356,8 +356,8 @@ def test_init_ogler():
     assert help.ogler.opened
     assert help.ogler.level == logging.DEBUG
 
-    _, pathDir = os.path.splitdrive(os.path.normpath(help.ogler.dirPath))
-    assert pathDir.startswith(os.path.join(os.path.sep, 'tmp', 'hio', 'logs', 'test_'))
+    _, path = os.path.splitdrive(os.path.normpath(help.ogler.dirPath))
+    assert path.startswith(os.path.join(os.path.sep, 'tmp', 'hio', 'logs', 'test_'))
     assert help.ogler.dirPath.endswith("_temp")
     assert help.ogler.path.endswith(os.path.join(os.path.sep, "main.log"))
     logger = help.ogler.getLogger()
@@ -379,8 +379,8 @@ def test_init_ogler():
                                           temp=True, reopen=True, clear=True)
     assert ogler.opened
     assert ogler.level == logging.DEBUG
-    _, pathDir = os.path.splitdrive(os.path.normpath(help.ogler.dirPath))
-    assert pathDir.startswith(os.path.join(os.path.sep, 'tmp', 'hio', 'logs', 'test_'))
+    _, path = os.path.splitdrive(os.path.normpath(help.ogler.dirPath))
+    assert path.startswith(os.path.join(os.path.sep, 'tmp', 'hio', 'logs', 'test_'))
     assert ogler.dirPath.endswith("_temp")
     assert ogler.path.endswith(os.path.join(os.path.sep, "test.log"))
     with open(ogler.path, 'r') as logfile:
@@ -444,8 +444,8 @@ def test_set_levels():
     help.ogler.reopen(temp=True, clear=True)
     assert help.ogler.opened
     assert help.ogler.level == logging.DEBUG
-    _, pathDir = os.path.splitdrive(os.path.normpath(help.ogler.dirPath))
-    assert pathDir.startswith(os.path.join(os.path.sep, 'tmp', 'hio', 'logs', 'test_'))
+    _, path = os.path.splitdrive(os.path.normpath(help.ogler.dirPath))
+    assert path.startswith(os.path.join(os.path.sep, 'tmp', 'hio', 'logs', 'test_'))
     assert help.ogler.dirPath.endswith("_temp")
     assert help.ogler.path.endswith(os.path.join(os.path.sep, "main.log"))
     # recreate loggers to pick up file handler
@@ -473,8 +473,8 @@ def test_set_levels():
                                           temp=True, reopen=True, clear=True)
     assert ogler.opened
     assert ogler.level == logging.DEBUG
-    _, pathDir = os.path.splitdrive(os.path.normpath(help.ogler.dirPath))
-    assert pathDir.startswith(os.path.join(os.path.sep, 'tmp', 'hio', 'logs', 'test_'))
+    _, path = os.path.splitdrive(os.path.normpath(help.ogler.dirPath))
+    assert path.startswith(os.path.join(os.path.sep, 'tmp', 'hio', 'logs', 'test_'))
     assert ogler.dirPath.endswith("_temp")
     assert ogler.path.endswith(os.path.join(os.path.sep, "test.log"))
     # Still have 3 handlers

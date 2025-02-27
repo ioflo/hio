@@ -46,17 +46,8 @@ def test_console():
     # Give the user time to see the prompt and respond
     cin = b''
     
-    # Add a timeout to avoid infinite loop if no input is provided
-    timeout = time.time() + 10  # 10 second timeout
-    
-    while not cin and time.time() < timeout:
+    while not cin:
         cin = console.get()
-        # Small delay to avoid high CPU usage
-        time.sleep(0.1)
-    
-    if not cin:
-        console.close()
-        pytest.skip("No input received within timeout period")
         
     console.put(b"You typed: " + cin + b'\n')
     assert cin ==  b'hello'
@@ -82,17 +73,9 @@ def test_console():
     console.put(cout)
     
     cin = b''
-    # Add a timeout to avoid infinite loop if no input is provided
-    timeout = time.time() + 10  # 10 second timeout
     
-    while not cin and time.time() < timeout:
+    while not cin:
         cin = console.get(bs=8)
-        # Small delay to avoid high CPU usage
-        time.sleep(0.1)
-    
-    if not cin:
-        console.close()
-        pytest.skip("No input received within timeout period")
 
     console.put(b"You typed: " + cin + b'\n')
     assert len(cin) > 8

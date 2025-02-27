@@ -211,8 +211,6 @@ class Console():
         """
         Service puts and gets
         """
-        # Just get any available data to process it
-        self.get()
 
 
 class ConsoleDoer(doing.Doer):
