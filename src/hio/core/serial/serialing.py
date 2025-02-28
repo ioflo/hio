@@ -88,7 +88,7 @@ class Console():
 
         To debug use os.isatty(fd) which returns True if the file descriptor
         fd is open and connected to a tty-like device, else False.
-        
+
         On UNIX/macOS systems uses os.ctermid() to get console
         On Windows systems uses console directly via msvcrt
         """
@@ -170,7 +170,7 @@ class Console():
         """
         bs = bs if bs is not None else self.bs
         line = bytearray()
-        
+
         try:
             if platform.system() == 'Windows':
                 # Windows-specific non-blocking read using msvcrt
@@ -348,14 +348,14 @@ class Device():
         """
         self.fd = None  # serial device port file descriptor, must be opened first
         self.port = port
-        
+
         if not self.port:
             system = platform.system()
             if system == 'Windows':
                 self.port = 'COM1'  # Default Windows serial port
             else:
                 self.port = os.ctermid()  # Default to console on Unix/macOS
-                
+
         self.speed = speed or 9600
         self.bs = bs or 1024
         self.opened = False
@@ -422,7 +422,7 @@ class Device():
             self.bs = bs
 
         system = platform.system()
-        
+
         if system == 'Windows':
             try:
                 # Try to use pyserial for COM ports on Windows for better handling
@@ -490,11 +490,11 @@ class Device():
         if self._serial:
             self._serial.close()
             self._serial = None
-        
+
         if self.fd and platform.system() != 'Windows' or not self._serial:
             # Close fd if not Windows or if we didn't use pyserial
             os.close(self.fd)
-        
+
         self.fd = None
         self.opened = False
 
@@ -523,8 +523,11 @@ class Device():
                 # Unix/macOS read
                 data = os.read(self.fd, self.bs)  #if no chars available generates exception
         except OSError as ex1:  # ex1 is the target instance of the exception
-            # BSD 35, Linux 11
-            if ex1.errno == errno.EAGAIN or (platform.system() == 'Windows' and ex1.errno == errno.EWOULDBLOCK):
+            # ex.args[0] == ex.errno for better os compatibility
+            # the value of a given errno.XXXXX may be different on each os
+            # EAGAIN: BSD 35, Linux 11, Windows 11
+            # EWOULDBLOCK: BSD 35 Linux 11 Windows 140
+            if ex1.args[0] in (errno.EAGAIN, errno.EWOULDBLOCK):
                 pass #No characters available
             else:
                 logger.error("Error: Receive on Device '%s'."
@@ -545,8 +548,11 @@ class Device():
             else:
                 count = os.write(self.fd, data)
         except OSError as ex1:  # ex1 is the target instance of the exception
-            # BSD 35, Linux 11
-            if ex1.errno == errno.EAGAIN or (platform.system() == 'Windows' and ex1.errno == errno.EWOULDBLOCK):
+            # ex.args[0] == ex.errno for better os compatibility
+            # the value of a given errno.XXXXX may be different on each os
+            # EAGAIN: BSD 35, Linux 11, Windows 11
+            # EWOULDBLOCK: BSD 35 Linux 11 Windows 140
+            if ex1.args[0] in (errno.EAGAIN, errno.EWOULDBLOCK):
                 count = 0  # buffer full can't write
             else:
                 logger.error("Error: Send on Device '%s'."
@@ -577,14 +583,14 @@ class Serial():
         """
         self.serial = None  # Serial instance
         self.port = port
-        
+
         if not self.port:
             system = platform.system()
             if system == 'Windows':
                 self.port = 'COM1'  # Default Windows serial port
             else:
                 self.port = os.ctermid()  # Default to console on Unix/macOS
-                
+
         self.speed = speed or 9600
         self.bs = bs or 1024
         self.opened = False
@@ -639,8 +645,11 @@ class Serial():
         try:
             data = self.serial.read(self.bs)  #if no chars available generates exception
         except OSError as ex1:  # ex1 is the target instance of the exception
-            # BSD 35, Linux 11
-            if ex1.errno == errno.EAGAIN or (platform.system() == 'Windows' and ex1.errno == errno.EWOULDBLOCK):
+            # ex.args[0] == ex.errno for better os compatibility
+            # the value of a given errno.XXXXX may be different on each os
+            # EAGAIN: BSD 35, Linux 11, Windows 11
+            # EWOULDBLOCK: BSD 35 Linux 11 Windows 140
+            if ex1.args[0] in (errno.EAGAIN, errno.EWOULDBLOCK):
                 pass #No characters available
             else:
                 logger.error("Error: Receive on Serial '%s'."
@@ -657,8 +666,11 @@ class Serial():
         try:
             count = self.serial.write(data)
         except OSError as ex1:  # ex1 is the target instance of the exception
-            # BSD 35, Linux 11
-            if ex1.errno == errno.EAGAIN or (platform.system() == 'Windows' and ex1.errno == errno.EWOULDBLOCK):
+            # ex.args[0] == ex.errno for better os compatibility
+            # the value of a given errno.XXXXX may be different on each os
+            # EAGAIN: BSD 35, Linux 11, Windows 11
+            # EWOULDBLOCK: BSD 35 Linux 11 Windows 140
+            if ex1.args[0] in (errno.EAGAIN, errno.EWOULDBLOCK):
                 count = 0  # buffer full can't write
             else:
                 logger.error("Error: Send on Serial '%s'."

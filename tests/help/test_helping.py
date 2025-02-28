@@ -3,12 +3,14 @@
 tests.help.test_helping module
 
 """
-import fractions
-
 import pytest
 
+import fractions
+from dataclasses import dataclass, astuple, asdict
+
+
 from hio.help import helping, Hict
-from hio.help.helping import isign, sceil
+from hio.help.helping import isign, sceil, dictify, datify
 
 def test_utilities():
     """
@@ -484,7 +486,88 @@ def test_b64_helpers():
 
 
 
+
+def test_datify():
+    """
+    Test convert dict to dataclass
+
+    dataclass, astuple, asdict, fields,
+    """
+    @dataclass
+    class Point:
+        x: float
+        y: float
+
+    @dataclass
+    class Line:
+        a: Point
+        b: Point
+
+    line = Line(Point(1,2), Point(3,4))
+    assert line == datify(Line, asdict(line))
+
+    assert asdict(line) == {'a': {'x': 1, 'y': 2}, 'b': {'x': 3, 'y': 4}}
+
+    pdict = dict(x=3, y=4)
+    pdata = datify(Point, pdict)
+    assert isinstance(pdata, Point)
+
+    @dataclass
+    class Circle:
+        radius: float
+
+        @staticmethod
+        def _der(d):
+            p = d["perimeter"]
+            r = p / 2 / 3.14
+
+            return Circle(radius=r)
+
+    d = {'area': 50.24, 'perimeter': 25.12}
+    c = datify(Circle, d)
+    assert c.radius == 4
+
+    """End Test"""
+
+
+def test_dictify():
+    """
+    Test convert dataclass to dict
+    """
+
+    @dataclass
+    class Point:
+        x: float
+        y: float
+
+    @dataclass
+    class Line:
+        a: Point
+        b: Point
+
+    line = Line(Point(1, 2), Point(3, 4))
+    assert dictify(line) == {'a': {'x': 1, 'y': 2}, 'b': {'x': 3, 'y': 4}}
+
+    @dataclass
+    class Circle:
+        radius: float
+
+        def _ser(self):
+            d = dict(
+                area=self.radius**2*3.14,
+                perimeter=2*self.radius*3.14
+            )
+
+            return d
+
+    c = Circle(radius=4)
+    assert dictify(c) == {'area': 50.24, 'perimeter': 25.12}
+
+
+
 if __name__ == "__main__":
     test_utilities()
     test_attributize()
     test_b64_helpers()
+    test_datify()
+    test_dictify()
