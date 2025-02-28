@@ -4,5 +4,5 @@ hio.core.uxd Package
 """
 
 
-from .uxding import openPeer, Peer, PeerDoer
+from .uxding import Peer, openPeer, PeerDoer
 

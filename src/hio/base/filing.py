@@ -134,7 +134,8 @@ class Filer(hioing.Mixin):
         """Setup directory of file at .path
 
         Parameters:
-            name (str): directory path name differentiator directory/file
+            name (str): Unique identifier of file. Unique directory path name
+                differentiator directory/file
                 When system employs more than one keri installation, name allows
                 differentiating each instance by name
             base (str): optional directory path segment inserted before name
@@ -382,6 +383,7 @@ class Filer(hioing.Mixin):
                                 os.makedirs(head)
                             if filed:
                                 file = ocfn(path, mode=mode, perm=perm)
+
                         else:
                             os.makedirs(path)
                     else:
@@ -404,13 +406,15 @@ class Filer(hioing.Mixin):
                                 os.makedirs(head)
                             if filed:
                                 file = ocfn(path, mode=mode, perm=perm)
+
                         else:
                             os.makedirs(path)
                 else:
                     if filed:
                         file = ocfn(path, mode=mode, perm=perm)
 
-            os.chmod(path, perm)  # set dir/file permissions
+            if not extensioned:
+                os.chmod(path, perm)  # set dir/file permissions
 
         return path, file
 
@@ -502,7 +506,7 @@ class Filer(hioing.Mixin):
         if clear:
             self._clearPath()
 
-        return self.opened
+        return not self.opened  # True means closed False means still opened
 
 
     def _clearPath(self):

@@ -25,6 +25,7 @@ def test_udp_basic():
         if platform.system() == 'Windows':
             alpha = udping.Peer(ha=('127.0.0.1', 6101), wl=wl)
         assert not alpha.opened
+        assert alpha.name == 'main'  # default
         assert alpha.reopen()
         assert alpha.opened
         if platform.system() == 'Windows':
@@ -35,7 +36,9 @@ def test_udp_basic():
         beta = udping.Peer(port = 6102, wl=wl)  # any interface on port 6102
         if platform.system() == 'Windows':
             beta = udping.Peer(ha=('127.0.0.1', 6102), wl=wl)
+
         assert not beta.opened
+        assert beta.name == 'beta'
         assert beta.reopen()
         assert beta.opened
         if platform.system() == 'Windows':
@@ -111,6 +114,7 @@ def test_open_peer():
     betaHa = ('127.0.0.1', 6102) if platform.system() == 'Windows' else ('0.0.0.0', 6102)
 
     with (wiring.openWL(samed=True, filed=True) as wl,
+
           udping.openPeer(ha=alphaHa, wl=wl) as alpha, # any interface on port 6101
           udping.openPeer(ha=betaHa, wl=wl) as beta):  # any interface on port 6102
 

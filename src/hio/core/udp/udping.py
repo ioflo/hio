@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-hio.core.udping Module
+hio.core.udp.udping Module
 """
 import sys
 import platform
@@ -9,9 +9,10 @@ import errno
 import socket
 from contextlib import contextmanager
 
-from ... import help
-from ...base import tyming, doing
+from ... import hioing
 from .. import coring
+from ...base import tyming, doing
+from ... import help
 
 logger = help.ogler.getLogger()
 
@@ -24,14 +25,15 @@ UDP_MAX_PACKET_SIZE = min(1024, UDP_MAX_DATAGRAM_SIZE)  # assumes IPV6 capable e
 
 
 @contextmanager
-def openPeer(cls=None, **kwa):
+def openPeer(cls=None, name="test", **kwa):
     """
     Wrapper to create and open UDP Peer instances
     When used in with statement block, calls .close() on exit of with block
 
     Parameters:
-        cls is Class instance of subclass instance
-
+        cls (Class): instance of subclass instance
+        name (str): unique identifer of peer. Enables management of Peer sockets
+                    by name.
     Usage:
         with openPeer() as peer0:
             peer0.receive()
@@ -45,7 +47,7 @@ def openPeer(cls=None, **kwa):
     if cls is None:
         cls = Peer
     try:
-        peer = cls(**kwa)
+        peer = cls(name=name, **kwa)
         peer.reopen()
 
         yield peer
@@ -56,14 +58,29 @@ def openPeer(cls=None, **kwa):
 
 
 
-class Peer(tyming.Tymee):
+class Peer(hioing.Mixin):
     """Class to manage non blocking I/O on UDP socket.
-    SubClass of Tymee to enable support for retry tymers as UDP is unreliable.
+
+    Attributes:
+        name (str): unique identifier of peer for managment purposes
+        ha (tuple): host address of form (host,port) of type (str, int) of this
+                peer's socket address.
+        bs (int): buffer size
+        wl (WireLog): instance ref for debug logging of over the wire tx and rx
+        bcast (bool): True enables sending to broadcast addresses from local socket
+                      False otherwise
+        ls (socket.socket): local socket of this Peer
+        opened (bool): True local socket is created and opened. False otherwise
+
+    Properties:
+        host (str): element of .ha duple
+        port (int): element of .ha duple
+
+
     """
-    Tymeout = 0.0  # tymeout in seconds, tymeout of 0.0 means ignore tymeout
 
     def __init__(self, *,
-                 tymeout=None,
+                 name='main',
                  ha=None,
                  host='',
                  port=55000,
@@ -73,19 +90,18 @@ class Peer(tyming.Tymee):
                  **kwa):
         """
         Initialization method for instance.
-
-        ha = host address duple (host, port)
-        host = '' equivalant to any interface on host
-        port = socket port
-        bs = buffer size
-        path = path to log file directory
-        wl = WireLog instance ref for debug logging or over the wire tx and rx
-        bcast = Flag if True enables sending to broadcast addresses on socket
+        Parameters:
+            name (str): unique identifier of peer for managment purposes
+            ha (tuple): local socket (host, port) address duple of type (str, int)
+            host (str): address where '' means any interface on host
+            port (int): socket port
+            bs (int):  buffer size
+            wl (WireLog): instance to log over the wire tx and rx
+            bcast (bool): True enables sending to broadcast addresses from local socket
+                          False otherwise
         """
         super(Peer, self).__init__(**kwa)
-        self.tymeout = tymeout if tymeout is not None else self.Tymeout
-        #self.tymer = tyming.Tymer(tymth=self.tymth, duration=self.tymeout) # retry tymer
-
+        self.name = name
         self.ha = ha or (host, port)  # ha = host address duple (host, port)
         host, port = self.ha
         host = coring.normalizeHost(host)  # ip host address
@@ -97,6 +113,7 @@ class Peer(tyming.Tymee):
 
         self.ls = None  # local socket for this Peer
         self.opened = False
+
 
     @property
     def host(self):
@@ -128,16 +145,6 @@ class Peer(tyming.Tymee):
         setter for port property
         """
         self.ha = (self.host, value)
-
-
-
-    def wind(self, tymth):
-        """
-        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
-        Updates winds .tymer .tymth
-        """
-        super(Peer, self).wind(tymth)
-        #self.tymer.wind(tymth)
 
 
     def actualBufSizes(self):
@@ -206,7 +213,9 @@ class Peer(tyming.Tymee):
             self.ls = None
             self.opened = False
 
-    def receive(self):
+        return not self.opened  # True means closed successfully
+
+    def receive(self, **kwa):
         """Perform non blocking read on  socket.
 
         Returns:
@@ -221,7 +230,8 @@ class Peer(tyming.Tymee):
             # the value of a given errno.XXXXX may be different on each os
             # EAGAIN: BSD 35, Linux 11, Windows 11
             # EWOULDBLOCK: BSD 35 Linux 11 Windows 140
-            if ex.args[0] in (errno.EAGAIN, errno.EWOULDBLOCK):
+            if (ex.args[0] in (errno.EAGAIN,
+                              errno.EWOULDBLOCK)):
                 return (b'', None) #receive has nothing empty string for data
             else:
                 logger.error("Error receive on UDP %s\n %s\n", self.ha, ex)
@@ -232,39 +242,62 @@ class Peer(tyming.Tymee):
 
         return (data, sa)
 
-    def send(self, data, da):
+    def send(self, data, dst, **kwa):
         """Perform non blocking send on  socket.
 
-        data is string in python2 and bytes in python3
-        da is destination address tuple (destHost, destPort)
+        Returns:
+            cnt (int): count of bytes actually sent, may be less than len(data).
+
+        Parameters:
+            data (bytes):  payload to send
+            dst (str): udp destination addr duple of form (host: str, port: int)
         """
         try:
-            result = self.ls.sendto(data, da) #result is number of bytes sent
+            cnt = self.ls.sendto(data, dst)  # count == int number of bytes sent
         except OSError as ex:
-            logger.error("Error send UDP from %s to %s.\n %s\n", self.ha, da, ex)
-            result = 0
+            # ex.args[0] == ex.errno for better compat
+            # the value of a given errno.XXXXX may be different on each os
+            # EAGAIN: BSD 35, Linux 11, Windows 11
+            # EWOULDBLOCK: BSD 35 Linux 11 Windows 140
+            if (ex.args[0] in (errno.EAGAIN,
+                               errno.EWOULDBLOCK,
+                               errno.ENOBUFS,
+                               errno.ENOMEM)):
+                # not enough buffer space to send, do not consume data
+                return 0  # try again later with same data
+
+            else:
+                logger.error("Error send UDP from %s to %s.\n %s\n", self.ha, dst, ex)
+                cnt = 0
             raise
 
-        if self.wl:  # log over the wire send
-            self.wl.writeTx(data[:result], who=da)
+        if self.wl:  # log over the wire actually sent data portion
+            self.wl.writeTx(data[:cnt], who=dst)
 
-        return result
+        return cnt
 
 
     def service(self):
+        """Service sends and receives
+
+        Stub Override in subclass
         """
-        Service sends and receives
-        """
+        pass
+
 
 
 class PeerDoer(doing.Doer):
     """
-    Basic UDP Peer Doer
+    Basic UXD Peer Doer
+    Because Unix Domain Sockets are reliable no need for retry tymer.
+
+    To test in WingIde must configure Debug I/O to use external console
+    See Doer for inherited attributes, properties, and methods.
 
     See Doer for inherited attributes, properties, and methods.
 
     Attributes:
-       .peer is UDP Peer instance
+       .peer is UXD Peer instance
 
     """
 
@@ -273,21 +306,10 @@ class PeerDoer(doing.Doer):
         Initialize instance.
 
         Parameters:
-           peer is UDP Peer instance
+           peer is UXD Peer instance
         """
         super(PeerDoer, self).__init__(**kwa)
         self.peer = peer
-        if self.tymth:
-            self.peer.wind(self.tymth)
-
-
-    def wind(self, tymth):
-        """
-        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
-        Updates winds .tymer .tymth
-        """
-        super(PeerDoer, self).wind(tymth)
-        self.peer.wind(tymth)
 
 
     def enter(self):
@@ -303,3 +325,4 @@ class PeerDoer(doing.Doer):
     def exit(self):
         """"""
         self.peer.close()
+

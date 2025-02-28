@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-hio.core.uxding Module
+hio.core.uxd.uxding Module
 """
 import sys
 import platform
@@ -17,55 +17,6 @@ from ... import hioing
 from ...base import doing, filing
 
 logger = help.ogler.getLogger()
-
-
-@contextmanager
-def openPeer(cls=None, name="test", temp=True, reopen=True, clear=True,
-             filed=False, extensioned=True, **kwa):
-    """
-    Wrapper to create and open UXD Peer instances
-    When used in with statement block, calls .close() on exit of with block
-
-    Parameters:
-        cls is Class instance of subclass instance
-        name is str name of Peer instance path part so can have multiple Peers
-             at different paths that each use different dirs or files
-        temp is Boolean, True means open in temporary directory, clear on close
-                Otherwise open in persistent directory, do not clear on close
-        reopen (bool): True (re)open with this init
-                           False not (re)open with this init but later (default)
-        clear (bool): True means remove directory upon close when reopening
-                          False means do not remove directory upon close when reopening
-        filed (bool): True means .path is file path not directory path
-                          False means .path is directiory path not file path
-        extensioned (bool): When not filed:
-                            True means ensure .path ends with fext
-                            False means do not ensure .path ends with fext
-
-    See filing.Filer and uxding.Peer for other keyword parameter passthroughs
-
-    Usage:
-        with openPeer() as peer0:
-            peer0.receive()
-
-        with openPeer(cls=PeerBig) as peer0:
-            peer0.receive()
-
-    """
-    peer = None
-    if cls is None:
-        cls = Peer
-    try:
-        peer = cls(name=name, temp=temp, reopen=reopen, clear=clear,
-                   filed=filed, extensioned=extensioned, **kwa)
-
-        yield peer
-
-    finally:
-        if peer:
-            peer.close(clear=peer.temp or clear)
-
-
 
 
 
@@ -109,11 +60,18 @@ class Peer(filing.Filer):
 
     Class Attributes:
         Umask (int): octal default umask permissions such as 0o022
+        MaxUxdPathSize (int:) max characters in uxd file path
+        MaxGramSize (int): max bytes in in datagram for this transport
+        BufSize (int): used to set buffer size for transport datagram buffers
+
 
     Attributes:
         umask (int): unpermission mask for uxd file, usually octal 0o022
                      .umask is applied after .perm is set if any
-        bs (int): buffer size
+        bc (int | None): count of transport buffers of MaxGramSize
+        bs (int): buffer size of transport buffers. When .bc then .bs is calculated
+            by multiplying, .bs = .bc * .MaxGramSize. When .bc is None then .bs
+            is provided value or default .BufSize
         wl (WireLog): instance ref for debug logging of over the wire tx and rx
         ls (socket.socket): local socket of this Peer
 
@@ -131,11 +89,16 @@ class Peer(filing.Filer):
     Mode = "r+"
     Fext = "uxd"
     Umask = 0o022  # default
+    MaxUxdPathSize = 108
+    MaxGramSize = 65535  # 2 ** 16 - 1  default gram size override in subclass
+    BufSize = 65535  # 2 ** 16 - 1  default buffersize
 
-    def __init__(self, *, umask=None, bs = 1024, wl=None,
+
+    def __init__(self, *, umask=None, bc=None, bs=None, wl=None,
                  reopen=False, clear=True,
                  filed=False, extensioned=True, **kwa):
         """Initialization method for instance.
+
         Inherited Parameters:
             reopen (bool): True (re)open with this init
                            False not (re)open with this init but later (default)
@@ -151,11 +114,21 @@ class Peer(filing.Filer):
 
         Parameters:
             umask (int): unpermission mask for uxd file, usually octal 0o022
-            bs (int): buffer size
+            bc (int | None): count of transport buffers of MaxGramSize
+            bs (int | None): buffer size of transport buffers. When .bc is provided
+                then .bs is calculated by multiplying, .bs = .bc * .MaxGramSize.
+                When .bc is not provided, then if .bs is provided use provided
+                value else use default .BufSize
             wl (WireLog): instance ref for debug logging of over the wire tx and rx
         """
         self.umask = umask  # only change umask if umask is not None below
-        self.bs = bs
+        self.bc = bc
+        if self.bc:
+            self.bs = self.MaxGramSize * self.bc
+        else:
+            self.bs = bs if bs is not None else self.BufSize
+
+
         self.wl = wl
         self.ls = None  # local socket of this Peer, needs to be opened/bound
 
@@ -164,6 +137,7 @@ class Peer(filing.Filer):
                                    filed=filed,
                                    extensioned=extensioned,
                                    **kwa)
+
 
 
     def actualBufSizes(self):
@@ -188,6 +162,11 @@ class Peer(filing.Filer):
         if socket not closed properly, binding socket gets error
             OSError: (48, 'Address already in use')
         """
+        if len(self.path) > self.MaxUxdPathSize:
+            self.close()
+            raise hioing.SizeError(f"UXD path={self.path} too long, > "
+                                   f"{self.MaxUxdPathSize}.")
+
         #create socket ss = server socket
         self.ls = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
 
@@ -196,7 +175,8 @@ class Peer(filing.Filer):
         # TIME_WAIT state, without waiting for its natural timeout to expire.
         self.ls.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-        # setup buffers
+        # setup buffers. With uxd sockets only the SO_SNDBUF matters, but set
+        # both anyway
         if self.ls.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF) <  self.bs:
             self.ls.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self.bs)
         if self.ls.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF) < self.bs:
@@ -268,15 +248,15 @@ class Peer(filing.Filer):
             self.opened = False
 
         try:
-            super(Peer, self).close(clear=clear)  # removes uxd file at end of path only
+            result = super(Peer, self).close(clear=clear)  # removes uxd file at end of path only
         except OSError:
             if os.path.exists(self.path):
                 raise
 
-        return self.opened
+        return result  # True means closed successfully
 
 
-    def receive(self):
+    def receive(self, **kwa):
         """Perform non blocking receive on  socket.
 
         Returns:
@@ -304,22 +284,34 @@ class Peer(filing.Filer):
         return (data, src)
 
 
-    def send(self, data, dst):
+    def send(self, data, dst, **kwa):
         """Perform non blocking send on socket.
 
         Returns:
-            cnt (int): number of bytes actually sent
+            cnt (int): number of bytes actually sent, may be less than len(data).
 
         Parameters:
            data (bytes): payload to send
            dst (str):  uxd destination path
         """
         try:
-            cnt = self.ls.sendto(data, dst)  # count is int number of bytes sent
+            cnt = self.ls.sendto(data, dst)  # count == int number of bytes sent
         except OSError as ex:
-            logger.error("Error send UXD from %s to %s.\n %s\n", self.path, dst, ex)
-            cnt = 0
-            raise
+            # ex.args[0] == ex.errno for better compat
+            # the value of a given errno.XXXXX may be different on each os
+            # EAGAIN: BSD 35, Linux 11, Windows 11
+            # EWOULDBLOCK: BSD 35 Linux 11 Windows 140
+            if (ex.args[0] in (errno.EAGAIN,
+                               errno.EWOULDBLOCK,
+                               errno.ENOBUFS,
+                               errno.ENOMEM)):
+                # not enough buffer space to send, do not consume data
+                return 0  # try again later with same data
+
+            else:
+                logger.error("Error send UXD from %s to %s.\n %s\n", self.path, dst, ex)
+                cnt = 0
+                raise
 
         if self.wl:# log over the wire send
             self.wl.writeTx(data[:cnt], who=dst)
@@ -327,9 +319,60 @@ class Peer(filing.Filer):
         return cnt
 
     def service(self):
+        """Service sends and receives
+
+        Stub Override in subclass
         """
-        Service sends and receives
-        """
+        pass
+
+
+
+@contextmanager
+def openPeer(cls=None, name="test", temp=True, reopen=True, clear=True,
+             filed=False, extensioned=True, **kwa):
+    """
+    Wrapper to create and open UXD Peer instances
+    When used in with statement block, calls .close() on exit of with block
+
+    Parameters:
+        cls (Class): instance of subclass instance
+        name (str): unique identifer of peer. Unique path part so can have many
+            Peers each at different paths that each use different dirs or files
+        temp (bool): True means open in temporary directory, clear on close
+                     Otherwise open in persistent directory, do not clear on close
+        reopen (bool): True (re)open with this init
+                       False not (re)open with this init but later (default)
+        clear (bool): True means remove directory upon close when reopening
+                      False means do not remove directory upon close when reopening
+        filed (bool): True means .path is file path not directory path
+                      False means .path is directiory path not file path
+        extensioned (bool): When not filed:
+                            True means ensure .path ends with fext
+                            False means do not ensure .path ends with fext
+
+    See filing.Filer and uxding.Peer for other keyword parameter passthroughs
+
+    Usage:
+        with openPeer() as peer0:
+            peer0.receive()
+
+        with openPeer(cls=PeerBig) as peer0:
+            peer0.receive()
+
+    """
+    peer = None
+    if cls is None:
+        cls = Peer
+    try:
+        peer = cls(name=name, temp=temp, reopen=reopen, clear=clear,
+                   filed=filed, extensioned=extensioned, **kwa)
+
+        yield peer
+
+    finally:
+        if peer:
+            peer.close(clear=peer.temp or clear)
+
 
 
 
@@ -372,3 +415,4 @@ class PeerDoer(doing.Doer):
     def exit(self):
         """"""
         self.peer.close(clear=True)
+
