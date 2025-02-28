@@ -77,10 +77,12 @@ class WireLog():
 
     """
     Prefix = "hio"
-    HeadDirPath = "/usr/local/var"  # default in /usr/local/var
+
+    HeadDirPath = os.path.join(os.path.sep, 'usr', 'local', 'var')  # default in /usr/local/var
+
     TailDirPath = "wirelogs"
     AltHeadDirPath = "~"  #  put in ~ as fallback when desired dir not permitted
-    TempHeadDir = "/tmp"
+    TempHeadDir = os.path.join(os.path.sep, "tmp")
     TempPrefix = "test_"
     TempSuffix = "_temp"
     Format = b'\n%(dx)b %(who)b:\n%(data)b\n'  # default format string as bytes

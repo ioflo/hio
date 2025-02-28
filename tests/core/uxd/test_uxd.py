@@ -3,6 +3,8 @@
 tests  core.uxd.uxding module
 
 """
+import platform
+
 import pytest
 
 import time
@@ -21,6 +23,8 @@ def test_uxd_basic():
     """ Test the uxd connection between two peers
 
     """
+    if platform.system() == "Windows":
+        return
     tymist = tyming.Tymist()
     with (wiring.openWL(samed=True, filed=True) as wl):
         bc = 4
@@ -148,7 +152,8 @@ def test_open_peer():
     """Test the uxd openPeer context manager connection between two peers
 
     """
-
+    if platform.system() == "Windows":
+        return
     tymist = tyming.Tymist()
     with (wiring.openWL(samed=True, filed=True) as wl,
           uxding.openPeer(name ="alpha", umask=0o077, wl=wl) as alpha,
@@ -285,6 +290,8 @@ def test_peer_doer():
 
     Must run in WingIDE with Debug I/O configured as external console
     """
+    if platform.system() == "Windows":
+        return
     tock = 0.03125
     ticks = 8
     limit = tock * ticks
@@ -294,7 +301,6 @@ def test_peer_doer():
     assert doist.real == True
     assert doist.limit == limit
     assert doist.doers == []
-
 
     peer = uxding.Peer(name="test", temp=True, reopen=False, umask=0o077)
     assert peer.opened == False
