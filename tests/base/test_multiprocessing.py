@@ -301,7 +301,7 @@ def main_basic():
     while True:
         for p in pxes:
             print("Child", p.name, p.pid, p.is_alive())
-        if not mp.active_children():
+        if not ctx.active_children():
             break
         time.sleep(0.05)
 
