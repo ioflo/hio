@@ -17,6 +17,7 @@ import re
 from collections import deque
 from collections.abc import Iterable, Sequence, Generator
 from abc import ABCMeta
+from dataclasses import dataclass, astuple, asdict, fields, field
 
 import msgpack
 import cbor2 as cbor
@@ -605,3 +606,84 @@ def nabSextets(b, l):
     i >>= p  # strip of last bits
     i <<= p  # pad with empty bits
     return (i.to_bytes(n, 'big'))
+
+
+
+# DOM Utilities dataclass utility classes
+
+
+def dictify(val: dataclass):
+    """
+    Returns a serializable dict represention of a dataclass.  If the dataclass
+    contains a `_ser` method, use it instead of `asdict`
+
+    Parameters:
+         val the dataclass instance to turn into a dict.
+    """
+    ser = getattr(val, "_ser", None)
+    if callable(ser):
+        return ser()
+
+    return asdict(val)
+
+
+def datify(cls, d):
+    """
+    Returns instance of dataclass cls converted from dict d. If the dataclass
+    cls or any nested dataclasses contains a `_der` method, the use it instead
+    of default fieldtypes conversion.
+
+    Parameters:
+    cls is dataclass class
+    d is dict
+    """
+    try:
+        der = getattr(cls, "_der", None)
+        if callable(der):
+            return der(d)
+
+        fieldtypes = {f.name: f.type for f in fields(cls)}
+        return cls(**{f: datify(fieldtypes[f], d[f]) for f in d})  # recursive
+    except:
+        return d  # Not a dataclass.
+
+
+@dataclass
+class RawDom:
+    """RawDom is base class for dataclasses that provides private utility
+    methods for representing the dataclass as some other format like dict,
+    json bytes, cbor bytes, mgpk bytes as a raw format. Typically use case
+    is to serialize dataclass either directly or to transform dataclass into
+    dict and then serialized to be included in messages or stored in a database.
+    """
+
+    @classmethod
+    def _fromdict(cls, d: dict):
+        """returns instance of clas initialized from dict d """
+        return helping.datify(cls, d)
+
+
+    def __iter__(self):
+        return iter(asdict(self))
+
+
+    def _asdict(self):
+        """Returns dict version of record"""
+        return dictify(self)
+
+
+    def _asjson(self):
+        """Returns json bytes version of record"""
+        return json.dumps(self._asdict(),
+                          separators=(",", ":"),
+                          ensure_ascii=False).encode("utf-8")
+
+
+    def _ascbor(self):
+        """Returns cbor bytes version of record"""
+        return cbor.dumps(self._asdict())
+
+
+    def _asmgpk(self):
+        """Returns mgpk bytes version of record"""
+        return msgpack.dumps(self._asdict())

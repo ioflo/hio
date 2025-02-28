@@ -12,11 +12,32 @@ import types
 import inspect
 from inspect import isgeneratorfunction
 from collections import deque, namedtuple
+from dataclasses import dataclass, astuple, asdict, field
 
 from .. import hioing
 from . import tyming
 from ..help import timing, helping
+from ..help.helping import RawDom
 from .doing import Doist, Doer
+
+
+@dataclass
+class SpawnDom(RawDom):
+    """
+    Corresponds to StateEstEvent namedtuple used as sub record in KeyStateRecord
+    for latest establishment event associated with current key state
+
+    Attributes:
+        name (str): identifier of child process and element of path based resources.
+        doers (list[Doers]): List of Doers to be run by child process Doist
+    """
+    name: str ='child'
+    doers: list = field(default_factory=list)
+
+
+    def __iter__(self):
+        return iter(asdict(self))
+
 
 
 class MultiDoer(Doer):
@@ -56,20 +77,27 @@ class MultiDoer(Doer):
 
 
     Attributes:
-       count (int): iteration count
+        spawn (list[SpawnDom]):  list of config dataclass instances
+        count (int): iteration count
 
     Properties:
 
 
     """
 
-    def __init__(self, load=None, **kwa):
+    def __init__(self, spawn=None, **kwa):
         """Initialize instance.
+
+        Parameters:
+            spawn (list | None):  configuration parameters for child processes
+                to spawn. Each entry in spawn is a dataclass of config fields.
+
+
 
 
         """
         super(MultiDoer, self).__init__(**kwa)
-        self.load = load if load is not None else dict()
+        self.spawn = spawn if spawn is not None else []
         self.count = None
 
 
