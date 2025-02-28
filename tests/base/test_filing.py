@@ -141,8 +141,8 @@ def test_filing():
 
     headDirPath = os.path.join(os.path.sep, 'root', 'hio')
     if platform.system() == 'Windows':
-        headDirPath = os.path.join(headDirPath, 'hio')
-
+        headDirPath = 'C:\\Windows\\System32\\hio'
+    headDirPath = os.path.join(headDirPath, 'hio')
 
     # headDirPath that is not permitted to force using AltPath
     filer = filing.Filer(name="test", headDirPath=headDirPath, reopen=False)
@@ -190,6 +190,9 @@ def test_filing():
     filepath = os.path.join(os.path.sep, 'usr', 'local', 'var', 'hio', 'conf', 'test.text')
     if os.path.exists(filepath):
         os.remove(filepath)
+    alt_filepath = os.path.join(os.path.expanduser('~'), '.hio', 'conf', 'test.text')
+    if os.path.exists(alt_filepath):
+        os.remove(alt_filepath)
 
     assert os.path.exists(filepath) is False
     filer = filing.Filer(name="test", base="conf", filed=True, reopen=False)
@@ -247,6 +250,8 @@ def test_filing():
         os.remove(filepath)
 
     headDirPath = os.path.join(os.path.sep, 'root', 'hio')
+    if platform.system() == 'Windows':
+        headDirPath = 'C:\\Windows\\System32'
 
     # force altPath by using headDirPath of "/root/hio" which is not permitted
     filer = filing.Filer(name="test", base="conf", headDirPath=headDirPath, filed=True, reopen=False)
@@ -255,7 +260,7 @@ def test_filing():
     filer = filing.Filer(name="test", base="conf", headDirPath=headDirPath, filed=True)
 
     assert filer.exists(name="test", base="conf", headDirPath=headDirPath, filed=True) is True
-    assert filer.path.endswith(".hio/conf/test.text")
+    assert filer.path.endswith(os.path.join('.hio', 'conf', 'test.text'))
     assert filer.opened
     assert os.path.exists(filer.path)
     assert filer.file
@@ -269,31 +274,31 @@ def test_filing():
     filer.close()
     assert not filer.opened
     assert filer.file.closed
-    assert filer.path.endswith(".hio/conf/test.text")
+    assert filer.path.endswith(os.path.join('.hio', 'conf', 'test.text'))
     assert os.path.exists(filer.path)
 
     filer.reopen()  # reuse False so remake but file exists so opens not creates
     assert filer.opened
     assert not filer.file.closed
-    assert filer.path.endswith(".hio/conf/test.text")
+    assert filer.path.endswith(os.path.join('.hio', 'conf', 'test.text'))
     assert os.path.exists(filer.path)
 
     filer.reopen(reuse=True)  # reuse True and clear False so don't remake
     assert filer.opened
     assert not filer.file.closed
-    assert filer.path.endswith(".hio/conf/test.text")
+    assert filer.path.endswith(os.path.join('.hio', 'conf', 'test.text'))
     assert os.path.exists(filer.path)
 
     filer.reopen(reuse=True, clear=True)  # clear True so remake even if reuse
     assert filer.opened
     assert not filer.file.closed
-    assert filer.path.endswith(".hio/conf/test.text")
+    assert filer.path.endswith(os.path.join('.hio', 'conf', 'test.text'))
     assert os.path.exists(filer.path)
 
     filer.reopen(clear=True)  # clear True so remake
     assert filer.opened
     assert not filer.file.closed
-    assert filer.path.endswith(".hio/conf/test.text")
+    assert filer.path.endswith(os.path.join('.hio', 'conf', 'test.text'))
     assert os.path.exists(filer.path)
 
     filer.close(clear=True)
@@ -301,9 +306,10 @@ def test_filing():
 
     #test openfiler with defaults temp == True
     with filing.openFiler() as filer:
-        dirpath = '/tmp/hio_hcbvwdnt_test/hio/test'
-        assert filer.path.startswith('/tmp/hio_')
-        assert filer.path.endswith('_test/hio/test')
+        dirpath = os.path.join(os.path.sep, 'tmp', 'hio_hcbvwdnt_test', 'hio', 'test')
+        _, path = os.path.splitdrive(os.path.normpath(filer.path))
+        assert path.startswith(os.path.join(os.path.sep, 'tmp', 'hio_'))
+        assert filer.path.endswith(os.path.join('_test', 'hio', 'test'))
         assert filer.opened
         assert os.path.exists(filer.path)
         assert not filer.file
@@ -311,18 +317,22 @@ def test_filing():
 
     #test openfiler with filed == True but otherwise defaults temp == True
     with filing.openFiler(filed=True) as filer:
-        dirpath = '/tmp/hio_6t3vlv7c_test/hio/test.text'
-        assert filer.path.startswith('/tmp/hio_')
-        assert filer.path.endswith('_test/hio/test.text')
+        dirpath = os.path.join(os.path.sep, 'tmp', 'hio_6t3vlv7c_test', 'hio', 'test.text')
+        _, path = os.path.splitdrive(os.path.normpath(filer.path))
+        assert path.startswith(os.path.join(os.path.sep, 'tmp', 'hio_'))
+        assert filer.path.endswith(os.path.join('_test', 'hio', 'test.text'))
         assert filer.opened
         assert os.path.exists(filer.path)
         assert filer.file
         assert not filer.file.closed
     assert not os.path.exists(filer.path)  # if temp clears
 
+    headDirPath = os.path.join(os.path.sep, 'root', 'hio')
+    if platform.system() == 'Windows':
+        headDirPath = 'C:\\Windows\\System32'
     # test alternate path use headDirPath not permitted to force use altPath
-    with filing.openFiler(filed=True, temp=False, headDirPath="/root/hio", clear=True) as  filer:
-        assert filer.path.endswith(".hio/test.text")  # uses altpath
+    with filing.openFiler(filed=True, temp=False, headDirPath=headDirPath, clear=True) as  filer:
+        assert filer.path.endswith(os.path.join('.hio', 'test.text'))  # uses altpath
         assert filer.opened
         assert os.path.exists(filer.path)
         assert filer.file
@@ -332,10 +342,16 @@ def test_filing():
 
     # Test bad file path components
     with pytest.raises(hioing.FilerError):
-        filer = filing.Filer(name="/test", base="conf", filed=True)
+        name = "/test"
+        if platform.system() == 'Windows':
+            name = "C:\\test"
+        filer = filing.Filer(name=name, base="conf", filed=True)
 
     with pytest.raises(hioing.FilerError):
-        filer = filing.Filer(name="test", base="/conf", filed=True)
+        conf = "/conf"
+        if platform.system() == 'Windows':
+            conf = "C:\\conf"
+        filer = filing.Filer(name="test", base=conf, filed=True)
 
     """Done Test"""
 
