@@ -21,7 +21,7 @@ from .doing import Doist, Doer
 
 class MultiDoer(Doer):
     """
-    MultiDoer spawns multiprocesses with doits
+    MultiDoer spawns multiprocesses with Doists
 
 
     See Doer for inherited attributes, properties, and methods.
@@ -31,11 +31,12 @@ class MultiDoer(Doer):
 
     """
 
-    def __init__(self, **kwa):
+    def __init__(self, load=None, **kwa):
         """
         Initialize instance.
         """
         super(MultiDoer, self).__init__(**kwa)
+        self.load = load if load is not None else dict()
         self.count = None
 
 

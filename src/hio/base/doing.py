@@ -100,7 +100,7 @@ class Doist(tyming.Tymist):
         self.timer = timing.MonoTimer(duration = self.tock)
 
 
-    def do(self, doers=None, limit=None, tyme=None):
+    def do(self, doers=None, limit=None, tyme=None, **opts):
         """
         Readies deeds deque from .doers or doers if any and then iteratively
         runs .recur over deeds deque until completion of all deeds.
@@ -127,6 +127,7 @@ class Doist(tyming.Tymist):
             limit (float): is real time limit on execution. Forces close of all dogs.
             tyme  (float): is optional starting tyme. Resets .tyme to tyme whe provided.
                If not provided uses current .tyme
+            opts (dict):  injected optional additional parameters
 
         Returns:
             None
@@ -390,11 +391,11 @@ def doify(f, *, name=None, tock=0.0, **opts):
     c = doify(f, name='c')
 
     Parameters:
-        f is generator function
-        name is new function name for returned doified copy g. Default is to copy
+        f (function): generator function
+        name (str): new function name for returned doified copy g. Default is to copy
             f.__name__
-        tock is default tock attribute of doified copy g
-        opts is dictionary of remaining parameters that becomes .opts attribute
+        tock (float): default tock attribute of doified copy g
+        opts (dict): remaining parameters that becomes .opts attribute
             of doified copy g
 
     Based on:
@@ -422,8 +423,8 @@ def doize(*, tock=0.0, **opts):
        pass
 
     Parameters:
-        tock is default tock attribute of doized f
-        opts is dictionary of remaining parameters that becomes .opts attribute
+        tock (float): default tock attribute of doized f
+        opts (dict): remaining parameters that becomes .opts attribute
             of doized f
     """
     def decorator(f):
@@ -453,24 +454,25 @@ class Doer(tyming.Tymee):
         enter, abort, exit
 
     Attributes:
-        .done is Boolean completion state:
+        done (bool): completion state:
             True means completed
             Otherwise incomplete. Incompletion maybe due to close or abort.
-        .opts is dict of injected options into its .do generator by scheduler
+        opts (dict): injected options into its .do generator by scheduler
 
     Inherited Properties:
-        .tyme is float relative cycle time of associated Tymist .tyme obtained
+        tyme (float): is float relative cycle time of associated Tymist .tyme obtained
             via injected .tymth function wrapper closure.
-        .tymth is function wrapper closure returned by Tymist .tymeth() method.
-            When .tymth is called it returns associated Tymist .tyme.
-            .tymth provides injected dependency on Tymist tyme base.
+        tymth (closure): function wrapper closure returned by Tymist.tymen()
+                        method. When .tymth is called it returns associated
+                        Tymist.tyme. Provides injected dependency on Tymist
+                        tyme base.
 
     Properties:
-        .tock is float, desired time in seconds between runs or until next run,
+        tock (float): desired time in seconds between runs or until next run,
                  non negative, zero means run asap
 
     Inherited Methods:
-        .wind  injects ._tymth dependency from associated Tymist to get its .tyme
+        wind  injects ._tymth dependency from associated Tymist to get its .tyme
 
     Methods:
         .__call__ makes instance callable
@@ -484,9 +486,9 @@ class Doer(tyming.Tymee):
         .abort is abort context method
 
     Hidden:
-        ._tymth is injected function wrapper closure returned by .tymen() of
+        _tymth (closure): is injected function wrapper closure returned by .tymen() of
             associated Tymist instance that returns Tymist .tyme. when called.
-        ._tock is hidden attribute for .tock property
+        _tock (float): is hidden attribute for .tock property
 
     """
 
@@ -495,11 +497,16 @@ class Doer(tyming.Tymee):
         Initialize instance.
 
         Inherited Parameters:
-            tymth is injected function wrapper closure returned by .tymen() of
+            tymth (closure): injected function wrapper closure returned by .tymen() of
                 Tymist instance. Calling tymth() returns associated Tymist .tyme.
 
         Parameters:
-           tock is float seconds initial value of .tock
+            tymth (closure): function wrapper closure returned by Tymist.tymen()
+                            method. When .tymth is called it returns associated
+                            Tymist.tyme. Provides injected dependency on Tymist
+                            tyme base.
+           tock (float): seconds initial value of .tock
+           opts (dict): injected options into its .do generator by scheduler
 
         """
         super(Doer, self).__init__(tymth=tymth)
@@ -547,10 +554,12 @@ class Doer(tyming.Tymee):
             .enter, .recur, .exit, .close, .abort
 
         Parameters:
-            tymth is injected function wrapper closure returned by .tymen() of
-                Tymist instance. Calling tymth() returns associated Tymist .tyme.
-            tock is injected initial tock value
-            args is dict of injected optional additional parameters
+            tymth (closure): function wrapper closure returned by Tymist.tymen()
+                        method. When .tymth is called it returns associated
+                        Tymist.tyme. Provides injected dependency on Tymist
+                        tyme base.
+            tock (float): injected initial tock value
+            opts (dict): of injected optional additional parameters
         """
         try:
             # enter context
@@ -660,18 +669,17 @@ class ReDoer(Doer):
     and executes it using yield from instead of just calling the method.
 
     Inherited Attributes:
-        .done is Boolean completion state:
-            True means completed
+        done (bool | None): completion state: True means completed
             Otherwise incomplete. Incompletion maybe due to close or abort.
-        .opts is dict of injected options into its .do generator by scheduler
+        opts (dict): injected options into its .do generator by scheduler
 
     Inherited Properties:
-         .tyme is float relative cycle time of associated Tymist .tyme obtained
+        tyme (float): relative cycle time of associated Tymist .tyme obtained
             via injected .tymth function wrapper closure.
-        .tymth is function wrapper closure returned by Tymist .tymeth() method.
-            When .tymth is called it returns associated Tymist .tyme.
+        tymth (closure): function wrapper closure returned by Tymist.tymen() method.
+            When .tymth is called it returns associated Tymist.tyme.
             .tymth provides injected dependency on Tymist tyme base.
-        .tock is float, desired time in seconds between runs or until next run,
+        tock (float): desired time in seconds between runs or until next run,
                  non negative, zero means run asap
 
     Inherited Methods:
@@ -890,20 +898,20 @@ class DoDoer(Doer):
         Interface matched generator function for compatibility
 
         Parameters:
-            tymth is injected function wrapper closure returned by .tymen() of
-                Tymist instance. Calling tymth() returns associated Tymist .tyme.
-            tock is injected initial tock value
-            doers is list of generator method or function callables with attributes
+            tymth (closure): injected function wrapper closure returned by
+                Tymist.tymen(). Calling tymth() returns associated Tymist.tyme.
+            tock (float): injected initial tock value
+            doers (list): of generator method or function callables with attributes
                 tock, done, and opts dict(). This may be used to update the .doers
                 attribute which is used throughout the execution lifecycle.
                 If not provided uses .doers.
                 Parameterization here of doers enables some special cases.
                 The normal case is to initialize in .__init__.
-            always is Boolean. True means keep running even when all dogs in deeds
+            always (bool): True means keep running even when all dogs in deeds
                 are complete. Enables dynamically managing extending or removing
                 doers and associated deeds while running.
                 When not provided use .always.
-            opts is dict of injected optional additional parameters
+            opts (dict): injected optional additional parameters
         """
         always = always if always is not None else self.always
         if doers is not None:
@@ -962,9 +970,8 @@ class DoDoer(Doer):
                 The normal case is to initialize in .__init__.
 
         Returns:
-            deeds deque():
-                A deed is tuple of form (dog, retyme, doer). If not provided
-                uses .deeds.
+            deeds (deque): A deed is tuple of form (dog, retyme, doer).
+                           If not provided uses .deeds.
 
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
         For setting attributes on bound methods.
@@ -1130,13 +1137,13 @@ def bareDo(tymth=None, tock=0.0, **opts):
     Injected Attributes:
         g.tock = tock  # default tock attributes
         g.done = None  # default done state
-        g.opts
+        g.opts = opts
 
     Parameters:
-        tymth is injected function wrapper closure returned by .tymen() of
-                Tymist instance. Calling tymth() returns associated Tymist .tyme.
-        tock is injected initial tock value
-        opts is dict of injected optional additional parameters
+        tymth (closure): injected function wrapper closure returned by
+                Tymist.tymen(). Calling tymth() returns associated Tymist.tyme.
+        tock (float): injected initial tock value
+        opts (dict):  injected optional additional parameters
 
     The function comments show where the 6 equivalent contexts are performed
     enter, recur, clean, exit, (unforced) close, abort (forced)
@@ -1180,8 +1187,8 @@ class ExDoer(Doer):
     See Doer for inherited attributes, properties, and methods.
 
     Attributes:
-       .states is list of State namedtuples (tyme, context, feed, count)
-       .count is iteration count
+       states (list): State namedtuples (tyme, context, feed, count)
+       count (int): iteration count
 
     """
 
@@ -1238,11 +1245,11 @@ def doifyExDo(tymth, tock=0.0, states=None, **opts):
     Wrapping this function with doify returns copy with unique attributes
 
     Parameters:
-        tymth is injected function wrapper closure returned by .tymen() of
-                Tymist instance. Calling tymth() returns associated Tymist .tyme.
-        tock is injected initial tock value
-        states is list of State namedtuples (tyme, context, feed, count)
-        opts is dict of injected optional additional parameters
+        tymth (closure): injected function wrapper closure returned by
+                Tymist.tymen(). Calling tymth() returns associated Tymist.tyme.
+        tock (float): injected initial tock value
+        states (list): State namedtuples (tyme, context, feed, count)
+        opts (dict): injected optional additional parameters
 
     """
     tyme = tymth()
@@ -1283,11 +1290,11 @@ def doizeExDo(tymth, tock=0.0, states=None, **opts):
     Calling this function returns generator
 
     Parameters:
-        tymth is injected function wrapper closure returned by .tymen() of
-            Tymist instance. Calling tymth() returns associated Tymist .tyme.
-            tock is injected initial tock value
-            states is list of State namedtuples (tyme, context, feed, count)
-            opts is dict of injected optional additional parameters
+        tymth (closure): injected function wrapper closure returned by
+                Tymist.tymen(). Calling tymth() returns associated Tymist.tyme.
+        tock (float): injected initial tock value
+        states (list): of State namedtuples (tyme, context, feed, count)
+        opts (dict): injected optional additional parameters
     """
     tyme = tymth()
     count = 0
@@ -1327,23 +1334,22 @@ class TryDoer(Doer):
     TryDoer supports testing with methods to record sends and yields
 
     Inherited Attributes:
-        .done is Boolean completion state:
-            True means completed
-            Otherwise incomplete. Incompletion maybe due to close or abort.
+        done (bool | None): completion state:
+                             True means completed Otherwise incomplete.
+                             Incompletion maybe due to close or abort.
 
     Attributes:
-       .states is list of State namedtuples (tyme, context, feed, count)
-       .count is context count
-       .stop is stop count where doer completes
+       states (list): State namedtuples (tyme, context, feed, count)
+       count (int): is context count
+       stop (int): count where doer completes
 
     Inherited Properties:
-        .tyme is float relative cycle time of associated Tymist .tyme obtained
+        tyme (float): relative cycle time of associated Tymist .tyme obtained
             via injected .tymth function wrapper closure.
-        .tymth is function wrapper closure returned by Tymist .tymeth() method.
-            When .tymth is called it returns associated Tymist .tyme.
-            .tymth provides injected dependency on Tymist tyme base.
-        .tock is float, desired time in seconds between runs or until next run,
-                 non negative, zero means run asap
+        tymth (closure): injected function wrapper closure returned by
+                Tymist.tymen(). Calling tymth() returns associated Tymist.tyme.
+        tock (float): injected initial tock value. non negative, zero means run asap
+
 
     Properties:
 
@@ -1418,9 +1424,15 @@ class TryDoer(Doer):
 #  for testing purposes
 @doize()
 def tryDo(states, tymth, tock=0.0,  **opts):
-    """
-    Generator function test example non-class based generator.
-    Calling this function returns generator
+    """Generator function test example non-class based generator.
+    Calling this function returns generator:
+
+    Parameters:
+        tymth (closure): injected function wrapper closure returned by
+                Tymist.tymen(). Calling tymth() returns associated Tymist.tyme.
+        tock (float): injected initial tock value
+        opts (dict): injected optional additional parameters
+
     """
     feed = "Default"
     count = 0
