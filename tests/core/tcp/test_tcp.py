@@ -5,6 +5,7 @@ tests.core.test_tcp module
 """
 import pytest
 
+import platform
 import sys
 import os
 import time
@@ -283,20 +284,20 @@ def test_tcp_basic():
         msgIn = gamma.receive()
         assert msgOut == msgIn
         msgIn = gamma.receive()
-        if 'linux' in sys.platform:
-            assert msgIn ==  b''  # server shutdown detected not None
-            assert gamma.cutoff == True
-        else:
-            assert msgIn == None  # server shutdown not detected
+        if platform.system() == 'Darwin':
             assert gamma.cutoff == False
+            assert  msgIn == None  # server shutdown not detected
+        else:
+            assert gamma.cutoff == True
+            assert msgIn == b''  # server shutdown detected not None
         time.sleep(0.05)
         msgIn = gamma.receive()
-        if 'linux' in sys.platform:
-            assert msgIn == b''  # server shutdown detected not None
-            assert gamma.cutoff == True
-        else:
-            assert msgIn == None   # server shutdown not detected
+        if platform.system() == 'Darwin':
             assert gamma.cutoff == False
+            assert  msgIn == None  # server shutdown not detected
+        else:
+            assert gamma.cutoff == True
+            assert msgIn == b''  # server shutdown detected not None
 
         ixGamma.close()  # close server connection to gamma
         del server.ixes[ixGamma.ca]
@@ -371,12 +372,12 @@ def test_tcp_basic():
         assert msgOut == msgIn
         time.sleep(0.05)
         msgIn = ixBeta.receive()
-        if 'linux' in sys.platform:
-            assert ixBeta.cutoff == True
-            assert msgIn == b''  # server does detect shutdown
-        else:
+        if platform.system() == 'Darwin':
             assert ixBeta.cutoff == False
             assert  msgIn == None  # server does not detect shutdown
+        else:
+            assert ixBeta.cutoff == True
+            assert msgIn == b''  # server does detect shutdown
         beta.close()
         time.sleep(0.05)
         msgIn = ixBeta.receive()

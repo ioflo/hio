@@ -5,6 +5,7 @@ hio.help.ogling module
 Provides python stdlib logging module support
 
 """
+import platform
 import sys
 import os
 import logging
@@ -96,10 +97,10 @@ class Ogler():
         count (int): backup count number of backups to keep
     """
     Prefix = "hio"
-    HeadDirPath = "/usr/local/var"  # default in /usr/local/var
+    HeadDirPath = os.path.join(os.path.sep, "usr", "local", "var")  # default in /usr/local/var
     TailDirPath = "logs"
-    AltHeadDirPath = "~"  #  put in ~ as fallback when desired dir not permitted
-    TempHeadDir = "/tmp"
+    AltHeadDirPath = os.path.expanduser("~")  #  put in ~ as fallback when desired dir not permitted
+    TempHeadDir = os.path.join(os.path.sep, "tmp")
     TempPrefix = "test_"
     TempSuffix = "_temp"
 
@@ -162,14 +163,16 @@ class Ogler():
         #create console handlers and assign formatters
         self.baseConsoleHandler = logging.StreamHandler()  # sys.stderr
         self.baseConsoleHandler.setFormatter(self.baseFormatter)
-        if sys.platform == 'darwin':
-            address = '/var/run/syslog'
+        if sys.platform in ('linux', 'darwin'):
+            if sys.platform == 'darwin':
+                address = '/var/run/syslog'
+            else:
+                address = '/dev/log'
+            facility = logging.handlers.SysLogHandler.LOG_USER
+            self.baseSysLogHandler = logging.handlers.SysLogHandler(address=address, facility=facility)
+            self.baseSysLogHandler.setFormatter(self.baseFormatter)
         else:
-            address = '/dev/log'
-        facility = logging.handlers.SysLogHandler.LOG_USER  # LOG_DAEMON
-        self.baseSysLogHandler = logging.handlers.SysLogHandler(address=address,
-                                                                facility=facility)
-        self.baseSysLogHandler.setFormatter(self.baseFormatter)
+            self.syslogged = False
         # SysLogHandler only appears to log at ERROR level despite the set level
         #self.baseSysLogHandler.encodePriority(self.baseSysLogHandler.LOG_USER,
                                               #self.baseSysLogHandler.LOG_DEBUG)
@@ -288,6 +291,28 @@ class Ogler():
         Parameters:
            clear is boolean, True means clear directory
         """
+        if platform.system() == 'Windows':
+            if self.filed and self.baseFileHandler:
+                self.baseFileHandler.close()
+                for name in logging.root.manager.loggerDict:
+                    logger = logging.getLogger(name)
+                    if self.baseFileHandler in logger.handlers:
+                        logger.removeHandler(self.baseFileHandler)
+
+            if self.consoled and self.baseConsoleHandler:
+                self.baseConsoleHandler.close()
+                for name in logging.root.manager.loggerDict:
+                    logger = logging.getLogger(name)
+                    if self.baseConsoleHandler in logger.handlers:
+                        logger.removeHandler(self.baseConsoleHandler)
+
+            if self.syslogged and self.baseSysLogHandler:
+                self.baseSysLogHandler.close()
+                for name in logging.root.manager.loggerDict:
+                    logger = logging.getLogger(name)
+                    if self.baseSysLogHandler in logger.handlers:
+                        logger.removeHandler(self.baseSysLogHandler)
+
         self.opened = False
         if clear or self.temp:
             self.clearDirPath()

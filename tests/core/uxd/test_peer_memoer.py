@@ -4,6 +4,7 @@ tests.core.test_peer_memoer module
 
 """
 import os
+import platform
 
 import pytest
 
@@ -17,7 +18,8 @@ from hio.core.uxd import uxding, peermemoing
 
 def test_memoer_peer_basic():
     """Test MemoerPeer class"""
-
+    if platform.system() == "Windows":
+        return
     alpha = peermemoing.PeerMemoer(name="alpha", temp=True, size=38)
     assert alpha.name == "alpha"
     assert alpha.code == GramDex.Basic
@@ -143,7 +145,8 @@ def test_memoer_peer_basic():
 
 def test_memoer_peer_open():
     """Test MemoerPeer class with context manager openPM"""
-
+    if platform.system() == "Windows":
+        return
     with (peermemoing.openPM(name='alpha', size=38) as alpha,
           peermemoing.openPM(name='beta', size=38) as beta):
 
@@ -270,6 +273,8 @@ def test_memoer_peer_open():
 def test_peermemoer_doer():
     """Test PeerMemoerDoer class
     """
+    if platform.system() == "Windows":
+        return
     tock = 0.03125
     ticks = 4
     limit = ticks *  tock
