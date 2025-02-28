@@ -437,7 +437,11 @@ class Device():
         try:
             data = os.read(self.fd, self.bs)  #if no chars available generates exception
         except OSError as ex1:  # ex1 is the target instance of the exception
-            if ex1.errno == errno.EAGAIN: #BSD 35, Linux 11
+            # ex.args[0] == ex.errno for better os compatibility
+            # the value of a given errno.XXXXX may be different on each os
+            # EAGAIN: BSD 35, Linux 11, Windows 11
+            # EWOULDBLOCK: BSD 35 Linux 11 Windows 140
+            if ex1.args[0] in (errno.EAGAIN, errno.EWOULDBLOCK):
                 pass #No characters available
             else:
                 logger.error("Error: Receive on Device '%s'."
@@ -454,7 +458,11 @@ class Device():
         try:
             count = os.write(self.fd, data)
         except OSError as ex1:  # ex1 is the target instance of the exception
-            if ex1.errno == errno.EAGAIN:  # BSD 35, Linux 11
+            # ex.args[0] == ex.errno for better os compatibility
+            # the value of a given errno.XXXXX may be different on each os
+            # EAGAIN: BSD 35, Linux 11, Windows 11
+            # EWOULDBLOCK: BSD 35 Linux 11 Windows 140
+            if ex1.args[0] in (errno.EAGAIN, errno.EWOULDBLOCK):
                 count = 0  # buffer full can't write
             else:
                 logger.error("Error: Send on Device '%s'."
@@ -540,7 +548,11 @@ class Serial():
         try:
             data = self.serial.read(self.bs)  #if no chars available generates exception
         except OSError as ex1:  # ex1 is the target instance of the exception
-            if ex1.errno == errno.EAGAIN: #BSD 35, Linux 11
+            # ex.args[0] == ex.errno for better os compatibility
+            # the value of a given errno.XXXXX may be different on each os
+            # EAGAIN: BSD 35, Linux 11, Windows 11
+            # EWOULDBLOCK: BSD 35 Linux 11 Windows 140
+            if ex1.args[0] in (errno.EAGAIN, errno.EWOULDBLOCK):
                 pass #No characters available
             else:
                 logger.error("Error: Receive on Serial '%s'."
@@ -557,7 +569,11 @@ class Serial():
         try:
             count = self.serial.write(data)
         except OSError as ex1:  # ex1 is the target instance of the exception
-            if ex1.errno == errno.EAGAIN: #BSD 35, Linux 11
+            # ex.args[0] == ex.errno for better os compatibility
+            # the value of a given errno.XXXXX may be different on each os
+            # EAGAIN: BSD 35, Linux 11, Windows 11
+            # EWOULDBLOCK: BSD 35 Linux 11 Windows 140
+            if ex1.args[0] in (errno.EAGAIN, errno.EWOULDBLOCK):
                 count = 0  # buffer full can't write
             else:
                 logger.error("Error: Send on Serial '%s'."
