@@ -33,7 +33,7 @@ def test_udp_basic():
         else:
             assert alpha.ha == ('0.0.0.0', 6101)
 
-        beta = udping.Peer(port = 6102, wl=wl)  # any interface on port 6102
+        beta = udping.Peer(name='beta',port = 6102, wl=wl)  # any interface on port 6102
         if platform.system() == 'Windows':
             beta = udping.Peer(ha=('127.0.0.1', 6102), wl=wl)
 
