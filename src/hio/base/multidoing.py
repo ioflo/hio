@@ -9,17 +9,23 @@ Provides multiprocessing support
 """
 import os
 import time
+import logging
 import multiprocessing as mp
 
 from collections import deque, namedtuple
 from dataclasses import dataclass, astuple, asdict, field
 
 
-from .. import hioing
 from . import tyming
+from .doing import Doist, Doer
+from .. import hioing
+from .. import help
 from ..help import timing, helping
 from ..help.helping import RawDom
-from .doing import Doist, Doer
+from ..help import ogling
+
+
+logger = help.ogler.getLogger()
 
 
 @dataclass
@@ -43,28 +49,6 @@ class DoistDom(RawDom):
 
     def __iter__(self):
         return iter(asdict(self))
-
-
-def spinup(name, tyme, tock, real, limit, doers):
-    """Process target function to make and run doist after child subprocess has
-    been started.
-
-    Doist must be built after process started so local tymth closure is created
-    inside subprocess so that when doist winds its doers the tymth is locally found.
-    """
-    print(f"Child: {name=} starting.")
-    print('    module name:', __name__)
-    print('    parent process:', os.getppid())
-    print('    process id:', os.getpid())
-    time.sleep(0.01)
-
-    doist = Doist(name=name, tock=tock, real=real, limit=limit, doers=doers)
-    doist.do()
-
-    print(f"Child: {name=} ended.")
-    print('    module name:', __name__)
-    print('    parent process:', os.getppid())
-    print('    process id:', os.getpid())
 
 
 
@@ -117,7 +101,7 @@ class MultiDoer(Doer):
 
     """
 
-    def __init__(self, loads=None, **kwa):
+    def __init__(self, loads=None, temp=False, **kwa):
         """Initialize instance.
 
 
@@ -129,17 +113,17 @@ class MultiDoer(Doer):
             opts (dict): injected options into its .do generator by scheduler
 
         Parameters:
-            loads: (list[dict]): each expanded to kwargs used to spinup a
+            loads (list[dict]): each expanded to kwargs used to spinup a
                                  child process' doist
-
-
-
+            temp (bool): True means logger or other resources in spinup uses temp
+                         False other wise
 
         """
         super(MultiDoer, self).__init__(**kwa)
+        self.loads = loads if loads is not None else []
+        self.temp = temp
         self.tots = {}
         self.ctx = mp.get_context('spawn')
-        self.loads = loads if loads is not None else []
         self.count = None
 
 
@@ -148,7 +132,7 @@ class MultiDoer(Doer):
         self.count = 0
         for load in self.loads:
             tot = self.ctx.Process(name=load["name"],
-                                     target=spinup,
+                                     target=self.spinup,
                                      kwargs=load)
             self.tots[tot.name] = tot
             tot.start()
@@ -175,4 +159,41 @@ class MultiDoer(Doer):
     def abort(self, ex):
         """"""
         self.count += 1
+
+
+    @staticmethod
+    def spinup(name, tyme, tock, real, limit, doers, temp):
+        """Process target function to make and run doist after child subprocess has
+        been started.
+
+        Paramters:
+            name (str): unique identifier for child doist and its resources
+            tyme (float): child doist start tyme
+            tock (float | None): child doist tyme lag between runs, None means ASAP
+            real (bool): child doist runtime
+                         True means run in real time, tyme is real time
+                         False means run in faster than real time, tyme is relative
+            limit (float | None): child doist tyme limit. None mean run forever
+            doers (list): child doist list of doers. Do not assign tymist to doers
+                          when creating.
+            temp (bool): use temp resources such as file pathing
+
+        Doist must be built after process started so local tymth closure is created
+        inside subprocess so that when doist winds the tyme for its doers
+        the tymth closure is locally sourced.
+        """
+        ogler = ogling.initOgler(prefix='hio_multi', name="hio_multi", level=logging.DEBUG,
+                                              temp=temp, reopen=True, clear=True)
+        logger = ogler.getLogger()
+
+        logger.info("Child Starting: name=%s, ppid=%d, pid=%s, module=%s.",
+                                name, os.getppid(), os.getpid(), __name__)
+        time.sleep(0.01)
+
+        doist = Doist(name=name, tock=tock, real=real, limit=limit, doers=doers)
+        doist.do()
+
+        logger.info("Child Ended: name=%s, ppid=%d, pid=%s, module=%s.",
+                             name, os.getppid(), os.getpid(), __name__)
+
 

@@ -30,7 +30,7 @@ def test_multidoer():
     assert doist.doers == []
 
     exdoer = ExDoer(tock=0.05)  # don't assign tymth now must be rewound inside subprocess
-    load = dict(name='child', tyme=0.0, tock=0.01, real=True, limit=None, doers=[exdoer])
+    load = dict(name='child', tyme=0.0, tock=0.01, real=True, limit=None, doers=[exdoer], temp=True)
 
     doer = multidoing.MultiDoer(tock=0.01, tymth=doist.tymen(), loads=[load])
     assert doer.loads[0] == load

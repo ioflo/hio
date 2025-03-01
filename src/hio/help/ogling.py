@@ -160,9 +160,11 @@ class Ogler():
         fmt = "{}: %(message)s".format(self.prefix)
         self.baseFormatter = logging.Formatter(fmt)  # basic format
 
-        #create console handlers and assign formatters
+        #create handlers and assign formatters
+        # console log
         self.baseConsoleHandler = logging.StreamHandler()  # sys.stderr
         self.baseConsoleHandler.setFormatter(self.baseFormatter)
+        # syslog
         if sys.platform in ('linux', 'darwin'):
             if sys.platform == 'darwin':
                 address = '/var/run/syslog'
@@ -176,12 +178,12 @@ class Ogler():
         # SysLogHandler only appears to log at ERROR level despite the set level
         #self.baseSysLogHandler.encodePriority(self.baseSysLogHandler.LOG_USER,
                                               #self.baseSysLogHandler.LOG_DEBUG)
-        if reopen:
+        if reopen:  # file log
             self.reopen(headDirPath=self.headDirPath, clear=clear)
 
 
     def reopen(self, name=None, temp=None, headDirPath=None, clear=False):
-        """
+        """Create file handler log.
         Use or Create if not preexistent, directory path .dirPath for file .path
         First closes .path if already opened. If clear is True then also clears
         .path before reopening
