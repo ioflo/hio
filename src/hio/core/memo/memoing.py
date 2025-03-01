@@ -1771,8 +1771,7 @@ class TymeeMemoerDoer(doing.Doer):
         """
         super(TymeeMemoerDoer, self).__init__(**kwa)
         self.peer = peer
-        if self.tymth:
-            self.peer.wind(self.tymth)
+
 
 
     def wind(self, tymth):
@@ -1784,7 +1783,9 @@ class TymeeMemoerDoer(doing.Doer):
 
 
     def enter(self):
-        """"""
+        """Doist or DoDoer winds is doers on enter"""
+        if self.tymth:
+            self.peer.wind(self.tymth)
         self.peer.reopen()
 
 
