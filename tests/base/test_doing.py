@@ -247,10 +247,10 @@ def test_doer():
     doer.tock = 0.0
     assert doer.tock ==  0.0
 
-    # test Doer.__call__ method on instance
+    # test Doer.__call__ method on instance calling .do
     # create generator use send and explicit close
-    args = {}
-    dog = doer(tymth=doer.tymth, tock=doer.tock, **args)
+    kwa = {}
+    dog = doer(tymth=doer.tymth, tock=doer.tock, **kwa)
     assert inspect.isgenerator(dog)
     result = dog.send(None)
     assert result == doer.tock == 0.0
@@ -329,8 +329,8 @@ def test_doer():
     # Test default pass through of extra __init__ kwa to .opts
     assert callable(doing.Doer)
 
-    opts = dict(extra=True, more=1, evenmore="hi")
-    doer = doing.Doer(extra=True, more=1, evenmore="hi")
+    opts = dict(some=True, more=1, evenmore="hi")
+    doer = doing.Doer(opts=opts, extra='stuff')
     assert callable(doer)
     assert not inspect.isgeneratorfunction(doer)
     assert doer.tock == 0.0
@@ -341,7 +341,7 @@ def test_doer():
 
     tymist = tyming.Tymist()
     tock = 1.0
-    doer = doing.Doer(tymth=tymist.tymen(), tock=tock, **opts)
+    doer = doing.Doer(tymth=tymist.tymen(), tock=tock, opts=opts, extra='stuff')
     assert callable(doer)
     assert not inspect.isgeneratorfunction(doer)
     assert doer.tymth is not None

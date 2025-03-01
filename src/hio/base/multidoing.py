@@ -8,11 +8,11 @@ Provides multiprocessing support
 
 """
 import time
-import types
-import inspect
-from inspect import isgeneratorfunction
+import multiprocessing as mp
+
 from collections import deque, namedtuple
 from dataclasses import dataclass, astuple, asdict, field
+
 
 from .. import hioing
 from . import tyming
@@ -22,17 +22,20 @@ from .doing import Doist, Doer
 
 
 @dataclass
-class SpawnDom(RawDom):
-    """
-    Corresponds to StateEstEvent namedtuple used as sub record in KeyStateRecord
-    for latest establishment event associated with current key state
+class LoadDom(RawDom):
+    """Configuration dataclass to load up a child process of MultiDoer
 
     Attributes:
         name (str): identifier of child process and element of path based resources.
         doers (list[Doers]): List of Doers to be run by child process Doist
+        doist (Doist): doist to run the doers in this child
+        process (mp.Process): instance of process
     """
-    name: str ='child'
+    name: str ='child'  # name of
     doers: list = field(default_factory=list)
+    doist: Doist | None = None
+    process: None = None
+
 
 
     def __iter__(self):
@@ -48,9 +51,10 @@ class MultiDoer(Doer):
 
     Inherited Attributes:
         done (bool): completion state:
-            True means completed
-            Otherwise incomplete. Incompletion maybe due to close or abort.
-        opts (dict): injected options into its .do generator by scheduler
+                     True means completed fully. Otherwise incomplete.
+                     Incompletion value may be None or False.
+        opts (dict): schedulaer injects options from .opts into its .do generator
+                     function as **opts parameter.
 
 
     Inherited Properties:
@@ -77,7 +81,8 @@ class MultiDoer(Doer):
 
 
     Attributes:
-        spawn (list[SpawnDom]):  list of config dataclass instances
+        ctx: (mp.context.SpawnContext | None): context under which to spawn processes
+        tots (dict): values are child process instances keyed by name
         count (int): iteration count
 
     Properties:
@@ -85,24 +90,38 @@ class MultiDoer(Doer):
 
     """
 
-    def __init__(self, spawn=None, **kwa):
+    def __init__(self, load=None, **kwa):
         """Initialize instance.
 
+
+        Inherited Parameters:
+            tymth (closure): injected function wrapper closure returned by
+                Tymist.tymen() instance. Calling tymth() returns associated
+                Tymist.tyme.
+            tock (float): seconds initial value of .tock
+            opts (dict): injected options into its .do generator by scheduler
+
         Parameters:
-            spawn (list | None):  configuration parameters for child processes
-                to spawn. Each entry in spawn is a dataclass of config fields.
+            load (dict[str, LoadDom] | None): LoadDom dataclass instances used to
+                                        child processes to be spawned.
 
 
 
 
         """
         super(MultiDoer, self).__init__(**kwa)
-        self.spawn = spawn if spawn is not None else []
+        self.ctx = mp.get_context('spawn')
+        self.tots = {}
+        if load:
+            for l in load:
+                self.tots[l.name] = l
+                l.doist = Doist(doers=l.doers)
+
         self.count = None
 
 
     def enter(self):
-        """"""
+        """Start processes with config from .spawn"""
         self.count = 0
 
     def recur(self, tyme):

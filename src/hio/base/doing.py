@@ -100,7 +100,7 @@ class Doist(tyming.Tymist):
         self.timer = timing.MonoTimer(duration = self.tock)
 
 
-    def do(self, doers=None, limit=None, tyme=None, **opts):
+    def do(self, doers=None, limit=None, tyme=None):
         """
         Readies deeds deque from .doers or doers if any and then iteratively
         runs .recur over deeds deque until completion of all deeds.
@@ -127,7 +127,6 @@ class Doist(tyming.Tymist):
             limit (float): is real time limit on execution. Forces close of all dogs.
             tyme  (float): is optional starting tyme. Resets .tyme to tyme whe provided.
                If not provided uses current .tyme
-            opts (dict):  injected optional additional parameters
 
         Returns:
             None
@@ -492,7 +491,7 @@ class Doer(tyming.Tymee):
 
     """
 
-    def __init__(self, *, tymth=None, tock=0.0, **opts):
+    def __init__(self, *, tymth=None, tock=0.0, opts=None, **kwa):
         """
         Initialize instance.
 
@@ -501,18 +500,15 @@ class Doer(tyming.Tymee):
                 Tymist instance. Calling tymth() returns associated Tymist .tyme.
 
         Parameters:
-            tymth (closure): function wrapper closure returned by Tymist.tymen()
-                            method. When .tymth is called it returns associated
-                            Tymist.tyme. Provides injected dependency on Tymist
-                            tyme base.
            tock (float): seconds initial value of .tock
            opts (dict): injected options into its .do generator by scheduler
 
         """
-        super(Doer, self).__init__(tymth=tymth)
+        super(Doer, self).__init__(tymth=tymth, **kwa)
         self.done = None  #  default completion state
         self.tock = tock  # desired tyme interval between runs, 0.0 means asap
-        self.opts = opts  # used for injection of options into .do by scheduler
+        # used for injection of options into .do by scheduler
+        self.opts = opts if opts is not None else {}  # empty dict if None
 
 
     def __call__(self, **kwa):
