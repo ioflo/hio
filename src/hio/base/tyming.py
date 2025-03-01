@@ -137,8 +137,10 @@ class Tymee(hioing.Mixin):
         """
         tyme property getter, get ._tyme
         .tyme is float cycle time in seconds
+        Returns:
+            tyme (float | None): tyme from self.tymth() when wound else None
         """
-        return self._tymth()
+        return self._tymth() if self._tymth else None
 
 
     @property

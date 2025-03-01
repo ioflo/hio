@@ -765,8 +765,7 @@ class ClientDoer(doing.Doer):
         """
         super(ClientDoer, self).__init__(**kwa)
         self.client = client
-        if self.tymth:
-            self.client.wind(self.tymth)
+
 
 
     def wind(self, tymth):
@@ -779,7 +778,9 @@ class ClientDoer(doing.Doer):
 
 
     def enter(self):
-        """"""
+        """Doist or DoDoer winds is doers on enter"""
+        if self.tymth:
+            self.client.wind(self.tymth)
         self.client.reopen()
 
 

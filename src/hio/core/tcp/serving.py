@@ -1052,8 +1052,6 @@ class ServerDoer(doing.Doer):
         """
         super(ServerDoer, self).__init__(**kwa)
         self.server = server
-        if self.tymth:
-            self.server.wind(self.tymth)
 
 
     def wind(self, tymth):
@@ -1066,7 +1064,9 @@ class ServerDoer(doing.Doer):
 
 
     def enter(self):
-        """"""
+        """Doist or DoDoer winds is doers on enter"""
+        if self.tymth:
+            self.server.wind(self.tymth)
         self.server.reopen()
 
 
@@ -1092,10 +1092,6 @@ class EchoServerDoer(ServerDoer):
 
 
     """
-
-    def enter(self):
-        """"""
-        self.server.reopen()
 
 
     def recur(self, tyme):

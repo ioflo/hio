@@ -24,40 +24,6 @@ UDP_MAX_PACKET_SIZE = min(1024, UDP_MAX_DATAGRAM_SIZE)  # assumes IPV6 capable e
 
 
 
-@contextmanager
-def openPeer(cls=None, name="test", **kwa):
-    """
-    Wrapper to create and open UDP Peer instances
-    When used in with statement block, calls .close() on exit of with block
-
-    Parameters:
-        cls (Class): instance of subclass instance
-        name (str): unique identifer of peer. Enables management of Peer sockets
-                    by name.
-    Usage:
-        with openPeer() as peer0:
-            peer0.receive()
-
-        with openPeer(cls=PeerBig) as peer0:
-            peer0.receive()
-
-    """
-    peer = None
-
-    if cls is None:
-        cls = Peer
-    try:
-        peer = cls(name=name, **kwa)
-        peer.reopen()
-
-        yield peer
-
-    finally:
-        if peer:
-            peer.close()
-
-
-
 class Peer(hioing.Mixin):
     """Class to manage non blocking I/O on UDP socket.
 
@@ -283,6 +249,40 @@ class Peer(hioing.Mixin):
         Stub Override in subclass
         """
         pass
+
+
+
+@contextmanager
+def openPeer(cls=None, name="test", **kwa):
+    """
+    Wrapper to create and open UDP Peer instances
+    When used in with statement block, calls .close() on exit of with block
+
+    Parameters:
+        cls (Class): instance of subclass instance
+        name (str): unique identifer of peer. Enables management of Peer sockets
+                    by name.
+    Usage:
+        with openPeer() as peer0:
+            peer0.receive()
+
+        with openPeer(cls=PeerBig) as peer0:
+            peer0.receive()
+
+    """
+    peer = None
+
+    if cls is None:
+        cls = Peer
+    try:
+        peer = cls(name=name, **kwa)
+        peer.reopen()
+
+        yield peer
+
+    finally:
+        if peer:
+            peer.close()
 
 
 

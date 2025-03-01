@@ -225,8 +225,6 @@ class Peer(filing.Filer):
                           False means do not remove directory and uxd file upon close
             See filing.Filer for other inherited parameters
         """
-        #self.close(clear=clear)
-
         opened = super(Peer, self).reopen(clear=clear, **kwa)
         if not opened:
             raise hioing.FilerError(f"Failure opening uxd path {self.path}.")

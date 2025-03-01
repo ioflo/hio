@@ -18,47 +18,6 @@ from ..help.helping import ocfn
 logger = help.ogler.getLogger()
 
 
-@contextmanager
-def openFiler(cls=None, name="test", temp=True, reopen=True, clear=False, **kwa):
-    """
-    Context manager wrapper Filer instances for managing a filesystem directory
-    and or files in a directory.
-
-    Defaults to using temporary directory path.
-    Context 'with' statements call .close on exit of 'with' block
-
-    Parameters:
-        cls is Class instance of subclass instance
-        name is str name of Filer instance path part so can have multiple Filers
-             at different paths that each use different dirs or files
-        temp is Boolean, True means open in temporary directory, clear on close
-                Otherwise open in persistent directory, do not clear on close
-        reopen (bool): True (re)open with this init
-                           False not (re)open with this init but later (default)
-        clear (bool): True means remove directory upon close when reopening
-                          False means do not remove directory upon close when reopening
-    See filing.Filer for other keyword parameter passthroughs
-
-    Usage:
-
-    with openFiler(name="bob") as filer:
-
-    with openFiler(name="eve", cls=FilerSubClass) as filer:
-
-    """
-    filer = None
-    if cls is None:
-        cls = Filer
-    try:
-        filer = cls(name=name, temp=temp, reopen=reopen, clear=clear, **kwa)
-        yield filer
-
-    finally:
-        if filer:
-            filer.close(clear=filer.temp or clear)  # clears if filer.temp
-
-
-
 class Filer(hioing.Mixin):
     """
     Filer instances manage file directories and files to hold keri installation
@@ -258,7 +217,7 @@ class Filer(hioing.Mixin):
             temp (bool): optional
                 None means ignore,
                 True means open temporary directory, may clear on close
-                False menans open persistent directory, may not clear on close
+                False means open persistent directory, may not clear on close
 
             headDirPath (str): optional head directory pathname of main database
 
@@ -533,6 +492,48 @@ class Filer(hioing.Mixin):
 
             else:
                 shutil.rmtree(self.path)  # remove trailing dir of path (and all below)
+
+
+
+@contextmanager
+def openFiler(cls=None, name="test", temp=True, reopen=True, clear=False, **kwa):
+    """
+    Context manager wrapper Filer instances for managing a filesystem directory
+    and or files in a directory.
+
+    Defaults to using temporary directory path.
+    Context 'with' statements call .close on exit of 'with' block
+
+    Parameters:
+        cls is Class instance of subclass instance
+        name is str name of Filer instance path part so can have multiple Filers
+             at different paths that each use different dirs or files
+        temp is Boolean, True means open in temporary directory, clear on close
+                Otherwise open in persistent directory, do not clear on close
+        reopen (bool): True (re)open with this init
+                           False not (re)open with this init but later (default)
+        clear (bool): True means remove directory upon close when reopening
+                          False means do not remove directory upon close when reopening
+    See filing.Filer for other keyword parameter passthroughs
+
+    Usage:
+
+    with openFiler(name="bob") as filer:
+
+    with openFiler(name="eve", cls=FilerSubClass) as filer:
+
+    """
+    filer = None
+    if cls is None:
+        cls = Filer
+    try:
+        filer = cls(name=name, temp=temp, reopen=reopen, clear=clear, **kwa)
+        yield filer
+
+    finally:
+        if filer:
+            filer.close(clear=filer.temp or clear)  # clears if filer.temp
+
 
 
 class FilerDoer(doing.Doer):

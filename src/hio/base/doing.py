@@ -227,7 +227,7 @@ class Doist(tyming.Tymist):
                 doer.__func__.done = None  # None before enter. enter may set to False
 
             opts = doer.opts if hasattr(doer, "opts") else {}
-            dog = doer(tymth=self.tymen(), tock=doer.tock, **opts)
+            dog = doer(tymth=self.tymen(), tock=doer.tock, **opts)  # calls doer.do
             try:
                 next(dog)  # run enter by advancing to first yield
             except StopIteration as ex:
@@ -459,6 +459,7 @@ class Doer(tyming.Tymee):
             True means completed
             Otherwise incomplete. Incompletion maybe due to close or abort.
         opts (dict): injected options into its .do generator by scheduler
+        temp (bool): True means use temporary file resources if any
 
     Inherited Properties:
         tyme (float): is float relative cycle time of associated Tymist .tyme obtained
@@ -493,7 +494,7 @@ class Doer(tyming.Tymee):
 
     """
 
-    def __init__(self, *, tymth=None, tock=0.0, opts=None, **kwa):
+    def __init__(self, *, tymth=None, tock=0.0, opts=None, temp=False, **kwa):
         """
         Initialize instance.
 
@@ -504,6 +505,7 @@ class Doer(tyming.Tymee):
         Parameters:
            tock (float): seconds initial value of .tock
            opts (dict): injected options into its .do generator by scheduler
+           temp (bool): True means use temporary file resources if any
 
         """
         super(Doer, self).__init__(tymth=tymth, **kwa)
@@ -511,6 +513,7 @@ class Doer(tyming.Tymee):
         self.tock = tock  # desired tyme interval between runs, 0.0 means asap
         # used for injection of options into .do by scheduler
         self.opts = opts if opts is not None else {}  # empty dict if None
+        self.temp = True if temp else False
 
 
     def __call__(self, **kwa):
@@ -670,6 +673,7 @@ class ReDoer(Doer):
         done (bool | None): completion state: True means completed
             Otherwise incomplete. Incompletion maybe due to close or abort.
         opts (dict): injected options into its .do generator by scheduler
+        temp (bool | None): use temporary file resources if any
 
     Inherited Properties:
         tyme (float): relative cycle time of associated Tymist .tyme obtained
@@ -745,10 +749,11 @@ class DoDoer(Doer):
     Scheduling hierarchy: Doist->DoDoer...->DoDoer->Doers
 
     Inherited Attributes:
-        .done is Boolean completion state:
-            True means completed
-            Otherwise incomplete. Incompletion maybe due to close or abort.
-        .opts is dict of injected options for its generator .do
+        done (bool): completion state:
+                    True means completed
+                    Otherwise incomplete. Incompletion maybe due to close or abort.
+        opts (dict): injected options for its generator .do
+        temp (bool | None): use temporary file resources if any
 
     Attributes:
 
@@ -986,7 +991,7 @@ class DoDoer(Doer):
             except AttributeError:   # when using bound method for generator function
                 doer.__func__.done = None  # None before enter. enter may set to False
             opts = doer.opts if hasattr(doer, "opts") else {}
-            dog = doer(tymth=self.tymth, tock=doer.tock, **opts)
+            dog = doer(tymth=self.tymth, tock=doer.tock, **opts)  # calls doer.do
             try:
                 next(dog)  # run enter by advancing to first yield
             except StopIteration as ex:  # returned instead of yielded
@@ -1335,6 +1340,8 @@ class TryDoer(Doer):
         done (bool | None): completion state:
                              True means completed Otherwise incomplete.
                              Incompletion maybe due to close or abort.
+        opts (dict): injected options into its .do generator by scheduler
+        temp (bool | None): use temporary file resources if any
 
     Attributes:
        states (list): State namedtuples (tyme, context, feed, count)
