@@ -31,12 +31,12 @@ class LoadDom(RawDom):
         doist (Doist): doist to run the doers in this child
         process (mp.Process): instance of process
     """
-    name: str ='child'  # name of
-    doers: list = field(default_factory=list)
-    doist: Doist | None = None
-    process: None = None
-
-
+    name: str ='child'  # unique identifier of child process and associated resources
+    tyme: float = 0.0    # child doist start time
+    tock: float | None = None  # child doist time lag between runs, None means ASAP
+    real: bool = True  # child doist True means run in real time
+    limit: float | None = None  # child doist time limit. None mean run forever
+    doers: list = field(default_factory=list)  # child doist list of doers
 
     def __iter__(self):
         return iter(asdict(self))
@@ -114,14 +114,16 @@ class MultiDoer(Doer):
         self.tots = {}
         if load:
             for l in load:
+                doist = Doist()
                 self.tots[l.name] = l
+                self.tots
                 l.doist = Doist(doers=l.doers)
 
         self.count = None
 
 
     def enter(self):
-        """Start processes with config from .spawn"""
+        """Start processes with config from .tots"""
         self.count = 0
 
     def recur(self, tyme):

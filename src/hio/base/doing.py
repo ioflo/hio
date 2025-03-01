@@ -72,7 +72,7 @@ class Doist(tyming.Tymist):
             times out do to reaching time limit
 
     """
-    def __init__(self, real=False, limit=None, doers=None, **kwa):
+    def __init__(self, *, real=False, limit=None, doers=None, **kwa):
         """
         Returns:
             instance

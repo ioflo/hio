@@ -292,7 +292,7 @@ def main_basic():
     for i in range(4):
         name = f"child{i}"
         title = f"{name.capitalize()} Info:"
-        p = ctx.Process(name=name, target=info, args=(title,))
+        p = ctx.Process(name=name, target=info, kwargs=dict(title=title))
         pxes.append(p)
         p.start()
         print("Child Started", p.name, p.pid, p.is_alive())
