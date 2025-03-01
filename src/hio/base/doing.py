@@ -39,6 +39,8 @@ class Doist(tyming.Tymist):
         .Tock is default .tock
 
     Attributes:
+        name (str): unique identifier of doist uses for identifying resources of
+                    doists running in child processes in multiprocessing
         real (boolean): True means run in real time, Otherwise as fast as possible.
         limit (float):  maximum run tyme limit then closes all doers
         done (boolean): True means completed due to limit or all deeds completed
@@ -72,7 +74,7 @@ class Doist(tyming.Tymist):
             times out do to reaching time limit
 
     """
-    def __init__(self, *, real=False, limit=None, doers=None, **kwa):
+    def __init__(self, *, name='doist', real=False, limit=None, doers=None, **kwa):
         """
         Returns:
             instance
@@ -91,7 +93,7 @@ class Doist(tyming.Tymist):
                 The normal case is to initialize here or in .do().
         """
         super(Doist, self).__init__(**kwa)
-
+        self.name = name
         self.real = True if real else False
         self.limit = abs(float(limit)) if limit is not None else None
         self.done = None
