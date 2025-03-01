@@ -572,7 +572,7 @@ class Doer(tyming.Tymee):
             else:  # .recur is standard method so iterate in while loop
                 while (not self.done):  # recur context
                     tyme = (yield (self.tock))  # yields .tock then waits for next send
-                    self.done = self.recur(tyme=tyme)
+                    self.done = self.recur(tyme=tyme)  # False means recur again
 
         except GeneratorExit:  # close context, forced exit due to .close on generator
             self.close() # close method on instance not generator

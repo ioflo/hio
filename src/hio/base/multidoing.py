@@ -7,6 +7,7 @@ Provides multiprocessing support
 
 
 """
+import os
 import time
 import multiprocessing as mp
 
@@ -22,24 +23,48 @@ from .doing import Doist, Doer
 
 
 @dataclass
-class LoadDom(RawDom):
-    """Configuration dataclass to load up a child process of MultiDoer
+class DoistDom(RawDom):
+    """Configuration dataclass to child process Doist parameters for MultiDoer
 
     Attributes:
-        name (str): identifier of child process and element of path based resources.
-        doers (list[Doers]): List of Doers to be run by child process Doist
-        doist (Doist): doist to run the doers in this child
-        process (mp.Process): instance of process
+        name (str): child doist identifier for resources.
+        tyme (float): child doist start tyme
+        tock (float | None): child doist tock, tyme lag between runs
+        real (bool): child doist True means run in real time, tyme is real time
+        limit (float | None): child doist tyme limit. None means run forever
+        doers (list[Doers]): child doist List of Doers
     """
     name: str ='child'  # unique identifier of child process and associated resources
-    tyme: float = 0.0    # child doist start time
-    tock: float | None = None  # child doist time lag between runs, None means ASAP
-    real: bool = True  # child doist True means run in real time
-    limit: float | None = None  # child doist time limit. None mean run forever
+    tyme: float = 0.0    # child doist start tyme
+    tock: float | None = None  # child doist tyme lag between runs, None means ASAP
+    real: bool = True  # child doist True means run in real time, tyme is real time
+    limit: float | None = None  # child doist tyme limit. None mean run forever
     doers: list = field(default_factory=list)  # child doist list of doers
 
     def __iter__(self):
         return iter(asdict(self))
+
+
+def spinup(name, tyme, tock, real, limit, doers):
+    """Process target function to make and run doist after child subprocess has
+    been started.
+
+    Doist must be built after process started so local tymth closure is created
+    inside subprocess so that when doist winds its doers the tymth is locally found.
+    """
+    print(f"Child: {name=} starting.")
+    print('    module name:', __name__)
+    print('    parent process:', os.getppid())
+    print('    process id:', os.getpid())
+    time.sleep(0.01)
+
+    doist = Doist(name=name, tock=tock, real=real, limit=limit, doers=doers)
+    doist.do()
+
+    print(f"Child: {name=} ended.")
+    print('    module name:', __name__)
+    print('    parent process:', os.getppid())
+    print('    process id:', os.getpid())
 
 
 
@@ -82,7 +107,9 @@ class MultiDoer(Doer):
 
     Attributes:
         ctx: (mp.context.SpawnContext | None): context under which to spawn processes
-        tots (dict): values are child process instances keyed by name
+        loads: (list[dict]): each expanded to kwargs used to spinup a
+                             child process' doist
+        tots (dict): values are child Process instances keyed by name
         count (int): iteration count
 
     Properties:
@@ -90,7 +117,7 @@ class MultiDoer(Doer):
 
     """
 
-    def __init__(self, load=None, **kwa):
+    def __init__(self, loads=None, **kwa):
         """Initialize instance.
 
 
@@ -102,37 +129,38 @@ class MultiDoer(Doer):
             opts (dict): injected options into its .do generator by scheduler
 
         Parameters:
-            load (dict[str, LoadDom] | None): LoadDom dataclass instances used to
-                                        child processes to be spawned.
+            loads: (list[dict]): each expanded to kwargs used to spinup a
+                                 child process' doist
 
 
 
 
         """
         super(MultiDoer, self).__init__(**kwa)
-        self.ctx = mp.get_context('spawn')
         self.tots = {}
-        if load:
-            for l in load:
-                doist = Doist()
-                self.tots[l.name] = l
-                self.tots
-                l.doist = Doist(doers=l.doers)
-
+        self.ctx = mp.get_context('spawn')
+        self.loads = loads if loads is not None else []
         self.count = None
 
 
     def enter(self):
         """Start processes with config from .tots"""
         self.count = 0
+        for load in self.loads:
+            tot = self.ctx.Process(name=load["name"],
+                                     target=spinup,
+                                     kwargs=load)
+            self.tots[tot.name] = tot
+            tot.start()
+
 
     def recur(self, tyme):
         """"""
         self.count += 1
 
-        if self.count > 3:
-            return True  # complete
-        return False  # incomplete
+        if not self.ctx.active_children():
+            return True   # complete
+        return False  # incomplete recur again
 
     def exit(self):
         """"""
