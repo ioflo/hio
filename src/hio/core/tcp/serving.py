@@ -153,7 +153,7 @@ class Acceptor(tyming.Tymee):
         self.opened = True
         return True
 
-    def reopen(self):
+    def reopen(self, **kwa):
         """
         Idempotently opens listen socket
         """
@@ -1063,11 +1063,20 @@ class ServerDoer(doing.Doer):
         self.server.wind(tymth)
 
 
-    def enter(self):
-        """Doist or DoDoer winds is doers on enter"""
+    def enter(self, *, temp=None):
+        """Do 'enter' context actions. Override in subclass. Not a generator method.
+        Set up resources. Comparable to context manager enter.
+
+        Parameters:
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value use self.temp
+
+        Doist or DoDoer winds its doers on enter
+        """
+        # inject temp into file resources here if any
         if self.tymth:
             self.server.wind(self.tymth)
-        self.server.reopen()
+        self.server.reopen(temp=temp)
 
 
     def recur(self, tyme):
@@ -1090,10 +1099,7 @@ class EchoServerDoer(ServerDoer):
     Inherited Attributes:
         .server is TCP Server instance
 
-
     """
-
-
     def recur(self, tyme):
         """"""
         self.server.service()

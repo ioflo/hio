@@ -120,7 +120,7 @@ class Console():
         return self.opened
 
 
-    def reopen(self):
+    def reopen(self, **kwa):
         """
         Idempotently opens console
         """
@@ -237,9 +237,18 @@ class ConsoleDoer(doing.Doer):
         self.console = console
 
 
-    def enter(self):
-        """"""
-        result = self.console.reopen()
+    def enter(self, *, temp=None):
+        """Do 'enter' context actions. Override in subclass. Not a generator method.
+        Set up resources. Comparable to context manager enter.
+
+        Parameters:
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value use self.temp
+
+        Doist or DoDoer winds its doers on enter
+        """
+        # inject temp into file resources here if any
+        result = self.console.reopen(temp=temp)
 
 
     def recur(self, tyme):
@@ -281,9 +290,18 @@ class EchoConsoleDoer(doing.Doer):
         self.txbs = txbs if txbs is not None else bytearray()
 
 
-    def enter(self):
-        """"""
-        self.console.reopen()
+    def enter(self, *, temp=None):
+        """Do 'enter' context actions. Override in subclass. Not a generator method.
+        Set up resources. Comparable to context manager enter.
+
+        Parameters:
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value use self.temp
+
+        Doist or DoDoer winds its doers on enter
+        """
+        # inject temp into file resources here if any
+        self.console.reopen(temp=temp)
         self.txbs.extend(b"Cmds: q=quit, h=help otherwise echoes.\n")
         self.txbs.extend(b"Type cmd & \n: ")
 

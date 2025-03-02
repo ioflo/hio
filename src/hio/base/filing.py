@@ -567,10 +567,19 @@ class FilerDoer(doing.Doer):
         super(FilerDoer, self).__init__(**kwa)
         self.filer = filer
 
-    def enter(self):
-        """"""
+
+    def enter(self, *, temp=None):
+        """Do 'enter' context actions. Override in subclass. Not a generator method.
+        Set up resources. Comparable to context manager enter.
+
+        Parameters:
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value use self.temp
+        """
+        # inject temp into file resources here if any
         if not self.filer.opened:
-            self.filer.reopen()
+            self.filer.reopen(temp=temp)
+
 
     def exit(self):
         """"""

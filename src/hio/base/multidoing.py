@@ -128,7 +128,19 @@ class MultiDoer(Doer):
 
 
     def enter(self):
-        """Start processes with config from .tots"""
+        """Do 'enter' context actions.
+        Start processes with config from .tots
+        Not a generator method.
+        Set up resources. Comparable to context manager enter.
+
+        Parameters:
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value use self.temp
+
+        Doist or DoDoer winds its doers on enter
+
+        """
+        # inject temp into file resources here if any
         self.count = 0
         for load in self.loads:
             tot = self.ctx.Process(name=load["name"],

@@ -57,6 +57,9 @@ class Doist(tyming.Tymist):
             case is use the default empty initialization performed here and
             update in .enter().
         timer (MonoTimer): for real time intervals
+        temp (bool): True means use temp resources such as file path.
+                     When True inject into doer enters when True.
+                     Otherwise do not inject into doer enters.
 
     Inherited Properties:
         tyme: is float relative cycle time, .tyme is artificial time
@@ -74,7 +77,8 @@ class Doist(tyming.Tymist):
             times out do to reaching time limit
 
     """
-    def __init__(self, *, name='doist', real=False, limit=None, doers=None, **kwa):
+    def __init__(self, *, name='doist', real=False, limit=None, doers=None,
+                          temp=False, **kwa):
         """
         Returns:
             instance
@@ -91,6 +95,8 @@ class Doist(tyming.Tymist):
                 The .doers attribute is used throughout the execution lifecycle.
                 Parameterization elsewhere of doers enables some special cases.
                 The normal case is to initialize here or in .do().
+            temp (bool): True means use temp resources such as file path, inject
+                         into doers when True. Otherwise do not inject.
         """
         super(Doist, self).__init__(**kwa)
         self.name = name
@@ -100,6 +106,7 @@ class Doist(tyming.Tymist):
         self.doers = list(doers) if doers is not None else []  # list of Doers
         self.deeds = deque()  # deque of deeds
         self.timer = timing.MonoTimer(duration = self.tock)
+        self.temp = True if temp else False
 
 
     def do(self, doers=None, limit=None, tyme=None):
@@ -182,9 +189,8 @@ class Doist(tyming.Tymist):
             self.exit()  # force close remaining deeds throws GeneratorExit
 
 
-    def enter(self, doers=None):
-        """
-        Enter context
+    def enter(self, doers=None, *, temp=None):
+        """Enter context
         Returns (deque):  deeds deque of triples (dog, retyme, doer)  where:
             dog is generator
             retyme is tyme (real or simulated) in seconds when dog should run next
@@ -204,7 +210,8 @@ class Doist(tyming.Tymist):
                 .opts is dict() of optional parameters
                 If not provided uses .doers.
                 The normal case is to initialize in .__init__. or .do().
-            deeds is deque of deed triples
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value use self.temp
 
         Returns:
             deeds deque():
@@ -214,6 +221,8 @@ class Doist(tyming.Tymist):
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
         For setting attributes on bound methods.
         """
+        # inject temp into file resources here if any
+
         if doers is None:
             doers = self.doers
             deeds = self.deeds
@@ -596,11 +605,15 @@ class Doer(tyming.Tymee):
         return self.done  # Only returns done state if normal return or close not abort raise
 
 
-    def enter(self):
-        """
-        Do 'enter' context actions. Override in subclass. Not a generator method.
+    def enter(self, *, temp=None):
+        """Do 'enter' context actions. Override in subclass. Not a generator method.
         Set up resources. Comparable to context manager enter.
+
+        Parameters:
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value use self.temp
         """
+        # inject temp into file resources here if any
 
 
     def recur(self, tyme):
@@ -951,9 +964,9 @@ class DoDoer(Doer):
         return self.done  # Only returns done state if normal return not close or abort raise
 
 
-    def enter(self, doers=None):
-        """
-        Do 'enter' context actions. Equivalent of Doist.enter()
+    def enter(self, doers=None, *, temp=None):
+        """Do 'enter' context actions. Equivalent of Doist.enter()
+        Set up resources. Comparable to context manager enter.
 
         Returns deeds deque of triples (dog, retyme, doer)  where:
             dog is generator created by doer
@@ -972,6 +985,9 @@ class DoDoer(Doer):
                 Parameterization here of doers enables some special cases.
                 The normal case is to initialize in .__init__.
 
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value use self.temp
+
         Returns:
             deeds (deque): A deed is tuple of form (dog, retyme, doer).
                            If not provided uses .deeds.
@@ -979,6 +995,8 @@ class DoDoer(Doer):
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
         For setting attributes on bound methods.
         """
+        # inject temp into file resources here if any
+
         if doers is None:
             doers = self.doers
             deeds = self.deeds
@@ -1204,8 +1222,17 @@ class ExDoer(Doer):
         self.count = None
 
 
-    def enter(self):
-        """"""
+    def enter(self, *, temp=None):
+        """Do 'enter' context actions. Override in subclass. Not a generator method.
+        Set up resources. Comparable to context manager enter.
+
+        Parameters:
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value use self.temp
+
+        Doist or DoDoer winds its doers on enter
+        """
+        # inject temp into file resources here if any
         self.count = 0
         self.states.append(State(tyme=self.tyme, context="enter",
                                  feed=self.tyme, count=self.count))
@@ -1385,9 +1412,16 @@ class TryDoer(Doer):
         self.count = None
         self.stop = stop
 
-    def enter(self):
+    def enter(self, *, temp=None):
+        """Do 'enter' context actions. Override in subclass. Not a generator method.
+        Set up resources. Comparable to context manager enter.
+
+        Parameters:
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value use self.temp
         """
-        """
+        # inject temp into file resources here if any
+
         feed = "Default"
         self.count = 0
         self.states.append(State(tyme=self.tyme, context="enter",
