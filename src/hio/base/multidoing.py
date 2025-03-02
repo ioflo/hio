@@ -24,13 +24,23 @@ from ..help import timing, helping
 from ..help.helping import RawDom
 from ..help import ogling
 
-
-logger = help.ogler.getLogger()
+ogler = ogling.initOgler(prefix='hio_mp', name="boss", level=logging.DEBUG)
+logger = ogler.getLogger()
 
 
 @dataclass
 class DoistDom(RawDom):
-    """Configuration dataclass to child process Doist parameters for MultiDoer
+    """Configuration dataclass of crew subprocess Doist parameters for MultiDoer
+    Use this when storing configuration in database or file. Use RawDom
+    serialization hidden methods:
+
+    Inherited Class Methods:
+        _fromdict(cls, d: dict): return dataclass converted from dict d
+        __iter__(self): asdict(self)
+        _asdict(self): return self converted to dict
+        _asjson(self): return self converted to json
+        _ascbor(self): return self converted to cbor
+        _asmgpk(self): return self converted to mgpk
 
     Attributes:
         name (str): child doist identifier for resources.
@@ -46,10 +56,7 @@ class DoistDom(RawDom):
     real: bool = True  # child doist True means run in real time, tyme is real time
     limit: float | None = None  # child doist tyme limit. None mean run forever
     doers: list = field(default_factory=list)  # child doist list of doers
-
-    def __iter__(self):
-        return iter(asdict(self))
-
+    temp: bool = False  # use temporary file resources if any
 
 
 class MultiDoer(Doer):
@@ -90,18 +97,20 @@ class MultiDoer(Doer):
 
 
     Attributes:
-        ctx: (mp.context.SpawnContext | None): context under which to spawn processes
-        loads: (list[dict]): each expanded to kwargs used to spinup a
-                             child process' doist
+        name (str): unique identifier for this MultDoer boss
+                    used to manage local resources
+        ctx (mp.context.SpawnContext | None): context under which to spawn processes
+        loads (list[dict]): each expanded to kwargs used to spinup a
+                            crew doist in a child process
         tots (dict): values are child Process instances keyed by name
-        count (int): iteration count
+
 
     Properties:
 
 
     """
 
-    def __init__(self, loads=None, temp=False, **kwa):
+    def __init__(self, *, name='boss', loads=None, temp=False, **kwa):
         """Initialize instance.
 
 
@@ -113,6 +122,8 @@ class MultiDoer(Doer):
             opts (dict): injected options into its .do generator by scheduler
 
         Parameters:
+            name (str): unique identifier for this MultiDoer boss to be used
+                        to manage local resources
             loads (list[dict]): each expanded to kwargs used to spinup a
                                  child process' doist
             temp (bool): True means logger or other resources in spinup uses temp
@@ -120,11 +131,11 @@ class MultiDoer(Doer):
 
         """
         super(MultiDoer, self).__init__(**kwa)
+        self.name = name
         self.loads = loads if loads is not None else []
         self.temp = temp
         self.tots = {}
         self.ctx = mp.get_context('spawn')
-        self.count = None
 
 
     def enter(self, *, temp=None):
@@ -134,13 +145,16 @@ class MultiDoer(Doer):
         Set up resources. Comparable to context manager enter.
 
         Parameters:
-            temp (bool | None): True means use temporary local file resources if any
-                                None means ignore parameter value use self.temp
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value. Use self.temp
+
+        Inject temp or self.temp into file resources here if any
 
         Doist or DoDoer winds its doers on enter
 
         """
-
+        logger.info("Boss Enter: name=%s size=%d, ppid=%d, pid=%d, module=%s.",
+                self.name, len(self.loads), os.getppid(), os.getpid(), __name__)
         self.count = 0
         for load in self.loads:
             tot = self.ctx.Process(name=load["name"],
@@ -161,6 +175,8 @@ class MultiDoer(Doer):
     def exit(self):
         """"""
         self.count += 1
+        logger.info("Boss Exit: name=%s, ppid=%d, pid=%d, module=%s.",
+                self.name, os.getppid(), os.getpid(), __name__)
 
 
     def close(self):
@@ -175,7 +191,7 @@ class MultiDoer(Doer):
 
     @staticmethod
     def spinup(name, tyme, tock, real, limit, doers, temp):
-        """Process target function to make and run doist after child subprocess has
+        """Process target function to make and run doist after crew subprocess has
         been started.
 
         Paramters:
@@ -194,18 +210,87 @@ class MultiDoer(Doer):
         inside subprocess so that when doist winds the tyme for its doers
         the tymth closure is locally sourced.
         """
-        ogler = ogling.initOgler(prefix='hio_multi', name="hio_multi", level=logging.DEBUG,
-                                              temp=temp, reopen=True, clear=True)
+        #When run inside subprocess ogler is a copy so can change ogler.level,
+        # ogler.temp and reopen log file or pass in temp to reopen
+        ogler.level = logging.INFO
+        ogler.reopen(name=name, temp=temp)
         logger = ogler.getLogger()
 
-        logger.info("Child Starting: name=%s, ppid=%d, pid=%s, module=%s.",
+        logger.info("Crew Start: name=%s, ppid=%d, pid=%s, module=%s.",
                                 name, os.getppid(), os.getpid(), __name__)
         time.sleep(0.01)
 
         doist = Doist(name=name, tock=tock, real=real, limit=limit, doers=doers)
         doist.do()
 
-        logger.info("Child Ended: name=%s, ppid=%d, pid=%s, module=%s.",
+        logger.info("Crew End: name=%s, ppid=%d, pid=%s, module=%s.",
                              name, os.getppid(), os.getpid(), __name__)
 
 
+class CrewDoer(Doer):
+    """CrewDoer runs interface between crew subprocess and its boss process.
+    This must be first doer run by crew subprocess doist.
+
+    Attributes:
+        name (str): crew member name for managing local resources to subprocess
+
+    """
+
+    def __init__(self, *, name='crew', **kwa):
+        """
+        Initialize instance.
+        """
+        super(CrewDoer, self).__init__(**kwa)
+        self.name = name
+        self.count = None
+
+
+    def enter(self, *, temp=None):
+        """Do 'enter' context actions. Override in subclass. Not a generator method.
+        Set up resources. Comparable to context manager enter.
+
+
+        Parameters:
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value. Use self.temp
+
+        Inject temp or self.temp into file resources here if any
+
+        Inject temp into file resources here if any
+
+        Doist or DoDoer winds its doers on enter
+        """
+        self.count = 0
+        #ogler.level = logging.INFO
+        #ogler.reopen(name=self.name, temp=temp)
+        logger = ogler.getLogger()
+        logger.info("CrewDoer Enter: name=%s pid=%d, ogler=%s, count=%d.",
+                    self.name, os.getpid(), ogler.name, self.count)
+
+
+
+    def recur(self, tyme):
+        """"""
+        self.count += 1
+        logger = ogler.getLogger()
+        logger.info("CrewDoer Recur: name=%s, pid=%d, ogler=%s, count=%d.",
+                    self.name, os.getpid(), ogler.name, self.count)
+        if self.count > 3:
+            return True  # complete
+        return False  # incomplete
+
+    def exit(self):
+        """"""
+        self.count += 1
+        logger = ogler.getLogger()
+        logger.info("CrewDoer Exit: name=%s pid=%d, ogler=%s, count=%d.",
+                    self.name, os.getpid(), ogler.name, self.count)
+
+    def close(self):
+        """"""
+        self.count += 1
+
+
+    def abort(self, ex):
+        """"""
+        self.count += 1

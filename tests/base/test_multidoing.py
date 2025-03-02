@@ -9,12 +9,13 @@ import os
 import sys
 import inspect
 import types
+import logging
 
 from hio.help import helping
 from hio.base import tyming
 from hio.base import doing, multidoing, Doist
 from hio.base.doing import ExDoer
-from hio.base.multidoing import DoistDom
+from hio.base.multidoing import MultiDoer, CrewDoer
 
 
 
@@ -30,9 +31,9 @@ def test_multidoer():
     assert doist.doers == []
 
     exdoer = ExDoer(tock=0.05)  # don't assign tymth now must be rewound inside subprocess
-    load = dict(name='child', tyme=0.0, tock=0.01, real=True, limit=None, doers=[exdoer], temp=True)
+    load = dict(name='TestCrew0', tyme=0.0, tock=0.01, real=True, limit=None, doers=[exdoer], temp=True)
 
-    doer = multidoing.MultiDoer(tock=0.01, tymth=doist.tymen(), loads=[load])
+    doer = MultiDoer(name="TestBoss", tock=0.01, tymth=doist.tymen(), loads=[load])
     assert doer.loads[0] == load
     doers = [doer]
 
@@ -54,6 +55,14 @@ def test_multidoer():
 
     assert len(doist.deeds) == 0
     assert doer.done == True
+
+    # Verify changes to ogler in child subprocesses not affect parent ogler
+    from hio.help import ogler
+    assert ogler.prefix == "hio"
+    assert ogler.name == "main"
+    assert ogler.level == logging.CRITICAL
+    assert not ogler.opened
+    assert not ogler.path
 
 
     """Done Test """

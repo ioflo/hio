@@ -660,7 +660,7 @@ class RawDom:
     @classmethod
     def _fromdict(cls, d: dict):
         """returns instance of clas initialized from dict d """
-        return helping.datify(cls, d)
+        return datify(cls, d)
 
 
     def __iter__(self):

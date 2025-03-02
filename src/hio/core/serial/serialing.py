@@ -243,7 +243,9 @@ class ConsoleDoer(doing.Doer):
 
         Parameters:
             temp (bool | None): True means use temporary file resources if any
-                                None means ignore parameter value use self.temp
+                                None means ignore parameter value. Use self.temp
+
+        Inject temp or self.temp into file resources here if any
 
         Doist or DoDoer winds its doers on enter
         """
@@ -296,7 +298,9 @@ class EchoConsoleDoer(doing.Doer):
 
         Parameters:
             temp (bool | None): True means use temporary file resources if any
-                                None means ignore parameter value use self.temp
+                                None means ignore parameter value. Use self.temp
+
+        Inject temp or self.temp into file resources here if any
 
         Doist or DoDoer winds its doers on enter
         """

@@ -215,7 +215,9 @@ class Doist(tyming.Tymist):
                 If not provided uses .doers.
                 The normal case is to initialize in .__init__. or .do().
             temp (bool | None): True means use temporary file resources if any
-                                None means ignore parameter value use self.temp
+                                None means ignore parameter value. Use self.temp
+
+        Inject temp or self.temp into file resources here if any
 
         Returns:
             deeds deque():
@@ -225,7 +227,6 @@ class Doist(tyming.Tymist):
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
         For setting attributes on bound methods.
         """
-        # inject temp into file resources here if any
 
         if doers is None:
             doers = self.doers
@@ -621,7 +622,9 @@ class Doer(tyming.Tymee):
 
         Parameters:
             temp (bool | None): True means use temporary file resources if any
-                                None means ignore parameter value use self.temp
+                                None means ignore parameter value. Use self.temp
+
+        Inject temp or self.temp into file resources here if any
         """
         # inject temp into file resources here if any
 
@@ -999,7 +1002,9 @@ class DoDoer(Doer):
                 The normal case is to initialize in .__init__.
 
             temp (bool | None): True means use temporary file resources if any
-                                None means ignore parameter value use self.temp
+                                None means ignore parameter value. Use self.temp
+
+        Inject temp or self.temp into file resources here if any
 
         Returns:
             deeds (deque): A deed is tuple of form (dog, retyme, doer).
@@ -1244,7 +1249,9 @@ class ExDoer(Doer):
 
         Parameters:
             temp (bool | None): True means use temporary file resources if any
-                                None means ignore parameter value use self.temp
+                                None means ignore parameter value. Use self.temp
+
+        Inject temp or self.temp into file resources here if any
 
         Doist or DoDoer winds its doers on enter
         """
@@ -1436,7 +1443,9 @@ class TryDoer(Doer):
 
         Parameters:
             temp (bool | None): True means use temporary file resources if any
-                                None means ignore parameter value use self.temp
+                                None means ignore parameter value. Use self.temp
+
+        Inject temp or self.temp into file resources here if any
         """
         # inject temp into file resources here if any
 
