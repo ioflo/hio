@@ -50,6 +50,8 @@ def test_doify():
     assert gf1.tock == 0.125
     assert gf0.done == None
     assert gf1.done == None
+    assert gf0.temp == None
+    assert gf1.temp == None
     assert gf0.opts == dict()
     assert gf1.opts == dict()
 
@@ -114,6 +116,7 @@ def test_doize():
     assert inspect.isgeneratorfunction(genfun)
     assert genfun.tock == 0.25
     assert genfun.done == None
+    assert genfun.temp == None
     assert genfun.opts == dict()
 
     tymist = tyming.Tymist()
@@ -148,6 +151,7 @@ def test_doize_dodoer_with_bound_method():
     # read of bound method attribute is allowed
     assert a.myDo.__func__.tock == a.myDo.tock == 0.25
     assert a.myDo.__func__.done == a.myDo.done == None
+    assert a.myDo.__func__.temp == a.myDo.temp == None
     assert a.myDo.__func__.opts == a.myDo.opts == dict()
 
     with pytest.raises(AttributeError):
@@ -195,6 +199,7 @@ def test_doize_dodoer_with_bound_method():
     # read of bound method attribute is allowed
     assert b.myDo.__func__.tock == b.myDo.tock == 0.25
     assert b.myDo.__func__.done == b.myDo.done == None
+    assert b.myDo.__func__.temp == b.myDo.temp == None
     assert b.myDo.__func__.opts == b.myDo.opts == dict()
 
     with pytest.raises(AttributeError):
