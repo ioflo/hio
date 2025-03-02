@@ -812,7 +812,7 @@ class Memoer(hioing.Mixin):
         return True
 
 
-    def reopen(self):
+    def reopen(self, **kwa):
         """Idempotently open transport
 
         This is a stub. Override in transport specific subclass
@@ -1627,9 +1627,16 @@ class MemoerDoer(doing.Doer):
         self.peer = peer
 
 
-    def enter(self):
-        """"""
-        self.peer.reopen()
+    def enter(self, *, temp=None):
+        """Do 'enter' context actions. Override in subclass. Not a generator method.
+        Set up resources. Comparable to context manager enter.
+
+        Parameters:
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value use self.temp
+        """
+        # inject temp into file resources here if any
+        self.peer.reopen(temp=temp)
 
 
     def recur(self, tyme):
@@ -1771,8 +1778,7 @@ class TymeeMemoerDoer(doing.Doer):
         """
         super(TymeeMemoerDoer, self).__init__(**kwa)
         self.peer = peer
-        if self.tymth:
-            self.peer.wind(self.tymth)
+
 
 
     def wind(self, tymth):
@@ -1783,9 +1789,20 @@ class TymeeMemoerDoer(doing.Doer):
         self.peer.wind(tymth)
 
 
-    def enter(self):
-        """"""
-        self.peer.reopen()
+    def enter(self, *, temp=None):
+        """Do 'enter' context actions. Override in subclass. Not a generator method.
+        Set up resources. Comparable to context manager enter.
+
+        Parameters:
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value use self.temp
+
+        Doist or DoDoer winds its doers on enter
+        """
+        # inject temp into file resources here if any
+        if self.tymth:
+            self.peer.wind(self.tymth)
+        self.peer.reopen(temp=temp)
 
 
     def recur(self, tyme):

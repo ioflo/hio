@@ -24,40 +24,6 @@ UDP_MAX_PACKET_SIZE = min(1024, UDP_MAX_DATAGRAM_SIZE)  # assumes IPV6 capable e
 
 
 
-@contextmanager
-def openPeer(cls=None, name="test", **kwa):
-    """
-    Wrapper to create and open UDP Peer instances
-    When used in with statement block, calls .close() on exit of with block
-
-    Parameters:
-        cls (Class): instance of subclass instance
-        name (str): unique identifer of peer. Enables management of Peer sockets
-                    by name.
-    Usage:
-        with openPeer() as peer0:
-            peer0.receive()
-
-        with openPeer(cls=PeerBig) as peer0:
-            peer0.receive()
-
-    """
-    peer = None
-
-    if cls is None:
-        cls = Peer
-    try:
-        peer = cls(name=name, **kwa)
-        peer.reopen()
-
-        yield peer
-
-    finally:
-        if peer:
-            peer.close()
-
-
-
 class Peer(hioing.Mixin):
     """Class to manage non blocking I/O on UDP socket.
 
@@ -199,7 +165,7 @@ class Peer(hioing.Mixin):
         self.opened = True
         return True
 
-    def reopen(self):
+    def reopen(self, **kwa):
         """Idempotently open socket
         """
         self.close()
@@ -286,6 +252,40 @@ class Peer(hioing.Mixin):
 
 
 
+@contextmanager
+def openPeer(cls=None, name="test", **kwa):
+    """
+    Wrapper to create and open UDP Peer instances
+    When used in with statement block, calls .close() on exit of with block
+
+    Parameters:
+        cls (Class): instance of subclass instance
+        name (str): unique identifer of peer. Enables management of Peer sockets
+                    by name.
+    Usage:
+        with openPeer() as peer0:
+            peer0.receive()
+
+        with openPeer(cls=PeerBig) as peer0:
+            peer0.receive()
+
+    """
+    peer = None
+
+    if cls is None:
+        cls = Peer
+    try:
+        peer = cls(name=name, **kwa)
+        peer.reopen()
+
+        yield peer
+
+    finally:
+        if peer:
+            peer.close()
+
+
+
 class PeerDoer(doing.Doer):
     """
     Basic UXD Peer Doer
@@ -312,9 +312,18 @@ class PeerDoer(doing.Doer):
         self.peer = peer
 
 
-    def enter(self):
-        """"""
-        self.peer.reopen()
+    def enter(self, *, temp=None):
+        """Do 'enter' context actions. Override in subclass. Not a generator method.
+        Set up resources. Comparable to context manager enter.
+
+        Parameters:
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value use self.temp
+
+        Doist or DoDoer winds its doers on enter
+        """
+        # inject temp into file resources here if any
+        self.peer.reopen(temp=temp)
 
 
     def recur(self, tyme):

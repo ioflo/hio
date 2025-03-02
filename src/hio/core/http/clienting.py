@@ -862,6 +862,7 @@ class Client():
         """
         return self.connector.reopen()
 
+
     def close(self):
         """
         Call .connecter.close  (shutclose)
@@ -1297,8 +1298,7 @@ class ClientDoer(doing.Doer):
         """
         super(ClientDoer, self).__init__(**kwa)
         self.client = client
-        if self.tymth:
-            self.client.wind(self.tymth)
+
 
 
     def wind(self, tymth):
@@ -1310,8 +1310,18 @@ class ClientDoer(doing.Doer):
         self.client.wind(tymth)
 
 
-    def enter(self):
-        """"""
+    def enter(self, *, temp=None):
+        """Do 'enter' context actions.
+        Set up resources. Comparable to context manager enter.
+
+        Parameters:
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value use self.temp
+        """
+        # inject temp into file resources here if any
+
+        if self.tymth:  # Doist or DoDoer winds its doers on enter
+            self.client.wind(self.tymth)
         self.client.reopen()
 
 

@@ -39,6 +39,8 @@ class Doist(tyming.Tymist):
         .Tock is default .tock
 
     Attributes:
+        name (str): unique identifier of doist uses for identifying resources of
+                    doists running in child processes in multiprocessing
         real (boolean): True means run in real time, Otherwise as fast as possible.
         limit (float):  maximum run tyme limit then closes all doers
         done (boolean): True means completed due to limit or all deeds completed
@@ -55,6 +57,9 @@ class Doist(tyming.Tymist):
             case is use the default empty initialization performed here and
             update in .enter().
         timer (MonoTimer): for real time intervals
+        temp (bool): True means use temp resources such as file path.
+                     When True inject into doer enters when True.
+                     Otherwise do not inject into doer enters.
 
     Inherited Properties:
         tyme: is float relative cycle time, .tyme is artificial time
@@ -72,7 +77,8 @@ class Doist(tyming.Tymist):
             times out do to reaching time limit
 
     """
-    def __init__(self, real=False, limit=None, doers=None, **kwa):
+    def __init__(self, *, name='doist', real=False, limit=None, doers=None,
+                          temp=False, **kwa):
         """
         Returns:
             instance
@@ -89,18 +95,21 @@ class Doist(tyming.Tymist):
                 The .doers attribute is used throughout the execution lifecycle.
                 Parameterization elsewhere of doers enables some special cases.
                 The normal case is to initialize here or in .do().
+            temp (bool): True means use temp resources such as file path, inject
+                         into doers when True. Otherwise do not inject.
         """
         super(Doist, self).__init__(**kwa)
-
+        self.name = name
         self.real = True if real else False
         self.limit = abs(float(limit)) if limit is not None else None
         self.done = None
         self.doers = list(doers) if doers is not None else []  # list of Doers
         self.deeds = deque()  # deque of deeds
         self.timer = timing.MonoTimer(duration = self.tock)
+        self.temp = True if temp else False
 
 
-    def do(self, doers=None, limit=None, tyme=None, **opts):
+    def do(self, doers=None, limit=None, tyme=None, *, temp=None):
         """
         Readies deeds deque from .doers or doers if any and then iteratively
         runs .recur over deeds deque until completion of all deeds.
@@ -127,7 +136,8 @@ class Doist(tyming.Tymist):
             limit (float): is real time limit on execution. Forces close of all dogs.
             tyme  (float): is optional starting tyme. Resets .tyme to tyme whe provided.
                If not provided uses current .tyme
-            opts (dict):  injected optional additional parameters
+               temp (bool): True means use temp resources such as file path, inject
+                         into doers when True. Otherwise do not inject.
 
         Returns:
             None
@@ -135,6 +145,8 @@ class Doist(tyming.Tymist):
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
         For setting attributes on bound methods.
         """
+        temp = temp or self.temp if self.temp else temp  # inject if temp or self.temp
+
         self.done = False
         if doers is not None:
             self.doers = list(doers)
@@ -147,7 +159,7 @@ class Doist(tyming.Tymist):
             self.tyme = tyme
 
         try:  # always clean up resources upon exception
-            self.enter()  # runs enter context on each doer
+            self.enter(temp=temp)  # runs enter context on each doer
 
             tymer = tyming.Tymer(tymth=self.tymen(), duration=self.limit)
             self.timer.start()
@@ -181,9 +193,8 @@ class Doist(tyming.Tymist):
             self.exit()  # force close remaining deeds throws GeneratorExit
 
 
-    def enter(self, doers=None):
-        """
-        Enter context
+    def enter(self, doers=None, *, temp=None):
+        """Enter context
         Returns (deque):  deeds deque of triples (dog, retyme, doer)  where:
             dog is generator
             retyme is tyme (real or simulated) in seconds when dog should run next
@@ -203,7 +214,8 @@ class Doist(tyming.Tymist):
                 .opts is dict() of optional parameters
                 If not provided uses .doers.
                 The normal case is to initialize in .__init__. or .do().
-            deeds is deque of deed triples
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value use self.temp
 
         Returns:
             deeds deque():
@@ -213,6 +225,8 @@ class Doist(tyming.Tymist):
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
         For setting attributes on bound methods.
         """
+        # inject temp into file resources here if any
+
         if doers is None:
             doers = self.doers
             deeds = self.deeds
@@ -225,8 +239,10 @@ class Doist(tyming.Tymist):
             except AttributeError:  # when using bound method for generator function
                 doer.__func__.done = None  # None before enter. enter may set to False
 
+            temp = temp or doer.temp if hasattr(doer, "temp") and doer.temp else None
             opts = doer.opts if hasattr(doer, "opts") else {}
-            dog = doer(tymth=self.tymen(), tock=doer.tock, **opts)
+
+            dog = doer(tymth=self.tymen(), tock=doer.tock, temp=temp, **opts)  # calls doer.do
             try:
                 next(dog)  # run enter by advancing to first yield
             except StopIteration as ex:
@@ -375,9 +391,8 @@ class Doist(tyming.Tymist):
         self.exit(deeds=rdeeds)
 
 
-def doify(f, *, name=None, tock=0.0, **opts):
-    """
-    Returns Doist compatible copy, g, of converted generator function f.
+def doify(f, *, name=None, tock=0.0, temp=None, **opts):
+    """Returns Doist compatible copy, g, of converted generator function f.
     Each invoction of doify(f) returns a unique copy of doified function f.
     Imbues copy, g, of converted generator function, f, with attributes used by
     Doist.enter() or DoDoer.enter().
@@ -395,6 +410,7 @@ def doify(f, *, name=None, tock=0.0, **opts):
         name (str): new function name for returned doified copy g. Default is to copy
             f.__name__
         tock (float): default tock attribute of doified copy g
+        temp (bool | None): use temporay file resources if any
         opts (dict): remaining parameters that becomes .opts attribute
             of doified copy g
 
@@ -403,16 +419,16 @@ def doify(f, *, name=None, tock=0.0, **opts):
     """
     g = helping.copyfunc(f, name=name)
     g.done = None  # default done state
-    g.tock = tock  # default tock attributes
+    g.tock = tock  # default tock attribute
+    g.temp = temp  # default temp attribute
     g.opts = dict(opts)  #  default opts attribute
     if inspect.ismethod(f):  # f.__self__ instance method
         g = types.MethodType(g, f.__self__)  # make g a method of f.__self__ only
     return g
 
 
-def doize(*, tock=0.0, **opts):
-    """
-    Returns decorator that makes decorated generator function Doist compatible.
+def doize(*, tock=0.0, temp=None, **opts):
+    """Returns decorator that makes decorated generator function Doist compatible.
     Imbues decorated generator function with attributes used by Doist.enter() or
     DoDoer.enter().
     Only one instance of decorated function with shared attributes is allowed.
@@ -429,7 +445,8 @@ def doize(*, tock=0.0, **opts):
     """
     def decorator(f):
         f.done = None  # default done state
-        f.tock = tock  # default tock attributes
+        f.tock = tock  # default tock attribute
+        f.temp = temp  # default temp attribute
         f.opts = dict(opts)  # default opts attribute
         return f
     return decorator
@@ -458,6 +475,7 @@ class Doer(tyming.Tymee):
             True means completed
             Otherwise incomplete. Incompletion maybe due to close or abort.
         opts (dict): injected options into its .do generator by scheduler
+        temp (bool): True means use temporary file resources if any
 
     Inherited Properties:
         tyme (float): is float relative cycle time of associated Tymist .tyme obtained
@@ -492,7 +510,7 @@ class Doer(tyming.Tymee):
 
     """
 
-    def __init__(self, *, tymth=None, tock=0.0, **opts):
+    def __init__(self, *, tymth=None, tock=0.0, opts=None, temp=False, **kwa):
         """
         Initialize instance.
 
@@ -501,18 +519,17 @@ class Doer(tyming.Tymee):
                 Tymist instance. Calling tymth() returns associated Tymist .tyme.
 
         Parameters:
-            tymth (closure): function wrapper closure returned by Tymist.tymen()
-                            method. When .tymth is called it returns associated
-                            Tymist.tyme. Provides injected dependency on Tymist
-                            tyme base.
            tock (float): seconds initial value of .tock
            opts (dict): injected options into its .do generator by scheduler
+           temp (bool): True means use temporary file resources if any
 
         """
-        super(Doer, self).__init__(tymth=tymth)
+        super(Doer, self).__init__(tymth=tymth, **kwa)
         self.done = None  #  default completion state
         self.tock = tock  # desired tyme interval between runs, 0.0 means asap
-        self.opts = opts  # used for injection of options into .do by scheduler
+        # used for injection of options into .do by scheduler
+        self.opts = opts if opts is not None else {}  # empty dict if None
+        self.temp = True if temp else False
 
 
     def __call__(self, **kwa):
@@ -545,7 +562,7 @@ class Doer(tyming.Tymee):
         self._tock = abs(float(tock))
 
 
-    def do(self, tymth, *, tock=0.0, **opts):
+    def do(self, tymth, *, tock=0.0, temp=None, **opts):
         """
         Generator method to run this doer.
         Calling this method returns generator.
@@ -559,14 +576,17 @@ class Doer(tyming.Tymee):
                         Tymist.tyme. Provides injected dependency on Tymist
                         tyme base.
             tock (float): injected initial tock value
+            temp (bool): True means use temporary file resources if any
             opts (dict): of injected optional additional parameters
         """
+        temp = temp or self.temp if self.temp else temp  # inject if temp or self.temp
+
         try:
             # enter context
             self.wind(tymth)  # update tymist dependencies
             self.tock = tock  #  set tock to parameter
             self.done = False  # allows enter to override completion state
-            self.enter()
+            self.enter(temp=temp)
 
             #recur context
             if isgeneratorfunction(self.recur):  #  .recur is generator method
@@ -574,7 +594,7 @@ class Doer(tyming.Tymee):
             else:  # .recur is standard method so iterate in while loop
                 while (not self.done):  # recur context
                     tyme = (yield (self.tock))  # yields .tock then waits for next send
-                    self.done = self.recur(tyme=tyme)
+                    self.done = self.recur(tyme=tyme)  # False means recur again
 
         except GeneratorExit:  # close context, forced exit due to .close on generator
             self.close() # close method on instance not generator
@@ -595,11 +615,15 @@ class Doer(tyming.Tymee):
         return self.done  # Only returns done state if normal return or close not abort raise
 
 
-    def enter(self):
-        """
-        Do 'enter' context actions. Override in subclass. Not a generator method.
+    def enter(self, *, temp=None):
+        """Do 'enter' context actions. Override in subclass. Not a generator method.
         Set up resources. Comparable to context manager enter.
+
+        Parameters:
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value use self.temp
         """
+        # inject temp into file resources here if any
 
 
     def recur(self, tyme):
@@ -672,6 +696,7 @@ class ReDoer(Doer):
         done (bool | None): completion state: True means completed
             Otherwise incomplete. Incompletion maybe due to close or abort.
         opts (dict): injected options into its .do generator by scheduler
+        temp (bool | None): use temporary file resources if any
 
     Inherited Properties:
         tyme (float): relative cycle time of associated Tymist .tyme obtained
@@ -747,10 +772,11 @@ class DoDoer(Doer):
     Scheduling hierarchy: Doist->DoDoer...->DoDoer->Doers
 
     Inherited Attributes:
-        .done is Boolean completion state:
-            True means completed
-            Otherwise incomplete. Incompletion maybe due to close or abort.
-        .opts is dict of injected options for its generator .do
+        done (bool): completion state:
+                    True means completed
+                    Otherwise incomplete. Incompletion maybe due to close or abort.
+        opts (dict): injected options for its generator .do
+        temp (bool | None): use temporary file resources if any
 
     Attributes:
 
@@ -891,7 +917,7 @@ class DoDoer(Doer):
         self._always = True if always else False
 
 
-    def do(self, tymth, tock=0.0, doers=None, always=None, **opts):
+    def do(self, tymth, tock=0.0, doers=None, always=None, *, temp=None, **opts):
         """
         Generator method to run this doer. Equivalent of doist.do
         Calling this method returns generator
@@ -911,8 +937,11 @@ class DoDoer(Doer):
                 are complete. Enables dynamically managing extending or removing
                 doers and associated deeds while running.
                 When not provided use .always.
+                temp (bool): True means use temporary file resources if any
             opts (dict): injected optional additional parameters
         """
+        temp = temp or self.temp if self.temp else temp  # inject if temp or self.temp
+
         always = always if always is not None else self.always
         if doers is not None:
             self.doers = list(doers)
@@ -924,7 +953,7 @@ class DoDoer(Doer):
             self.tock = tock  #  set tock to parameter
             # tyme = self.tyme
             self.done = False  # allows enter to override completion state
-            self.enter()  # doist.enter() equivalent
+            self.enter(temp=temp)  # doist.enter() equivalent
 
             #recur context
             while (not self.done or always):  # recur context
@@ -948,9 +977,9 @@ class DoDoer(Doer):
         return self.done  # Only returns done state if normal return not close or abort raise
 
 
-    def enter(self, doers=None):
-        """
-        Do 'enter' context actions. Equivalent of Doist.enter()
+    def enter(self, doers=None, *, temp=None):
+        """Do 'enter' context actions. Equivalent of Doist.enter()
+        Set up resources. Comparable to context manager enter.
 
         Returns deeds deque of triples (dog, retyme, doer)  where:
             dog is generator created by doer
@@ -969,6 +998,9 @@ class DoDoer(Doer):
                 Parameterization here of doers enables some special cases.
                 The normal case is to initialize in .__init__.
 
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value use self.temp
+
         Returns:
             deeds (deque): A deed is tuple of form (dog, retyme, doer).
                            If not provided uses .deeds.
@@ -976,6 +1008,8 @@ class DoDoer(Doer):
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
         For setting attributes on bound methods.
         """
+        # inject temp into file resources here if any
+
         if doers is None:
             doers = self.doers
             deeds = self.deeds
@@ -987,8 +1021,10 @@ class DoDoer(Doer):
                 doer.done = None  # None before enter. enter may set to False
             except AttributeError:   # when using bound method for generator function
                 doer.__func__.done = None  # None before enter. enter may set to False
+            temp = temp or doer.temp if hasattr(doer, "temp") and doer.temp else None
             opts = doer.opts if hasattr(doer, "opts") else {}
-            dog = doer(tymth=self.tymth, tock=doer.tock, **opts)
+
+            dog = doer(tymth=self.tymth, tock=doer.tock, temp=temp, **opts)  # calls doer.do
             try:
                 next(dog)  # run enter by advancing to first yield
             except StopIteration as ex:  # returned instead of yielded
@@ -1122,7 +1158,7 @@ class DoDoer(Doer):
         self.exit(deeds=rdeeds)
 
 
-def bareDo(tymth=None, tock=0.0, **opts):
+def bareDo(tymth=None, tock=0.0, *, temp=None, **opts):
     """
     Bare bones generator function template as example of generator function
     suitable for use with either doify wrapper or doize decorator.
@@ -1143,6 +1179,7 @@ def bareDo(tymth=None, tock=0.0, **opts):
         tymth (closure): injected function wrapper closure returned by
                 Tymist.tymen(). Calling tymth() returns associated Tymist.tyme.
         tock (float): injected initial tock value
+        temp (bool): True means use temporary file resources if any
         opts (dict):  injected optional additional parameters
 
     The function comments show where the 6 equivalent contexts are performed
@@ -1201,8 +1238,17 @@ class ExDoer(Doer):
         self.count = None
 
 
-    def enter(self):
-        """"""
+    def enter(self, *, temp=None):
+        """Do 'enter' context actions. Override in subclass. Not a generator method.
+        Set up resources. Comparable to context manager enter.
+
+        Parameters:
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value use self.temp
+
+        Doist or DoDoer winds its doers on enter
+        """
+        # inject temp into file resources here if any
         self.count = 0
         self.states.append(State(tyme=self.tyme, context="enter",
                                  feed=self.tyme, count=self.count))
@@ -1237,7 +1283,7 @@ class ExDoer(Doer):
 
 
 
-def doifyExDo(tymth, tock=0.0, states=None, **opts):
+def doifyExDo(tymth, tock=0.0, states=None, *, temp=None, **opts):
     """
     Example generator function for testing and demonstration.
     Example non-class based generator for use with doify wrapper.
@@ -1249,6 +1295,7 @@ def doifyExDo(tymth, tock=0.0, states=None, **opts):
                 Tymist.tymen(). Calling tymth() returns associated Tymist.tyme.
         tock (float): injected initial tock value
         states (list): State namedtuples (tyme, context, feed, count)
+        temp (bool): True means use temporary file resources if any
         opts (dict): injected optional additional parameters
 
     """
@@ -1283,7 +1330,7 @@ def doifyExDo(tymth, tock=0.0, states=None, **opts):
 
 
 @doize(tock=0, states=None)
-def doizeExDo(tymth, tock=0.0, states=None, **opts):
+def doizeExDo(tymth, tock=0.0, states=None, *, temp=None, **opts):
     """
     Example decorated generator function for use with doize decorator.
     Example non-class based generator
@@ -1294,6 +1341,7 @@ def doizeExDo(tymth, tock=0.0, states=None, **opts):
                 Tymist.tymen(). Calling tymth() returns associated Tymist.tyme.
         tock (float): injected initial tock value
         states (list): of State namedtuples (tyme, context, feed, count)
+        temp (bool): True means use temporary file resources if any
         opts (dict): injected optional additional parameters
     """
     tyme = tymth()
@@ -1337,6 +1385,8 @@ class TryDoer(Doer):
         done (bool | None): completion state:
                              True means completed Otherwise incomplete.
                              Incompletion maybe due to close or abort.
+        opts (dict): injected options into its .do generator by scheduler
+        temp (bool | None): use temporary file resources if any
 
     Attributes:
        states (list): State namedtuples (tyme, context, feed, count)
@@ -1380,9 +1430,16 @@ class TryDoer(Doer):
         self.count = None
         self.stop = stop
 
-    def enter(self):
+    def enter(self, *, temp=None):
+        """Do 'enter' context actions. Override in subclass. Not a generator method.
+        Set up resources. Comparable to context manager enter.
+
+        Parameters:
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value use self.temp
         """
-        """
+        # inject temp into file resources here if any
+
         feed = "Default"
         self.count = 0
         self.states.append(State(tyme=self.tyme, context="enter",
@@ -1423,7 +1480,7 @@ class TryDoer(Doer):
 
 #  for testing purposes
 @doize()
-def tryDo(states, tymth, tock=0.0,  **opts):
+def tryDo(states, tymth, tock=0.0, *, temp=None, **opts):
     """Generator function test example non-class based generator.
     Calling this function returns generator:
 
@@ -1431,6 +1488,7 @@ def tryDo(states, tymth, tock=0.0,  **opts):
         tymth (closure): injected function wrapper closure returned by
                 Tymist.tymen(). Calling tymth() returns associated Tymist.tyme.
         tock (float): injected initial tock value
+        temp (bool): True means use temporary file resources if any
         opts (dict): injected optional additional parameters
 
     """

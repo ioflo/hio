@@ -58,9 +58,8 @@ def test_tymee():
     Test Tymee class
     """
     tymee = tyming.Tymee()
-    assert tymee.tymth == None
-    with pytest.raises(TypeError):
-        tymee.tyme  # NoneType object not callable
+    assert tymee.tymth == None  # not yet wound
+    assert tymee.tyme == None  # not yet wound
 
     tymist = tyming.Tymist(tock=1.0)
     tymee = tyming.Tymee(tymth=tymist.tymen())

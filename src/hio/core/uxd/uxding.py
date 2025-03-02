@@ -225,8 +225,6 @@ class Peer(filing.Filer):
                           False means do not remove directory and uxd file upon close
             See filing.Filer for other inherited parameters
         """
-        #self.close(clear=clear)
-
         opened = super(Peer, self).reopen(clear=clear, **kwa)
         if not opened:
             raise hioing.FilerError(f"Failure opening uxd path {self.path}.")
@@ -402,9 +400,18 @@ class PeerDoer(doing.Doer):
         self.peer = peer
 
 
-    def enter(self):
-        """"""
-        self.peer.reopen()
+    def enter(self, *, temp=None):
+        """Do 'enter' context actions. Override in subclass. Not a generator method.
+        Set up resources. Comparable to context manager enter.
+
+        Parameters:
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value use self.temp
+
+        Doist or DoDoer winds its doers on enter
+        """
+        # inject temp into file resources here if any
+        self.peer.reopen(temp=temp)
 
 
     def recur(self, tyme):

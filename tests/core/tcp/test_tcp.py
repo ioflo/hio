@@ -1427,15 +1427,23 @@ def test_server_client_doers():
     port = 6120
     server = tcp.Server(host="", port=port)
     # client needs tymth in order to init its .tymer
-    client = tcp.Client(tymth=doist.tymen(), host="localhost", port=port)
-    assert client.tyme == doist.tyme
+    client = tcp.Client(host="localhost", port=port)  # wind later
+    assert client.tyme == None  # wind later
 
     serdoer = tcp.ServerDoer(tymth=doist.tymen(), server=server)
+    assert serdoer.tyme == doist.tyme
     assert serdoer.server ==  server
-    assert serdoer.tyme ==  serdoer.server.tyme == doist.tyme
+    assert serdoer.server.tyme == None  # not wound yet, gets wound on enter
+    serdoer.wind(tymth=doist.tymen())
+    assert serdoer.server.tyme == serdoer.tyme == doist.tyme
+
+
     clidoer = tcp.ClientDoer(tymth=doist.tymen(), client=client)
+    assert clidoer.tyme == doist.tyme
     assert clidoer.client == client
-    assert clidoer.tyme == clidoer.client.tyme == doist.tyme
+    assert clidoer.client.tyme == None  # not wound yet, gets wound on enter
+    clidoer.wind(tymth=doist.tymen())
+    assert clidoer.client.tyme == clidoer.tyme == doist.tyme
 
     assert serdoer.tock == 0.0  # ASAP
     assert clidoer.tock == 0.0  # ASAP
@@ -1474,14 +1482,21 @@ def test_echo_server_client_doers():
 
     port = 6120
     server = tcp.Server(host="", port=port)
-    client = tcp.Client(tymth=doist.tymen(), host="localhost", port=port)
+    client = tcp.Client(host="localhost", port=port)  # wind later
 
     serdoer = tcp.EchoServerDoer(tymth=doist.tymen(), server=server)
+    assert serdoer.tyme == doist.tyme
     assert serdoer.server == server
-    assert serdoer.tyme ==  serdoer.server.tyme == doist.tyme
+    assert serdoer.server.tyme == None  # not wound yet gets wound on enter
+    serdoer.wind(doist.tymen())
+    assert serdoer.server.tyme == serdoer.tyme == doist.tyme
+
     clidoer = tcp.ClientDoer(tymth=doist.tymen(), client=client)
+    assert clidoer.tyme == doist.tyme
     assert clidoer.client == client
-    assert clidoer.tyme == clidoer.client.tyme == doist.tyme
+    assert clidoer.client.tyme == None  # not wound yet, gets wound on enter
+    clidoer.wind(doist.tymen())
+    assert clidoer.client.tyme == clidoer.tyme == doist.tyme
 
     assert serdoer.tock == 0.0  # ASAP
     assert clidoer.tock == 0.0  # ASAP

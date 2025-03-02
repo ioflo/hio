@@ -129,7 +129,7 @@ class Tymee(hioing.Mixin):
                 Tymist instance. Calling tymth() returns associated Tymist .tyme.
         """
         super(Tymee, self).__init__(**kwa)  # Mixin for Mult-inheritance MRO
-        self._tymth = tymth  # maybe wound later to set to not None
+        self._tymth = tymth  # maybe wind later to set to not None
 
 
     @property
@@ -137,8 +137,10 @@ class Tymee(hioing.Mixin):
         """
         tyme property getter, get ._tyme
         .tyme is float cycle time in seconds
+        Returns:
+            tyme (float | None): tyme from self.tymth() when wound else None
         """
-        return self._tymth()
+        return self._tymth() if self._tymth else None
 
 
     @property
