@@ -30,10 +30,10 @@ def test_boss_crew_basic():
     assert doist.limit == None
     assert doist.doers == []
 
-    exdoer = ExDoer(tock=0.05)  # don't assign tymth now must be rewound inside subprocess
-    load = dict(name='TestCrew0', tyme=0.0, tock=0.01, real=True, limit=None, doers=[exdoer], temp=True)
+    crewdoer = CrewDoer(tock=0.05, name='Hand')  # don't assign tymth now must be rewound inside subprocess
+    load = dict(name='Crew', tyme=0.0, tock=0.01, real=True, limit=None, doers=[crewdoer], temp=True)
 
-    doer = BossDoer(name="TestBoss", tock=0.01, tymth=doist.tymen(), loads=[load])
+    doer = BossDoer(name="Boss", tock=0.01, tymth=doist.tymen(), loads=[load])
     assert doer.loads[0] == load
     doers = [doer]
 

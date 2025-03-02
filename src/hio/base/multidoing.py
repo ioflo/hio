@@ -24,7 +24,7 @@ from ..help import timing, helping
 from ..help.helping import RawDom
 from ..help import ogling
 
-ogler = ogling.initOgler(prefix='hio_mp', name="boss", level=logging.DEBUG)
+ogler = ogling.initOgler(prefix='hio_mp', name="Boss", level=logging.DEBUG)
 logger = ogler.getLogger()
 
 
@@ -61,12 +61,12 @@ class DoistDom(RawDom):
 
 
 class BossDoer(Doer):
-    """
-    BossDoer spawns multiple crew subprocesses and injects each with a Doist
-    and Doers. The boss Doists runs the BossDoer in the parent process.
-    Each crew Doist runs a CrewDoer that coordinates with the
-    BossDoer. Analogy Boss runs a Crew. The parent process has a boss Doist which
-    runs a BossDoer. Each crew member is a child process with its own crew doist
+    """BossDoer spawns multiple crew hand subprocesses and injects each with
+    a Doist and Doers. The boss Doists runs the BossDoer in the parent process.
+    Each crew hand Doist runs a CrewDoer that coordinates with the BossDoer.
+
+    Analogy Boss runs a Crew of Hans. The parent process has a boss Doist which
+    runs a BossDoer. Each crew hand is a child process with its own crew doist
     that runs its own CrewDoer
 
     See Doer for inherited attributes, properties, and methods.
@@ -159,8 +159,8 @@ class BossDoer(Doer):
         Doist or DoDoer winds its doers on enter
 
         """
-        logger.info("Boss Enter: name=%s size=%d, ppid=%d, pid=%d, module=%s.",
-                self.name, len(self.loads), os.getppid(), os.getpid(), __name__)
+        logger.info("Boss Enter: name=%s size=%d, ppid=%d, pid=%d, module=%s, ogler=%s.",
+            self.name, len(self.loads), os.getppid(), os.getpid(), __name__, ogler.name)
         self.count = 0
         for load in self.loads:
             tot = self.ctx.Process(name=load["name"],
@@ -181,8 +181,8 @@ class BossDoer(Doer):
     def exit(self):
         """"""
         self.count += 1
-        logger.info("Boss Exit: name=%s, ppid=%d, pid=%d, module=%s.",
-                self.name, os.getppid(), os.getpid(), __name__)
+        logger.info("Boss Exit: name=%s, ppid=%d, pid=%d, module=%s, ogler=%s.",
+                self.name, os.getppid(), os.getpid(), __name__, ogler.name)
 
 
     def close(self):
@@ -216,29 +216,31 @@ class BossDoer(Doer):
         inside subprocess so that when doist winds the tyme for its doers
         the tymth closure is locally sourced.
         """
-        #When run inside subprocess ogler is a copy so can change ogler.level,
-        # ogler.temp and reopen log file or pass in temp to reopen
+        # When run inside subprocess, spinup is at the outside scope for any
+        # Doist and doers that reference ogler. This is a copy of the ogler in
+        # the parer so can change ogler.level, ogler.temp and run ogler.reopen
+        # to reopen log file or pass in temp to reopen
         ogler.level = logging.INFO
         ogler.reopen(name=name, temp=temp)
         logger = ogler.getLogger()
 
-        logger.info("Crew Start: name=%s, ppid=%d, pid=%s, module=%s.",
-                                name, os.getppid(), os.getpid(), __name__)
+        logger.info("Crew Start: name=%s, ppid=%d, pid=%s, module=%s, ogler=%s.",
+                        name, os.getppid(), os.getpid(), __name__, ogler.name)
         time.sleep(0.01)
 
         doist = Doist(name=name, tock=tock, real=real, limit=limit, doers=doers)
         doist.do()
 
-        logger.info("Crew End: name=%s, ppid=%d, pid=%s, module=%s.",
-                             name, os.getppid(), os.getpid(), __name__)
+        logger.info("Crew End: name=%s, ppid=%d, pid=%s, module=%s, ogler=%s.",
+                        name, os.getppid(), os.getpid(), __name__, ogler.name)
 
 
 class CrewDoer(Doer):
-    """CrewDoer runs interface between crew subprocess and its boss process.
-    This must be first doer run by crew subprocess doist.
+    """CrewDoer runs interface between a given crew hand subprocess and its
+    boss process. This must be first doer run by crew hand subprocess doist.
 
     Attributes:
-        name (str): crew member name for managing local resources to subprocess
+        name (str): crew hand name for managing local resources to subprocess
 
     """
 
@@ -272,7 +274,6 @@ class CrewDoer(Doer):
         logger = ogler.getLogger()
         logger.info("CrewDoer Enter: name=%s pid=%d, ogler=%s, count=%d.",
                     self.name, os.getpid(), ogler.name, self.count)
-
 
 
     def recur(self, tyme):
