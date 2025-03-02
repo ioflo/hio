@@ -30,7 +30,8 @@ logger = ogler.getLogger()
 
 @dataclass
 class DoistDom(RawDom):
-    """Configuration dataclass of crew subprocess Doist parameters for MultiDoer
+    """Configuration dataclass of crew subprocess Doist parameters for crew doist
+    to be injected by BossDoer.
     Use this when storing configuration in database or file. Use RawDom
     serialization hidden methods:
 
@@ -59,9 +60,14 @@ class DoistDom(RawDom):
     temp: bool = False  # use temporary file resources if any
 
 
-class MultiDoer(Doer):
+class BossDoer(Doer):
     """
-    MultiDoer spawns multiprocesses with Doists
+    BossDoer spawns multiple crew subprocesses and injects each with a Doist
+    and Doers. The boss Doists runs the BossDoer in the parent process.
+    Each crew Doist runs a CrewDoer that coordinates with the
+    BossDoer. Analogy Boss runs a Crew. The parent process has a boss Doist which
+    runs a BossDoer. Each crew member is a child process with its own crew doist
+    that runs its own CrewDoer
 
     See Doer for inherited attributes, properties, and methods.
 
@@ -122,7 +128,7 @@ class MultiDoer(Doer):
             opts (dict): injected options into its .do generator by scheduler
 
         Parameters:
-            name (str): unique identifier for this MultiDoer boss to be used
+            name (str): unique identifier for this BossDoer boss to be used
                         to manage local resources
             loads (list[dict]): each expanded to kwargs used to spinup a
                                  child process' doist
@@ -130,7 +136,7 @@ class MultiDoer(Doer):
                          False other wise
 
         """
-        super(MultiDoer, self).__init__(**kwa)
+        super(BossDoer, self).__init__(**kwa)
         self.name = name
         self.loads = loads if loads is not None else []
         self.temp = temp

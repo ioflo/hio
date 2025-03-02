@@ -15,13 +15,13 @@ from hio.help import helping
 from hio.base import tyming
 from hio.base import doing, multidoing, Doist
 from hio.base.doing import ExDoer
-from hio.base.multidoing import MultiDoer, CrewDoer
+from hio.base.multidoing import BossDoer, CrewDoer
 
 
 
-def test_multidoer():
+def test_boss_crew_basic():
     """
-    Test MultiDoer class
+    Test BossDoer and CrewDoer classes basic
     """
     doist = doing.Doist(tock=0.01, real=True)
     assert doist.tyme == 0.0  # on next cycle
@@ -33,7 +33,7 @@ def test_multidoer():
     exdoer = ExDoer(tock=0.05)  # don't assign tymth now must be rewound inside subprocess
     load = dict(name='TestCrew0', tyme=0.0, tock=0.01, real=True, limit=None, doers=[exdoer], temp=True)
 
-    doer = MultiDoer(name="TestBoss", tock=0.01, tymth=doist.tymen(), loads=[load])
+    doer = BossDoer(name="TestBoss", tock=0.01, tymth=doist.tymen(), loads=[load])
     assert doer.loads[0] == load
     doers = [doer]
 
@@ -69,4 +69,4 @@ def test_multidoer():
 
 
 if __name__ == "__main__":
-    test_multidoer()
+    test_boss_crew_basic()
