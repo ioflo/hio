@@ -27,11 +27,29 @@ from ..help import ogling
 ogler = ogling.initOgler(prefix='hio_mp', name="Boss", level=logging.DEBUG)
 logger = ogler.getLogger()
 
+# BossDoer info to be injected in CrewDoer as BossDoer enter time
+#    name (str | None): name of Boss for resource management
+#    path (str | None): UXD cmd memo path used by crew to talk to their boss
+Bossage = namedtuple("Bossage", "name path")
+
+# BossDoer info to be injected into CrewDoer spinup containing both crew doist
+# parms for Process target kwargs and and CrewDoer parms
+#    name (str): child doist identifier for resources.
+#    tyme (float): child doist start tyme
+#    tock (float | None): child doist tock, tyme lag between runs
+#    real (bool): child doist True means run in real time, tyme is real time
+#    limit (float | None): child doist tyme limit. None means run forever
+#    doers (list[Doers]): child doist List of Doers
+#    temp (bool | None): True means use temporary file resources
+#    boss (Bossage | None): BossDoer  info for CrewDoer. May be filled at enter time
+#                       CrewDoer uses to contact BossDoer.
+Loadage = namedtuple("Loadage", "name tyme tock real limit doers temp boss")
+
 
 @dataclass
-class DoistDom(RawDom):
+class CrewDom(RawDom):
     """Configuration dataclass of crew subprocess Doist parameters for crew doist
-    to be injected by BossDoer.
+    and its CrewDoer to be injected by BossDoer.
     Use this when storing configuration in database or file. Use RawDom
     serialization hidden methods:
 
@@ -50,6 +68,9 @@ class DoistDom(RawDom):
         real (bool): child doist True means run in real time, tyme is real time
         limit (float | None): child doist tyme limit. None means run forever
         doers (list[Doers]): child doist List of Doers
+        temp (bool | None): True means use temporary file resources
+        boss (Bossage | None): BossDoer  info for CrewDoer. May be filled at enter time
+                                CrewDoer uses to contact BossDoer.
     """
     name: str ='child'  # unique identifier of child process and associated resources
     tyme: float = 0.0    # child doist start tyme
@@ -57,7 +78,10 @@ class DoistDom(RawDom):
     real: bool = True  # child doist True means run in real time, tyme is real time
     limit: float | None = None  # child doist tyme limit. None mean run forever
     doers: list = field(default_factory=list)  # child doist list of doers
-    temp: bool = False  # use temporary file resources if any
+    temp: bool | None = False  # use temporary file resources if any
+    boss: (Bossage | None) = Bossage(name=None, path=None)  # BossDoer info
+
+
 
 
 class BossDoer(Doer):
@@ -105,10 +129,13 @@ class BossDoer(Doer):
     Attributes:
         name (str): unique identifier for this MultDoer boss
                     used to manage local resources
+
+        loads (list[dict]): BossDoer info to be injected into CrewDoer spinup
+                            containing both crew doist parmss for Process target
+                            kwargs and and CrewDoer parms
+                            (see Loadage._asdict() or CrewDom._asdict())
         ctx (mp.context.SpawnContext | None): context under which to spawn processes
-        loads (list[dict]): each expanded to kwargs used to spinup a
-                            crew doist in a child process
-        tots (dict): values are child Process instances keyed by name
+        crew (dict): values are child Process instances keyed by name
 
 
     Properties:
@@ -130,8 +157,8 @@ class BossDoer(Doer):
         Parameters:
             name (str): unique identifier for this BossDoer boss to be used
                         to manage local resources
-            loads (list[dict]): each expanded to kwargs used to spinup a
-                                 child process' doist
+            loads (list[dict]): parameters used to spinup crew hand subprocess
+                                see fields of
             temp (bool): True means logger or other resources in spinup uses temp
                          False other wise
 
@@ -140,8 +167,10 @@ class BossDoer(Doer):
         self.name = name
         self.loads = loads if loads is not None else []
         self.temp = temp
-        self.tots = {}
+
         self.ctx = mp.get_context('spawn')
+        self.crew = {}
+
 
 
     def enter(self, *, temp=None):
@@ -151,8 +180,8 @@ class BossDoer(Doer):
         Set up resources. Comparable to context manager enter.
 
         Parameters:
-            temp (bool | None): True means use temporary file resources if any
-                                None means ignore parameter value. Use self.temp
+            temp (bool | None): True means use temporary file resources if any.
+                                None means ignore parameter value. Use self.temp.
 
         Inject temp or self.temp into file resources here if any
 
@@ -163,11 +192,11 @@ class BossDoer(Doer):
             self.name, len(self.loads), os.getppid(), os.getpid(), __name__, ogler.name)
         self.count = 0
         for load in self.loads:
-            tot = self.ctx.Process(name=load["name"],
+            hand = self.ctx.Process(name=load["name"],
                                      target=self.spinup,
                                      kwargs=load)
-            self.tots[tot.name] = tot
-            tot.start()
+            self.crew[hand.name] = hand
+            hand.start()
 
 
     def recur(self, tyme):
@@ -177,6 +206,7 @@ class BossDoer(Doer):
         if not self.ctx.active_children():
             return True   # complete
         return False  # incomplete recur again
+
 
     def exit(self):
         """"""
@@ -196,21 +226,26 @@ class BossDoer(Doer):
 
 
     @staticmethod
-    def spinup(name, tyme, tock, real, limit, doers, temp):
+    def spinup(*, name='crew', tyme=0.0, tock=None, real=True, limit=None,
+               doers=None, temp=None, boss=None):
         """Process target function to make and run doist after crew subprocess has
         been started.
 
-        Paramters:
-            name (str): unique identifier for child doist and its resources
-            tyme (float): child doist start tyme
-            tock (float | None): child doist tyme lag between runs, None means ASAP
-            real (bool): child doist runtime
-                         True means run in real time, tyme is real time
-                         False means run in faster than real time, tyme is relative
-            limit (float | None): child doist tyme limit. None mean run forever
-            doers (list): child doist list of doers. Do not assign tymist to doers
-                          when creating.
-            temp (bool): use temp resources such as file pathing
+        Parameters:
+            name (str): unique crew hand name to be used to manage resources
+            tyme (float): crew doist initial value of cycle time in seconds
+            tock (float | None): crew doist tock time in seconds. None means run Asap
+            real (bool): crew doist True means run in real time,
+                        Otherwise run faster than real
+            limit (float | None): crew doist seconds for max run time of doist.
+                                  None means no limit.
+            doers (iterable[Doer] | None): crew doist Doer class instances
+                                   First entry must be CrewDoer
+            temp (bool | None): True means use temp file resources by injection.
+                                Otherwise ignore do not inject.
+            boss (Bossage | None): boss info. May be filled at enter time
+                                  CrewDoer uses to contact BossDoer.
+
 
         Doist must be built after process started so local tymth closure is created
         inside subprocess so that when doist winds the tyme for its doers
@@ -228,7 +263,8 @@ class BossDoer(Doer):
                         name, os.getppid(), os.getpid(), __name__, ogler.name)
         time.sleep(0.01)
 
-        doist = Doist(name=name, tock=tock, real=real, limit=limit, doers=doers)
+        doist = Doist(name=name, tyme=tyme, tock=tock, real=real, limit=limit,
+                      doers=doers, temp=temp)
         doist.do()
 
         logger.info("Crew End: name=%s, ppid=%d, pid=%s, module=%s, ogler=%s.",

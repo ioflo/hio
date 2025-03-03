@@ -38,12 +38,15 @@ class Doist(tyming.Tymist):
     Inherited Class Attributes:
         .Tock is default .tock
 
+    Inherited Attributes:
+
+
     Attributes:
         name (str): unique identifier of doist uses for identifying resources of
                     doists running in child processes in multiprocessing
-        real (boolean): True means run in real time, Otherwise as fast as possible.
+        real (bool): True means run in real time, Otherwise as fast as possible.
         limit (float):  maximum run tyme limit then closes all doers
-        done (boolean): True means completed due to limit or all deeds completed
+        done (bool | None): True means completed due to limit or all deeds completed
                 False is forced complete due to error
         doers (list): Doer class instances, generator methods or
                 function callables with attributes tock, done, and opts dict().
@@ -62,8 +65,8 @@ class Doist(tyming.Tymist):
                      Otherwise do not inject into doer enters.
 
     Inherited Properties:
-        tyme: is float relative cycle time, .tyme is artificial time
-        : is float tyme increment of .tick()
+        tyme: (float): starting relative cycle time, .tyme is artificial time
+        tock (float | None): float tyme lag of .tick(). None means asap
 
     Properties:
 
@@ -83,9 +86,12 @@ class Doist(tyming.Tymist):
         Returns:
             instance
 
+        Inherited Parameters:
+            tyme (float): initial value of cycle time in seconds
+            tock (float | None): lag tyme in seconds between runs, None means run ASAP
+
         Parameters:
-            tyme (float): initial value of cycle time in seconds (inherited)
-            tock (float): tock time in seconds  (inherited)
+            name (str): unique identifier of doist to manage resources
             real (boolean): True means run in real time,
                             Otherwise run faster than real
             limit (float): seconds for max run time of doist. None means no limit.

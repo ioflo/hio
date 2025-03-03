@@ -31,7 +31,7 @@ def test_boss_crew_basic():
     assert doist.doers == []
 
     crewdoer = CrewDoer(tock=0.05, name='Hand')  # don't assign tymth now must be rewound inside subprocess
-    load = dict(name='Crew', tyme=0.0, tock=0.01, real=True, limit=None, doers=[crewdoer], temp=True)
+    load = dict(name='Crew', tyme=0.0, tock=0.01, real=True, limit=None, doers=[crewdoer], temp=True, boss=None)
 
     doer = BossDoer(name="Boss", tock=0.01, tymth=doist.tymen(), loads=[load])
     assert doer.loads[0] == load
@@ -42,7 +42,7 @@ def test_boss_crew_basic():
     assert len(doist.deeds) == 1
     assert doer.count == 0
     assert doer.done == False
-    assert doer.tots
+    assert doer.crew
 
     doist.recur()
     assert doist.tyme == 0.01  # on next cycle
