@@ -341,8 +341,7 @@ class Ogler():
 
 
     def getLogger(self, name=__name__, level=None):
-        """
-        Returns Basic Logger
+        """Returns Basic Logger
         default is to name logger after module
         """
         logger = logging.getLogger(name)

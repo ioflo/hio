@@ -77,7 +77,7 @@ class FilerError(HioError):
 
 class NamerError(HioError):
     """
-    Error using or configuring Remoter
+    Error using or configuring Namer
 
     Usage:
         raise NamerError("error message")
@@ -85,7 +85,15 @@ class NamerError(HioError):
 
 class MemoerError(HioError):
     """
-    Error using or configuring Remoter
+    Error using or configuring Memoer
+
+    Usage:
+        raise MemoGramError("error message")
+    """
+
+class MultiError(HioError):
+    """
+    Error using or configuring multiprocessing support classes
 
     Usage:
         raise MemoGramError("error message")

@@ -5,4 +5,5 @@ hio.core.uxd Package
 
 
 from .uxding import Peer, openPeer, PeerDoer
+from .peermemoing import PeerMemoer, openPM, PeerMemoerDoer
 

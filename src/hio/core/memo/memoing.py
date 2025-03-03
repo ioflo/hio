@@ -1571,7 +1571,7 @@ class Memoer(hioing.Mixin):
         self.serviceAllRx()
         self.serviceAllTx()
 
-    service = serviceAll  # alias override peer service method
+    service = serviceAll  # alias
 
 
 @contextmanager
@@ -1633,7 +1633,9 @@ class MemoerDoer(doing.Doer):
 
         Parameters:
             temp (bool | None): True means use temporary file resources if any
-                                None means ignore parameter value use self.temp
+                                None means ignore parameter value. Use self.temp
+
+        Inject temp or self.temp into file resources here if any
         """
         # inject temp into file resources here if any
         self.peer.reopen(temp=temp)
@@ -1795,7 +1797,9 @@ class TymeeMemoerDoer(doing.Doer):
 
         Parameters:
             temp (bool | None): True means use temporary file resources if any
-                                None means ignore parameter value use self.temp
+                                None means ignore parameter value. Use self.temp
+
+        Inject temp or self.temp into file resources here if any
 
         Doist or DoDoer winds its doers on enter
         """

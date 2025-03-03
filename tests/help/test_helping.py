@@ -7,7 +7,9 @@ import pytest
 
 import fractions
 from dataclasses import dataclass, astuple, asdict
-
+import json
+import msgpack
+import cbor2 as cbor
 
 from hio.help import helping, Hict
 from hio.help.helping import isign, sceil, dictify, datify
@@ -563,6 +565,10 @@ def test_dictify():
     c = Circle(radius=4)
     assert dictify(c) == {'area': 50.24, 'perimeter': 25.12}
 
+def test_rawdom():
+    """Test RawDom dataclass """
+
+    """Done Test"""
 
 
 if __name__ == "__main__":
@@ -571,3 +577,4 @@ if __name__ == "__main__":
     test_b64_helpers()
     test_datify()
     test_dictify()
+    test_rawdom()

@@ -38,12 +38,15 @@ class Doist(tyming.Tymist):
     Inherited Class Attributes:
         .Tock is default .tock
 
+    Inherited Attributes:
+
+
     Attributes:
         name (str): unique identifier of doist uses for identifying resources of
                     doists running in child processes in multiprocessing
-        real (boolean): True means run in real time, Otherwise as fast as possible.
+        real (bool): True means run in real time, Otherwise as fast as possible.
         limit (float):  maximum run tyme limit then closes all doers
-        done (boolean): True means completed due to limit or all deeds completed
+        done (bool | None): True means completed due to limit or all deeds completed
                 False is forced complete due to error
         doers (list): Doer class instances, generator methods or
                 function callables with attributes tock, done, and opts dict().
@@ -62,8 +65,8 @@ class Doist(tyming.Tymist):
                      Otherwise do not inject into doer enters.
 
     Inherited Properties:
-        tyme: is float relative cycle time, .tyme is artificial time
-        : is float tyme increment of .tick()
+        tyme: (float): starting relative cycle time, .tyme is artificial time
+        tock (float | None): float tyme lag of .tick(). None means asap
 
     Properties:
 
@@ -83,9 +86,12 @@ class Doist(tyming.Tymist):
         Returns:
             instance
 
+        Inherited Parameters:
+            tyme (float): initial value of cycle time in seconds
+            tock (float | None): lag tyme in seconds between runs, None means run ASAP
+
         Parameters:
-            tyme (float): initial value of cycle time in seconds (inherited)
-            tock (float): tock time in seconds  (inherited)
+            name (str): unique identifier of doist to manage resources
             real (boolean): True means run in real time,
                             Otherwise run faster than real
             limit (float): seconds for max run time of doist. None means no limit.
@@ -145,7 +151,7 @@ class Doist(tyming.Tymist):
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
         For setting attributes on bound methods.
         """
-        temp = temp or self.temp if self.temp else temp  # inject if temp or self.temp
+        temp = temp or (self.temp if self.temp else temp)  # inject if temp or self.temp
 
         self.done = False
         if doers is not None:
@@ -215,7 +221,9 @@ class Doist(tyming.Tymist):
                 If not provided uses .doers.
                 The normal case is to initialize in .__init__. or .do().
             temp (bool | None): True means use temporary file resources if any
-                                None means ignore parameter value use self.temp
+                                None means ignore parameter value. Use self.temp
+
+        Inject temp or self.temp into file resources here if any
 
         Returns:
             deeds deque():
@@ -225,7 +233,6 @@ class Doist(tyming.Tymist):
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
         For setting attributes on bound methods.
         """
-        # inject temp into file resources here if any
 
         if doers is None:
             doers = self.doers
@@ -239,7 +246,7 @@ class Doist(tyming.Tymist):
             except AttributeError:  # when using bound method for generator function
                 doer.__func__.done = None  # None before enter. enter may set to False
 
-            temp = temp or doer.temp if hasattr(doer, "temp") and doer.temp else None
+            temp = temp or (doer.temp if hasattr(doer, "temp") and doer.temp else None)
             opts = doer.opts if hasattr(doer, "opts") else {}
 
             dog = doer(tymth=self.tymen(), tock=doer.tock, temp=temp, **opts)  # calls doer.do
@@ -579,7 +586,7 @@ class Doer(tyming.Tymee):
             temp (bool): True means use temporary file resources if any
             opts (dict): of injected optional additional parameters
         """
-        temp = temp or self.temp if self.temp else temp  # inject if temp or self.temp
+        temp = temp or (self.temp if self.temp else temp)  # inject if temp or self.temp
 
         try:
             # enter context
@@ -621,7 +628,9 @@ class Doer(tyming.Tymee):
 
         Parameters:
             temp (bool | None): True means use temporary file resources if any
-                                None means ignore parameter value use self.temp
+                                None means ignore parameter value. Use self.temp
+
+        Inject temp or self.temp into file resources here if any
         """
         # inject temp into file resources here if any
 
@@ -940,7 +949,7 @@ class DoDoer(Doer):
                 temp (bool): True means use temporary file resources if any
             opts (dict): injected optional additional parameters
         """
-        temp = temp or self.temp if self.temp else temp  # inject if temp or self.temp
+        temp = temp or (self.temp if self.temp else temp)  # inject if temp or self.temp
 
         always = always if always is not None else self.always
         if doers is not None:
@@ -999,7 +1008,9 @@ class DoDoer(Doer):
                 The normal case is to initialize in .__init__.
 
             temp (bool | None): True means use temporary file resources if any
-                                None means ignore parameter value use self.temp
+                                None means ignore parameter value. Use self.temp
+
+        Inject temp or self.temp into file resources here if any
 
         Returns:
             deeds (deque): A deed is tuple of form (dog, retyme, doer).
@@ -1021,7 +1032,7 @@ class DoDoer(Doer):
                 doer.done = None  # None before enter. enter may set to False
             except AttributeError:   # when using bound method for generator function
                 doer.__func__.done = None  # None before enter. enter may set to False
-            temp = temp or doer.temp if hasattr(doer, "temp") and doer.temp else None
+            temp = temp or (doer.temp if hasattr(doer, "temp") and doer.temp else None)
             opts = doer.opts if hasattr(doer, "opts") else {}
 
             dog = doer(tymth=self.tymth, tock=doer.tock, temp=temp, **opts)  # calls doer.do
@@ -1244,7 +1255,9 @@ class ExDoer(Doer):
 
         Parameters:
             temp (bool | None): True means use temporary file resources if any
-                                None means ignore parameter value use self.temp
+                                None means ignore parameter value. Use self.temp
+
+        Inject temp or self.temp into file resources here if any
 
         Doist or DoDoer winds its doers on enter
         """
@@ -1436,7 +1449,9 @@ class TryDoer(Doer):
 
         Parameters:
             temp (bool | None): True means use temporary file resources if any
-                                None means ignore parameter value use self.temp
+                                None means ignore parameter value. Use self.temp
+
+        Inject temp or self.temp into file resources here if any
         """
         # inject temp into file resources here if any
 
