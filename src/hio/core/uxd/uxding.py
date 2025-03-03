@@ -316,12 +316,6 @@ class Peer(filing.Filer):
 
         return cnt
 
-    def service(self):
-        """Service sends and receives
-
-        Stub Override in subclass
-        """
-        pass
 
 
 
@@ -375,8 +369,9 @@ def openPeer(cls=None, name="test", temp=True, reopen=True, clear=True,
 
 
 class PeerDoer(doing.Doer):
-    """
-    Basic UXD Peer Doer
+    """Basic UXD Peer Doer
+    Stub override in sub class
+
     Because Unix Domain Sockets are reliable no need for retry tymer.
 
     To test in WingIde must configure Debug I/O to use external console
@@ -418,7 +413,7 @@ class PeerDoer(doing.Doer):
 
     def recur(self, tyme):
         """"""
-        self.peer.service()
+        # service receives and sends
 
 
     def exit(self):

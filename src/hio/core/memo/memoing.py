@@ -1571,7 +1571,7 @@ class Memoer(hioing.Mixin):
         self.serviceAllRx()
         self.serviceAllTx()
 
-    service = serviceAll  # alias override peer service method
+    service = serviceAll  # alias
 
 
 @contextmanager

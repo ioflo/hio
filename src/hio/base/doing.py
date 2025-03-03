@@ -151,7 +151,7 @@ class Doist(tyming.Tymist):
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
         For setting attributes on bound methods.
         """
-        temp = temp or self.temp if self.temp else temp  # inject if temp or self.temp
+        temp = temp or (self.temp if self.temp else temp)  # inject if temp or self.temp
 
         self.done = False
         if doers is not None:
@@ -246,7 +246,7 @@ class Doist(tyming.Tymist):
             except AttributeError:  # when using bound method for generator function
                 doer.__func__.done = None  # None before enter. enter may set to False
 
-            temp = temp or doer.temp if hasattr(doer, "temp") and doer.temp else None
+            temp = temp or (doer.temp if hasattr(doer, "temp") and doer.temp else None)
             opts = doer.opts if hasattr(doer, "opts") else {}
 
             dog = doer(tymth=self.tymen(), tock=doer.tock, temp=temp, **opts)  # calls doer.do
@@ -586,7 +586,7 @@ class Doer(tyming.Tymee):
             temp (bool): True means use temporary file resources if any
             opts (dict): of injected optional additional parameters
         """
-        temp = temp or self.temp if self.temp else temp  # inject if temp or self.temp
+        temp = temp or (self.temp if self.temp else temp)  # inject if temp or self.temp
 
         try:
             # enter context
@@ -949,7 +949,7 @@ class DoDoer(Doer):
                 temp (bool): True means use temporary file resources if any
             opts (dict): injected optional additional parameters
         """
-        temp = temp or self.temp if self.temp else temp  # inject if temp or self.temp
+        temp = temp or (self.temp if self.temp else temp)  # inject if temp or self.temp
 
         always = always if always is not None else self.always
         if doers is not None:
@@ -1032,7 +1032,7 @@ class DoDoer(Doer):
                 doer.done = None  # None before enter. enter may set to False
             except AttributeError:   # when using bound method for generator function
                 doer.__func__.done = None  # None before enter. enter may set to False
-            temp = temp or doer.temp if hasattr(doer, "temp") and doer.temp else None
+            temp = temp or (doer.temp if hasattr(doer, "temp") and doer.temp else None)
             opts = doer.opts if hasattr(doer, "opts") else {}
 
             dog = doer(tymth=self.tymth, tock=doer.tock, temp=temp, **opts)  # calls doer.do

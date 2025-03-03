@@ -24,25 +24,34 @@ from ..help import timing, helping
 from ..help.helping import RawDom
 from ..help import ogling
 
-ogler = ogling.initOgler(prefix='hio_mp', name="Boss", level=logging.DEBUG)
-logger = ogler.getLogger()
+from ..core.uxd import PeerMemoer
 
-# BossDoer info to be injected in CrewDoer as BossDoer enter time
-#    name (str | None): name of Boss for resource management
-#    path (str | None): UXD cmd memo path used by crew to talk to their boss
+ogler = ogling.initOgler(prefix='hio_mp', name="Boss", level=logging.ERROR)
+
+
+"""Bossage (namedtuple):
+BossDoer info to be injected in CrewDoer as BossDoer enter time
+Fields:
+   name (str | None): name of Boss for resource management
+   path (str | None): UXD cmd memo path used by crew to talk to their boss
+"""
 Bossage = namedtuple("Bossage", "name path")
 
-# BossDoer info to be injected into CrewDoer spinup containing both crew doist
-# parms for Process target kwargs and and CrewDoer parms
-#    name (str): child doist identifier for resources.
-#    tyme (float): child doist start tyme
-#    tock (float | None): child doist tock, tyme lag between runs
-#    real (bool): child doist True means run in real time, tyme is real time
-#    limit (float | None): child doist tyme limit. None means run forever
-#    doers (list[Doers]): child doist List of Doers
-#    temp (bool | None): True means use temporary file resources
-#    boss (Bossage | None): BossDoer  info for CrewDoer. May be filled at enter time
-#                       CrewDoer uses to contact BossDoer.
+"""Loadage (namedtuple):
+BossDoer info to be injected into CrewDoer .start() containing both crew doist
+parms for Process target kwargs and and CrewDoer parms
+
+Fields:
+   name (str): child doist identifier for resources.
+   tyme (float): child doist start tyme
+   tock (float | None): child doist tock, tyme lag between runs
+   real (bool): child doist True means run in real time, tyme is real time
+   limit (float | None): child doist tyme limit. None means run forever
+   doers (list[Doers]): child doist List of Doers
+   temp (bool | None): True means use temporary file resources
+   boss (Bossage | None): BossDoer  info for CrewDoer. May be filled at enter time
+                      CrewDoer uses to contact BossDoer.
+"""
 Loadage = namedtuple("Loadage", "name tyme tock real limit doers temp boss")
 
 
@@ -129,8 +138,8 @@ class BossDoer(Doer):
     Attributes:
         name (str): unique identifier for this MultDoer boss
                     used to manage local resources
-
-        loads (list[dict]): BossDoer info to be injected into CrewDoer spinup
+        peer (BossMemoer): underlying transport instance subclass of Memoer
+        loads (list[dict]): BossDoer info to be injected into CrewDoer .start()
                             containing both crew doist parmss for Process target
                             kwargs and and CrewDoer parms
                             (see Loadage._asdict() or CrewDom._asdict())
@@ -138,14 +147,14 @@ class BossDoer(Doer):
         crew (dict): values are child Process instances keyed by name
 
 
+
     Properties:
 
 
     """
 
-    def __init__(self, *, name='boss', loads=None, temp=False, **kwa):
+    def __init__(self, *, name='boss', peer=None, loads=None, temp=False, **kwa):
         """Initialize instance.
-
 
         Inherited Parameters:
             tymth (closure): injected function wrapper closure returned by
@@ -157,14 +166,20 @@ class BossDoer(Doer):
         Parameters:
             name (str): unique identifier for this BossDoer boss to be used
                         to manage local resources
+            peer (BossMemoer | None): underlying transport instance subclass of Memoer
             loads (list[dict]): parameters used to spinup crew hand subprocess
-                                see fields of
-            temp (bool): True means logger or other resources in spinup uses temp
-                         False other wise
+                                .start(). See fields of Loadage and Bossage
+            temp (bool): True means logger or other file resources created by
+                            .start() will use temp
+                         False otherwise
+
 
         """
         super(BossDoer, self).__init__(**kwa)
         self.name = name
+        if not peer:
+            peer = BossMemoer(name=self.name, reopen=False)  # default not opened reopen in enter
+        self.peer = peer
         self.loads = loads if loads is not None else []
         self.temp = temp
 
@@ -174,10 +189,11 @@ class BossDoer(Doer):
 
 
     def enter(self, *, temp=None):
-        """Do 'enter' context actions.
-        Start processes with config from .tots
-        Not a generator method.
+        """Do 'enter' context.
         Set up resources. Comparable to context manager enter.
+        Start processes with config from .loads
+        Not a generator method.
+
 
         Parameters:
             temp (bool | None): True means use temporary file resources if any.
@@ -188,48 +204,67 @@ class BossDoer(Doer):
         Doist or DoDoer winds its doers on enter
 
         """
-        logger.info("Boss Enter: name=%s size=%d, ppid=%d, pid=%d, module=%s, ogler=%s.",
-            self.name, len(self.loads), os.getppid(), os.getpid(), __name__, ogler.name)
-        self.count = 0
+        logger = ogler.getLogger()  # get so picks up test ogler.level
+        logger.debug("BossDoer Enter: name=%s size=%d, ppid=%d, pid=%d, module=%s, temp=%s,ogler=%s.",
+            self.name, len(self.loads), os.getppid(), os.getpid(), __name__, temp, ogler.name)
+        self.peer.reopen(temp=temp)
+        logger.debug("Boss name=%s Peer: name=%s path=%s opened=%s.",
+                    self.name, self.peer.name, self.peer.path, self.peer.opened)
+        boss = Bossage(name=self.peer.name, path=self.peer.path)  # use peer at enter
+
         for load in self.loads:
-            hand = self.ctx.Process(name=load["name"],
-                                     target=self.spinup,
-                                     kwargs=load)
-            self.crew[hand.name] = hand
-            hand.start()
+            #logger.debug("Load: %s.", load)
+            name = load["name"]
+            doers = load["doers"]
+            if not doers or not isinstance(doers[0], CrewDoer):  # first doer must be CrewDoer
+                raise hioing.MultiError(f"No crew doer for crew hand doist={name}.")
+
+            doers[0].boss = boss  # assign boss contact info to crew doer
+
+            if name not in self.crew:  # ensure unique by name
+                hand = self.ctx.Process(name=name,
+                                         target=self.start,
+                                         kwargs=load)
+                self.crew[hand.name] = hand
+                hand.start()
+            else:
+                raise hioing.MultiError(f"Non-unique crew hand {name=} in loads.")
 
 
     def recur(self, tyme):
-        """"""
-        self.count += 1
-
+        """Do 'recur' context."""
+        logger = ogler.getLogger()  # get so picks up test ogler.level
+        self.peer.service()
         if not self.ctx.active_children():
             return True   # complete
         return False  # incomplete recur again
 
 
     def exit(self):
-        """"""
-        self.count += 1
-        logger.info("Boss Exit: name=%s, ppid=%d, pid=%d, module=%s, ogler=%s.",
+        """Do 'exit' (try finally) context."""
+        logger = ogler.getLogger()
+        self.peer.close(clear=True)
+        logger.debug("Boss name=%s Peer: name=%s path=%s opened=%s.",
+                self.name, self.peer.name, self.peer.path, self.peer.opened)
+        logger.debug("BossDoer Exit: name=%s, ppid=%d, pid=%d, module=%s, ogler=%s.",
                 self.name, os.getppid(), os.getpid(), __name__, ogler.name)
 
 
     def close(self):
-        """"""
-        self.count += 1
+        """Do 'close' context."""
+        logger = ogler.getLogger()  # get so picks up test ogler.level
 
 
     def abort(self, ex):
-        """"""
-        self.count += 1
+        """Do 'abort' context."""
+        logger = ogler.getLogger()  # get so picks up test ogler.level
 
 
     @staticmethod
-    def spinup(*, name='crew', tyme=0.0, tock=None, real=True, limit=None,
+    def start(*, name='crew', tyme=0.0, tock=None, real=True, limit=None,
                doers=None, temp=None, boss=None):
-        """Process target function to make and run doist after crew subprocess has
-        been started.
+        """Process target function to spinup and run doist inside crew subprocess
+        after it has been started.
 
         Parameters:
             name (str): unique crew hand name to be used to manage resources
@@ -250,25 +285,27 @@ class BossDoer(Doer):
         Doist must be built after process started so local tymth closure is created
         inside subprocess so that when doist winds the tyme for its doers
         the tymth closure is locally sourced.
-        """
-        # When run inside subprocess, spinup is at the outside scope for any
-        # Doist and doers that reference ogler. This is a copy of the ogler in
-        # the parer so can change ogler.level, ogler.temp and run ogler.reopen
-        # to reopen log file or pass in temp to reopen
-        ogler.level = logging.INFO
-        ogler.reopen(name=name, temp=temp)
-        logger = ogler.getLogger()
 
-        logger.info("Crew Start: name=%s, ppid=%d, pid=%s, module=%s, ogler=%s.",
-                        name, os.getppid(), os.getpid(), __name__, ogler.name)
+        When run inside subprocess, this static method provides the outside
+        scope for any Doist and doers that reference objects inside the
+        __main__ moduleo that calls this method such as ogler.
+        The subprocess gets a picked copy of these module globals. Any Doer
+        inside then has access to the module globals and can update them as
+        neede. In the case of ogler this means changing ogler.level, ogler.temp
+        and running ogler.reopen(temp=temp) as appropriate.
+        """
+        logger = ogler.getLogger()  # do here so picks up level inside subprocess
+
+        logger.debug("Crew Start: name=%s, ppid=%d, pid=%s, module=%s, temp=%s, ogler=%s.",
+                        name, os.getppid(), os.getpid(), __name__, temp, ogler.name)
         time.sleep(0.01)
 
         doist = Doist(name=name, tyme=tyme, tock=tock, real=real, limit=limit,
                       doers=doers, temp=temp)
         doist.do()
 
-        logger.info("Crew End: name=%s, ppid=%d, pid=%s, module=%s, ogler=%s.",
-                        name, os.getppid(), os.getpid(), __name__, ogler.name)
+        logger.debug("Crew End: name=%s, ppid=%d, pid=%s, module=%s, temp=%s, ogler=%s.",
+                        name, os.getppid(), os.getpid(), __name__, temp, ogler.name)
 
 
 class CrewDoer(Doer):
@@ -277,22 +314,43 @@ class CrewDoer(Doer):
 
     Attributes:
         name (str): crew hand name for managing local resources to subprocess
+        peer (CrewMemoer): underlying transport instance subclass of Memoer
+        count (int): iteration counter for debugging
 
     """
 
-    def __init__(self, *, name='crew', **kwa):
-        """
-        Initialize instance.
+    def __init__(self, *, name='crew', boss=Bossage(name=None, path=None),
+                          peer=None, **kwa):
+        """Initialize instance.
+
+        Inherited Parameters:
+            tymth (closure): injected function wrapper closure returned by
+                Tymist.tymen() instance. Calling tymth() returns associated
+                Tymist.tyme.
+            tock (float): seconds initial value of .tock
+            opts (dict): injected options into its .do generator by scheduler
+
+        Parameters:
+            name (str): unique identifier for this BossDoer boss to be used
+                        to manage local resources
+            boss (Bossage): contact info for BossDoer. assigned by boss at enter
+            peer (CrewMemoer | None): underlying transport instance subclass of Memoer
+
+            temp (bool): True means logger or other file resources created by
+                            .start() will use temp
+                         False otherwise
         """
         super(CrewDoer, self).__init__(**kwa)
         self.name = name
+        self.boss = boss
+        self.peer = peer if peer is not None else CrewMemoer(name=self.name, reopen=False)
         self.count = None
 
 
     def enter(self, *, temp=None):
-        """Do 'enter' context actions. Override in subclass. Not a generator method.
+        """Do 'enter' context.
         Set up resources. Comparable to context manager enter.
-
+        Not a generator method.
 
         Parameters:
             temp (bool | None): True means use temporary file resources if any
@@ -300,40 +358,159 @@ class CrewDoer(Doer):
 
         Inject temp or self.temp into file resources here if any
 
-        Inject temp into file resources here if any
-
         Doist or DoDoer winds its doers on enter
         """
+        logger = ogler.getLogger()  # get so picks up test ogler.level
         self.count = 0
-        #ogler.level = logging.INFO
-        #ogler.reopen(name=self.name, temp=temp)
-        logger = ogler.getLogger()
-        logger.info("CrewDoer Enter: name=%s pid=%d, ogler=%s, count=%d.",
-                    self.name, os.getpid(), ogler.name, self.count)
+        logger.debug("CrewDoer Enter: name=%s pid=%d, temp=%s, ogler=%s, count=%d.",
+                    self.name, os.getpid(), temp, ogler.name, self.count)
+        logger.debug("Crew name=%s Boss: name=%s path=%s.",
+                            self.name, self.boss.name, self.boss.path)
+        self.peer.reopen(temp=temp)
+        logger.debug("Crew name=%s Peer: name=%s path=%s opened=%s.",
+                    self.name, self.peer.name, self.peer.path, self.peer.opened)
+
+        memo = f"Register: Crew hand name={self.peer.name}"
+        dst = self.boss.path
+        self.peer.memoit(memo, dst)
 
 
     def recur(self, tyme):
-        """"""
-        self.count += 1
+        """Do 'recur' context."""
         logger = ogler.getLogger()
-        logger.info("CrewDoer Recur: name=%s, pid=%d, ogler=%s, count=%d.",
+        self.count += 1
+        logger.debug("CrewDoer Recur: name=%s, pid=%d, ogler=%s, count=%d.",
                     self.name, os.getpid(), ogler.name, self.count)
+        self.peer.service()
         if self.count > 3:
             return True  # complete
         return False  # incomplete
 
+
     def exit(self):
-        """"""
-        self.count += 1
+        """Do 'exit' (try finally) context."""
         logger = ogler.getLogger()
-        logger.info("CrewDoer Exit: name=%s pid=%d, ogler=%s, count=%d.",
+        self.count += 1
+        self.peer.close(clear=True)
+        logger.debug("Crew name=%s Peer: name=%s path=%s opened=%s.",
+                    self.name, self.peer.name, self.peer.path, self.peer.opened)
+        logger.debug("CrewDoer Exit: name=%s pid=%d, ogler=%s, count=%d.",
                     self.name, os.getpid(), ogler.name, self.count)
 
     def close(self):
-        """"""
+        """Do 'close' context."""
+        logger = ogler.getLogger()
         self.count += 1
 
 
     def abort(self, ex):
-        """"""
+        """Do 'abort' context."""
+        logger = ogler.getLogger()
         self.count += 1
+
+
+
+class BossMemoer(PeerMemoer):
+    """Class for sending memograms over UXD transport
+    Mixin base classes Peer and Memoer to attain memogram over uxd transport.
+
+
+    Inherited Class Attributes:
+        MaxGramSize (int): absolute max gram size on tx with overhead
+        See memoing.Memoer Class
+        See Peer Class
+
+    Inherited Attributes:
+        See memoing.Memoer Class
+        See Peer Class
+
+    Class Attributes:
+
+    Attributes:
+
+    """
+
+
+    def __init__(self, *, reopen=False, bc=4, **kwa):
+        """Initialization method for instance.
+
+        Inherited Parameters:
+            reopen (bool): True (re)open with this init
+                           False not (re)open with this init but later (default)
+            bc (int | None): count of transport buffers of MaxGramSize
+
+            See memoing.Memoer for other inherited paramters
+            See Peer for other inherited paramters
+
+
+        Parameters:
+
+        """
+        super(BossMemoer, self).__init__(reopen=reopen, bc=bc, **kwa)
+
+
+    def serviceRxMemos(self):
+        """Service all memos in .rxms (greedy) if any
+
+        Override in subclass to handle result(s) and put them somewhere
+        """
+        logger = ogler.getLogger()
+
+        while self.rxms:
+            memo, src, vid = self._serviceOneRxMemo()
+            logger.debug("Boss Peer RX: name=%s rx from src=%s memo=%s.",
+                                self.name, src, memo)
+
+            dst = src
+            memo = f"ACK: {src=}"
+            self.memoit(memo, dst)
+
+
+
+class CrewMemoer(PeerMemoer):
+    """Class for sending memograms over UXD transport
+    Mixin base classes Peer and Memoer to attain memogram over uxd transport.
+
+
+    Inherited Class Attributes:
+        MaxGramSize (int): absolute max gram size on tx with overhead
+        See memoing.Memoer Class
+        See Peer Class
+
+    Inherited Attributes:
+        See memoing.Memoer Class
+        See Peer Class
+
+    Class Attributes:
+
+    Attributes:
+
+    """
+    def __init__(self, *, reopen=False, bc=4, **kwa):
+        """Initialization method for instance.
+
+        Inherited Parameters:
+            reopen (bool): True (re)open with this init
+                           False not (re)open with this init but later (default)
+            bc (int | None): count of transport buffers of MaxGramSize
+
+            See memoing.Memoer for other inherited paramters
+            See Peer for other inherited paramters
+
+
+        Parameters:
+
+        """
+        super(CrewMemoer, self).__init__(reopen=reopen, bc=bc, **kwa)
+
+    def serviceRxMemos(self):
+        """Service all memos in .rxms (greedy) if any
+
+        Override in subclass to handle result(s) and put them somewhere
+        """
+        logger = ogler.getLogger()
+
+        while self.rxms:
+            memo, src, vid = self._serviceOneRxMemo()
+            logger.debug("Crew Peer RX: name=%s rx from src=%s memo=%s.",
+                                self.name, src, memo)
