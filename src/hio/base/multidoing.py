@@ -10,6 +10,7 @@ Provides multiprocessing support
 import os
 import time
 import logging
+import json
 import multiprocessing as mp
 
 from collections import deque, namedtuple
@@ -91,6 +92,28 @@ class CrewDom(RawDom):
     boss: (Bossage | None) = Bossage(name=None, path=None)  # BossDoer info
 
 
+@dataclass
+class MemoDom(RawDom):
+    """Inter Boss Crew Hand structured memo dataclass. Used for control messages
+    Between Boss and Crew Doers via their .peer UXD BossMemoer or CrewMemoer.
+
+
+    Inherited Class Methods:
+        _fromdict(cls, d: dict): return dataclass converted from dict d
+        __iter__(self): asdict(self)
+        _asdict(self): return self converted to dict
+        _asjson(self): return self converted to json
+        _ascbor(self): return self converted to cbor
+        _asmgpk(self): return self converted to mgpk
+
+    Attributes:
+        name (str): unique identifier as source of memo
+        kin (str): type of memo
+        load (dict): type specific payload of memo
+    """
+    name: str ='child'  # unique identifier of source
+    kin: str = 'ACK'    # type of memo
+    load: dict = field(default_factory=dict)  # type specific payload
 
 
 class BossDoer(Doer):
@@ -370,7 +393,8 @@ class CrewDoer(Doer):
         logger.debug("Crew name=%s Peer: name=%s path=%s opened=%s.",
                     self.name, self.peer.name, self.peer.path, self.peer.opened)
 
-        memo = f"Register: Crew hand name={self.peer.name}"
+        memo = dict(name=self.name, kin="REG", load={})
+        memo = json.dumps(memo, separators=(",", ":"), ensure_ascii=False)
         dst = self.boss.path
         self.peer.memoit(memo, dst)
 
@@ -460,10 +484,15 @@ class BossMemoer(PeerMemoer):
             memo, src, vid = self._serviceOneRxMemo()
             logger.debug("Boss Peer RX: name=%s rx from src=%s memo=%s.",
                                 self.name, src, memo)
+            memo = json.loads(memo)
+            if memo['kin'] == "REG":
+                pass # register src path with name
+
 
             dst = src
-            memo = f"ACK: {src=}"
-            self.memoit(memo, dst)
+            mack = dict(name=self.name, kin="ACK", load={})
+            mack = json.dumps(mack,separators=(",", ":"),ensure_ascii=False)
+            self.memoit(mack, dst)
 
 
 
@@ -514,3 +543,4 @@ class CrewMemoer(PeerMemoer):
             memo, src, vid = self._serviceOneRxMemo()
             logger.debug("Crew Peer RX: name=%s rx from src=%s memo=%s.",
                                 self.name, src, memo)
+            memo = json.loads(memo)
