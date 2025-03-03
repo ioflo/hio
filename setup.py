@@ -9,7 +9,7 @@ https://pypi.org/manage/projects/
 
 More secure to use twine to upload
 $ pip3 install twine
-$ python3 setup.py sdist
+$ python setup.py sdist
 $ twine upload dist/hio-0.0.1.tar.gz
 
 
