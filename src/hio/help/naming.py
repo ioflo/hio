@@ -46,8 +46,13 @@ class Namer(hioing.Mixin):
             entries (dict | interable): dict or iterable of (name, addr) duples
                 to  bulk initialize the mappings between addresses and names
 
-
         Attributes:
+
+        Properties:
+            addrByName (dict): mapping between (name, address) pairs, these
+                must be one-to-one so that inverse is also one-to-one
+            nameByAddr (dict): mapping between (address, name) pairs, these
+                must be one-to-one so that inverse is also one-to-one
 
         Hidden:
             _addrByName (dict): mapping between (name, address) pairs, these
@@ -55,7 +60,14 @@ class Namer(hioing.Mixin):
             _nameByAddr (dict): mapping between (address, name) pairs, these
                 must be one-to-one so that inverse is also one-to-one
 
-
+        Methods:
+            clearAllNameAddr()
+            getAddr(name)
+            getName(addr)
+            addNameAddr(name, addr)
+            remNameAddr(name=None, addr=None)
+            changeAddrAtName(name=None, addr=None)
+            changeNameAtAddr(addr=None, name=None)
 
         """
         self._addrByName = dict()
@@ -67,7 +79,7 @@ class Namer(hioing.Mixin):
             items = entries.items() if entries else []
 
         for name, addr in items:
-            self.addEntry(name=name, addr=addr)
+            self.addNameAddr(name=name, addr=addr)
 
         super(Namer, self).__init__(**kwa)
 
@@ -83,6 +95,14 @@ class Namer(hioing.Mixin):
         """Property that returns copy of ._nameByAddr
         """
         return dict(self._nameByAddr)
+
+
+    def clearAllNameAddr(self):
+        """Clears all entries
+
+        """
+        self._addrByName = dict()
+        self._nameByAddr = dict()
 
 
     def getAddr(self, name):
@@ -103,7 +123,7 @@ class Namer(hioing.Mixin):
         return self._nameByAddr.get(addr)
 
 
-    def addEntry(self, name, addr):
+    def addNameAddr(self, name, addr):
         """Add mapping and inverse mapping entries for
         name to addr and addr to name
         All mappings must be one-to-one
@@ -143,7 +163,7 @@ class Namer(hioing.Mixin):
         return True  # added new entry
 
 
-    def remEntry(self, name=None, addr=None):
+    def remNameAddr(self, name=None, addr=None):
         """Delete both name to addr and addr to name mapping entries.
            When an entry is found for either name or addr or both.
            When both provided must be matching one-to-one entries.
@@ -193,13 +213,6 @@ class Namer(hioing.Mixin):
 
         return False  # nothing deleted neither name nor addr provided
 
-
-    def clearEntries(self):
-        """Clears all entries
-
-        """
-        self._addrByName = dict()
-        self._nameByAddr = dict()
 
 
     def changeAddrAtName(self, *, name=None, addr=None):

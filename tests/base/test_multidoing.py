@@ -55,6 +55,7 @@ def test_boss_crew_stepped():
     assert doer.done == False
     assert doer.crew
     assert doer.logger
+    assert hasattr(doer, "addrByName")
 
     doist.recur()
     assert doist.tyme == 0.01  # on next cycle
@@ -67,6 +68,7 @@ def test_boss_crew_stepped():
     assert len(doist.deeds) == 0
     assert not doer.opened
     assert doer.done == True
+    assert doer.getAddr(name="hand")
 
     # Verify changes to ogler in child subprocesses not affect parent ogler
     from hio.help import ogler

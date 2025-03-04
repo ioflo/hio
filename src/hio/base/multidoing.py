@@ -25,6 +25,7 @@ from ..help import timing, helping
 from ..help.helping import RawDom
 from ..help import ogling
 
+from ..help.naming import Namer
 from ..core.uxd import PeerMemoer
 
 ogler = ogling.initOgler(prefix='hio_mp', name="Boss", level=logging.ERROR)
@@ -117,15 +118,15 @@ class MemoDom(RawDom):
 
 
 
-class MultiDoerBase(PeerMemoer, Doer):
+class MultiDoerBase(Namer, PeerMemoer, Doer):
     """MultiDoerBase is base class for Doers in multiprocessing. Each subclass
     has support for UXD peer communications via PeerMemoer super class. As well
     as support for local logging given scope of module global ogler at enter time.
 
-    See Doer and PeerMemoer for inherited attributes, properties, and methods.
+    See Namer, PeerMemoer, and Doer for inherited attributes, properties, and methods.
 
     Inherited Class Attributes:
-        See PeerMemoer and Doer Classes
+        See Namer, PeerMemoer and Doer Classes
 
     Inherited Attributes:  (See Doer and PeerMemoer for all)
         done (bool): completion state:
@@ -145,7 +146,7 @@ class MultiDoerBase(PeerMemoer, Doer):
         logger (Logger | None): from module scope ogler created at enter time
                         with local resources.
 
-    Inherited Properties: (doer)
+    Inherited Properties:
         tyme (float): is float relative cycle time of associated Tymist .tyme obtained
             via injected .tymth function wrapper closure.
         tymth (closure): function wrapper closure returned by Tymist.tymen()
@@ -154,10 +155,15 @@ class MultiDoerBase(PeerMemoer, Doer):
                         tyme base.
         tock (float): desired time in seconds between runs or until next run,
                  non negative, zero means run asap
+        addrByName (dict): mapping between (name, address) pairs, these
+            must be one-to-one so that inverse is also one-to-one
+        nameByAddr (dict): mapping between (address, name) pairs, these
+            must be one-to-one so that inverse is also one-to-one
+
 
     Properties:
 
-    Inherited Methods:  (doer)
+    Inherited Methods:
         __call__()  makes instance callable as generator function returning generator
         do() generator method that returns generator
         enter() is enter context action method
@@ -167,6 +173,13 @@ class MultiDoerBase(PeerMemoer, Doer):
         close() close context method
         abort() abort context method
         wind()  injects ._tymth dependency from associated Tymist to get its .tyme
+        clearAllNameAddr()
+        getAddr(name)
+        getName(addr)
+        addNameAddr(name, addr)
+        remNameAddr(name=None, addr=None)
+        changeAddrAtName(name=None, addr=None)
+        changeNameAtAddr(addr=None, name=None)
 
     """
 
@@ -351,11 +364,15 @@ class BossDoer(MultiDoerBase):
                                 self.name, src, memo)
             memo = json.loads(memo)
             if memo['kin'] == "REG":
-                pass # register src path with name
+                name = memo['name']
+                try:
+                    self.addNameAddr(name=name, addr=src)
+                except hioing.NamerError as ex:
+                    self.changeAddrAtName(name=name, addr=src)
 
 
             dst = src
-            mack = dict(name=self.name, kin="ACK", load={})
+            mack = dict(name=self.name, kin="ACK", load=dict(kin='REG', name=name, addr=src))
             mack = json.dumps(mack,separators=(",", ":"),ensure_ascii=False)
             self.memoit(mack, dst)
 
@@ -478,8 +495,10 @@ class CrewDoer(MultiDoerBase):
         self.count = 0
         self.logger.debug("CrewDoer Enter: name=%s pid=%d, temp=%s, ogler=%s, count=%d.",
                     self.name, os.getpid(), temp, ogler.name, self.count)
+
         self.logger.debug("Crew name=%s Boss: name=%s path=%s.",
                             self.name, self.boss.name, self.boss.path)
+        self.addNameAddr(name=self.boss.name, addr=self.boss.path)
 
         self.reopen(temp=temp)
 
