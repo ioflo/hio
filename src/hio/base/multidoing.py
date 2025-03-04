@@ -117,6 +117,104 @@ class MemoDom(RawDom):
 
 
 
+class MultiDoerBase(PeerMemoer, Doer):
+    """MultiDoerBase is base class for Doers in multiprocessing. Each subclass
+    has support for UXD peer communications via PeerMemoer super class. As well
+    as support for local logging given scope of module global ogler at enter time.
+
+    See Doer and PeerMemoer for inherited attributes, properties, and methods.
+
+
+    Inherited Class Attributes:
+        See PeerMemoer and Doer Classes
+
+
+    Inherited Attributes:  (See Doer and PeerMemoer for all)
+        done (bool): completion state:
+                     True means completed fully. Otherwise incomplete.
+                     Incompletion value may be None or False.
+        opts (dict): schedulaer injects options from .opts into its .do generator
+                     function as **opts parameter.
+        name (str): unique identifier for this BossDoer
+                    used to manage local resources
+
+
+    Attributes:
+        logger (Logger | None): from module scope ogler created at enter time
+                        with local resources.
+
+
+
+    Inherited Properties: (doer)
+        tyme (float): is float relative cycle time of associated Tymist .tyme obtained
+            via injected .tymth function wrapper closure.
+        tymth (closure): function wrapper closure returned by Tymist.tymen()
+                        method. When .tymth is called it returns associated
+                        Tymist.tyme. Provides injected dependency on Tymist
+                        tyme base.
+        tock (float): desired time in seconds between runs or until next run,
+                 non negative, zero means run asap
+
+    Properties:
+
+    Inherited Methods:  (doer)
+        __call__()  makes instance callable as generator function returning generator
+        do() generator method that returns generator
+        enter() is enter context action method
+        recur() recur context action method or generator method
+        clean() clean context action method
+        exit() exit context method
+        close() close context method
+        abort() abort context method
+        wind()  injects ._tymth dependency from associated Tymist to get its .tyme
+
+
+    """
+
+    def __init__(self, *, name='base', peer=None, loads=None, temp=False,
+                 reopen=False, bc=4, **kwa):
+        """Initialize instance.
+
+        Inherited Parameters:  (see Doer and PeerMemoer for all)
+            tymth (closure): injected function wrapper closure returned by
+                Tymist.tymen() instance. Calling tymth() returns associated
+                Tymist.tyme.
+            tock (float): seconds initial value of .tock
+            opts (dict): injected options into its .do generator by scheduler
+            name (str): unique identifier for this BossDoer boss to be used
+                        to manage local resources
+            temp (bool): True means logger or other file resources created by
+                            .start() will use temp
+                         False otherwise
+            reopen (bool): True (re)open with this init
+                           False not (re)open with this init but later (default)
+            bc (int | None): count of transport buffers of MaxGramSize
+
+        Parameters:
+            loads (list[dict]): parameters used to spinup crew hand subprocess
+                                .start(). See fields of Loadage and Bossage
+
+        """
+        super(BossDoer, self).__init__(name=name,
+                                       temp=temp,
+                                       reopen=reopen,
+                                       bc=bc,
+                                       **kwa)
+
+        self.logger = None  # assign later from ogler in enter time/scope
+        self.loads = loads if loads is not None else []
+
+
+        self.ctx = mp.get_context('spawn')
+        self.crew = {}
+
+
+
+
+
+
+
+
 class BossDoer(PeerMemoer, Doer):
     """BossDoer spawns multiple crew hand subprocesses and injects each with
     a Doist and Doers. The boss Doists runs the BossDoer in the parent process.
@@ -139,11 +237,19 @@ class BossDoer(PeerMemoer, Doer):
                      Incompletion value may be None or False.
         opts (dict): schedulaer injects options from .opts into its .do generator
                      function as **opts parameter.
-        name (str): unique identifier for this BossDoer
+        name (str): unique identifier for this instance
                     used to manage local resources
+        temp (bool): True means logger or other file resources created by
+                            .start() will use temp
+                         False otherwise
+        reopen (bool): True (re)open with this init
+                           False not (re)open with this init but later (default)
+        bc (int | None): count of transport buffers of MaxGramSize
 
 
     Attributes:
+        logger (Logger | None): from module scope ogler created at enter time
+                        with local resources.
         loads (list[dict]): BossDoer info to be injected into CrewDoer .start()
                             containing both crew doist parmss for Process target
                             kwargs and and CrewDoer parms
@@ -178,8 +284,12 @@ class BossDoer(PeerMemoer, Doer):
 
     """
 
-    def __init__(self, *, name='boss', peer=None, loads=None, temp=False,
-                 reopen=False, bc=4, **kwa):
+    def __init__(self, *, name='boss',
+                          temp=False,
+                          reopen=False,
+                          bc=4,
+                          loads=None,
+                          **kwa):
         """Initialize instance.
 
         Inherited Parameters:  (see Doer and PeerMemoer for all)
@@ -207,13 +317,9 @@ class BossDoer(PeerMemoer, Doer):
                                        reopen=reopen,
                                        bc=bc,
                                        **kwa)
-        #self.name = name
-        #if not peer:
-            #peer = BossMemoer(name=self.name, reopen=False)  # default not opened reopen in enter
-        #self.peer = peer
-        self.loads = loads if loads is not None else []
-        #self.temp = temp
 
+        self.logger = None  # assign later from ogler in enter time/scope
+        self.loads = loads if loads is not None else []
         self.ctx = mp.get_context('spawn')
         self.crew = {}
 
@@ -235,20 +341,16 @@ class BossDoer(PeerMemoer, Doer):
         Doist or DoDoer winds its doers on enter
 
         """
-        logger = ogler.getLogger()  # get so picks up test ogler.level
-        logger.debug("BossDoer Enter: name=%s size=%d, ppid=%d, pid=%d, module=%s, temp=%s,ogler=%s.",
+        self.logger = ogler.getLogger()  # uses ogler in enter scope
+        self.logger.debug("BossDoer Enter: name=%s size=%d, ppid=%d, pid=%d, module=%s, temp=%s,ogler=%s.",
             self.name, len(self.loads), os.getppid(), os.getpid(), __name__, temp, ogler.name)
-        #self.peer.reopen(temp=temp)
+
         self.reopen(temp=temp)
-        #logger.debug("Boss name=%s Peer: name=%s path=%s opened=%s.",
-                    #self.name, self.peer.name, self.peer.path, self.peer.opened)
-        #boss = Bossage(name=self.peer.name, path=self.peer.path)  # use peer at enter
-        logger.debug("Boss name=%s path=%s opened=%s.",
+        self.logger.debug("Boss name=%s path=%s opened=%s.",
                     self.name, self.path, self.opened)
         boss = Bossage(name=self.name, path=self.path)  # use peer at enter
 
         for load in self.loads:
-            #logger.debug("Load: %s.", load)
             name = load["name"]
             doers = load["doers"]
             if not doers or not isinstance(doers[0], CrewDoer):  # first doer must be CrewDoer
@@ -268,8 +370,6 @@ class BossDoer(PeerMemoer, Doer):
 
     def recur(self, tyme):
         """Do 'recur' context."""
-        logger = ogler.getLogger()  # get so picks up test ogler.level
-        #self.peer.service()
         self.service()
         if not self.ctx.active_children():
             return True   # complete
@@ -278,27 +378,40 @@ class BossDoer(PeerMemoer, Doer):
 
     def exit(self):
         """Do 'exit' (try finally) context."""
-        logger = ogler.getLogger()
-        #self.peer.close(clear=True)
         self.close(clear=True)
-        #logger.debug("Boss name=%s Peer: name=%s path=%s opened=%s.",
-                #self.name, self.peer.name, self.peer.path, self.peer.opened)
-        #logger.debug("BossDoer Exit: name=%s, ppid=%d, pid=%d, module=%s, ogler=%s.",
-                #self.name, os.getppid(), os.getpid(), __name__, ogler.name)
-        logger.debug("Boss name=%s path=%s opened=%s.",
+        self.logger.debug("Boss name=%s path=%s opened=%s.",
                 self.name, self.path, self.opened)
-        logger.debug("BossDoer Exit: name=%s, ppid=%d, pid=%d, module=%s, ogler=%s.",
+        self.logger.debug("BossDoer Exit: name=%s, ppid=%d, pid=%d, module=%s, ogler=%s.",
                 self.name, os.getppid(), os.getpid(), __name__, ogler.name)
 
 
     def cease(self):
         """Do 'cease' context."""
-        logger = ogler.getLogger()  # get so picks up test ogler.level
 
 
     def abort(self, ex):
         """Do 'abort' context."""
-        logger = ogler.getLogger()  # get so picks up test ogler.level
+
+
+    def serviceRxMemos(self):
+        """Service all memos in .rxms (greedy) if any
+
+        Override in subclass to handle result(s) and put them somewhere
+        """
+        while self.rxms:
+            memo, src, vid = self._serviceOneRxMemo()
+            self.logger.debug("Boss Peer RX: name=%s rx from src=%s memo=%s.",
+                                self.name, src, memo)
+            memo = json.loads(memo)
+            if memo['kin'] == "REG":
+                pass # register src path with name
+
+
+            dst = src
+            mack = dict(name=self.name, kin="ACK", load={})
+            mack = json.dumps(mack,separators=(",", ":"),ensure_ascii=False)
+            self.memoit(mack, dst)
+
 
 
     @staticmethod
@@ -335,7 +448,7 @@ class BossDoer(PeerMemoer, Doer):
         neede. In the case of ogler this means changing ogler.level, ogler.temp
         and running ogler.reopen(temp=temp) as appropriate.
         """
-        logger = ogler.getLogger()  # do here so picks up level inside subprocess
+        logger = ogler.getLogger()  # uses ogler from subprocess scope
 
         logger.debug("Crew Start: name=%s, ppid=%d, pid=%s, module=%s, temp=%s, ogler=%s.",
                         name, os.getppid(), os.getpid(), __name__, temp, ogler.name)
@@ -347,30 +460,6 @@ class BossDoer(PeerMemoer, Doer):
 
         logger.debug("Crew End: name=%s, ppid=%d, pid=%s, module=%s, temp=%s, ogler=%s.",
                         name, os.getppid(), os.getpid(), __name__, temp, ogler.name)
-
-
-    def serviceRxMemos(self):
-        """Service all memos in .rxms (greedy) if any
-
-        Override in subclass to handle result(s) and put them somewhere
-        """
-        logger = ogler.getLogger()
-
-        while self.rxms:
-            memo, src, vid = self._serviceOneRxMemo()
-            logger.debug("Boss Peer RX: name=%s rx from src=%s memo=%s.",
-                                self.name, src, memo)
-            memo = json.loads(memo)
-            if memo['kin'] == "REG":
-                pass # register src path with name
-
-
-            dst = src
-            mack = dict(name=self.name, kin="ACK", load={})
-            mack = json.dumps(mack,separators=(",", ":"),ensure_ascii=False)
-            self.memoit(mack, dst)
-
-
 
 
 
@@ -391,9 +480,17 @@ class CrewDoer(PeerMemoer, Doer):
                      function as **opts parameter.
         name (str): unique identifier for this crew doer
                     used to manage local resources
+        temp (bool): True means logger or other file resources created by
+                            .start() will use temp
+                         False otherwise
+        reopen (bool): True (re)open with this init
+                           False not (re)open with this init but later (default)
+        bc (int | None): count of transport buffers of MaxGramSize
 
     Attributes:
-        self.boss (Bossage): contact info for communicating with boss
+        logger (Logger | None): from module scope ogler created at enter time
+                        with local resources.
+        boss (Bossage): contact info for communicating with boss
         count (int): iteration counter for debugging
 
 
@@ -423,10 +520,10 @@ class CrewDoer(PeerMemoer, Doer):
     """
 
     def __init__(self, *, name='crew',
-                          boss=Bossage(name=None, path=None),
                           temp=None,
                           reopen=False,
                           bc=4,
+                          boss=Bossage(name=None, path=None),
                           **kwa):
         """Initialize instance.
 
@@ -437,21 +534,24 @@ class CrewDoer(PeerMemoer, Doer):
             tock (float): seconds initial value of .tock
             opts (dict): injected options into its .do generator by scheduler
 
-        Parameters:
             name (str): unique identifier for this BossDoer boss to be used
                         to manage local resources
-            boss (Bossage): contact info for BossDoer. assigned by boss at enter
-
-
             temp (bool): True means logger or other file resources created by
                             .start() will use temp
                          False otherwise
+            reopen (bool): True (re)open with this init
+                           False not (re)open with this init but later (default)
+            bc (int | None): count of transport buffers of MaxGramSize
+
+
+        Parameters:
+            boss (Bossage): contact info for BossDoer. assigned by boss at enter
+
 
         """
         super(CrewDoer, self).__init__(name=name, temp=temp, reopen=reopen, bc=bc, **kwa)
-        #self.name = name
+        self.logger = None  # assign later from ogler in enter time/scope
         self.boss = boss
-        #self.peer = peer if peer is not None else CrewMemoer(name=self.name, reopen=False)
         self.count = None
 
 
@@ -468,33 +568,30 @@ class CrewDoer(PeerMemoer, Doer):
 
         Doist or DoDoer winds its doers on enter
         """
-        logger = ogler.getLogger()  # get so picks up test ogler.level
+        self.logger = ogler.getLogger()  # uses ogler in enter scope
         self.count = 0
-        logger.debug("CrewDoer Enter: name=%s pid=%d, temp=%s, ogler=%s, count=%d.",
+        self.logger.debug("CrewDoer Enter: name=%s pid=%d, temp=%s, ogler=%s, count=%d.",
                     self.name, os.getpid(), temp, ogler.name, self.count)
-        logger.debug("Crew name=%s Boss: name=%s path=%s.",
+        self.logger.debug("Crew name=%s Boss: name=%s path=%s.",
                             self.name, self.boss.name, self.boss.path)
-        #self.peer.reopen(temp=temp)
+
         self.reopen(temp=temp)
-        #logger.debug("Crew name=%s Peer: name=%s path=%s opened=%s.",
-                    #self.name, self.peer.name, self.peer.path, self.peer.opened)
-        logger.debug("Crew name=%s path=%s opened=%s.",
+
+        self.logger.debug("Crew name=%s path=%s opened=%s.",
                     self.name, self.path, self.opened)
 
         memo = dict(name=self.name, kin="REG", load={})
         memo = json.dumps(memo, separators=(",", ":"), ensure_ascii=False)
         dst = self.boss.path
-        #self.peer.memoit(memo, dst)
         self.memoit(memo, dst)
 
 
     def recur(self, tyme):
         """Do 'recur' context."""
-        logger = ogler.getLogger()
         self.count += 1
-        logger.debug("CrewDoer Recur: name=%s, pid=%d, ogler=%s, count=%d.",
+        self.logger.debug("CrewDoer Recur: name=%s, pid=%d, ogler=%s, count=%d.",
                     self.name, os.getpid(), ogler.name, self.count)
-        #self.peer.service()
+
         self.service()
         if self.count > 3:
             return True  # complete
@@ -503,26 +600,20 @@ class CrewDoer(PeerMemoer, Doer):
 
     def exit(self):
         """Do 'exit' (try finally) context."""
-        logger = ogler.getLogger()
         self.count += 1
-        #self.peer.close(clear=True)
         self.close(clear=True)
-        #logger.debug("Crew name=%s Peer: name=%s path=%s opened=%s.",
-                    #self.name, self.peer.name, self.peer.path, self.peer.opened)
-        logger.debug("Crew name=%s path=%s opened=%s.",
+        self.logger.debug("Crew name=%s path=%s opened=%s.",
                     self.name, self.path, self.opened)
-        logger.debug("CrewDoer Exit: name=%s pid=%d, ogler=%s, count=%d.",
+        self.logger.debug("CrewDoer Exit: name=%s pid=%d, ogler=%s, count=%d.",
                     self.name, os.getpid(), ogler.name, self.count)
 
     def cease(self):
         """Do 'cease' context."""
-        logger = ogler.getLogger()
         self.count += 1
 
 
     def abort(self, ex):
         """Do 'abort' context."""
-        logger = ogler.getLogger()
         self.count += 1
 
 
@@ -532,10 +623,8 @@ class CrewDoer(PeerMemoer, Doer):
 
         Override in subclass to handle result(s) and put them somewhere
         """
-        logger = ogler.getLogger()
-
         while self.rxms:
             memo, src, vid = self._serviceOneRxMemo()
-            logger.debug("Crew Peer RX: name=%s rx from src=%s memo=%s.",
+            self.logger.debug("Crew Peer RX: name=%s rx from src=%s memo=%s.",
                                 self.name, src, memo)
             memo = json.loads(memo)

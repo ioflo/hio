@@ -186,10 +186,10 @@ class Doist(tyming.Tymist):
                     if self.limit and tymer.expired:  # reached time limit
                         break  # break out of forever loop
 
-                except KeyboardInterrupt:  # use CNTL-C to shutdown from shell
+                except KeyboardInterrupt:  # SIGINT, use CNTL-C to shutdown from shell
                     break
 
-                except SystemExit: # Forced shutdown of process
+                except SystemExit: # Forced shutdown of process via sys.exit()
                     raise
 
                 except Exception:  # Unknown exception
@@ -1199,7 +1199,7 @@ def bareDo(tymth=None, tock=0.0, *, temp=None, **opts):
     enter, recur, clean, exit, (unforced) close, abort (forced)
     So context order may be:
     enter, recur, clean, exit
-    enter, recur, close, exit
+    enter, recur, cease, exit
     enter, recur, abort, exit
     enter, abort, exit
     """
@@ -1213,7 +1213,7 @@ def bareDo(tymth=None, tock=0.0, *, temp=None, **opts):
             #  do stuff repeately in while loop
             done = True  # means ready to exit while loop
 
-    except GeneratorExit:  # close context upon Doist thrown .close to force early exit.
+    except GeneratorExit:  # cease context upon Doist thrown .close to force early exit.
         pass  # do forced close clean up here
 
     except Exception as ex:  # abort context, forced exit due to uncaught exception
@@ -1328,7 +1328,7 @@ def doifyExDo(tymth, tock=0.0, states=None, *, temp=None, **opts):
             if count > 3:
                 break  # normal exit
 
-    except GeneratorExit:  # close context, forced exit due to .close
+    except GeneratorExit:  # cease context, forced exit due to generator.close
         count += 1
         states.append(State(tyme=tymth(), context='cease', feed=None, count=count))
 
@@ -1373,7 +1373,7 @@ def doizeExDo(tymth, tock=0.0, states=None, *, temp=None, **opts):
             if count > 3:
                 break  # normal exit
 
-    except GeneratorExit:  # close context, forced exit due to .close
+    except GeneratorExit:  # cease context, forced exit due to generator.close
         count += 1
         states.append(State(tyme=tymth(), context='cease', feed=None, count=count))
 
@@ -1523,7 +1523,7 @@ def tryDo(states, tymth, tock=0.0, *, temp=None, **opts):
             if count > 3:
                 break  # normal exit
 
-    except GeneratorExit:  # close context, forced exit due to .close
+    except GeneratorExit:  # cease context, forced exit due to generator.close
         count += 1
         states.append(State(tyme=tymth(), context='cease', feed=feed, count=count))
 
