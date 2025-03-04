@@ -17,7 +17,7 @@ to a much lighter weight async structure based on a hierarchical scheduling appr
 This is even lighter weight and more performant than non-hierarchical structured
 concurrency approaches such as trio or curio.
 
- approach also is informed by and supports cooperative concurrent
+The approach also is informed by and supports cooperative concurrent
 discrete event simulation (DES). One important feature of concurrent
 discrete event simulation is reproducibility. This requires tight control over
 scheduling order as in completely deterministic control of scheduling.
@@ -58,6 +58,9 @@ See API docs on readthedocs.org [Here](https://hio-py.readthedocs.io/en/latest/i
 
 Current Status
 ================
+
+Version 0.7.2
+  Added support for multiprocessing via multidoing.py
 
 Version 0.4.1
   Refined Doist and DoDoer makes their protocol interfaces nearly identical as

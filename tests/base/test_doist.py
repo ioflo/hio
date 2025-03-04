@@ -214,14 +214,14 @@ def test_doist_dos():
     assert doer1.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.0625, context='recur', feed=0.0625, count=2),
-                            State(tyme=0.125, context='close', feed=None, count=3),
+                            State(tyme=0.125, context='cease', feed=None, count=3),
                             State(tyme=0.125, context='exit', feed=None, count=4)]
     assert doer1.done == False
 
     assert doer2.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.0625, context='recur', feed=0.0625, count=2),
-                            State(tyme=0.125, context='close', feed=None, count=3),
+                            State(tyme=0.125, context='cease', feed=None, count=3),
                             State(tyme=0.125, context='exit', feed=None, count=4)]
     assert doer2.done == False
 
@@ -250,13 +250,13 @@ def test_doist_dos():
     assert doer1.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.0625, context='recur', feed=0.0625, count=2),
-                            State(tyme=0.125, context='close', feed=None, count=3),
+                            State(tyme=0.125, context='cease', feed=None, count=3),
                             State(tyme=0.125, context='exit', feed=None, count=4)]
 
     assert doer2.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.0625, context='recur', feed=0.0625, count=2),
-                            State(tyme=0.125, context='close', feed=None, count=3),
+                            State(tyme=0.125, context='cease', feed=None, count=3),
                             State(tyme=0.125, context='exit', feed=None, count=4)]
 
 
@@ -280,7 +280,7 @@ def test_doist_dos():
     assert doer0.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.03125, context='recur', feed=0.03125, count=2),
-                            State(tyme=0.0625, context='close', feed=None, count=3),
+                            State(tyme=0.0625, context='cease', feed=None, count=3),
                             State(tyme=0.0625, context='exit', feed=None, count=4)]
 
     assert doer0.opts["states"] == doer1.opts["states"] == doer2.opts["states"]
@@ -303,7 +303,7 @@ def test_doist_dos():
     assert doer0.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.03125, context='recur', feed=0.03125, count=2),
-                            State(tyme=0.0625, context='close', feed=None, count=3),
+                            State(tyme=0.0625, context='cease', feed=None, count=3),
                             State(tyme=0.0625, context='exit', feed=None, count=4)]
 
     assert doer0.opts["states"] == doer1.opts["states"] == doer2.opts["states"]
@@ -348,7 +348,7 @@ def test_doist_doers():
     assert doer1.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.0625, context='recur', feed=0.0625, count=2),
-                            State(tyme=0.125, context='close', feed=None, count=3),
+                            State(tyme=0.125, context='cease', feed=None, count=3),
                             State(tyme=0.125, context='exit', feed=None, count=4)]
     assert doer1.done == False
 
@@ -376,7 +376,7 @@ def test_doist_doers():
     assert doer1.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.0625, context='recur', feed=0.0625, count=2),
-                            State(tyme=0.125, context='close', feed=None, count=3),
+                            State(tyme=0.125, context='cease', feed=None, count=3),
                             State(tyme=0.125, context='exit', feed=None, count=4)]
     assert doer1.done == False
 
@@ -405,7 +405,7 @@ def test_doist_doers():
     assert doer1.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.0625, context='recur', feed=0.0625, count=2),
-                            State(tyme=0.125, context='close', feed=None, count=3),
+                            State(tyme=0.125, context='cease', feed=None, count=3),
                             State(tyme=0.125, context='exit', feed=None, count=4)]
     assert doer1.done == False
 
@@ -479,7 +479,7 @@ def test_doist_doers():
     assert doer0.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.03125, context='recur', feed=0.03125, count=2),
-                            State(tyme=0.0625, context='close', feed=None, count=3),
+                            State(tyme=0.0625, context='cease', feed=None, count=3),
                             State(tyme=0.0625, context='exit', feed=None, count=4)]
     assert doer0.done == doer1.done == False
 
@@ -504,7 +504,7 @@ def test_doist_doers():
     assert doer0.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.03125, context='recur', feed=0.03125, count=2),
-                            State(tyme=0.0625, context='close', feed=None, count=3),
+                            State(tyme=0.0625, context='cease', feed=None, count=3),
                             State(tyme=0.0625, context='exit', feed=None, count=4)]
     assert doer0.done == doer1.done == False
     assert doer1.states == doer0.states
@@ -934,7 +934,7 @@ def test_nested_doers():
     assert doer3.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.125, context='recur', feed=0.125, count=2),
-                            State(tyme=0.25, context='close', feed=None, count=3),
+                            State(tyme=0.25, context='cease', feed=None, count=3),
                             State(tyme=0.25, context='exit', feed=None, count=4)]
     assert doer3.done == False
     """End Test """

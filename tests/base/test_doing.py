@@ -1004,7 +1004,7 @@ def test_exDo():
     assert doizeExDo.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                                    State(tyme=0.0, context='recur', feed='Hello', count=1),
                                    State(tyme=0.0, context='recur', feed='Hi', count=2),
-                                   State(tyme=0.0, context='close', feed=None, count=3),
+                                   State(tyme=0.0, context='cease', feed=None, count=3),
                                    State(tyme=0.0, context='exit', feed=None, count=4)]
 
     doizeExDo.opts["states"] = []
@@ -1024,7 +1024,7 @@ def test_exDo():
     assert doizeExDo.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                                    State(tyme=0.0, context='recur', feed='Hello', count=1),
                                    State(tyme=0.0, context='recur', feed='Hi', count=2),
-                                   State(tyme=0.0, context='close', feed=None, count=3),
+                                   State(tyme=0.0, context='cease', feed=None, count=3),
                                    State(tyme=0.0, context='exit', feed=None, count=4)]
 
 
@@ -1045,7 +1045,7 @@ def test_exDo():
     assert doizeExDo.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                                    State(tyme=0.0, context='recur', feed=None, count=1),
                                    State(tyme=0.0, context='recur', feed=None, count=2),
-                                   State(tyme=0.0, context='close', feed=None, count=3),
+                                   State(tyme=0.0, context='cease', feed=None, count=3),
                                    State(tyme=0.0, context='exit', feed=None, count=4)]
 
     """End Test """
@@ -1123,25 +1123,25 @@ def test_trydoer_close():
     assert doer.states ==  []
     assert tymist.tyme == 0.0
 
-    do = doer(tymth=doer.tymth, tock=doer.tock)
-    assert inspect.isgenerator(do)
-    result = do.send(None)
+    dog = doer(tymth=doer.tymth, tock=doer.tock)  # do g enerator
+    assert inspect.isgenerator(dog)
+    result = dog.send(None)
     assert result == 0.25
     assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0)]
-    result = do.send("Hello")
+    result = dog.send("Hello")
     assert result  == 0.25
     assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                            State(tyme=0.0, context='recur', feed='Hello', count=1)]
 
 
     tymist.tick()
-    result = do.send("Hi")
+    result = dog.send("Hi")
     assert result ==  0.25
     assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                            State(tyme=0.0, context='recur', feed='Hello', count=1),
                            State(tyme=0.125, context='recur', feed='Hi', count=2)]
     tymist.tick()
-    result = do.close()  # raises GeneratorExit which triggers Finally
+    result = dog.close()  # raises GeneratorExit which triggers Finally
     # python 3.13 gh-104770: If a generator returns a value upon being
     # closed, the value is now returned by generator.close().
     if sys.version_info.major == 3 and sys.version_info.minor >= 13:
@@ -1149,19 +1149,19 @@ def test_trydoer_close():
     assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                            State(tyme=0.0, context='recur', feed='Hello', count=1),
                            State(tyme=0.125, context='recur', feed='Hi', count=2),
-                           State(tyme=0.25, context='close', feed=None, count=3),
+                           State(tyme=0.25, context='cease', feed=None, count=3),
                            State(tyme=0.25, context='exit', feed=None, count=4)]
 
     # send after close
     tymist.tick()
     try:
-        result = do.send("what?")
+        result = dog.send("what?")
     except StopIteration as ex:
         assert ex.value == None  # after close no StopIteration value
         assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                                State(tyme=0.0, context='recur', feed='Hello', count=1),
                                State(tyme=0.125, context='recur', feed='Hi', count=2),
-                               State(tyme=0.25, context='close', feed=None, count=3),
+                               State(tyme=0.25, context='cease', feed=None, count=3),
                                State(tyme=0.25, context='exit', feed=None, count=4)]
 
     """End Test """
@@ -1288,25 +1288,25 @@ def test_trydo_close():
     assert tymist.tyme == 0.0
     states = []
 
-    do = tryDo(tymth=tymist.tymen(), states=states, tock=0.25)
-    assert inspect.isgenerator(do)
-    result = do.send(None)
+    dog = tryDo(tymth=tymist.tymen(), states=states, tock=0.25)
+    assert inspect.isgenerator(dog)
+    result = dog.send(None)
     assert result == 0
     assert states == [State(tyme=0.0, context='enter', feed='Default', count=0)]
-    result = do.send("Hello")
+    result = dog.send("Hello")
     assert result  == 1
     assert states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                            State(tyme=0.0, context='recur', feed='Hello', count=1)]
 
 
     tymist.tick()
-    result = do.send("Hi")
+    result = dog.send("Hi")
     assert result ==  2
     assert states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                            State(tyme=0.0, context='recur', feed='Hello', count=1),
                            State(tyme=0.125, context='recur', feed='Hi', count=2)]
     tymist.tick()
-    result = do.close()  # raises GeneratorExit which triggers finally
+    result = dog.close()  # raises GeneratorExit which triggers finally
     # python 3.13 gh-104770: If a generator returns a value upon being
     # closed, the value is now returned by generator.close().
     if sys.version_info.major == 3 and sys.version_info.minor >= 13:
@@ -1314,18 +1314,18 @@ def test_trydo_close():
     assert states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                            State(tyme=0.0, context='recur', feed='Hello', count=1),
                            State(tyme=0.125, context='recur', feed='Hi', count=2),
-                           State(tyme=0.25, context='close', feed='Hi', count=3),
+                           State(tyme=0.25, context='cease', feed='Hi', count=3),
                            State(tyme=0.25, context='exit', feed='Hi', count=4)]
 
     tymist.tick()
     try:
-        result = do.send("what?")
+        result = dog.send("what?")
     except StopIteration as ex:
         assert ex.value == None  # not clean return
         assert states == [State(tyme=0.0, context='enter', feed='Default', count=0),
                                State(tyme=0.0, context='recur', feed='Hello', count=1),
                                State(tyme=0.125, context='recur', feed='Hi', count=2),
-                               State(tyme=0.25, context='close', feed='Hi', count=3),
+                               State(tyme=0.25, context='cease', feed='Hi', count=3),
                                State(tyme=0.25, context='exit', feed='Hi', count=4)]
 
     """End Test """
