@@ -8,6 +8,7 @@ Provides multiprocessing support
 
 """
 import os
+import sys
 import time
 import logging
 import json
@@ -553,3 +554,10 @@ class CrewDoer(MultiDoerBase):
             self.logger.debug("Crew Peer RX: name=%s rx from src=%s memo=%s.",
                                 self.name, src, memo)
             memo = json.loads(memo)
+            kin = memo["kin"]
+            name = memo["name"]
+            if memo['kin'] == "EXIT":
+                if name == self.boss.name and src == self.boss.path:
+                    self.logger.debug("Memoed %s from boss %s.", kin, name)
+                    sys.exit()
+

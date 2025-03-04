@@ -216,14 +216,14 @@ def test_doist_dos():
                             State(tyme=0.0625, context='recur', feed=0.0625, count=2),
                             State(tyme=0.125, context='cease', feed=None, count=3),
                             State(tyme=0.125, context='exit', feed=None, count=4)]
-    assert doer1.done == False
+    assert doer1.done == True
 
     assert doer2.opts["states"] == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
                             State(tyme=0.0625, context='recur', feed=0.0625, count=2),
                             State(tyme=0.125, context='cease', feed=None, count=3),
                             State(tyme=0.125, context='exit', feed=None, count=4)]
-    assert doer2.done == False
+    assert doer2.done == True
 
     #  repeat but real time
     doist = doing.Doist(tock=tock, real=True, limit=limit)
@@ -947,4 +947,8 @@ if __name__ == "__main__":
     test_doist_once()
     test_doist_dos()
     test_doist_doers()
+    test_extend_remove_doers()
+    test_doist_remove()
     test_doist_remove_own_doer()
+    test_doist_remove_by_own_doer()
+    test_nested_doers()

@@ -346,14 +346,15 @@ class Doist(tyming.Tymist):
             if not dog:  # marker deed
                 continue  # skip marker
             try:
-                tock = dog.close()  # force GeneratorExit. Maybe log exit tock tyme
+                done = dog.close()  # force GeneratorExit. Maybe log exit tock tyme
             except StopIteration:
                 pass  # Hmm? Not supposed to happen!
             else:  # set done state
                 try:
-                    doer.done = False  # forced close
+                    doer.done = done if done is not None else False  # forced close False
                 except AttributeError:  # when using bound method for generator function
-                    doer.__func__.done = False  # forced close
+                    # forced close False
+                    doer.__func__.done = done if done is not None else False
 
 
     def extend(self, doers):
@@ -399,11 +400,12 @@ class Doist(tyming.Tymist):
 
 
 def doify(f, *, name=None, tock=0.0, temp=None, **opts):
-    """Returns Doist compatible copy, g, of converted generator function f.
-    Each invoction of doify(f) returns a unique copy of doified function f.
-    Imbues copy, g, of converted generator function, f, with attributes used by
-    Doist.enter() or DoDoer.enter().
-    Allows multiple instances of copy, g, of generator function, f, each with
+    """Returns Doist/DoDoer compatible copy, g, of converted generator
+    function/method f.
+    Each doify(f) invoction returns a unique copy of doified function/method f.
+    Imbues copy, g, of converted generator function/method, f, with attributes
+    used by Doist.enter() or DoDoer.enter().
+    Allows multiple instances of copy, g, of generator function/method, f, each with
     unique attributes.
 
     Usage:
@@ -604,7 +606,7 @@ class Doer(tyming.Tymee):
                     self.done = self.recur(tyme=tyme)  # False means recur again
 
         except GeneratorExit:  # close context, forced exit due to .close on generator
-            self.cease() # close method on instance not generator
+            self.cease()
 
         except Exception as ex:  # abort context, forced exit due to uncaught exception
             self.abort(ex=ex)
@@ -1119,14 +1121,15 @@ class DoDoer(Doer):
             if not dog:  # marker deed
                 continue  # skip marker
             try:
-                tock = dog.close()  # force GeneratorExit
+                done = dog.close()  # force GeneratorExit returns None if already closed or Gen Return value
             except StopIteration:
                 pass  # Hmm? Not supposed to happen!
             else:  # set done state
                 try:
-                    doer.done = False  # forced close
+                    doer.done = done if done is not None else False  # forced close  False
                 except AttributeError:  # when using bound method for generator function
-                    doer.__func__.done = False  # forced close
+                    # forced close False
+                    doer.__func__.done = done if done is not None else False
 
 
     def extend(self, doers):

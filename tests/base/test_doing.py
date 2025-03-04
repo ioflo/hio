@@ -214,7 +214,7 @@ def test_doize_dodoer_with_bound_method():
     assert inspect.isgenerator(myGen)
 
     doist.do(doers=[b.myDo])
-    assert b.myDo.done == False
+    assert b.myDo.done == False  # forced exit
     assert b.x == 6
 
     b.x =  1
@@ -224,7 +224,7 @@ def test_doize_dodoer_with_bound_method():
     dodoer = doing.DoDoer(doers=[b.myDo])
 
     doist.do(doers=[dodoer])
-    assert b.myDo.done == False
+    assert b.myDo.done == False  # forced exit
     assert b.x == 6
 
     """End Test"""
@@ -595,9 +595,10 @@ def test_dodoer_always():
     assert dodoer.always == True
     doist.do(limit=5)
     assert doist.tyme == 11.0
-    assert not dodoer.done  # dodoer not done
+    assert dodoer.done  # dodoer done all deeds completed
+    assert not dodoer.deeds
     assert dodoer.always == True
-    for doer in dodoer.doers:   #  but all its doers are done
+    for doer in dodoer.doers:   #  all its doers are done
         assert doer.done
     assert not dodoer.deeds
 
@@ -1509,9 +1510,21 @@ def test_decoration():
 
 
 if __name__ == "__main__":
+    test_deed()
+    test_doify()
+    test_doize()
+    test_doize_dodoer_with_bound_method()
     test_doer()
     test_redoer()
     test_dodoer()
+    test_dodoer_always()
+    test_dodoer_remove()
+    test_dodoer_remove_by_own_doer()
+    test_dodoer_remove_own_doer()
     test_exDo()
+    test_trydoer_break()
     test_trydoer_close()
+    test_trydoer_throw()
+    test_trydo_break()
     test_trydo_close()
+    test_trydo_throw()
