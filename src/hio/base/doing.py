@@ -186,13 +186,13 @@ class Doist(tyming.Tymist):
                     if self.limit and tymer.expired:  # reached time limit
                         break  # break out of forever loop
 
-                except KeyboardInterrupt:  # SIGINT, use CNTL-C to shutdown from shell
+                except KeyboardInterrupt:  # Forced shutdown due to SIGINT, use CNTL-C to shutdown from shell
                     break
 
                 except SystemExit: # Forced shutdown of process via sys.exit()
                     raise
 
-                except Exception:  # Unknown exception
+                except Exception:  # Forced shutdown due to uncaught exception
                     raise
 
         finally: # finally clause always runs regardless of exception or not.
