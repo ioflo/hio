@@ -124,10 +124,8 @@ class MultiDoerBase(PeerMemoer, Doer):
 
     See Doer and PeerMemoer for inherited attributes, properties, and methods.
 
-
     Inherited Class Attributes:
         See PeerMemoer and Doer Classes
-
 
     Inherited Attributes:  (See Doer and PeerMemoer for all)
         done (bool): completion state:
@@ -135,15 +133,17 @@ class MultiDoerBase(PeerMemoer, Doer):
                      Incompletion value may be None or False.
         opts (dict): schedulaer injects options from .opts into its .do generator
                      function as **opts parameter.
-        name (str): unique identifier for this BossDoer
-                    used to manage local resources
-
+        name (str): unique identifier for this instance used to manage local resources
+        temp (bool): True means logger or other file resources created by
+                        .start() will use temp
+                     False otherwise
+        reopen (bool): True (re)open with this init
+                       False not (re)open with this init but later (default)
+        bc (int | None): count of transport buffers of MaxGramSize
 
     Attributes:
         logger (Logger | None): from module scope ogler created at enter time
                         with local resources.
-
-
 
     Inherited Properties: (doer)
         tyme (float): is float relative cycle time of associated Tymist .tyme obtained
@@ -168,19 +168,12 @@ class MultiDoerBase(PeerMemoer, Doer):
         abort() abort context method
         wind()  injects ._tymth dependency from associated Tymist to get its .tyme
 
-
     """
 
-    def __init__(self, *, name='base', peer=None, loads=None, temp=False,
-                 reopen=False, bc=4, **kwa):
+    def __init__(self, *, name='base', temp=False, reopen=False, bc=4, **kwa):
         """Initialize instance.
 
         Inherited Parameters:  (see Doer and PeerMemoer for all)
-            tymth (closure): injected function wrapper closure returned by
-                Tymist.tymen() instance. Calling tymth() returns associated
-                Tymist.tyme.
-            tock (float): seconds initial value of .tock
-            opts (dict): injected options into its .do generator by scheduler
             name (str): unique identifier for this BossDoer boss to be used
                         to manage local resources
             temp (bool): True means logger or other file resources created by
@@ -191,31 +184,38 @@ class MultiDoerBase(PeerMemoer, Doer):
             bc (int | None): count of transport buffers of MaxGramSize
 
         Parameters:
-            loads (list[dict]): parameters used to spinup crew hand subprocess
-                                .start(). See fields of Loadage and Bossage
+
 
         """
-        super(BossDoer, self).__init__(name=name,
-                                       temp=temp,
-                                       reopen=reopen,
-                                       bc=bc,
-                                       **kwa)
+        super(MultiDoerBase, self).__init__(name=name,
+                                            temp=temp,
+                                            reopen=reopen,
+                                            bc=bc,
+                                            **kwa)
 
         self.logger = None  # assign later from ogler in enter time/scope
-        self.loads = loads if loads is not None else []
 
 
-        self.ctx = mp.get_context('spawn')
-        self.crew = {}
+    def enter(self, *, temp=None):
+        """Do 'enter' context.
+        Set up resources. Comparable to context manager enter.
+        Start processes with config from .loads
+        Not a generator method.
+
+        Parameters:
+            temp (bool | None): True means use temporary file resources if any.
+                                None means ignore parameter value. Use self.temp.
+
+        Inject temp or self.temp into file resources here if any
+        Doist or DoDoer winds its doers on enter
+
+        """
+        self.logger = ogler.getLogger()  # uses ogler in enter scope
 
 
 
 
-
-
-
-
-class BossDoer(PeerMemoer, Doer):
+class BossDoer(MultiDoerBase):
     """BossDoer spawns multiple crew hand subprocesses and injects each with
     a Doist and Doers. The boss Doists runs the BossDoer in the parent process.
     Each crew hand Doist runs a CrewDoer that coordinates with the BossDoer.
@@ -224,32 +224,19 @@ class BossDoer(PeerMemoer, Doer):
     runs a BossDoer. Each crew hand is a child process with its own crew doist
     that runs its own CrewDoer
 
-    See Doer and PeerMemoer for inherited attributes, properties, and methods.
-
+    See MultiDoerBase for all inherited attributes, properties, and methods.
 
     Inherited Class Attributes:
-        See PeerMemoer and Doer Classes
+        See MultiDoerBase Class
 
 
-    Inherited Attributes:  (See Doer and PeerMemoer for all)
-        done (bool): completion state:
-                     True means completed fully. Otherwise incomplete.
-                     Incompletion value may be None or False.
-        opts (dict): schedulaer injects options from .opts into its .do generator
-                     function as **opts parameter.
+    Inherited Attributes:  (See MultiDoerBase Class for all)
         name (str): unique identifier for this instance
                     used to manage local resources
-        temp (bool): True means logger or other file resources created by
-                            .start() will use temp
-                         False otherwise
-        reopen (bool): True (re)open with this init
-                           False not (re)open with this init but later (default)
-        bc (int | None): count of transport buffers of MaxGramSize
-
-
-    Attributes:
         logger (Logger | None): from module scope ogler created at enter time
                         with local resources.
+
+    Attributes:
         loads (list[dict]): BossDoer info to be injected into CrewDoer .start()
                             containing both crew doist parmss for Process target
                             kwargs and and CrewDoer parms
@@ -258,67 +245,28 @@ class BossDoer(PeerMemoer, Doer):
         crew (dict): values are child Process instances keyed by name
 
 
-    Inherited Properties: (doer)
-        tyme (float): is float relative cycle time of associated Tymist .tyme obtained
-            via injected .tymth function wrapper closure.
-        tymth (closure): function wrapper closure returned by Tymist.tymen()
-                        method. When .tymth is called it returns associated
-                        Tymist.tyme. Provides injected dependency on Tymist
-                        tyme base.
-        tock (float): desired time in seconds between runs or until next run,
-                 non negative, zero means run asap
+    Inherited Properties:
+        See MultiDoerBase Class
 
     Properties:
 
-    Inherited Methods:  (doer)
-        __call__()  makes instance callable as generator function returning generator
-        do() generator method that returns generator
-        enter() is enter context action method
-        recur() recur context action method or generator method
-        clean() clean context action method
-        exit() exit context method
-        close() close context method
-        abort() abort context method
-        wind()  injects ._tymth dependency from associated Tymist to get its .tyme
-
-
+    Inherited Methods:
+        See MultiDoerBase Class
     """
 
-    def __init__(self, *, name='boss',
-                          temp=False,
-                          reopen=False,
-                          bc=4,
-                          loads=None,
-                          **kwa):
+    def __init__(self, *, name='boss',loads=None, **kwa):
         """Initialize instance.
 
         Inherited Parameters:  (see Doer and PeerMemoer for all)
-            tymth (closure): injected function wrapper closure returned by
-                Tymist.tymen() instance. Calling tymth() returns associated
-                Tymist.tyme.
-            tock (float): seconds initial value of .tock
-            opts (dict): injected options into its .do generator by scheduler
-            name (str): unique identifier for this BossDoer boss to be used
+            name (str): unique identifier for this instance to be used
                         to manage local resources
-            temp (bool): True means logger or other file resources created by
-                            .start() will use temp
-                         False otherwise
-            reopen (bool): True (re)open with this init
-                           False not (re)open with this init but later (default)
-            bc (int | None): count of transport buffers of MaxGramSize
 
         Parameters:
             loads (list[dict]): parameters used to spinup crew hand subprocess
                                 .start(). See fields of Loadage and Bossage
 
         """
-        super(BossDoer, self).__init__(name=name,
-                                       temp=temp,
-                                       reopen=reopen,
-                                       bc=bc,
-                                       **kwa)
-
-        self.logger = None  # assign later from ogler in enter time/scope
+        super(BossDoer, self).__init__(name=name, **kwa)
         self.loads = loads if loads is not None else []
         self.ctx = mp.get_context('spawn')
         self.crew = {}
@@ -331,7 +279,6 @@ class BossDoer(PeerMemoer, Doer):
         Start processes with config from .loads
         Not a generator method.
 
-
         Parameters:
             temp (bool | None): True means use temporary file resources if any.
                                 None means ignore parameter value. Use self.temp.
@@ -339,9 +286,9 @@ class BossDoer(PeerMemoer, Doer):
         Inject temp or self.temp into file resources here if any
 
         Doist or DoDoer winds its doers on enter
-
         """
-        self.logger = ogler.getLogger()  # uses ogler in enter scope
+        super(BossDoer, self).enter(temp=temp)
+
         self.logger.debug("BossDoer Enter: name=%s size=%d, ppid=%d, pid=%d, module=%s, temp=%s,ogler=%s.",
             self.name, len(self.loads), os.getppid(), os.getpid(), __name__, temp, ogler.name)
 
@@ -463,94 +410,52 @@ class BossDoer(PeerMemoer, Doer):
 
 
 
-class CrewDoer(PeerMemoer, Doer):
+class CrewDoer(MultiDoerBase):
     """CrewDoer runs interface between a given crew hand subprocess and its
     boss process. This must be first doer run by crew hand subprocess doist.
 
-    See Doer and PeerMemoer for inherited attributes, properties, and methods.
+    See MultiDoerBase for all inherited attributes, properties, and methods.
 
     Inherited Class Attributes:
-        See PeerMemoer and Doer Classes
+        See MultiDoerBase Class
 
-    Inherited Attributes:  (see PeerMemoer and Doer for all)
-        done (bool): completion state:
-                     True means completed fully. Otherwise incomplete.
-                     Incompletion value may be None or False.
-        opts (dict): schedulaer injects options from .opts into its .do generator
-                     function as **opts parameter.
-        name (str): unique identifier for this crew doer
+
+    Inherited Attributes:  (See MultiDoerBase Class for all)
+        name (str): unique identifier for this instance
                     used to manage local resources
-        temp (bool): True means logger or other file resources created by
-                            .start() will use temp
-                         False otherwise
-        reopen (bool): True (re)open with this init
-                           False not (re)open with this init but later (default)
-        bc (int | None): count of transport buffers of MaxGramSize
-
-    Attributes:
         logger (Logger | None): from module scope ogler created at enter time
                         with local resources.
+
+
+    Attributes:
         boss (Bossage): contact info for communicating with boss
         count (int): iteration counter for debugging
 
 
-    Inherited Properties: (doer)
-        tyme (float): is float relative cycle time of associated Tymist .tyme obtained
-            via injected .tymth function wrapper closure.
-        tymth (closure): function wrapper closure returned by Tymist.tymen()
-                        method. When .tymth is called it returns associated
-                        Tymist.tyme. Provides injected dependency on Tymist
-                        tyme base.
-        tock (float): desired time in seconds between runs or until next run,
-                 non negative, zero means run asap
+    Inherited Properties:
+        See MultiDoerBase Class
 
+    Properties:
 
-    Inherited Methods:  (doer)
-        __call__()  makes instance callable as generator function returning generator
-        do() generator method that returns generator
-        enter() is enter context action method
-        recur() recur context action method or generator method
-        clean() clean context action method
-        exit() exit context method
-        close() close context method
-        abort() abort context method
-        wind()  injects ._tymth dependency from associated Tymist to get its .tyme
-
+    Inherited Methods:
+        See MultiDoerBase Class
 
     """
 
-    def __init__(self, *, name='crew',
-                          temp=None,
-                          reopen=False,
-                          bc=4,
-                          boss=Bossage(name=None, path=None),
-                          **kwa):
+    def __init__(self, *, name='crew', boss=Bossage(name=None, path=None), **kwa):
         """Initialize instance.
 
         Inherited Parameters:
-            tymth (closure): injected function wrapper closure returned by
-                Tymist.tymen() instance. Calling tymth() returns associated
-                Tymist.tyme.
-            tock (float): seconds initial value of .tock
-            opts (dict): injected options into its .do generator by scheduler
-
             name (str): unique identifier for this BossDoer boss to be used
                         to manage local resources
             temp (bool): True means logger or other file resources created by
-                            .start() will use temp
-                         False otherwise
-            reopen (bool): True (re)open with this init
-                           False not (re)open with this init but later (default)
-            bc (int | None): count of transport buffers of MaxGramSize
-
 
         Parameters:
             boss (Bossage): contact info for BossDoer. assigned by boss at enter
 
 
         """
-        super(CrewDoer, self).__init__(name=name, temp=temp, reopen=reopen, bc=bc, **kwa)
-        self.logger = None  # assign later from ogler in enter time/scope
+        super(CrewDoer, self).__init__(name=name, **kwa)
         self.boss = boss
         self.count = None
 
@@ -568,7 +473,8 @@ class CrewDoer(PeerMemoer, Doer):
 
         Doist or DoDoer winds its doers on enter
         """
-        self.logger = ogler.getLogger()  # uses ogler in enter scope
+        super(CrewDoer, self).enter(temp=temp)
+
         self.count = 0
         self.logger.debug("CrewDoer Enter: name=%s pid=%d, temp=%s, ogler=%s, count=%d.",
                     self.name, os.getpid(), temp, ogler.name, self.count)

@@ -48,14 +48,13 @@ def test_boss_crew_stepped():
     assert doer.loads[0] == load
     doers = [doer]
 
-
-
     doist.doers = doers
     doist.enter(temp=True)  # since we don't call doist.do temp does not get injected
     assert len(doist.deeds) == 1
     assert doer.opened
     assert doer.done == False
     assert doer.crew
+    assert doer.logger
 
     doist.recur()
     assert doist.tyme == 0.01  # on next cycle
@@ -107,6 +106,7 @@ def test_boss_crew_basic():
     assert len(doist.deeds) == 0
     assert doer.done == True
     assert not doer.opened
+    assert doer.logger
 
     # Verify changes to ogler in child subprocesses not affect parent ogler
     from hio.help import ogler
