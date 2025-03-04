@@ -1189,6 +1189,7 @@ def bareDo(tymth=None, tock=0.0, *, temp=None, **opts):
     Injected Attributes:
         g.tock = tock  # default tock attributes
         g.done = None  # default done state
+        g.temp = None  # temporary resources
         g.opts = opts
 
     Parameters:
