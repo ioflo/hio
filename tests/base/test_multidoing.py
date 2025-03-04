@@ -53,8 +53,7 @@ def test_boss_crew_stepped():
     doist.doers = doers
     doist.enter(temp=True)  # since we don't call doist.do temp does not get injected
     assert len(doist.deeds) == 1
-    assert doer.peer
-    assert doer.peer.opened
+    assert doer.opened
     assert doer.done == False
     assert doer.crew
 
@@ -67,7 +66,7 @@ def test_boss_crew_stepped():
 
 
     assert len(doist.deeds) == 0
-    assert not doer.peer.opened
+    assert not doer.opened
     assert doer.done == True
 
     # Verify changes to ogler in child subprocesses not affect parent ogler
@@ -93,8 +92,7 @@ def test_boss_crew_basic():
 
     doer = BossDoer(name="boss", tock=0.01, loads=[load])
     assert doer.loads[0] == load
-    assert doer.peer
-    assert not doer.peer.opened
+    assert not doer.opened
     doers = [doer]
 
     doist = doing.Doist(tock=0.01, real=True, doers=doers, temp=True)
@@ -108,7 +106,7 @@ def test_boss_crew_basic():
 
     assert len(doist.deeds) == 0
     assert doer.done == True
-    assert not doer.peer.opened
+    assert not doer.opened
 
     # Verify changes to ogler in child subprocesses not affect parent ogler
     from hio.help import ogler
@@ -123,5 +121,5 @@ def test_boss_crew_basic():
 
 
 if __name__ == "__main__":
-    #test_boss_crew_stepped()
+    test_boss_crew_stepped()
     test_boss_crew_basic()

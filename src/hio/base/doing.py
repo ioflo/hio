@@ -469,11 +469,11 @@ class Doer(tyming.Tymee):
 
     The .do method executes other methods each corresponding to one of the
     six econtexts:
-        enter, recur, clean, exit, (unforced) close, abort (forced)
+        enter, recur, clean, exit, cease (forced), abort (forced)
 
     Actual context order may be one of:
         enter, recur, clean, exit
-        enter, recur, close, exit
+        enter, recur, cease, exit
         enter, recur, abort, exit
         enter, abort, exit
 
@@ -507,7 +507,7 @@ class Doer(tyming.Tymee):
         .recur is recur context action method or generator method
         .clean is clean context action method
         .exit is exit context method
-        .close is close context method
+        .cease is cease context method
         .abort is abort context method
 
     Hidden:
@@ -575,7 +575,7 @@ class Doer(tyming.Tymee):
         Calling this method returns generator.
         Interface matches generator function for compatibility.
         To customize create subclasses and override the lifecycle methods:
-            .enter, .recur, .exit, .close, .abort
+            .enter, .recur, .exit, .cease, .abort
 
         Parameters:
             tymth (closure): function wrapper closure returned by Tymist.tymen()
@@ -604,7 +604,7 @@ class Doer(tyming.Tymee):
                     self.done = self.recur(tyme=tyme)  # False means recur again
 
         except GeneratorExit:  # close context, forced exit due to .close on generator
-            self.close() # close method on instance not generator
+            self.cease() # close method on instance not generator
 
         except Exception as ex:  # abort context, forced exit due to uncaught exception
             self.abort(ex=ex)
@@ -668,6 +668,7 @@ class Doer(tyming.Tymee):
         Called by else after normal return.
         """
 
+
     def exit(self):
         """
         Do 'exit' context actions. Override in subclass. Not a generator method.
@@ -677,11 +678,12 @@ class Doer(tyming.Tymee):
         """
 
 
-    def close(self):
+    def cease(self):
         """
-        Do 'close' context actions. Override in subclass. Not a generator method.
-        Forced close by thrown generator .close() method causing GeneratorExit.
-        .exit() is finally called after .close().
+        Do 'cease' context actions. Forced exist. Override in subclass.
+        Not a generator method.
+        Forced cease by thrown generator.close() method causing GeneratorExit.
+        .exit() is finally called after .cease().
         """
 
 
@@ -969,8 +971,8 @@ class DoDoer(Doer):
                 tyme = (yield (self.tock))  # yields .tock then waits for next send
                 self.done = self.recur(tyme=tyme)  # equv of doist.recur
 
-        except GeneratorExit:  # close context, forced exit due to .close
-            self.close()
+        except GeneratorExit:  # cease context, forced exit due to generator.close()
+            self.cease()
 
         except Exception as ex:  # abort context, forced exit due to uncaught exception
             self.abort(ex=ex)
@@ -1281,10 +1283,10 @@ class ExDoer(Doer):
         self.states.append(State(tyme=self.tyme, context='exit',
                                  feed=None, count=self.count))
 
-    def close(self):
+    def cease(self):
         """"""
         self.count += 1
-        self.states.append(State(tyme=self.tyme, context='close',
+        self.states.append(State(tyme=self.tyme, context='cease',
                                  feed=None, count=self.count))
 
     def abort(self, ex):
@@ -1328,7 +1330,7 @@ def doifyExDo(tymth, tock=0.0, states=None, *, temp=None, **opts):
 
     except GeneratorExit:  # close context, forced exit due to .close
         count += 1
-        states.append(State(tyme=tymth(), context='close', feed=None, count=count))
+        states.append(State(tyme=tymth(), context='cease', feed=None, count=count))
 
     except Exception as ex:  # abort context, forced exit due to uncaught exception
         count += 1
@@ -1373,7 +1375,7 @@ def doizeExDo(tymth, tock=0.0, states=None, *, temp=None, **opts):
 
     except GeneratorExit:  # close context, forced exit due to .close
         count += 1
-        states.append(State(tyme=tymth(), context='close', feed=None, count=count))
+        states.append(State(tyme=tymth(), context='cease', feed=None, count=count))
 
     except Exception as ex:  # abort context, forced exit due to uncaught exception
         count += 1
@@ -1478,11 +1480,11 @@ class TryDoer(Doer):
         self.states.append(State(tyme=self.tyme, context='exit',
                                  feed=None, count=self.count))
 
-    def close(self):
+    def cease(self):
         """
         """
         self.count += 1
-        self.states.append(State(tyme=self.tyme, context='close',
+        self.states.append(State(tyme=self.tyme, context='cease',
                                  feed=None, count=self.count))
 
     def abort(self, ex):
@@ -1523,7 +1525,7 @@ def tryDo(states, tymth, tock=0.0, *, temp=None, **opts):
 
     except GeneratorExit:  # close context, forced exit due to .close
         count += 1
-        states.append(State(tyme=tymth(), context='close', feed=feed, count=count))
+        states.append(State(tyme=tymth(), context='cease', feed=feed, count=count))
 
     except Exception:  # abort context, forced exit due to uncaught exception
         count += 1
