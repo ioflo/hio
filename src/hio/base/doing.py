@@ -183,7 +183,7 @@ class Doist(tyming.Tymist):
                         self.done = True
                         break  # break out of forever loop
 
-                    if self.limit and tymer.expired:  # reached time limit
+                    if self.limit and tymer.expired:  # reached limit before all deeds done
                         break  # break out of forever loop
 
                 except KeyboardInterrupt:  # Forced shutdown due to SIGINT, use CNTL-C to shutdown from shell
