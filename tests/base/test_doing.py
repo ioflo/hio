@@ -148,17 +148,23 @@ def test_doize_dodoer_with_bound_method():
 
     assert inspect.ismethod(a.myDo)
     assert inspect.isgeneratorfunction(a.myDo)
-    # read of bound method attribute is allowed
+    # can only write attributes to bound method to its .__funct__ function
+    # read of bound method attribute from .__func__
     assert a.myDo.__func__.tock == a.myDo.tock == 0.25
     assert a.myDo.__func__.done == a.myDo.done == None
     assert a.myDo.__func__.temp == a.myDo.temp == None
     assert a.myDo.__func__.opts == a.myDo.opts == dict()
+    # read of bound method attribut from method also works
+    assert a.myDo.tock == a.myDo.tock == 0.25
+    assert a.myDo.done == a.myDo.done == None
+    assert a.myDo.temp == a.myDo.temp == None
+    assert a.myDo.opts == a.myDo.opts == dict()
 
     with pytest.raises(AttributeError):
         a.myDo.tock = 0.2  # can't write to bound method attribute
 
     a.myDo.__func__.tock = 0.2  # can write to bound method.__func__ attribute
-    assert a.myDo.tock == 0.2
+    assert a.myDo.tock == 0.2  # can read from bound method itself
 
     doist = doing.Doist(limit=1.0)
 
@@ -255,6 +261,7 @@ def test_doer():
     # test Doer.__call__ method on instance calling .do
     # create generator use send and explicit close
     kwa = {}
+    doer.done = False  # set initial done state as would happen in doist.enter()
     dog = doer(tymth=doer.tymth, tock=doer.tock, **kwa)
     assert inspect.isgenerator(dog)
     result = dog.send(None)
@@ -378,6 +385,7 @@ def test_redoer():
 
     # create generator use send and run until normal exit. emulates Doist.enter()
     args = {}
+    redoer.done = False  # set initial done state as would happen in doist.enter()
     dog = redoer(tymth=redoer.tymth, tock=redoer.tock, **args)
     assert inspect.isgenerator(dog)
 
@@ -423,7 +431,7 @@ def test_redoer():
 
     result = dog.close() # raises GeneratorExit which triggers Finally
     if sys.version_info.major == 3 and sys.version_info.minor >= 13:
-        assert result == False == redoer.done  # no yielded value on close but Finally returns .done
+        assert result == True == redoer.done  # no yielded value on close but Finally returns .done
 
     tymist.tick()
     with pytest.raises(StopIteration):  # send after close
@@ -436,6 +444,7 @@ def test_redoer():
 
     # use next instead of send
     args = {}
+    redoer.done = False  # set initial done state as would happen in doist.enter()
     dog = redoer(tymth=redoer.tymth, tock=redoer.tock, **args)
     assert inspect.isgenerator(dog)
 
@@ -510,6 +519,7 @@ def test_dodoer():
 
     # create generator use send and then explicit close. emulates Doist.enter()
     args = {}
+    dodoer.done = False  # what doist.enter would do to .done
     dog = dodoer(tymth=dodoer.tymth, tock=dodoer.tock, doers=doers, **args)
     assert inspect.isgenerator(dog)
     assert dodoer.doers == []
@@ -526,11 +536,12 @@ def test_dodoer():
     result = dog.send(tymist.tyme)
     assert result == dodoer.tock == 0.0
 
+    # close prematurely
     result = dog.close() # raises GeneratorExit which triggers Finally
     # python 3.13 gh-104770: If a generator returns a value upon being
     # closed, the value is now returned by generator.close().
     if sys.version_info.major == 3 and sys.version_info.minor >= 13:
-        assert result == False == dodoer.done  # no yielded value on close but Finally returns .done
+        assert result == False == dodoer.done
 
     tymist.tick()
     with pytest.raises(StopIteration):  # send after close
@@ -1062,6 +1073,7 @@ def test_trydoer_break():
     assert doer.states ==  []
     assert tymist.tyme == 0.0
 
+    doer.done = False # what doist.enter() would do to doer.done
     do = doer(tymth=doer.tymth, tock=doer.tock)
     assert inspect.isgenerator(do)
     result = do.send(None)
@@ -1124,6 +1136,7 @@ def test_trydoer_close():
     assert doer.states ==  []
     assert tymist.tyme == 0.0
 
+    doer.done = False  # what doist.enter() would do to doer.done
     dog = doer(tymth=doer.tymth, tock=doer.tock)  # do g enerator
     assert inspect.isgenerator(dog)
     result = dog.send(None)
@@ -1178,6 +1191,7 @@ def test_trydoer_throw():
     assert doer.states ==  []
     assert tymist.tyme == 0.0
 
+    doer.done = False  # what doist.enter() would do to doer.done
     do = doer(tymth=doer.tymth, tock=doer.tock)
     assert inspect.isgenerator(do)
     result = do.send(None)
