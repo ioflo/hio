@@ -34,9 +34,9 @@ def test_boss_crew_basic():
     Test BossDoer and CrewDoer classes basic
     """
     logger.debug("***** Basic  Boss Doist Test *****")
-
-    crewdoer = CrewDoer(name='hand', tock=0.05)  # don't assign tymth now must be rewound inside subprocess
-    load = dict(name='crew', tyme=0.0, tock=0.01, real=True, limit=None, doers=[crewdoer], temp=True, boss=None)
+    name = 'hand'  # crew hand name
+    crewdoer = CrewDoer(tock=0.05)  # don't assign tymth now must be rewound inside subprocess
+    load = dict(name=name, tyme=0.0, tock=0.01, real=True, limit=None, doers=[crewdoer], temp=True, boss=None)
 
     doer = BossDoer(name="boss", tock=0.01, loads=[load])
     assert doer.loads[0] == load

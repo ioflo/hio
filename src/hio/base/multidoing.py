@@ -16,6 +16,7 @@ import multiprocessing as mp
 
 from collections import deque, namedtuple
 from dataclasses import dataclass, astuple, asdict, field
+import typing
 
 
 from . import tyming
@@ -30,6 +31,9 @@ from ..help.naming import Namer
 from ..core.uxd import PeerMemoer
 
 ogler = ogling.initOgler(prefix='hio_mp', name="Boss", level=logging.ERROR)
+
+
+
 
 
 """Bossage (namedtuple):
@@ -56,6 +60,31 @@ Fields:
                       CrewDoer uses to contact BossDoer.
 """
 Loadage = namedtuple("Loadage", "name tyme tock real limit doers temp boss")
+
+
+@dataclass
+class HandDom(RawDom):
+    """Configuration dataclass of CrewDoer crew hand info managed by its BossDoer
+    boss.
+
+    serialization hidden methods:
+
+    Inherited Class Methods:
+        _fromdict(cls, d: dict): return dataclass converted from dict d
+        __iter__(self): asdict(self)
+        _asdict(self): return self converted to dict
+        _asjson(self): return self converted to json
+        _ascbor(self): return self converted to cbor
+        _asmgpk(self): return self converted to mgpk
+
+    Attributes:
+        proc (typing.Any | None): crew hand subprocess or None
+        exiting (bool): True means commanded to exit but may not have exited yet
+                        False means not yet commanded to exit
+
+    """
+    proc: typing.Any = None  # crew hand subprocess
+    exiting: bool = False  # True means commanded to exit but may not have exited yet
 
 
 @dataclass
@@ -256,7 +285,7 @@ class BossDoer(MultiDoerBase):
                             kwargs and and CrewDoer parms
                             (see Loadage._asdict() or CrewDom._asdict())
         ctx (mp.context.SpawnContext | None): context under which to spawn processes
-        crew (dict): values are child Process instances keyed by name
+        crew (dict): values HandDom instances keyed by name
 
 
     Inherited Properties:
@@ -283,7 +312,7 @@ class BossDoer(MultiDoerBase):
         super(BossDoer, self).__init__(name=name, **kwa)
         self.loads = loads if loads is not None else []
         self.ctx = mp.get_context('spawn')
-        self.crew = {}
+        self.crew = {}  # dict of HandDom instances keyed by crew name
         self.crewed = False  # True means crew successfully registered with boss
 
 
@@ -320,13 +349,15 @@ class BossDoer(MultiDoerBase):
                 raise hioing.MultiError(f"No crew doer for crew hand doist={name}.")
 
             doers[0].boss = boss  # assign boss contact info to crew doer
+            doers[0].name = name  # make name of CrewDoer same as name of crew doist
 
             if name not in self.crew:  # ensure unique by name
-                hand = self.ctx.Process(name=name,
+                proc = self.ctx.Process(name=name,
                                          target=self.start,
                                          kwargs=load)
-                self.crew[hand.name] = hand
-                hand.start()
+                dom = HandDom(proc=proc, exiting=False)
+                self.crew[proc.name] = dom
+                proc.start()
             else:
                 raise hioing.MultiError(f"Non-unique crew hand {name=} in loads.")
 
@@ -340,8 +371,19 @@ class BossDoer(MultiDoerBase):
                           #self.name, os.getpid(), ogler.name, tyme)
         self.service()
 
-        if self.crewed and not self.ctx.active_children():  # complete
-            return True
+        if self.crewed:
+            if self.ctx.active_children():
+                if tyme > 10 * self.tock:
+                    for name, dom in self.crew.items():  # dom is CrewDom instance
+                        memo = dict(name=self.name, kin="EXIT", load={})
+                        memo = json.dumps(memo,separators=(",", ":"),ensure_ascii=False)
+                        if dom.proc.is_alive() and not dom.exiting:
+                            dst = self.getAddr(name=name)
+                            self.memoit(memo, dst)
+                            dom.exiting = True  # now exiting
+
+            else:  # all crew hands completed
+                return True
 
         #if tyme > self.tock * 20:
             #return True
@@ -353,11 +395,12 @@ class BossDoer(MultiDoerBase):
     def exit(self):
         """Do 'exit' (try finally) context."""
         self.close(clear=True)
-        self.logger.debug("Boss name=%s path=%s opened=%s.",
-                self.name, self.path, self.opened)
+
         self.logger.debug("BossDoer Exit: name=%s, ppid=%d, pid=%d, module=%s, "
                           "ogler=%s, tyme=%f.", self.name, os.getppid(),
                           os.getpid(), __name__, ogler.name, self.tyme)
+        self.logger.debug("Boss name=%s path=%s opened=%s.",
+                self.name, self.path, self.opened)
 
 
     def cease(self):
@@ -440,11 +483,13 @@ class BossDoer(MultiDoerBase):
 
         doist = Doist(name=name, tyme=tyme, tock=tock, real=real, limit=limit,
                       doers=doers, temp=temp)
-        doist.do()
+        try:
+            doist.do()
 
-        logger.debug("Crew End: name=%s, ppid=%d, pid=%s, module=%s, temp=%s, "
-                     "ogler=%s, doist.tyme=%f.", name, os.getppid(), os.getpid(),
-                     __name__, temp, ogler.name, doist.tyme)
+        finally:
+            logger.debug("Crew End: name=%s, ppid=%d, pid=%s, module=%s, temp=%s, "
+                         "ogler=%s, doist.tyme=%f.", name, os.getppid(), os.getpid(),
+                         __name__, temp, ogler.name, doist.tyme)
 
 
 
@@ -511,17 +556,17 @@ class CrewDoer(MultiDoerBase):
         """
         super(CrewDoer, self).enter(temp=temp)
 
-        self.logger.debug("CrewDoer Enter: name=%s pid=%d, temp=%s, ogler=%s, "
+        self.logger.debug("CrewDoer Enter: hand name=%s pid=%d, temp=%s, ogler=%s, "
                           "tyme=%f.", self.name, os.getpid(), temp, ogler.name,
                           self.tyme)
 
-        self.logger.debug("Crew name=%s Boss: name=%s path=%s.",
+        self.logger.debug("Hand name=%s Boss: name=%s path=%s.",
                             self.name, self.boss.name, self.boss.path)
         self.addNameAddr(name=self.boss.name, addr=self.boss.path)
 
         self.reopen(temp=temp)
 
-        self.logger.debug("Crew name=%s path=%s opened=%s.",
+        self.logger.debug("Hand name=%s path=%s opened=%s.",
                     self.name, self.path, self.opened)
 
         memo = dict(name=self.name, kin="REG", load={})
@@ -532,14 +577,14 @@ class CrewDoer(MultiDoerBase):
 
     def recur(self, tyme):
         """Do 'recur' context."""
-        self.logger.debug("CrewDoer Recur: name=%s, pid=%d, ogler=%s, tyme=%f.",
+        self.logger.debug("CrewDoer Recur: hand name=%s, pid=%d, ogler=%s, tyme=%f.",
                           self.name, os.getpid(), ogler.name, tyme)
 
         self.service()
         if self.registered and tyme > self.tock * 3:
             return True  # complete
 
-        if tyme > self.tock * 40:
+        if tyme > self.tock * 20:
             return True
 
         return False  # incomplete
@@ -548,10 +593,11 @@ class CrewDoer(MultiDoerBase):
     def exit(self):
         """Do 'exit' (try finally) context."""
         self.close(clear=True)
-        self.logger.debug("Crew name=%s path=%s opened=%s.",
-                    self.name, self.path, self.opened)
-        self.logger.debug("CrewDoer Exit: name=%s pid=%d, ogler=%s, tyme=%f.",
+
+        self.logger.debug("CrewDoer Exit: hand name=%s pid=%d, ogler=%s, tyme=%f.",
                           self.name, os.getpid(), ogler.name, self.tyme)
+        self.logger.debug("Hand name=%s path=%s opened=%s.",
+                    self.name, self.path, self.opened)
 
     def cease(self):
         """Do 'cease' context."""
@@ -571,7 +617,7 @@ class CrewDoer(MultiDoerBase):
         """
         while self.rxms:
             memo, src, vid = self._serviceOneRxMemo()
-            self.logger.debug("Crew Peer RX: name=%s rx from src=%s memo=%s.",
+            self.logger.debug("Hand Peer RX: name=%s rx from src=%s memo=%s.",
                                 self.name, src, memo)
             memo = json.loads(memo)
             kin = memo["kin"]
@@ -579,14 +625,14 @@ class CrewDoer(MultiDoerBase):
             if kin == "EXIT":
                 name = memo["name"]
                 if name == self.boss.name and src == self.boss.path:
-                    self.logger.debug("Memoed %s from boss %s.", kin, name)
+                    self.logger.debug("Hand name=%s exiting.", self.name)
                     sys.exit()
 
             elif kin == "ACK":
                 name = memo["name"]
                 if name == self.boss.name and memo['load']['kin'] == 'REG':
                     self.registered = True
-                    self.logger.debug("Crew hand=%s registered with boss=%s",
+                    self.logger.debug("Hand name=%s registered with boss=%s",
                                         self.name, self.boss.name)
 
 
