@@ -12,6 +12,7 @@ import sys
 import time
 import logging
 import json
+import signal
 import multiprocessing as mp
 
 from collections import deque, namedtuple
@@ -175,6 +176,11 @@ class MultiDoerBase(Namer, PeerMemoer, Doer):
     Attributes:
         logger (Logger | None): from module scope ogler created at enter time
                         with local resources.
+        graceful (bool): indication to gracefully exit on next recur. Set by
+                         .force signal handler. Must add check in .self.recur
+                         if self.graceful: sys.exit()
+                         True means exit on next recur
+                         False otherwise.
 
     Inherited Properties:
         tyme (float): is float relative cycle time of associated Tymist .tyme obtained
@@ -189,6 +195,7 @@ class MultiDoerBase(Namer, PeerMemoer, Doer):
             must be one-to-one so that inverse is also one-to-one
         nameByAddr (dict): mapping between (address, name) pairs, these
             must be one-to-one so that inverse is also one-to-one
+        countNameAddr (int): count of entries in .addrByName
 
 
     Properties:
@@ -237,6 +244,13 @@ class MultiDoerBase(Namer, PeerMemoer, Doer):
                                             **kwa)
 
         self.logger = None  # assign later from ogler in enter time/scope
+        self.graceful = False  # indiction by .force signal handler to exit on next recur
+
+
+
+    def force(self, signum, frame):  # signal handler for forced but graceful exit
+        self.graceful = True  # exit gracefully in recur
+        self.logger.debug("Caught signal=%d so graceful forced exit.", signum)
 
 
     def enter(self, *, temp=None):
@@ -254,6 +268,8 @@ class MultiDoerBase(Namer, PeerMemoer, Doer):
 
         """
         self.logger = ogler.getLogger()  # uses ogler in enter scope
+        signal.signal(signal.SIGINT, self.force)  # register signal handers
+        signal.signal(signal.SIGTERM, self.force) # register signal handers
 
 
 
@@ -278,6 +294,11 @@ class BossDoer(MultiDoerBase):
                     used to manage local resources
         logger (Logger | None): from module scope ogler created at enter time
                         with local resources.
+        graceful (bool): indication to gracefully exit on next recur. Set by
+                         .force signal handler. Must add check in .self.recur
+                         if self.graceful: sys.exit()
+                         True means exit on next recur
+                         False otherwise.
 
     Attributes:
         loads (list[dict]): BossDoer info to be injected into CrewDoer .start()
@@ -286,6 +307,9 @@ class BossDoer(MultiDoerBase):
                             (see Loadage._asdict() or CrewDom._asdict())
         ctx (mp.context.SpawnContext | None): context under which to spawn processes
         crew (dict): values HandDom instances keyed by name
+        crewed (bool): True means all crew members have registered memo interface
+                            with this boss.
+                       False means not yet
 
 
     Inherited Properties:
@@ -314,6 +338,7 @@ class BossDoer(MultiDoerBase):
         self.ctx = mp.get_context('spawn')
         self.crew = {}  # dict of HandDom instances keyed by crew name
         self.crewed = False  # True means crew successfully registered with boss
+
 
 
     def enter(self, *, temp=None):
@@ -369,6 +394,10 @@ class BossDoer(MultiDoerBase):
         """Do 'recur' context."""
         #self.logger.debug("BossDoer Recur: name=%s, pid=%d, ogler=%s, tyme=%f.",
                           #self.name, os.getpid(), ogler.name, tyme)
+
+        if self.graceful:  # signal handler.force caught signal so exit here
+            sys.exit()
+
         self.service()
 
         if self.crewed:
@@ -428,7 +457,7 @@ class BossDoer(MultiDoerBase):
                     self.addNameAddr(name=name, addr=src)
                 except hioing.NamerError as ex:
                     self.changeAddrAtName(name=name, addr=src)
-                if len(self.addrByName) == len(self.crew):
+                if self.countNameAddr == len(self.crew):
                     self.crewed = True
                     self.logger.debug("Boss name=%s crewed=%s with size=%d at "
                                       "tyme=%f.", self.name, self.crewed,
@@ -508,10 +537,17 @@ class CrewDoer(MultiDoerBase):
                     used to manage local resources
         logger (Logger | None): from module scope ogler created at enter time
                         with local resources.
-
+        graceful (bool): indication to gracefully exit on next recur. Set by
+                         .force signal handler. Must add check in .self.recur
+                         if self.graceful: sys.exit()
+                         True means exit on next recur
+                         False otherwise.
 
     Attributes:
         boss (Bossage): contact info for communicating with boss
+        registered (bool): True means .path acked registered with boss memoing
+                           False not yet registered
+
 
     Inherited Properties:
         See MultiDoerBase Class
@@ -538,7 +574,12 @@ class CrewDoer(MultiDoerBase):
         """
         super(CrewDoer, self).__init__(name=name, **kwa)
         self.boss = boss
-        self.registered = False  # registered UXD comms with Boss
+        self.registered = False  # True means .path acked registered with boss memoing
+
+
+    def force(self, signum, frame):  # signal handler for forced but graceful exit
+        self.graceful = True  # exit gracefully in recur
+        self.logger.debug("Caught signal=%d so graceful forced exit.", signum)
 
 
     def enter(self, *, temp=None):
@@ -575,10 +616,15 @@ class CrewDoer(MultiDoerBase):
         self.memoit(memo, dst)
 
 
+
+
+
     def recur(self, tyme):
         """Do 'recur' context."""
         self.logger.debug("CrewDoer Recur: hand name=%s, pid=%d, ogler=%s, tyme=%f.",
                           self.name, os.getpid(), ogler.name, tyme)
+        if self.graceful:  # signal handler.force caught signal so exit here
+            sys.exit()
 
         self.service()
         if self.registered and tyme > self.tock * 3:
@@ -598,6 +644,7 @@ class CrewDoer(MultiDoerBase):
                           self.name, os.getpid(), ogler.name, self.tyme)
         self.logger.debug("Hand name=%s path=%s opened=%s.",
                     self.name, self.path, self.opened)
+
 
     def cease(self):
         """Do 'cease' context."""

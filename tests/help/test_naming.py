@@ -15,10 +15,14 @@ def test_namer():
     namer = Namer()
     assert not namer.addrByName
     assert not namer.nameByAddr
+    assert namer.countNameAddr == 0
 
     assert namer.addNameAddr("alpha", "/path/to/alpha")
     assert namer.addNameAddr("beta", "/path/to/beta")
     assert namer.addNameAddr("gamma", "/path/to/gamma")
+    assert namer.countNameAddr == 3
+
+
     assert not namer.addNameAddr("gamma", "/path/to/gamma")  # already added
 
     assert namer.addrByName == {'alpha': '/path/to/alpha',

@@ -96,6 +96,12 @@ class Namer(hioing.Mixin):
         """
         return dict(self._nameByAddr)
 
+    @property
+    def countNameAddr(self):
+        """Property that returns count of entries in .addrByName
+        """
+        return len(self._addrByName)
+
 
     def clearAllNameAddr(self):
         """Clears all entries
