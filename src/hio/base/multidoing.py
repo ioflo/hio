@@ -272,6 +272,18 @@ class MultiDoerBase(Namer, PeerMemoer, Doer):
         signal.signal(signal.SIGTERM, self.force) # register signal handers
 
 
+    def recur(self, tyme):
+        """Do 'recur' context.
+        Must be overidden in subclass
+        """
+        if self.graceful:  # signal handler.force caught signal so exit here
+            sys.exit()
+
+        self.service()
+
+        return False  # this  is just a default
+
+
 
 
 class BossDoer(MultiDoerBase):
@@ -386,8 +398,6 @@ class BossDoer(MultiDoerBase):
             else:
                 raise hioing.MultiError(f"Non-unique crew hand {name=} in loads.")
 
-        #while not self.ctx.active_children():
-            #pass  # wait for start
 
 
     def recur(self, tyme):
@@ -400,19 +410,23 @@ class BossDoer(MultiDoerBase):
 
         self.service()
 
-        if self.crewed:
-            if self.ctx.active_children():
-                if tyme > 10 * self.tock:
-                    for name, dom in self.crew.items():  # dom is CrewDom instance
-                        memo = dict(name=self.name, kin="EXIT", load={})
-                        memo = json.dumps(memo,separators=(",", ":"),ensure_ascii=False)
-                        if dom.proc.is_alive() and not dom.exiting:
-                            dst = self.getAddr(name=name)
-                            self.memoit(memo, dst)
-                            dom.exiting = True  # now exiting
+        # run forever until doist limit or crewed and then all crew hands done
+        if self.crewed and not self.ctx.active_children():
+            return True
 
-            else:  # all crew hands completed
-                return True
+        #if self.crewed:
+            #if self.ctx.active_children():
+                #if tyme > 10 * self.tock:
+                    #for name, dom in self.crew.items():  # dom is CrewDom instance
+                        #memo = dict(name=self.name, kin="EXIT", load={})
+                        #memo = json.dumps(memo,separators=(",", ":"),ensure_ascii=False)
+                        #if dom.proc.is_alive() and not dom.exiting:
+                            #dst = self.getAddr(name=name)
+                            #self.memoit(memo, dst)
+                            #dom.exiting = True  # now exiting
+
+            #else:  # all crew hands completed
+                #return True
 
         #if tyme > self.tock * 20:
             #return True
@@ -423,13 +437,20 @@ class BossDoer(MultiDoerBase):
 
     def exit(self):
         """Do 'exit' (try finally) context."""
-        self.close(clear=True)
-
         self.logger.debug("BossDoer Exit: name=%s, ppid=%d, pid=%d, module=%s, "
                           "ogler=%s, tyme=%f.", self.name, os.getppid(),
                           os.getpid(), __name__, ogler.name, self.tyme)
+
+        self.close(clear=True)
         self.logger.debug("Boss name=%s path=%s opened=%s.",
                 self.name, self.path, self.opened)
+
+        for name, dom in self.crew.items():  # dom is CrewDom instance
+            if dom.proc.is_alive():
+                dom.proc.terminate()  # force exit with SIGTERM
+                self.logger.debug("Boss name=%s pid=%d terminating hand name=%s "
+                                  "pid=%d.", self.name, os.getpid(), name,
+                                  dom.proc.pid)
 
 
     def cease(self):
@@ -579,7 +600,8 @@ class CrewDoer(MultiDoerBase):
 
     def force(self, signum, frame):  # signal handler for forced but graceful exit
         self.graceful = True  # exit gracefully in recur
-        self.logger.debug("Caught signal=%d so graceful forced exit.", signum)
+        self.logger.debug("Doer name=%s caught signal=%d so graceful forced exit.",
+                          self.name, signum)
 
 
     def enter(self, *, temp=None):
@@ -617,8 +639,6 @@ class CrewDoer(MultiDoerBase):
 
 
 
-
-
     def recur(self, tyme):
         """Do 'recur' context."""
         self.logger.debug("CrewDoer Recur: hand name=%s, pid=%d, ogler=%s, tyme=%f.",
@@ -627,11 +647,14 @@ class CrewDoer(MultiDoerBase):
             sys.exit()
 
         self.service()
-        if self.registered and tyme > self.tock * 3:
-            return True  # complete
 
-        if tyme > self.tock * 20:
-            return True
+        #if self.registered and tyme > self.tock * 3:
+            #self.logger.debug("Hand name=%s registered and done at tyme=%f.",
+                              #self.name, tyme)
+            #return True  # complete
+
+        #if tyme > self.tock * 20:
+            #return True
 
         return False  # incomplete
 
@@ -656,7 +679,6 @@ class CrewDoer(MultiDoerBase):
 
 
 
-
     def serviceRxMemos(self):
         """Service all memos in .rxms (greedy) if any
 
@@ -673,7 +695,7 @@ class CrewDoer(MultiDoerBase):
                 name = memo["name"]
                 if name == self.boss.name and src == self.boss.path:
                     self.logger.debug("Hand name=%s exiting.", self.name)
-                    sys.exit()
+                    self.graceful = True  # next recur graceful exit
 
             elif kin == "ACK":
                 name = memo["name"]
