@@ -140,11 +140,11 @@ class MemoDom(RawDom):
 
     Attributes:
         name (str): unique identifier as source of memo
-        kin (str): type of memo
+        tag (str): type of memo
         load (dict): type specific payload of memo
     """
     name: str ='child'  # unique identifier of source
-    kin: str = 'ACK'    # type of memo
+    tag: str = 'ACK'    # type of memo
     load: dict = field(default_factory=dict)  # type specific payload
 
 
@@ -410,27 +410,11 @@ class BossDoer(MultiDoerBase):
 
         self.service()
 
-        # run forever until doist limit or crewed and then all crew hands done
-        if self.crewed and not self.ctx.active_children():
-            return True
+        if self.crewed:
+            if not self.ctx.active_children():
+                return True  # childred exited on their own so unforced exit
 
-        #if self.crewed:
-            #if self.ctx.active_children():
-                #if tyme > 10 * self.tock:
-                    #for name, dom in self.crew.items():  # dom is CrewDom instance
-                        #memo = dict(name=self.name, kin="EXIT", load={})
-                        #memo = json.dumps(memo,separators=(",", ":"),ensure_ascii=False)
-                        #if dom.proc.is_alive() and not dom.exiting:
-                            #dst = self.getAddr(name=name)
-                            #self.memoit(memo, dst)
-                            #dom.exiting = True  # now exiting
-
-            #else:  # all crew hands completed
-                #return True
-
-        #if tyme > self.tock * 20:
-            #return True
-
+        # otherwise run forever
 
         return False  # incomplete recur again
 
@@ -442,6 +426,7 @@ class BossDoer(MultiDoerBase):
                           os.getpid(), __name__, ogler.name, self.tyme)
 
         self.close(clear=True)
+
         self.logger.debug("Boss name=%s path=%s opened=%s.",
                 self.name, self.path, self.opened)
 
@@ -471,8 +456,8 @@ class BossDoer(MultiDoerBase):
             self.logger.debug("Boss Peer RX: name=%s rx from src=%s memo=%s.",
                                 self.name, src, memo)
             memo = json.loads(memo)
-            kin = memo['kin']
-            if kin == "REG":
+            tag = memo['tag']
+            if tag == "REG":
                 name = memo['name']
                 try:
                     self.addNameAddr(name=name, addr=src)
@@ -485,7 +470,7 @@ class BossDoer(MultiDoerBase):
                                       len(self.crew), self.tyme)
 
             dst = src
-            mack = dict(name=self.name, kin="ACK", load=dict(kin='REG', name=name, addr=src))
+            mack = dict(name=self.name, tag="ACK", load=dict(tag='REG', name=name, addr=src))
             mack = json.dumps(mack,separators=(",", ":"),ensure_ascii=False)
             self.memoit(mack, dst)
 
@@ -632,7 +617,7 @@ class CrewDoer(MultiDoerBase):
         self.logger.debug("Hand name=%s path=%s opened=%s.",
                     self.name, self.path, self.opened)
 
-        memo = dict(name=self.name, kin="REG", load={})
+        memo = dict(name=self.name, tag="REG", load={})
         memo = json.dumps(memo, separators=(",", ":"), ensure_ascii=False)
         dst = self.boss.path
         self.memoit(memo, dst)
@@ -689,17 +674,17 @@ class CrewDoer(MultiDoerBase):
             self.logger.debug("Hand Peer RX: name=%s rx from src=%s memo=%s.",
                                 self.name, src, memo)
             memo = json.loads(memo)
-            kin = memo["kin"]
+            tag = memo['tag']
 
-            if kin == "EXIT":
+            if tag == "END":
                 name = memo["name"]
                 if name == self.boss.name and src == self.boss.path:
                     self.logger.debug("Hand name=%s exiting.", self.name)
                     self.graceful = True  # next recur graceful exit
 
-            elif kin == "ACK":
+            elif tag == "ACK":
                 name = memo["name"]
-                if name == self.boss.name and memo['load']['kin'] == 'REG':
+                if name == self.boss.name and memo['load']['tag'] == 'REG':
                     self.registered = True
                     self.logger.debug("Hand name=%s registered with boss=%s",
                                         self.name, self.boss.name)

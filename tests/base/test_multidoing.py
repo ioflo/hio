@@ -78,7 +78,7 @@ def test_boss_crew_terminate():
     sends SIGTERM to CrewDoer
 
     """
-    logger.debug("***** Basic Boss Crew Terminate *****")
+    logger.debug("***** Boss Crew Terminate *****")
     name = 'hand'  # crew hand name
     crewdoer = CrewDoer(tock=0.01)  # don't assign tymth now must be rewound inside subprocess
     # crew doist load
@@ -152,8 +152,8 @@ class Test0CrewDoer(CrewDoer):
 
 def test_crewdoer_own_exit():
     """
-    Test BossDoer and CrewDoer where crew doer exits on own which causes boss
-    doer to exit because no active children.
+    Test BossDoer and CrewDoer where crew doer exits on own based on tyme after
+    registered which causes boss doer to exit because no active children.
     """
 
     logger.debug("***** Boss with Crew Own Exit *****")
@@ -209,7 +209,7 @@ class Test1BossDoer(BossDoer):
             if self.ctx.active_children():
                 if tyme > 15 * self.tock:
                     for name, dom in self.crew.items():  # dom is CrewDom instance
-                        memo = dict(name=self.name, kin="EXIT", load={})
+                        memo = dict(name=self.name, tag="END", load={})
                         memo = json.dumps(memo,separators=(",", ":"),ensure_ascii=False)
                         if dom.proc.is_alive() and not dom.exiting:
                             dst = self.getAddr(name=name)
@@ -243,14 +243,11 @@ class Test1CrewDoer(CrewDoer):
         return False  # incomplete
 
 
-def test_boss_crew_memo_cmd_exit():
+def test_boss_crew_memo_cmd_end():
     """
-    Test BossDoer and CrewDoer where boss sends memo to command exit of crew.
+    Test BossDoer and CrewDoer where boss sends memo to command end of crew.
     """
-
-
-
-    logger.debug("***** Boss Send Memo Exit Command Test *****")
+    logger.debug("***** Boss Send Memo END Command Test *****")
     name = 'hand'  # crew hand name
     crewdoer = Test1CrewDoer(tock=0.01)  # don't assign tymth now must be rewound inside subprocess
     load = dict(name=name, tyme=0.0, tock=0.01, real=True, limit=None, doers=[crewdoer], temp=True, boss=None)
@@ -296,6 +293,6 @@ if __name__ == "__main__":
     test_boss_crew_basic()
     test_boss_crew_terminate()
     test_crewdoer_own_exit()
-    test_boss_crew_memo_cmd_exit()
+    test_boss_crew_memo_cmd_end()
 
 
