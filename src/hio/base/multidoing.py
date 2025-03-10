@@ -143,9 +143,40 @@ class MemoDom(RawDom):
         tag (str): type of memo
         load (dict): type specific payload of memo
     """
-    name: str ='child'  # unique identifier of source
-    tag: str = 'ACK'    # type of memo
+    name: str ='hand'  # unique identifier of source
+    tag: str = 'REG'    # type of memo
     load: dict = field(default_factory=dict)  # type specific payload
+
+
+@dataclass
+class AddrDom(RawDom):
+    """Load Field Value of ACK
+
+    Attributes:
+        name (str): unique identifier as source of memo being acked
+        tag (str): type of memo being acked
+        addr (dict): addr of source of memo being acked
+    """
+    name: str ='hand'  # unique identifier of source of ack
+    tag: str = 'REG'    # type of memo being acked
+    addr: str = ''  # addr of source of acked memo
+
+
+
+@dataclass
+class AckDom(RawDom):
+    """Inter Boss Crew Hand structured memo dataclass. Used for control messages
+    Between Boss and Crew Doers via their .peer UXD BossMemoer or CrewMemoer.
+
+
+    Attributes:
+        name (str): unique identifier as source of memo
+        tag (str): type of memo
+        load (AddrDom): info of acked memo
+    """
+    name: str ='hand'  # unique identifier of source
+    tag: str = 'ACK'    # type of memo
+    load: AddrDom | None = None  # instane of AddrDom
 
 
 
@@ -550,7 +581,7 @@ class CrewDoer(MultiDoerBase):
                          False otherwise.
 
     Attributes:
-        boss (Bossage): contact info for communicating with boss
+        boss (Bossage | None): contact info for communicating with boss
         registered (bool): True means .path acked registered with boss memoing
                            False not yet registered
 
@@ -565,7 +596,7 @@ class CrewDoer(MultiDoerBase):
 
     """
 
-    def __init__(self, *, name='crew', boss=Bossage(name=None, path=None), **kwa):
+    def __init__(self, *, name='crew', boss=None, **kwa):
         """Initialize instance.
 
         Inherited Parameters:
@@ -579,7 +610,7 @@ class CrewDoer(MultiDoerBase):
 
         """
         super(CrewDoer, self).__init__(name=name, **kwa)
-        self.boss = boss
+        self.boss = boss if boss is not None else Bossage(name=None, path=None)
         self.registered = False  # True means .path acked registered with boss memoing
 
 

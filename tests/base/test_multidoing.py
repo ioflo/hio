@@ -14,6 +14,7 @@ import logging
 import json
 
 from hio.help import helping
+from hio.help.helping import datify, dictify
 from hio.base import tyming
 from hio.base import doing, multidoing, Doist
 from hio.base.doing import ExDoer
@@ -30,9 +31,21 @@ logger = ogler.getLogger(name='test')
 
 
 
+def test_memo_doms():
+    """Test dataclass Doms used for memos"""
+    memodom = multidoing.MemoDom()
+    assert memodom.name == 'hand'
+    assert memodom.tag == 'REG'
+    assert memodom.load == {}
+
+    d = dictify(memodom)
+    assert datify(multidoing.MemoDom, d) == memodom
+
+
+    """Done test"""
+
 def test_boss_crew_basic():
-    """
-    Test BossDoer and CrewDoer classes basic. Crew doist exit at doist time limit
+    """Test BossDoer and CrewDoer classes basic. Crew doist exit at doist time limit
     which causes boss doer to exit done true because no active children
     """
     logger.debug("***** Basic Boss Crew Test *****")
@@ -356,6 +369,7 @@ def test_boss_crew_memo_cmd_end():
     """Done Test"""
 
 if __name__ == "__main__":
+    test_memo_doms()
     test_boss_crew_basic()
     test_boss_crew_basic_multi()
     test_boss_crew_terminate()
