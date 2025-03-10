@@ -133,7 +133,10 @@ process = multiprocessing.Process(group=None,
 process.start()  parent starts child that is process
 process.run()  called by .start() in child process  once setup
 process.join() blocks parent of process until process completes
-process.terminate()  terminate child process using SIGTERM so need to create
+process.terminate()  terminate child process using SIGTERM
+                     Note that descendant processes of the process will not be
+                     terminated – they will simply become orphaned.
+                     so need to create
                      signal handler for SIGTERM since python only has built in
                     support to catch SIGINT == KeyboardInterrupt
                     exit clauses and finally will not be will not be executed
@@ -142,7 +145,8 @@ process.terminate()  terminate child process using SIGTERM so need to create
 process.kill()  same as terminate but uses SIGKILL so need signal handler for SIGKILL
 process.close()  close the process releasing all resources associated with it
                  raises ValueError if the process is still running so need to
-                 end process before closing.
+                 end (terminate) process before closing.
+
 
 process.name
 process.is_alive()
@@ -208,6 +212,114 @@ print(p, p.is_alive())
 p.exitcode == -signal.SIGTERM
 True
 
+
+Signal handlers
+https://docs.python.org/3/library/signal.html
+A handler for a particular signal, once set, remains installed until it is explicitly reset
+A Python signal handler does not get executed inside the low-level (C) signal handler.
+Instead, the low-level signal handler sets a flag which tells the virtual machine
+to execute the corresponding Python signal handler at a later point(for example
+at the next bytecode instruction). This has consequences:
+
+If the handler raises an exception, it will be raised “out of thin air”
+in the main thread. See the note below for a discussion.
+
+A caveat when setting a signal handler is that only one handler can be defined
+for a given signal. Therefore, all handling must be done from a single callback function.
+
+import signal
+signal.SIGINT
+signal.SIGTERM
+
+Cannot register signal handler in python for SIGKILL cannot be caught
+signal.SIGKILL
+
+def handler(signum, frame):
+    print('Signal handler called with signal', signum)
+    interrupt_write.send(b'\0')
+signal.signal(signal.SIGINT, handler)
+
+
+https://stackoverflow.com/questions/18499497/how-to-process-sigterm-signal-gracefully
+
+import signal
+import time
+
+class GracefulKiller:
+  kill_now = False
+  def __init__(self):
+    signal.signal(signal.SIGINT, self.exit_gracefully)
+    signal.signal(signal.SIGTERM, self.exit_gracefully)
+
+  def exit_gracefully(self, signum, frame):
+    self.kill_now = True
+
+if __name__ == '__main__':
+  killer = GracefulKiller()
+  while not killer.kill_now:
+    time.sleep(1)
+    print("doing something in a loop ...")
+
+  print("End of the program. I was killed gracefully :)")
+
+
+Context Manager
+import logging
+import signal
+import sys
+
+
+class TerminateProtected:
+
+    killed = False
+
+    def _handler(self, signum, frame):
+        logging.error("Received SIGINT or SIGTERM! Finishing this block, then exiting.")
+        self.killed = True
+
+    def __enter__(self):
+        self.old_sigint = signal.signal(signal.SIGINT, self._handler)
+        self.old_sigterm = signal.signal(signal.SIGTERM, self._handler)
+
+    def __exit__(self, type, value, traceback):
+        if self.killed:
+            sys.exit(0)
+        signal.signal(signal.SIGINT, self.old_sigint)
+        signal.signal(signal.SIGTERM, self.old_sigterm)
+
+
+if __name__ == '__main__':
+    print("Try pressing ctrl+c while the sleep is running!")
+    from time import sleep
+    with TerminateProtected():
+        sleep(10)
+        print("Finished anyway!")
+    print("This only prints if there was no sigint or sigterm")
+
+
+https://avi.im/blag/2016/sigterm-in-python/
+
+import signal
+import sys
+import time
+
+
+def sigterm_handler(signal, frame):
+    # save the state here or do whatever you want
+    print('booyah! bye bye')
+    sys.exit(0)
+
+signal.signal(signal.SIGTERM, sigterm_handler)
+
+
+def main():
+    for i in range(100):
+        print(i)
+        time.sleep(i)
+
+
+if __name__ == '__main__':
+    main()
 
 """
 import pytest

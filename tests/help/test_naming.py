@@ -15,11 +15,15 @@ def test_namer():
     namer = Namer()
     assert not namer.addrByName
     assert not namer.nameByAddr
+    assert namer.countNameAddr == 0
 
-    assert namer.addEntry("alpha", "/path/to/alpha")
-    assert namer.addEntry("beta", "/path/to/beta")
-    assert namer.addEntry("gamma", "/path/to/gamma")
-    assert not namer.addEntry("gamma", "/path/to/gamma")  # already added
+    assert namer.addNameAddr("alpha", "/path/to/alpha")
+    assert namer.addNameAddr("beta", "/path/to/beta")
+    assert namer.addNameAddr("gamma", "/path/to/gamma")
+    assert namer.countNameAddr == 3
+
+
+    assert not namer.addNameAddr("gamma", "/path/to/gamma")  # already added
 
     assert namer.addrByName == {'alpha': '/path/to/alpha',
                                 'beta': '/path/to/beta',
@@ -30,21 +34,21 @@ def test_namer():
                                 '/path/to/gamma': 'gamma'}
 
     with pytest.raises(hioing.NamerError):
-        namer.addEntry("", "")
+        namer.addNameAddr("", "")
 
     with pytest.raises(hioing.NamerError):
-        namer.addEntry("delta", "")
+        namer.addNameAddr("delta", "")
 
     with pytest.raises(hioing.NamerError):
-        namer.addEntry("", "/path/to/delta")
+        namer.addNameAddr("", "/path/to/delta")
 
     with pytest.raises(hioing.NamerError):
-        namer.addEntry("delta", "/path/to/alpha")
+        namer.addNameAddr("delta", "/path/to/alpha")
 
     with pytest.raises(hioing.NamerError):
-        namer.addEntry("alpha", "/path/to/delta")
+        namer.addNameAddr("alpha", "/path/to/delta")
 
-    assert namer.addEntry("delta", "/path/to/delta")
+    assert namer.addNameAddr("delta", "/path/to/delta")
 
     assert namer.addrByName == {'alpha': '/path/to/alpha',
                                 'beta': '/path/to/beta',
@@ -57,23 +61,23 @@ def test_namer():
                                 '/path/to/gamma': 'gamma',
                                 '/path/to/delta': 'delta'}
 
-    assert not namer.remEntry(name="delta", addr="/path/to/alpha")
+    assert not namer.remNameAddr(name="delta", addr="/path/to/alpha")
 
-    assert namer.remEntry(name="delta", addr="/path/to/delta")
-    assert not namer.remEntry(name="delta", addr="/path/to/delta")
-    assert not namer.remEntry(name="delta")
-    assert not namer.remEntry(addr="/path/to/delta")
+    assert namer.remNameAddr(name="delta", addr="/path/to/delta")
+    assert not namer.remNameAddr(name="delta", addr="/path/to/delta")
+    assert not namer.remNameAddr(name="delta")
+    assert not namer.remNameAddr(addr="/path/to/delta")
 
-    assert namer.remEntry(name="gamma")
-    assert namer.remEntry(addr="/path/to/beta")
+    assert namer.remNameAddr(name="gamma")
+    assert namer.remNameAddr(addr="/path/to/beta")
 
     assert namer.addrByName == {'alpha': '/path/to/alpha'}
 
     assert namer.nameByAddr == {'/path/to/alpha': 'alpha'}
 
-    assert namer.addEntry("beta", "/path/to/beta")
-    assert namer.addEntry("gamma", "/path/to/gamma")
-    assert namer.addEntry("delta", "/path/to/delta")
+    assert namer.addNameAddr("beta", "/path/to/beta")
+    assert namer.addNameAddr("gamma", "/path/to/gamma")
+    assert namer.addNameAddr("delta", "/path/to/delta")
 
     assert not namer.changeAddrAtName(name='alpha', addr="/path/to/alpha")
     assert namer.changeAddrAtName(name='alpha', addr="/alt/path/to/alpha")
@@ -101,7 +105,7 @@ def test_namer():
                                 '/path/to/delta': 'delta',
                                 '/alt/path/to/alpha': 'alpha'}
 
-    namer.clearEntries()
+    namer.clearAllNameAddr()
     assert not namer.addrByName
     assert not namer.nameByAddr
 

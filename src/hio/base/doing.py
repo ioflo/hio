@@ -183,16 +183,16 @@ class Doist(tyming.Tymist):
                         self.done = True
                         break  # break out of forever loop
 
-                    if self.limit and tymer.expired:  # reached time limit
+                    if self.limit and tymer.expired:  # reached limit before all deeds done
                         break  # break out of forever loop
 
-                except KeyboardInterrupt:  # use CNTL-C to shutdown from shell
+                except KeyboardInterrupt:  # Forced shutdown due to SIGINT, use CNTL-C to shutdown from shell
                     break
 
-                except SystemExit: # Forced shutdown of process
+                except SystemExit: # Forced shutdown of process via sys.exit()
                     raise
 
-                except Exception:  # Unknown exception
+                except Exception:  # Forced shutdown due to uncaught exception
                     raise
 
         finally: # finally clause always runs regardless of exception or not.
@@ -242,9 +242,9 @@ class Doist(tyming.Tymist):
 
         for doer in doers:
             try:
-                doer.done = None  #  None before enter. enter may set to False
+                doer.done = False  # False at enter. False signals incomplete
             except AttributeError:  # when using bound method for generator function
-                doer.__func__.done = None  # None before enter. enter may set to False
+                doer.__func__.done = False  # False at enter. False signals incomplete
 
             temp = temp or (doer.temp if hasattr(doer, "temp") and doer.temp else None)
             opts = doer.opts if hasattr(doer, "opts") else {}
@@ -252,11 +252,17 @@ class Doist(tyming.Tymist):
             dog = doer(tymth=self.tymen(), tock=doer.tock, temp=temp, **opts)  # calls doer.do
             try:
                 next(dog)  # run enter by advancing to first yield
-            except StopIteration as ex:
-                try:
-                    doer.done = ex.value if ex.value else False  # assign done state
-                except AttributeError:
-                    doer.__func__.done = ex.value if ex.value else False  # assign done state
+            except StopIteration as ex:   # return not yield
+                # done in enter so assign done state
+                try:  # assign done state non forced return
+                    doer.done = ex.value if ex.value is not None else doer.done
+                except AttributeError:  # bount method generator
+                    # write to doer.__func__.done read from doer.done
+                    doer.__func__.done = ex.value if ex.value is not None else doer.done
+                #try:
+                    #doer.done = ex.value if ex.value else False  # assign done state
+                #except AttributeError:
+                    #doer.__func__.done = ex.value if ex.value else False  # assign done state
                 continue  # don't append
             deeds.append((dog, self.tyme, doer))
         return deeds
@@ -298,10 +304,11 @@ class Doist(tyming.Tymist):
                 try:  # send tyme. yield tock, tock may change during sended run
                     tock = dog.send(self.tyme)  # yielded tock == 0.0 means re-run asap
                 except StopIteration as ex:  # returned instead of yielded
-                    try:
-                        doer.done = ex.value if ex.value else False  # assign done state
-                    except AttributeError:   # when using bound method for generator function
-                        doer.__func__.done = ex.value if ex.value else False  # assign done state
+                    try:  # assign done state non forced return
+                        doer.done = ex.value if ex.value is not None else doer.done
+                    except AttributeError:  # bount method generator
+                        # write to doer.__func__.done read from doer.done
+                        doer.__func__.done = ex.value if ex.value is not None else doer.done
                 else:  # reappend for next pass
                     if not tock:  # tock is None or tock == 0.0 with empty yield tock == None
                         retyme = self.tyme + self.tock  # rerun at next recur
@@ -346,14 +353,15 @@ class Doist(tyming.Tymist):
             if not dog:  # marker deed
                 continue  # skip marker
             try:
-                tock = dog.close()  # force GeneratorExit. Maybe log exit tock tyme
+                done = dog.close()  # force GeneratorExit. Maybe log exit tock tyme
             except StopIteration:
                 pass  # Hmm? Not supposed to happen!
-            else:  # set done state
-                try:
-                    doer.done = False  # forced close
-                except AttributeError:  # when using bound method for generator function
-                    doer.__func__.done = False  # forced close
+            else:  # set done state forced close
+                try:  # not bound method generator but doer instance or function
+                    doer.done = done if done is not None else doer.done
+                except AttributeError:  # when using bound method generator
+                    # writing to doer.__func__.done read from doer.done
+                    doer.__func__.done = done if done is not None else doer.done
 
 
     def extend(self, doers):
@@ -399,11 +407,12 @@ class Doist(tyming.Tymist):
 
 
 def doify(f, *, name=None, tock=0.0, temp=None, **opts):
-    """Returns Doist compatible copy, g, of converted generator function f.
-    Each invoction of doify(f) returns a unique copy of doified function f.
-    Imbues copy, g, of converted generator function, f, with attributes used by
-    Doist.enter() or DoDoer.enter().
-    Allows multiple instances of copy, g, of generator function, f, each with
+    """Returns Doist/DoDoer compatible copy, g, of converted generator
+    function/method f.
+    Each doify(f) invoction returns a unique copy of doified function/method f.
+    Imbues copy, g, of converted generator function/method, f, with attributes
+    used by Doist.enter() or DoDoer.enter().
+    Allows multiple instances of copy, g, of generator function/method, f, each with
     unique attributes.
 
     Usage:
@@ -592,10 +601,9 @@ class Doer(tyming.Tymee):
             # enter context
             self.wind(tymth)  # update tymist dependencies
             self.tock = tock  #  set tock to parameter
-            self.done = False  # allows enter to override completion state
             self.enter(temp=temp)
 
-            #recur context
+            #recur context self.done set by super doist or dodoer prior to enter
             if isgeneratorfunction(self.recur):  #  .recur is generator method
                 self.done = yield from self.recur()  # recur context delegated
             else:  # .recur is standard method so iterate in while loop
@@ -604,7 +612,7 @@ class Doer(tyming.Tymee):
                     self.done = self.recur(tyme=tyme)  # False means recur again
 
         except GeneratorExit:  # close context, forced exit due to .close on generator
-            self.cease() # close method on instance not generator
+            self.cease()
 
         except Exception as ex:  # abort context, forced exit due to uncaught exception
             self.abort(ex=ex)
@@ -963,10 +971,10 @@ class DoDoer(Doer):
             self.wind(tymth)  # change tymist dependencies
             self.tock = tock  #  set tock to parameter
             # tyme = self.tyme
-            self.done = False  # allows enter to override completion state
+
             self.enter(temp=temp)  # doist.enter() equivalent
 
-            #recur context
+            #recur context  self.done set by super doist or dodoer prior to enter
             while (not self.done or always):  # recur context
                 tyme = (yield (self.tock))  # yields .tock then waits for next send
                 self.done = self.recur(tyme=tyme)  # equv of doist.recur
@@ -1031,20 +1039,28 @@ class DoDoer(Doer):
 
         for doer in doers:
             try:
-                doer.done = None  # None before enter. enter may set to False
+                doer.done = False  # False at enter. False signals incomplete
             except AttributeError:   # when using bound method for generator function
-                doer.__func__.done = None  # None before enter. enter may set to False
+                doer.__func__.done = False  # False at enter.  False signals incomplete
             temp = temp or (doer.temp if hasattr(doer, "temp") and doer.temp else None)
             opts = doer.opts if hasattr(doer, "opts") else {}
 
             dog = doer(tymth=self.tymth, tock=doer.tock, temp=temp, **opts)  # calls doer.do
             try:
                 next(dog)  # run enter by advancing to first yield
-            except StopIteration as ex:  # returned instead of yielded
-                try:
-                    doer.done = ex.value if ex.value else False  # assign done state
-                except AttributeError:
-                    doer.__func__.done = ex.value if ex.value else False  # assign done state
+            except StopIteration as ex:  # return not yield
+                # done in enter so assign done state
+                try:  # assign done state non forced return
+                    doer.done = ex.value if ex.value is not None else doer.done
+                except AttributeError:  # bount method generator
+                    # write to doer.__func__.done read from doer.done
+                    doer.__func__.done = ex.value if ex.value is not None else doer.done
+                #try:
+                    #doer.done = ex.value if ex.value else False  # assign done state
+                #except AttributeError:
+                    #doer.__func__.done = ex.value if ex.value else False  # assign done state
+
+
                 continue  # don't append already complete
             deeds.append((dog, self.tyme, doer))
         return deeds
@@ -1083,10 +1099,11 @@ class DoDoer(Doer):
                 try:  # send tyme. yield tock, tock may change during sended run
                     tock = dog.send(tyme)  # yielded tock == 0.0 means re-run asap
                 except StopIteration as ex:  # returned instead of yielded
-                    try:
-                        doer.done = ex.value if ex.value else False  # assign done state
-                    except AttributeError:
-                        doer.__func__.done = ex.value if ex.value else False  # assign done state
+                    try:  # assign done state non forced return
+                        doer.done = ex.value if ex.value is not None else doer.done
+                    except AttributeError:  # bount method generator
+                        # write to doer.__func__.done read from doer.done
+                        doer.__func__.done = ex.value if ex.value is not None else doer.done
                 else:  # reappend for next pass
                     if not tock:  # tock is None or tock == 0.0 with empty yield tock == None
                         retyme = tyme + self.tock  # rerun at next recur
@@ -1119,14 +1136,15 @@ class DoDoer(Doer):
             if not dog:  # marker deed
                 continue  # skip marker
             try:
-                tock = dog.close()  # force GeneratorExit
+                done = dog.close()  # force GeneratorExit returns None if already closed or Gen Return value
             except StopIteration:
                 pass  # Hmm? Not supposed to happen!
-            else:  # set done state
-                try:
-                    doer.done = False  # forced close
-                except AttributeError:  # when using bound method for generator function
-                    doer.__func__.done = False  # forced close
+            else:  # set done state forced exit
+                try:  # not bound method generator but doer instance or function
+                    doer.done = done if done is not None else doer.done
+                except AttributeError:  # when using bound method generator
+                    # writing to doer.__func__.done read from doer.done
+                    doer.__func__.done = done if done is not None else doer.done
 
 
     def extend(self, doers):
@@ -1186,6 +1204,7 @@ def bareDo(tymth=None, tock=0.0, *, temp=None, **opts):
     Injected Attributes:
         g.tock = tock  # default tock attributes
         g.done = None  # default done state
+        g.temp = None  # temporary resources
         g.opts = opts
 
     Parameters:
@@ -1199,7 +1218,7 @@ def bareDo(tymth=None, tock=0.0, *, temp=None, **opts):
     enter, recur, clean, exit, (unforced) close, abort (forced)
     So context order may be:
     enter, recur, clean, exit
-    enter, recur, close, exit
+    enter, recur, cease, exit
     enter, recur, abort, exit
     enter, abort, exit
     """
@@ -1213,7 +1232,7 @@ def bareDo(tymth=None, tock=0.0, *, temp=None, **opts):
             #  do stuff repeately in while loop
             done = True  # means ready to exit while loop
 
-    except GeneratorExit:  # close context upon Doist thrown .close to force early exit.
+    except GeneratorExit:  # cease context upon Doist thrown .close to force early exit.
         pass  # do forced close clean up here
 
     except Exception as ex:  # abort context, forced exit due to uncaught exception
@@ -1328,7 +1347,7 @@ def doifyExDo(tymth, tock=0.0, states=None, *, temp=None, **opts):
             if count > 3:
                 break  # normal exit
 
-    except GeneratorExit:  # close context, forced exit due to .close
+    except GeneratorExit:  # cease context, forced exit due to generator.close
         count += 1
         states.append(State(tyme=tymth(), context='cease', feed=None, count=count))
 
@@ -1373,7 +1392,7 @@ def doizeExDo(tymth, tock=0.0, states=None, *, temp=None, **opts):
             if count > 3:
                 break  # normal exit
 
-    except GeneratorExit:  # close context, forced exit due to .close
+    except GeneratorExit:  # cease context, forced exit due to generator.close
         count += 1
         states.append(State(tyme=tymth(), context='cease', feed=None, count=count))
 
@@ -1523,7 +1542,7 @@ def tryDo(states, tymth, tock=0.0, *, temp=None, **opts):
             if count > 3:
                 break  # normal exit
 
-    except GeneratorExit:  # close context, forced exit due to .close
+    except GeneratorExit:  # cease context, forced exit due to generator.close
         count += 1
         states.append(State(tyme=tymth(), context='cease', feed=feed, count=count))
 
