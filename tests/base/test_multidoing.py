@@ -81,8 +81,9 @@ def test_memo_doms():
     ad = multidoing.AckDom._fromdict(d)
     assert ad == ackdom
 
-
     """Done test"""
+
+
 
 def test_boss_crew_basic():
     """Test BossDoer and CrewDoer classes basic. Crew doist exit at doist time limit
