@@ -12,7 +12,7 @@ import msgpack
 import cbor2 as cbor
 
 from hio.help import helping, Hict
-from hio.help.helping import isign, sceil, dictify, datify
+from hio.help.helping import isign, sceil, dictify, datify, RawDom
 
 def test_utilities():
     """
@@ -565,8 +565,55 @@ def test_dictify():
     c = Circle(radius=4)
     assert dictify(c) == {'area': 50.24, 'perimeter': 25.12}
 
+
 def test_rawdom():
     """Test RawDom dataclass """
+
+    @dataclass
+    class TestDom(RawDom):
+        name:  str = 'test'
+        value:  int = 5
+
+
+    td = TestDom()
+    assert isinstance(td, TestDom)
+    assert isinstance(td, RawDom)
+    assert td.name == 'test'
+    assert td.value == 5
+
+    d = td._asdict()
+    assert isinstance(d, dict)
+    assert d == {'name': 'test', 'value': 5}
+
+    xtd = RawDom._fromdict(d)
+    assert isinstance(xtd, dict)  # since fields don't match
+    assert xtd == d
+
+    rtd = TestDom._fromdict(d)
+    assert isinstance(rtd, RawDom)
+    assert isinstance(rtd, TestDom)
+    assert rtd == td
+
+    s = td._asjson()
+    assert isinstance(s, bytes)
+    assert s == b'{"name":"test","value":5}'
+    jtd = TestDom._fromjson(s)
+    assert jtd == td
+    s = s.decode()
+    jtd = TestDom._fromjson(s)
+    assert jtd == td
+
+    s = td._ascbor()
+    assert s == b'\xa2dnamedtestevalue\x05'
+    assert isinstance(s, bytes)
+    ctd = TestDom._fromcbor(s)
+    assert ctd == td
+
+    s = td._asmgpk()
+    assert s == b'\x82\xa4name\xa4test\xa5value\x05'
+    assert isinstance(s, bytes)
+    mtd = TestDom._frommgpk(s)
+    assert mtd == td
 
     """Done Test"""
 

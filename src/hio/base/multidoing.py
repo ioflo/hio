@@ -63,20 +63,27 @@ Fields:
 Loadage = namedtuple("Loadage", "name tyme tock real limit doers temp boss")
 
 
+"""RawDom hidden methods
+
+
+    Inherited Class Methods:
+        _fromdict(cls, d: dict): return dataclass converted from dict d
+        _fromjson(cls, s: str|bytes): return dataclass converted from json s
+        _fromcbor(cls, s: bytes): return dataclass converted from cbor s
+        _frommgpk(cls, s: bytes): return dataclass converted from mgpk s
+
+    Inherited Methods:
+        __iter__(self): asdict(self)
+        _asdict(self): return self converted to dict
+        _asjson(self): return bytes self converted to json
+        _ascbor(self): return bytes self converted to cbor
+        _asmgpk(self): return bytes self converted to mgpk
+
+"""
 @dataclass
 class HandDom(RawDom):
     """Configuration dataclass of CrewDoer crew hand info managed by its BossDoer
     boss.
-
-    serialization hidden methods:
-
-    Inherited Class Methods:
-        _fromdict(cls, d: dict): return dataclass converted from dict d
-        __iter__(self): asdict(self)
-        _asdict(self): return self converted to dict
-        _asjson(self): return self converted to json
-        _ascbor(self): return self converted to cbor
-        _asmgpk(self): return self converted to mgpk
 
     Attributes:
         proc (typing.Any | None): crew hand subprocess or None
@@ -95,13 +102,6 @@ class CrewDom(RawDom):
     Use this when storing configuration in database or file. Use RawDom
     serialization hidden methods:
 
-    Inherited Class Methods:
-        _fromdict(cls, d: dict): return dataclass converted from dict d
-        __iter__(self): asdict(self)
-        _asdict(self): return self converted to dict
-        _asjson(self): return self converted to json
-        _ascbor(self): return self converted to cbor
-        _asmgpk(self): return self converted to mgpk
 
     Attributes:
         name (str): child doist identifier for resources.
@@ -128,15 +128,6 @@ class CrewDom(RawDom):
 class MemoDom(RawDom):
     """Inter Boss Crew Hand structured memo dataclass. Used for control messages
     Between Boss and Crew Doers via their .peer UXD BossMemoer or CrewMemoer.
-
-
-    Inherited Class Methods:
-        _fromdict(cls, d: dict): return dataclass converted from dict d
-        __iter__(self): asdict(self)
-        _asdict(self): return self converted to dict
-        _asjson(self): return self converted to json
-        _ascbor(self): return self converted to cbor
-        _asmgpk(self): return self converted to mgpk
 
     Attributes:
         name (str): unique identifier as source of memo
@@ -174,9 +165,9 @@ class AckDom(RawDom):
         tag (str): type of memo
         load (AddrDom): info of acked memo
     """
-    name: str ='hand'  # unique identifier of source
+    name: str ='boss'  # unique identifier of source
     tag: str = 'ACK'    # type of memo
-    load: AddrDom | None = None  # instane of AddrDom
+    load: AddrDom = field(default_factory=AddrDom)  # instance of AddrDom
 
 
 

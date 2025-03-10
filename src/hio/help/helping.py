@@ -612,7 +612,7 @@ def nabSextets(b, l):
 # DOM Utilities dataclass utility classes
 
 
-def dictify(val: dataclass):
+def dictify(val):
     """
     Returns a serializable dict represention of a dataclass.  If the dataclass
     contains a `_ser` method, use it instead of `asdict`
@@ -628,8 +628,7 @@ def dictify(val: dataclass):
 
 
 def datify(cls, d):
-    """
-    Returns instance of dataclass cls converted from dict d. If the dataclass
+    """Returns instance of dataclass cls converted from dict d. If the dataclass
     cls or any nested dataclasses contains a `_der` method, the use it instead
     of default fieldtypes conversion.
 
@@ -644,8 +643,8 @@ def datify(cls, d):
 
         fieldtypes = {f.name: f.type for f in fields(cls)}
         return cls(**{f: datify(fieldtypes[f], d[f]) for f in d})  # recursive
-    except:
-        return d  # Not a dataclass.
+    except:  # Fields in dict d don't match dataclass or something else
+        return d  # return unchanged
 
 
 @dataclass
@@ -655,21 +654,60 @@ class RawDom:
     json bytes, cbor bytes, mgpk bytes as a raw format. Typically use case
     is to serialize dataclass either directly or to transform dataclass into
     dict and then serialized to be included in messages or stored in a database.
-    """
 
+
+    Class Methods:
+        _fromdict(cls, d: dict): return dataclass converted from dict d
+        _fromjson(cls, s: str|bytes): return dataclass converted from json s
+        _fromcbor(cls, s: bytes): return dataclass converted from cbor s
+        _frommgpk(cls, s: bytes): return dataclass converted from mgpk s
+
+    Methods:
+        __iter__(self): asdict(self)
+        _asdict(self): return self converted to dict
+        _asjson(self): return bytes self converted to json
+        _ascbor(self): return bytes self converted to cbor
+        _asmgpk(self): return bytes self converted to mgpk
+    """
     @classmethod
     def _fromdict(cls, d: dict):
         """returns instance of clas initialized from dict d """
         return datify(cls, d)
 
 
+    @classmethod
+    def _fromjson(cls, s: str | bytes):
+        """returns instance of clas initialized from json str or bytes s """
+        if hasattr(s, "decode"):  # bytes
+            s = s.decode() # convert to str
+        d = json.loads(s)  # convert to dict
+        return datify(cls, d)
+
+
+    @classmethod
+    def _fromcbor(cls, s: bytes):
+        """returns instance of clas initialized from cbor bytes or str s """
+        d = cbor.loads(s)  # convert to dict
+        return datify(cls, d)
+
+
+    @classmethod
+    def _frommgpk(cls, s: bytes):
+        """returns instance of clas initialized from mgpk bytes or str s """
+        d = msgpack.loads(s)  # convert to dict
+        return datify(cls, d)
+
+
+
     def __iter__(self):
         return iter(asdict(self))
+
 
 
     def _asdict(self):
         """Returns dict version of record"""
         return dictify(self)
+
 
 
     def _asjson(self):
@@ -679,9 +717,11 @@ class RawDom:
                           ensure_ascii=False).encode("utf-8")
 
 
+
     def _ascbor(self):
         """Returns cbor bytes version of record"""
         return cbor.dumps(self._asdict())
+
 
 
     def _asmgpk(self):

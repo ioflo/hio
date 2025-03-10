@@ -41,6 +41,46 @@ def test_memo_doms():
     d = dictify(memodom)
     assert datify(multidoing.MemoDom, d) == memodom
 
+    d = memodom._asdict()
+    assert d == {'name': 'hand', 'tag': 'REG', 'load': {}}
+
+    md = multidoing.MemoDom._fromdict(d)
+    assert md == memodom
+
+    ackdom = multidoing.AckDom()
+    assert ackdom.name == 'boss'
+    assert ackdom.tag == 'ACK'
+    assert ackdom.load == multidoing.AddrDom(name='hand', tag='REG', addr='')
+
+    d = ackdom._asdict()
+    assert d == {'name': 'boss', 'tag': 'ACK', 'load':
+                 {'name': 'hand', 'tag': 'REG', 'addr': ''}}
+
+    ad = multidoing.AckDom._fromdict(d)
+    assert ad == ackdom
+
+    addrdom = multidoing.AddrDom(name='hand', tag='REG', addr='myaddress')
+    assert addrdom.name == 'hand'
+    assert addrdom.tag == 'REG'
+    assert addrdom.addr == 'myaddress'
+    d = addrdom._asdict()
+    assert d == {'name': 'hand', 'tag': 'REG', 'addr': 'myaddress'}
+
+    add = multidoing.AddrDom._fromdict(d)
+    assert add == addrdom
+
+    ackdom = multidoing.AckDom(load=addrdom)
+    assert ackdom.name == 'boss'
+    assert ackdom.tag == 'ACK'
+    assert ackdom.load == addrdom
+
+    d = ackdom._asdict()
+    assert d == {'name': 'boss', 'tag': 'ACK', 'load':
+                 {'name': 'hand', 'tag': 'REG', 'addr': 'myaddress'}}
+
+    ad = multidoing.AckDom._fromdict(d)
+    assert ad == ackdom
+
 
     """Done test"""
 
