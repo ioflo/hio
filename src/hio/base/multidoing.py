@@ -569,7 +569,7 @@ class CrewDoer(MultiDoerBase):
         """Initialize instance.
 
         Inherited Parameters:
-            name (str): unique identifier for this BossDoer boss to be used
+            name (str): unique identifier for this instance to be used
                         to manage local resources
             temp (bool): True means logger or other file resources created by
 

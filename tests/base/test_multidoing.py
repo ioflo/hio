@@ -71,6 +71,72 @@ def test_boss_crew_basic():
 
     """Done Test """
 
+
+def test_boss_crew_basic_multi():
+    """
+    Test BossDoer and CrewDoer classes with multiple crew hands.
+    Each Crew doist exits at doist time limit which causes boss doer to exit
+    done true once all exit because no active children
+    """
+    logger.debug("***** Basic Boss with Multi Crew Test *****")
+    loads = []
+
+    name = 'hand0'  # crew doista and crew hand doer name
+    crewdoer = CrewDoer(tock=0.01)  # don't assign tymth now must be rewound inside subprocess
+    # crew doist load
+    load = dict(name=name, tyme=0.0, tock=0.01, real=True, limit=0.08, doers=[crewdoer], temp=True, boss=None)
+    loads.append(load)
+
+    name = 'hand1'  # crew doista and crew hand doer name
+    crewdoer = CrewDoer(tock=0.01)  # don't assign tymth now must be rewound inside subprocess
+    # crew doist load
+    load = dict(name=name, tyme=0.0, tock=0.01, real=True, limit=0.08, doers=[crewdoer], temp=True, boss=None)
+    loads.append(load)
+
+    name = 'hand3'  # crew doista and crew hand doer name
+    crewdoer = CrewDoer(tock=0.01)  # don't assign tymth now must be rewound inside subprocess
+    # crew doist load
+    load = dict(name=name, tyme=0.0, tock=0.01, real=True, limit=0.07, doers=[crewdoer], temp=True, boss=None)
+    loads.append(load)
+
+    name = 'hand4'  # crew doista and crew hand doer name
+    crewdoer = CrewDoer(tock=0.01)  # don't assign tymth now must be rewound inside subprocess
+    # crew doist load
+    load = dict(name=name, tyme=0.0, tock=0.01, real=True, limit=0.07, doers=[crewdoer], temp=True, boss=None)
+    loads.append(load)
+
+
+    doer = BossDoer(name="boss", tock=0.01, loads=loads)
+    assert len(doer.loads) == 4
+    assert not doer.opened
+    doers = [doer]
+
+    doist = doing.Doist(tock=0.01, real=True, limit=0.50, doers=doers, temp=True)
+    assert doist.tyme == 0.0  # on next cycle
+    assert doist.tock == 0.01
+    assert doist.real == True
+    assert doist.limit == 0.50
+    assert doist.doers == [doer]
+
+    doist.do()
+
+    logger.debug("Boss doist done=%s at tyme=%f.", doist.done, doist.tyme)
+    assert doist.done  # ended because time limit of crew ended so crew is done
+    assert doer.done  # exit due to crew done
+    assert not doer.opened
+    assert doer.logger
+
+    # Verify changes to ogler in child subprocesses not affect parent ogler
+    from hio.help import ogler
+    assert ogler.prefix == "hio"
+    assert ogler.name == "main"
+    assert ogler.level == logging.CRITICAL
+    assert not ogler.opened
+    assert not ogler.path
+
+    """Done Test """
+
+
 def test_boss_crew_terminate():
     """
     Test BossDoer and CrewDoer with terminate SIGTERM. Boss doist exit at limit
@@ -291,6 +357,7 @@ def test_boss_crew_memo_cmd_end():
 
 if __name__ == "__main__":
     test_boss_crew_basic()
+    test_boss_crew_basic_multi()
     test_boss_crew_terminate()
     test_crewdoer_own_exit()
     test_boss_crew_memo_cmd_end()
