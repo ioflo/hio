@@ -13,6 +13,7 @@ import time
 import logging
 import json
 import signal
+import re
 import multiprocessing as mp
 
 from collections import deque, namedtuple
@@ -62,9 +63,16 @@ Fields:
 """
 Loadage = namedtuple("Loadage", "name tyme tock real limit doers temp boss")
 
+# (?P<proto2>[A-Z]{4})
+# regular expression to parse JSON serializations of BossDoer CrewDoer memos
+TAGREX = r'^\{"tag":"(?P<tag>[A-Z]*)"'
+# Usage: if retag.match(memo): or if not Reb64.match(memo): memo is str
+# tag = retag.match(memo).group(1)
+# tag = retag.match(memo).group("tag")
+# if match := retag.match(memo): tag =match.group(0)
+Retag = re.compile(TAGREX)  # compile is faster
 
 """RawDom hidden methods
-
 
     Inherited Class Methods:
         _fromdict(cls, d: dict): return dataclass converted from dict d
@@ -126,7 +134,7 @@ class CrewDom(RawDom):
 
 @dataclass
 class MemoDom(RawDom):
-    """Inter Boss Crew Hand structured memo dataclass. Used for control messages
+    """Inter Boss Crew Hand structured memo dataclass. Used for control memos
     Between Boss and Crew Doers via their .peer UXD BossMemoer or CrewMemoer.
 
     Attributes:
@@ -137,6 +145,21 @@ class MemoDom(RawDom):
     tag: str = 'REG'    # type of memo
     name: str ='hand'  # unique identifier of source
     load: dict = field(default_factory=dict)  # type specific payload
+
+
+@dataclass
+class RegDom(RawDom):
+    """Inter Boss Crew Hand structured memo dataclass. Used for REG memos
+    Between Boss and Crew Doers via their .peer UXD BossMemoer or CrewMemoer.
+
+    Attributes:
+        tag (str): type of memo
+        name (str): unique identifier as source of memo
+        load (dict): empty dict
+    """
+    tag: str = 'REG'    # type of memo
+    name: str ='hand'  # unique identifier of source
+    load: dict = field(default_factory=dict)  # empty dict
 
 
 @dataclass
@@ -153,12 +176,17 @@ class AddrDom(RawDom):
     addr: str = ''  # addr of source of acked memo
 
 
-
 @dataclass
 class AckDom(RawDom):
-    """Inter Boss Crew Hand structured memo dataclass. Used for control messages
+    """Inter Boss Crew Hand structured memo dataclass. Used for ACK memos
     Between Boss and Crew Doers via their .peer UXD BossMemoer or CrewMemoer.
+    Payload load field is specific to the memo being acked. The load includes
+    the tag and name fields at least of the memo being acked additional fields
+    in the load dict may include information related to the memo being acked.
 
+
+    In the case of an ACK to a REG memo the load of the ACK is an AddrDom
+    instance with the fields, tag, name, and addr.
 
     Attributes:
         tag (str): type of memo
@@ -168,6 +196,64 @@ class AckDom(RawDom):
     tag: str = 'ACK'    # type of memo
     name: str ='boss'  # unique identifier of source
     load: AddrDom = field(default_factory=AddrDom)  # instance of AddrDom
+
+
+@dataclass
+class EndDom(RawDom):
+    """Inter Boss Crew Hand structured memo dataclass. Used for END memos
+    Sent by Boss to its Crew Doers to gracefully terminate. Sent via their .peer
+    UXD BossMemoer or CrewMemoer instead of using an OS SIGTERM signal.
+
+    Attributes:
+        tag (str): type of memo
+        name (str): unique identifier of boss
+        load (dict): empty dict
+    """
+    tag: str = 'END'    # type of memo
+    name: str ='boss'  # unique identifier of boss
+    load: dict = field(default_factory=dict)  # empty dict
+
+
+@dataclass
+class BokDom(RawDom):
+    """Inter Boss Crew Hand structured memo dataclass. Used for BOK memos
+    Sent by Boss to its Crew Doers with an address book of the crew hands. This
+    enables crew hand to crew hand peer-to-peer messages sent via their .peer
+    UXD CrewMemoer.
+
+    The load value is a dict keyed by crew hand names with values that are the
+    crew hand UXD peer addres file paths. The items of the dict are (name, addr)
+    tuples
+
+    Attributes:
+        tag (str): type of memo
+        name (str): unique identifier of boss
+        load (dict): items are (name, addr) tuples
+    """
+    tag: str = 'BOK'    # type of memo
+    name: str ='boss'  # unique identifier of boss
+    load: dict = field(default_factory=dict)  # needs to be filled
+
+
+@dataclass
+class MemoDomCodex():
+    """Codex of keyed by memo tag with value of appropriate MemoDom subclass for
+    given tag.
+
+    Attributes:
+        tag (str): type of memo
+        name (str): unique identifier of boss
+        load (dict): empty dict
+    """
+    REG: type[RegDom] = RegDom  # value is class not instance
+    ACK: type[AckDom] = AckDom  # value is class not instance
+    END: type[EndDom] = EndDom  # value is class not instance
+    BOK: type[BokDom] = BokDom  # value is class not instance
+
+    def __iter__(self):
+        return iter(asdict(self))
+
+DomDex = MemoDomCodex()  # make instance
 
 
 

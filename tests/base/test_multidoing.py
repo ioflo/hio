@@ -13,6 +13,8 @@ import types
 import logging
 import json
 
+from dataclasses import dataclass, astuple, asdict, field
+
 from hio.help import helping
 from hio.help.helping import datify, dictify
 from hio.base import tyming
@@ -30,56 +32,206 @@ ogler.temp = True  # for testing set to True
 logger = ogler.getLogger(name='test')
 
 
+def test_retag_regex():
+    """Test Retag regex for detecting tag value of JSON serialized memo"""
+
+    memo = '{"tag":"REG","name":"boss","load":{}}'
+    match = multidoing.Retag.match(memo)
+    assert match
+    assert match is not None
+    assert "REG" == match.group(1)
+    assert "REG" == match.group("tag")
+
+    if match := multidoing.Retag.match(memo):
+        assert match.group("tag") == "REG"
+    else:
+        assert False
+
+    memo = ''
+    match = multidoing.Retag.match(memo)
+    assert not match
+    assert match is None
+
+    memo = '123#$'
+    match = multidoing.Retag.match(memo)
+    assert not match
+    assert match is None
+
+    with pytest.raises(AttributeError):
+        tag = multidoing.Retag.match(memo).group("tag")
+
+    memo = '{"tag": "REG", "name": "boss", "load": {}}'
+    with pytest.raises(AttributeError):
+        tag = multidoing.Retag.match(memo).group("tag")
+
+    memo = '{"tag": "reg", "name": "boss", "load": {}}'
+    with pytest.raises(AttributeError):
+        tag = multidoing.Retag.match(memo).group("tag")
+
+    memo = '{"tag":"A", "name": "boss", "load": {}}'
+    assert multidoing.Retag.match(memo).group("tag") == 'A'
+
+    memo = '{"tag":"AB", "name": "boss", "load": {}}'
+    assert multidoing.Retag.match(memo).group("tag") == 'AB'
+
+    memo = '{"tag":"ABC", "name": "boss", "load": {}}'
+    assert multidoing.Retag.match(memo).group("tag") == 'ABC'
+
+    memo = '{"tag":"ABCD", "name": "boss", "load": {}}'
+    assert multidoing.Retag.match(memo).group("tag") == 'ABCD'
+
+    """Done Test"""
+
 
 def test_memo_doms():
     """Test dataclass Doms used for memos"""
+    # Test MemoDom
     memodom = multidoing.MemoDom()
-    assert memodom.name == 'hand'
     assert memodom.tag == 'REG'
+    assert memodom.name == 'hand'
     assert memodom.load == {}
 
     d = dictify(memodom)
     assert datify(multidoing.MemoDom, d) == memodom
 
     d = memodom._asdict()
-    assert d == {'name': 'hand', 'tag': 'REG', 'load': {}}
+    assert d == {'tag': 'REG', 'name': 'hand', 'load': {}}
 
     md = multidoing.MemoDom._fromdict(d)
     assert md == memodom
 
+    # Test RegDom
+    regdom = multidoing.RegDom()
+    assert regdom.tag == 'REG'
+    assert regdom.name == 'hand'
+    assert regdom.load == {}
+
+    d = dictify(regdom)
+    assert datify(multidoing.RegDom, d) == regdom
+
+    d = regdom._asdict()
+    assert d == {'tag': 'REG', 'name': 'hand', 'load': {}}
+
+    rd = multidoing.RegDom._fromdict(d)
+    assert rd == regdom
+
+    # Test AckDom
     ackdom = multidoing.AckDom()
-    assert ackdom.name == 'boss'
     assert ackdom.tag == 'ACK'
-    assert ackdom.load == multidoing.AddrDom(name='hand', tag='REG', addr='')
+    assert ackdom.name == 'boss'
+    assert ackdom.load == multidoing.AddrDom(tag='REG', name='hand', addr='')
 
     d = ackdom._asdict()
-    assert d == {'name': 'boss', 'tag': 'ACK', 'load':
-                 {'name': 'hand', 'tag': 'REG', 'addr': ''}}
+    assert d == {'tag': 'ACK', 'name': 'boss', 'load':
+                 {'tag': 'REG', 'name': 'hand', 'addr': ''}}
 
     ad = multidoing.AckDom._fromdict(d)
     assert ad == ackdom
 
-    addrdom = multidoing.AddrDom(name='hand', tag='REG', addr='myaddress')
-    assert addrdom.name == 'hand'
+    # Test AddrDom
+    addrdom = multidoing.AddrDom(tag='REG', name='hand', addr='myaddress')
     assert addrdom.tag == 'REG'
+    assert addrdom.name == 'hand'
     assert addrdom.addr == 'myaddress'
     d = addrdom._asdict()
-    assert d == {'name': 'hand', 'tag': 'REG', 'addr': 'myaddress'}
+    assert d == { 'tag': 'REG', 'name': 'hand','addr': 'myaddress'}
 
     add = multidoing.AddrDom._fromdict(d)
     assert add == addrdom
 
     ackdom = multidoing.AckDom(load=addrdom)
-    assert ackdom.name == 'boss'
     assert ackdom.tag == 'ACK'
+    assert ackdom.name == 'boss'
     assert ackdom.load == addrdom
 
     d = ackdom._asdict()
-    assert d == {'name': 'boss', 'tag': 'ACK', 'load':
-                 {'name': 'hand', 'tag': 'REG', 'addr': 'myaddress'}}
+    assert d == {'tag': 'ACK', 'name': 'boss', 'load':
+                 { 'tag': 'REG', 'name': 'hand', 'addr': 'myaddress'}}
 
     ad = multidoing.AckDom._fromdict(d)
     assert ad == ackdom
+
+    # Test EndDom
+    enddom = multidoing.EndDom()
+    assert enddom.tag == 'END'
+    assert enddom.name == 'boss'
+    assert enddom.load == {}
+
+    d = dictify(enddom)
+    assert datify(multidoing.EndDom, d) == enddom
+
+    d = enddom._asdict()
+    assert d == {'tag': 'END', 'name': 'boss', 'load': {}}
+
+    ed = multidoing.EndDom._fromdict(d)
+    assert ed == enddom
+
+    # Test BokDom
+    bokdom = multidoing.BokDom()
+    assert bokdom.tag == 'BOK'
+    assert bokdom.name == 'boss'
+    assert bokdom.load == {}
+
+    d = dictify(bokdom)
+    assert datify(multidoing.BokDom, d) == bokdom
+
+    d = bokdom._asdict()
+    assert d == { 'tag': 'BOK', 'name': 'boss', 'load': {}}
+
+    bd = multidoing.BokDom._fromdict(d)
+    assert bd == bokdom
+
+    book = dict(hand0="hand0path", hand1="hand1path", hand2="hand2path")
+
+    bokdom = multidoing.BokDom(name='bossy', load=book)
+    assert bokdom.tag == 'BOK'
+    assert bokdom.name == 'bossy'
+    assert bokdom.load == book
+
+    d = dictify(bokdom)
+    assert datify(multidoing.BokDom, d) == bokdom
+
+    d = bokdom._asdict()
+    assert d == {'tag': 'BOK', 'name': 'bossy', 'load':
+                 {
+                    'hand0': 'hand0path',
+                    'hand1': 'hand1path',
+                    'hand2': 'hand2path'
+                 }
+                }
+
+    bd = multidoing.BokDom._fromdict(d)
+    assert bd == bokdom
+
+    #test DomDex
+    assert isinstance(multidoing.DomDex, multidoing.MemoDomCodex)
+
+    assert 'REG' in multidoing.DomDex
+    assert multidoing.DomDex.REG == multidoing.RegDom
+
+    assert asdict(multidoing.DomDex) == {
+        'REG': multidoing.RegDom,
+        'ACK': multidoing.AckDom,
+        'END': multidoing.EndDom,
+        'BOK': multidoing.BokDom,
+    }
+
+    dom = multidoing.RegDom(name='testy')
+    memo = dom._asjson()
+    assert memo == b'{"tag":"REG","name":"testy","load":{}}'
+    memo = memo.decode()  # make str from bytes
+    tag = multidoing.Retag.match(memo).group("tag")
+    assert tag == 'REG'
+    assert tag in multidoing.DomDex
+
+    rdom = getattr(multidoing.DomDex, tag)._fromjson(memo)
+    assert rdom == dom
+
+    d = json.loads(memo)
+    rdom = getattr(multidoing.DomDex, tag)(**d)
+    assert rdom == dom
+
+
 
     """Done test"""
 
@@ -410,6 +562,7 @@ def test_boss_crew_memo_cmd_end():
     """Done Test"""
 
 if __name__ == "__main__":
+    test_retag_regex()
     test_memo_doms()
     test_boss_crew_basic()
     test_boss_crew_basic_multi()
