@@ -329,8 +329,8 @@ class Test1BossDoer(BossDoer):
             if self.ctx.active_children():
                 if tyme > 15 * self.tock:
                     for name, dom in self.crew.items():  # dom is CrewDom instance
-                        memo = dict(name=self.name, tag="END", load={})
-                        memo = json.dumps(memo,separators=(",", ":"),ensure_ascii=False)
+                        memo = dict(tag="END", name=self.name, load={})
+                        memo = self.dumps(memo)
                         if dom.proc.is_alive() and not dom.exiting:
                             dst = self.getAddr(name=name)
                             self.memoit(memo, dst)

@@ -130,12 +130,12 @@ class MemoDom(RawDom):
     Between Boss and Crew Doers via their .peer UXD BossMemoer or CrewMemoer.
 
     Attributes:
-        name (str): unique identifier as source of memo
         tag (str): type of memo
+        name (str): unique identifier as source of memo
         load (dict): type specific payload of memo
     """
-    name: str ='hand'  # unique identifier of source
     tag: str = 'REG'    # type of memo
+    name: str ='hand'  # unique identifier of source
     load: dict = field(default_factory=dict)  # type specific payload
 
 
@@ -144,12 +144,12 @@ class AddrDom(RawDom):
     """Load Field Value of ACK
 
     Attributes:
-        name (str): unique identifier as source of memo being acked
         tag (str): type of memo being acked
+        name (str): unique identifier as source of memo being acked
         addr (dict): addr of source of memo being acked
     """
-    name: str ='hand'  # unique identifier of source of ack
     tag: str = 'REG'    # type of memo being acked
+    name: str ='hand'  # unique identifier of source of ack
     addr: str = ''  # addr of source of acked memo
 
 
@@ -161,12 +161,12 @@ class AckDom(RawDom):
 
 
     Attributes:
-        name (str): unique identifier as source of memo
         tag (str): type of memo
+        name (str): unique identifier as source of memo
         load (AddrDom): info of acked memo
     """
-    name: str ='boss'  # unique identifier of source
     tag: str = 'ACK'    # type of memo
+    name: str ='boss'  # unique identifier of source
     load: AddrDom = field(default_factory=AddrDom)  # instance of AddrDom
 
 
@@ -306,6 +306,16 @@ class MultiDoerBase(Namer, PeerMemoer, Doer):
         return False  # this  is just a default
 
 
+    def dumps(self, d):
+        """Returns compact JSON serialization of d suitable for .memoit.
+
+        Parameters:
+            d (dict | list): object to be serialized
+
+        Returns:
+            s (str): serialized JSON
+        """
+        return json.dumps(d, separators=(",", ":"),ensure_ascii=False )
 
 
 class BossDoer(MultiDoerBase):
@@ -481,20 +491,31 @@ class BossDoer(MultiDoerBase):
             tag = memo['tag']
             if tag == "REG":
                 name = memo['name']
-                try:
+                try:  # add to address book
                     self.addNameAddr(name=name, addr=src)
                 except hioing.NamerError as ex:
                     self.changeAddrAtName(name=name, addr=src)
+                # Send ACK to REG to src crew hand
+                dst = src
+                mack = dict(tag="ACK", name=self.name, load=dict(tag='REG', name=name, addr=src))
+                mack = self.dumps(mack)
+                self.memoit(mack, dst)
+
+
                 if self.countNameAddr == len(self.crew):
                     self.crewed = True
                     self.logger.debug("Boss name=%s crewed=%s with size=%d at "
                                       "tyme=%f.", self.name, self.crewed,
                                       len(self.crew), self.tyme)
 
-            dst = src
-            mack = dict(name=self.name, tag="ACK", load=dict(tag='REG', name=name, addr=src))
-            mack = json.dumps(mack,separators=(",", ":"),ensure_ascii=False)
-            self.memoit(mack, dst)
+                    # send address book of crew hands to all crew hands
+                    book = self.addrByName  # dict of (name, addr) pairs
+                    mbok = dict(tag="BOK", name=self.name, load=book)
+                    mbok = self.dumps(mbok)
+                    for name, dom in self.crew.items():  # dom is CrewDom instance
+                        if dom.proc.is_alive():
+                            dst = self.getAddr(name=name)
+                            self.memoit(mbok, dst)
 
 
 
@@ -639,8 +660,8 @@ class CrewDoer(MultiDoerBase):
         self.logger.debug("Hand name=%s path=%s opened=%s.",
                     self.name, self.path, self.opened)
 
-        memo = dict(name=self.name, tag="REG", load={})
-        memo = json.dumps(memo, separators=(",", ":"), ensure_ascii=False)
+        memo = dict( tag="REG", name=self.name, load={})
+        memo = self.dumps(memo)
         dst = self.boss.path
         self.memoit(memo, dst)
 
@@ -655,13 +676,6 @@ class CrewDoer(MultiDoerBase):
 
         self.service()
 
-        #if self.registered and tyme > self.tock * 3:
-            #self.logger.debug("Hand name=%s registered and done at tyme=%f.",
-                              #self.name, tyme)
-            #return True  # complete
-
-        #if tyme > self.tock * 20:
-            #return True
 
         return False  # incomplete
 
@@ -710,5 +724,18 @@ class CrewDoer(MultiDoerBase):
                     self.registered = True
                     self.logger.debug("Hand name=%s registered with boss=%s",
                                         self.name, self.boss.name)
+
+            elif tag == "BOK":
+                name = memo["name"]
+                if name == self.boss.name:
+                    load = memo['load']
+                    self.logger.debug("Hand name=%s got from boss=%s "
+                                      "address book update of other crew"
+                                      " hands if any.",
+                                      self.name, self.boss.name)
+                    for name, addr in load.items():
+                        if name != self.name:  # don't put self in own address book
+                            self.addNameAddr(name=name, addr=addr)
+
 
 
