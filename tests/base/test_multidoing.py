@@ -20,7 +20,7 @@ from hio.help.helping import datify, dictify
 from hio.base import tyming
 from hio.base import doing, multidoing, Doist
 from hio.base.doing import ExDoer
-from hio.base.multidoing import BossDoer, CrewDoer, ogler
+from hio.base.multidoing import BossDoer, CrewDoer, ogler, EndDom
 
 # Any subprocess started by this modules __main__ will inherit this module scope.
 # Therefore Doist or Doers that reference this ogler will get a picked copy of it.
@@ -203,7 +203,7 @@ def test_memo_doms():
     bd = multidoing.BokDom._fromdict(d)
     assert bd == bokdom
 
-    #test DomDex
+    # test DomDex
     assert isinstance(multidoing.DomDex, multidoing.MemoDomCodex)
 
     assert 'REG' in multidoing.DomDex
@@ -461,9 +461,8 @@ def test_crewdoer_own_exit():
     assert ogler.level == logging.CRITICAL
     assert not ogler.opened
     assert not ogler.path
-
-
     """Done Test """
+
 
 class Test1BossDoer(BossDoer):
     """BossDoer with custome recur for testing"""
@@ -481,8 +480,7 @@ class Test1BossDoer(BossDoer):
             if self.ctx.active_children():
                 if tyme > 15 * self.tock:
                     for name, dom in self.crew.items():  # dom is CrewDom instance
-                        memo = dict(tag="END", name=self.name, load={})
-                        memo = self.dumps(memo)
+                        memo = EndDom(name=self.name)._asjson().decode()
                         if dom.proc.is_alive() and not dom.exiting:
                             dst = self.getAddr(name=name)
                             self.memoit(memo, dst)
@@ -490,7 +488,6 @@ class Test1BossDoer(BossDoer):
 
             else:  # all crew hands completed
                 return True
-
 
         return False  # incomplete recur again
 
@@ -556,10 +553,6 @@ def test_boss_crew_memo_cmd_end():
 
     """Done Test """
 
-
-
-
-    """Done Test"""
 
 if __name__ == "__main__":
     test_retag_regex()

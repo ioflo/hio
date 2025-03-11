@@ -573,20 +573,24 @@ class BossDoer(MultiDoerBase):
             memo, src, vid = self._serviceOneRxMemo()
             self.logger.debug("Boss Peer RX: name=%s rx from src=%s memo=%s.",
                                 self.name, src, memo)
-            memo = json.loads(memo)
-            tag = memo['tag']
+            try:
+                tag = Retag.match(memo).group("tag")
+                if tag not in DomDex:  # unrecognized tag
+                    continue  # so drop memo
+                mdom = getattr(DomDex, tag)._fromjson(memo)
+            except AttributeError as ex:  # unrecognized memo format
+                continue  # not start with tag field so drop
+
             if tag == "REG":
-                name = memo['name']
+                name = mdom.name
                 try:  # add to address book
                     self.addNameAddr(name=name, addr=src)
                 except hioing.NamerError as ex:
                     self.changeAddrAtName(name=name, addr=src)
                 # Send ACK to REG to src crew hand
                 dst = src
-                mack = dict(tag="ACK", name=self.name, load=dict(tag='REG', name=name, addr=src))
-                mack = self.dumps(mack)
+                mack = AckDom(name=self.name, load=AddrDom(name=name, addr=src))._asjson().decode()
                 self.memoit(mack, dst)
-
 
                 if self.countNameAddr == len(self.crew):
                     self.crewed = True
@@ -596,8 +600,7 @@ class BossDoer(MultiDoerBase):
 
                     # send address book of crew hands to all crew hands
                     book = self.addrByName  # dict of (name, addr) pairs
-                    mbok = dict(tag="BOK", name=self.name, load=book)
-                    mbok = self.dumps(mbok)
+                    mbok = BokDom(name=self.name, load=book)._asjson().decode()
                     for name, dom in self.crew.items():  # dom is CrewDom instance
                         if dom.proc.is_alive():
                             dst = self.getAddr(name=name)
@@ -746,8 +749,7 @@ class CrewDoer(MultiDoerBase):
         self.logger.debug("Hand name=%s path=%s opened=%s.",
                     self.name, self.path, self.opened)
 
-        memo = dict( tag="REG", name=self.name, load={})
-        memo = self.dumps(memo)
+        memo = RegDom(name=self.name)._asjson().decode()
         dst = self.boss.path
         self.memoit(memo, dst)
 
@@ -795,26 +797,31 @@ class CrewDoer(MultiDoerBase):
             memo, src, vid = self._serviceOneRxMemo()
             self.logger.debug("Hand Peer RX: name=%s rx from src=%s memo=%s.",
                                 self.name, src, memo)
-            memo = json.loads(memo)
-            tag = memo['tag']
+            try:
+                tag = Retag.match(memo).group("tag")
+                if tag not in DomDex:  # unrecognized tag
+                    continue  # so drop memo
+                mdom = getattr(DomDex, tag)._fromjson(memo)
+            except AttributeError as ex:  # unrecognized memo format
+                continue  # not start with tag field so drop
 
             if tag == "END":
-                name = memo["name"]
+                name = mdom.name
                 if name == self.boss.name and src == self.boss.path:
                     self.logger.debug("Hand name=%s exiting.", self.name)
                     self.graceful = True  # next recur graceful exit
 
             elif tag == "ACK":
-                name = memo["name"]
-                if name == self.boss.name and memo['load']['tag'] == 'REG':
+                name = mdom.name
+                if name == self.boss.name and mdom.load.tag == 'REG':
                     self.registered = True
                     self.logger.debug("Hand name=%s registered with boss=%s",
                                         self.name, self.boss.name)
 
             elif tag == "BOK":
-                name = memo["name"]
+                name = mdom.name
                 if name == self.boss.name:
-                    load = memo['load']
+                    load = mdom.load
                     self.logger.debug("Hand name=%s got from boss=%s "
                                       "address book update of other crew"
                                       " hands if any.",
