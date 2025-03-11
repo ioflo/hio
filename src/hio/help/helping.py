@@ -714,7 +714,7 @@ class RawDom:
         """Returns json bytes version of record"""
         return json.dumps(self._asdict(),
                           separators=(",", ":"),
-                          ensure_ascii=False).encode("utf-8")
+                          ensure_ascii=False).encode()
 
 
 

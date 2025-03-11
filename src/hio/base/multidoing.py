@@ -13,6 +13,7 @@ import time
 import logging
 import json
 import signal
+import re
 import multiprocessing as mp
 
 from collections import deque, namedtuple
@@ -62,9 +63,16 @@ Fields:
 """
 Loadage = namedtuple("Loadage", "name tyme tock real limit doers temp boss")
 
+# (?P<proto2>[A-Z]{4})
+# regular expression to parse JSON serializations of BossDoer CrewDoer memos
+TAGREX = r'^\{"tag":"(?P<tag>[A-Z]*)"'
+# Usage: if retag.match(memo): or if not Reb64.match(memo): memo is str
+# tag = retag.match(memo).group(1)
+# tag = retag.match(memo).group("tag")
+# if match := retag.match(memo): tag =match.group(0)
+Retag = re.compile(TAGREX)  # compile is faster
 
 """RawDom hidden methods
-
 
     Inherited Class Methods:
         _fromdict(cls, d: dict): return dataclass converted from dict d
@@ -126,17 +134,32 @@ class CrewDom(RawDom):
 
 @dataclass
 class MemoDom(RawDom):
-    """Inter Boss Crew Hand structured memo dataclass. Used for control messages
+    """Inter Boss Crew Hand structured memo dataclass. Used for control memos
     Between Boss and Crew Doers via their .peer UXD BossMemoer or CrewMemoer.
 
     Attributes:
-        name (str): unique identifier as source of memo
         tag (str): type of memo
+        name (str): unique identifier as source of memo
         load (dict): type specific payload of memo
     """
-    name: str ='hand'  # unique identifier of source
     tag: str = 'REG'    # type of memo
+    name: str ='hand'  # unique identifier of source
     load: dict = field(default_factory=dict)  # type specific payload
+
+
+@dataclass
+class RegDom(RawDom):
+    """Inter Boss Crew Hand structured memo dataclass. Used for REG memos
+    Between Boss and Crew Doers via their .peer UXD BossMemoer or CrewMemoer.
+
+    Attributes:
+        tag (str): type of memo
+        name (str): unique identifier as source of memo
+        load (dict): empty dict
+    """
+    tag: str = 'REG'    # type of memo
+    name: str ='hand'  # unique identifier of source
+    load: dict = field(default_factory=dict)  # empty dict
 
 
 @dataclass
@@ -144,30 +167,93 @@ class AddrDom(RawDom):
     """Load Field Value of ACK
 
     Attributes:
-        name (str): unique identifier as source of memo being acked
         tag (str): type of memo being acked
+        name (str): unique identifier as source of memo being acked
         addr (dict): addr of source of memo being acked
     """
-    name: str ='hand'  # unique identifier of source of ack
     tag: str = 'REG'    # type of memo being acked
+    name: str ='hand'  # unique identifier of source of ack
     addr: str = ''  # addr of source of acked memo
-
 
 
 @dataclass
 class AckDom(RawDom):
-    """Inter Boss Crew Hand structured memo dataclass. Used for control messages
+    """Inter Boss Crew Hand structured memo dataclass. Used for ACK memos
     Between Boss and Crew Doers via their .peer UXD BossMemoer or CrewMemoer.
+    Payload load field is specific to the memo being acked. The load includes
+    the tag and name fields at least of the memo being acked additional fields
+    in the load dict may include information related to the memo being acked.
 
+
+    In the case of an ACK to a REG memo the load of the ACK is an AddrDom
+    instance with the fields, tag, name, and addr.
 
     Attributes:
-        name (str): unique identifier as source of memo
         tag (str): type of memo
+        name (str): unique identifier as source of memo
         load (AddrDom): info of acked memo
     """
-    name: str ='boss'  # unique identifier of source
     tag: str = 'ACK'    # type of memo
+    name: str ='boss'  # unique identifier of source
     load: AddrDom = field(default_factory=AddrDom)  # instance of AddrDom
+
+
+@dataclass
+class EndDom(RawDom):
+    """Inter Boss Crew Hand structured memo dataclass. Used for END memos
+    Sent by Boss to its Crew Doers to gracefully terminate. Sent via their .peer
+    UXD BossMemoer or CrewMemoer instead of using an OS SIGTERM signal.
+
+    Attributes:
+        tag (str): type of memo
+        name (str): unique identifier of boss
+        load (dict): empty dict
+    """
+    tag: str = 'END'    # type of memo
+    name: str ='boss'  # unique identifier of boss
+    load: dict = field(default_factory=dict)  # empty dict
+
+
+@dataclass
+class BokDom(RawDom):
+    """Inter Boss Crew Hand structured memo dataclass. Used for BOK memos
+    Sent by Boss to its Crew Doers with an address book of the crew hands. This
+    enables crew hand to crew hand peer-to-peer messages sent via their .peer
+    UXD CrewMemoer.
+
+    The load value is a dict keyed by crew hand names with values that are the
+    crew hand UXD peer addres file paths. The items of the dict are (name, addr)
+    tuples
+
+    Attributes:
+        tag (str): type of memo
+        name (str): unique identifier of boss
+        load (dict): items are (name, addr) tuples
+    """
+    tag: str = 'BOK'    # type of memo
+    name: str ='boss'  # unique identifier of boss
+    load: dict = field(default_factory=dict)  # needs to be filled
+
+
+@dataclass
+class MemoDomCodex():
+    """Codex of keyed by memo tag with value of appropriate MemoDom subclass for
+    given tag.
+
+    Attributes:
+        tag (str): type of memo
+        name (str): unique identifier of boss
+        load (dict): empty dict
+    """
+    REG: type[RegDom] = RegDom  # value is class not instance
+    ACK: type[AckDom] = AckDom  # value is class not instance
+    END: type[EndDom] = EndDom  # value is class not instance
+    BOK: type[BokDom] = BokDom  # value is class not instance
+
+    def __iter__(self):
+        return iter(asdict(self))
+
+DomDex = MemoDomCodex()  # make instance
 
 
 
@@ -306,6 +392,16 @@ class MultiDoerBase(Namer, PeerMemoer, Doer):
         return False  # this  is just a default
 
 
+    def dumps(self, d):
+        """Returns compact JSON serialization of d suitable for .memoit.
+
+        Parameters:
+            d (dict | list): object to be serialized
+
+        Returns:
+            s (str): serialized JSON
+        """
+        return json.dumps(d, separators=(",", ":"),ensure_ascii=False )
 
 
 class BossDoer(MultiDoerBase):
@@ -477,24 +573,38 @@ class BossDoer(MultiDoerBase):
             memo, src, vid = self._serviceOneRxMemo()
             self.logger.debug("Boss Peer RX: name=%s rx from src=%s memo=%s.",
                                 self.name, src, memo)
-            memo = json.loads(memo)
-            tag = memo['tag']
+            try:
+                tag = Retag.match(memo).group("tag")
+                if tag not in DomDex:  # unrecognized tag
+                    continue  # so drop memo
+                mdom = getattr(DomDex, tag)._fromjson(memo)
+            except AttributeError as ex:  # unrecognized memo format
+                continue  # not start with tag field so drop
+
             if tag == "REG":
-                name = memo['name']
-                try:
+                name = mdom.name
+                try:  # add to address book
                     self.addNameAddr(name=name, addr=src)
                 except hioing.NamerError as ex:
                     self.changeAddrAtName(name=name, addr=src)
+                # Send ACK to REG to src crew hand
+                dst = src
+                mack = AckDom(name=self.name, load=AddrDom(name=name, addr=src))._asjson().decode()
+                self.memoit(mack, dst)
+
                 if self.countNameAddr == len(self.crew):
                     self.crewed = True
                     self.logger.debug("Boss name=%s crewed=%s with size=%d at "
                                       "tyme=%f.", self.name, self.crewed,
                                       len(self.crew), self.tyme)
 
-            dst = src
-            mack = dict(name=self.name, tag="ACK", load=dict(tag='REG', name=name, addr=src))
-            mack = json.dumps(mack,separators=(",", ":"),ensure_ascii=False)
-            self.memoit(mack, dst)
+                    # send address book of crew hands to all crew hands
+                    book = self.addrByName  # dict of (name, addr) pairs
+                    mbok = BokDom(name=self.name, load=book)._asjson().decode()
+                    for name, dom in self.crew.items():  # dom is CrewDom instance
+                        if dom.proc.is_alive():
+                            dst = self.getAddr(name=name)
+                            self.memoit(mbok, dst)
 
 
 
@@ -639,8 +749,7 @@ class CrewDoer(MultiDoerBase):
         self.logger.debug("Hand name=%s path=%s opened=%s.",
                     self.name, self.path, self.opened)
 
-        memo = dict(name=self.name, tag="REG", load={})
-        memo = json.dumps(memo, separators=(",", ":"), ensure_ascii=False)
+        memo = RegDom(name=self.name)._asjson().decode()
         dst = self.boss.path
         self.memoit(memo, dst)
 
@@ -655,13 +764,6 @@ class CrewDoer(MultiDoerBase):
 
         self.service()
 
-        #if self.registered and tyme > self.tock * 3:
-            #self.logger.debug("Hand name=%s registered and done at tyme=%f.",
-                              #self.name, tyme)
-            #return True  # complete
-
-        #if tyme > self.tock * 20:
-            #return True
 
         return False  # incomplete
 
@@ -695,20 +797,38 @@ class CrewDoer(MultiDoerBase):
             memo, src, vid = self._serviceOneRxMemo()
             self.logger.debug("Hand Peer RX: name=%s rx from src=%s memo=%s.",
                                 self.name, src, memo)
-            memo = json.loads(memo)
-            tag = memo['tag']
+            try:
+                tag = Retag.match(memo).group("tag")
+                if tag not in DomDex:  # unrecognized tag
+                    continue  # so drop memo
+                mdom = getattr(DomDex, tag)._fromjson(memo)
+            except AttributeError as ex:  # unrecognized memo format
+                continue  # not start with tag field so drop
 
             if tag == "END":
-                name = memo["name"]
+                name = mdom.name
                 if name == self.boss.name and src == self.boss.path:
                     self.logger.debug("Hand name=%s exiting.", self.name)
                     self.graceful = True  # next recur graceful exit
 
             elif tag == "ACK":
-                name = memo["name"]
-                if name == self.boss.name and memo['load']['tag'] == 'REG':
+                name = mdom.name
+                if name == self.boss.name and mdom.load.tag == 'REG':
                     self.registered = True
                     self.logger.debug("Hand name=%s registered with boss=%s",
                                         self.name, self.boss.name)
+
+            elif tag == "BOK":
+                name = mdom.name
+                if name == self.boss.name:
+                    load = mdom.load
+                    self.logger.debug("Hand name=%s got from boss=%s "
+                                      "address book update of other crew"
+                                      " hands if any.",
+                                      self.name, self.boss.name)
+                    for name, addr in load.items():
+                        if name != self.name:  # don't put self in own address book
+                            self.addNameAddr(name=name, addr=addr)
+
 
 
