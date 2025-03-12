@@ -391,8 +391,8 @@ class MultiDoerBase(Namer, PeerMemoer, Doer):
 
         return False  # this  is just a default
 
-
-    def dumps(self, d):
+    @staticmethod
+    def tojson(d):
         """Returns compact JSON serialization of d suitable for .memoit.
 
         Parameters:
