@@ -506,13 +506,16 @@ def test_datify():
         b: Point
 
     line = Line(Point(1,2), Point(3,4))
-    assert line == datify(Line, asdict(line))
-
     assert asdict(line) == {'a': {'x': 1, 'y': 2}, 'b': {'x': 3, 'y': 4}}
+    assert line == datify(Line, asdict(line))
 
     pdict = dict(x=3, y=4)
     pdata = datify(Point, pdict)
     assert isinstance(pdata, Point)
+
+    bad = dict(a=3, y=4)
+    pdata = datify(Point, bad)
+    assert not isinstance(pdata, Point)
 
     @dataclass
     class Circle:
@@ -528,6 +531,9 @@ def test_datify():
     d = {'area': 50.24, 'perimeter': 25.12}
     c = datify(Circle, d)
     assert c.radius == 4
+
+
+
 
     """End Test"""
 
@@ -585,14 +591,17 @@ def test_rawdom():
     assert isinstance(d, dict)
     assert d == {'name': 'test', 'value': 5}
 
-    xtd = RawDom._fromdict(d)
-    assert isinstance(xtd, dict)  # since fields don't match
-    assert xtd == d
-
     rtd = TestDom._fromdict(d)
     assert isinstance(rtd, RawDom)
     assert isinstance(rtd, TestDom)
     assert rtd == td
+
+    bad = dict(name='test', val=0)  # field label "val" instead of "value"
+    with pytest.raises(ValueError):
+        TestDom._fromdict(bad)
+
+    with pytest.raises(ValueError):
+        RawDom._fromdict(d)  # since fields of d don't match RawDom which has not fields
 
     s = td._asjson()
     assert isinstance(s, bytes)
@@ -603,17 +612,31 @@ def test_rawdom():
     jtd = TestDom._fromjson(s)
     assert jtd == td
 
+    bad = b'{"name":"test","val":5}'  # field label "val" instead of "value"
+    with pytest.raises(ValueError):
+        TestDom._fromjson(bad)
+
     s = td._ascbor()
     assert s == b'\xa2dnamedtestevalue\x05'
     assert isinstance(s, bytes)
     ctd = TestDom._fromcbor(s)
     assert ctd == td
 
+    bad = cbor.dumps(dict(name='test', val=0)) # field label "val" instead of "value"
+    assert bad == b'\xa2dnamedtestcval\x00'
+    with pytest.raises(ValueError):
+        TestDom._fromcbor(bad)
+
     s = td._asmgpk()
     assert s == b'\x82\xa4name\xa4test\xa5value\x05'
     assert isinstance(s, bytes)
     mtd = TestDom._frommgpk(s)
     assert mtd == td
+
+    bad = msgpack.dumps(dict(name='test', val=0)) # field label "val" instead of "value"
+    assert bad == b'\x82\xa4name\xa4test\xa3val\x00'
+    with pytest.raises(ValueError):
+        TestDom._frommgpk(bad)
 
     """Done Test"""
 

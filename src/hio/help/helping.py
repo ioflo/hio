@@ -643,8 +643,8 @@ def datify(cls, d):
 
         fieldtypes = {f.name: f.type for f in fields(cls)}
         return cls(**{f: datify(fieldtypes[f], d[f]) for f in d})  # recursive
-    except:  # Fields in dict d don't match dataclass or something else
-        return d  # return unchanged
+    except Exception:  # Fields in dict d don't match dataclass or something else
+        return d  # not a dataclass so end recursion and next level up will process
 
 
 @dataclass
@@ -696,7 +696,10 @@ class RawDom:
     @classmethod
     def _fromdict(cls, d: dict):
         """returns instance of clas initialized from dict d """
-        return datify(cls, d)
+        dom = datify(cls, d)
+        if not isinstance(dom, cls):
+            raise ValueError("Invalid dict={d} to datify as dataclass={cls}.")
+        return dom
 
 
     @classmethod
@@ -705,21 +708,30 @@ class RawDom:
         if hasattr(s, "decode"):  # bytes
             s = s.decode() # convert to str
         d = json.loads(s)  # convert to dict
-        return datify(cls, d)
+        dom = datify(cls, d)
+        if not isinstance(dom, cls):
+            raise ValueError("Invalid dict={d} to datify as dataclass={cls}.")
+        return dom
 
 
     @classmethod
     def _fromcbor(cls, s: bytes):
         """returns instance of clas initialized from cbor bytes or str s """
         d = cbor.loads(s)  # convert to dict
-        return datify(cls, d)
+        dom = datify(cls, d)
+        if not isinstance(dom, cls):
+            raise ValueError("Invalid dict={d} to datify as dataclass={cls}.")
+        return dom
 
 
     @classmethod
     def _frommgpk(cls, s: bytes):
         """returns instance of clas initialized from mgpk bytes or str s """
         d = msgpack.loads(s)  # convert to dict
-        return datify(cls, d)
+        dom = datify(cls, d)
+        if not isinstance(dom, cls):
+            raise ValueError("Invalid dict={d} to datify as dataclass={cls}.")
+        return dom
 
 
 
