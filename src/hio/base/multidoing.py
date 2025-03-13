@@ -238,11 +238,14 @@ class BokDom(RawDom):
 @dataclass(frozen=True)
 class TagDomCodex(MapDom):
     """Codex keyed by memo tag with value of associated MemoDom subclass.
+    Attribute values are classes not instances
 
     Attributes:
-        tag (str): type of memo
-        name (str): unique identifier of boss
-        load (dict): empty dict
+        REG (type[RegDom]): RegDom
+        ACK (type[AckDom]): AckDom
+        END (type[EndDom]): EndDom
+        BOK (type[BokDom]): BokDom
+
     """
     REG: type[RegDom] = RegDom  # value is class not instance
     ACK: type[AckDom] = AckDom  # value is class not instance
@@ -265,6 +268,9 @@ class MultiDoerBase(Namer, PeerMemoer, Doer):
 
     Inherited Class Attributes:
         See Namer, PeerMemoer and Doer Classes
+
+    Class Attributes:
+        Tagex (TagDomCodex):  codex mapping memo tags to memo doms
 
     Inherited Attributes:  (See Doer and PeerMemoer for all)
         done (bool): completion state:
@@ -326,6 +332,7 @@ class MultiDoerBase(Namer, PeerMemoer, Doer):
         changeNameAtAddr(addr=None, name=None)
 
     """
+    Tagex = TagDex
 
     def __init__(self, *, name='base', temp=False, reopen=False, bc=4, **kwa):
         """Initialize instance.
@@ -574,9 +581,9 @@ class BossDoer(MultiDoerBase):
                                 self.name, src, memo)
             try:
                 tag = Retag.match(memo).group("tag")
-                if tag not in TagDex:  # unrecognized tag
+                if tag not in self.Tagex:  # unrecognized tag
                     continue  # so drop memo
-                mdom = TagDex[tag]._fromjson(memo)  # gettattr(TagDec,tag)
+                mdom = self.Tagex[tag]._fromjson(memo)  # gettattr(TagDec,tag)
             except AttributeError as ex:  # unrecognized memo format
                 continue  # not start with tag field so drop
 
@@ -798,9 +805,9 @@ class CrewDoer(MultiDoerBase):
                                 self.name, src, memo)
             try:
                 tag = Retag.match(memo).group("tag")
-                if tag not in TagDex:  # unrecognized tag
+                if tag not in self.Tagex:  # unrecognized tag
                     continue  # so drop memo
-                mdom = TagDex[tag]._fromjson(memo)  #  getattr(TagDex, tag)
+                mdom = self.Tagex[tag]._fromjson(memo)  #  getattr(TagDex, tag)
             except AttributeError as ex:  # unrecognized memo format
                 continue  # not start with tag field so drop
 
