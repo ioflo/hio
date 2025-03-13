@@ -579,13 +579,18 @@ class BossDoer(MultiDoerBase):
             memo, src, vid = self._serviceOneRxMemo()
             self.logger.debug("Boss Peer RX: name=%s rx from src=%s memo=%s.",
                                 self.name, src, memo)
+
+            if not (match := Retag.match(memo)):  # missing or unreconizable tag
+                continue  # drop memo
+
+            tag = match.group("tag")
+            if tag not in self.Tagex:  # unrecognized tag
+                continue  # so drop memo
+
             try:
-                tag = Retag.match(memo).group("tag")
-                if tag not in self.Tagex:  # unrecognized tag
-                    continue  # so drop memo
-                mdom = self.Tagex[tag]._fromjson(memo)  # gettattr(TagDec,tag)
-            except AttributeError as ex:  # unrecognized memo format
-                continue  # not start with tag field so drop
+                mdom = self.Tagex[tag]._fromjson(memo)
+            except ValueError:  # invalid formatted json for dom at tag
+                continue  # so drop memo
 
             if tag == "REG":
                 name = mdom.name
@@ -803,13 +808,18 @@ class CrewDoer(MultiDoerBase):
             memo, src, vid = self._serviceOneRxMemo()
             self.logger.debug("Hand Peer RX: name=%s rx from src=%s memo=%s.",
                                 self.name, src, memo)
+
+            if not (match := Retag.match(memo)):  # missing or unreconizable tag
+                continue  # drop memo
+
+            tag = match.group("tag")
+            if tag not in self.Tagex:  # unrecognized tag
+                continue  # so drop memo
+
             try:
-                tag = Retag.match(memo).group("tag")
-                if tag not in self.Tagex:  # unrecognized tag
-                    continue  # so drop memo
-                mdom = self.Tagex[tag]._fromjson(memo)  #  getattr(TagDex, tag)
-            except AttributeError as ex:  # unrecognized memo format
-                continue  # not start with tag field so drop
+                mdom = self.Tagex[tag]._fromjson(memo)
+            except ValueError:  # invalid formatted json for dom at tag
+                continue  # so drop memo
 
             if tag == "END":
                 name = mdom.name

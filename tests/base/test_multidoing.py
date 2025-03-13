@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-tests.core.test_doing module
+tests.base.test_multidoing module
 
 """
 import pytest
@@ -20,7 +20,7 @@ from hio.help.helping import datify, dictify
 from hio.base import tyming
 from hio.base import doing, multidoing, Doist
 from hio.base.doing import ExDoer
-from hio.base.multidoing import BossDoer, CrewDoer, ogler, EndDom
+from hio.base.multidoing import BossDoer, CrewDoer, ogler, EndDom, TagDex, Retag
 
 # Any subprocess started by this modules __main__ will inherit this module scope.
 # Therefore Doist or Doers that reference this ogler will get a picked copy of it.
@@ -36,49 +36,65 @@ def test_retag_regex():
     """Test Retag regex for detecting tag value of JSON serialized memo"""
 
     memo = '{"tag":"REG","name":"boss","load":{}}'
-    match = multidoing.Retag.match(memo)
+    match = Retag.match(memo)
     assert match
     assert match is not None
     assert "REG" == match.group(1)
     assert "REG" == match.group("tag")
 
-    if match := multidoing.Retag.match(memo):
+    if match := Retag.match(memo):
         assert match.group("tag") == "REG"
     else:
         assert False
 
     memo = ''
-    match = multidoing.Retag.match(memo)
+    match = Retag.match(memo)
     assert not match
     assert match is None
 
     memo = '123#$'
-    match = multidoing.Retag.match(memo)
+    match = Retag.match(memo)
     assert not match
     assert match is None
 
     with pytest.raises(AttributeError):
-        tag = multidoing.Retag.match(memo).group("tag")
+        tag = Retag.match(memo).group("tag")
 
     memo = '{"tag": "REG", "name": "boss", "load": {}}'
     with pytest.raises(AttributeError):
-        tag = multidoing.Retag.match(memo).group("tag")
+        tag = Retag.match(memo).group("tag")
+
+    if not (match := Retag.match(memo)):
+        tag = None
+    else:
+        tag = match.group("tag")
+
+    assert tag is None
+
 
     memo = '{"tag": "reg", "name": "boss", "load": {}}'
     with pytest.raises(AttributeError):
-        tag = multidoing.Retag.match(memo).group("tag")
+        tag = Retag.match(memo).group("tag")
 
     memo = '{"tag":"A", "name": "boss", "load": {}}'
-    assert multidoing.Retag.match(memo).group("tag") == 'A'
+    assert Retag.match(memo).group("tag") == 'A'
 
     memo = '{"tag":"AB", "name": "boss", "load": {}}'
-    assert multidoing.Retag.match(memo).group("tag") == 'AB'
+    assert Retag.match(memo).group("tag") == 'AB'
 
     memo = '{"tag":"ABC", "name": "boss", "load": {}}'
-    assert multidoing.Retag.match(memo).group("tag") == 'ABC'
+    assert Retag.match(memo).group("tag") == 'ABC'
 
     memo = '{"tag":"ABCD", "name": "boss", "load": {}}'
-    assert multidoing.Retag.match(memo).group("tag") == 'ABCD'
+    assert Retag.match(memo).group("tag") == 'ABCD'
+
+    # test memo with correct tag but malformed fields
+    memo = '{"tag":"REG", "alias": "boss", "load": {}}'
+    tag = Retag.match(memo).group("tag")
+    assert tag in TagDex
+    with pytest.raises(ValueError):
+        mdom = TagDex[tag]._fromjson(memo)
+
 
     """Done Test"""
 
