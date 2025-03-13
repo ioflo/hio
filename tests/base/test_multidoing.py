@@ -237,6 +237,8 @@ def test_memo_doms():
     assert multidoing.TagDex['BOK'] == multidoing.BokDom
 
 
+    mdoer = multidoing.MultiDoerBase()
+    assert mdoer.Tagex == multidoing.TagDex
 
     """Done test"""
 
