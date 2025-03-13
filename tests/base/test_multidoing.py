@@ -203,13 +203,13 @@ def test_memo_doms():
     bd = multidoing.BokDom._fromdict(d)
     assert bd == bokdom
 
-    # test DomDex
-    assert isinstance(multidoing.DomDex, multidoing.MemoDomCodex)
+    # test TagDex
+    assert isinstance(multidoing.TagDex, multidoing.TagDomCodex)
 
-    assert 'REG' in multidoing.DomDex
-    assert multidoing.DomDex.REG == multidoing.RegDom
+    assert 'REG' in multidoing.TagDex
+    assert multidoing.TagDex.REG == multidoing.RegDom
 
-    assert asdict(multidoing.DomDex) == {
+    assert asdict(multidoing.TagDex) == {
         'REG': multidoing.RegDom,
         'ACK': multidoing.AckDom,
         'END': multidoing.EndDom,
@@ -222,14 +222,19 @@ def test_memo_doms():
     memo = memo.decode()  # make str from bytes
     tag = multidoing.Retag.match(memo).group("tag")
     assert tag == 'REG'
-    assert tag in multidoing.DomDex
+    assert tag in multidoing.TagDex
 
-    rdom = getattr(multidoing.DomDex, tag)._fromjson(memo)
+    rdom = getattr(multidoing.TagDex, tag)._fromjson(memo)
     assert rdom == dom
 
     d = json.loads(memo)
-    rdom = getattr(multidoing.DomDex, tag)(**d)
+    rdom = getattr(multidoing.TagDex, tag)(**d)
     assert rdom == dom
+
+    assert multidoing.TagDex['REG'] == multidoing.RegDom
+    assert multidoing.TagDex['ACK'] == multidoing.AckDom
+    assert multidoing.TagDex['END'] == multidoing.EndDom
+    assert multidoing.TagDex['BOK'] == multidoing.BokDom
 
 
 

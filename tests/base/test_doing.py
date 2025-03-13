@@ -148,7 +148,7 @@ def test_doize_dodoer_with_bound_method():
 
     assert inspect.ismethod(a.myDo)
     assert inspect.isgeneratorfunction(a.myDo)
-    # can only write attributes to bound method to its .__funct__ function
+    # can only write attributes to bound method to its .__func__ function
     # read of bound method attribute from .__func__
     assert a.myDo.__func__.tock == a.myDo.tock == 0.25
     assert a.myDo.__func__.done == a.myDo.done == None

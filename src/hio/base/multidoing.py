@@ -26,7 +26,7 @@ from .doing import Doist, Doer
 from .. import hioing
 from .. import help
 from ..help import timing, helping
-from ..help.helping import RawDom
+from ..help.helping import RawDom, MapDom
 from ..help import ogling
 
 from ..help.naming import Namer
@@ -235,10 +235,9 @@ class BokDom(RawDom):
     load: dict = field(default_factory=dict)  # needs to be filled
 
 
-@dataclass
-class MemoDomCodex():
-    """Codex of keyed by memo tag with value of appropriate MemoDom subclass for
-    given tag.
+@dataclass(frozen=True)
+class TagDomCodex(MapDom):
+    """Codex keyed by memo tag with value of associated MemoDom subclass.
 
     Attributes:
         tag (str): type of memo
@@ -253,7 +252,7 @@ class MemoDomCodex():
     def __iter__(self):
         return iter(asdict(self))
 
-DomDex = MemoDomCodex()  # make instance
+TagDex = TagDomCodex()  # make instance
 
 
 
@@ -575,9 +574,9 @@ class BossDoer(MultiDoerBase):
                                 self.name, src, memo)
             try:
                 tag = Retag.match(memo).group("tag")
-                if tag not in DomDex:  # unrecognized tag
+                if tag not in TagDex:  # unrecognized tag
                     continue  # so drop memo
-                mdom = getattr(DomDex, tag)._fromjson(memo)
+                mdom = TagDex[tag]._fromjson(memo)  # gettattr(TagDec,tag)
             except AttributeError as ex:  # unrecognized memo format
                 continue  # not start with tag field so drop
 
@@ -799,9 +798,9 @@ class CrewDoer(MultiDoerBase):
                                 self.name, src, memo)
             try:
                 tag = Retag.match(memo).group("tag")
-                if tag not in DomDex:  # unrecognized tag
+                if tag not in TagDex:  # unrecognized tag
                     continue  # so drop memo
-                mdom = getattr(DomDex, tag)._fromjson(memo)
+                mdom = TagDex[tag]._fromjson(memo)  #  getattr(TagDex, tag)
             except AttributeError as ex:  # unrecognized memo format
                 continue  # not start with tag field so drop
 

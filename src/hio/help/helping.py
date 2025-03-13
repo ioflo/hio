@@ -663,12 +663,36 @@ class RawDom:
         _frommgpk(cls, s: bytes): return dataclass converted from mgpk s
 
     Methods:
+        __getitem__(self, name)  map like interface
+        __setitem__(self, name, value)  map like interface
+        __delitem__(self, name)  map like interface
         __iter__(self): asdict(self)
         _asdict(self): return self converted to dict
         _asjson(self): return bytes self converted to json
         _ascbor(self): return bytes self converted to cbor
         _asmgpk(self): return bytes self converted to mgpk
     """
+    def __getitem__(self, name):
+        try:
+            return getattr(self, name)
+        except AttributeError as ex:
+            raise IndexError(ex.args) from ex
+
+
+    def __setitem__(self, name, value):
+        try:
+            return setattr(self, name, value)
+        except AttributeError as ex:
+            raise IndexError(ex.args) from ex
+
+
+    def __delitem__(self, name):
+        try:
+            return delattr(self, name)
+        except AttributeError as ex:
+            raise IndexError(ex.args) from ex
+
+
     @classmethod
     def _fromdict(cls, d: dict):
         """returns instance of clas initialized from dict d """
@@ -727,3 +751,36 @@ class RawDom:
     def _asmgpk(self):
         """Returns mgpk bytes version of record"""
         return msgpack.dumps(self._asdict())
+
+
+
+@dataclass(frozen=True)
+class MapDom:
+    """Base class for frozen dataclasses (codexes) that support map syntax
+    Adds support for dunder methods for map syntax dc[name].
+    Converts exceptions from attribute syntax to raise map syntax when using
+    map syntax.
+
+    Enables dataclass instances to use Mapping item syntax
+    """
+
+    def __getitem__(self, name):
+        try:
+            return getattr(self, name)
+        except AttributeError as ex:
+            raise IndexError(ex.args) from ex
+
+
+    def __setitem__(self, name, value):
+        try:
+            return setattr(self, name, value)
+        except AttributeError as ex:
+            raise IndexError(ex.args) from ex
+
+
+    def __delitem__(self, name):
+        try:
+            return delattr(self, name)
+        except AttributeError as ex:
+            raise IndexError(ex.args) from ex
+
