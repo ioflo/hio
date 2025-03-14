@@ -24,54 +24,63 @@ from ..doing import Doist, Doer
 from ... import hioing
 from ...hioing import Mixin, HierError
 from ... import help
+from ...help.helping import isNonStringIterable
 
 
-"""Lode
-make dict subclass with custom __setitem__ method that will only allow
-str as key if tuple then converts tuple to separated string _
 
-class dbdict(dict):
 
-    __slots__ = ('db')  # no .__dict__ just for db reference
+class Lode(dict):
+    """Lode subclass of dict with custom methods dunder methods and get that
+    will only allow actual keys as str. Iterables passed in as key are converted
+    to a "_' joined str. Uses "_" so can use dict constuctor if need be with str
+    path. Assumes items in Iterable do not contain '_'.
+    """
 
-    def __init__(self, *pa, **kwa):
-        super(dbdict, self).__init__(*pa, **kwa)
-        self.db = None
+    def __setitem__(self, k, v):
+        if isNonStringIterable(k):
+            try:
+                k = '_'.join(k)
+            except Exception as ex:
+                raise KeyError(ex.args) from ex
+        if not isinstance(k, str):
+            raise KeyError(f"Expected str got {k}.")
+        return super(Lode, self).__setitem__(k, v)
 
     def __getitem__(self, k):
-        try:
-            return super(dbdict, self).__getitem__(k)
-        except KeyError as ex:
-            if not self.db:
-                raise ex  # reraise KeyError
-            if (ksr := self.db.states.get(keys=k)) is None:
-                raise ex  # reraise KeyError
+        if isNonStringIterable(k):
             try:
-                kever = eventing.Kever(state=ksr, db=self.db)
-            except kering.MissingEntryError:  # no kel event for keystate
-                raise ex  # reraise KeyError
-            self.__setitem__(k, kever)
-            return kever
+                k = '_'.join(k)
+            except Exception as ex:
+                raise KeyError(ex.args) from ex
+        if not isinstance(k, str):
+            raise KeyError(f"Expected str got {k}.")
+        return super(Lode, self).__getitem__(k)
+
 
     def __contains__(self, k):
-        if not super(dbdict, self).__contains__(k):
+        if isNonStringIterable(k):
             try:
-                self.__getitem__(k)
-                return True
-            except KeyError:
-                return False
-        else:
-            return True
+                k = '_'.join(k)
+            except Exception as ex:
+                raise KeyError(ex.args) from ex
+        if not isinstance(k, str):
+            raise KeyError(f"Expected str got {k}.")
+        return super(Lode, self).__contains__(k)
+
 
     def get(self, k, default=None):
-
-        if not super(dbdict, self).__contains__(k):
+        if isNonStringIterable(k):
+            try:
+                k = '_'.join(k)
+            except Exception as ex:
+                raise KeyError(ex.args) from ex
+        if not isinstance(k, str):
+            raise KeyError(f"Expected str got {k}.")
+        if not super(Lode, self).__contains__(k):
             return default
         else:
-            return self.__getitem__(k)
+            return super(Lode, self).__getitem__(k)
 
-
-"""
 
 class Builder(Mixin):
     """Builder Class boxworks of Boxer and Box instances.
@@ -79,7 +88,7 @@ class Builder(Mixin):
     Holds reference to current Boxer and Boxe being built
 
     Attributes:
-        lode (dict): in memory data lode shared by all boxes in boxwork
+        lode (Lode): in memory data lode shared by all boxes in boxwork
         boxer (Boxer | None): current boxer
         box (Box | None): cureent box
 
@@ -95,13 +104,13 @@ class Builder(Mixin):
 
         Parameters:
             name (str): unique identifier of box
-            lode (dict | None): in memory data lode shared by all boxes in box work
+            lode (Lode | None): in memory data lode shared by all boxes in box work
 
 
         """
         super(Builder, self).__init__(**kwa)
         self.name = name
-        self.lode = lode if lode is not None else {}
+        self.lode = lode if lode is not None else Lode()
         self.boxer = None
         self.box = None
 
@@ -135,7 +144,7 @@ class Boxer(Mixin):
     Box instance holds references to all its boxes in dict keyed by box name.
 
     Attributes:
-        lode (dict): in memory data lode shared by all boxes in box work
+        lode (Lode): in memory data lode shared by all boxes in box work
         doer (Doer | None): doer running this boxer
         first (Box | None):  beginning box
         box (Box | None):  current box
@@ -157,7 +166,7 @@ class Boxer(Mixin):
 
         Parameters:
             name (str): unique identifier of box
-            lode (dict | None): in memory data lode shared by all boxes in box work
+            lode (Lode | None): in memory data lode shared by all boxes in box work
             doer (Doer | None): Doer running this Boxer
             first (Box | None):  beginning box
 
@@ -165,7 +174,7 @@ class Boxer(Mixin):
         """
         super(Boxer, self).__init__(**kwa)
         self.name = name
-        self.lode = lode if lode is not None else {}
+        self.lode = lode if lode is not None else Lode()
         self.doer = None
         self.first = first
         self.box = None  # current box
@@ -257,7 +266,7 @@ class Box(Mixin):
         if '_' in name:
             raise HierError(f"Invalid {name=} contains '_'.")
         self.name = name
-        self.lode = lode if lode is not None else {}
+        self.lode = lode if lode is not None else Lode()
         self.boxer = boxer
         self.over = None  # over box
         self.unders = []  # list of under boxes, zeroth entry is primary

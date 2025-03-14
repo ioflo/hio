@@ -18,14 +18,66 @@ from hio import hioing
 from hio.help import helping
 from hio.base import tyming
 from hio.base.hier import hierdoing
-from hio.base.hier.hierdoing import Builder, Boxer, Box
+from hio.base.hier.hierdoing import Lode, Builder, Boxer, Box
+
+def test_lode_basic():
+    """Basic test Lode class"""
+    lode = Lode()  # defaults
+    assert lode == {}
+
+    assert isinstance(lode, dict)
+    assert issubclass(Lode, dict)
+
+    lode['a'] = 5
+    lode['a_b'] = 6
+    assert lode['a'] == 5
+    assert 'a' in lode
+    assert lode.get('a') == 5
+
+    keys = ('a', 'b', 'c')
+    key = '_'.join(keys)
+    assert key == 'a_b_c'
+
+    lode[keys] = 7
+    assert list(lode.items()) == [('a', 5), ('a_b', 6), ('a_b_c', 7)]
+
+    assert lode[keys] == 7
+    assert keys in lode
+    assert lode.get(keys) == 7
+
+    assert lode[key] == 7
+    assert key in lode
+    assert lode.get(key) == 7
+
+    lode[key] = 8
+    assert lode[keys] == 8
+
+    assert lode.get('c') == None
+    assert lode.get(("b", "c")) == None
+
+    with pytest.raises(KeyError):
+        lode['c']
+
+    with pytest.raises(KeyError):
+        lode[1] = 'A'
+
+    with pytest.raises(KeyError):
+        lode[("a", 2)] = 'B'
+
+    with pytest.raises(KeyError):
+        lode[("a", 2)]
+
+    lode = Lode(a=0, a_b=1, a_b_c=2)
+    assert list(lode.items()) == [('a', 0), ('a_b', 1), ('a_b_c', 2)]
+
+    """Done Test"""
 
 
 def test_builder_basic():
     """Basic test Builder class"""
     builder = Builder()  # defaults
     assert builder.name == 'builder'
-    assert builder.lode == {}
+    assert builder.lode == Lode()
     assert builder.boxer == None
     assert builder.box == None
 
@@ -40,7 +92,7 @@ def test_boxer_basic():
     """Basic test Boxer class"""
     boxer = Boxer()  # defaults
     assert boxer.name == 'boxer'
-    assert boxer.lode == {}
+    assert boxer.lode == Lode()
     assert boxer.doer == None
     assert boxer.first == None
     assert boxer.box == None
@@ -57,7 +109,7 @@ def test_box_basic():
     """Basic test Box class"""
     box = Box()  # defaults
     assert box.name == 'box'
-    assert box.lode == {}
+    assert box.lode == Lode()
     assert box.boxer == None
     assert box.over == None
     assert box.unders == []
@@ -82,6 +134,7 @@ def test_box_basic():
     """Done Test"""
 
 if __name__ == "__main__":
+    test_lode_basic()
     test_builder_basic()
     test_boxer_basic()
     test_box_basic()
