@@ -39,7 +39,7 @@ ogler = ogling.initOgler(prefix='hio_mp', name="Boss", level=logging.ERROR)
 
 
 """Bossage (namedtuple):
-BossDoer info to be injected in CrewDoer as BossDoer enter time
+Bosser info to be injected in Crewer as Bosser enter time
 Fields:
    name (str | None): name of Boss for resource management
    path (str | None): UXD cmd memo path used by crew to talk to their boss
@@ -47,8 +47,8 @@ Fields:
 Bossage = namedtuple("Bossage", "name path")
 
 """Loadage (namedtuple):
-BossDoer info to be injected into CrewDoer .start() containing both crew doist
-parms for Process target kwargs and and CrewDoer parms
+Bosser info to be injected into Crewer .start() containing both crew doist
+parms for Process target kwargs and and Crewer parms
 
 Fields:
    name (str): child doist identifier for resources.
@@ -58,13 +58,13 @@ Fields:
    limit (float | None): child doist tyme limit. None means run forever
    doers (list[Doers]): child doist List of Doers
    temp (bool | None): True means use temporary file resources
-   boss (Bossage | None): BossDoer  info for CrewDoer. May be filled at enter time
-                      CrewDoer uses to contact BossDoer.
+   boss (Bossage | None): Bosser  info for Crewer. May be filled at enter time
+                      Crewer uses to contact Bosser.
 """
 Loadage = namedtuple("Loadage", "name tyme tock real limit doers temp boss")
 
 # (?P<proto2>[A-Z]{4})
-# regular expression to parse JSON serializations of BossDoer CrewDoer memos
+# regular expression to parse JSON serializations of Bosser Crewer memos
 TAGREX = r'^\{"tag":"(?P<tag>[A-Z]*)"'
 # Usage: if retag.match(memo): or if not Reb64.match(memo): memo is str
 # tag = retag.match(memo).group(1)
@@ -90,7 +90,7 @@ Retag = re.compile(TAGREX)  # compile is faster
 """
 @dataclass
 class HandDom(RawDom):
-    """Configuration dataclass of CrewDoer crew hand info managed by its BossDoer
+    """Configuration dataclass of Crewer crew hand info managed by its Bosser
     boss.
 
     Attributes:
@@ -106,7 +106,7 @@ class HandDom(RawDom):
 @dataclass
 class CrewDom(RawDom):
     """Configuration dataclass of crew subprocess Doist parameters for crew doist
-    and its CrewDoer to be injected by BossDoer.
+    and its Crewer to be injected by Bosser.
     Use this when storing configuration in database or file. Use RawDom
     serialization hidden methods:
 
@@ -119,8 +119,8 @@ class CrewDom(RawDom):
         limit (float | None): child doist tyme limit. None means run forever
         doers (list[Doers]): child doist List of Doers
         temp (bool | None): True means use temporary file resources
-        boss (Bossage | None): BossDoer  info for CrewDoer. May be filled at enter time
-                                CrewDoer uses to contact BossDoer.
+        boss (Bossage | None): Bosser  info for Crewer. May be filled at enter time
+                                Crewer uses to contact Bosser.
     """
     name: str ='child'  # unique identifier of child process and associated resources
     tyme: float = 0.0    # child doist start tyme
@@ -129,7 +129,7 @@ class CrewDom(RawDom):
     limit: float | None = None  # child doist tyme limit. None mean run forever
     doers: list = field(default_factory=list)  # child doist list of doers
     temp: bool | None = False  # use temporary file resources if any
-    boss: (Bossage | None) = Bossage(name=None, path=None)  # BossDoer info
+    boss: (Bossage | None) = Bossage(name=None, path=None)  # Bosser info
 
 
 @dataclass
@@ -338,7 +338,7 @@ class MultiDoerBase(Namer, PeerMemoer, Doer):
         """Initialize instance.
 
         Inherited Parameters:  (see Doer and PeerMemoer for all)
-            name (str): unique identifier for this BossDoer boss to be used
+            name (str): unique identifier for this Bosser boss to be used
                         to manage local resources
             temp (bool): True means logger or other file resources created by
                             .start() will use temp
@@ -410,14 +410,14 @@ class MultiDoerBase(Namer, PeerMemoer, Doer):
         return json.dumps(d, separators=(",", ":"),ensure_ascii=False )
 
 
-class BossDoer(MultiDoerBase):
-    """BossDoer spawns multiple crew hand subprocesses and injects each with
-    a Doist and Doers. The boss Doists runs the BossDoer in the parent process.
-    Each crew hand Doist runs a CrewDoer that coordinates with the BossDoer.
+class Bosser(MultiDoerBase):
+    """Bosser spawns multiple crew hand subprocesses and injects each with
+    a Doist and Doers. The boss Doists runs the Bosser in the parent process.
+    Each crew hand Doist runs a Crewer that coordinates with the Bosser.
 
     Analogy Boss runs a Crew of Hans. The parent process has a boss Doist which
-    runs a BossDoer. Each crew hand is a child process with its own crew doist
-    that runs its own CrewDoer
+    runs a Bosser. Each crew hand is a child process with its own crew doist
+    that runs its own Crewer
 
     See MultiDoerBase for all inherited attributes, properties, and methods.
 
@@ -437,9 +437,9 @@ class BossDoer(MultiDoerBase):
                          False otherwise.
 
     Attributes:
-        loads (list[dict]): BossDoer info to be injected into CrewDoer .start()
+        loads (list[dict]): Bosser info to be injected into Crewer .start()
                             containing both crew doist parmss for Process target
-                            kwargs and and CrewDoer parms
+                            kwargs and and Crewer parms
                             (see Loadage._asdict() or CrewDom._asdict())
         ctx (mp.context.SpawnContext | None): context under which to spawn processes
         crew (dict): values HandDom instances keyed by name
@@ -469,7 +469,7 @@ class BossDoer(MultiDoerBase):
                                 .start(). See fields of Loadage and Bossage
 
         """
-        super(BossDoer, self).__init__(name=name, **kwa)
+        super(Bosser, self).__init__(name=name, **kwa)
         self.loads = loads if loads is not None else []
         self.ctx = mp.get_context('spawn')
         self.crew = {}  # dict of HandDom instances keyed by crew name
@@ -491,9 +491,9 @@ class BossDoer(MultiDoerBase):
 
         Doist or DoDoer winds its doers on enter
         """
-        super(BossDoer, self).enter(temp=temp)
+        super(Bosser, self).enter(temp=temp)
 
-        self.logger.debug("BossDoer Enter: name=%s size=%d, ppid=%d, pid=%d, "
+        self.logger.debug("Bosser Enter: name=%s size=%d, ppid=%d, pid=%d, "
                           "module=%s, temp=%s, ogler=%s tyme=%f.",
                           self.name, len(self.loads), os.getppid(), os.getpid(),
                           __name__, temp, ogler.name, self.tyme)
@@ -506,11 +506,11 @@ class BossDoer(MultiDoerBase):
         for load in self.loads:
             name = load["name"]
             doers = load["doers"]
-            if not doers or not isinstance(doers[0], CrewDoer):  # first doer must be CrewDoer
+            if not doers or not isinstance(doers[0], Crewer):  # first doer must be Crewer
                 raise hioing.MultiError(f"No crew doer for crew hand doist={name}.")
 
             doers[0].boss = boss  # assign boss contact info to crew doer
-            doers[0].name = name  # make name of CrewDoer same as name of crew doist
+            doers[0].name = name  # make name of Crewer same as name of crew doist
 
             if name not in self.crew:  # ensure unique by name
                 proc = self.ctx.Process(name=name,
@@ -526,7 +526,7 @@ class BossDoer(MultiDoerBase):
 
     def recur(self, tyme):
         """Do 'recur' context."""
-        #self.logger.debug("BossDoer Recur: name=%s, pid=%d, ogler=%s, tyme=%f.",
+        #self.logger.debug("Bosser Recur: name=%s, pid=%d, ogler=%s, tyme=%f.",
                           #self.name, os.getpid(), ogler.name, tyme)
 
         if self.graceful:  # signal handler.force caught signal so exit here
@@ -545,7 +545,7 @@ class BossDoer(MultiDoerBase):
 
     def exit(self):
         """Do 'exit' (try finally) context."""
-        self.logger.debug("BossDoer Exit: name=%s, ppid=%d, pid=%d, module=%s, "
+        self.logger.debug("Bosser Exit: name=%s, ppid=%d, pid=%d, module=%s, "
                           "ogler=%s, tyme=%f.", self.name, os.getppid(),
                           os.getpid(), __name__, ogler.name, self.tyme)
 
@@ -634,11 +634,11 @@ class BossDoer(MultiDoerBase):
             limit (float | None): crew doist seconds for max run time of doist.
                                   None means no limit.
             doers (iterable[Doer] | None): crew doist Doer class instances
-                                   First entry must be CrewDoer
+                                   First entry must be Crewer
             temp (bool | None): True means use temp file resources by injection.
                                 Otherwise ignore do not inject.
             boss (Bossage | None): boss info. May be filled at enter time
-                                  CrewDoer uses to contact BossDoer.
+                                  Crewer uses to contact Bosser.
 
 
         Doist must be built after process started so local tymth closure is created
@@ -671,8 +671,8 @@ class BossDoer(MultiDoerBase):
 
 
 
-class CrewDoer(MultiDoerBase):
-    """CrewDoer runs interface between a given crew hand subprocess and its
+class Crewer(MultiDoerBase):
+    """Crewer runs interface between a given crew hand subprocess and its
     boss process. This must be first doer run by crew hand subprocess doist.
 
     See MultiDoerBase for all inherited attributes, properties, and methods.
@@ -717,11 +717,11 @@ class CrewDoer(MultiDoerBase):
             temp (bool): True means logger or other file resources created by
 
         Parameters:
-            boss (Bossage): contact info for BossDoer. assigned by boss at enter
+            boss (Bossage): contact info for Bosser. assigned by boss at enter
 
 
         """
-        super(CrewDoer, self).__init__(name=name, **kwa)
+        super(Crewer, self).__init__(name=name, **kwa)
         self.boss = boss if boss is not None else Bossage(name=None, path=None)
         self.registered = False  # True means .path acked registered with boss memoing
 
@@ -745,9 +745,9 @@ class CrewDoer(MultiDoerBase):
 
         Doist or DoDoer winds its doers on enter
         """
-        super(CrewDoer, self).enter(temp=temp)
+        super(Crewer, self).enter(temp=temp)
 
-        self.logger.debug("CrewDoer Enter: hand name=%s pid=%d, temp=%s, ogler=%s, "
+        self.logger.debug("Crewer Enter: hand name=%s pid=%d, temp=%s, ogler=%s, "
                           "tyme=%f.", self.name, os.getpid(), temp, ogler.name,
                           self.tyme)
 
@@ -768,7 +768,7 @@ class CrewDoer(MultiDoerBase):
 
     def recur(self, tyme):
         """Do 'recur' context."""
-        self.logger.debug("CrewDoer Recur: hand name=%s, pid=%d, ogler=%s, tyme=%f.",
+        self.logger.debug("Crewer Recur: hand name=%s, pid=%d, ogler=%s, tyme=%f.",
                           self.name, os.getpid(), ogler.name, tyme)
         if self.graceful:  # signal handler.force caught signal so exit here
             sys.exit()
@@ -783,7 +783,7 @@ class CrewDoer(MultiDoerBase):
         """Do 'exit' (try finally) context."""
         self.close(clear=True)
 
-        self.logger.debug("CrewDoer Exit: hand name=%s pid=%d, ogler=%s, tyme=%f.",
+        self.logger.debug("Crewer Exit: hand name=%s pid=%d, ogler=%s, tyme=%f.",
                           self.name, os.getpid(), ogler.name, self.tyme)
         self.logger.debug("Hand name=%s path=%s opened=%s.",
                     self.name, self.path, self.opened)
