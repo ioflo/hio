@@ -14,7 +14,7 @@ import logging
 import json
 
 from dataclasses import dataclass, astuple, asdict, field
-
+from hio import hioing
 from hio.help import helping
 from hio.base import tyming
 from hio.base import hierdoing
@@ -29,6 +29,12 @@ def test_builder_basic():
     assert builder.boxer == None
     assert builder.box == None
 
+    with pytest.raises(hioing.HierError):
+        builder.name = "A_B"
+
+    with pytest.raises(hioing.HierError):
+        builder.name = "_builder"
+
 
 def test_boxer_basic():
     """Basic test Boxer class"""
@@ -37,6 +43,12 @@ def test_boxer_basic():
     assert boxer.lode == {}
     assert boxer.first == None
     assert boxer.boxes == {}
+
+    with pytest.raises(hioing.HierError):
+        boxer.name = "A_B"
+
+    with pytest.raises(hioing.HierError):
+        boxer.name = "_boxer"
 
 
 def test_box_basic():
@@ -57,7 +69,11 @@ def test_box_basic():
     assert box.rexacts == []
     assert box.auxes == []
 
+    with pytest.raises(hioing.HierError):
+        box.name = "A_B"
 
+    with pytest.raises(hioing.HierError):
+        box.name = "_box"
 
 
     """Done Test"""

@@ -96,5 +96,13 @@ class MultiError(HioError):
     Error using or configuring multiprocessing support classes
 
     Usage:
-        raise MemoGramError("error message")
+        raise MultiError("error message")
+    """
+
+class HierError(HioError):
+    """
+    Error using or configuring hierdoing support classes
+
+    Usage:
+        raise HierError("error message")
     """

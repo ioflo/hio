@@ -20,7 +20,7 @@ from hio.help.helping import datify, dictify
 from hio.base import tyming
 from hio.base import doing, multidoing, Doist
 from hio.base.doing import ExDoer
-from hio.base.multidoing import BossDoer, CrewDoer, ogler, EndDom, TagDex, Retag
+from hio.base.multidoing import Bosser, Crewer, ogler, EndDom, TagDex, Retag
 
 # Any subprocess started by this modules __main__ will inherit this module scope.
 # Therefore Doist or Doers that reference this ogler will get a picked copy of it.
@@ -261,16 +261,16 @@ def test_memo_doms():
 
 
 def test_boss_crew_basic():
-    """Test BossDoer and CrewDoer classes basic. Crew doist exit at doist time limit
+    """Test Bosser and Crewer classes basic. Crew doist exit at doist time limit
     which causes boss doer to exit done true because no active children
     """
     logger.debug("***** Basic Boss Crew Test *****")
     name = 'hand'  # crew hand name
-    crewdoer = CrewDoer(tock=0.01)  # don't assign tymth now must be rewound inside subprocess
+    crewdoer = Crewer(tock=0.01)  # don't assign tymth now must be rewound inside subprocess
     # crew doist load
     load = dict(name=name, tyme=0.0, tock=0.01, real=True, limit=0.08, doers=[crewdoer], temp=True, boss=None)
 
-    doer = BossDoer(name="boss", tock=0.01, loads=[load])
+    doer = Bosser(name="boss", tock=0.01, loads=[load])
     assert doer.loads[0] == load
     assert not doer.opened
     doers = [doer]
@@ -303,7 +303,7 @@ def test_boss_crew_basic():
 
 def test_boss_crew_basic_multi():
     """
-    Test BossDoer and CrewDoer classes with multiple crew hands.
+    Test Bosser and Crewer classes with multiple crew hands.
     Each Crew doist exits at doist time limit which causes boss doer to exit
     done true once all exit because no active children
     """
@@ -311,31 +311,31 @@ def test_boss_crew_basic_multi():
     loads = []
 
     name = 'hand0'  # crew doista and crew hand doer name
-    crewdoer = CrewDoer(tock=0.01)  # don't assign tymth now must be rewound inside subprocess
+    crewdoer = Crewer(tock=0.01)  # don't assign tymth now must be rewound inside subprocess
     # crew doist load
     load = dict(name=name, tyme=0.0, tock=0.01, real=True, limit=0.08, doers=[crewdoer], temp=True, boss=None)
     loads.append(load)
 
     name = 'hand1'  # crew doista and crew hand doer name
-    crewdoer = CrewDoer(tock=0.01)  # don't assign tymth now must be rewound inside subprocess
+    crewdoer = Crewer(tock=0.01)  # don't assign tymth now must be rewound inside subprocess
     # crew doist load
     load = dict(name=name, tyme=0.0, tock=0.01, real=True, limit=0.08, doers=[crewdoer], temp=True, boss=None)
     loads.append(load)
 
     name = 'hand3'  # crew doista and crew hand doer name
-    crewdoer = CrewDoer(tock=0.01)  # don't assign tymth now must be rewound inside subprocess
+    crewdoer = Crewer(tock=0.01)  # don't assign tymth now must be rewound inside subprocess
     # crew doist load
     load = dict(name=name, tyme=0.0, tock=0.01, real=True, limit=0.07, doers=[crewdoer], temp=True, boss=None)
     loads.append(load)
 
     name = 'hand4'  # crew doista and crew hand doer name
-    crewdoer = CrewDoer(tock=0.01)  # don't assign tymth now must be rewound inside subprocess
+    crewdoer = Crewer(tock=0.01)  # don't assign tymth now must be rewound inside subprocess
     # crew doist load
     load = dict(name=name, tyme=0.0, tock=0.01, real=True, limit=0.07, doers=[crewdoer], temp=True, boss=None)
     loads.append(load)
 
 
-    doer = BossDoer(name="boss", tock=0.01, loads=loads)
+    doer = Bosser(name="boss", tock=0.01, loads=loads)
     assert len(doer.loads) == 4
     assert not doer.opened
     doers = [doer]
@@ -368,18 +368,18 @@ def test_boss_crew_basic_multi():
 
 def test_boss_crew_terminate():
     """
-    Test BossDoer and CrewDoer with terminate SIGTERM. Boss doist exit at limit
-    before crew doist exits at limit so BossDoer calls proc.termintate() which
-    sends SIGTERM to CrewDoer
+    Test Bosser and Crewer with terminate SIGTERM. Boss doist exit at limit
+    before crew doist exits at limit so Bosser calls proc.termintate() which
+    sends SIGTERM to Crewer
 
     """
     logger.debug("***** Boss Crew Terminate *****")
     name = 'hand'  # crew hand name
-    crewdoer = CrewDoer(tock=0.01)  # don't assign tymth now must be rewound inside subprocess
+    crewdoer = Crewer(tock=0.01)  # don't assign tymth now must be rewound inside subprocess
     # crew doist load
     load = dict(name=name, tyme=0.0, tock=0.01, real=True, limit=None, doers=[crewdoer], temp=True, boss=None)
 
-    doer = BossDoer(name="boss", tock=0.01, loads=[load])
+    doer = Bosser(name="boss", tock=0.01, loads=[load])
     assert doer.loads[0] == load
     assert not doer.opened
     doers = [doer]
@@ -409,32 +409,32 @@ def test_boss_crew_terminate():
 
     """Done Test """
 
-class Test0BossDoer(BossDoer):
-    """BossDoer with custome recur for testing"""
+class Test0Bosser(Bosser):
+    """Bosser with custome recur for testing"""
 
     def __init__(self, **kwa):
         """Initialize instance."""
-        super(Test0BossDoer, self).__init__(**kwa)
+        super(Test0Bosser, self).__init__(**kwa)
 
 
     def recur(self, tyme):
         """Do 'recur' context."""
-        done = super(Test0BossDoer, self).recur(tyme=tyme)
+        done = super(Test0Bosser, self).recur(tyme=tyme)
 
         return done
 
 
-class Test0CrewDoer(CrewDoer):
-    """CrewDoer with custom recur for testing"""
+class Test0Crewer(Crewer):
+    """Crewer with custom recur for testing"""
 
     def __init__(self, **kwa):
         """Initialize instance."""
-        super(Test0CrewDoer, self).__init__(**kwa)
+        super(Test0Crewer, self).__init__(**kwa)
 
 
     def recur(self, tyme):
         """Do 'recur' context."""
-        done = super(Test0CrewDoer, self).recur(tyme=tyme)
+        done = super(Test0Crewer, self).recur(tyme=tyme)
 
         if self.registered:
             if tyme > self.tock * 3:
@@ -445,18 +445,18 @@ class Test0CrewDoer(CrewDoer):
         return False  # incomplete
 
 
-def test_crewdoer_own_exit():
+def test_crewer_own_exit():
     """
-    Test BossDoer and CrewDoer where crew doer exits on own based on tyme after
+    Test Bosser and Crewer where crew doer exits on own based on tyme after
     registered which causes boss doer to exit because no active children.
     """
 
     logger.debug("***** Boss with Crew Own Exit *****")
     name = 'hand'  # crew hand name
-    crewdoer = Test0CrewDoer(tock=0.01)  # don't assign tymth now must be rewound inside subprocess
+    crewdoer = Test0Crewer(tock=0.01)  # don't assign tymth now must be rewound inside subprocess
     load = dict(name=name, tyme=0.0, tock=0.01, real=True, limit=None, doers=[crewdoer], temp=True, boss=None)
 
-    doer = Test0BossDoer(name="boss", tock=0.01, loads=[load])
+    doer = Test0Bosser(name="boss", tock=0.01, loads=[load])
     assert doer.loads[0] == load
     assert not doer.opened
     doers = [doer]
@@ -487,17 +487,17 @@ def test_crewdoer_own_exit():
     """Done Test """
 
 
-class Test1BossDoer(BossDoer):
-    """BossDoer with custome recur for testing"""
+class Test1Bosser(Bosser):
+    """Bosser with custome recur for testing"""
 
     def __init__(self, **kwa):
         """Initialize instance."""
-        super(Test1BossDoer, self).__init__(**kwa)
+        super(Test1Bosser, self).__init__(**kwa)
 
 
     def recur(self, tyme):
         """Do 'recur' context."""
-        done = super(Test1BossDoer, self).recur(tyme=tyme)
+        done = super(Test1Bosser, self).recur(tyme=tyme)
 
         if self.crewed:
             if self.ctx.active_children():
@@ -515,17 +515,17 @@ class Test1BossDoer(BossDoer):
         return False  # incomplete recur again
 
 
-class Test1CrewDoer(CrewDoer):
-    """CrewDoer with custom recur for testing"""
+class Test1Crewer(Crewer):
+    """Crewer with custom recur for testing"""
 
     def __init__(self, **kwa):
         """Initialize instance."""
-        super(Test1CrewDoer, self).__init__(**kwa)
+        super(Test1Crewer, self).__init__(**kwa)
 
 
     def recur(self, tyme):
         """Do 'recur' context."""
-        done = super(Test1CrewDoer, self).recur(tyme=tyme)
+        done = super(Test1Crewer, self).recur(tyme=tyme)
 
         if self.registered:
             self.logger.debug("Hand name=%s registered at tyme=%f.",
@@ -537,14 +537,14 @@ class Test1CrewDoer(CrewDoer):
 
 def test_boss_crew_memo_cmd_end():
     """
-    Test BossDoer and CrewDoer where boss sends memo to command end of crew.
+    Test Bosser and Crewer where boss sends memo to command end of crew.
     """
     logger.debug("***** Boss Send Memo END Command Test *****")
     name = 'hand'  # crew hand name
-    crewdoer = Test1CrewDoer(tock=0.01)  # don't assign tymth now must be rewound inside subprocess
+    crewdoer = Test1Crewer(tock=0.01)  # don't assign tymth now must be rewound inside subprocess
     load = dict(name=name, tyme=0.0, tock=0.01, real=True, limit=None, doers=[crewdoer], temp=True, boss=None)
 
-    doer = Test1BossDoer(name="boss", tock=0.01, loads=[load])
+    doer = Test1Bosser(name="boss", tock=0.01, loads=[load])
     assert doer.loads[0] == load
     assert not doer.opened
     doers = [doer]
@@ -583,7 +583,7 @@ if __name__ == "__main__":
     test_boss_crew_basic()
     test_boss_crew_basic_multi()
     test_boss_crew_terminate()
-    test_crewdoer_own_exit()
+    test_crewer_own_exit()
     test_boss_crew_memo_cmd_end()
 
 
