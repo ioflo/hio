@@ -202,10 +202,13 @@ class Box(Mixin):
         over (Box | None): this box's over box instance or None
         unders (list[Box]): this box's under box instances or empty
         nxt (Box | None): this box's next box if any
-        beacts (list[act]): benter context acts
-        enacts (list[act]): benter context acts
-        beacts (list[act]): benter context acts
-        beacts (list[act]): benter context acts
+        beacts (list[act]): benter (before enter) context acts
+        renacts (list[act]): renter (re-enter) context acts
+        reacts (list[act]): recur context acts
+        preacts (list[act]): pretrans (pre-transit) context acts
+        tracts (list[act]): transit context acts
+        exacts (list[act]): exit context acts
+        rexacts (list[act]): rexit (re-exit) context acts
 
     Properties:
         name (str): unique identifier of instance
@@ -223,11 +226,11 @@ class Box(Mixin):
         reacts
         aux reacts
         while not done or segued:
-            aux tracts
-            aux if preact in aux preacts is True
+            aux preacts
+            aux if tract in aux tracts is True
                 aux seque
-            tracts
-            if preact in preacts is True
+            preacts
+            if tract in tracts is True
                segue
             reacts
             aux reacts
@@ -262,8 +265,8 @@ class Box(Mixin):
         self.renacts = []  # renter context list of re-enter acts
         self.enacts = []  # enter context list of enter acts
         self.reacts = []  # recur context list of recurring acts
-        self.tracts = []  # transit context list of pre-transition acts
-        self.preacts = []  # precur context list transistion acts
+        self.preacts = []  # pretrans context list of pre-transit acts
+        self.tracts = []  # transit context list of transition acts
         self.exacts = []  # exit context list of exit acts
         self.rexacts = []  # rexit context list of re-exit acts
 

@@ -61,10 +61,11 @@ def test_box_basic():
     assert box.unders == []
     assert box.nxt == None
     assert box.beacts == []
-    assert box.enacts == []
     assert box.renacts == []
+    assert box.enacts == []
     assert box.reacts == []
     assert box.preacts == []
+    assert box.tracts == []
     assert box.exacts == []
     assert box.rexacts == []
     assert box.auxes == []
