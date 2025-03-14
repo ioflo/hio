@@ -34,6 +34,10 @@ class Lode(dict):
     will only allow actual keys as str. Iterables passed in as key are converted
     to a "_' joined str. Uses "_" so can use dict constuctor if need be with str
     path. Assumes items in Iterable do not contain '_'.
+
+    Special staticmethods:
+        tokeys(k) returns split of k at separator '_' as tuple.
+
     """
     @staticmethod
     def tokeys(k):
