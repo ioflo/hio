@@ -70,6 +70,14 @@ def test_lode_basic():
     lode = Lode(a=0, a_b=1, a_b_c=2)
     assert list(lode.items()) == [('a', 0), ('a_b', 1), ('a_b_c', 2)]
 
+    assert Lode.tokeys(key) == keys
+    assert Lode.tokeys('') == ('', )
+    assert Lode.tokeys('a') == ('a', )
+
+    lode[''] = 10
+    assert '' in lode
+    assert lode[''] == 10
+
     """Done Test"""
 
 

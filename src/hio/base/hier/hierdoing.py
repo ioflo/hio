@@ -35,6 +35,14 @@ class Lode(dict):
     to a "_' joined str. Uses "_" so can use dict constuctor if need be with str
     path. Assumes items in Iterable do not contain '_'.
     """
+    @classmethod
+    def tokeys(cls, k):
+        """Converts '_' joined key string to tuple of keys by splitting on '_'
+        Returns:
+            keys (tuple[str]): split of k on '_' into path key components
+        """
+        return tuple(k.split("_"))
+
 
     def __setitem__(self, k, v):
         if isNonStringIterable(k):
