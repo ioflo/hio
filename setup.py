@@ -10,7 +10,7 @@ https://pypi.org/manage/projects/
 More secure to use twine to upload
 $ pip3 install twine
 $ python setup.py sdist
-$ twine upload dist/hio-0.0.1.tar.gz
+$ twine upload dist/hio-0.7.5.tar.gz
 
 
 Update sphinx /docs
