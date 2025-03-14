@@ -19,11 +19,11 @@ from dataclasses import dataclass, astuple, asdict, field
 import typing
 
 
-from . import tyming
-from .doing import Doist, Doer
-from .. import hioing
-from ..hioing import Mixin, HierError
-from .. import help
+from .. import tyming
+from ..doing import Doist, Doer
+from ... import hioing
+from ...hioing import Mixin, HierError
+from ... import help
 
 
 """Lode

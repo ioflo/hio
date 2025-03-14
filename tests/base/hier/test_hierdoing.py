@@ -17,8 +17,8 @@ from dataclasses import dataclass, astuple, asdict, field
 from hio import hioing
 from hio.help import helping
 from hio.base import tyming
-from hio.base import hierdoing
-from hio.base.hierdoing import Builder, Boxer, Box
+from hio.base.hier import hierdoing
+from hio.base.hier.hierdoing import Builder, Boxer, Box
 
 
 def test_builder_basic():
