@@ -223,18 +223,23 @@ class Box(Mixin):
     Hidden:
         _name (str): unique identifier of instance
 
-    Order of Execution of Contexts:  (need time[k])
-        beacts
-        renacts
-        enacts
-        reacts
-        while not done or segued:
-            preacts
-            if tract in tracts is True
-               segue
+    Order of Execution of Contexts:
+        time[k]
+            beacts
+            renacts
+            enacts
             reacts
-        exacts
-        rexacts
+            while not done:
+                time[k+1]
+                    preacts
+                    if tract in tracts is True:
+                        if beacts new stak is True:
+                            segue to new stak
+                                old stak: exacts, rexacts
+                                new stak: renacts, enacts
+                    reacts (current stak)
+            exacts
+            rexacts
 
 
     """
