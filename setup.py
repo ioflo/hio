@@ -10,7 +10,7 @@ https://pypi.org/manage/projects/
 More secure to use twine to upload
 $ pip3 install twine
 $ python setup.py sdist
-$ twine upload dist/hio-0.0.1.tar.gz
+$ twine upload dist/hio-0.7.5.tar.gz
 
 
 Update sphinx /docs
@@ -44,7 +44,7 @@ from setuptools import setup
 
 setup(
     name='hio',
-    version='0.7.4',  #  also change in src/hio/__init__.py
+    version='0.7.5',  #  also change in src/hio/__init__.py
     license='Apache Software License 2.0',
     description='Hierarchical Concurrency with Async IO',
     long_description=("HIO Hierarchical Concurrency and Asynchronous IO Library. "
@@ -86,7 +86,7 @@ setup(
                "structured concurrency",
         # eg: 'keyword1', 'keyword2', 'keyword3',
     ],
-    python_requires='>=3.13.1',
+    python_requires='>=3.13.2',
     install_requires=[
         'lmdb>=1.6.2',
         'msgpack>=1.1.0',
@@ -102,8 +102,8 @@ setup(
         #   ':python_version=="2.6"': ['argparse'],
     },
     tests_require=[
-                    'coverage>=7.6.10',
-                    'pytest>=8.3.4',
+                    'coverage>=7.6.12',
+                    'pytest>=8.3.5',
                   ],
     setup_requires=[
     ],

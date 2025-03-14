@@ -126,6 +126,7 @@ class Builder(Mixin):
             raise HierError(f"Invalid {name=} contains '_'.")
         self._name = name
 
+
 class Boxer(Mixin):
     """Boxer Class that executes hierarchical action framework (boxwork) instances.
     Boxer instance holds reference to in-memory data lode shared by all its boxes
@@ -135,7 +136,9 @@ class Boxer(Mixin):
 
     Attributes:
         lode (dict): in memory data lode shared by all boxes in box work
+        doer (Doer | None): doer running this boxer
         first (Box | None):  beginning box
+        box (Box | None):  current box
         boxes (dict): all boxes mapping of (box name, box) pairs
 
     Properties:
@@ -149,21 +152,24 @@ class Boxer(Mixin):
 
 
     """
-    def __init__(self, *, name='boxer', lode=None, first=None, boxes=None, **kwa):
+    def __init__(self, *, name='boxer', lode=None, doer=None, first=None, **kwa):
         """Initialize instance.
 
         Parameters:
             name (str): unique identifier of box
             lode (dict | None): in memory data lode shared by all boxes in box work
+            doer (Doer | None): Doer running this Boxer
             first (Box | None):  beginning box
-            boxes (dict | None): all boxes mapping of (box name, box) pairs
+
 
         """
         super(Boxer, self).__init__(**kwa)
         self.name = name
         self.lode = lode if lode is not None else {}
+        self.doer = None
         self.first = first
-        self.boxes = boxes if boxes is not None else {}
+        self.box = None  # current box
+        self.boxes = {}
 
     @property
     def name(self):
@@ -202,6 +208,7 @@ class Box(Mixin):
         over (Box | None): this box's over box instance or None
         unders (list[Box]): this box's under box instances or empty
         nxt (Box | None): this box's next box if any
+        stak (list[Box]): this box's stak of boxes
         beacts (list[act]): benter (before enter) context acts
         renacts (list[act]): renter (re-enter) context acts
         reacts (list[act]): recur context acts
@@ -216,26 +223,16 @@ class Box(Mixin):
     Hidden:
         _name (str): unique identifier of instance
 
-    Order of Execution of Contexts:
+    Order of Execution of Contexts:  (need time[k])
         beacts
-        aux beacts
         renacts
         enacts
-        aux renacts
-        aux enacts
         reacts
-        aux reacts
         while not done or segued:
-            aux preacts
-            aux if tract in aux tracts is True
-                aux seque
             preacts
             if tract in tracts is True
                segue
             reacts
-            aux reacts
-        aux exacts
-        aux rexacts
         exacts
         rexacts
 
@@ -260,7 +257,8 @@ class Box(Mixin):
         self.over = None  # over box
         self.unders = []  # list of under boxes, zeroth entry is primary
         self.nxt = None  # next box
-
+        self.stak = []  # stak of boxes to which this box belongs
+        # contexts
         self.beacts = []  # benter context list of before enter acts
         self.renacts = []  # renter context list of re-enter acts
         self.enacts = []  # enter context list of enter acts
@@ -269,8 +267,6 @@ class Box(Mixin):
         self.tracts = []  # transit context list of transition acts
         self.exacts = []  # exit context list of exit acts
         self.rexacts = []  # rexit context list of re-exit acts
-
-        self.auxes = []  # auxiliary Boxers
 
     @property
     def name(self):
