@@ -41,7 +41,9 @@ def test_boxer_basic():
     boxer = Boxer()  # defaults
     assert boxer.name == 'boxer'
     assert boxer.lode == {}
+    assert boxer.doer == None
     assert boxer.first == None
+    assert boxer.box == None
     assert boxer.boxes == {}
 
     with pytest.raises(hioing.HierError):
@@ -60,6 +62,7 @@ def test_box_basic():
     assert box.over == None
     assert box.unders == []
     assert box.nxt == None
+    assert box.stak == []
     assert box.beacts == []
     assert box.renacts == []
     assert box.enacts == []
@@ -68,7 +71,6 @@ def test_box_basic():
     assert box.tracts == []
     assert box.exacts == []
     assert box.rexacts == []
-    assert box.auxes == []
 
     with pytest.raises(hioing.HierError):
         box.name = "A_B"
