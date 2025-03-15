@@ -162,7 +162,8 @@ class Boxer(Mixin):
         lode (Lode): in memory data lode shared by all boxes in box work
         doer (Doer | None): doer running this boxer
         first (Box | None):  beginning box
-        box (Box | None):  current box
+        stak (list[Box]): active stak of boxes
+        box (Box | None):  active box in stak
         boxes (dict): all boxes mapping of (box name, box) pairs
 
     Properties:
@@ -172,8 +173,29 @@ class Boxer(Mixin):
         _name (str): unique identifier of instance
 
 
-    Order of Execution of Boxer of its boxwork:
-
+    Order of Execution of Contexts:
+        time[k=0]  First Time
+            precur preacts (marks)
+            benter beacts
+            renter renacts
+            enter enacts
+            recur reacts
+            while not done:
+                time[k=k+1]  Next Time
+                    precur preacts (marks)
+                    transit
+                        if tract in tracts is True and benter beacts new stak is True:
+                            segue to new stak
+                                old stak:
+                                    exit exacts
+                                    rexit rexacts
+                                new stak:
+                                    renter renacts
+                                    enter enacts
+                    else:
+                        recur reacts (current stak)
+            exit exacts
+            rexit rexacts
 
     """
     def __init__(self, *, name='boxer', lode=None, doer=None, first=None, **kwa):
@@ -192,7 +214,8 @@ class Boxer(Mixin):
         self.lode = lode if lode is not None else Lode()
         self.doer = None
         self.first = first
-        self.box = None  # current box
+        self.stak = []  # current active stak
+        self.box = None  # current active box in active stak
         self.boxes = {}
 
     @property
@@ -233,10 +256,10 @@ class Box(Mixin):
         unders (list[Box]): this box's under box instances or empty
         nxt (Box | None): this box's next box if any
         stak (list[Box]): this box's stak of boxes
+        preacts (list[act]): precur (pre-occurence pre-transit) context acts
         beacts (list[act]): benter (before enter) context acts
         renacts (list[act]): renter (re-enter) context acts
         reacts (list[act]): recur context acts
-        preacts (list[act]): pretrans (pre-transit) context acts
         tracts (list[act]): transit context acts
         exacts (list[act]): exit context acts
         rexacts (list[act]): rexit (re-exit) context acts
@@ -247,23 +270,7 @@ class Box(Mixin):
     Hidden:
         _name (str): unique identifier of instance
 
-    Order of Execution of Contexts:
-        time[k]
-            beacts
-            renacts
-            enacts
-            reacts
-            while not done:
-                time[k+1]
-                    preacts
-                    if tract in tracts is True:
-                        if beacts new stak is True:
-                            segue to new stak
-                                old stak: exacts, rexacts
-                                new stak: renacts, enacts
-                    reacts (current stak)
-            exacts
-            rexacts
+
 
 
     """
@@ -287,12 +294,12 @@ class Box(Mixin):
         self.unders = []  # list of under boxes, zeroth entry is primary
         self.nxt = None  # next box
         self.stak = []  # stak of boxes to which this box belongs
-        # contexts
+        # acts by contexts
+        self.preacts = []  # precur context list of pre-occurence pre-transit acts
         self.beacts = []  # benter context list of before enter acts
         self.renacts = []  # renter context list of re-enter acts
         self.enacts = []  # enter context list of enter acts
         self.reacts = []  # recur context list of recurring acts
-        self.preacts = []  # pretrans context list of pre-transit acts
         self.tracts = []  # transit context list of transition acts
         self.exacts = []  # exit context list of exit acts
         self.rexacts = []  # rexit context list of re-exit acts

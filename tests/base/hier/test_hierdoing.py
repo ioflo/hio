@@ -103,6 +103,7 @@ def test_boxer_basic():
     assert boxer.lode == Lode()
     assert boxer.doer == None
     assert boxer.first == None
+    assert boxer.stak == []
     assert boxer.box == None
     assert boxer.boxes == {}
 
@@ -123,11 +124,11 @@ def test_box_basic():
     assert box.unders == []
     assert box.nxt == None
     assert box.stak == []
+    assert box.preacts == []
     assert box.beacts == []
     assert box.renacts == []
     assert box.enacts == []
     assert box.reacts == []
-    assert box.preacts == []
     assert box.tracts == []
     assert box.exacts == []
     assert box.rexacts == []
