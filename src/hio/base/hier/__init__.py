@@ -2,4 +2,4 @@
 """
 hio.base.hier Package
 """
-from .hierdoing import Builder, Boxer, Box
+from .hierdoing import Lode, Builder, Boxer, Box
