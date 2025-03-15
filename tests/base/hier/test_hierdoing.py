@@ -142,8 +142,16 @@ def test_box_basic():
 
     """Done Test"""
 
+def test_exen():
+    """Test exen function for finding common/uncommon boxes in near far staks
+    for computing exits, enters, rexits, renters on a transition
+    """
+
+    """Done Test"""
+
 if __name__ == "__main__":
     test_lode_basic()
     test_builder_basic()
     test_boxer_basic()
     test_box_basic()
+    test_exen()

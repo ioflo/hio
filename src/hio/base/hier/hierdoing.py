@@ -28,6 +28,72 @@ from ...help.helping import isNonStringIterable
 
 
 
+def exen(nears,far):
+    """Computes the relative differences (uncommon  and common parts) between
+    the box stak lists nears passed in and fars from box far.stak
+
+    Parameters:
+        nears (list[Box]): near box.stak in top down order
+        far (Box): far box giving fars = far.stak in top down order.
+
+    Assumes staks nears and fars are in top down order
+
+    Returns:
+        quadruple (tuple[list]): quadruple of lists of form:
+            (exits, enters, renters, rexits) where:
+            exits is list of uncommon boxes in nears but not in fars to be exited.
+                Reversed to bottom up order.
+            enters is list of uncommon boxes in fars but not in nears to be entered
+            rexits is list of common boxes in both nears and fars to be re-exited
+                Reversed to bottom up order.
+            renters is list of common boxes in both nears and fars to be re-entered
+
+            The sets of boxes in rexits and renters are the same set but rexits
+            is reversed to bottum up order.
+
+
+    Supports forced reentry transitions when far is in nears. This means fars
+        == nears. In this case:
+        The common part of nears/fars from far down is re-exited
+        The common part of nears/fars from far down is re-entered
+
+    When far in nears then forced reentry at far so far is nears[i]
+    catches that case for forced reentry at some far in nears. Since
+    far is in fars, then when far == nears[i] then fars == nears.
+
+    Since a given box's stak is always traced up via its .over if any and down via
+    its primary under i.e. .unders[0] if any,  then anything below far is same
+    in both fars and nears.
+
+    Otherwise when far not in nears then i where fars[i] is not nears[i]
+    indicates first box where fars down and nears down is uncommon i.e. the stak
+    tree branches at i. This is the normal non-forced reentry case for transition.
+
+    Two different topologies are accounted for with this code.
+    Recall that python slice of list is zero based where:
+       fars[i] not in fars[:i] and fars[i] in fars[i:]
+       nears[i] not in nears[:i] and nears[i] in nears[i:]
+       this means fars[:0] == nears[:0] == [] empty list
+
+    1.0 near and far in same tree either on same branch or different branches
+        1.1 on same branch forced reentry where nears == fars so far in nears.
+           Walk down from shared root to find where far is nears[i]. Boxes above
+           far given by fars[:i] == nears[:i] are re-exit re-enter set of boxes
+        1.2 on different branch to walk down from root until find fork where
+           fars[i] is not nears[i]. So fars[:i] == nears[:i] above fork at i,
+           and are re-exit and re-enter set of boxes.
+    2.0 near and far not in same tree. In this case top of nears at nears[0] is
+        not top of fars ar fars[0] i.e. different tree roots, far[0] != near[0]
+        and fars[:0] == nears[:0] = [] empty re-exits and re-enters.
+
+    """
+    fars = far.stak  # top down order
+    l = min(len(nears), len(fars))  # l >= 1 since far in fars & near in nears
+    for i in range(l):  # start at the top of both nears and fars
+        if (far is nears[i]) or (fars[i] is not nears[i]): #first effective uncommon member
+            # (exits, enters, rexits, renters)
+            return (nears[i:].reverse(), fars[i:], nears[:i].reverse(), fars[:i])
+
 
 class Lode(dict):
     """Lode subclass of dict with custom methods dunder methods and get that
