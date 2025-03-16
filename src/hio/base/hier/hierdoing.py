@@ -25,15 +25,15 @@ from ...help.helping import isNonStringIterable
 
 
 
-def exen(nears,far):
+def exen(near,far):
     """Computes the relative differences (uncommon  and common parts) between
     the box pile lists nears passed in and fars from box far.pile
 
     Parameters:
-        nears (list[Box]): near box.pile in top down order
+        near (Box): near box giving nears =near.pile in top down order
         far (Box): far box giving fars = far.pile in top down order.
 
-    Assumes staks nears and fars are in top down order
+    Assumes piles nears and fars are in top down order
 
     Returns:
         quadruple (tuple[list]): quadruple of lists of form:
@@ -87,6 +87,7 @@ def exen(nears,far):
         all nears are exit and all fars are entry.
 
     """
+    nears = near.pile  # top down order
     fars = far.pile  # top down order
     l = min(len(nears), len(fars))  # l >= 1 since far in fars & near in nears
     for i in range(l):  # start at the top of both nears and fars

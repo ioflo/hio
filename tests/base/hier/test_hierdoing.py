@@ -206,49 +206,49 @@ def test_exen():
 
 
     # test exen
-    exits, enters, rexits, renters = exen(d.pile, e)
+    exits, enters, rexits, renters = exen(d, e)
     assert exits == [d]
     assert enters == [e, f]
     assert rexits == [c, b, a]
     assert renters == [a, b, c]
 
-    exits, enters, rexits, renters = exen(d.pile, f)
+    exits, enters, rexits, renters = exen(d, f)
     assert exits == [d]
     assert enters == [e, f]
     assert rexits == [c, b, a]
     assert renters == [a, b, c]
 
-    exits, enters, rexits, renters = exen(a.pile, e)
+    exits, enters, rexits, renters = exen(a, e)
     assert exits == [d]
     assert enters == [e, f]
     assert rexits == [c, b, a]
     assert renters == [a, b, c]
 
-    exits, enters, rexits, renters = exen(c.pile, b)
+    exits, enters, rexits, renters = exen(c, b)
     assert exits == [d, c, b]
     assert enters == [b, c, d]
     assert rexits == [a]
     assert renters == [a]
 
-    exits, enters, rexits, renters = exen(c.pile, c)
+    exits, enters, rexits, renters = exen(c, c)
     assert exits == [d, c]
     assert enters == [c, d]
     assert rexits == [b, a]
     assert renters == [a, b]
 
-    exits, enters, rexits, renters = exen(c.pile, d)
+    exits, enters, rexits, renters = exen(c, d)
     assert exits == [d]
     assert enters == [d]
     assert rexits == [c, b, a]
     assert renters == [a, b, c]
 
-    exits, enters, rexits, renters = exen(e.pile, d)
+    exits, enters, rexits, renters = exen(e, d)
     assert exits == [f, e]
     assert enters == [d]
     assert rexits == [c, b, a]
     assert renters == [a, b, c]
 
-    exits, enters, rexits, renters = exen(f.pile, f)
+    exits, enters, rexits, renters = exen(f, f)
     assert exits == [f]
     assert enters == [f]
     assert rexits == [e, c, b, a]
