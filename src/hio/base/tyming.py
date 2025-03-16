@@ -107,11 +107,14 @@ class Tymee(hioing.Mixin):
     Attributes:
 
     Properties:
-        .tyme is float relative cycle time of associated Tymist .tyme obtained
-            via injected .tymth function wrapper closure.
-        .tymth is function wrapper closure returned by Tymist .tymeth() method.
-            When .tymth is called it returns associated Tymist .tyme.
-            .tymth provides injected dependency on Tymist tyme base.
+        .tyme (float | None):  relative cycle time of associated Tymist which is
+            provided by calling .tymth function wrapper closure which is obtained
+            from Tymist.tymen().
+            None means not assigned yet.
+        .tymth (closure | None): function wrapper closure returned by
+            Tymist.tymen() method. When .tymth is called it returns associated
+            Tymist.tyme. Provides injected dependency on Tymist cycle tyme base.
+            None means not assigned yet.
 
     Methods:
         .wind  injects ._tymth dependency from associated Tymist to get its .tyme

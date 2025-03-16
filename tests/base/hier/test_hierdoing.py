@@ -102,6 +102,8 @@ def test_builder_basic():
 def test_boxer_basic():
     """Basic test Boxer class"""
     boxer = Boxer()  # defaults
+    assert boxer.tyme == None
+    assert boxer.tymth == None
     assert boxer.name == 'boxer'
     assert boxer.lode == Lode()
     assert boxer.doer == None
@@ -109,6 +111,8 @@ def test_boxer_basic():
     assert boxer.pile == []
     assert boxer.box == None
     assert boxer.boxes == {}
+
+
 
     with pytest.raises(hioing.HierError):
         boxer.name = "A_B"
@@ -120,6 +124,8 @@ def test_boxer_basic():
 def test_box_basic():
     """Basic test Box class"""
     box = Box()  # defaults
+    assert box.tyme == None
+    assert box.tymth == None
     assert box.name == 'box'
     assert box.lode == Lode()
     assert box.boxer == None

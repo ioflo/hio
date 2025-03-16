@@ -19,11 +19,8 @@ from dataclasses import dataclass, astuple, asdict, field
 import typing
 
 
-from .. import tyming
-from ..doing import Doist, Doer
-from ... import hioing
+from .. import Tymee
 from ...hioing import Mixin, HierError
-from ... import help
 from ...help.helping import isNonStringIterable
 
 
@@ -221,12 +218,15 @@ class Builder(Mixin):
         self._name = name
 
 
-class Boxer(Mixin):
+class Boxer(Tymee):
     """Boxer Class that executes hierarchical action framework (boxwork) instances.
     Boxer instance holds reference to in-memory data lode shared by all its boxes
     and other Boxers in a given boxwork.
     Box instance holds a reference to its first (beginning) box.
     Box instance holds references to all its boxes in dict keyed by box name.
+
+    Inherited Attributes, Properties
+        see Tymee
 
     Attributes:
         lode (Lode): in memory data lode shared by all boxes in box work
@@ -309,14 +309,15 @@ class Boxer(Mixin):
         self._name = name
 
 
-class Box(Mixin):
+class Box(Tymee):
     """Box Class for hierarchical action framework (boxwork) instances.
     Box instance holds reference to in-memory data lode shared by all the boxes in a
     given boxwork as well as its executing Boxer.
     Box instance holds references (links) to its over box and its under boxes.
     Box instance holds the acts to be executed in their context.
 
-
+    Inherited Attributes, Properties
+        see Tymee
 
     Attributes:
         lode (dict): in memory data lode shared by all boxes in box work
