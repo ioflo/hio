@@ -247,7 +247,6 @@ class Boxer(Mixin):
         time[k=0]  First Time
             precur preacts (marks)
             benter beacts
-            renter renacts
             enter enacts
             recur reacts
             while not done:
@@ -265,7 +264,7 @@ class Boxer(Mixin):
                     else:
                         recur reacts (current pile)
             exit exacts
-            rexit rexacts
+
 
     """
     def __init__(self, *, name='boxer', lode=None, doer=None, first=None, **kwa):
