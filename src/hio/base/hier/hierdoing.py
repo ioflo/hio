@@ -399,13 +399,11 @@ class Box(Mixin):
 
     def __repr__(self):
         """Representation usable by eval()."""
-        return (f"{self.__class__.__name__}(name='{self.name}', "
-                f"over={repr(self.over)}, unders={repr(self.unders)})")
+        return (f"{self.__class__.__name__}(name='{self.name}')")
 
     def __str__(self):
         """Representation human friendly."""
-        return (f"{self.__class__.__name__}(name='{self.name}', "
-                f"pile='{self.trail}')")
+        return (f"{self.__class__.__name__}({self.trail})")
 
 
     def _trace(self):

@@ -139,8 +139,8 @@ def test_box_basic():
     assert box.pile == [box]
     assert box.spot == 0
     assert box.trail == '<box>'
-    assert str(box) == "Box(name='box', pile='<box>')"
-    assert repr(box) == "Box(name='box', over=None, unders=[])"
+    assert str(box) == "Box(<box>)"
+    assert repr(box) == "Box(name='box')"
 
     assert isinstance(eval(repr(box)), Box)
 
@@ -175,33 +175,24 @@ def test_exen():
     e.unders.append(f)
 
 
-    assert repr(a) == ("Box(name='a', over=None, unders=[Box(name='b', over=Box(name='a', over=None, "
-                    "unders=[...]), unders=[Box(name='c', over=Box(name='b', over=Box(name='a', "
-                    "over=None, unders=[...]), unders=[...]), unders=[Box(name='d', "
-                    "over=Box(name='c', over=Box(name='b', over=Box(name='a', over=None, "
-                    "unders=[...]), unders=[...]), unders=[...]), unders=[]), Box(name='e', "
-                    "over=Box(name='c', over=Box(name='b', over=Box(name='a', over=None, "
-                    "unders=[...]), unders=[...]), unders=[...]), unders=[Box(name='f', "
-                    "over=Box(name='e', over=Box(name='c', over=Box(name='b', over=Box(name='a', "
-                    'over=None, unders=[...]), unders=[...]), unders=[...]), unders=[...]), '
-                    'unders=[])])])])])')
+    assert repr(a) == "Box(name='a')"
 
-    assert str(a) == "Box(name='a', pile='<a>b>c>d')"
+    assert str(a) == "Box(<a>b>c>d)"
     assert a.pile == [a, b, c, d]
 
-    assert str(b) == "Box(name='b', pile='a<b>c>d')"
+    assert str(b) == "Box(a<b>c>d)"
     assert b.pile == [a, b, c, d]
 
-    assert str(c) == "Box(name='c', pile='a<b<c>d')"
+    assert str(c) == "Box(a<b<c>d)"
     assert c.pile == [a, b, c, d]
 
-    assert str(d) == "Box(name='d', pile='a<b<c<d>')"
+    assert str(d) == "Box(a<b<c<d>)"
     assert d.pile == [a, b, c, d]
 
-    assert str(e) == "Box(name='e', pile='a<b<c<e>f')"
+    assert str(e) == "Box(a<b<c<e>f)"
     assert e.pile == [a, b, c, e, f]
 
-    assert str(f) == "Box(name='f', pile='a<b<c<e<f>')"
+    assert str(f) == "Box(a<b<c<e<f>)"
     assert f.pile == [a, b, c, e, f]
 
     assert a.pile == b.pile == c.pile == d.pile
