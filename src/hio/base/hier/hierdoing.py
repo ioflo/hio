@@ -30,11 +30,11 @@ from ...help.helping import isNonStringIterable
 
 def exen(nears,far):
     """Computes the relative differences (uncommon  and common parts) between
-    the box stak lists nears passed in and fars from box far.stak
+    the box pile lists nears passed in and fars from box far.pile
 
     Parameters:
-        nears (list[Box]): near box.stak in top down order
-        far (Box): far box giving fars = far.stak in top down order.
+        nears (list[Box]): near box.pile in top down order
+        far (Box): far box giving fars = far.pile in top down order.
 
     Assumes staks nears and fars are in top down order
 
@@ -61,12 +61,12 @@ def exen(nears,far):
     catches that case for forced entry at some far in nears. Since
     far is in fars, then when far == nears[i] then fars == nears.
 
-    Since a given box's stak is always traced up via its .over if any and down via
+    Since a given box's pile is always traced up via its .over if any and down via
     its primary under i.e. .unders[0] if any, when far is in nears the anything
     below far is same in both fars and nears.
 
     Otherwise when far not in nears then i where fars[i] is not nears[i]
-    indicates first box where fars down and nears down is uncommon i.e. the stak
+    indicates first box where fars down and nears down is uncommon i.e. the pile
     tree branches at i. This is the normal non-forced entry case for transition.
 
     Two different topologies are accounted for with this code.
@@ -90,12 +90,13 @@ def exen(nears,far):
         all nears are exit and all fars are entry.
 
     """
-    fars = far.stak  # top down order
+    fars = far.pile  # top down order
     l = min(len(nears), len(fars))  # l >= 1 since far in fars & near in nears
     for i in range(l):  # start at the top of both nears and fars
         if (far is nears[i]) or (fars[i] is not nears[i]): #first effective uncommon member
             # (exits, enters, rexits, renters)
-            return (nears[i:].reverse(), fars[i:], nears[:i].reverse(), fars[:i])
+            return (list(reversed(nears[i:])), fars[i:],
+                    list(reversed(nears[:i])), fars[:i])
 
 
 class Lode(dict):
@@ -187,7 +188,7 @@ class Builder(Mixin):
         """Initialize instance.
 
         Parameters:
-            name (str): unique identifier of box
+            name (str): unique identifier of instance
             lode (Lode | None): in memory data lode shared by all boxes in box work
 
 
@@ -231,8 +232,8 @@ class Boxer(Mixin):
         lode (Lode): in memory data lode shared by all boxes in box work
         doer (Doer | None): doer running this boxer
         first (Box | None):  beginning box
-        stak (list[Box]): active stak of boxes
-        box (Box | None):  active box in stak
+        pile (list[Box]): active pile of boxes
+        box (Box | None):  active box in pile
         boxes (dict): all boxes mapping of (box name, box) pairs
 
     Properties:
@@ -253,16 +254,16 @@ class Boxer(Mixin):
                 time[k=k+1]  Next Time
                     precur preacts (marks)
                     transit
-                        if tract in tracts is True and benter beacts new stak is True:
-                            segue to new stak
-                                old stak:
+                        if tract in tracts is True and benter beacts new pile is True:
+                            segue to new pile
+                                old pile:
                                     exit exacts
                                     rexit rexacts
-                                new stak:
+                                new pile:
                                     renter renacts
                                     enter enacts
                     else:
-                        recur reacts (current stak)
+                        recur reacts (current pile)
             exit exacts
             rexit rexacts
 
@@ -283,8 +284,8 @@ class Boxer(Mixin):
         self.lode = lode if lode is not None else Lode()
         self.doer = None
         self.first = first
-        self.stak = []  # current active stak
-        self.box = None  # current active box in active stak
+        self.pile = []  # current active pile
+        self.box = None  # current active box in active pile
         self.boxes = {}
 
     @property
@@ -323,8 +324,9 @@ class Box(Mixin):
         boxer (Boxer | None):  this box's Boxer instance
         over (Box | None): this box's over box instance or None
         unders (list[Box]): this box's under box instances or empty
+                            zeroth entry is primary under
+
         nxt (Box | None): this box's next box if any
-        stak (list[Box]): this box's stak of boxes
         preacts (list[act]): precur (pre-occurence pre-transit) context acts
         beacts (list[act]): benter (before enter) context acts
         renacts (list[act]): renter (re-enter) context acts
@@ -335,34 +337,56 @@ class Box(Mixin):
 
     Properties:
         name (str): unique identifier of instance
+        pile (list[Box]): this box's pile of boxes generated by tracing .over up
+                          and .unders[0] down if any. This is generated lazily.
+                          To refresh call ._trace()
+        trail (str): human friendly represetion of pile as delimited string of
+                        box names from .pile. This is generated lazily.
+                        To refresh call ._trace()
 
     Hidden:
         _name (str): unique identifier of instance
+        _pile (list[Box] | None): pile of Boxes to which this box belongs.
+                                  None means not yet traced.
+        _spot (int | None): zero based offset into .pile of this box. This is
+                            computed by ._trace
+        _trail (int | None): human friendly represetion of pile as delimited
+                             string of box names from .pile.
+                            This is computed by ._trace
+        _trace(): function to trace and update ._pile from .over and .unders[0]
+                  and update ._spot and ._trail
 
 
 
 
     """
-    def __init__(self, *, name='box', lode=None, boxer=None, **kwa):
+    def __init__(self, *, name='box', lode=None, boxer=None, over=None,
+                 unders=None, **kwa):
         """Initialize instance.
 
         Parameters:
             name (str): unique identifier of box
             lode (dict | None): in memory data lode shared by all boxes in box work
             boxer (Boxer | None):  this box's Boxer instance
-
-
+            over (Box | None): this box's over box instance or None
+            unders (list[Box]): this box's under box instances or empty.
+                                zeroth entry is primary under
         """
         super(Box, self).__init__(**kwa)
         if '_' in name:
             raise HierError(f"Invalid {name=} contains '_'.")
         self.name = name
+        self._pile = None  # force .trace on first access of .pile property
+        self._spot = None  # zero based offset into .pile of this box
+        self._trail = None  # delimited string representation of box names in .pile
+
         self.lode = lode if lode is not None else Lode()
         self.boxer = boxer
-        self.over = None  # over box
-        self.unders = []  # list of under boxes, zeroth entry is primary
-        self.nxt = None  # next box
-        self.stak = []  # stak of boxes to which this box belongs
+        self.over = over  # over box
+        self.unders = unders if unders is not None else []  # list of under boxes,
+
+        self.nxt = None  # next box to execute on default transition
+
         # acts by contexts
         self.preacts = []  # precur context list of pre-occurence pre-transit acts
         self.beacts = []  # benter context list of before enter acts
@@ -372,6 +396,40 @@ class Box(Mixin):
         self.tracts = []  # transit context list of transition acts
         self.exacts = []  # exit context list of exit acts
         self.rexacts = []  # rexit context list of re-exit acts
+
+
+    def __repr__(self):
+        """Representation usable by eval()."""
+        return (f"{self.__class__.__name__}(name='{self.name}', "
+                f"over={repr(self.over)}, unders={repr(self.unders)})")
+
+    def __str__(self):
+        """Representation human friendly."""
+        return (f"{self.__class__.__name__}(name='{self.name}', "
+                f"pile='{self.trail}')")
+
+
+    def _trace(self):
+        """Trace pile and update .pile by tracing over up if any and unders[0]
+        down if any.
+        """
+        pile = []
+        over = self.over
+        while over:
+            pile.insert(0, over)
+            over = over.over
+        pile.append(self)
+        self._spot = len(pile) - 1
+        under = self.unders[0] if self.unders else None
+        while under:
+            pile.append(under)
+            under = under.unders[0] if under.unders else None
+        self._pile = pile
+
+        up = "<".join(over.name for over in self._pile[:self._spot])
+        dn = ">".join(under.name for under in self._pile[self._spot+1:])
+        self._trail = up + "<" + self._name + ">" + dn
+
 
     @property
     def name(self):
@@ -393,3 +451,51 @@ class Box(Mixin):
         if '_' in name:
             raise HierError(f"Invalid {name=} contains '_'.")
         self._name = name
+
+
+    @property
+    def pile(self):
+        """Property getter for ._pile
+
+        Returns:
+            pile (list[Box]): this box's pile of boxes generated by tracing
+                              .over up and .unders[0] down if any. This is
+                              generated lazily to refresh call ._trace().
+                              pile always includes self once traced.
+        """
+        if self._pile is None:
+            self._trace()
+        return self._pile
+
+    @property
+    def spot(self):
+        """Property getter for ._spot
+
+        Returns:
+            spot (int): zero based offset of this box into its pile of boxes
+                        generated by tracing .over up and .unders[0] down if any.
+                        This is generated lazily. To refresh call ._trace().
+                        Since pile always includes self, spot is always defined
+                        once traced.
+        """
+        if self._spot is None:
+            self._trace()
+        return self._spot
+
+    @property
+    def trail(self):
+        """Property getter for ._trail
+
+        Returns:
+            trail (str): human frieldly delimited string of box names from .pile.
+                        This is generated lazily. To refresh call ._trace().
+                        Since pile always includes self, trail is always defined
+                        once traced.
+        """
+        if self._trail is None:
+            self._trace()
+        return self._trail
+
+
+
+

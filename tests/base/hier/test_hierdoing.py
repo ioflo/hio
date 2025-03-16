@@ -17,8 +17,11 @@ from dataclasses import dataclass, astuple, asdict, field
 from hio import hioing
 from hio.help import helping
 from hio.base import tyming
+
+from hio.base.hier import Lode, Builder, Boxer, Box
 from hio.base.hier import hierdoing
-from hio.base.hier.hierdoing import Lode, Builder, Boxer, Box
+from hio.base.hier.hierdoing import exen
+
 
 def test_lode_basic():
     """Basic test Lode class"""
@@ -103,7 +106,7 @@ def test_boxer_basic():
     assert boxer.lode == Lode()
     assert boxer.doer == None
     assert boxer.first == None
-    assert boxer.stak == []
+    assert boxer.pile == []
     assert boxer.box == None
     assert boxer.boxes == {}
 
@@ -122,8 +125,8 @@ def test_box_basic():
     assert box.boxer == None
     assert box.over == None
     assert box.unders == []
+
     assert box.nxt == None
-    assert box.stak == []
     assert box.preacts == []
     assert box.beacts == []
     assert box.renacts == []
@@ -133,12 +136,19 @@ def test_box_basic():
     assert box.exacts == []
     assert box.rexacts == []
 
+    assert box.pile == [box]
+    assert box.spot == 0
+    assert box.trail == '<box>'
+    assert str(box) == "Box(name='box', pile='<box>')"
+    assert repr(box) == "Box(name='box', over=None, unders=[])"
+
+    assert isinstance(eval(repr(box)), Box)
+
     with pytest.raises(hioing.HierError):
         box.name = "A_B"
 
     with pytest.raises(hioing.HierError):
         box.name = "_box"
-
 
     """Done Test"""
 
@@ -146,6 +156,106 @@ def test_exen():
     """Test exen function for finding common/uncommon boxes in near far staks
     for computing exits, enters, rexits, renters on a transition
     """
+    a = Box(name='a')
+    b = Box(name='b')
+    b.over = a
+    a.unders.append(b)
+    c = Box(name='c')
+    c.over = b
+    b.unders.append(c)
+    d = Box(name='d')
+    d.over = c
+    c.unders.append(d)
+
+    e = Box(name='e')
+    e.over = c
+    c.unders.append(e)
+    f = Box(name='f')
+    f.over = e
+    e.unders.append(f)
+
+
+    assert repr(a) == ("Box(name='a', over=None, unders=[Box(name='b', over=Box(name='a', over=None, "
+                    "unders=[...]), unders=[Box(name='c', over=Box(name='b', over=Box(name='a', "
+                    "over=None, unders=[...]), unders=[...]), unders=[Box(name='d', "
+                    "over=Box(name='c', over=Box(name='b', over=Box(name='a', over=None, "
+                    "unders=[...]), unders=[...]), unders=[...]), unders=[]), Box(name='e', "
+                    "over=Box(name='c', over=Box(name='b', over=Box(name='a', over=None, "
+                    "unders=[...]), unders=[...]), unders=[...]), unders=[Box(name='f', "
+                    "over=Box(name='e', over=Box(name='c', over=Box(name='b', over=Box(name='a', "
+                    'over=None, unders=[...]), unders=[...]), unders=[...]), unders=[...]), '
+                    'unders=[])])])])])')
+
+    assert str(a) == "Box(name='a', pile='<a>b>c>d')"
+    assert a.pile == [a, b, c, d]
+
+    assert str(b) == "Box(name='b', pile='a<b>c>d')"
+    assert b.pile == [a, b, c, d]
+
+    assert str(c) == "Box(name='c', pile='a<b<c>d')"
+    assert c.pile == [a, b, c, d]
+
+    assert str(d) == "Box(name='d', pile='a<b<c<d>')"
+    assert d.pile == [a, b, c, d]
+
+    assert str(e) == "Box(name='e', pile='a<b<c<e>f')"
+    assert e.pile == [a, b, c, e, f]
+
+    assert str(f) == "Box(name='f', pile='a<b<c<e<f>')"
+    assert f.pile == [a, b, c, e, f]
+
+    assert a.pile == b.pile == c.pile == d.pile
+    assert e.pile == f.pile
+
+
+    # test exen
+    exits, enters, rexits, renters = exen(d.pile, e)
+    assert exits == [d]
+    assert enters == [e, f]
+    assert rexits == [c, b, a]
+    assert renters == [a, b, c]
+
+    exits, enters, rexits, renters = exen(d.pile, f)
+    assert exits == [d]
+    assert enters == [e, f]
+    assert rexits == [c, b, a]
+    assert renters == [a, b, c]
+
+    exits, enters, rexits, renters = exen(a.pile, e)
+    assert exits == [d]
+    assert enters == [e, f]
+    assert rexits == [c, b, a]
+    assert renters == [a, b, c]
+
+    exits, enters, rexits, renters = exen(c.pile, b)
+    assert exits == [d, c, b]
+    assert enters == [b, c, d]
+    assert rexits == [a]
+    assert renters == [a]
+
+    exits, enters, rexits, renters = exen(c.pile, c)
+    assert exits == [d, c]
+    assert enters == [c, d]
+    assert rexits == [b, a]
+    assert renters == [a, b]
+
+    exits, enters, rexits, renters = exen(c.pile, d)
+    assert exits == [d]
+    assert enters == [d]
+    assert rexits == [c, b, a]
+    assert renters == [a, b, c]
+
+    exits, enters, rexits, renters = exen(e.pile, d)
+    assert exits == [f, e]
+    assert enters == [d]
+    assert rexits == [c, b, a]
+    assert renters == [a, b, c]
+
+    exits, enters, rexits, renters = exen(f.pile, f)
+    assert exits == [f]
+    assert enters == [f]
+    assert rexits == [e, c, b, a]
+    assert renters == [a, b, c, e]
 
     """Done Test"""
 
