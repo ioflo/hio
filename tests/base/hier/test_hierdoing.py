@@ -12,15 +12,36 @@ import inspect
 import types
 import logging
 import json
+import inspect
+
+
 
 from dataclasses import dataclass, astuple, asdict, field
 from hio import hioing
 from hio.help import helping
 from hio.base import tyming
 
-from hio.base.hier import Lode, Builder, Boxer, Box
+from hio.base.hier import Reat, Lode, Builder, Boxer, Box
 from hio.base.hier import hierdoing
 from hio.base.hier.hierdoing import exen
+
+def test_reat():
+    """Test regular expression Reat for attribute name """
+    name = "hello"
+    assert Reat.match(name)
+
+    name = "_hello"
+    assert Reat.match(name)
+
+    name = "hell1"
+    assert Reat.match(name)
+
+    name = "1hello"
+    assert not Reat.match(name)
+
+    name = "hello.hello"
+    assert not Reat.match(name)
+    """Done Test"""
 
 
 def test_lode_basic():
@@ -38,11 +59,16 @@ def test_lode_basic():
     assert lode.get('a') == 5
 
     keys = ('a', 'b', 'c')
-    key = '_'.join(keys)
-    assert key == 'a_b_c'
+    key = '.'.join(keys)
+    assert key == 'a.b.c'
+
+    # Test staticmethod .tokeys()
+    assert Lode.tokeys(key) == keys
+    assert Lode.tokeys('') == ('', )
+    assert Lode.tokeys('a') == ('a', )
 
     lode[keys] = 7
-    assert list(lode.items()) == [('a', 5), ('a_b', 6), ('a_b_c', 7)]
+    assert list(lode.items()) == [('a', 5), ('a_b', 6), ('a.b.c', 7)]
 
     assert lode[keys] == 7
     assert keys in lode
@@ -57,6 +83,11 @@ def test_lode_basic():
 
     assert lode.get('c') == None
     assert lode.get(("b", "c")) == None
+
+    lode[''] = 10
+    assert '' in lode
+    assert lode[''] == 10
+
 
     with pytest.raises(KeyError):
         lode['c']
@@ -73,13 +104,34 @@ def test_lode_basic():
     lode = Lode(a=0, a_b=1, a_b_c=2)
     assert list(lode.items()) == [('a', 0), ('a_b', 1), ('a_b_c', 2)]
 
-    assert Lode.tokeys(key) == keys
-    assert Lode.tokeys('') == ('', )
-    assert Lode.tokeys('a') == ('a', )
+    lode = Lode([('a', 0), ('a.b', 1), ('a.b.c', 2)])
+    assert list(lode.items()) == [('a', 0), ('a.b', 1), ('a.b.c', 2)]
 
-    lode[''] = 10
-    assert '' in lode
-    assert lode[''] == 10
+    # test init with iterable using keys as tuples
+    lode = Lode([(('a', ), 0), (('a', 'b'), 1), (('a','b', 'c'), 2)], d=4)
+    assert list(lode.items()) == [('a', 0), ('a.b', 1), ('a.b.c', 2), ('d', 4)]
+
+    # test init with dict using keys as tuples
+    d = {}
+    d[("a", )] = 0
+    d[("a", "b")] = 1
+    d[("a", "b", "c")] = 2
+    lode = Lode(d, d=4)
+    assert list(lode.items()) == [('a', 0), ('a.b', 1), ('a.b.c', 2), ('d', 4)]
+
+    # test update with iterable using keys as tuples
+    lode = Lode()
+    lode.update([(('a', ), 0), (('a', 'b'), 1), (('a','b', 'c'), 2)], d=4)
+    assert list(lode.items()) == [('a', 0), ('a.b', 1), ('a.b.c', 2), ('d', 4)]
+
+    # test update with dict using keys as tuples
+    d = {}
+    d[("a", )] = 0
+    d[("a", "b")] = 1
+    d[("a", "b", "c")] = 2
+    lode = Lode()
+    lode.update(d, d=4)
+    assert list(lode.items()) == [('a', 0), ('a.b', 1), ('a.b.c', 2), ('d', 4)]
 
     """Done Test"""
 
@@ -93,10 +145,10 @@ def test_builder_basic():
     assert builder.box == None
 
     with pytest.raises(hioing.HierError):
-        builder.name = "A_B"
+        builder.name = "A.B"
 
     with pytest.raises(hioing.HierError):
-        builder.name = "_builder"
+        builder.name = "|builder"
 
 
 def test_boxer_basic():
@@ -115,10 +167,10 @@ def test_boxer_basic():
 
 
     with pytest.raises(hioing.HierError):
-        boxer.name = "A_B"
+        boxer.name = "A.B"
 
     with pytest.raises(hioing.HierError):
-        boxer.name = "_boxer"
+        boxer.name = ".boxer"
 
 
 def test_box_basic():
@@ -151,10 +203,10 @@ def test_box_basic():
     assert isinstance(eval(repr(box)), Box)
 
     with pytest.raises(hioing.HierError):
-        box.name = "A_B"
+        box.name = "A.B"
 
     with pytest.raises(hioing.HierError):
-        box.name = "_box"
+        box.name = ".box"
 
     """Done Test"""
 
@@ -256,9 +308,101 @@ def test_exen():
 
     """Done Test"""
 
+
+
+def test_inspect_stuff():
+    """Test inpect stuff to see how works"""
+
+    def f(name, over):
+        av = inspect.getargvalues(inspect.currentframe())
+        """ArgInfo(args=['name', 'over'],
+                   varargs=None,
+                   keywords=None,
+                   locals={'name': 'test', 'over': 'up',
+                   'av': ...)   """
+        pass
+
+    sig = inspect.signature(f)
+
+    f(name="test", over="up")
+
+    _name = ''
+    _boxes = {}  # default boxes dict
+    _over = None # default top box
+
+    def be(name=None, over=None):
+        # '_name' is only in locals because it is referenced in the assignment
+        # statement below. If _name is never referenced inside function be()
+        # then it never makes it into locals(). The interpreter only populates
+        # locals with varialbls in local scope it needs not all variables in
+        # local scope it could access if it needed to.
+        x = _name
+        assert '_name' in locals()
+
+        #l = locals() # makes copy of locals
+        # l['name'] = 'big'
+        #g = globals()  # makes copy of globals
+        assert '_name' not in globals()
+
+    be(name="test", over="up")
+
+    global _blame
+    assert not '_blame' in globals()  # not in globals until assigned a value
+    _blame = ''
+    assert '_blame' in globals()  # why is this
+
+    def g(name=None, over=None):
+        global _blame
+
+        assert not '_blame' in locals()
+        assert '_blame' in globals()  # unless assigned someplace else
+        x = _blame
+
+    g(name="test", over="up")
+
+    _fame = ''  # not a global at this point
+    assert not '_fame' in globals()
+
+    def h(name=None, over=None):
+        global _fame
+
+        assert not '_fame' in globals()
+        _fame = 'why'  # now a global
+        assert '_fame' in globals()
+
+    h(name="test", over="up")
+
+    """Done Test"""
+
+def test_be_box():
+    """Test be function for adding box to box work
+
+    Note: name mangling only happens inside a class definition.
+    """
+    global _boxes, _over, _prefix
+    _boxes = {}  # default boxes dict now a global
+    _over = None # default top box now a global
+    _prefix = '_box'  #  default box name prefix now a global
+
+    def be(name=None, over=None):
+        global _boxes, _over, _prefix
+
+        assert '_prefix' in globals()
+        x = _prefix
+
+    be(name="test", over="up")
+
+
+    """Done Test"""
+
+
+
 if __name__ == "__main__":
+    test_reat()
     test_lode_basic()
     test_builder_basic()
     test_boxer_basic()
     test_box_basic()
     test_exen()
+    test_inspect_stuff()
+    test_be_box()

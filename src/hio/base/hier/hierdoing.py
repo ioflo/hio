@@ -15,6 +15,7 @@ import re
 import multiprocessing as mp
 
 from collections import deque, namedtuple
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, astuple, asdict, field
 import typing
 
@@ -24,6 +25,10 @@ from ...hioing import Mixin, HierError
 from ...help.helping import isNonStringIterable
 
 
+# Regular expression to detect valid attribute names for Boxes
+ATREX = r'^[a-zA-Z_][a-zA-Z0-9_]*$'
+# Usage: if Reat.match(name): or if not Reat.match(name):
+Reat = re.compile(ATREX)  # compile is faster
 
 def exen(near,far):
     """Computes the relative differences (uncommon  and common parts) between
@@ -97,6 +102,7 @@ def exen(near,far):
                     list(reversed(nears[:i])), fars[:i])
 
 
+
 class Lode(dict):
     """Lode subclass of dict with custom methods dunder methods and get that
     will only allow actual keys as str. Iterables passed in as key are converted
@@ -107,32 +113,96 @@ class Lode(dict):
         tokeys(k) returns split of k at separator '_' as tuple.
 
     """
+    def __init__(self, *pa, **kwa):
+        """Convert keys that are tuples when positional argument is Iterable or
+        Mapping to '.' joined strings
+
+        dict __init__ signature options are:
+            dict(**kwa)
+            dict(mapping, **kwa)
+            dict(iterable, **kwa)
+        dict.update has same call signature
+            d.update({"a": 5, "b": 2,}, c=3 , d=4)
+
+        """
+        self.update(*pa, **kwa)
+
+
+    def update(self, *pa, **kwa):
+        """Convert keys that are tuples when positional argument is Iterable or
+        Mapping to '.' joined strings
+
+        dict __init__ signature options are:
+            dict(**kwa)
+            dict(mapping, **kwa)
+            dict(iterable, **kwa)
+        dict.update has same call signature
+            d.update({"a": 5, "b": 2,}, c=3 , d=4)
+
+        """
+        if len(pa) > 1:
+            raise TypeError(f"expected 1 positional argument got {len(pa)}")
+
+        if pa:
+            di = pa[0]
+            if isinstance(di, Mapping):
+                rd = {}
+                for k, v in di.items():
+                    if isNonStringIterable(k):
+                        try:
+                            k = '.'.join(k)
+                        except Exception as ex:
+                            raise KeyError(ex.args) from ex
+                    if not isinstance(k, str):
+                        raise KeyError(f"Expected str got {k}.")
+                    rd[k] = v
+                super(Lode, self).update(rd, **kwa)
+
+            elif isinstance(di, Iterable):
+                ri = []
+                for k, v in di:
+                    if isNonStringIterable(k):
+                        try:
+                            k = '.'.join(k)
+                        except Exception as ex:
+                            raise KeyError(ex.args) from ex
+                    if not isinstance(k, str):
+                        raise KeyError(f"Expected str got {k}.")
+                    ri.append((k, v))
+                super(Lode, self).update(ri, **kwa)
+
+        else:
+            super(Lode, self).update(**kwa)
+
+
+
     @staticmethod
     def tokeys(k):
-        """Converts '_' joined key string to tuple of keys by splitting on '_'
+        """Converts '.' joined key string to tuple of keys by splitting on '.'
 
         Parameters:
-            k (str): '_' joined string to be split
+            k (str): '.' joined string to be split
         Returns:
-            keys (tuple[str]): split of k on '_' into path key components
+            keys (tuple[str]): split of k on '.' into path key components
         """
-        return tuple(k.split("_"))
+        return tuple(k.split("."))
 
 
     def __setitem__(self, k, v):
         if isNonStringIterable(k):
             try:
-                k = '_'.join(k)
+                k = '.'.join(k)
             except Exception as ex:
                 raise KeyError(ex.args) from ex
         if not isinstance(k, str):
             raise KeyError(f"Expected str got {k}.")
         return super(Lode, self).__setitem__(k, v)
 
+
     def __getitem__(self, k):
         if isNonStringIterable(k):
             try:
-                k = '_'.join(k)
+                k = '.'.join(k)
             except Exception as ex:
                 raise KeyError(ex.args) from ex
         if not isinstance(k, str):
@@ -143,7 +213,7 @@ class Lode(dict):
     def __contains__(self, k):
         if isNonStringIterable(k):
             try:
-                k = '_'.join(k)
+                k = '.'.join(k)
             except Exception as ex:
                 raise KeyError(ex.args) from ex
         if not isinstance(k, str):
@@ -154,7 +224,7 @@ class Lode(dict):
     def get(self, k, default=None):
         if isNonStringIterable(k):
             try:
-                k = '_'.join(k)
+                k = '.'.join(k)
             except Exception as ex:
                 raise KeyError(ex.args) from ex
         if not isinstance(k, str):
@@ -214,8 +284,9 @@ class Builder(Mixin):
         Paramaters:
             name (str): unique identifier of instance
         """
-        if '_' in name:
-            raise HierError(f"Invalid {name=} contains '_'.")
+        if not Reat.match(name):
+            raise HierError(f"Invalid {name=}.")
+
         self._name = name
 
 
@@ -305,8 +376,8 @@ class Boxer(Tymee):
         Paramaters:
             name (str): unique identifier of instance
         """
-        if '_' in name:
-            raise HierError(f"Invalid {name=} contains '_'.")
+        if not Reat.match(name):
+            raise HierError(f"Invalid {name=}.")
         self._name = name
 
 
@@ -447,8 +518,8 @@ class Box(Tymee):
         Paramaters:
             name (str): unique identifier of instance
         """
-        if '_' in name:
-            raise HierError(f"Invalid {name=} contains '_'.")
+        if not Reat.match(name):
+            raise HierError(f"Invalid {name=}.")
         self._name = name
 
 

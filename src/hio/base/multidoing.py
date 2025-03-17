@@ -63,8 +63,8 @@ Fields:
 """
 Loadage = namedtuple("Loadage", "name tyme tock real limit doers temp boss")
 
-# (?P<proto2>[A-Z]{4})
-# regular expression to parse JSON serializations of Bosser Crewer memos
+
+# Regular expression to extract tag from JSON serializations of Bosser Crewer memos
 TAGREX = r'^\{"tag":"(?P<tag>[A-Z]*)"'
 # Usage: if retag.match(memo): or if not Reb64.match(memo): memo is str
 # tag = retag.match(memo).group(1)
