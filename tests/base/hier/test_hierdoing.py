@@ -46,6 +46,31 @@ def test_reat():
 
 def test_lode_basic():
     """Basic test Lode class"""
+    keys = ('a', 'b', 'c')
+    key = '.'.join(keys)
+    assert key == 'a.b.c'
+
+    # test staticmethod .tokey()
+    assert Lode.tokey(keys) == key
+    assert Lode.tokey('a') == 'a'  # str unchanged
+    assert Lode.tokey('a.b') == 'a.b'  # str unchanged
+    assert Lode.tokey(keys)
+
+    with pytest.raises(KeyError):
+        key = Lode.tokey((1, 2, 3))
+
+    with pytest.raises(KeyError):
+        key = Lode.tokey(1)
+
+
+    # Test staticmethod .tokeys()
+    assert Lode.tokeys(key) == keys
+    assert Lode.tokeys('') == ('', )
+    assert Lode.tokeys('a') == ('a', )
+
+    assert Lode.tokey(Lode.tokeys(key)) == key
+    assert Lode.tokeys(Lode.tokey(keys)) == keys
+
     lode = Lode()  # defaults
     assert lode == {}
 
@@ -57,15 +82,6 @@ def test_lode_basic():
     assert lode['a'] == 5
     assert 'a' in lode
     assert lode.get('a') == 5
-
-    keys = ('a', 'b', 'c')
-    key = '.'.join(keys)
-    assert key == 'a.b.c'
-
-    # Test staticmethod .tokeys()
-    assert Lode.tokeys(key) == keys
-    assert Lode.tokeys('') == ('', )
-    assert Lode.tokeys('a') == ('a', )
 
     lode[keys] = 7
     assert list(lode.items()) == [('a', 5), ('a_b', 6), ('a.b.c', 7)]

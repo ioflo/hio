@@ -128,6 +128,58 @@ class Lode(dict):
         self.update(*pa, **kwa)
 
 
+    def __setitem__(self, k, v):
+        #if isNonStringIterable(k):
+            #try:
+                #k = '.'.join(k)
+            #except Exception as ex:
+                #raise KeyError(ex.args) from ex
+        #if not isinstance(k, str):
+            #raise KeyError(f"Expected str got {k}.")
+        return super(Lode, self).__setitem__(self.tokey(k), v)
+
+
+    def __getitem__(self, k):
+        #if isNonStringIterable(k):
+            #try:
+                #k = '.'.join(k)
+            #except Exception as ex:
+                #raise KeyError(ex.args) from ex
+        #if not isinstance(k, str):
+            #raise KeyError(f"Expected str got {k}.")
+        return super(Lode, self).__getitem__(self.tokey(k))
+
+
+    def __contains__(self, k):
+        #if isNonStringIterable(k):
+            #try:
+                #k = '.'.join(k)
+            #except Exception as ex:
+                #raise KeyError(ex.args) from ex
+        #if not isinstance(k, str):
+            #raise KeyError(f"Expected str got {k}.")
+        return super(Lode, self).__contains__(self.tokey(k))
+
+
+    def get(self, k, default=None):
+        #if isNonStringIterable(k):
+            #try:
+                #k = '.'.join(k)
+            #except Exception as ex:
+                #raise KeyError(ex.args) from ex
+        #if not isinstance(k, str):
+            #raise KeyError(f"Expected str got {k}.")
+        #if not super(Lode, self).__contains__(k):
+            #return default
+        #else:
+            #return super(Lode, self).__getitem__(k)
+        if not self.__contains__(k):
+            return default
+        else:
+            return self.__getitem__(k)
+
+
+
     def update(self, *pa, **kwa):
         """Convert keys that are tuples when positional argument is Iterable or
         Mapping to '.' joined strings
@@ -148,91 +200,68 @@ class Lode(dict):
             if isinstance(di, Mapping):
                 rd = {}
                 for k, v in di.items():
-                    if isNonStringIterable(k):
-                        try:
-                            k = '.'.join(k)
-                        except Exception as ex:
-                            raise KeyError(ex.args) from ex
-                    if not isinstance(k, str):
-                        raise KeyError(f"Expected str got {k}.")
-                    rd[k] = v
+                    #if isNonStringIterable(k):
+                        #try:
+                            #k = '.'.join(k)
+                        #except Exception as ex:
+                            #raise KeyError(ex.args) from ex
+                    #if not isinstance(k, str):
+                        #raise KeyError(f"Expected str got {k}.")
+                    rd[self.tokey(k)] = v
                 super(Lode, self).update(rd, **kwa)
 
             elif isinstance(di, Iterable):
                 ri = []
                 for k, v in di:
-                    if isNonStringIterable(k):
-                        try:
-                            k = '.'.join(k)
-                        except Exception as ex:
-                            raise KeyError(ex.args) from ex
-                    if not isinstance(k, str):
-                        raise KeyError(f"Expected str got {k}.")
-                    ri.append((k, v))
+                    #if isNonStringIterable(k):
+                        #try:
+                            #k = '.'.join(k)
+                        #except Exception as ex:
+                            #raise KeyError(ex.args) from ex
+                    #if not isinstance(k, str):
+                        #raise KeyError(f"Expected str got {k}.")
+                    ri.append((self.tokey(k), v))
                 super(Lode, self).update(ri, **kwa)
 
         else:
             super(Lode, self).update(**kwa)
 
 
-
     @staticmethod
-    def tokeys(k):
-        """Converts '.' joined key string to tuple of keys by splitting on '.'
+    def tokey(keys):
+        """Joins tuple of strings keys to '.' joined string key. If already
+        str then returns unchanged.
 
         Parameters:
-            k (str): '.' joined string to be split
+            keys (Iterable[str] | str ): non-string Iteralble of path key
+                    components to be '.' joined into key.
+                    If keys is already str then returns unchanged
+
         Returns:
-            keys (tuple[str]): split of k on '.' into path key components
+            key (str): '.' joined string
         """
-        return tuple(k.split("."))
-
-
-    def __setitem__(self, k, v):
-        if isNonStringIterable(k):
+        if isNonStringIterable(keys):
             try:
-                k = '.'.join(k)
+                key = '.'.join(keys)
             except Exception as ex:
                 raise KeyError(ex.args) from ex
-        if not isinstance(k, str):
-            raise KeyError(f"Expected str got {k}.")
-        return super(Lode, self).__setitem__(k, v)
-
-
-    def __getitem__(self, k):
-        if isNonStringIterable(k):
-            try:
-                k = '.'.join(k)
-            except Exception as ex:
-                raise KeyError(ex.args) from ex
-        if not isinstance(k, str):
-            raise KeyError(f"Expected str got {k}.")
-        return super(Lode, self).__getitem__(k)
-
-
-    def __contains__(self, k):
-        if isNonStringIterable(k):
-            try:
-                k = '.'.join(k)
-            except Exception as ex:
-                raise KeyError(ex.args) from ex
-        if not isinstance(k, str):
-            raise KeyError(f"Expected str got {k}.")
-        return super(Lode, self).__contains__(k)
-
-
-    def get(self, k, default=None):
-        if isNonStringIterable(k):
-            try:
-                k = '.'.join(k)
-            except Exception as ex:
-                raise KeyError(ex.args) from ex
-        if not isinstance(k, str):
-            raise KeyError(f"Expected str got {k}.")
-        if not super(Lode, self).__contains__(k):
-            return default
         else:
-            return super(Lode, self).__getitem__(k)
+            key = keys
+        if not isinstance(key, str):
+            raise KeyError(f"Expected str got {key}.")
+        return key
+
+
+    @staticmethod
+    def tokeys(key):
+        """Converts '.' joined string key to tuple of keys by splitting on '.'
+
+        Parameters:
+            key (str): '.' joined string to be split
+        Returns:
+            keys (tuple[str]): split of key on '.' into path key components
+        """
+        return tuple(key.split("."))
 
 
 class Builder(Mixin):
