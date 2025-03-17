@@ -264,8 +264,8 @@ class Lode(dict):
         return tuple(key.split("."))
 
 
-class Builder(Mixin):
-    """Builder Class boxworks of Boxer and Box instances.
+class Maker(Mixin):
+    """Maker Class makes boxworks of Boxer and Box instances.
     Holds reference to in-memory lode shared by all boxes in boxwork
     Holds reference to current Boxer and Boxe being built
 
@@ -281,7 +281,7 @@ class Builder(Mixin):
         _name (str): unique identifier of instance
 
     """
-    def __init__(self, *, name='builder', lode=None, **kwa):
+    def __init__(self, *, name='maker', lode=None, **kwa):
         """Initialize instance.
 
         Parameters:
@@ -290,7 +290,7 @@ class Builder(Mixin):
 
 
         """
-        super(Builder, self).__init__(**kwa)
+        super(Maker, self).__init__(**kwa)
         self.name = name
         self.lode = lode if lode is not None else Lode()
         self.boxer = None
@@ -317,6 +317,9 @@ class Builder(Mixin):
             raise HierError(f"Invalid {name=}.")
 
         self._name = name
+
+    def make(self):
+        """"""
 
 
 class Boxer(Tymee):
@@ -408,6 +411,18 @@ class Boxer(Tymee):
         if not Reat.match(name):
             raise HierError(f"Invalid {name=}.")
         self._name = name
+
+    def prep(self):
+        """"""
+
+    def run(self):
+        """"""
+
+    def quit(self):
+        """"""
+
+    def make(self):
+        """"""
 
 
 class Box(Tymee):

@@ -21,7 +21,7 @@ from hio import hioing
 from hio.help import helping
 from hio.base import tyming
 
-from hio.base.hier import Reat, Lode, Builder, Boxer, Box
+from hio.base.hier import Reat, Lode, Maker, Boxer, Box
 from hio.base.hier import hierdoing
 from hio.base.hier.hierdoing import exen
 
@@ -152,19 +152,19 @@ def test_lode_basic():
     """Done Test"""
 
 
-def test_builder_basic():
-    """Basic test Builder class"""
-    builder = Builder()  # defaults
-    assert builder.name == 'builder'
-    assert builder.lode == Lode()
-    assert builder.boxer == None
-    assert builder.box == None
+def test_maker_basic():
+    """Basic test Maker class"""
+    maker = Maker()  # defaults
+    assert maker.name == 'maker'
+    assert maker.lode == Lode()
+    assert maker.boxer == None
+    assert maker.box == None
 
     with pytest.raises(hioing.HierError):
-        builder.name = "A.B"
+        maker.name = "A.B"
 
     with pytest.raises(hioing.HierError):
-        builder.name = "|builder"
+        maker.name = "|maker"
 
 
 def test_boxer_basic():
@@ -416,7 +416,7 @@ def test_be_box():
 if __name__ == "__main__":
     test_reat()
     test_lode_basic()
-    test_builder_basic()
+    test_maker_basic()
     test_boxer_basic()
     test_box_basic()
     test_exen()
