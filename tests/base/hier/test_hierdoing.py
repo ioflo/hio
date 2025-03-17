@@ -20,7 +20,6 @@ from dataclasses import dataclass, astuple, asdict, field
 from hio import hioing
 from hio.help import helping
 from hio.base import tyming
-
 from hio.base.hier import Reat, Lode, Maker, Boxer, Box
 from hio.base.hier import hierdoing
 from hio.base.hier.hierdoing import exen
@@ -156,7 +155,7 @@ def test_maker_basic():
     """Basic test Maker class"""
     maker = Maker()  # defaults
     assert maker.name == 'maker'
-    assert maker.lode == Lode()
+    assert maker.bags == Lode()
     assert maker.boxer == None
     assert maker.box == None
 
@@ -173,7 +172,7 @@ def test_boxer_basic():
     assert boxer.tyme == None
     assert boxer.tymth == None
     assert boxer.name == 'boxer'
-    assert boxer.lode == Lode()
+    assert boxer.bags == Lode()
     assert boxer.doer == None
     assert boxer.first == None
     assert boxer.pile == []
@@ -195,7 +194,7 @@ def test_box_basic():
     assert box.tyme == None
     assert box.tymth == None
     assert box.name == 'box'
-    assert box.lode == Lode()
+    assert box.bags == Lode()
     assert box.boxer == None
     assert box.over == None
     assert box.unders == []
@@ -343,8 +342,6 @@ def test_inspect_stuff():
     f(name="test", over="up")
 
     _name = ''
-    _boxes = {}  # default boxes dict
-    _over = None # default top box
 
     def be(name=None, over=None):
         # '_name' is only in locals because it is referenced in the assignment
@@ -373,11 +370,15 @@ def test_inspect_stuff():
         assert not '_blame' in locals()
         assert '_blame' in globals()  # unless assigned someplace else
         x = _blame
+        _blame = "who"
 
     g(name="test", over="up")
+    assert '_blame' in globals()
+    assert _blame == "who"
+
 
     _fame = ''  # not a global at this point
-    assert not '_fame' in globals()
+    assert '_fame' not in globals()
 
     def h(name=None, over=None):
         global _fame
@@ -387,26 +388,140 @@ def test_inspect_stuff():
         assert '_fame' in globals()
 
     h(name="test", over="up")
+    assert _fame not in globals()
+    assert _fame == ''  # not changed outside if not declared in global outside
 
     """Done Test"""
 
 def test_be_box():
-    """Test be function for adding box to box work
+    """Test concept for be function for adding box to box work
 
-    Note: name mangling only happens inside a class definition.
     """
-    global _boxes, _over, _prefix
+    global B, _bags, _boxer, _boxes, _box, _over, _proem, _index
+
+    B = _bags = Lode()
+    _boxer = None
     _boxes = {}  # default boxes dict now a global
+    _box = None
     _over = None # default top box now a global
-    _prefix = '_box'  #  default box name prefix now a global
+    _proem = '_box'  #  default box name prefix now a global
+    _index = 0  # default box name index
 
-    def be(name=None, over=None):
-        global _boxes, _over, _prefix
+    def be(name: None|str=None, over: None|str|Box="")->Box:
+        """Make a box and add to box work
 
-        assert '_prefix' in globals()
-        x = _prefix
+        Parameters:
+            name (None | str): when None then create name from _proem and _index
+                               if non-empty string then use provided
+                               otherwise raise exception
 
-    be(name="test", over="up")
+            over (None | str | Box): over box for new box.
+                                    when str then name of new over box
+                                    when box then actual over box
+                                    when None then no over box (top level)
+                                    when empty then same level use _over
+
+        Globals:
+            B, _bags: (Lode): data lode for this box work
+            _boxer (Boxer | None): instance to which this box belongs
+            _boxes (dict): map of boxes in this box work
+            _box (Box | None): current box in box work. None if not yet a box
+            _over (Box | None): current over Box in box work. None if top level
+
+
+        """
+        global B, _bags, _boxer, _boxes, _box, _over, _proem, _index
+
+        if not name:  # empty or None
+            if name is None:
+                name = _proem + str(_index)
+                _index += 1
+            else:
+                raise hioing.HierError(f"Missing name.")
+
+        if name in _boxes:  # duplicate name
+            raise hioing.HierError(f"Non-unique box {name=}.")
+
+        if over is not None:  # not at top level
+            if isinstance(over, str):
+                if not over:  # empty string
+                    over = _over  # same level
+                else:  # resolvable string
+                    try:
+                        over = _boxes[over]  # resolve
+                    except KeyError as ex:
+                        raise hioing.HierError(f"Under box={name} defined before"
+                                               f"its {over=}.") from ex
+
+            elif over.name not in _boxes:  # stray over box
+                _boxes[over.name] = over  # add to boxes
+
+        box = Box(name=name, over=over, bags=_bags, boxer=_boxer)
+        if box.over is not None:  # not at top level
+            box.over.unders.append(box)  # add to over.unders list
+
+        _over = over  # update current level
+        _boxes[box.name] = box  # update box work
+        _box = box  # update current box
+        return box
+
+    assert _boxes == {}
+    assert _box == None
+    assert _over == None
+    assert _index == 0
+
+    btop = be(name="top")
+    assert _box == btop
+    assert _over == None
+
+    b0 = be(over="top")
+    assert _box == b0
+    assert _over == btop
+
+    b1 = be()
+    assert _box == b1
+    assert _over == btop
+
+    b2 = be(over=b1)
+    assert _box == b2
+    assert _over == b1
+
+    b3 = be(over=None)
+    assert _box == b3
+    assert _over == None
+
+    b4 = be()
+    assert _box == b4
+    assert _over == None
+
+    b5 = be(over="_box0")
+    assert _box == b5
+    assert _over == b0
+
+    b6 = be()
+    assert _box == b6
+    assert _over == b0
+
+    assert _index == 7
+
+
+    assert _boxes == {'top': btop,
+                    '_box0': b0,
+                    '_box1': b1,
+                    '_box2': b2,
+                    '_box3': b3,
+                    '_box4': b4,
+                    '_box5': b5,
+                    '_box6': b6,}
+
+    assert str(btop) == 'Box(<top>_box0>_box5)'
+    assert str(b0) == 'Box(top<_box0>_box5)'
+    assert str(b1) == 'Box(top<_box1>_box2)'
+    assert str(b2) == 'Box(top<_box1<_box2>)'
+    assert str(b3) == 'Box(<_box3>)'
+    assert str(b4) == 'Box(<_box4>)'
+    assert str(b5) == 'Box(top<_box0<_box5>)'
+    assert str(b6) == 'Box(top<_box0<_box6>)'
 
 
     """Done Test"""

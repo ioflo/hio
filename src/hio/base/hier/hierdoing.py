@@ -270,7 +270,7 @@ class Maker(Mixin):
     Holds reference to current Boxer and Boxe being built
 
     Attributes:
-        lode (Lode): in memory data lode shared by all boxes in boxwork
+        bags (Lode): in memory data lode shared by all boxes in boxwork
         boxer (Boxer | None): current boxer
         box (Box | None): cureent box
 
@@ -281,18 +281,18 @@ class Maker(Mixin):
         _name (str): unique identifier of instance
 
     """
-    def __init__(self, *, name='maker', lode=None, **kwa):
+    def __init__(self, *, name='maker', bags=None, **kwa):
         """Initialize instance.
 
         Parameters:
             name (str): unique identifier of instance
-            lode (Lode | None): in memory data lode shared by all boxes in box work
+            bags (Lode | None): in memory data lode shared by all boxes in box work
 
 
         """
         super(Maker, self).__init__(**kwa)
         self.name = name
-        self.lode = lode if lode is not None else Lode()
+        self.bags = bags if bags is not None else Lode()
         self.boxer = None
         self.box = None
 
@@ -333,7 +333,7 @@ class Boxer(Tymee):
         see Tymee
 
     Attributes:
-        lode (Lode): in memory data lode shared by all boxes in box work
+        bags (Lode): in memory Lode (map) of data bags shared by all boxes in box work
         doer (Doer | None): doer running this boxer
         first (Box | None):  beginning box
         pile (list[Box]): active pile of boxes
@@ -371,12 +371,13 @@ class Boxer(Tymee):
 
 
     """
-    def __init__(self, *, name='boxer', lode=None, doer=None, first=None, **kwa):
+    def __init__(self, *, name='boxer', bags=None, doer=None, first=None, **kwa):
         """Initialize instance.
 
         Parameters:
             name (str): unique identifier of box
-            lode (Lode | None): in memory data lode shared by all boxes in box work
+            bags (Lode | None): in memory Lode (map) of data bags shared by all
+                                 boxes in box work
             doer (Doer | None): Doer running this Boxer
             first (Box | None):  beginning box
 
@@ -384,7 +385,7 @@ class Boxer(Tymee):
         """
         super(Boxer, self).__init__(**kwa)
         self.name = name
-        self.lode = lode if lode is not None else Lode()
+        self.bags = bags if bags is not None else Lode()
         self.doer = None
         self.first = first
         self.pile = []  # current active pile
@@ -436,7 +437,8 @@ class Box(Tymee):
         see Tymee
 
     Attributes:
-        lode (dict): in memory data lode shared by all boxes in box work
+        bags (Lode): in memory Lode (map) of data bags shared by all boxes
+                     in box work
         boxer (Boxer | None):  this box's Boxer instance
         over (Box | None): this box's over box instance or None
         unders (list[Box]): this box's under box instances or empty
@@ -476,27 +478,26 @@ class Box(Tymee):
 
 
     """
-    def __init__(self, *, name='box', lode=None, boxer=None, over=None,
+    def __init__(self, *, name='box', bags=None, boxer=None, over=None,
                  unders=None, **kwa):
         """Initialize instance.
 
         Parameters:
             name (str): unique identifier of box
-            lode (dict | None): in memory data lode shared by all boxes in box work
+            bags (Lode): in memory Lode (map) of data bags shared by all boxes
+                         in box work
             boxer (Boxer | None):  this box's Boxer instance
             over (Box | None): this box's over box instance or None
             unders (list[Box]): this box's under box instances or empty.
                                 zeroth entry is primary under
         """
         super(Box, self).__init__(**kwa)
-        if '_' in name:
-            raise HierError(f"Invalid {name=} contains '_'.")
         self.name = name
         self._pile = None  # force .trace on first access of .pile property
         self._spot = None  # zero based offset into .pile of this box
         self._trail = None  # delimited string representation of box names in .pile
 
-        self.lode = lode if lode is not None else Lode()
+        self.bags = bags if bags is not None else Lode()
         self.boxer = boxer
         self.over = over  # over box
         self.unders = unders if unders is not None else []  # list of under boxes,
