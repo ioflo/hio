@@ -63,8 +63,8 @@ Fields:
 """
 Loadage = namedtuple("Loadage", "name tyme tock real limit doers temp boss")
 
-# (?P<proto2>[A-Z]{4})
-# regular expression to parse JSON serializations of Bosser Crewer memos
+
+# Regular expression to extract tag from JSON serializations of Bosser Crewer memos
 TAGREX = r'^\{"tag":"(?P<tag>[A-Z]*)"'
 # Usage: if retag.match(memo): or if not Reb64.match(memo): memo is str
 # tag = retag.match(memo).group(1)
@@ -180,18 +180,14 @@ class AddrDom(RawDom):
 class AckDom(RawDom):
     """Inter Boss Crew Hand structured memo dataclass. Used for ACK memos
     Between Boss and Crew Doers via their .peer UXD BossMemoer or CrewMemoer.
-    Payload load field is specific to the memo being acked. The load includes
-    the tag and name fields at least of the memo being acked additional fields
-    in the load dict may include information related to the memo being acked.
-
-
-    In the case of an ACK to a REG memo the load of the ACK is an AddrDom
-    instance with the fields, tag, name, and addr.
+    The load of the ACK is an AddrDom instance with the fields, tag, name, and addr.
+    The AddrDom tag and name fields come from the memo being acked. The addr
+    field is the src address path of the memo being acked.
 
     Attributes:
         tag (str): type of memo
         name (str): unique identifier as source of memo
-        load (AddrDom): info of acked memo
+        load (AddrDom): attribution info of acked memo
     """
     tag: str = 'ACK'    # type of memo
     name: str ='boss'  # unique identifier of source
