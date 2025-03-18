@@ -318,8 +318,42 @@ class Maker(Mixin):
 
         self._name = name
 
-    def make(self):
-        """"""
+    def make(self, fun, bags=None, boxes=None):
+        """Make box work from function fun
+        Parameters:
+            fun (function):  employs be, do, on, go maker functions with
+                              globals
+            bags (None|Lode):  shared data Lode for all made Boxers
+            boxes (None|dict): shared boxes map
+
+        Globals:  (used inside of be,do,on, go maker functions)
+
+
+        def fun(boxer=None):
+            globals _box, _over, _proem, _index
+
+        """
+        # these are external scope to fun and must be global since not collections
+        global _box, _over, _proem, _index
+        _box = None
+        _over = None
+        _proem = '_box'
+        _index = 0
+
+        # bags boxes and boxers are external scope to fun but since collections
+        # do not need to be global
+        bags = bags if bags is not None else Lode()  # create new if not provided
+        boxes = boxes if boxes is not None else {}  # create new if not provided
+        boxers = []  # list of made boxers
+
+        # create a default boxer
+        boxer = Boxer(name='boxer', bags=bags, boxes=boxes)
+        boxers.append(boxer)
+
+
+
+
+
 
 
 class Boxer(Tymee):
@@ -333,12 +367,13 @@ class Boxer(Tymee):
         see Tymee
 
     Attributes:
-        bags (Lode): in memory Lode (map) of data bags shared by all boxes in box work
-        doer (Doer | None): doer running this boxer
+        bags (Lode): in memory Lode (map) of data bags shared across boxwork
         first (Box | None):  beginning box
+        doer (Doer | None): doer running this boxer  (do we need this?)
+        boxes (dict): all boxes mapping of (box name, box) pairs
+
         pile (list[Box]): active pile of boxes
         box (Box | None):  active box in pile
-        boxes (dict): all boxes mapping of (box name, box) pairs
 
     Properties:
         name (str): unique identifier of instance
@@ -371,26 +406,27 @@ class Boxer(Tymee):
 
 
     """
-    def __init__(self, *, name='boxer', bags=None, doer=None, first=None, **kwa):
+    def __init__(self, *, name='boxer', bags=None, first=None, doer=None, **kwa):
         """Initialize instance.
 
         Parameters:
             name (str): unique identifier of box
             bags (Lode | None): in memory Lode (map) of data bags shared by all
                                  boxes in box work
-            doer (Doer | None): Doer running this Boxer
             first (Box | None):  beginning box
+            doer (Doer | None): Doer running this Boxer doe we need this?
 
 
         """
         super(Boxer, self).__init__(**kwa)
         self.name = name
         self.bags = bags if bags is not None else Lode()
-        self.doer = None
         self.first = first
+        self.doer = doer
+        self.boxes = {}
         self.pile = []  # current active pile
         self.box = None  # current active box in active pile
-        self.boxes = {}
+
 
     @property
     def name(self):
@@ -422,8 +458,35 @@ class Boxer(Tymee):
     def quit(self):
         """"""
 
-    def make(self):
-        """"""
+    def make(self, fun):
+        """Make box work for this boxer from function fun
+        Parameters:
+            fun (function):  employs be, do, on, go maker functions with
+                              globals
+            bags (None|Lode):  shared data Lode for all made Boxers
+            boxes (None|dict): shared boxes map
+
+        Globals:  (used inside of be,do,on, go maker functions)
+
+
+        def fun(boxer=None):
+            globals _box, _over, _proem, _index
+
+        """
+        # these are external scope to fun and must be global since not collections
+        global _box, _over, _proem, _index
+        _box = None
+        _over = None
+        _proem = '_box'
+        _index = 0
+
+        boxer = self  # externally scoped reference inside fun and maker functions
+
+        fun()  # calling fun will build boxer.boxes
+
+
+
+
 
 
 class Box(Tymee):
@@ -437,14 +500,12 @@ class Box(Tymee):
         see Tymee
 
     Attributes:
-        bags (Lode): in memory Lode (map) of data bags shared by all boxes
-                     in box work
-        boxer (Boxer | None):  this box's Boxer instance
+        bags (Lode): in memory Lode (map) of data bags shared across boxwork
         over (Box | None): this box's over box instance or None
         unders (list[Box]): this box's under box instances or empty
                             zeroth entry is primary under
 
-        nxt (Box | None): this box's next box if any
+
         preacts (list[act]): precur (pre-occurence pre-transit) context acts
         beacts (list[act]): benter (before enter) context acts
         renacts (list[act]): renter (re-enter) context acts
@@ -473,36 +534,28 @@ class Box(Tymee):
                             This is computed by ._trace
         _trace(): function to trace and update ._pile from .over and .unders[0]
                   and update ._spot and ._trail
+        _next (Box | None): this box's next box if any lexically
 
 
 
 
     """
-    def __init__(self, *, name='box', bags=None, boxer=None, over=None,
-                 unders=None, **kwa):
+    def __init__(self, *, name='box', bags=None, over=None, **kwa):
         """Initialize instance.
 
         Parameters:
             name (str): unique identifier of box
-            bags (Lode): in memory Lode (map) of data bags shared by all boxes
-                         in box work
-            boxer (Boxer | None):  this box's Boxer instance
+            bags (Lode): in memory Lode (map) of data bags shared across boxwork
             over (Box | None): this box's over box instance or None
-            unders (list[Box]): this box's under box instances or empty.
-                                zeroth entry is primary under
         """
         super(Box, self).__init__(**kwa)
         self.name = name
+        self.bags = bags if bags is not None else Lode()
         self._pile = None  # force .trace on first access of .pile property
         self._spot = None  # zero based offset into .pile of this box
         self._trail = None  # delimited string representation of box names in .pile
-
-        self.bags = bags if bags is not None else Lode()
-        self.boxer = boxer
         self.over = over  # over box
-        self.unders = unders if unders is not None else []  # list of under boxes,
-
-        self.nxt = None  # next box to execute on default transition
+        self.unders = []  # list of under boxes,
 
         # acts by contexts
         self.preacts = []  # precur context list of pre-occurence pre-transit acts
@@ -513,6 +566,9 @@ class Box(Tymee):
         self.tracts = []  # transit context list of transition acts
         self.exacts = []  # exit context list of exit acts
         self.rexacts = []  # rexit context list of re-exit acts
+
+        #lexical context
+        self._next = None  # next box lexically
 
 
     def __repr__(self):
@@ -613,4 +669,73 @@ class Box(Tymee):
 
 
 
+def be(name: None|str=None, over: None|str|Box="")->Box:
+    """Make a box and add to box work
 
+    Parameters:
+        name (None | str): when None then create name from _proem and _index
+                           if non-empty string then use provided
+                           otherwise raise exception
+
+        over (None | str | Box): over box for new box.
+                                when str then name of new over box
+                                when box then actual over box
+                                when None then no over box (top level)
+                                when empty then same level use _over
+
+    Externally Referenced:
+        boxer (Boxer | None): instance to which this box belongs
+                              uses and updates its collections .bags .boxes
+
+
+    Globals:  (these used and updated inside here)
+        _box (Box | None): current box in box work. None if not yet a box
+        _over (Box | None): current over Box in box work. None if top level
+        _proem (str):  default name prefix used to generate unique box name
+                       relative to boxer.boxes
+        _index (int): default int used to generate unique box name relative to
+                      boxer.boxes
+
+
+    """
+    global _box, _over, _proem, _index
+
+
+    if not name:  # empty or None
+        if name is None:
+            name = _proem + str(_index)
+            _index += 1
+            while name in boxer.boxes:
+                name = _proem + str(_index)
+                _index += 1
+
+        else:
+            raise hioing.HierError(f"Missing name.")
+
+    if name in boxer.boxes:  # duplicate name
+        raise hioing.HierError(f"Non-unique box {name=}.")
+
+    if over is not None:  # not at top level
+        if isinstance(over, str):
+            if not over:  # empty string
+                over = _over  # same level
+            else:  # resolvable string
+                try:
+                    over = boxer.boxes[over]  # resolve
+                except KeyError as ex:
+                    raise hioing.HierError(f"Under box={name} defined before"
+                                           f"its {over=}.") from ex
+
+        elif over.name not in boxer.boxes:  # stray over box
+            boxer.boxes[over.name] = over  # add to boxes
+
+    box = Box(name=name, over=over, bags=boxer.bags, tymth=boxer.tymth)
+    boxer.boxes[box.name] = box  # update box work
+    if box.over is not None:  # not at top level
+        box.over.unders.append(box)  # add to over.unders list
+
+    _over = over  # update current level
+    if _box:  # update last boxes lexical ._next to this box
+        _box._next = box
+    _box = box  # update current box
+    return box

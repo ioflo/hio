@@ -173,11 +173,13 @@ def test_boxer_basic():
     assert boxer.tymth == None
     assert boxer.name == 'boxer'
     assert boxer.bags == Lode()
-    assert boxer.doer == None
+    assert boxer.boxes == {}
     assert boxer.first == None
+    assert boxer.doer == None
+
     assert boxer.pile == []
     assert boxer.box == None
-    assert boxer.boxes == {}
+
 
 
 
@@ -194,12 +196,10 @@ def test_box_basic():
     assert box.tyme == None
     assert box.tymth == None
     assert box.name == 'box'
-    assert box.bags == Lode()
-    assert box.boxer == None
+    assert isinstance(box.bags, Lode)
     assert box.over == None
     assert box.unders == []
 
-    assert box.nxt == None
     assert box.preacts == []
     assert box.beacts == []
     assert box.renacts == []
@@ -342,8 +342,7 @@ def test_inspect_stuff():
     f(name="test", over="up")
 
     _name = ''
-
-    def be(name=None, over=None):
+    def d(name=None, over=None):
         # '_name' is only in locals because it is referenced in the assignment
         # statement below. If _name is never referenced inside function be()
         # then it never makes it into locals(). The interpreter only populates
@@ -351,13 +350,28 @@ def test_inspect_stuff():
         # local scope it could access if it needed to.
         x = _name
         assert '_name' in locals()
-
-        #l = locals() # makes copy of locals
-        # l['name'] = 'big'
-        #g = globals()  # makes copy of globals
         assert '_name' not in globals()
 
-    be(name="test", over="up")
+    d(name="test", over="up")
+    assert '_name' not in globals()
+    assert _name == ''
+
+    _game = ''
+    def e(name=None, over=None):
+        # '_name' is only in locals because it is referenced in the assignment
+        # statement below. If _name is never referenced inside function be()
+        # then it never makes it into locals(). The interpreter only populates
+        # locals with varialbls in local scope it needs not all variables in
+        # local scope it could access if it needed to.
+        _name = "where"
+        x = _name
+        assert '_name' in locals()
+        assert '_name' not in globals()
+
+    e(name="test", over="up")
+    assert '_name' not in globals()
+    assert _name == ''
+
 
     global _blame
     assert not '_blame' in globals()  # not in globals until assigned a value
@@ -390,6 +404,38 @@ def test_inspect_stuff():
     h(name="test", over="up")
     assert _fame not in globals()
     assert _fame == ''  # not changed outside if not declared in global outside
+
+
+    # double nested globals
+    def j():
+        global _tame
+        assert _tame == 'here'
+        _tame = "far"
+        assert '_tame' in globals()
+
+    assert '_tame' not in globals()
+
+    global _tame
+    _tame = 'here'
+    assert '_tame' in globals()
+
+    def i(name=None, over=None):
+        j()
+    i()
+    assert '_tame' in globals()
+    assert _tame == "far"
+
+
+    def k():
+        def l():
+            global _tame
+            assert _tame == 'far'
+            _tame = "near"
+            assert '_tame' in globals()  # closure?
+        l()
+    k()
+    assert '_tame' in globals()
+    assert _tame == "near"
 
     """Done Test"""
 
@@ -436,6 +482,10 @@ def test_be_box():
             if name is None:
                 name = _proem + str(_index)
                 _index += 1
+                while name in _boxes:
+                    name = _proem + str(_index)
+                    _index += 1
+
             else:
                 raise hioing.HierError(f"Missing name.")
 
@@ -462,6 +512,8 @@ def test_be_box():
 
         _over = over  # update current level
         _boxes[box.name] = box  # update box work
+        if _box:
+            _box._next = box #update prior box lexical next to this box
         _box = box  # update current box
         return box
 
@@ -473,34 +525,43 @@ def test_be_box():
     btop = be(name="top")
     assert _box == btop
     assert _over == None
+    assert not btop._next
 
     b0 = be(over="top")
     assert _box == b0
     assert _over == btop
+    assert btop._next == b0
 
     b1 = be()
     assert _box == b1
     assert _over == btop
+    assert b0._next == b1
 
     b2 = be(over=b1)
     assert _box == b2
     assert _over == b1
+    assert b1._next == b2
 
     b3 = be(over=None)
     assert _box == b3
     assert _over == None
+    assert b2._next == b3
 
     b4 = be()
     assert _box == b4
     assert _over == None
+    assert b3._next == b4
 
     b5 = be(over="_box0")
     assert _box == b5
     assert _over == b0
+    assert b4._next == b5
 
     b6 = be()
     assert _box == b6
     assert _over == b0
+    assert b5._next == b6
+    assert not b6._next
 
     assert _index == 7
 
