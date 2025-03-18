@@ -223,7 +223,7 @@ def attributize(genie):
         # now replace default class references with real gen attributes. "duckify"
         for attr in ('__next__', 'close', 'send', 'throw',
                      'gi_code', 'gi_frame', 'gi_running', 'gi_yieldfrom'):
-            setattr(AG, attr, getattr(gen, attr))
+            setattr(AG, attr, getattr(gen, attr))  # methods are class attributes
 
         functools.update_wrapper(wrapper=ag, wrapped=gen)  # fix up wrapper
         return ag
