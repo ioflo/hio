@@ -707,6 +707,8 @@ def makize(works: dict|None=None) -> Callable[..., Any]:
         def wrapper(*pa, **kwa):
             if 'works' not in kwa or kwa['works'] is None:  # missing or None
                 kwa.update(works=works)  # replace or add works to kwa
+            else:
+                works.update(kwa['works'])  # update closure works for reuse
             return f(*pa, **kwa)
         return wrapper
     return inner

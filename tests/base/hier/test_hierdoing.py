@@ -150,20 +150,30 @@ def test_lode_basic():
 
     """Done Test"""
 
+def test_makize():
+    """Test makize wrapper. Test different use cases
+    as inline wrapper with call time injected works (standard)
+    as inline wrapper with default lexical works
+    as inline wrapper with call time inject works that is preserved
+    as decorator with defualt lexical works
+    as decorator with call time works paramter that is preserved
 
-def test_maker_basic():
-    """Basic test Maker class"""
-    maker = Maker()  # defaults
-    assert maker.name == 'maker'
-    assert maker.bags == Lode()
-    assert maker.boxer == None
-    assert maker.box == None
+    """
+    works = dict(count=0)
 
-    with pytest.raises(hioing.HierError):
-        maker.name = "A.B"
+    def be(name="box", *, works=None):
+        works['count'] += 1
 
-    with pytest.raises(hioing.HierError):
-        maker.name = "|maker"
+
+    def fun(be):
+        be(name='top')
+        be(over='top')
+        be()
+        b = be()
+        be(over=b)
+
+    """Done Test"""
+
 
 
 def test_box_basic():
@@ -251,6 +261,22 @@ def test_boxer_make():
     assert works['box'].name == 'box3'
 
     """Done Test"""
+
+
+def test_maker_basic():
+    """Basic test Maker class"""
+    maker = Maker()  # defaults
+    assert maker.name == 'maker'
+    assert maker.bags == Lode()
+    assert maker.boxer == None
+    assert maker.box == None
+
+    with pytest.raises(hioing.HierError):
+        maker.name = "A.B"
+
+    with pytest.raises(hioing.HierError):
+        maker.name = "|maker"
+
 
 def test_exen():
     """Test exen function for finding common/uncommon boxes in near far staks
@@ -774,6 +800,7 @@ def test_concept_be_box_global():
 
 if __name__ == "__main__":
     test_reat()
+    test_makize()
     test_lode_basic()
     test_box_basic()
     test_boxer_basic()
