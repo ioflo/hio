@@ -340,8 +340,8 @@ class Maker(Mixin):
         _proem = '_box'
         _index = 0
 
-        # bags boxes and boxers are external scope to fun but since collections
-        # do not need to be global
+        # bags, boxes, and boxers can be referenced by fun in its nonlocal
+        # enclosing scope. collections references to not need to be global
         bags = bags if bags is not None else Lode()  # create new if not provided
         boxes = boxes if boxes is not None else {}  # create new if not provided
         boxers = []  # list of made boxers
@@ -349,6 +349,8 @@ class Maker(Mixin):
         # create a default boxer
         boxer = Boxer(name='boxer', bags=bags, boxes=boxes)
         boxers.append(boxer)
+
+        fun()
 
 
 
