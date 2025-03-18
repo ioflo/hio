@@ -141,7 +141,7 @@ def test_filing():
 
     headDirPath = os.path.join(os.path.sep, 'root', 'hio')
     if platform.system() == 'Windows':
-        headDirPath = 'C:\\Windows\\System32\\hio'
+        headDirPath = 'C:\\System Volume Information\\hio'
     headDirPath = os.path.join(headDirPath, 'hio')
 
     # headDirPath that is not permitted to force using AltPath
