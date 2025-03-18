@@ -28,7 +28,7 @@ jobs:
           sudo chown -R $USER /usr/local/var/hio
           python -m pip install --upgrade pip
           pip install pytest
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if (Test-Path requirements.txt) { pip install -r requirements.txt }
       - name: Run hio tests
         run: |
           pytest
