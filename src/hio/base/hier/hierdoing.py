@@ -467,20 +467,25 @@ class Boxer(Tymee):
             boxes (None|dict): shared boxes map
 
         Globals:  (used inside of be,do,on, go maker functions)
+            _box: None|Box = None
+            _over: None|Box = None
+            _proem: str = '_box'
+            _index: int = 0
 
-
-        def fun(boxer=None):
+        def fun():
             globals _box, _over, _proem, _index
 
         """
-        # these are external scope to fun and must be global since not collections
+        # these are nonlocal scope to fun and must be global since not collections
         global _box, _over, _proem, _index
         _box = None
         _over = None
         _proem = '_box'
         _index = 0
 
-        boxer = self  # externally scoped reference inside fun and maker functions
+        # nonlocal enclosing scope reference inside fun to boxer collection
+        # attributes .bags and .boxes so don't need to make global
+        boxer = self  # nonlocal enclosing scope referenced inside fun
 
         fun()  # calling fun will build boxer.boxes
 
