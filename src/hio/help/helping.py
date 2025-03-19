@@ -650,39 +650,159 @@ def datify(cls, d):
         return d  # not a dataclass so end recursion and next level up will process
 
 
-@dataclass
-class RawDom:
-    """RawDom is base class for dataclasses that provides private utility
-    methods for representing the dataclass as some other format like dict,
-    json bytes, cbor bytes, mgpk bytes as a raw format. Typically use case
-    is to serialize dataclass either directly or to transform dataclass into
-    dict and then serialized to be included in messages or stored in a database.
 
+@dataclass(frozen=True)
+class IceMapDom:
+    """Base class for frozen dataclasses (codexes) that support map syntax
+    Adds support for dunder methods for map syntax dc[name].
+    Converts exceptions from attribute syntax to raise map syntax when using
+    map syntax.
+
+    Note: iter astuple
+
+    Enables dataclass instances to use Mapping item syntax
+    """
+    def __getitem__(self, name):
+        try:
+            return getattr(self, name)
+        except AttributeError as ex:
+            raise IndexError(ex.args) from ex
+
+    def __iter__(self):
+        return iter(self._asdict())
+
+    #def __iter__(self):
+        #return iter(astuple(self))
+
+
+    def _asdict(self):
+        """Returns dict version of record"""
+        return dictify(self)
+
+
+    def _astuple(self):
+        """Returns dict version of record"""
+        return tuple(self._asdict().values())
+
+
+class MapDom:
+    """MapDom is a base class for dataclasses that support map syntax
+    Adds support for dunder methods for map syntax dc[name].
+    Converts exceptions from attribute syntax to raise map syntax when using
+    map syntax.
+
+    Note: iter asdict
+
+    Enables dataclass instances to use Mapping item syntax
 
     Class Methods:
         _fromdict(cls, d: dict): return dataclass converted from dict d
-        _fromjson(cls, s: str|bytes): return dataclass converted from json s
-        _fromcbor(cls, s: bytes): return dataclass converted from cbor s
-        _frommgpk(cls, s: bytes): return dataclass converted from mgpk s
 
     Methods:
         __getitem__(self, name)  map like interface
         __setitem__(self, name, value)  map like interface
-        __delitem__(self, name)  map like interface
-        __iter__(self): asdict(self)
-        _asdict(self): return self converted to dict
-        _asjson(self): return bytes self converted to json
-        _ascbor(self): return bytes self converted to cbor
-        _asmgpk(self): return bytes self converted to mgpk
+        __iter__():  asdict(self)
+        _asdict(): return self converted to dict
+        _astuple(): return self converted to tuple
+        _update(*pa,**kwa): update attributes using dict like update syntax
     """
 
     @classmethod
     def _fromdict(cls, d: dict):
-        """returns instance of clas initialized from dict d """
+        """returns instance of cls initialized from dict d """
         dom = datify(cls, d)
         if not isinstance(dom, cls):
             raise ValueError("Invalid dict={d} to datify as dataclass={cls}.")
         return dom
+
+
+    def __getitem__(self, name):
+        try:
+            return getattr(self, name)
+        except AttributeError as ex:
+            raise IndexError(ex.args) from ex
+
+
+    def __setitem__(self, name, value):
+        try:
+            return setattr(self, name, value)
+        except AttributeError as ex:
+            raise IndexError(ex.args) from ex
+
+    # dataclasses to not allow delattr
+    #def __delitem__(self, name):
+        #try:
+            #return delattr(self, name)
+        #except AttributeError as ex:
+            #raise IndexError(ex.args) from ex
+
+    def __iter__(self):
+        return iter(self._asdict())
+
+
+    def _asdict(self):
+        """Returns dict version of record"""
+        return dictify(self)
+
+
+    def _astuple(self):
+        """Returns dict version of record"""
+        return tuple(self._asdict().values())
+
+
+    def _update(self, *pa, **kwa):
+        """Use item update syntax
+        """
+        if len(pa) > 1:
+            raise TypeError(f"Expected 1 positional argument got {len(pa)}.")
+
+        if pa:
+            di = pa[0]
+            if isinstance(di, Mapping):
+                for k, v in di.items():
+                    self[k] = v
+            elif isinstance(di, Iterable):
+                for k, v in di:
+                    self[k] = v
+            else:
+                raise TypeError(f"Expected Mapping or Iterable got {type(di)}.")
+
+        for k, v in kwa.items():
+            self[k] = v
+
+
+
+@dataclass
+class RawDom(MapDom):
+    """RawDom is subclass of MapDom that adds methods for converting to/from
+    raw format serializations in JSON, CBOR, and MGPK. RawDom is a base class
+    for such dataclasses. The serialization process is to transform dataclass into
+    dict and then serialize into raw. The deserialization process is and to
+    deserialize into dict and then convert to dataclass. This allows dataclass
+    to stored in databases or to be sent over the wire in messages in raw format.
+
+
+    Inherited Class Methods:
+        _fromdict(cls, d: dict): return dataclass converted from dict d
+
+    Class Methods:
+        _fromjson(cls, s: str|bytes): return dataclass converted from json s
+        _fromcbor(cls, s: bytes): return dataclass converted from cbor s
+        _frommgpk(cls, s: bytes): return dataclass converted from mgpk s
+
+    Inherited Methods:
+        __getitem__(self, name)  map like interface
+        __setitem__(self, name, value)  map like interface
+        __iter__(self): asdict(self)
+        _asdict(self): return self converted to dict
+        _astuple(): return self converted to tuple
+        _update(*pa,**kwa): update attributes using dict like update syntax
+
+    Methods:
+        _asjson(self): return bytes self converted to json
+        _ascbor(self): return bytes self converted to cbor
+        _asmgpk(self): return bytes self converted to mgpk
+    """
 
 
     @classmethod
@@ -790,106 +910,6 @@ class RawDom:
     def _asmgpk(self):
         """Returns mgpk bytes version of record"""
         return msgpack.dumps(self._asdict())
-
-
-
-class MapDom:
-    """Base class for dataclasses that support map syntax
-    Adds support for dunder methods for map syntax dc[name].
-    Converts exceptions from attribute syntax to raise map syntax when using
-    map syntax.
-
-    Note: iter asdict
-
-    Enables dataclass instances to use Mapping item syntax
-    """
-    def __getitem__(self, name):
-        try:
-            return getattr(self, name)
-        except AttributeError as ex:
-            raise IndexError(ex.args) from ex
-
-
-    def __setitem__(self, name, value):
-        try:
-            return setattr(self, name, value)
-        except AttributeError as ex:
-            raise IndexError(ex.args) from ex
-
-    # dataclasses to not allow delattr
-    #def __delitem__(self, name):
-        #try:
-            #return delattr(self, name)
-        #except AttributeError as ex:
-            #raise IndexError(ex.args) from ex
-
-    def __iter__(self):
-        return iter(self._asdict())
-
-
-    def _asdict(self):
-        """Returns dict version of record"""
-        return dictify(self)
-
-
-    def _astuple(self):
-        """Returns dict version of record"""
-        return tuple(self._asdict().values())
-
-
-    def _update(self, *pa, **kwa):
-        """Use item update syntax
-        """
-        if len(pa) > 1:
-            raise TypeError(f"Expected 1 positional argument got {len(pa)}.")
-
-        if pa:
-            di = pa[0]
-            if isinstance(di, Mapping):
-                for k, v in di.items():
-                    self[k] = v
-            elif isinstance(di, Iterable):
-                for k, v in di:
-                    self[k] = v
-            else:
-                raise TypeError(f"Expected Mapping or Iterable got {type(di)}.")
-
-        for k, v in kwa.items():
-            self[k] = v
-
-
-@dataclass(frozen=True)
-class IceMapDom:
-    """Base class for frozen dataclasses (codexes) that support map syntax
-    Adds support for dunder methods for map syntax dc[name].
-    Converts exceptions from attribute syntax to raise map syntax when using
-    map syntax.
-
-    Note: iter astuple
-
-    Enables dataclass instances to use Mapping item syntax
-    """
-    def __getitem__(self, name):
-        try:
-            return getattr(self, name)
-        except AttributeError as ex:
-            raise IndexError(ex.args) from ex
-
-    def __iter__(self):
-        return iter(self._asdict())
-
-    #def __iter__(self):
-        #return iter(astuple(self))
-
-
-    def _asdict(self):
-        """Returns dict version of record"""
-        return dictify(self)
-
-
-    def _astuple(self):
-        """Returns dict version of record"""
-        return tuple(self._asdict().values())
 
 
 

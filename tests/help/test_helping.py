@@ -572,6 +572,87 @@ def test_dictify():
     assert dictify(c) == {'area': 50.24, 'perimeter': 25.12}
 
 
+def test_icemapdom():
+    """Test IceMapDom dataclass """
+
+    @dataclass(frozen=True)
+    class TestDom(IceMapDom):
+        name:  str = 'test'
+        value:  int = 5
+
+
+    td = TestDom()
+    assert isinstance(td, TestDom)
+    assert isinstance(td, IceMapDom)
+    assert td.name == 'test'
+    assert td.value == 5
+
+    d = td._asdict()
+    assert isinstance(d, dict)
+    assert d == {'name': 'test', 'value': 5}
+
+    assert td._astuple() == ("test", 5)
+
+    assert 'name' in td
+    assert 'value' in td
+    """Done Test"""
+
+
+def test_mapdom():
+    """Test MapDom dataclass """
+
+    @dataclass
+    class TestDom(MapDom):
+        name:  str = 'test'
+        value:  int = 5
+
+
+    td = TestDom()
+    assert isinstance(td, TestDom)
+    assert isinstance(td, MapDom)
+    assert td.name == 'test'
+    assert td.value == 5
+
+    d = td._asdict()
+    assert isinstance(d, dict)
+    assert d == {'name': 'test', 'value': 5}
+
+    assert td._astuple() == ("test", 5)
+
+    rtd = TestDom._fromdict(d)
+    assert isinstance(rtd, MapDom)
+    assert isinstance(rtd, TestDom)
+    assert rtd == td
+
+    bad = dict(name='test', val=0)  # field label "val" instead of "value"
+    with pytest.raises(ValueError):
+        TestDom._fromdict(bad)
+
+    with pytest.raises(ValueError):
+        MapDom._fromdict(d)  # since fields of d don't match MapDom which does not have fields
+
+    td.name = "rest"
+    td.value = 6
+
+    assert td["name"] == 'rest'
+    assert td["value"] == 6
+
+    td["name"] = 'best'
+    assert td.name == 'best'
+
+    td._update(name='test', value=7)
+    assert td.name == 'test'
+    assert td.value == 7
+
+    assert 'name' in td
+    assert 'value' in td
+
+
+
+    """Done Test"""
+
+
+
 def test_rawdom():
     """Test RawDom dataclass """
 
@@ -620,7 +701,7 @@ def test_rawdom():
         TestDom._fromdict(bad)
 
     with pytest.raises(ValueError):
-        RawDom._fromdict(d)  # since fields of d don't match RawDom which has not fields
+        RawDom._fromdict(d)  # since fields of d don't match RawDom which does not have fields
 
     s = td._asjson()
     assert isinstance(s, bytes)
@@ -656,77 +737,7 @@ def test_rawdom():
     assert bad == b'\x82\xa4name\xa4test\xa3val\x00'
     with pytest.raises(ValueError):
         TestDom._frommgpk(bad)
-
     """Done Test"""
-
-
-def test_mapdom():
-    """Test MapDom dataclass """
-
-    @dataclass
-    class TestDom(MapDom):
-        name:  str = 'test'
-        value:  int = 5
-
-
-    td = TestDom()
-    assert isinstance(td, TestDom)
-    assert isinstance(td, MapDom)
-    assert td.name == 'test'
-    assert td.value == 5
-
-    d = td._asdict()
-    assert isinstance(d, dict)
-    assert d == {'name': 'test', 'value': 5}
-
-    td.name = "rest"
-    td.value = 6
-
-    assert td["name"] == 'rest'
-    assert td["value"] == 6
-
-    td["name"] = 'best'
-    assert td.name == 'best'
-
-    td._update(name='test', value=7)
-    assert td.name == 'test'
-    assert td.value == 7
-
-    assert 'name' in td
-    assert 'value' in td
-
-    assert td._astuple() == ("test", 7)
-
-    """Done Test"""
-
-
-def test_icemapdom():
-    """Test IceMapDom dataclass """
-
-    @dataclass(frozen=True)
-    class TestDom(IceMapDom):
-        name:  str = 'test'
-        value:  int = 5
-
-
-    td = TestDom()
-    assert isinstance(td, TestDom)
-    assert isinstance(td, IceMapDom)
-    assert td.name == 'test'
-    assert td.value == 5
-
-    d = td._asdict()
-    assert isinstance(d, dict)
-    assert d == {'name': 'test', 'value': 5}
-
-    assert td._astuple() == ("test", 5)
-
-    assert 'name' in td
-    assert 'value' in td
-
-
-    """Done Test"""
-
 
 
 def test_modify():
@@ -1012,8 +1023,8 @@ if __name__ == "__main__":
     test_b64_helpers()
     test_datify()
     test_dictify()
-    test_rawdom()
-    test_mapdom()
     test_icemapdom()
+    test_mapdom()
+    test_rawdom()
     test_modify()
     test_modize()
