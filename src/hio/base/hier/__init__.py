@@ -2,4 +2,4 @@
 """
 hio.base.hier Package
 """
-from .hierdoing import Reat, Lode, Maker, Boxer, Box
+from .hiering import Reat, Lode, Maker, Boxer, Box

@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-tests.base.test_hierdoing module
+tests.base.hier.test_hiering module
 
 """
 from __future__ import annotations  # so type hints of classes get resolved later
@@ -24,8 +24,8 @@ from hio import hioing
 from hio.help import helping
 from hio.base import tyming
 from hio.base.hier import Reat, Lode, Maker, Boxer, Box
-from hio.base.hier import hierdoing
-from hio.base.hier.hierdoing import exen, modify
+from hio.base.hier import hiering
+from hio.base.hier.hiering import exen, modify
 
 
 def test_reat():
