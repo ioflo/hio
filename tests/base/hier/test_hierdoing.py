@@ -155,22 +155,132 @@ def test_makize():
     as inline wrapper with call time injected works (standard)
     as inline wrapper with default lexical works
     as inline wrapper with call time inject works that is preserved
-    as decorator with defualt lexical works
+    as decorator with default lexical works
     as decorator with call time works paramter that is preserved
 
     """
-    works = dict(count=0)
+    def fun(we):
+        n0 = we(name='top')
+        n1 = we()
+        n2 = we()
+        n3 = we()
+        return(n0, n1, n2, n3)
 
-    def be(name="box", *, works=None):
-        works['count'] += 1
+    # Test standard wrapper call
+    def we0(name=None, *, works=None):
+        w = works
+        if "count" not in w:
+            w["count"] = 0
+        if "names" not in w:
+            w["names"] = []
 
+        if not name:
+            name = "x" + str(w["count"])
+        w['count'] += 1
+        w["names"].append(name)
 
-    def fun(be):
-        be(name='top')
-        be(over='top')
-        be()
-        b = be()
-        be(over=b)
+        return name
+
+    # first time
+    works = dict(count=0, names=[])
+    we = makize(works)(we0)  # wrapper it
+    names = fun(we)
+    assert names == ('top', 'x1', 'x2', 'x3')
+    assert works == {'count': 4, 'names': ['top', 'x1', 'x2', 'x3']}
+
+    # call again as wrapped already
+    names = fun(we)  # call again
+    assert names == ('top', 'x5', 'x6', 'x7')
+    assert works == {'count': 8, 'names': ['top', 'x1', 'x2', 'x3', 'top', 'x5', 'x6', 'x7']}
+
+    # override replace works
+    vorks = {}
+    name = we(works=vorks)
+    assert name == 'x0'
+    assert vorks == {'count': 1, 'names': ['x0']}
+
+    # resume back befoe override
+    name = we()
+    assert name == 'x8'
+    assert works == {'count': 9, 'names': ['top', 'x1', 'x2', 'x3', 'top', 'x5', 'x6', 'x7', 'x8']}
+
+    # default lexical works in wrapper call
+    def we1(name=None, *, works=None):
+        w = works
+        if "count" not in w:
+            w["count"] = 0
+        if "names" not in w:
+            w["names"] = []
+
+        if not name:
+            name = "x" + str(w["count"])
+        w['count'] += 1
+        w["names"].append(name)
+
+        return name
+
+    # test lexical closure in wrapper
+    works = None
+    we = makize(works)(we1)
+    names = fun(we)
+    assert names == ('top', 'x1', 'x2', 'x3')
+    assert works == None  # not visible outside closure
+
+    # call again as wrapped already
+    names = fun(we)  # call again
+    assert names == ('top', 'x5', 'x6', 'x7')
+    assert works == None  # not visible outside closure
+
+    # override replace works inside
+    vorks = {}
+    name = we(works=vorks)
+    assert name == 'x0'
+    assert vorks == {'count': 1, 'names': ['x0']}
+
+    # do again but now without override
+    name = we()
+    assert name == 'x8'
+    assert works == None  # not visible
+
+    # decorated
+    works = dict(count=0, names=[])
+
+    @makize(works)
+    def we1(name=None, *, works=None):
+        w = works
+        if "count" not in w:
+            w["count"] = 0
+        if "names" not in w:
+            w["names"] = []
+
+        if not name:
+            name = "x" + str(w["count"])
+        w['count'] += 1
+        w["names"].append(name)
+
+        return name
+
+    # test decoration with lexical scope of works, same scope in test so can view.
+    # normally would be in different scopes
+    names = fun(we1)
+    assert names == ('top', 'x1', 'x2', 'x3')
+    assert works == {'count': 4, 'names': ['top', 'x1', 'x2', 'x3']}
+
+    # call again
+    names = fun(we1)  # call again
+    assert names == ('top', 'x5', 'x6', 'x7')
+    assert works == {'count': 8, 'names': ['top', 'x1', 'x2', 'x3', 'top', 'x5', 'x6', 'x7']}
+
+    # override replace works
+    vorks = {}
+    name = we1(works=vorks)
+    assert name == 'x0'
+    assert vorks == {'count': 1, 'names': ['x0']}
+
+    # do again but now without override
+    name = we1()
+    assert name == 'x8'
+    assert works == {'count': 9, 'names': ['top', 'x1', 'x2', 'x3', 'top', 'x5', 'x6', 'x7', 'x8']}
 
     """Done Test"""
 

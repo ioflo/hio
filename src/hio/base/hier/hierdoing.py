@@ -616,6 +616,11 @@ class Boxer(Tymee):
 
         """
         w = works  # alias more compact
+        defaults = dict(box=None, over=None, bepre='box', beidx=0)
+        for k, v in defaults.items():
+            if k not in w:
+                w[k] = v
+
         if not name:  # empty or None
             if name is None:
                 name = w["bepre"] + str(w["beidx"])
@@ -659,22 +664,36 @@ class Boxer(Tymee):
 def makize(works: dict|None=None) -> Callable[..., Any]:
     """Wrapper with argument(s) that injects works dict  when provided as
     keyword arg into wrapped function in order make a boxwork.
-    If works is None then injects lexical closure of a dict.
+    If works is None then creates and injects lexical closure of a dict.
     If wrapped function call itself includes works as an arg whose value is
-    not None then does not inject.
+    not None then does not inject. This allows override of a single call.
+    Subsequent calls will resume using the lexical closure or the wrapped
+    injected works whichever was provided.
 
     Assumes wrapped function defines works argument as a keyword only parameter
     using '*' such as:
-       def be(name='box, over=None, *, works=None):
+       def f(name='box, over=None, *, works=None):
 
     To use inline:
         works = dict(box=None, over=None, bepre='box', beidx=0)
-        be = makize(works)(self.be)
+        g = makize(works)(f)
 
-    Later calling be as:
-        be(name="mid", over="top")
+    Later calling g as:
+        g(name="mid", over="top")
     Actually has works inject as if called as:
-        be(name="mid", over="top", works=works)
+        g(name="mid", over="top", works=works)
+
+    If method then works as wells.
+       def f(self, name='box, over=None, *, works=None):
+
+    To use inline:
+        works = dict(box=None, over=None, bepre='box', beidx=0)
+        f = makize(works)(self.f)
+
+    Later calling f as:
+        f(name="mid", over="top")
+    Actually has works inject as if called as:
+        f(name="mid", over="top", works=works)  the self is automaticall supplied
 
     Since works is a mutable collection i.e. dict, not an immutable string then
     using it as decorator could be problematic as the works would have lexical
@@ -685,30 +704,26 @@ def makize(works: dict|None=None) -> Callable[..., Any]:
         works = dict(box=None, over=None, bepre='box', beidx=0)
 
         @makize(works=works)
-        def be(name="box), over=None, *, works=None)
+        def f(name="box), over=None, *, works=None)
 
     Later calling be as:
-        be(name="mid", over="top")
+        f(name="mid", over="top")
     Actually has works inject as if called as:
-        be(name="mid", over="top", works=works)
+        f(name="mid", over="top", works=works)
 
     But the works in this case is from the defining scope of be not the calling
     scope.
 
     Likewise passing in works=None would result in a lexical closure of works
-    with default values initially that would be shared everywhere be() is called
+    with default values initially that would be shared everywhere f() is called
     with whatever values each call changes in the lexical closure of works.
     """
     works = works if works is not None else {}  # lexical closure so not None
-    if not works:
-        works.update(box=None, over=None, bepre='box', beidx=0)
     def inner(f):
         @functools.wraps(f)
         def wrapper(*pa, **kwa):
             if 'works' not in kwa or kwa['works'] is None:  # missing or None
                 kwa.update(works=works)  # replace or add works to kwa
-            else:
-                works.update(kwa['works'])  # update closure works for reuse
             return f(*pa, **kwa)
         return wrapper
     return inner
