@@ -982,14 +982,14 @@ def modify(mods: MapDom|None=None, klas: Type[MapDom]=MapDom)->Callable[..., Any
 
     """
     mods = mods if mods is not None else klas()  # lexical closure so not None
-    def inner(f):
+    def decorator(f):
         @functools.wraps(f)
-        def wrapper(*pa, **kwa):
+        def inner(*pa, **kwa):
             if 'mods' not in kwa or kwa['mods'] is None:  # missing or None
                 kwa.update(mods=mods)  # replace or add mods to kwa
             return f(*pa, **kwa)
-        return wrapper
-    return inner
+        return inner
+    return decorator
 
 
 
@@ -1052,11 +1052,11 @@ def modize(mods: dict|None=None) -> Callable[..., Any]:
     with whatever values each call changes in the lexical closure of works.
     """
     mods = mods if mods is not None else {}  # {} in lexical closure when None
-    def inner(f):
+    def decorator(f):
         @functools.wraps(f)
-        def wrapper(*pa, **kwa):
+        def inner(*pa, **kwa):
             if 'mods' not in kwa or kwa['mods'] is None:  # missing or None
                 kwa.update(mods=mods)  # replace or add works to kwa
             return f(*pa, **kwa)
-        return wrapper
-    return inner
+        return inner
+    return decorator
