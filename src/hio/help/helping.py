@@ -672,26 +672,6 @@ class RawDom:
         _ascbor(self): return bytes self converted to cbor
         _asmgpk(self): return bytes self converted to mgpk
     """
-    def __getitem__(self, name):
-        try:
-            return getattr(self, name)
-        except AttributeError as ex:
-            raise IndexError(ex.args) from ex
-
-
-    def __setitem__(self, name, value):
-        try:
-            return setattr(self, name, value)
-        except AttributeError as ex:
-            raise IndexError(ex.args) from ex
-
-
-    def __delitem__(self, name):
-        try:
-            return delattr(self, name)
-        except AttributeError as ex:
-            raise IndexError(ex.args) from ex
-
 
     @classmethod
     def _fromdict(cls, d: dict):
@@ -733,6 +713,26 @@ class RawDom:
             raise ValueError("Invalid dict={d} to datify as dataclass={cls}.")
         return dom
 
+
+    def __getitem__(self, name):
+        try:
+            return getattr(self, name)
+        except AttributeError as ex:
+            raise IndexError(ex.args) from ex
+
+
+    def __setitem__(self, name, value):
+        try:
+            return setattr(self, name, value)
+        except AttributeError as ex:
+            raise IndexError(ex.args) from ex
+
+
+    def __delitem__(self, name):
+        try:
+            return delattr(self, name)
+        except AttributeError as ex:
+            raise IndexError(ex.args) from ex
 
 
     def __iter__(self):
