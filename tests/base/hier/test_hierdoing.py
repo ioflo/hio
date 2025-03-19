@@ -240,12 +240,14 @@ def test_boxer_basic():
 
 def test_boxer_make():
     """Test make method of Boxer and modify wrapper"""
-    def fun(be):
+    def fun(be, do):
         be(name='top')
         be(over='top')
         be()
         b = be()
         be(over=b)
+        do(name="sing")
+        do()
 
     boxer = Boxer()
     assert boxer.boxes == {}
@@ -256,7 +258,7 @@ def test_boxer_make():
     assert str(boxer.boxes['top']) == 'Box(<top>box0)'
     assert str(boxer.boxes['box3']) == 'Box(top<box2<box3>)'
     assert mods["bxpre"] == 'box'
-    assert mods["bxidx"] == 4
+    assert mods["bxidx"] == 5
     assert mods["over"].name == 'box2'
     assert mods['box'].name == 'box3'
 

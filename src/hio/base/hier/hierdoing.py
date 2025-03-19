@@ -556,7 +556,8 @@ class Boxer(Tymee):
         """
         works = WorkDom()  # standard defaults
         be = modify(mods=works)(self.be)
-        fun(be=be)  # calling fun will build boxer.boxes
+        do = modify(mods=works)(self.do)
+        fun(be=be, do=do)  # calling fun will build boxer.boxes
 
         return works  # for debugging analysis
 
@@ -637,6 +638,55 @@ class Boxer(Tymee):
             m.box._next = box
         m.box = box  # update current box
         return box
+
+
+
+    def do(self, name: None|str=None,
+                *, mods: WorkDom|None=None)->Box:
+        """Make an act and add to box work
+
+        Parameters:
+            name (None | str): when None then create name from bepre and beidx
+                               items in works.
+                               if non-empty string then use provided
+                               otherwise raise exception
+
+
+            mods (None | WorkDom):  state variables used to construct box work
+                None is just to allow definition as keyword arg. Assumes in
+                actual usage that mods is always provided as WorkDom instance of
+                form:
+
+                    box (Box|None): current box in box work. None if not yet a box
+                    over (Box|None): current over Box in box work. None if top level
+                    bxpre (str): default name prefix used to generate unique box
+                        name relative to boxer.boxes
+                    bxidx (int): default box index used to generate unique box
+                        name relative to boxer.boxes
+
+
+
+        """
+        m = mods  # alias more compact
+        defaults = dict(box=None, over=None, bxpre='box', bxidx=0)
+        for k, v in defaults.items():
+            if k not in m:
+                m[k] = v
+
+        if not name:  # empty or None
+            if name is None:
+                name = 'act' + str(m.bxidx)
+                m.bxidx += 1
+                while name in self.boxes:
+                    name = 'act' + str(m.bxidx)
+                    m.bxidx += 1
+
+            else:
+                raise HierError(f"Missing name.")
+
+
+        return name
+
 
 
 

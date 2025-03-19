@@ -11,8 +11,8 @@ import json
 import msgpack
 import cbor2 as cbor
 
-from hio.help import helping, Hict, RawDom, MapDom, IceMapDom, modify
-from hio.help.helping import isign, sceil, dictify, datify, modize
+from hio.help import helping, Hict, RawDom, MapDom, IceMapDom, modify, modize
+from hio.help.helping import isign, sceil, dictify, datify
 
 def test_utilities():
     """

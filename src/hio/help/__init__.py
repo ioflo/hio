@@ -19,5 +19,5 @@ from .hicting import Hict, Mict
 from .timing import Timer, MonoTimer, TimerError, RetroTimerError
 from .naming import Namer
 from .helping import (isNonStringIterable, isNonStringSequence, isIterator,
-                      RawDom, MapDom, IceMapDom, modify)
+                      RawDom, MapDom, IceMapDom, modify, modize)
 
