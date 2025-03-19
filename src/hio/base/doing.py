@@ -761,10 +761,9 @@ class ReDoer(Doer):
             tyme is initial output of send fed to do yield, Doist feeds its .tyme
         Returns completion state of recurrence actions.
            True means done False means continue
-        Maybe a non-generator method or a generator method.
+
         For base class do:
-            non-generator recur method runs until returns (True)
-            generator recur method runs until returns (yield from)
+            yield from this generator recur method which runs until returns
 
         """
         count = 0
