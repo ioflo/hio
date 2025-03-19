@@ -15,7 +15,7 @@ import base64
 import re
 
 from collections import deque
-from collections.abc import Iterable, Sequence, Generator
+from collections.abc import Iterable, Sequence, Generator, Mapping
 from abc import ABCMeta
 from dataclasses import dataclass, astuple, asdict, fields, field
 
@@ -727,12 +727,32 @@ class RawDom:
         except AttributeError as ex:
             raise IndexError(ex.args) from ex
 
+    # dataclasses don't allow deletion of attributes
+    #def __delitem__(self, name):
+        #try:
+            #return delattr(self, name)
+        #except AttributeError as ex:
+            #raise IndexError(ex.args) from ex
 
-    def __delitem__(self, name):
-        try:
-            return delattr(self, name)
-        except AttributeError as ex:
-            raise IndexError(ex.args) from ex
+    def _update(self, *pa, **kwa):
+        """Use item update syntax
+        """
+        if len(pa) > 1:
+            raise TypeError(f"Expected 1 positional argument got {len(pa)}.")
+
+        if pa:
+            di = pa[0]
+            if isinstance(di, Mapping):
+                for k, v in di.items():
+                    self[k] = v
+            elif isinstance(di, Iterable):
+                for k, v in di:
+                    self[k] = v
+            else:
+                raise TypeError(f"Expected Mapping or Iterable got {type(di)}.")
+
+        for k, v in kwa.items():
+            self[k] = v
 
 
     def __iter__(self):
@@ -744,6 +764,10 @@ class RawDom:
         """Returns dict version of record"""
         return dictify(self)
 
+
+    def _astuple(self):
+        """Returns dict version of record"""
+        return tuple(self._asdict().values())
 
 
     def _asjson(self):
@@ -766,16 +790,16 @@ class RawDom:
 
 
 
-@dataclass(frozen=True)
 class MapDom:
-    """Base class for frozen dataclasses (codexes) that support map syntax
+    """Base class for dataclasses that support map syntax
     Adds support for dunder methods for map syntax dc[name].
     Converts exceptions from attribute syntax to raise map syntax when using
     map syntax.
 
+    Note: iter asdict
+
     Enables dataclass instances to use Mapping item syntax
     """
-
     def __getitem__(self, name):
         try:
             return getattr(self, name)
@@ -789,10 +813,77 @@ class MapDom:
         except AttributeError as ex:
             raise IndexError(ex.args) from ex
 
+    # dataclasses to not allow delattr
+    #def __delitem__(self, name):
+        #try:
+            #return delattr(self, name)
+        #except AttributeError as ex:
+            #raise IndexError(ex.args) from ex
 
-    def __delitem__(self, name):
+    def __iter__(self):
+        return iter(asdict(self))
+
+
+    def _asdict(self):
+        """Returns dict version of record"""
+        return dictify(self)
+
+
+    def _astuple(self):
+        """Returns dict version of record"""
+        return tuple(self._asdict().values())
+
+
+    def _update(self, *pa, **kwa):
+        """Use item update syntax
+        """
+        if len(pa) > 1:
+            raise TypeError(f"Expected 1 positional argument got {len(pa)}.")
+
+        if pa:
+            di = pa[0]
+            if isinstance(di, Mapping):
+                for k, v in di.items():
+                    self[k] = v
+            elif isinstance(di, Iterable):
+                for k, v in di:
+                    self[k] = v
+            else:
+                raise TypeError(f"Expected Mapping or Iterable got {type(di)}.")
+
+        for k, v in kwa.items():
+            self[k] = v
+
+
+@dataclass(frozen=True)
+class IceMapDom:
+    """Base class for frozen dataclasses (codexes) that support map syntax
+    Adds support for dunder methods for map syntax dc[name].
+    Converts exceptions from attribute syntax to raise map syntax when using
+    map syntax.
+
+    Note: iter astuple
+
+    Enables dataclass instances to use Mapping item syntax
+    """
+    def __getitem__(self, name):
         try:
-            return delattr(self, name)
+            return getattr(self, name)
         except AttributeError as ex:
             raise IndexError(ex.args) from ex
 
+    def __iter__(self):
+        return iter(asdict(self))
+
+    #def __iter__(self):
+        #return iter(astuple(self))
+
+
+    def _asdict(self):
+        """Returns dict version of record"""
+        return dictify(self)
+
+
+    def _astuple(self):
+        """Returns dict version of record"""
+        return tuple(self._asdict().values())

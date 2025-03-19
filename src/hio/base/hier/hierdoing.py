@@ -104,6 +104,74 @@ def exen(near,far):
 
 
 
+def workize(works: dict|None=None) -> Callable[..., Any]:
+    """Wrapper with argument(s) that injects works dict  when provided as
+    keyword arg into wrapped function in order make a boxwork.
+    If works is None then creates and injects lexical closure of a dict.
+    If wrapped function call itself includes works as an arg whose value is
+    not None then does not inject. This allows override of a single call.
+    Subsequent calls will resume using the lexical closure or the wrapped
+    injected works whichever was provided.
+
+    Assumes wrapped function defines works argument as a keyword only parameter
+    using '*' such as:
+       def f(name='box, over=None, *, works=None):
+
+    To use inline:
+        works = dict(box=None, over=None, bepre='box', beidx=0)
+        g = workize(works)(f)
+
+    Later calling g as:
+        g(name="mid", over="top")
+    Actually has works inject as if called as:
+        g(name="mid", over="top", works=works)
+
+    If method then works as wells.
+       def f(self, name='box, over=None, *, works=None):
+
+    To use inline:
+        works = dict(box=None, over=None, bepre='box', beidx=0)
+        f = workize(works)(self.f)
+
+    Later calling f as:
+        f(name="mid", over="top")
+    Actually has works inject as if called as:
+        f(name="mid", over="top", works=works)  the self is automaticall supplied
+
+    Since works is a mutable collection i.e. dict, not an immutable string then
+    using it as decorator could be problematic as the works would have lexical
+    defining scope not calling scope.
+    Which is ok if works has lexical module scope intentionally.
+
+    Example:
+        works = dict(box=None, over=None, bepre='box', beidx=0)
+
+        @workize(works=works)
+        def f(name="box), over=None, *, works=None)
+
+    Later calling be as:
+        f(name="mid", over="top")
+    Actually has works inject as if called as:
+        f(name="mid", over="top", works=works)
+
+    But the works in this case is from the defining scope of be not the calling
+    scope.
+
+    Likewise passing in works=None would result in a lexical closure of works
+    with default values initially that would be shared everywhere f() is called
+    with whatever values each call changes in the lexical closure of works.
+    """
+    works = works if works is not None else {}  # lexical closure so not None
+    def inner(f):
+        @functools.wraps(f)
+        def wrapper(*pa, **kwa):
+            if 'works' not in kwa or kwa['works'] is None:  # missing or None
+                kwa.update(works=works)  # replace or add works to kwa
+            return f(*pa, **kwa)
+        return wrapper
+    return inner
+
+
 class Lode(dict):
     """Lode subclass of dict with custom methods dunder methods and get that
     will only allow actual keys as str. Iterables passed in as key are converted
@@ -130,50 +198,22 @@ class Lode(dict):
 
 
     def __setitem__(self, k, v):
-        #if isNonStringIterable(k):
-            #try:
-                #k = '.'.join(k)
-            #except Exception as ex:
-                #raise KeyError(ex.args) from ex
-        #if not isinstance(k, str):
-            #raise KeyError(f"Expected str got {k}.")
         return super(Lode, self).__setitem__(self.tokey(k), v)
 
 
     def __getitem__(self, k):
-        #if isNonStringIterable(k):
-            #try:
-                #k = '.'.join(k)
-            #except Exception as ex:
-                #raise KeyError(ex.args) from ex
-        #if not isinstance(k, str):
-            #raise KeyError(f"Expected str got {k}.")
         return super(Lode, self).__getitem__(self.tokey(k))
 
 
+    def __delitem__(self, k):
+        return super(Lode, self).__delitem__(self.tokey(k))
+
+
     def __contains__(self, k):
-        #if isNonStringIterable(k):
-            #try:
-                #k = '.'.join(k)
-            #except Exception as ex:
-                #raise KeyError(ex.args) from ex
-        #if not isinstance(k, str):
-            #raise KeyError(f"Expected str got {k}.")
         return super(Lode, self).__contains__(self.tokey(k))
 
 
     def get(self, k, default=None):
-        #if isNonStringIterable(k):
-            #try:
-                #k = '.'.join(k)
-            #except Exception as ex:
-                #raise KeyError(ex.args) from ex
-        #if not isinstance(k, str):
-            #raise KeyError(f"Expected str got {k}.")
-        #if not super(Lode, self).__contains__(k):
-            #return default
-        #else:
-            #return super(Lode, self).__getitem__(k)
         if not self.__contains__(k):
             return default
         else:
@@ -194,35 +234,24 @@ class Lode(dict):
 
         """
         if len(pa) > 1:
-            raise TypeError(f"expected 1 positional argument got {len(pa)}")
+            raise TypeError(f"Expected 1 positional argument got {len(pa)}.")
 
         if pa:
             di = pa[0]
             if isinstance(di, Mapping):
                 rd = {}
                 for k, v in di.items():
-                    #if isNonStringIterable(k):
-                        #try:
-                            #k = '.'.join(k)
-                        #except Exception as ex:
-                            #raise KeyError(ex.args) from ex
-                    #if not isinstance(k, str):
-                        #raise KeyError(f"Expected str got {k}.")
                     rd[self.tokey(k)] = v
                 super(Lode, self).update(rd, **kwa)
 
             elif isinstance(di, Iterable):
                 ri = []
                 for k, v in di:
-                    #if isNonStringIterable(k):
-                        #try:
-                            #k = '.'.join(k)
-                        #except Exception as ex:
-                            #raise KeyError(ex.args) from ex
-                    #if not isinstance(k, str):
-                        #raise KeyError(f"Expected str got {k}.")
                     ri.append((self.tokey(k), v))
                 super(Lode, self).update(ri, **kwa)
+
+            else:
+                raise TypeError(f"Expected Mapping or Iterable got {type(di)}.")
 
         else:
             super(Lode, self).update(**kwa)
@@ -550,7 +579,7 @@ class Boxer(Tymee):
     def quit(self):
         """"""
 
-    def make(self, fun):
+    def make_alt(self, fun):
         """Make box work for this boxer from function fun
         Parameters:
             fun (function):  employs be, do, on, go maker functions injected
@@ -575,14 +604,14 @@ class Boxer(Tymee):
 
         """
         works = dict(box=None, over=None, bepre='box', beidx=0)
-        be = makize(works)(self.be)
+        be = workize(works)(self.be_alt)
         fun(be=be)  # calling fun will build boxer.boxes
 
         return works  # for debugging analysis
 
 
 
-    def be(self, name: None|str=None, over: None|str|Box="",
+    def be_alt(self, name: None|str=None, over: None|str|Box="",
                  works: dict | None = None)->Box:
         """Make a box and add to box work
 
@@ -661,7 +690,7 @@ class Boxer(Tymee):
         return box
 
 
-def makize(works: dict|None=None) -> Callable[..., Any]:
+def workize(works: dict|None=None) -> Callable[..., Any]:
     """Wrapper with argument(s) that injects works dict  when provided as
     keyword arg into wrapped function in order make a boxwork.
     If works is None then creates and injects lexical closure of a dict.
@@ -676,7 +705,7 @@ def makize(works: dict|None=None) -> Callable[..., Any]:
 
     To use inline:
         works = dict(box=None, over=None, bepre='box', beidx=0)
-        g = makize(works)(f)
+        g = workize(works)(f)
 
     Later calling g as:
         g(name="mid", over="top")
@@ -688,7 +717,7 @@ def makize(works: dict|None=None) -> Callable[..., Any]:
 
     To use inline:
         works = dict(box=None, over=None, bepre='box', beidx=0)
-        f = makize(works)(self.f)
+        f = workize(works)(self.f)
 
     Later calling f as:
         f(name="mid", over="top")
@@ -703,7 +732,7 @@ def makize(works: dict|None=None) -> Callable[..., Any]:
     Example:
         works = dict(box=None, over=None, bepre='box', beidx=0)
 
-        @makize(works=works)
+        @workize(works=works)
         def f(name="box), over=None, *, works=None)
 
     Later calling be as:

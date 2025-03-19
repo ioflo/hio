@@ -22,7 +22,7 @@ from hio.help import helping
 from hio.base import tyming
 from hio.base.hier import Reat, Lode, Maker, Boxer, Box
 from hio.base.hier import hierdoing
-from hio.base.hier.hierdoing import exen, makize
+from hio.base.hier.hierdoing import exen, workize
 
 def test_reat():
     """Test regular expression Reat for attribute name """
@@ -96,6 +96,26 @@ def test_lode_basic():
     lode[key] = 8
     assert lode[keys] == 8
 
+    del lode[keys]
+    assert key not in lode
+
+    with pytest.raises(KeyError):
+        del lode[key]
+
+    with pytest.raises(KeyError):
+        del lode[keys]
+
+    lode[keys] = 8
+    del lode[key]
+
+    with pytest.raises(KeyError):
+        del lode[keys]
+
+    with pytest.raises(KeyError):
+        del lode[key]
+
+
+
     assert lode.get('c') == None
     assert lode.get(("b", "c")) == None
 
@@ -150,8 +170,8 @@ def test_lode_basic():
 
     """Done Test"""
 
-def test_makize():
-    """Test makize wrapper. Test different use cases
+def test_workize():
+    """Test workize wrapper. Test different use cases
     as inline wrapper with call time injected works (standard)
     as inline wrapper with default lexical works
     as inline wrapper with call time inject works that is preserved
@@ -183,7 +203,7 @@ def test_makize():
 
     # first time
     works = dict(count=0, names=[])
-    we = makize(works)(we0)  # wrapper it
+    we = workize(works)(we0)  # wrapper it
     names = fun(we)
     assert names == ('top', 'x1', 'x2', 'x3')
     assert works == {'count': 4, 'names': ['top', 'x1', 'x2', 'x3']}
@@ -221,7 +241,7 @@ def test_makize():
 
     # test lexical closure in wrapper
     works = None
-    we = makize(works)(we1)
+    we = workize(works)(we1)
     names = fun(we)
     assert names == ('top', 'x1', 'x2', 'x3')
     assert works == None  # not visible outside closure
@@ -245,7 +265,7 @@ def test_makize():
     # decorated
     works = dict(count=0, names=[])
 
-    @makize(works)
+    @workize(works)
     def we1(name=None, *, works=None):
         w = works
         if "count" not in w:
@@ -349,7 +369,7 @@ def test_boxer_basic():
 
 
 def test_boxer_make():
-    """Test make method of Boxer and makize wrapper"""
+    """Test make method of Boxer and workize wrapper"""
     def fun(be):
         be(name='top')
         be(over='top')
@@ -359,7 +379,7 @@ def test_boxer_make():
 
     boxer = Boxer()
     assert boxer.boxes == {}
-    works = boxer.make(fun)
+    works = boxer.make_alt(fun)
     assert boxer.boxes
     assert len(boxer.boxes) == 5
     assert list(boxer.boxes) == ['top', 'box0', 'box1', 'box2', 'box3']
@@ -910,7 +930,7 @@ def test_concept_be_box_global():
 
 if __name__ == "__main__":
     test_reat()
-    test_makize()
+    test_workize()
     test_lode_basic()
     test_box_basic()
     test_boxer_basic()

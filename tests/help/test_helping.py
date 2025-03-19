@@ -12,7 +12,8 @@ import msgpack
 import cbor2 as cbor
 
 from hio.help import helping, Hict
-from hio.help.helping import isign, sceil, dictify, datify, RawDom
+from hio.help.helping import (isign, sceil, dictify, datify,
+                              RawDom, MapDom, IceMapDom)
 
 def test_utilities():
     """
@@ -580,6 +581,23 @@ def test_rawdom():
         name:  str = 'test'
         value:  int = 5
 
+    td = TestDom()
+    assert isinstance(td, TestDom)
+    assert isinstance(td, RawDom)
+    assert td.name == 'test'
+    assert td.value == 5
+
+    assert td["name"] == 'test'
+    assert td["value"] == 5
+
+    td["name"] = 'best'
+    assert td.name == 'best'
+
+    td._update(name='test')
+    assert td.name == 'test'
+
+    assert 'name' in td
+    assert 'value' in td
 
     td = TestDom()
     assert isinstance(td, TestDom)
@@ -590,6 +608,8 @@ def test_rawdom():
     d = td._asdict()
     assert isinstance(d, dict)
     assert d == {'name': 'test', 'value': 5}
+
+    assert td._astuple() == ("test", 5)
 
     rtd = TestDom._fromdict(d)
     assert isinstance(rtd, RawDom)
@@ -641,6 +661,74 @@ def test_rawdom():
     """Done Test"""
 
 
+def test_mapdom():
+    """Test MapDom dataclass """
+
+    @dataclass
+    class TestDom(MapDom):
+        name:  str = 'test'
+        value:  int = 5
+
+
+    td = TestDom()
+    assert isinstance(td, TestDom)
+    assert isinstance(td, MapDom)
+    assert td.name == 'test'
+    assert td.value == 5
+
+    d = td._asdict()
+    assert isinstance(d, dict)
+    assert d == {'name': 'test', 'value': 5}
+
+    td.name = "rest"
+    td.value = 6
+
+    assert td["name"] == 'rest'
+    assert td["value"] == 6
+
+    td["name"] = 'best'
+    assert td.name == 'best'
+
+    td._update(name='test', value=7)
+    assert td.name == 'test'
+    assert td.value == 7
+
+    assert 'name' in td
+    assert 'value' in td
+
+    assert td._astuple() == ("test", 7)
+
+    """Done Test"""
+
+
+def test_icemapdom():
+    """Test IceMapDom dataclass """
+
+    @dataclass(frozen=True)
+    class TestDom(IceMapDom):
+        name:  str = 'test'
+        value:  int = 5
+
+
+    td = TestDom()
+    assert isinstance(td, TestDom)
+    assert isinstance(td, IceMapDom)
+    assert td.name == 'test'
+    assert td.value == 5
+
+    d = td._asdict()
+    assert isinstance(d, dict)
+    assert d == {'name': 'test', 'value': 5}
+
+    assert td._astuple() == ("test", 5)
+
+    assert 'name' in td
+    assert 'value' in td
+
+
+    """Done Test"""
+
+
 if __name__ == "__main__":
     test_utilities()
     test_attributize()
@@ -648,3 +736,5 @@ if __name__ == "__main__":
     test_datify()
     test_dictify()
     test_rawdom()
+    test_mapdom()
+    test_icemapdom()
