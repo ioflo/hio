@@ -25,7 +25,7 @@ from hio.help import helping
 from hio.base import tyming
 from hio.base.hier import Reat, Lode, Maker, Boxer, Box
 from hio.base.hier import hierdoing
-from hio.base.hier.hierdoing import exen, workize, workify
+from hio.base.hier.hierdoing import exen, modify
 
 
 def test_reat():
@@ -175,278 +175,6 @@ def test_lode_basic():
     """Done Test"""
 
 
-def test_workify():
-    """Test workify wrapper. Test different use cases
-    as inline wrapper with call time injected works (standard)
-    as inline wrapper with default lexical works
-    as inline wrapper with call time inject works that is preserved
-    as decorator with default lexical works
-    as decorator with call time works paramter that is preserved
-
-    """
-    @dataclass
-    class TestDom(helping.MapDom):
-        count: int = 0
-        names: list = field(default_factory=list)
-
-
-    def fun(we):
-        n0 = we(name='top')
-        n1 = we()
-        n2 = we()
-        n3 = we()
-        return(n0, n1, n2, n3)
-
-    # Test standard wrapper call
-    def we0(name=None, *, works=None):
-        w = works
-        if "count" not in w:
-            w.count = 0
-        if "names" not in w:
-            w.names = []
-
-        if not name:
-            name = "x" + str(w.count)
-        w.count += 1
-        w.names.append(name)
-        return name
-
-    # first time
-    works = TestDom()
-    we = workify(works)(we0)  # wrapper it
-    names = fun(we)
-    assert names == ('top', 'x1', 'x2', 'x3')
-    assert works._asdict() == {'count': 4, 'names': ['top', 'x1', 'x2', 'x3']}
-
-    # call again as wrapped already
-    names = fun(we)  # call again
-    assert names == ('top', 'x5', 'x6', 'x7')
-    assert works._asdict() == {'count': 8, 'names': ['top', 'x1', 'x2', 'x3', 'top', 'x5', 'x6', 'x7']}
-
-    # override replace works
-    vorks = TestDom()
-    name = we(works=vorks)
-    assert name == 'x0'
-    assert vorks._asdict() == {'count': 1, 'names': ['x0']}
-
-    # resume back befoe override
-    name = we()
-    assert name == 'x8'
-    assert works._asdict() == {'count': 9, 'names': ['top', 'x1', 'x2', 'x3', 'top', 'x5', 'x6', 'x7', 'x8']}
-
-    # default lexical works in wrapper call
-    def we1(name=None, *, works=None):
-        w = works
-        if "count" not in w:
-            w.count = 0
-        if "names" not in w:
-            w.names = []
-
-        if not name:
-            name = "x" + str(w.count)
-        w.count += 1
-        w.names.append(name)
-        return name
-
-    # test lexical closure in wrapper
-    works = None
-    we = workify(works, TestDom)(we1)
-    names = fun(we)
-    assert names == ('top', 'x1', 'x2', 'x3')
-    assert works == None  # not visible outside closure
-
-    # call again as wrapped already
-    names = fun(we)  # call again
-    assert names == ('top', 'x5', 'x6', 'x7')
-    assert works == None  # not visible outside closure
-
-    # override replace works inside
-    vorks = TestDom()
-    name = we(works=vorks)
-    assert name == 'x0'
-    assert vorks._asdict() == {'count': 1, 'names': ['x0']}
-
-    # do again but now without override
-    name = we()
-    assert name == 'x8'
-    assert works == None  # not visible
-
-    # decorated
-    works = TestDom()
-
-    @workify(works)
-    def we1(name=None, *, works=None):
-        w = works
-        if "count" not in w:
-            w.count = 0
-        if "names" not in w:
-            w.names = []
-
-        if not name:
-            name = "x" + str(w.count)
-        w.count += 1
-        w.names.append(name)
-        return name
-
-    # test decoration with lexical scope of works, same scope in test so can view.
-    # normally would be in different scopes
-    names = fun(we1)
-    assert names == ('top', 'x1', 'x2', 'x3')
-    assert works._asdict() == {'count': 4, 'names': ['top', 'x1', 'x2', 'x3']}
-
-    # call again
-    names = fun(we1)  # call again
-    assert names == ('top', 'x5', 'x6', 'x7')
-    assert works._asdict() == {'count': 8, 'names': ['top', 'x1', 'x2', 'x3', 'top', 'x5', 'x6', 'x7']}
-
-    # override replace works
-    vorks = TestDom()
-    name = we1(works=vorks)
-    assert name == 'x0'
-    assert vorks._asdict() == {'count': 1, 'names': ['x0']}
-
-    # do again but now without override
-    name = we1()
-    assert name == 'x8'
-    assert works._asdict() == {'count': 9, 'names': ['top', 'x1', 'x2', 'x3', 'top', 'x5', 'x6', 'x7', 'x8']}
-
-    """Done Test"""
-
-
-def test_workize():
-    """Test workize wrapper. Test different use cases
-    as inline wrapper with call time injected works (standard)
-    as inline wrapper with default lexical works
-    as inline wrapper with call time inject works that is preserved
-    as decorator with default lexical works
-    as decorator with call time works paramter that is preserved
-
-    """
-    def fun(we):
-        n0 = we(name='top')
-        n1 = we()
-        n2 = we()
-        n3 = we()
-        return(n0, n1, n2, n3)
-
-    # Test standard wrapper call
-    def we0(name=None, *, works=None):
-        w = works
-        if "count" not in w:
-            w["count"] = 0
-        if "names" not in w:
-            w["names"] = []
-
-        if not name:
-            name = "x" + str(w["count"])
-        w['count'] += 1
-        w["names"].append(name)
-
-        return name
-
-    # first time
-    works = dict(count=0, names=[])
-    we = workize(works)(we0)  # wrapper it
-    names = fun(we)
-    assert names == ('top', 'x1', 'x2', 'x3')
-    assert works == {'count': 4, 'names': ['top', 'x1', 'x2', 'x3']}
-
-    # call again as wrapped already
-    names = fun(we)  # call again
-    assert names == ('top', 'x5', 'x6', 'x7')
-    assert works == {'count': 8, 'names': ['top', 'x1', 'x2', 'x3', 'top', 'x5', 'x6', 'x7']}
-
-    # override replace works
-    vorks = {}
-    name = we(works=vorks)
-    assert name == 'x0'
-    assert vorks == {'count': 1, 'names': ['x0']}
-
-    # resume back befoe override
-    name = we()
-    assert name == 'x8'
-    assert works == {'count': 9, 'names': ['top', 'x1', 'x2', 'x3', 'top', 'x5', 'x6', 'x7', 'x8']}
-
-    # default lexical works in wrapper call
-    def we1(name=None, *, works=None):
-        w = works
-        if "count" not in w:
-            w["count"] = 0
-        if "names" not in w:
-            w["names"] = []
-
-        if not name:
-            name = "x" + str(w["count"])
-        w['count'] += 1
-        w["names"].append(name)
-
-        return name
-
-    # test lexical closure in wrapper
-    works = None
-    we = workize(works)(we1)
-    names = fun(we)
-    assert names == ('top', 'x1', 'x2', 'x3')
-    assert works == None  # not visible outside closure
-
-    # call again as wrapped already
-    names = fun(we)  # call again
-    assert names == ('top', 'x5', 'x6', 'x7')
-    assert works == None  # not visible outside closure
-
-    # override replace works inside
-    vorks = {}
-    name = we(works=vorks)
-    assert name == 'x0'
-    assert vorks == {'count': 1, 'names': ['x0']}
-
-    # do again but now without override
-    name = we()
-    assert name == 'x8'
-    assert works == None  # not visible
-
-    # decorated
-    works = dict(count=0, names=[])
-
-    @workize(works)
-    def we1(name=None, *, works=None):
-        w = works
-        if "count" not in w:
-            w["count"] = 0
-        if "names" not in w:
-            w["names"] = []
-
-        if not name:
-            name = "x" + str(w["count"])
-        w['count'] += 1
-        w["names"].append(name)
-
-        return name
-
-    # test decoration with lexical scope of works, same scope in test so can view.
-    # normally would be in different scopes
-    names = fun(we1)
-    assert names == ('top', 'x1', 'x2', 'x3')
-    assert works == {'count': 4, 'names': ['top', 'x1', 'x2', 'x3']}
-
-    # call again
-    names = fun(we1)  # call again
-    assert names == ('top', 'x5', 'x6', 'x7')
-    assert works == {'count': 8, 'names': ['top', 'x1', 'x2', 'x3', 'top', 'x5', 'x6', 'x7']}
-
-    # override replace works
-    vorks = {}
-    name = we1(works=vorks)
-    assert name == 'x0'
-    assert vorks == {'count': 1, 'names': ['x0']}
-
-    # do again but now without override
-    name = we1()
-    assert name == 'x8'
-    assert works == {'count': 9, 'names': ['top', 'x1', 'x2', 'x3', 'top', 'x5', 'x6', 'x7', 'x8']}
-
-    """Done Test"""
-
 
 
 def test_box_basic():
@@ -510,9 +238,8 @@ def test_boxer_basic():
         boxer.name = ".boxer"
 
 
-
 def test_boxer_make():
-    """Test make method of Boxer and workize wrapper"""
+    """Test make method of Boxer and modify wrapper"""
     def fun(be):
         be(name='top')
         be(over='top')
@@ -522,18 +249,19 @@ def test_boxer_make():
 
     boxer = Boxer()
     assert boxer.boxes == {}
-    works = boxer.make_alt(fun)
+    mods = boxer.make(fun)
     assert boxer.boxes
     assert len(boxer.boxes) == 5
     assert list(boxer.boxes) == ['top', 'box0', 'box1', 'box2', 'box3']
     assert str(boxer.boxes['top']) == 'Box(<top>box0)'
     assert str(boxer.boxes['box3']) == 'Box(top<box2<box3>)'
-    assert works["bepre"] == 'box'
-    assert works["beidx"] == 4
-    assert works["over"].name == 'box2'
-    assert works['box'].name == 'box3'
+    assert mods["bxpre"] == 'box'
+    assert mods["bxidx"] == 4
+    assert mods["over"].name == 'box2'
+    assert mods['box'].name == 'box3'
 
     """Done Test"""
+
 
 
 def test_maker_basic():
@@ -1073,8 +801,6 @@ def test_concept_be_box_global():
 
 if __name__ == "__main__":
     test_reat()
-    test_workify()
-    test_workize()
     test_lode_basic()
     test_box_basic()
     test_boxer_basic()

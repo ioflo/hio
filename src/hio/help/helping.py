@@ -3,6 +3,8 @@
 hio.help.helping module
 
 """
+from __future__ import annotations  # so type hints of classes get resolved later
+
 import types
 import functools
 import inspect
@@ -14,6 +16,7 @@ import json
 import base64
 import re
 
+from typing import Any, Type
 from collections import deque
 from collections.abc import Iterable, Sequence, Generator, Mapping
 from abc import ABCMeta
@@ -887,3 +890,153 @@ class IceMapDom:
     def _astuple(self):
         """Returns dict version of record"""
         return tuple(self._asdict().values())
+
+
+
+def modify(mods: MapDom|None=None, klas: Type[MapDom]=MapDom)->Callable[..., Any]:
+    """Wrapper with argument(s) that injects mods dataclass instance that must
+    be a subclass of MapDom. When mods is provided it is injected as the keyword
+    arg 'mods' into the wrapped function.
+    If mods is None then an instance of klas is created and injected instead.
+    This creates a lexical closure of this injection. The value of klas must
+    also be a a MapDom subclass.
+
+    Parameters:
+        mods (WorkDom|None): default None. Instance of dataclass to be injected
+        klas (Type[WorkDom]): defualt WorkDom. Class of dataclass to be injected
+                             as default when mods not provided.
+
+    If wrapped function call itself includes mods as an arg whose value is
+    not None then does not inject. This allows override of a single call.
+    Subsequent calls will resume using the lexical closure or the wrapped
+    injected mods whichever was provided.
+
+    Assumes wrapped function defines mods argument as a keyword only parameter
+    using '*' such as:
+       def f(name='box, over=None, *, mods=None):
+
+    To use inline:
+        mods = WorkDom(box=None, over=None, bepre='box', beidx=0)
+        g = modify(mods)(f)
+
+    Later calling g as:
+        g(name="mid", over="top")
+    Actually has mods inject as if called as:
+        g(name="mid", over="top", mods=mods)
+
+    Also can be used on a method not just a function.
+       def m(self, name='box, over=None, *, mods=None):
+
+    To use inline:
+        mods = dict(box=None, over=None, bepre='box', beidx=0)
+        m = modify(mods)(self.m)
+
+    Later calling m as:
+        m(name="mid", over="top")
+    Actually has mods injectd as if called as:
+        m(name="mid", over="top", mods=mods)  where self is also injected into method
+
+    Since mods is a mutable collection i.e. dataclass, not an immutable object
+    using @decorator syntax on could be problematic as the injected mods would
+    be a lexical closure defined in the defining scope not the calling scope.
+    Depends on what the use case it for it.
+
+    Example:
+        mods = WorkDom(box=None, over=None, bepre='box', beidx=0)
+        @modify(mods=mods)
+        def f(name="box), over=None, *, mods=None)
+
+    Later calling f as:
+        f(name="mid", over="top")
+    Actually has mods injected as if called as:
+        f(name="mid", over="top", mods=mods)
+
+    But the mods in this case is from the defining scope,not the calling scope.
+
+    Likewise passing in mods=None would result in a lexical closure of mods
+    with default values initially that would be shared everywhere f() is called.
+
+    When f() is called with an explicit mods such as f(mods=mods) then that
+    call will use the passed in mods not the injected mods. This allows a per
+    call override of the injected mods.
+
+    """
+    mods = mods if mods is not None else klas()  # lexical closure so not None
+    def inner(f):
+        @functools.wraps(f)
+        def wrapper(*pa, **kwa):
+            if 'mods' not in kwa or kwa['mods'] is None:  # missing or None
+                kwa.update(mods=mods)  # replace or add mods to kwa
+            return f(*pa, **kwa)
+        return wrapper
+    return inner
+
+
+
+
+def modize(mods: dict|None=None) -> Callable[..., Any]:
+    """Wrapper with argument(s) that injects works dict  when provided as
+    keyword arg into wrapped function in order make a boxwork.
+    If works is None then creates and injects lexical closure of a dict.
+    If wrapped function call itself includes works as an arg whose value is
+    not None then does not inject. This allows override of a single call.
+    Subsequent calls will resume using the lexical closure or the wrapped
+    injected works whichever was provided.
+
+    Assumes wrapped function defines works argument as a keyword only parameter
+    using '*' such as:
+       def f(name='box, over=None, *, works=None):
+
+    To use inline:
+        works = dict(box=None, over=None, bepre='box', beidx=0)
+        g = modize(works)(f)
+
+    Later calling g as:
+        g(name="mid", over="top")
+    Actually has works inject as if called as:
+        g(name="mid", over="top", works=works)
+
+    If method then works as wells.
+       def f(self, name='box, over=None, *, works=None):
+
+    To use inline:
+        works = dict(box=None, over=None, bepre='box', beidx=0)
+        f = modize(works)(self.f)
+
+    Later calling f as:
+        f(name="mid", over="top")
+    Actually has works inject as if called as:
+        f(name="mid", over="top", works=works)  the self is automaticall supplied
+
+    Since works is a mutable collection i.e. dict, not an immutable string then
+    using it as decorator could be problematic as the works would have lexical
+    defining scope not calling scope.
+    Which is ok if works has lexical module scope intentionally.
+
+    Example:
+        works = dict(box=None, over=None, bepre='box', beidx=0)
+
+        @modize(works=works)
+        def f(name="box), over=None, *, works=None)
+
+    Later calling be as:
+        f(name="mid", over="top")
+    Actually has works inject as if called as:
+        f(name="mid", over="top", works=works)
+
+    But the works in this case is from the defining scope of be not the calling
+    scope.
+
+    Likewise passing in works=None would result in a lexical closure of works
+    with default values initially that would be shared everywhere f() is called
+    with whatever values each call changes in the lexical closure of works.
+    """
+    mods = mods if mods is not None else {}  # {} in lexical closure when None
+    def inner(f):
+        @functools.wraps(f)
+        def wrapper(*pa, **kwa):
+            if 'mods' not in kwa or kwa['mods'] is None:  # missing or None
+                kwa.update(mods=mods)  # replace or add works to kwa
+            return f(*pa, **kwa)
+        return wrapper
+    return inner
