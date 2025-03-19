@@ -26,7 +26,7 @@ from .doing import Doist, Doer
 from .. import hioing
 from .. import help
 from ..help import timing, helping
-from ..help.helping import RawDom, MapDom
+from ..help.helping import RawDom, IceMapDom
 from ..help import ogling
 
 from ..help.naming import Namer
@@ -232,9 +232,11 @@ class BokDom(RawDom):
 
 
 @dataclass(frozen=True)
-class TagDomCodex(MapDom):
+class TagDomCodex(IceMapDom):
     """Codex keyed by memo tag with value of associated MemoDom subclass.
     Attribute values are classes not instances
+
+    iters asdict
 
     Attributes:
         REG (type[RegDom]): RegDom
@@ -247,9 +249,6 @@ class TagDomCodex(MapDom):
     ACK: type[AckDom] = AckDom  # value is class not instance
     END: type[EndDom] = EndDom  # value is class not instance
     BOK: type[BokDom] = BokDom  # value is class not instance
-
-    def __iter__(self):
-        return iter(asdict(self))
 
 TagDex = TagDomCodex()  # make instance
 

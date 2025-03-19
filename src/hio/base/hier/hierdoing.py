@@ -5,6 +5,8 @@ hio.core.hierdoing Module
 Provides hierarchical action support
 
 """
+from __future__ import annotations  # so type hints of classes get resolved later
+
 import os
 import sys
 import time
@@ -13,16 +15,17 @@ import json
 import signal
 import re
 import multiprocessing as mp
+import functools
 
 from collections import deque, namedtuple
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Callable
+from typing import Any, Type
 from dataclasses import dataclass, astuple, asdict, field
-import typing
 
 
 from .. import Tymee
 from ...hioing import Mixin, HierError
-from ...help.helping import isNonStringIterable
+from ...help import isNonStringIterable, MapDom, modify
 
 
 # Regular expression to detect valid attribute names for Boxes
@@ -101,6 +104,27 @@ def exen(near,far):
             return (list(reversed(nears[i:])), fars[i:],
                     list(reversed(nears[:i])), fars[:i])
 
+@dataclass
+class WorkDom(MapDom):
+    """WorkDom provides state for building boxwork by a boxer to be injected
+    make methods of Boxer by workify wrapper.
+
+
+    Attributes:
+        box (Box | None): current box in box work. None if not yet a box
+        over (Box | None): current over Box in box work. None if top level
+        bxpre (str):  default box name prefix used to generate unique box name
+                    relative to boxer.boxes
+        bxidx (int): default box name index used to generate unique box name
+                    relative to boxer.boxes
+    """
+    box: None | Box = None  # current box in boxwork. None if not yet any box
+    over: None | Box = None  # current over box in boxwork. None if not yet any over
+    bxpre: str = 'box'  # default box name prefix when name not provided
+    bxidx: int = 0  # default box name index when name not provided
+
+
+
 
 
 class Lode(dict):
@@ -129,50 +153,22 @@ class Lode(dict):
 
 
     def __setitem__(self, k, v):
-        #if isNonStringIterable(k):
-            #try:
-                #k = '.'.join(k)
-            #except Exception as ex:
-                #raise KeyError(ex.args) from ex
-        #if not isinstance(k, str):
-            #raise KeyError(f"Expected str got {k}.")
         return super(Lode, self).__setitem__(self.tokey(k), v)
 
 
     def __getitem__(self, k):
-        #if isNonStringIterable(k):
-            #try:
-                #k = '.'.join(k)
-            #except Exception as ex:
-                #raise KeyError(ex.args) from ex
-        #if not isinstance(k, str):
-            #raise KeyError(f"Expected str got {k}.")
         return super(Lode, self).__getitem__(self.tokey(k))
 
 
+    def __delitem__(self, k):
+        return super(Lode, self).__delitem__(self.tokey(k))
+
+
     def __contains__(self, k):
-        #if isNonStringIterable(k):
-            #try:
-                #k = '.'.join(k)
-            #except Exception as ex:
-                #raise KeyError(ex.args) from ex
-        #if not isinstance(k, str):
-            #raise KeyError(f"Expected str got {k}.")
         return super(Lode, self).__contains__(self.tokey(k))
 
 
     def get(self, k, default=None):
-        #if isNonStringIterable(k):
-            #try:
-                #k = '.'.join(k)
-            #except Exception as ex:
-                #raise KeyError(ex.args) from ex
-        #if not isinstance(k, str):
-            #raise KeyError(f"Expected str got {k}.")
-        #if not super(Lode, self).__contains__(k):
-            #return default
-        #else:
-            #return super(Lode, self).__getitem__(k)
         if not self.__contains__(k):
             return default
         else:
@@ -193,35 +189,24 @@ class Lode(dict):
 
         """
         if len(pa) > 1:
-            raise TypeError(f"expected 1 positional argument got {len(pa)}")
+            raise TypeError(f"Expected 1 positional argument got {len(pa)}.")
 
         if pa:
             di = pa[0]
             if isinstance(di, Mapping):
                 rd = {}
                 for k, v in di.items():
-                    #if isNonStringIterable(k):
-                        #try:
-                            #k = '.'.join(k)
-                        #except Exception as ex:
-                            #raise KeyError(ex.args) from ex
-                    #if not isinstance(k, str):
-                        #raise KeyError(f"Expected str got {k}.")
                     rd[self.tokey(k)] = v
                 super(Lode, self).update(rd, **kwa)
 
             elif isinstance(di, Iterable):
                 ri = []
                 for k, v in di:
-                    #if isNonStringIterable(k):
-                        #try:
-                            #k = '.'.join(k)
-                        #except Exception as ex:
-                            #raise KeyError(ex.args) from ex
-                    #if not isinstance(k, str):
-                        #raise KeyError(f"Expected str got {k}.")
                     ri.append((self.tokey(k), v))
                 super(Lode, self).update(ri, **kwa)
+
+            else:
+                raise TypeError(f"Expected Mapping or Iterable got {type(di)}.")
 
         else:
             super(Lode, self).update(**kwa)
@@ -264,151 +249,6 @@ class Lode(dict):
         return tuple(key.split("."))
 
 
-class Builder(Mixin):
-    """Builder Class boxworks of Boxer and Box instances.
-    Holds reference to in-memory lode shared by all boxes in boxwork
-    Holds reference to current Boxer and Boxe being built
-
-    Attributes:
-        lode (Lode): in memory data lode shared by all boxes in boxwork
-        boxer (Boxer | None): current boxer
-        box (Box | None): cureent box
-
-    Properties:
-        name (str): unique identifier of instance
-
-    Hidden:
-        _name (str): unique identifier of instance
-
-    """
-    def __init__(self, *, name='builder', lode=None, **kwa):
-        """Initialize instance.
-
-        Parameters:
-            name (str): unique identifier of instance
-            lode (Lode | None): in memory data lode shared by all boxes in box work
-
-
-        """
-        super(Builder, self).__init__(**kwa)
-        self.name = name
-        self.lode = lode if lode is not None else Lode()
-        self.boxer = None
-        self.box = None
-
-    @property
-    def name(self):
-        """Property getter for ._name
-
-        Returns:
-            name (str): unique identifier of instance
-        """
-        return self._name
-
-
-    @name.setter
-    def name(self, name):
-        """Property setter for ._name
-
-        Paramaters:
-            name (str): unique identifier of instance
-        """
-        if not Reat.match(name):
-            raise HierError(f"Invalid {name=}.")
-
-        self._name = name
-
-
-class Boxer(Tymee):
-    """Boxer Class that executes hierarchical action framework (boxwork) instances.
-    Boxer instance holds reference to in-memory data lode shared by all its boxes
-    and other Boxers in a given boxwork.
-    Box instance holds a reference to its first (beginning) box.
-    Box instance holds references to all its boxes in dict keyed by box name.
-
-    Inherited Attributes, Properties
-        see Tymee
-
-    Attributes:
-        lode (Lode): in memory data lode shared by all boxes in box work
-        doer (Doer | None): doer running this boxer
-        first (Box | None):  beginning box
-        pile (list[Box]): active pile of boxes
-        box (Box | None):  active box in pile
-        boxes (dict): all boxes mapping of (box name, box) pairs
-
-    Properties:
-        name (str): unique identifier of instance
-
-    Hidden:
-        _name (str): unique identifier of instance
-
-
-    Order of Execution of Contexts:
-        time[k=0]  First Time
-            precur preacts (marks)
-            benter beacts
-            enter enacts
-            recur reacts
-            while not done:
-                time[k=k+1]  Next Time
-                    precur preacts (marks)
-                    transit
-                        if tract in tracts is True and benter beacts new pile is True:
-                            segue to new pile
-                                old pile:
-                                    exit exacts
-                                    rexit rexacts
-                                new pile:
-                                    renter renacts
-                                    enter enacts
-                    else:
-                        recur reacts (current pile)
-            exit exacts
-
-
-    """
-    def __init__(self, *, name='boxer', lode=None, doer=None, first=None, **kwa):
-        """Initialize instance.
-
-        Parameters:
-            name (str): unique identifier of box
-            lode (Lode | None): in memory data lode shared by all boxes in box work
-            doer (Doer | None): Doer running this Boxer
-            first (Box | None):  beginning box
-
-
-        """
-        super(Boxer, self).__init__(**kwa)
-        self.name = name
-        self.lode = lode if lode is not None else Lode()
-        self.doer = None
-        self.first = first
-        self.pile = []  # current active pile
-        self.box = None  # current active box in active pile
-        self.boxes = {}
-
-    @property
-    def name(self):
-        """Property getter for ._name
-
-        Returns:
-            name (str): unique identifier of instance
-        """
-        return self._name
-
-
-    @name.setter
-    def name(self, name):
-        """Property setter for ._name
-
-        Paramaters:
-            name (str): unique identifier of instance
-        """
-        if not Reat.match(name):
-            raise HierError(f"Invalid {name=}.")
-        self._name = name
-
 
 class Box(Tymee):
     """Box Class for hierarchical action framework (boxwork) instances.
@@ -421,13 +261,12 @@ class Box(Tymee):
         see Tymee
 
     Attributes:
-        lode (dict): in memory data lode shared by all boxes in box work
-        boxer (Boxer | None):  this box's Boxer instance
+        bags (Lode): in memory Lode (map) of data bags shared across boxwork
         over (Box | None): this box's over box instance or None
         unders (list[Box]): this box's under box instances or empty
                             zeroth entry is primary under
 
-        nxt (Box | None): this box's next box if any
+
         preacts (list[act]): precur (pre-occurence pre-transit) context acts
         beacts (list[act]): benter (before enter) context acts
         renacts (list[act]): renter (re-enter) context acts
@@ -456,37 +295,28 @@ class Box(Tymee):
                             This is computed by ._trace
         _trace(): function to trace and update ._pile from .over and .unders[0]
                   and update ._spot and ._trail
+        _next (Box | None): this box's next box if any lexically
 
 
 
 
     """
-    def __init__(self, *, name='box', lode=None, boxer=None, over=None,
-                 unders=None, **kwa):
+    def __init__(self, *, name='box', bags=None, over=None, **kwa):
         """Initialize instance.
 
         Parameters:
             name (str): unique identifier of box
-            lode (dict | None): in memory data lode shared by all boxes in box work
-            boxer (Boxer | None):  this box's Boxer instance
+            bags (Lode): in memory Lode (map) of data bags shared across boxwork
             over (Box | None): this box's over box instance or None
-            unders (list[Box]): this box's under box instances or empty.
-                                zeroth entry is primary under
         """
         super(Box, self).__init__(**kwa)
-        if '_' in name:
-            raise HierError(f"Invalid {name=} contains '_'.")
         self.name = name
+        self.bags = bags if bags is not None else Lode()
         self._pile = None  # force .trace on first access of .pile property
         self._spot = None  # zero based offset into .pile of this box
         self._trail = None  # delimited string representation of box names in .pile
-
-        self.lode = lode if lode is not None else Lode()
-        self.boxer = boxer
         self.over = over  # over box
-        self.unders = unders if unders is not None else []  # list of under boxes,
-
-        self.nxt = None  # next box to execute on default transition
+        self.unders = []  # list of under boxes,
 
         # acts by contexts
         self.preacts = []  # precur context list of pre-occurence pre-transit acts
@@ -497,6 +327,9 @@ class Box(Tymee):
         self.tracts = []  # transit context list of transition acts
         self.exacts = []  # exit context list of exit acts
         self.rexacts = []  # rexit context list of re-exit acts
+
+        #lexical context
+        self._next = None  # next box lexically
 
 
     def __repr__(self):
@@ -596,5 +429,347 @@ class Box(Tymee):
         return self._trail
 
 
+
+
+
+class Boxer(Tymee):
+    """Boxer Class that executes hierarchical action framework (boxwork) instances.
+    Boxer instance holds reference to in-memory data lode shared by all its boxes
+    and other Boxers in a given boxwork.
+    Box instance holds a reference to its first (beginning) box.
+    Box instance holds references to all its boxes in dict keyed by box name.
+
+    Inherited Attributes, Properties
+        see Tymee
+
+    Attributes:
+        bags (Lode): in memory Lode (map) of data bags shared across boxwork
+        first (Box | None):  beginning box
+        doer (Doer | None): doer running this boxer  (do we need this?)
+        boxes (dict): all boxes mapping of (box name, box) pairs
+
+        pile (list[Box]): active pile of boxes
+        box (Box | None):  active box in pile
+
+    Properties:
+        name (str): unique identifier of instance
+
+    Hidden:
+        _name (str): unique identifier of instance
+
+
+    Order of Execution of Contexts:
+        time[k=0]  First Time
+            precur preacts (marks)
+            benter beacts
+            enter enacts
+            recur reacts
+            while not done:
+                time[k=k+1]  Next Time
+                    precur preacts (marks)
+                    transit
+                        if tract in tracts is True and benter beacts new pile is True:
+                            segue to new pile
+                                old pile:
+                                    exit exacts
+                                    rexit rexacts
+                                new pile:
+                                    renter renacts
+                                    enter enacts
+                    else:
+                        recur reacts (current pile)
+            exit exacts
+
+
+    """
+    def __init__(self, *, name='boxer', bags=None, first=None, doer=None, **kwa):
+        """Initialize instance.
+
+        Parameters:
+            name (str): unique identifier of box
+            bags (Lode | None): in memory Lode (map) of data bags shared by all
+                                 boxes in box work
+            first (Box | None):  beginning box
+            doer (Doer | None): Doer running this Boxer doe we need this?
+
+
+        """
+        super(Boxer, self).__init__(**kwa)
+        self.name = name
+        self.bags = bags if bags is not None else Lode()
+        self.first = first
+        self.doer = doer
+        self.boxes = {}
+        self.pile = []  # current active pile
+        self.box = None  # current active box in active pile
+
+
+    @property
+    def name(self):
+        """Property getter for ._name
+
+        Returns:
+            name (str): unique identifier of instance
+        """
+        return self._name
+
+
+    @name.setter
+    def name(self, name):
+        """Property setter for ._name
+
+        Paramaters:
+            name (str): unique identifier of instance
+        """
+        if not Reat.match(name):
+            raise HierError(f"Invalid {name=}.")
+        self._name = name
+
+    def prep(self):
+        """"""
+
+    def run(self):
+        """"""
+
+    def quit(self):
+        """"""
+
+    def make(self, fun):
+        """Make box work for this boxer from function fun
+        Parameters:
+            fun (function):  employs be, do, on, go maker functions injected
+                             works (boxwork state vars)
+
+        def fun(be):
+
+
+        Injects works as WorkDom dataclass instance whose attributes are used to
+        construct boxwork. WorkDom attributes include
+            box (Box|None): current box in box work. None if not yet a box
+            over (Box|None): current over Box in box work. None if top level
+            bxpre (str): default name prefix used to generate unique box
+                name relative to boxer.boxes
+            bxidx (int): default box index used to generate unique box
+                name relative to boxer.boxes
+
+
+        """
+        works = WorkDom()  # standard defaults
+        be = modify(mods=works)(self.be)
+        do = modify(mods=works)(self.do)
+        fun(be=be, do=do)  # calling fun will build boxer.boxes
+
+        return works  # for debugging analysis
+
+
+
+    def be(self, name: None|str=None, over: None|str|Box="",
+                *, mods: WorkDom|None=None)->Box:
+        """Make a box and add to box work
+
+        Parameters:
+            name (None | str): when None then create name from bepre and beidx
+                               items in works.
+                               if non-empty string then use provided
+                               otherwise raise exception
+
+            over (None | str | Box): over box for new box.
+                                    when str then name of new over box
+                                    when box then actual over box
+                                    when None then no over box (top level)
+                                    when empty then same level use _over
+
+            mods (None | WorkDom):  state variables used to construct box work
+                None is just to allow definition as keyword arg. Assumes in
+                actual usage that mods is always provided as WorkDom instance of
+                form:
+
+                    box (Box|None): current box in box work. None if not yet a box
+                    over (Box|None): current over Box in box work. None if top level
+                    bxpre (str): default name prefix used to generate unique box
+                        name relative to boxer.boxes
+                    bxidx (int): default box index used to generate unique box
+                        name relative to boxer.boxes
+
+
+
+        """
+        m = mods  # alias more compact
+        defaults = dict(box=None, over=None, bxpre='box', bxidx=0)
+        for k, v in defaults.items():
+            if k not in m:
+                m[k] = v
+
+        if not name:  # empty or None
+            if name is None:
+                name = m.bxpre + str(m.bxidx)
+                m.bxidx += 1
+                while name in self.boxes:
+                    name = m.bxpre + str(m.bxidx)
+                    m.bxidx += 1
+
+            else:
+                raise HierError(f"Missing name.")
+
+        if name in self.boxes:  # duplicate name
+            raise HierError(f"Non-unique box {name=}.")
+
+        if over is not None:  # not at top level
+            if isinstance(over, str):
+                if not over:  # empty string
+                    over = m.over  # same level
+                else:  # resolvable string
+                    try:
+                        over = self.boxes[over]  # resolve
+                    except KeyError as ex:
+                        raise HierError(f"Under box={name} defined before"
+                                               f"its {over=}.") from ex
+
+            elif over.name not in self.boxes:  # stray over box
+                self.boxes[over.name] = over  # add to boxes
+
+        box = Box(name=name, over=over, bags=self.bags, tymth=self.tymth)
+        self.boxes[box.name] = box  # update box work
+        if box.over is not None:  # not at top level
+            box.over.unders.append(box)  # add to over.unders list
+
+        m.over = over  # update current level
+        if m.box:  # update last boxes lexical ._next to this box
+            m.box._next = box
+        m.box = box  # update current box
+        return box
+
+
+
+    def do(self, name: None|str=None,
+                *, mods: WorkDom|None=None)->Box:
+        """Make an act and add to box work
+
+        Parameters:
+            name (None | str): when None then create name from bepre and beidx
+                               items in works.
+                               if non-empty string then use provided
+                               otherwise raise exception
+
+
+            mods (None | WorkDom):  state variables used to construct box work
+                None is just to allow definition as keyword arg. Assumes in
+                actual usage that mods is always provided as WorkDom instance of
+                form:
+
+                    box (Box|None): current box in box work. None if not yet a box
+                    over (Box|None): current over Box in box work. None if top level
+                    bxpre (str): default name prefix used to generate unique box
+                        name relative to boxer.boxes
+                    bxidx (int): default box index used to generate unique box
+                        name relative to boxer.boxes
+
+
+
+        """
+        m = mods  # alias more compact
+        defaults = dict(box=None, over=None, bxpre='box', bxidx=0)
+        for k, v in defaults.items():
+            if k not in m:
+                m[k] = v
+
+        if not name:  # empty or None
+            if name is None:
+                name = 'act' + str(m.bxidx)
+                m.bxidx += 1
+                while name in self.boxes:
+                    name = 'act' + str(m.bxidx)
+                    m.bxidx += 1
+
+            else:
+                raise HierError(f"Missing name.")
+
+
+        return name
+
+
+
+
+
+class Maker(Mixin):
+    """Maker Class makes boxworks of Boxer and Box instances.
+    Holds reference to in-memory lode shared by all boxes in boxwork
+    Holds reference to current Boxer and Boxe being built
+
+    ****Placeholder for now. Future to be able to make multiple boxers from
+    single fun or in multiple iterations making.****
+
+    Attributes:
+        bags (Lode): in memory data lode shared by all boxes in boxwork
+        boxer (Boxer | None): current boxer
+        box (Box | None): cureent box
+
+    Properties:
+        name (str): unique identifier of instance
+
+    Hidden:
+        _name (str): unique identifier of instance
+
+    """
+    def __init__(self, *, name='maker', bags=None, **kwa):
+        """Initialize instance.
+
+        Parameters:
+            name (str): unique identifier of instance
+            bags (Lode | None): in memory data lode shared by all boxes in box work
+
+
+        """
+        super(Maker, self).__init__(**kwa)
+        self.name = name
+        self.bags = bags if bags is not None else Lode()
+        self.boxer = None
+        self.box = None
+
+    @property
+    def name(self):
+        """Property getter for ._name
+
+        Returns:
+            name (str): unique identifier of instance
+        """
+        return self._name
+
+
+    @name.setter
+    def name(self, name):
+        """Property setter for ._name
+
+        Paramaters:
+            name (str): unique identifier of instance
+        """
+        if not Reat.match(name):
+            raise HierError(f"Invalid {name=}.")
+
+        self._name = name
+
+    def make(self, fun, bags=None, boxes=None):
+        """Make box work from function fun
+        Parameters:
+            fun (function):  employs be, do, on, go maker functions with
+                              globals
+            bags (None|Lode):  shared data Lode for all made Boxers
+            boxes (None|dict): shared boxes map
+
+
+
+        """
+
+        # bags, boxes, and boxers can be referenced by fun in its nonlocal
+        # enclosing scope. collections references so do not need to be global
+        bags = bags if bags is not None else Lode()  # create new if not provided
+        boxes = boxes if boxes is not None else {}  # create new if not provided
+        boxers = []  # list of made boxers
+
+        # create a default boxer
+        boxer = Boxer(name='boxer', bags=bags, boxes=boxes)
+        boxers.append(boxer)
+
+        fun()
 
 
