@@ -756,7 +756,7 @@ class RawDom:
 
 
     def __iter__(self):
-        return iter(asdict(self))
+        return iter(self._asdict())
 
 
 
@@ -821,7 +821,7 @@ class MapDom:
             #raise IndexError(ex.args) from ex
 
     def __iter__(self):
-        return iter(asdict(self))
+        return iter(self._asdict())
 
 
     def _asdict(self):
@@ -873,7 +873,7 @@ class IceMapDom:
             raise IndexError(ex.args) from ex
 
     def __iter__(self):
-        return iter(asdict(self))
+        return iter(self._asdict())
 
     #def __iter__(self):
         #return iter(astuple(self))

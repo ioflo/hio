@@ -5,6 +5,8 @@ hio.core.hierdoing Module
 Provides hierarchical action support
 
 """
+from __future__ import annotations  # so type hints of classes get resolved later
+
 import os
 import sys
 import time
@@ -17,13 +19,13 @@ import functools
 
 from collections import deque, namedtuple
 from collections.abc import Iterable, Mapping, Callable
-from typing import Any
+from typing import Any, Type
 from dataclasses import dataclass, astuple, asdict, field
 
 
 from .. import Tymee
 from ...hioing import Mixin, HierError
-from ...help.helping import isNonStringIterable
+from ...help import isNonStringIterable, MapDom
 
 
 # Regular expression to detect valid attribute names for Boxes
@@ -101,6 +103,103 @@ def exen(near,far):
             # (exits, enters, rexits, renters)
             return (list(reversed(nears[i:])), fars[i:],
                     list(reversed(nears[:i])), fars[:i])
+
+@dataclass
+class WorkDom(MapDom):
+    """WorkDom provides state for building boxwork by a boxer to be injected
+    make methods of Boxer by workify wrapper.
+
+
+    Attributes:
+        box (Box | None): current box in box work. None if not yet a box
+        over (Box | None): current over Box in box work. None if top level
+        bxpre (str):  default box name prefix used to generate unique box name
+                    relative to boxer.boxes
+        bxidx (int): default box name index used to generate unique box name
+                    relative to boxer.boxes
+    """
+    box: None | Box = None  # current box in boxwork. None if not yet any box
+    over: None | Box = None  # current over box in boxwork. None if not yet any over
+    bxpre: str = 'box'  # default box name prefix when name not provided
+    bxidx: int = 0  # default box name index when name not provided
+
+
+def workify(works: WorkDom|None=None, klas: Type[WorkDom]=WorkDom)->Callable[..., Any]:
+    """Wrapper with argument(s) that injects works WorkDom dataclass instance
+    when provided as keyword arg into wrapped function in order make a boxwork.
+    If works is None then creates and injects a WorkDom instance which creates
+    a lexical closure.
+
+    Parameters:
+        works (WorkDom|None): default None. Instance of dataclass to be injected
+        klas (Type[WorkDom]): defualt WorkDom. Class of dataclass to be injected
+                             as default when works not provided.
+
+    If wrapped function call itself includes works as an arg whose value is
+    not None then does not inject. This allows override of a single call.
+    Subsequent calls will resume using the lexical closure or the wrapped
+    injected works whichever was provided.
+
+    Assumes wrapped function defines works argument as a keyword only parameter
+    using '*' such as:
+       def f(name='box, over=None, *, works=None):
+
+    To use inline:
+        works = WorkDom(box=None, over=None, bepre='box', beidx=0)
+        g = workify(works)(f)
+
+    Later calling g as:
+        g(name="mid", over="top")
+    Actually has works inject as if called as:
+        g(name="mid", over="top", works=works)
+
+    Also can be used on a method not just a function.
+       def m(self, name='box, over=None, *, works=None):
+
+    To use inline:
+        works = dict(box=None, over=None, bepre='box', beidx=0)
+        m = workize(works)(self.m)
+
+    Later calling m as:
+        m(name="mid", over="top")
+    Actually has works injectd as if called as:
+        m(name="mid", over="top", works=works)  where self is also injected into method
+
+    Since works is a mutable collection i.e. dataclass, not an immutable object
+    using @decorator syntax on could be problematic as the injected works would
+    be a lexical closure defined in the defining scope not the calling scope.
+    Depends on what the use case it for it.
+
+    Example:
+        works = WorkDom(box=None, over=None, bepre='box', beidx=0)
+        @workify(works=works)
+        def f(name="box), over=None, *, works=None)
+
+    Later calling f as:
+        f(name="mid", over="top")
+    Actually has works injected as if called as:
+        f(name="mid", over="top", works=works)
+
+    But the works in this case is from the defining scope,not the calling scope.
+
+    Likewise passing in works=None would result in a lexical closure of works
+    with default values initially that would be shared everywhere f() is called.
+
+    When f() is called with an explicit works such as f(works=works) then that
+    call will use the passed in works not the injected works. This allows a per
+    call override of the injected works.
+
+    """
+    works = works if works is not None else klas()  # lexical closure so not None
+    def inner(f):
+        @functools.wraps(f)
+        def wrapper(*pa, **kwa):
+            if 'works' not in kwa or kwa['works'] is None:  # missing or None
+                kwa.update(works=works)  # replace or add works to kwa
+            return f(*pa, **kwa)
+        return wrapper
+    return inner
+
 
 
 
@@ -578,6 +677,111 @@ class Boxer(Tymee):
 
     def quit(self):
         """"""
+
+    def make(self, fun):
+        """Make box work for this boxer from function fun
+        Parameters:
+            fun (function):  employs be, do, on, go maker functions injected
+                             works (boxwork state vars)
+
+        def fun(be):
+
+
+        Injects works as WorkDom dataclass instance whose attributes are used to
+        construct boxwork. WorkDom attributes include
+            box (Box|None): current box in box work. None if not yet a box
+            over (Box|None): current over Box in box work. None if top level
+            bxpre (str): default name prefix used to generate unique box
+                name relative to boxer.boxes
+            bxidx (int): default box index used to generate unique box
+                name relative to boxer.boxes
+
+
+        """
+        works = WorkDom()  # standard defaults
+        be = workify(works)(self.be)
+        fun(be=be)  # calling fun will build boxer.boxes
+
+        return works  # for debugging analysis
+
+
+
+    def be(self, name: None|str=None, over: None|str|Box="",
+                *, works: WorkDom|None=None)->Box:
+        """Make a box and add to box work
+
+        Parameters:
+            name (None | str): when None then create name from bepre and beidx
+                               items in works.
+                               if non-empty string then use provided
+                               otherwise raise exception
+
+            over (None | str | Box): over box for new box.
+                                    when str then name of new over box
+                                    when box then actual over box
+                                    when None then no over box (top level)
+                                    when empty then same level use _over
+
+            works (None | WorkDom):  state variables used to construct box work
+                None is just to allow definition as keyword arg. Assumes in
+                actual usage that works always provided as WorkDom instance of
+                form:
+
+                    box (Box|None): current box in box work. None if not yet a box
+                    over (Box|None): current over Box in box work. None if top level
+                    bxpre (str): default name prefix used to generate unique box
+                        name relative to boxer.boxes
+                    bxidx (int): default box index used to generate unique box
+                        name relative to boxer.boxes
+
+
+
+        """
+        w = works  # alias more compact
+        defaults = dict(box=None, over=None, bxpre='box', bxidx=0)
+        for k, v in defaults.items():
+            if k not in w:
+                w[k] = v
+
+        if not name:  # empty or None
+            if name is None:
+                name = w.bxpre + str(w.bxidx)
+                w.bxidx += 1
+                while name in self.boxes:
+                    name = w.bxpre + str(w.bxidx)
+                    w.bxidx += 1
+
+            else:
+                raise HierError(f"Missing name.")
+
+        if name in self.boxes:  # duplicate name
+            raise HierError(f"Non-unique box {name=}.")
+
+        if over is not None:  # not at top level
+            if isinstance(over, str):
+                if not over:  # empty string
+                    over = w.over  # same level
+                else:  # resolvable string
+                    try:
+                        over = self.boxes[over]  # resolve
+                    except KeyError as ex:
+                        raise HierError(f"Under box={name} defined before"
+                                               f"its {over=}.") from ex
+
+            elif over.name not in self.boxes:  # stray over box
+                self.boxes[over.name] = over  # add to boxes
+
+        box = Box(name=name, over=over, bags=self.bags, tymth=self.tymth)
+        self.boxes[box.name] = box  # update box work
+        if box.over is not None:  # not at top level
+            box.over.unders.append(box)  # add to over.unders list
+
+        w.over = over  # update current level
+        if w.box:  # update last boxes lexical ._next to this box
+            w.box._next = box
+        w.box = box  # update current box
+        return box
+
 
     def make_alt(self, fun):
         """Make box work for this boxer from function fun
