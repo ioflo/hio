@@ -63,13 +63,23 @@ def actify(name, *, base=None, registry=None):
         return inner
     return decorator
 
+Registry = dict()  # registry of Actor subclasses keyed by class name
+
+def register(actor, name=None):
+    """Add Registry entry for actor keyed by its name.
+    Must be Callable. If name not provides then actor must have .__name__
+    attribute or property
+    """
+    name = name if name is not None else actor.__name__
+    if name in Registry:
+        raise hioing.HierError(f"Actor by {name=} already registered.")
+    Registry[name] = actor
 
 
 class Actor(Mixin):
     """Actor Callable Base Class. Has Actor specific Registry of classes
 
     Class Attributes:
-        Registry (dict): keyed by subclass name of subclasses
         Index (int): default naming index for subclass instances
 
 
@@ -80,10 +90,9 @@ class Actor(Mixin):
         ._name (str|None): unique name of instance
 
     """
-    Registry = dict()  # Actor subclass registry
     Index = 0  # naming index for default names of subclass instances
-
     __slots__ = ('_name')
+
 
     def __init__(self, name=None, **kwa):
         """
@@ -131,3 +140,4 @@ class Actor(Mixin):
         self._name = name
 
 
+register(Actor)

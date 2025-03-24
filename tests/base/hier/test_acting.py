@@ -8,16 +8,16 @@ from __future__ import annotations  # so type hints of classes get resolved late
 import pytest
 
 from hio.base.hier import acting
-from hio.base.hier.acting import Actage, Actor, actify
+from hio.base.hier.acting import Actage, Registry, Actor, actify
 
 
 def test_acting_basic():
     """Test Actor class and subclasses basically"""
 
-
+    assert Registry == dict(Actor=Actor)
 
     assert Actor.__name__ == 'Actor'
-    assert Actor.Registry == {}
+
     assert Actor.Index == 0
 
     actor = Actor()
