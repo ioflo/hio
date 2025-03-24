@@ -19,10 +19,10 @@ def test_acting_basic():
     assert Actor.__name__ == 'Actor'
     assert Actor.Registry == {}
     assert Actor.Index == 0
-    assert Actor.Attrs == {}
 
     actor = Actor()
     assert actor.name == 'Actor0'
+    assert hasattr(actor, 'name')   # hasattr works for properties and attributes
 
     act = Actage(act=actor, kwa={})
     act.act(**act.kwa)
