@@ -18,7 +18,7 @@ import re
 
 from typing import Any, Type
 from collections import deque
-from collections.abc import Iterable, Sequence, Generator, Mapping
+from collections.abc import Iterable, Sequence, Generator, Mapping, Callable
 from abc import ABCMeta
 from dataclasses import dataclass, astuple, asdict, fields, field
 
