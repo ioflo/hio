@@ -251,7 +251,7 @@ def test_filing():
 
     headDirPath = os.path.join(os.path.sep, 'root', 'hio')
     if platform.system() == 'Windows':
-        headDirPath = 'C:\\Windows\\System32'
+        headDirPath = 'C:\\System Volume Information'
 
     # force altPath by using headDirPath of "/root/hio" which is not permitted
     filer = filing.Filer(name="test", base="conf", headDirPath=headDirPath, filed=True, reopen=False)
@@ -329,7 +329,7 @@ def test_filing():
 
     headDirPath = os.path.join(os.path.sep, 'root', 'hio')
     if platform.system() == 'Windows':
-        headDirPath = 'C:\\Windows\\System32'
+        headDirPath = 'C:\\System Volume Information'
     # test alternate path use headDirPath not permitted to force use altPath
     with filing.openFiler(filed=True, temp=False, headDirPath=headDirPath, clear=True) as  filer:
         assert filer.path.endswith(os.path.join('.hio', 'test.text'))  # uses altpath
