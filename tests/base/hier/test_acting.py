@@ -7,28 +7,16 @@ from __future__ import annotations  # so type hints of classes get resolved late
 
 import pytest
 
+from hio.base.hier.hiering import Actage, Registry, Actor, actify
 from hio.base.hier import acting
-from hio.base.hier.acting import Actage, Registry, Actor, actify
 
 
-def test_acting_basic():
-    """Test Actor class and subclasses basically"""
 
-    assert Registry == dict(Actor=Actor)
-
-    assert Actor.__name__ == 'Actor'
-
-    assert Actor.Index == 0
-
-    actor = Actor()
-    assert actor.name == 'Actor0'
-    assert hasattr(actor, 'name')   # hasattr works for properties and attributes
-
-    act = Actage(act=actor, kwa={})
-    act.act(**act.kwa)
+def test_tractor_basic():
+    """Test Tractor class and subclasses basically"""
 
 
     """Done Test"""
 
 if __name__ == "__main__":
-    test_acting_basic()
+    test_tractor_basic()

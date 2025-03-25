@@ -33,6 +33,132 @@ ATREX = r'^[a-zA-Z_][a-zA-Z0-9_]*$'
 # Usage: if Reat.match(name): or if not Reat.match(name):
 Reat = re.compile(ATREX)  # compile is faster
 
+"""Actage (namedtuple):
+Callable object and its keyword args to be injected and called at run time.
+
+Fields:
+   act (Callable): callable object. Must have name attribute
+   kwa (dict): key word args to be injected at runtime into act.
+"""
+Actage = namedtuple("Actage", "act kwa")
+
+Registry = dict()  # registry of Actor subclasses keyed by class name
+
+def register(actor, name=None):
+    """Add Registry entry for actor keyed by its name.
+    Must be Callable. If name not provides then actor must have .__name__
+    attribute or property
+    """
+    name = name if name is not None else actor.__name__
+    if name in Registry:
+        raise hioing.HierError(f"Actor by {name=} already registered.")
+    Registry[name] = actor
+
+
+
+# ToDo  any callable usually function that is not already a subclass of Actor.
+# can be converted so a subclass of Actor and then registered in the Registry.
+# normally if defining a class then inhereit from Actor. But if simply a function
+# then decorate with actify so that a a new subclass is created and registered
+
+def actify(name, *, base=None, registry=None):
+    """ Parametrized decorator function that converts the decorated function
+    into an Actor sub class with .act method and with class name that
+    is name and registers the new subclass in the registry under name as
+    a subclass of base. The default base is Actor.
+
+    The parameters  name, attr if provided,
+    are used to create the class attributes for the new subclass
+
+    """
+    if not issubclass(base, Actor):
+        raise hioing.HierError(f"Expected Actor got {base=}.")
+
+    # make this smarted and apply to functions with function attributes for
+    # actor slots name, bags
+
+    attrs = None
+    cls = type(name, (base, ), attrs)
+
+    def decorator(func):
+        if not isinstance(func, Callable):
+            raise hioing.HierError(f"Expected Callable got {func=}.")
+
+        @functools.wraps(func)
+        def inner(*pa, **kwa):
+            return func(*pa, **kwa)
+        cls.act = inner  # method
+        return inner
+    return decorator
+
+
+class Actor(Mixin):
+    """Actor Callable Base Class. Has Actor specific Registry of classes
+
+    Class Attributes:
+        Index (int): default naming index for subclass instances
+
+
+    Properties:
+        name (str): unique name string of instance
+
+    Hidden
+        ._name (str|None): unique name of instance
+
+    """
+    Index = 0  # naming index for default names of subclass instances
+    __slots__ = ('_name')
+
+
+    def __init__(self, name=None, **kwa):
+        """
+        Initialization method for instance.
+
+
+
+        """
+        super(Actor,self).__init__(**kwa) # in case of MRO
+
+        if name is None:
+            name = self.__class__.__name__ + str(self.Index)
+            self.__class__.Index += 1   # so has not to shadow class attribute
+        self.name = name
+
+
+    def __call__(self, **kwa):
+        """Make Actor instance a callable object. run its .act method"""
+        return self.act(**kwa)
+
+
+    def act(self, **kwa):
+        """Act called by Actor. Should override in subclass."""
+        pass
+
+    @property
+    def name(self):
+        """Property getter for ._name
+
+        Returns:
+            name (str): unique identifier of instance
+        """
+        return self._name
+
+
+    @name.setter
+    def name(self, name):
+        """Property setter for ._name
+
+        Paramaters:
+            name (str): unique identifier of instance
+        """
+        if not Reat.match(name):
+            raise HierError(f"Invalid {name=}.")
+        self._name = name
+
+
+register(Actor)
+
+
 def exen(near,far):
     """Computes the relative differences (uncommon  and common parts) between
     the box pile lists nears passed in and fars from box far.pile
@@ -248,528 +374,5 @@ class Haul(dict):
         """
         return tuple(key.split("."))
 
-
-
-class Box(Tymee):
-    """Box Class for hierarchical action framework (boxwork) instances.
-    Box instance holds reference to in-memory data haul shared by all the boxes in a
-    given boxwork as well as its executing Boxer.
-    Box instance holds references (links) to its over box and its under boxes.
-    Box instance holds the acts to be executed in their context.
-
-    Inherited Attributes, Properties
-        see Tymee
-
-    Attributes:
-        bags (Haul): in memory Haul (map) of data bags shared across boxwork
-        over (Box | None): this box's over box instance or None
-        unders (list[Box]): this box's under box instances or empty
-                            zeroth entry is primary under
-
-
-        preacts (list[act]): precur (pre-occurence pre-transit) context acts
-        beacts (list[act]): benter (before enter) context acts
-        renacts (list[act]): renter (re-enter) context acts
-        reacts (list[act]): recur context acts
-        tracts (list[act]): transit context acts
-        exacts (list[act]): exit context acts
-        rexacts (list[act]): rexit (re-exit) context acts
-
-    Properties:
-        name (str): unique identifier of instance
-        pile (list[Box]): this box's pile of boxes generated by tracing .over up
-                          and .unders[0] down if any. This is generated lazily.
-                          To refresh call ._trace()
-        trail (str): human friendly represetion of pile as delimited string of
-                        box names from .pile. This is generated lazily.
-                        To refresh call ._trace()
-
-    Hidden:
-        _name (str): unique identifier of instance
-        _pile (list[Box] | None): pile of Boxes to which this box belongs.
-                                  None means not yet traced.
-        _spot (int | None): zero based offset into .pile of this box. This is
-                            computed by ._trace
-        _trail (int | None): human friendly represetion of pile as delimited
-                             string of box names from .pile.
-                            This is computed by ._trace
-        _trace(): function to trace and update ._pile from .over and .unders[0]
-                  and update ._spot and ._trail
-        _next (Box | None): this box's next box if any lexically
-
-
-
-
-    """
-    def __init__(self, *, name='box', bags=None, over=None, **kwa):
-        """Initialize instance.
-
-        Parameters:
-            name (str): unique identifier of box
-            bags (Haul): in memory Haul (map) of data bags shared across boxwork
-            over (Box | None): this box's over box instance or None
-        """
-        super(Box, self).__init__(**kwa)
-        self.name = name
-        self.bags = bags if bags is not None else Haul()
-        self._pile = None  # force .trace on first access of .pile property
-        self._spot = None  # zero based offset into .pile of this box
-        self._trail = None  # delimited string representation of box names in .pile
-        self.over = over  # over box
-        self.unders = []  # list of under boxes,
-
-        # acts by contexts
-        self.preacts = []  # precur context list of pre-occurence pre-transit acts
-        self.beacts = []  # benter context list of before enter acts
-        self.renacts = []  # renter context list of re-enter acts
-        self.enacts = []  # enter context list of enter acts
-        self.reacts = []  # recur context list of recurring acts
-        self.tracts = []  # transit context list of transition acts
-        self.exacts = []  # exit context list of exit acts
-        self.rexacts = []  # rexit context list of re-exit acts
-
-        #lexical context
-        self._next = None  # next box lexically
-
-
-    def __repr__(self):
-        """Representation usable by eval()."""
-        return (f"{self.__class__.__name__}(name='{self.name}')")
-
-    def __str__(self):
-        """Representation human friendly."""
-        return (f"{self.__class__.__name__}({self.trail})")
-
-
-    def _trace(self):
-        """Trace pile and update .pile by tracing over up if any and unders[0]
-        down if any.
-        """
-        pile = []
-        over = self.over
-        while over:
-            pile.insert(0, over)
-            over = over.over
-        pile.append(self)
-        self._spot = len(pile) - 1
-        under = self.unders[0] if self.unders else None
-        while under:
-            pile.append(under)
-            under = under.unders[0] if under.unders else None
-        self._pile = pile
-
-        up = "<".join(over.name for over in self._pile[:self._spot])
-        dn = ">".join(under.name for under in self._pile[self._spot+1:])
-        self._trail = up + "<" + self._name + ">" + dn
-
-
-    @property
-    def name(self):
-        """Property getter for ._name
-
-        Returns:
-            name (str): unique identifier of instance
-        """
-        return self._name
-
-
-    @name.setter
-    def name(self, name):
-        """Property setter for ._name
-
-        Paramaters:
-            name (str): unique identifier of instance
-        """
-        if not Reat.match(name):
-            raise HierError(f"Invalid {name=}.")
-        self._name = name
-
-
-    @property
-    def pile(self):
-        """Property getter for ._pile
-
-        Returns:
-            pile (list[Box]): this box's pile of boxes generated by tracing
-                              .over up and .unders[0] down if any. This is
-                              generated lazily to refresh call ._trace().
-                              pile always includes self once traced.
-        """
-        if self._pile is None:
-            self._trace()
-        return self._pile
-
-    @property
-    def spot(self):
-        """Property getter for ._spot
-
-        Returns:
-            spot (int): zero based offset of this box into its pile of boxes
-                        generated by tracing .over up and .unders[0] down if any.
-                        This is generated lazily. To refresh call ._trace().
-                        Since pile always includes self, spot is always defined
-                        once traced.
-        """
-        if self._spot is None:
-            self._trace()
-        return self._spot
-
-    @property
-    def trail(self):
-        """Property getter for ._trail
-
-        Returns:
-            trail (str): human frieldly delimited string of box names from .pile.
-                        This is generated lazily. To refresh call ._trace().
-                        Since pile always includes self, trail is always defined
-                        once traced.
-        """
-        if self._trail is None:
-            self._trace()
-        return self._trail
-
-
-
-
-
-class Boxer(Tymee):
-    """Boxer Class that executes hierarchical action framework (boxwork) instances.
-    Boxer instance holds reference to in-memory data haul shared by all its boxes
-    and other Boxers in a given boxwork.
-    Box instance holds a reference to its first (beginning) box.
-    Box instance holds references to all its boxes in dict keyed by box name.
-
-    Inherited Attributes, Properties
-        see Tymee
-
-    Attributes:
-        bags (Haul): in memory Haul (map) of data bags shared across boxwork
-        first (Box | None):  beginning box
-        doer (Doer | None): doer running this boxer  (do we need this?)
-        boxes (dict): all boxes mapping of (box name, box) pairs
-
-        pile (list[Box]): active pile of boxes
-        box (Box | None):  active box in pile
-
-    Properties:
-        name (str): unique identifier of instance
-
-    Hidden:
-        _name (str): unique identifier of instance
-
-
-    Order of Execution of Contexts:
-        time[k=0]  First Time
-            precur preacts (marks)
-            benter beacts
-            enter enacts
-            recur reacts
-            while not done:
-                time[k=k+1]  Next Time
-                    precur preacts (marks)
-                    transit
-                        if tract in tracts is True and benter beacts new pile is True:
-                            segue to new pile
-                                old pile:
-                                    exit exacts
-                                    rexit rexacts
-                                new pile:
-                                    renter renacts
-                                    enter enacts
-                    else:
-                        recur reacts (current pile)
-            exit exacts
-
-
-    """
-    def __init__(self, *, name='boxer', bags=None, first=None, doer=None, **kwa):
-        """Initialize instance.
-
-        Parameters:
-            name (str): unique identifier of box
-            bags (Haul | None): in memory Haul (map) of data bags shared by all
-                                 boxes in box work
-            first (Box | None):  beginning box
-            doer (Doer | None): Doer running this Boxer doe we need this?
-
-
-        """
-        super(Boxer, self).__init__(**kwa)
-        self.name = name
-        self.bags = bags if bags is not None else Haul()
-        self.first = first
-        self.doer = doer
-        self.boxes = {}
-        self.pile = []  # current active pile
-        self.box = None  # current active box in active pile
-
-
-    @property
-    def name(self):
-        """Property getter for ._name
-
-        Returns:
-            name (str): unique identifier of instance
-        """
-        return self._name
-
-
-    @name.setter
-    def name(self, name):
-        """Property setter for ._name
-
-        Paramaters:
-            name (str): unique identifier of instance
-        """
-        if not Reat.match(name):
-            raise HierError(f"Invalid {name=}.")
-        self._name = name
-
-    def prep(self):
-        """"""
-
-    def run(self):
-        """"""
-
-    def quit(self):
-        """"""
-
-    def make(self, fun):
-        """Make box work for this boxer from function fun
-        Parameters:
-            fun (function):  employs be, do, on, go maker functions injected
-                             works (boxwork state vars)
-
-        def fun(be):
-
-
-        Injects works as WorkDom dataclass instance whose attributes are used to
-        construct boxwork. WorkDom attributes include
-            box (Box|None): current box in box work. None if not yet a box
-            over (Box|None): current over Box in box work. None if top level
-            bxpre (str): default name prefix used to generate unique box
-                name relative to boxer.boxes
-            bxidx (int): default box index used to generate unique box
-                name relative to boxer.boxes
-
-
-        """
-        works = WorkDom()  # standard defaults
-        be = modify(mods=works)(self.be)
-        do = modify(mods=works)(self.do)
-        fun(be=be, do=do)  # calling fun will build boxer.boxes
-
-        return works  # for debugging analysis
-
-
-
-    def be(self, name: None|str=None, over: None|str|Box="",
-                *, mods: WorkDom|None=None)->Box:
-        """Make a box and add to box work
-
-        Parameters:
-            name (None | str): when None then create name from bepre and beidx
-                               items in works.
-                               if non-empty string then use provided
-                               otherwise raise exception
-
-            over (None | str | Box): over box for new box.
-                                    when str then name of new over box
-                                    when box then actual over box
-                                    when None then no over box (top level)
-                                    when empty then same level use _over
-
-            mods (None | WorkDom):  state variables used to construct box work
-                None is just to allow definition as keyword arg. Assumes in
-                actual usage that mods is always provided as WorkDom instance of
-                form:
-
-                    box (Box|None): current box in box work. None if not yet a box
-                    over (Box|None): current over Box in box work. None if top level
-                    bxpre (str): default name prefix used to generate unique box
-                        name relative to boxer.boxes
-                    bxidx (int): default box index used to generate unique box
-                        name relative to boxer.boxes
-
-
-
-        """
-        m = mods  # alias more compact
-        defaults = dict(box=None, over=None, bxpre='box', bxidx=0)
-        for k, v in defaults.items():
-            if k not in m:
-                m[k] = v
-
-        if not name:  # empty or None
-            if name is None:
-                name = m.bxpre + str(m.bxidx)
-                m.bxidx += 1
-                while name in self.boxes:
-                    name = m.bxpre + str(m.bxidx)
-                    m.bxidx += 1
-
-            else:
-                raise HierError(f"Missing name.")
-
-        if name in self.boxes:  # duplicate name
-            raise HierError(f"Non-unique box {name=}.")
-
-        if over is not None:  # not at top level
-            if isinstance(over, str):
-                if not over:  # empty string
-                    over = m.over  # same level
-                else:  # resolvable string
-                    try:
-                        over = self.boxes[over]  # resolve
-                    except KeyError as ex:
-                        raise HierError(f"Under box={name} defined before"
-                                               f"its {over=}.") from ex
-
-            elif over.name not in self.boxes:  # stray over box
-                self.boxes[over.name] = over  # add to boxes
-
-        box = Box(name=name, over=over, bags=self.bags, tymth=self.tymth)
-        self.boxes[box.name] = box  # update box work
-        if box.over is not None:  # not at top level
-            box.over.unders.append(box)  # add to over.unders list
-
-        m.over = over  # update current level
-        if m.box:  # update last boxes lexical ._next to this box
-            m.box._next = box
-        m.box = box  # update current box
-        return box
-
-
-
-    def do(self, name: None|str=None,
-                *, mods: WorkDom|None=None)->Box:
-        """Make an act and add to box work
-
-        Parameters:
-            name (None | str): when None then create name from bepre and beidx
-                               items in works.
-                               if non-empty string then use provided
-                               otherwise raise exception
-
-
-            mods (None | WorkDom):  state variables used to construct box work
-                None is just to allow definition as keyword arg. Assumes in
-                actual usage that mods is always provided as WorkDom instance of
-                form:
-
-                    box (Box|None): current box in box work. None if not yet a box
-                    over (Box|None): current over Box in box work. None if top level
-                    bxpre (str): default name prefix used to generate unique box
-                        name relative to boxer.boxes
-                    bxidx (int): default box index used to generate unique box
-                        name relative to boxer.boxes
-
-
-
-        """
-        m = mods  # alias more compact
-        defaults = dict(box=None, over=None, bxpre='box', bxidx=0)
-        for k, v in defaults.items():
-            if k not in m:
-                m[k] = v
-
-        if not name:  # empty or None
-            if name is None:
-                name = 'act' + str(m.bxidx)
-                m.bxidx += 1
-                while name in self.boxes:
-                    name = 'act' + str(m.bxidx)
-                    m.bxidx += 1
-
-            else:
-                raise HierError(f"Missing name.")
-
-
-        return name
-
-
-
-
-
-class Maker(Mixin):
-    """Maker Class makes boxworks of Boxer and Box instances.
-    Holds reference to in-memory haul shared by all boxes in boxwork
-    Holds reference to current Boxer and Boxe being built
-
-    ****Placeholder for now. Future to be able to make multiple boxers from
-    single fun or in multiple iterations making.****
-
-    Attributes:
-        bags (Haul): in memory data haul shared by all boxes in boxwork
-        boxer (Boxer | None): current boxer
-        box (Box | None): cureent box
-
-    Properties:
-        name (str): unique identifier of instance
-
-    Hidden:
-        _name (str): unique identifier of instance
-
-    """
-    def __init__(self, *, name='maker', bags=None, **kwa):
-        """Initialize instance.
-
-        Parameters:
-            name (str): unique identifier of instance
-            bags (Haul | None): in memory data haul shared by all boxes in box work
-
-
-        """
-        super(Maker, self).__init__(**kwa)
-        self.name = name
-        self.bags = bags if bags is not None else Haul()
-        self.boxer = None
-        self.box = None
-
-    @property
-    def name(self):
-        """Property getter for ._name
-
-        Returns:
-            name (str): unique identifier of instance
-        """
-        return self._name
-
-
-    @name.setter
-    def name(self, name):
-        """Property setter for ._name
-
-        Paramaters:
-            name (str): unique identifier of instance
-        """
-        if not Reat.match(name):
-            raise HierError(f"Invalid {name=}.")
-
-        self._name = name
-
-    def make(self, fun, bags=None, boxes=None):
-        """Make box work from function fun
-        Parameters:
-            fun (function):  employs be, do, on, go maker functions with
-                              globals
-            bags (None|Haul):  shared data Haul for all made Boxers
-            boxes (None|dict): shared boxes map
-
-
-
-        """
-
-        # bags, boxes, and boxers can be referenced by fun in its nonlocal
-        # enclosing scope. collections references so do not need to be global
-        bags = bags if bags is not None else Haul()  # create new if not provided
-        boxes = boxes if boxes is not None else {}  # create new if not provided
-        boxers = []  # list of made boxers
-
-        # create a default boxer
-        boxer = Boxer(name='boxer', bags=bags, boxes=boxes)
-        boxers.append(boxer)
-
-        fun()
 
 
