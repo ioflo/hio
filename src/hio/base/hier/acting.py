@@ -23,15 +23,24 @@ Fields:
 """
 Actage = namedtuple("Actage", "act kwa")
 
+Registry = dict()  # registry of Actor subclasses keyed by class name
+
+def register(actor, name=None):
+    """Add Registry entry for actor keyed by its name.
+    Must be Callable. If name not provides then actor must have .__name__
+    attribute or property
+    """
+    name = name if name is not None else actor.__name__
+    if name in Registry:
+        raise hioing.HierError(f"Actor by {name=} already registered.")
+    Registry[name] = actor
 
 
-# ToDO change this so that its looking for a callable with a .name attribute
-# or property hasattr works for both. If not then add .name as attribute
-# then either callable subclasses or functions will work the same with regards
-# name. The name is used for introspection logging debugging etc. Can set a
-# conditional breakpoint based on Actor.name for a given act (actage) entry
-# in a box.  Look as doify for coping the function not just decorating it in place
-#
+
+# ToDo  any callable usually function that is not already a subclass of Actor.
+# can be converted so a subclass of Actor and then registered in the Registry.
+# normally if defining a class then inhereit from Actor. But if simply a function
+# then decorate with actify so that a a new subclass is created and registered
 
 def actify(name, *, base=None, registry=None):
     """ Parametrized decorator function that converts the decorated function
@@ -62,18 +71,6 @@ def actify(name, *, base=None, registry=None):
         cls.act = inner  # method
         return inner
     return decorator
-
-Registry = dict()  # registry of Actor subclasses keyed by class name
-
-def register(actor, name=None):
-    """Add Registry entry for actor keyed by its name.
-    Must be Callable. If name not provides then actor must have .__name__
-    attribute or property
-    """
-    name = name if name is not None else actor.__name__
-    if name in Registry:
-        raise hioing.HierError(f"Actor by {name=} already registered.")
-    Registry[name] = actor
 
 
 class Actor(Mixin):
