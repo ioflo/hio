@@ -23,7 +23,7 @@ from dataclasses import dataclass, astuple, asdict, field
 from hio import hioing
 from hio.help import helping
 from hio.base import tyming
-from hio.base.hier import Reat, Lode, Maker, Boxer, Box
+from hio.base.hier import Reat, Haul, Maker, Boxer, Box
 from hio.base.hier import hiering
 from hio.base.hier.hiering import exen, modify
 
@@ -47,130 +47,130 @@ def test_reat():
     """Done Test"""
 
 
-def test_lode_basic():
-    """Basic test Lode class"""
+def test_haul_basic():
+    """Basic test Haul class"""
     keys = ('a', 'b', 'c')
     key = '.'.join(keys)
     assert key == 'a.b.c'
 
     # test staticmethod .tokey()
-    assert Lode.tokey(keys) == key
-    assert Lode.tokey('a') == 'a'  # str unchanged
-    assert Lode.tokey('a.b') == 'a.b'  # str unchanged
-    assert Lode.tokey(keys)
+    assert Haul.tokey(keys) == key
+    assert Haul.tokey('a') == 'a'  # str unchanged
+    assert Haul.tokey('a.b') == 'a.b'  # str unchanged
+    assert Haul.tokey(keys)
 
     with pytest.raises(KeyError):
-        key = Lode.tokey((1, 2, 3))
+        key = Haul.tokey((1, 2, 3))
 
     with pytest.raises(KeyError):
-        key = Lode.tokey(1)
+        key = Haul.tokey(1)
 
 
     # Test staticmethod .tokeys()
-    assert Lode.tokeys(key) == keys
-    assert Lode.tokeys('') == ('', )
-    assert Lode.tokeys('a') == ('a', )
+    assert Haul.tokeys(key) == keys
+    assert Haul.tokeys('') == ('', )
+    assert Haul.tokeys('a') == ('a', )
 
-    assert Lode.tokey(Lode.tokeys(key)) == key
-    assert Lode.tokeys(Lode.tokey(keys)) == keys
+    assert Haul.tokey(Haul.tokeys(key)) == key
+    assert Haul.tokeys(Haul.tokey(keys)) == keys
 
-    lode = Lode()  # defaults
-    assert lode == {}
+    haul = Haul()  # defaults
+    assert haul == {}
 
-    assert isinstance(lode, dict)
-    assert issubclass(Lode, dict)
+    assert isinstance(haul, dict)
+    assert issubclass(Haul, dict)
 
-    lode['a'] = 5
-    lode['a_b'] = 6
-    assert lode['a'] == 5
-    assert 'a' in lode
-    assert lode.get('a') == 5
+    haul['a'] = 5
+    haul['a_b'] = 6
+    assert haul['a'] == 5
+    assert 'a' in haul
+    assert haul.get('a') == 5
 
-    lode[keys] = 7
-    assert list(lode.items()) == [('a', 5), ('a_b', 6), ('a.b.c', 7)]
+    haul[keys] = 7
+    assert list(haul.items()) == [('a', 5), ('a_b', 6), ('a.b.c', 7)]
 
-    assert lode[keys] == 7
-    assert keys in lode
-    assert lode.get(keys) == 7
+    assert haul[keys] == 7
+    assert keys in haul
+    assert haul.get(keys) == 7
 
-    assert lode[key] == 7
-    assert key in lode
-    assert lode.get(key) == 7
+    assert haul[key] == 7
+    assert key in haul
+    assert haul.get(key) == 7
 
-    lode[key] = 8
-    assert lode[keys] == 8
+    haul[key] = 8
+    assert haul[keys] == 8
 
-    del lode[keys]
-    assert key not in lode
-
-    with pytest.raises(KeyError):
-        del lode[key]
+    del haul[keys]
+    assert key not in haul
 
     with pytest.raises(KeyError):
-        del lode[keys]
-
-    lode[keys] = 8
-    del lode[key]
+        del haul[key]
 
     with pytest.raises(KeyError):
-        del lode[keys]
+        del haul[keys]
+
+    haul[keys] = 8
+    del haul[key]
 
     with pytest.raises(KeyError):
-        del lode[key]
+        del haul[keys]
+
+    with pytest.raises(KeyError):
+        del haul[key]
 
 
 
-    assert lode.get('c') == None
-    assert lode.get(("b", "c")) == None
+    assert haul.get('c') == None
+    assert haul.get(("b", "c")) == None
 
-    lode[''] = 10
-    assert '' in lode
-    assert lode[''] == 10
+    haul[''] = 10
+    assert '' in haul
+    assert haul[''] == 10
 
 
     with pytest.raises(KeyError):
-        lode['c']
+        haul['c']
 
     with pytest.raises(KeyError):
-        lode[1] = 'A'
+        haul[1] = 'A'
 
     with pytest.raises(KeyError):
-        lode[("a", 2)] = 'B'
+        haul[("a", 2)] = 'B'
 
     with pytest.raises(KeyError):
-        lode[("a", 2)]
+        haul[("a", 2)]
 
-    lode = Lode(a=0, a_b=1, a_b_c=2)
-    assert list(lode.items()) == [('a', 0), ('a_b', 1), ('a_b_c', 2)]
+    haul = Haul(a=0, a_b=1, a_b_c=2)
+    assert list(haul.items()) == [('a', 0), ('a_b', 1), ('a_b_c', 2)]
 
-    lode = Lode([('a', 0), ('a.b', 1), ('a.b.c', 2)])
-    assert list(lode.items()) == [('a', 0), ('a.b', 1), ('a.b.c', 2)]
+    haul = Haul([('a', 0), ('a.b', 1), ('a.b.c', 2)])
+    assert list(haul.items()) == [('a', 0), ('a.b', 1), ('a.b.c', 2)]
 
     # test init with iterable using keys as tuples
-    lode = Lode([(('a', ), 0), (('a', 'b'), 1), (('a','b', 'c'), 2)], d=4)
-    assert list(lode.items()) == [('a', 0), ('a.b', 1), ('a.b.c', 2), ('d', 4)]
+    haul = Haul([(('a', ), 0), (('a', 'b'), 1), (('a','b', 'c'), 2)], d=4)
+    assert list(haul.items()) == [('a', 0), ('a.b', 1), ('a.b.c', 2), ('d', 4)]
 
     # test init with dict using keys as tuples
     d = {}
     d[("a", )] = 0
     d[("a", "b")] = 1
     d[("a", "b", "c")] = 2
-    lode = Lode(d, d=4)
-    assert list(lode.items()) == [('a', 0), ('a.b', 1), ('a.b.c', 2), ('d', 4)]
+    haul = Haul(d, d=4)
+    assert list(haul.items()) == [('a', 0), ('a.b', 1), ('a.b.c', 2), ('d', 4)]
 
     # test update with iterable using keys as tuples
-    lode = Lode()
-    lode.update([(('a', ), 0), (('a', 'b'), 1), (('a','b', 'c'), 2)], d=4)
-    assert list(lode.items()) == [('a', 0), ('a.b', 1), ('a.b.c', 2), ('d', 4)]
+    haul = Haul()
+    haul.update([(('a', ), 0), (('a', 'b'), 1), (('a','b', 'c'), 2)], d=4)
+    assert list(haul.items()) == [('a', 0), ('a.b', 1), ('a.b.c', 2), ('d', 4)]
 
     # test update with dict using keys as tuples
     d = {}
     d[("a", )] = 0
     d[("a", "b")] = 1
     d[("a", "b", "c")] = 2
-    lode = Lode()
-    lode.update(d, d=4)
-    assert list(lode.items()) == [('a', 0), ('a.b', 1), ('a.b.c', 2), ('d', 4)]
+    haul = Haul()
+    haul.update(d, d=4)
+    assert list(haul.items()) == [('a', 0), ('a.b', 1), ('a.b.c', 2), ('d', 4)]
 
     """Done Test"""
 
@@ -183,7 +183,7 @@ def test_box_basic():
     assert box.tyme == None
     assert box.tymth == None
     assert box.name == 'box'
-    assert isinstance(box.bags, Lode)
+    assert isinstance(box.bags, Haul)
     assert box.over == None
     assert box.unders == []
 
@@ -219,7 +219,7 @@ def test_boxer_basic():
     assert boxer.tyme == None
     assert boxer.tymth == None
     assert boxer.name == 'boxer'
-    assert boxer.bags == Lode()
+    assert boxer.bags == Haul()
     assert boxer.boxes == {}
     assert boxer.first == None
     assert boxer.doer == None
@@ -270,7 +270,7 @@ def test_maker_basic():
     """Basic test Maker class"""
     maker = Maker()  # defaults
     assert maker.name == 'maker'
-    assert maker.bags == Lode()
+    assert maker.bags == Haul()
     assert maker.boxer == None
     assert maker.box == None
 
@@ -509,7 +509,7 @@ def test_concept_be_box_nonlocal():
     """
     #global B, _bags, _boxer, _boxes, _box, _over, _proem, _index
 
-    B = _bags = Lode()
+    B = _bags = Haul()
     _boxer = None
     _boxes = {}  # default boxes dict now a global
     _box = None
@@ -532,7 +532,7 @@ def test_concept_be_box_nonlocal():
                                     when empty then same level use _over
 
         Globals:
-            B, _bags: (Lode): data lode for this box work
+            B, _bags: (Haul): data haul for this box work
             _boxer (Boxer | None): instance to which this box belongs
             _boxes (dict): map of boxes in this box work
             _box (Box | None): current box in box work. None if not yet a box
@@ -658,7 +658,7 @@ def test_concept_be_box_global():
     """
     global B, _bags, _boxer, _boxes, _box, _over, _proem, _index
 
-    B = _bags = Lode()
+    B = _bags = Haul()
     _boxer = None
     _boxes = {}  # default boxes dict now a global
     _box = None
@@ -681,7 +681,7 @@ def test_concept_be_box_global():
                                     when empty then same level use _over
 
         Globals:
-            B, _bags: (Lode): data lode for this box work
+            B, _bags: (Haul): data haul for this box work
             _boxer (Boxer | None): instance to which this box belongs
             _boxes (dict): map of boxes in this box work
             _box (Box | None): current box in box work. None if not yet a box
@@ -803,7 +803,7 @@ def test_concept_be_box_global():
 
 if __name__ == "__main__":
     test_reat()
-    test_lode_basic()
+    test_haul_basic()
     test_box_basic()
     test_boxer_basic()
     test_boxer_make()

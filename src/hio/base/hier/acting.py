@@ -12,7 +12,7 @@ from collections import namedtuple
 
 from ... import hioing
 from ...hioing import Mixin, HierError
-from .hiering import Reat, Lode
+from .hiering import Reat, Haul
 
 """Actage (namedtuple):
 Callable object and its keyword args to be injected and called at run time.

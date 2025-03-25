@@ -127,8 +127,8 @@ class WorkDom(MapDom):
 
 
 
-class Lode(dict):
-    """Lode subclass of dict with custom methods dunder methods and get that
+class Haul(dict):
+    """Haul subclass of dict with custom methods dunder methods and get that
     will only allow actual keys as str. Iterables passed in as key are converted
     to a "_' joined str. Uses "_" so can use dict constuctor if need be with str
     path. Assumes items in Iterable do not contain '_'.
@@ -153,19 +153,19 @@ class Lode(dict):
 
 
     def __setitem__(self, k, v):
-        return super(Lode, self).__setitem__(self.tokey(k), v)
+        return super(Haul, self).__setitem__(self.tokey(k), v)
 
 
     def __getitem__(self, k):
-        return super(Lode, self).__getitem__(self.tokey(k))
+        return super(Haul, self).__getitem__(self.tokey(k))
 
 
     def __delitem__(self, k):
-        return super(Lode, self).__delitem__(self.tokey(k))
+        return super(Haul, self).__delitem__(self.tokey(k))
 
 
     def __contains__(self, k):
-        return super(Lode, self).__contains__(self.tokey(k))
+        return super(Haul, self).__contains__(self.tokey(k))
 
 
     def get(self, k, default=None):
@@ -197,19 +197,19 @@ class Lode(dict):
                 rd = {}
                 for k, v in di.items():
                     rd[self.tokey(k)] = v
-                super(Lode, self).update(rd, **kwa)
+                super(Haul, self).update(rd, **kwa)
 
             elif isinstance(di, Iterable):
                 ri = []
                 for k, v in di:
                     ri.append((self.tokey(k), v))
-                super(Lode, self).update(ri, **kwa)
+                super(Haul, self).update(ri, **kwa)
 
             else:
                 raise TypeError(f"Expected Mapping or Iterable got {type(di)}.")
 
         else:
-            super(Lode, self).update(**kwa)
+            super(Haul, self).update(**kwa)
 
 
     @staticmethod
@@ -252,7 +252,7 @@ class Lode(dict):
 
 class Box(Tymee):
     """Box Class for hierarchical action framework (boxwork) instances.
-    Box instance holds reference to in-memory data lode shared by all the boxes in a
+    Box instance holds reference to in-memory data haul shared by all the boxes in a
     given boxwork as well as its executing Boxer.
     Box instance holds references (links) to its over box and its under boxes.
     Box instance holds the acts to be executed in their context.
@@ -261,7 +261,7 @@ class Box(Tymee):
         see Tymee
 
     Attributes:
-        bags (Lode): in memory Lode (map) of data bags shared across boxwork
+        bags (Haul): in memory Haul (map) of data bags shared across boxwork
         over (Box | None): this box's over box instance or None
         unders (list[Box]): this box's under box instances or empty
                             zeroth entry is primary under
@@ -306,12 +306,12 @@ class Box(Tymee):
 
         Parameters:
             name (str): unique identifier of box
-            bags (Lode): in memory Lode (map) of data bags shared across boxwork
+            bags (Haul): in memory Haul (map) of data bags shared across boxwork
             over (Box | None): this box's over box instance or None
         """
         super(Box, self).__init__(**kwa)
         self.name = name
-        self.bags = bags if bags is not None else Lode()
+        self.bags = bags if bags is not None else Haul()
         self._pile = None  # force .trace on first access of .pile property
         self._spot = None  # zero based offset into .pile of this box
         self._trail = None  # delimited string representation of box names in .pile
@@ -434,7 +434,7 @@ class Box(Tymee):
 
 class Boxer(Tymee):
     """Boxer Class that executes hierarchical action framework (boxwork) instances.
-    Boxer instance holds reference to in-memory data lode shared by all its boxes
+    Boxer instance holds reference to in-memory data haul shared by all its boxes
     and other Boxers in a given boxwork.
     Box instance holds a reference to its first (beginning) box.
     Box instance holds references to all its boxes in dict keyed by box name.
@@ -443,7 +443,7 @@ class Boxer(Tymee):
         see Tymee
 
     Attributes:
-        bags (Lode): in memory Lode (map) of data bags shared across boxwork
+        bags (Haul): in memory Haul (map) of data bags shared across boxwork
         first (Box | None):  beginning box
         doer (Doer | None): doer running this boxer  (do we need this?)
         boxes (dict): all boxes mapping of (box name, box) pairs
@@ -487,7 +487,7 @@ class Boxer(Tymee):
 
         Parameters:
             name (str): unique identifier of box
-            bags (Lode | None): in memory Lode (map) of data bags shared by all
+            bags (Haul | None): in memory Haul (map) of data bags shared by all
                                  boxes in box work
             first (Box | None):  beginning box
             doer (Doer | None): Doer running this Boxer doe we need this?
@@ -496,7 +496,7 @@ class Boxer(Tymee):
         """
         super(Boxer, self).__init__(**kwa)
         self.name = name
-        self.bags = bags if bags is not None else Lode()
+        self.bags = bags if bags is not None else Haul()
         self.first = first
         self.doer = doer
         self.boxes = {}
@@ -693,14 +693,14 @@ class Boxer(Tymee):
 
 class Maker(Mixin):
     """Maker Class makes boxworks of Boxer and Box instances.
-    Holds reference to in-memory lode shared by all boxes in boxwork
+    Holds reference to in-memory haul shared by all boxes in boxwork
     Holds reference to current Boxer and Boxe being built
 
     ****Placeholder for now. Future to be able to make multiple boxers from
     single fun or in multiple iterations making.****
 
     Attributes:
-        bags (Lode): in memory data lode shared by all boxes in boxwork
+        bags (Haul): in memory data haul shared by all boxes in boxwork
         boxer (Boxer | None): current boxer
         box (Box | None): cureent box
 
@@ -716,13 +716,13 @@ class Maker(Mixin):
 
         Parameters:
             name (str): unique identifier of instance
-            bags (Lode | None): in memory data lode shared by all boxes in box work
+            bags (Haul | None): in memory data haul shared by all boxes in box work
 
 
         """
         super(Maker, self).__init__(**kwa)
         self.name = name
-        self.bags = bags if bags is not None else Lode()
+        self.bags = bags if bags is not None else Haul()
         self.boxer = None
         self.box = None
 
@@ -753,7 +753,7 @@ class Maker(Mixin):
         Parameters:
             fun (function):  employs be, do, on, go maker functions with
                               globals
-            bags (None|Lode):  shared data Lode for all made Boxers
+            bags (None|Haul):  shared data Haul for all made Boxers
             boxes (None|dict): shared boxes map
 
 
@@ -762,7 +762,7 @@ class Maker(Mixin):
 
         # bags, boxes, and boxers can be referenced by fun in its nonlocal
         # enclosing scope. collections references so do not need to be global
-        bags = bags if bags is not None else Lode()  # create new if not provided
+        bags = bags if bags is not None else Haul()  # create new if not provided
         boxes = boxes if boxes is not None else {}  # create new if not provided
         boxers = []  # list of made boxers
 
