@@ -310,7 +310,7 @@ def test_filing():
         # hio_hcbvwdnt_test
         tempDirPath = tempfile.gettempdir()
         _, path = os.path.splitdrive(os.path.normpath(filer.path))
-        assert path.startswith(os.path.join(os.path.sep, os.path.basename(tempDirPath), 'hio_'))
+        assert path.startswith(os.path.join(tempDirPath, 'hio_'))
         assert filer.path.endswith(os.path.join('_test', 'hio', 'test'))
         assert filer.opened
         assert os.path.exists(filer.path)
@@ -322,7 +322,7 @@ def test_filing():
         # hio_6t3vlv7c_test
         tempDirPath = tempfile.gettempdir()
         _, path = os.path.splitdrive(os.path.normpath(filer.path))
-        assert path.startswith(os.path.join(os.path.sep, os.path.basename(tempDirPath), 'hio_'))
+        assert path.startswith(os.path.join(tempDirPath, 'hio_'))
         assert filer.path.endswith(os.path.join('_test', 'hio', 'test.text'))
         assert filer.opened
         assert os.path.exists(filer.path)
