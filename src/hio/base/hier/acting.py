@@ -12,6 +12,144 @@ from collections import namedtuple
 
 from ... import hioing
 from ...hioing import Mixin, HierError
-from .hiering import Reat, Haul
+from .hiering import Reat, Haul, Act, register
 
+
+class Tract(Act):
+    """Tract (transit act) is subclass of Act whose .act evaluates conditional
+    need expression to determine if a transition condition is satified for
+    transition to its destination box.
+
+    Inherited Class Attributes:
+        Registry (dict): subclass registry whose items are (name, cls) where:
+                name is unique name for subclass
+                cls is reference to class object
+        Names (dict): instance registry whose items are (name, instance) where:
+                name is unique instance name and instance is instance reference
+
+    Overridden Class Attributes
+        Index (int): default naming index for subclass instances. Each subclass
+                overrides with a subclass specific Index value to track
+                subclass specific instance default names.
+
+
+
+    Inherited Properties:
+        name (str): unique name string of instance
+        iopts (dict): input-output-parameters for .act
+
+    Hidden
+        ._name (str|None): unique name of instance
+        ._iopts (dict): input-output-paramters for .act
+
+    """
+    Index = 0  # naming index for default names of this subclasses instances
+
+
+    def __init__(self, dest=None, need=None, **kwa):
+        """
+        Initialization method for instance.
+
+        Inherited Parameters:
+            name (str|None): unique name of this instance. When None then
+                generate name from .Index
+            iopts (dict|None): input-output-parameters for .act. When None then
+                set to empty dict.
+
+        Parameters:
+            dest (None|str|Box): destination Box for this transition.
+                When None then resolve later to next box of current box
+                When str is box name then resolve to box with that name
+                When Box instance then use directly
+            need (None|str|Need): transition condition to be evaluated
+                When None then always evaluates to True
+                When str = bool expression then create Need from expression
+                When Need instance then use directly
+
+        """
+        super(Tract, self).__init__(**kwa)
+        self.dest = dest
+        self.need = need
+
+
+    def __call__(self):
+        """Make Actor instance a callable object. run its .act method"""
+        return self.act(**self.iopts)
+
+
+    def act(self, **iopts):
+        """Act called by Actor. Should override in subclass."""
+
+        return None  # conditional not met
+
+
+
+
+@register
+class Tract(Act):
+    """Tract (transit act) is subclass of Act whose .act evaluates conditional
+    need expression to determine if a transition condition is satified for
+    transition to its destination box.
+
+    Inherited Class Attributes:
+        Registry (dict): subclass registry whose items are (name, cls) where:
+                name is unique name for subclass
+                cls is reference to class object
+        Names (dict): instance registry whose items are (name, instance) where:
+                name is unique instance name and instance is instance reference
+
+    Overridden Class Attributes
+        Index (int): default naming index for subclass instances. Each subclass
+                overrides with a subclass specific Index value to track
+                subclass specific instance default names.
+
+
+
+    Inherited Properties:
+        name (str): unique name string of instance
+        iopts (dict): input-output-parameters for .act
+
+    Hidden
+        ._name (str|None): unique name of instance
+        ._iopts (dict): input-output-paramters for .act
+
+    """
+    Index = 0  # naming index for default names of this subclasses instances
+
+
+    def __init__(self, dest=None, need=None, **kwa):
+        """
+        Initialization method for instance.
+
+        Inherited Parameters:
+            name (str|None): unique name of this instance. When None then
+                generate name from .Index
+            iopts (dict|None): input-output-parameters for .act. When None then
+                set to empty dict.
+
+        Parameters:
+            dest (None|str|Box): destination Box for this transition.
+                When None then resolve later to next box of current box
+                When str is box name then resolve to box with that name
+                When Box instance then use directly
+            need (None|str|Need): transition condition to be evaluated
+                When None then always evaluates to True
+                When str = bool expression then create Need from expression
+                When Need instance then use directly
+
+        """
+        super(Tract, self).__init__(**kwa)
+        self.dest = dest
+        self.need = need
+
+
+    def __call__(self):
+        """Make Actor instance a callable object. run its .act method"""
+        return self.act(**self.iopts)
+
+
+    def act(self, **iopts):
+        """Act called by Actor. Should override in subclass."""
+
+        return None  # conditional not met
 

@@ -51,7 +51,8 @@ def test_act_basic():
     """Test Act basic stuff"""
 
     assert Act.__name__ == 'Act'
-    assert Act.Registry == {'Act': Act}
+    assert Act.__name__ in Act.Registry
+    assert Act.Registry[Act.__name__] == Act
     assert Act.Names == {}
     assert Act.Index == 0
 

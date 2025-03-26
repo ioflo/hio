@@ -142,7 +142,7 @@ class Act(Mixin):
     Index = 0  # naming index for default names of this subclasses instances
 
 
-    def __init__(self, name=None, iopts=None, **kwa):
+    def __init__(self, *, name=None, iopts=None, **kwa):
         """
         Initialization method for instance.
 
