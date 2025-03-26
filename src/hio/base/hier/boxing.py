@@ -11,9 +11,9 @@ from __future__ import annotations  # so type hints of classes get resolved late
 
 
 
-from .. import Tymee
+from ..tyming import Tymee
 from ...hioing import Mixin, HierError
-from .hiering import Reat, Haul, WorkDom
+from .hiering import Reat, Haul, WorkDom, Act
 from ...help import modify
 
 
@@ -452,7 +452,7 @@ class Boxer(Tymee):
 
 
     def go(self, dest: None|str=None, need=None,
-                 *, mods: WorkDom|None=None, **kwa)->Actage:
+                 *, mods: WorkDom|None=None, **kwa)->Act:
         """Make a Tractor act and add it to the transit (tracts) context of
         the current box. Return the
 
@@ -502,6 +502,79 @@ class Boxer(Tymee):
 
 
         return dest
+
+    @staticmethod
+    def exen(near,far):
+        """Computes the relative differences (uncommon  and common parts) between
+        the box pile lists nears passed in and fars from box far.pile
+
+        Parameters:
+            near (Box): near box giving nears =near.pile in top down order
+            far (Box): far box giving fars = far.pile in top down order.
+
+        Assumes piles nears and fars are in top down order
+
+        Returns:
+            quadruple (tuple[list]): quadruple of lists of form:
+                (exits, enters, renters, rexits) where:
+                exits is list of uncommon boxes in nears but not in fars to be exited.
+                    Reversed to bottom up order.
+                enters is list of uncommon boxes in fars but not in nears to be entered
+                rexits is list of common boxes in both nears and fars to be re-exited
+                    Reversed to bottom up order.
+                renters is list of common boxes in both nears and fars to be re-entered
+
+                The sets of boxes in rexits and renters are the same set but rexits
+                is reversed to bottum up order.
+
+
+        Supports forced reentry transitions when far is in nears. This means fars
+            == nears. In this case:
+            The common part of nears/fars from far down is force exited
+            The common part of nears/fars from far down is force entered
+
+        When far in nears then forced entry at far so far is nears[i]
+        catches that case for forced entry at some far in nears. Since
+        far is in fars, then when far == nears[i] then fars == nears.
+
+        Since a given box's pile is always traced up via its .over if any and down via
+        its primary under i.e. .unders[0] if any, when far is in nears the anything
+        below far is same in both fars and nears.
+
+        Otherwise when far not in nears then i where fars[i] is not nears[i]
+        indicates first box where fars down and nears down is uncommon i.e. the pile
+        tree branches at i. This is the normal non-forced entry case for transition.
+
+        Two different topologies are accounted for with this code.
+        Recall that python slice of list is zero based where:
+           fars[i] not in fars[:i] and fars[i] in fars[i:]
+           nears[i] not in nears[:i] and nears[i] in nears[i:]
+           this means fars[:0] == nears[:0] == [] empty list
+
+        1.0 near and far in same tree either on same branch or different branches
+            1.1 on same branch forced entry where nears == fars so far in nears.
+               Walk down from shared root to find where far is nears[i]. Boxes above
+               far given by fars[:i] == nears[:i] are re-exit re-enter set of boxes.
+               Boxes at far and below are forced exit entry.
+            1.2 on different branch to walk down from root until find fork where
+               fars[i] is not nears[i]. So fars[:i] == nears[:i] above fork at i,
+               and are re-exit and re-enter set of boxes. Boxes at i and below in
+               nears are exit and boxes at i and below in fars are enter
+        2.0 near and far not in same tree. In this case top of nears at nears[0] is
+            not top of fars ar fars[0] i.e. different tree roots, far[0] != near[0]
+            and fars[:0] == nears[:0] = [] means empty re-exits and re-enters and
+            all nears are exit and all fars are entry.
+
+        """
+        nears = near.pile  # top down order
+        fars = far.pile  # top down order
+        l = min(len(nears), len(fars))  # l >= 1 since far in fars & near in nears
+        for i in range(l):  # start at the top of both nears and fars
+            if (far is nears[i]) or (fars[i] is not nears[i]): #first effective uncommon member
+                # (exits, enters, rexits, renters)
+                return (list(reversed(nears[i:])), fars[i:],
+                        list(reversed(nears[:i])), fars[:i])
+
 
 
 

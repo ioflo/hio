@@ -22,10 +22,11 @@ from dataclasses import dataclass, astuple, asdict, field
 
 from hio import hioing
 from hio.help import helping
+from hio.help.helping import modify
 from hio.base import tyming
 from hio.base.hier import Reat, Haul, Box, Boxer, Maker
 from hio.base.hier import hiering
-from hio.base.hier.hiering import exen, modify
+
 
 
 def test_box_basic():
@@ -64,6 +65,109 @@ def test_box_basic():
     """Done Test"""
 
 
+
+def test_boxer_exen():
+    """Test exen function for finding common/uncommon boxes in near far staks
+    for computing exits, enters, rexits, renters on a transition
+    """
+    a = Box(name='a')
+    b = Box(name='b')
+    b.over = a
+    a.unders.append(b)
+    c = Box(name='c')
+    c.over = b
+    b.unders.append(c)
+    d = Box(name='d')
+    d.over = c
+    c.unders.append(d)
+
+    e = Box(name='e')
+    e.over = c
+    c.unders.append(e)
+    f = Box(name='f')
+    f.over = e
+    e.unders.append(f)
+
+
+    assert repr(a) == "Box(name='a')"
+
+    assert str(a) == "Box(<a>b>c>d)"
+    assert a.pile == [a, b, c, d]
+
+    assert str(b) == "Box(a<b>c>d)"
+    assert b.pile == [a, b, c, d]
+
+    assert str(c) == "Box(a<b<c>d)"
+    assert c.pile == [a, b, c, d]
+
+    assert str(d) == "Box(a<b<c<d>)"
+    assert d.pile == [a, b, c, d]
+
+    assert str(e) == "Box(a<b<c<e>f)"
+    assert e.pile == [a, b, c, e, f]
+
+    assert str(f) == "Box(a<b<c<e<f>)"
+    assert f.pile == [a, b, c, e, f]
+
+    assert a.pile == b.pile == c.pile == d.pile
+    assert e.pile == f.pile
+
+
+    # test exen staticmethod
+    exen = Boxer.exen  # exen is staticmethod of Boxer
+
+    exits, enters, rexits, renters = exen(d, e)
+    assert exits == [d]
+    assert enters == [e, f]
+    assert rexits == [c, b, a]
+    assert renters == [a, b, c]
+
+    exits, enters, rexits, renters = exen(d, f)
+    assert exits == [d]
+    assert enters == [e, f]
+    assert rexits == [c, b, a]
+    assert renters == [a, b, c]
+
+    exits, enters, rexits, renters = exen(a, e)
+    assert exits == [d]
+    assert enters == [e, f]
+    assert rexits == [c, b, a]
+    assert renters == [a, b, c]
+
+    exits, enters, rexits, renters = exen(c, b)
+    assert exits == [d, c, b]
+    assert enters == [b, c, d]
+    assert rexits == [a]
+    assert renters == [a]
+
+    exits, enters, rexits, renters = exen(c, c)
+    assert exits == [d, c]
+    assert enters == [c, d]
+    assert rexits == [b, a]
+    assert renters == [a, b]
+
+    exits, enters, rexits, renters = exen(c, d)
+    assert exits == [d]
+    assert enters == [d]
+    assert rexits == [c, b, a]
+    assert renters == [a, b, c]
+
+    exits, enters, rexits, renters = exen(e, d)
+    assert exits == [f, e]
+    assert enters == [d]
+    assert rexits == [c, b, a]
+    assert renters == [a, b, c]
+
+    exits, enters, rexits, renters = exen(f, f)
+    assert exits == [f]
+    assert enters == [f]
+    assert rexits == [e, c, b, a]
+    assert renters == [a, b, c, e]
+
+    """Done Test"""
+
+
+
 def test_boxer_basic():
     """Basic test Boxer class"""
     boxer = Boxer()  # defaults
@@ -87,6 +191,8 @@ def test_boxer_basic():
 
     with pytest.raises(hioing.HierError):
         boxer.name = ".boxer"
+
+
 
 
 def test_boxer_make():
@@ -432,6 +538,7 @@ def test_concept_be_box_global():
 
 if __name__ == "__main__":
     test_box_basic()
+    test_boxer_exen()
     test_boxer_basic()
     test_boxer_make()
     test_maker_basic()

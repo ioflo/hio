@@ -16,7 +16,7 @@ import logging
 import json
 import inspect
 
-
+from collections.abc import Callable
 from dataclasses import dataclass, astuple, asdict, field
 
 
@@ -25,8 +25,7 @@ from hio.help import helping
 from hio.base import tyming
 from hio.base.hier import Reat, Haul, Maker, Boxer, Box
 from hio.base.hier import hiering
-from hio.base.hier.hiering import exen, modify
-from hio.base.hier.hiering import Actage, Registry, Actor, actify
+from hio.base.hier.hiering import Act, actify
 
 
 def test_reat():
@@ -48,21 +47,37 @@ def test_reat():
     """Done Test"""
 
 
-def test_act_registry_basic():
+def test_act_basic():
     """Test Actor registry base stuff class and subclasses"""
 
-    assert Registry == dict(Actor=Actor)
+    assert Act.__name__ == 'Act'
+    assert Act.Registry == {'Act': Act}
+    assert Act.Names == {}
+    assert Act.Index == 0
 
-    assert Actor.__name__ == 'Actor'
+    act = Act()
+    assert isinstance(act, Callable)
+    assert act.name == 'Act0'
+    assert act.iopts == {}
+    assert hasattr(act, 'name')   # hasattr works for properties and attributes
+    assert act.name in Act.Names
+    assert Act.Names[act.name] == act
+    assert Act.Index == 1
+    assert act() == {}
 
-    assert Actor.Index == 0
 
-    actor = Actor()
-    assert actor.name == 'Actor0'
-    assert hasattr(actor, 'name')   # hasattr works for properties and attributes
+    act = Act()
+    assert isinstance(act, Callable)
+    assert act.name == 'Act1'
+    assert act.iopts == {}
+    assert hasattr(act, 'name')   # hasattr works for properties and attributes
+    assert act.name in Act.Names
+    assert Act.Names[act.name] == act
+    assert Act.Index == 2
+    assert act() == {}
 
-    act = Actage(act=actor, kwa={})
-    act.act(**act.kwa)
+
+    """Done Test"""
 
 
 def test_haul_basic():
@@ -196,105 +211,6 @@ def test_haul_basic():
 
 
 
-def test_exen():
-    """Test exen function for finding common/uncommon boxes in near far staks
-    for computing exits, enters, rexits, renters on a transition
-    """
-    a = Box(name='a')
-    b = Box(name='b')
-    b.over = a
-    a.unders.append(b)
-    c = Box(name='c')
-    c.over = b
-    b.unders.append(c)
-    d = Box(name='d')
-    d.over = c
-    c.unders.append(d)
-
-    e = Box(name='e')
-    e.over = c
-    c.unders.append(e)
-    f = Box(name='f')
-    f.over = e
-    e.unders.append(f)
-
-
-    assert repr(a) == "Box(name='a')"
-
-    assert str(a) == "Box(<a>b>c>d)"
-    assert a.pile == [a, b, c, d]
-
-    assert str(b) == "Box(a<b>c>d)"
-    assert b.pile == [a, b, c, d]
-
-    assert str(c) == "Box(a<b<c>d)"
-    assert c.pile == [a, b, c, d]
-
-    assert str(d) == "Box(a<b<c<d>)"
-    assert d.pile == [a, b, c, d]
-
-    assert str(e) == "Box(a<b<c<e>f)"
-    assert e.pile == [a, b, c, e, f]
-
-    assert str(f) == "Box(a<b<c<e<f>)"
-    assert f.pile == [a, b, c, e, f]
-
-    assert a.pile == b.pile == c.pile == d.pile
-    assert e.pile == f.pile
-
-
-    # test exen
-    exits, enters, rexits, renters = exen(d, e)
-    assert exits == [d]
-    assert enters == [e, f]
-    assert rexits == [c, b, a]
-    assert renters == [a, b, c]
-
-    exits, enters, rexits, renters = exen(d, f)
-    assert exits == [d]
-    assert enters == [e, f]
-    assert rexits == [c, b, a]
-    assert renters == [a, b, c]
-
-    exits, enters, rexits, renters = exen(a, e)
-    assert exits == [d]
-    assert enters == [e, f]
-    assert rexits == [c, b, a]
-    assert renters == [a, b, c]
-
-    exits, enters, rexits, renters = exen(c, b)
-    assert exits == [d, c, b]
-    assert enters == [b, c, d]
-    assert rexits == [a]
-    assert renters == [a]
-
-    exits, enters, rexits, renters = exen(c, c)
-    assert exits == [d, c]
-    assert enters == [c, d]
-    assert rexits == [b, a]
-    assert renters == [a, b]
-
-    exits, enters, rexits, renters = exen(c, d)
-    assert exits == [d]
-    assert enters == [d]
-    assert rexits == [c, b, a]
-    assert renters == [a, b, c]
-
-    exits, enters, rexits, renters = exen(e, d)
-    assert exits == [f, e]
-    assert enters == [d]
-    assert rexits == [c, b, a]
-    assert renters == [a, b, c]
-
-    exits, enters, rexits, renters = exen(f, f)
-    assert exits == [f]
-    assert enters == [f]
-    assert rexits == [e, c, b, a]
-    assert renters == [a, b, c, e]
-
-    """Done Test"""
-
-
 
 def test_inspect_stuff():
     """Test inpect stuff to see how works"""
@@ -422,7 +338,6 @@ def test_inspect_stuff():
 
 if __name__ == "__main__":
     test_reat()
-    test_act_registry_basic()
+    test_act_basic()
     test_haul_basic()
-    test_exen()
     test_inspect_stuff()
