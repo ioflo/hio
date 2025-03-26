@@ -48,7 +48,7 @@ def test_reat():
 
 
 def test_act_basic():
-    """Test Actor registry base stuff class and subclasses"""
+    """Test Act basic stuff"""
 
     assert Act.__name__ == 'Act'
     assert Act.Registry == {'Act': Act}
@@ -75,6 +75,76 @@ def test_act_basic():
     assert Act.Names[act.name] == act
     assert Act.Index == 2
     assert act() == {}
+
+
+    """Done Test"""
+
+
+def test_actify():
+    """Test Actor registry base stuff class and subclasses"""
+
+    @actify(name="Tact")
+    def test(self, **kwa):  # signature for .act with **iopts as **kwa
+        assert kwa == self.iopts
+        return self.iopts
+
+    t = test(iopts=dict(what=1), hello="hello")  # signature for Act.__init__
+    assert t.name == "Tact0"
+    assert t.iopts == dict(what=1)
+    assert t.__class__.__name__ == "Tact"
+    assert t.__class__.__name__ in t.Registry
+    assert t.Registry[t.__class__.__name__] == t.__class__
+    assert t.name in t.Names
+    assert t.Names[t.name] == t
+    assert isinstance(t, Act)
+    assert t() == t.iopts
+
+    x = test(bye="bye")  # signature for Act.__init__
+    assert x.name == "Tact1"
+    assert x.iopts == {}
+    assert x.__class__.__name__ == "Tact"
+    assert x.__class__.__name__ in t.Registry
+    assert x.Registry[t.__class__.__name__] == t.__class__
+    assert x.name in t.Names
+    assert x.Names[t.name] == t
+    assert isinstance(t, Act)
+    assert x() == x.iopts
+
+    assert x.__class__ == t.__class__
+    klas = Act.Registry["Tact"]
+    assert isinstance(t, klas)
+    assert isinstance(x, klas)
+
+    @actify(name="Pact")
+    def pest(self, **kwa):  # signature for .act
+        assert kwa == self.iopts
+        assert "why" in kwa
+        assert kwa["why"] == 1
+        return self.iopts
+
+    p = pest(name="spot", iopts=dict(why=1))  # same signature as Act.__init__
+    assert p.name == 'spot'
+    assert p.iopts == dict(why=1)
+    assert "Pact" in p.Registry
+    klas = p.Registry["Pact"]
+    assert isinstance(p, klas)
+    assert p.Names[p.name] == p
+    assert p() == dict(why=1)
+
+    @actify(name="Bact")
+    def best(self, *, how=None):  # signature for .act
+        assert how == 5
+        assert self.iopts["how"] == how
+        return self.iopts
+
+    b = best(iopts=dict(how=5))  # signature for Act.__init__
+    assert b.name == 'Bact0'
+    assert b.iopts == dict(how=5)
+    assert "Bact" in b.Registry
+    klas = b.Registry["Bact"]
+    assert isinstance(b, klas)
+    assert b.Names[b.name] == b
+    assert b() == dict(how=5)
 
 
     """Done Test"""
@@ -339,5 +409,6 @@ def test_inspect_stuff():
 if __name__ == "__main__":
     test_reat()
     test_act_basic()
+    test_actify()
     test_haul_basic()
     test_inspect_stuff()

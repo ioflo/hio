@@ -43,37 +43,61 @@ Reat = re.compile(ATREX)  # compile is faster
 # normally if defining a class then inhereit from Actor. But if simply a function
 # then decorate with actify so that a a new subclass is created and registered
 
-def actify(name, *, base=None, attrs=None, registry=None):
-    """ Parametrized decorator function that converts the decorated function
-    into an Actor sub class with .act method and with class name that
-    is name and registers the new subclass in the registry under name as
-    a subclass of base. The default base is Actor.
+def actify(name, *, base=None, attrs=None):
+    """Parametrized decorator that converts the decorated function func into
+    .act method of new subclass of class base with .__name__ name. If not
+    provided then uses Act as base. When provided base must be subclass of Act.
+    Registers new subclass in Act.Registry. Then instantiates cls and returns
+    instance.
 
-    The parameters  name, attr if provided,
-    are used to create the class attributes for the new subclass
+    Returns:
+        instance (cls): instance of new subclass
+
+    Updates the class attributes of new subclass with attrs if any.
+
+    Usage:
+
+
+    Assigning a function to a class the value of an attribute automatically
+    makes that attribute a bound method with injected self as first argument.
+
+    class A():
+        def a(self):
+           print(self)
+
+    a = A()
+    a.a()
+    <__main__.A object at 0x1059ffc50>
+
+    def b(self):
+        print(self)
+
+    A.b = b
+    a.b()
+    <__main__.A object at 0x1059ffc50>
+
 
     """
+    base = base if base is not None else Act
     if not issubclass(base, Act):
-        raise hioing.HierError(f"Expected Actor got {base=}.")
-
-    # make this smarted and apply to functions with function attributes for
-    # actor slots name, bags
+        raise hioing.HierError(f"Expected Act subclass got {base=}.")
 
     attrs = attrs if attrs is not None else {}
-    cls = type(name, (base, ), attrs)
+    # assign Act attrs
+    attrs.update(dict(Registry=base.Registry, Names=base.Names, Index=0))
+    cls = type(name, (base, ), attrs)  # create new subclass of base of Act.
+    register(cls)  # register subclass in cls.Registry
 
     def decorator(func):
         if not isinstance(func, Callable):
             raise hioing.HierError(f"Expected Callable got {func=}.")
+        cls.act = func  # assign as bound method .act with injected self.
 
         @functools.wraps(func)
         def inner(*pa, **kwa):
-            return func(*pa, **kwa)
-        cls.act = inner  # method
+            return cls(*pa, **kwa)  # instantiate and return instance
         return inner
     return decorator
-
-
 
 
 def register(cls):
