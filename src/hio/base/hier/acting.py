@@ -13,7 +13,7 @@ from collections import namedtuple
 from ... import hioing
 from ...hioing import Mixin, HierError
 from .hiering import Reat, Haul, ActBase, register
-
+from .needing import Need
 
 
 
@@ -148,13 +148,15 @@ class Tract(ActBase):
 
         """
         super(Tract, self).__init__(**kwa)
-        self.dest = dest
-        self.need = need
+        self.dest = dest  # fix this so default is next
+        self.need = need if need is not None else Need()  # default need evals to True
 
 
 
     def act(self, **iops):
         """Act called by Actor. Should override in subclass."""
-
-        return None  # conditional not met
+        if self.need():
+            return self.dest
+        else:
+            return None
 

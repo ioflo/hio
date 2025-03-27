@@ -7,7 +7,7 @@ from __future__ import annotations  # so type hints of classes get resolved late
 
 import pytest
 
-from hio.base.hier import ActBase, actify, Act, Tract
+from hio.base.hier import ActBase, actify, Act, Tract, Need
 
 
 
@@ -46,9 +46,10 @@ def test_tract_basic():
     assert tract.Index == 1
     assert tract.Names[tract.name] == tract
     assert tract.dest == None
-    assert tract.need == None
+    assert isinstance(tract.need, Need)
+    assert tract.need()
 
-    assert not tract()
+    assert not tract()  # since not created default .dest
 
     """Done Test"""
 
