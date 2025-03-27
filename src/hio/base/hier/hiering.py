@@ -78,8 +78,8 @@ def actify(name, *, base=None, attrs=None):
 
 
     """
-    base = base if base is not None else Act
-    if not issubclass(base, Act):
+    base = base if base is not None else ActBase
+    if not issubclass(base, ActBase):
         raise hioing.HierError(f"Expected Act subclass got {base=}.")
 
     attrs = attrs if attrs is not None else {}
@@ -113,8 +113,8 @@ def register(cls):
 
 
 @register
-class Act(Mixin):
-    """Act Callable Base Class. Has Registry Act and all of its subclasses
+class ActBase(Mixin):
+    """Act Base Class. Callable with Registry of itself and its subclasses.
 
     Class Attributes:
         Registry (dict): subclass registry whose items are (name, cls) where:
@@ -130,7 +130,7 @@ class Act(Mixin):
 
     Properties:
         name (str): unique name string of instance
-        iopts (dict): input-output-parameters for .act
+        iops (dict): input-output-parameters for .act
 
     Hidden
         ._name (str|None): unique name of instance
@@ -142,30 +142,30 @@ class Act(Mixin):
     Index = 0  # naming index for default names of this subclasses instances
 
 
-    def __init__(self, *, name=None, iopts=None, **kwa):
+    def __init__(self, *, name=None, iops=None, **kwa):
         """
         Initialization method for instance.
 
         Parameters:
             name (str|None): unique name of this instance. When None then
                 generate name from .Index
-            iopts (dict|None): input-output-parameters for .act. When None then
+            iops (dict|None): input-output-parameters for .act. When None then
                 set to empty dict.
 
         """
-        super(Act, self).__init__(**kwa) # in case of MRO
+        super(ActBase, self).__init__(**kwa) # in case of MRO
         self.name = name  # set name property
-        self._iopts = iopts if iopts is not None else {}  #
+        self._iops = iops if iops is not None else {}  #
 
 
     def __call__(self):
         """Make Actor instance a callable object. run its .act method"""
-        return self.act(**self.iopts)
+        return self.act(**self.iops)
 
 
-    def act(self, **iopts):
+    def act(self, **iops):
         """Act called by Actor. Should override in subclass."""
-        return iopts  # for debugging
+        return iops  # for debugging
 
 
 
@@ -199,13 +199,13 @@ class Act(Mixin):
 
 
     @property
-    def iopts(self):
+    def iops(self):
         """Property getter for ._iopts. Makes ._iopts read only
 
         Returns:
-            iopts (dict): input-output-parameters for .act
+            iops (dict): input-output-parameters for .act
         """
-        return self._iopts
+        return self._iops
 
 
 

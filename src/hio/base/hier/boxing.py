@@ -13,7 +13,7 @@ from __future__ import annotations  # so type hints of classes get resolved late
 
 from ..tyming import Tymee
 from ...hioing import Mixin, HierError
-from .hiering import Reat, Haul, WorkDom, Act
+from .hiering import Reat, Haul, WorkDom, ActBase
 from ...help import modify
 
 
@@ -452,7 +452,7 @@ class Boxer(Tymee):
 
 
     def go(self, dest: None|str=None, need=None,
-                 *, mods: WorkDom|None=None, **kwa)->Act:
+                 *, mods: WorkDom|None=None, **kwa)->ActBase:
         """Make a Tractor act and add it to the transit (tracts) context of
         the current box. Return the
 

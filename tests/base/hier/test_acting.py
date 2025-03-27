@@ -7,12 +7,29 @@ from __future__ import annotations  # so type hints of classes get resolved late
 
 import pytest
 
-from hio.base.hier import Act, actify
-from hio.base.hier.acting import Tract
+from hio.base.hier import ActBase, actify
+from hio.base.hier.acting import Act, Tract
+
+
+def test_act_basic():
+    """Test Act class"""
+    act = Act()
+    assert "Act" in Act.Registry
+    assert Act.Registry["Act"] == Act
+
+    assert act.name == "Act0"
+    assert act.Index == 1
+    assert act.Names[act.name] == act
+    assert act.dest == None
+    assert act.need == None
+
+    assert not act()
+
+    """Done Test"""
 
 
 def test_tract_basic():
-    """Test Tract class and subclasses basically"""
+    """Test Tract class"""
     tract = Tract()
     assert "Tract" in Tract.Registry
     assert Tract.Registry["Tract"] == Tract
@@ -28,4 +45,5 @@ def test_tract_basic():
     """Done Test"""
 
 if __name__ == "__main__":
+    test_act_basic()
     test_tract_basic()

@@ -25,7 +25,7 @@ from hio.help import helping
 from hio.base import tyming
 from hio.base.hier import Reat, Haul, Maker, Boxer, Box
 from hio.base.hier import hiering
-from hio.base.hier.hiering import Act, actify
+from hio.base.hier.hiering import ActBase, actify
 
 
 def test_reat():
@@ -47,34 +47,34 @@ def test_reat():
     """Done Test"""
 
 
-def test_act_basic():
-    """Test Act basic stuff"""
+def test_actbase():
+    """Test ActBase Class"""
 
-    assert Act.__name__ == 'Act'
-    assert Act.__name__ in Act.Registry
-    assert Act.Registry[Act.__name__] == Act
-    assert Act.Names == {}
-    assert Act.Index == 0
+    assert ActBase.__name__ == 'ActBase'
+    assert ActBase.__name__ in ActBase.Registry
+    assert ActBase.Registry[ActBase.__name__] == ActBase
+    assert ActBase.Names == {}
+    assert ActBase.Index == 0
 
-    act = Act()
+    act = ActBase()
     assert isinstance(act, Callable)
-    assert act.name == 'Act0'
-    assert act.iopts == {}
+    assert act.name == 'ActBase0'
+    assert act.iops == {}
     assert hasattr(act, 'name')   # hasattr works for properties and attributes
-    assert act.name in Act.Names
-    assert Act.Names[act.name] == act
-    assert Act.Index == 1
+    assert act.name in ActBase.Names
+    assert ActBase.Names[act.name] == act
+    assert ActBase.Index == 1
     assert act() == {}
 
 
-    act = Act()
+    act = ActBase()
     assert isinstance(act, Callable)
-    assert act.name == 'Act1'
-    assert act.iopts == {}
+    assert act.name == 'ActBase1'
+    assert act.iops == {}
     assert hasattr(act, 'name')   # hasattr works for properties and attributes
-    assert act.name in Act.Names
-    assert Act.Names[act.name] == act
-    assert Act.Index == 2
+    assert act.name in ActBase.Names
+    assert ActBase.Names[act.name] == act
+    assert ActBase.Index == 2
     assert act() == {}
 
 
@@ -85,47 +85,47 @@ def test_actify():
     """Test Actor registry base stuff class and subclasses"""
 
     @actify(name="Tact")
-    def test(self, **kwa):  # signature for .act with **iopts as **kwa
-        assert kwa == self.iopts
-        return self.iopts
+    def test(self, **kwa):  # signature for .act with **iops as **kwa
+        assert kwa == self.iops
+        return self.iops
 
-    t = test(iopts=dict(what=1), hello="hello")  # signature for Act.__init__
+    t = test(iops=dict(what=1), hello="hello")  # signature for Act.__init__
     assert t.name == "Tact0"
-    assert t.iopts == dict(what=1)
+    assert t.iops == dict(what=1)
     assert t.__class__.__name__ == "Tact"
     assert t.__class__.__name__ in t.Registry
     assert t.Registry[t.__class__.__name__] == t.__class__
     assert t.name in t.Names
     assert t.Names[t.name] == t
-    assert isinstance(t, Act)
-    assert t() == t.iopts
+    assert isinstance(t, ActBase)
+    assert t() == t.iops
 
     x = test(bye="bye")  # signature for Act.__init__
     assert x.name == "Tact1"
-    assert x.iopts == {}
+    assert x.iops == {}
     assert x.__class__.__name__ == "Tact"
     assert x.__class__.__name__ in t.Registry
     assert x.Registry[t.__class__.__name__] == t.__class__
     assert x.name in t.Names
     assert x.Names[t.name] == t
-    assert isinstance(t, Act)
-    assert x() == x.iopts
+    assert isinstance(t, ActBase)
+    assert x() == x.iops
 
     assert x.__class__ == t.__class__
-    klas = Act.Registry["Tact"]
+    klas = ActBase.Registry["Tact"]
     assert isinstance(t, klas)
     assert isinstance(x, klas)
 
     @actify(name="Pact")
     def pest(self, **kwa):  # signature for .act
-        assert kwa == self.iopts
+        assert kwa == self.iops
         assert "why" in kwa
         assert kwa["why"] == 1
-        return self.iopts
+        return self.iops
 
-    p = pest(name="spot", iopts=dict(why=1))  # same signature as Act.__init__
+    p = pest(name="spot", iops=dict(why=1))  # same signature as Act.__init__
     assert p.name == 'spot'
-    assert p.iopts == dict(why=1)
+    assert p.iops == dict(why=1)
     assert "Pact" in p.Registry
     klas = p.Registry["Pact"]
     assert isinstance(p, klas)
@@ -135,12 +135,12 @@ def test_actify():
     @actify(name="Bact")
     def best(self, *, how=None):  # signature for .act
         assert how == 5
-        assert self.iopts["how"] == how
-        return self.iopts
+        assert self.iops["how"] == how
+        return self.iops
 
-    b = best(iopts=dict(how=5))  # signature for Act.__init__
+    b = best(iops=dict(how=5))  # signature for Act.__init__
     assert b.name == 'Bact0'
-    assert b.iopts == dict(how=5)
+    assert b.iops == dict(how=5)
     assert "Bact" in b.Registry
     klas = b.Registry["Bact"]
     assert isinstance(b, klas)
@@ -409,7 +409,7 @@ def test_inspect_stuff():
 
 if __name__ == "__main__":
     test_reat()
-    test_act_basic()
+    test_actbase()
     test_actify()
     test_haul_basic()
     test_inspect_stuff()
