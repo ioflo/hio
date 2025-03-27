@@ -46,8 +46,8 @@ Reat = re.compile(ATREX)  # compile is faster
 def actify(name, *, base=None, attrs=None):
     """Parametrized decorator that converts the decorated function func into
     .act method of new subclass of class base with .__name__ name. If not
-    provided then uses Act as base. When provided base must be subclass of Act.
-    Registers new subclass in Act.Registry. Then instantiates cls and returns
+    provided then uses Act as base. When provided base must be subclass of ActBase.
+    Registers new subclass in ActBase.Registry. Then instantiates cls and returns
     instance.
 
     Returns:
@@ -80,7 +80,7 @@ def actify(name, *, base=None, attrs=None):
     """
     base = base if base is not None else ActBase
     if not issubclass(base, ActBase):
-        raise hioing.HierError(f"Expected Act subclass got {base=}.")
+        raise hioing.HierError(f"Expected ActBase subclass got {base=}.")
 
     attrs = attrs if attrs is not None else {}
     # assign Act attrs
@@ -141,10 +141,26 @@ class ActBase(Mixin):
     Names = {}  # instance name registry
     Index = 0  # naming index for default names of this subclasses instances
 
+    @classmethod
+    def _reregister(cls):
+        """Reregisters cls after clear.
+        Need to override in each subclass with super to reregister the class hierarchy
+        """
+        register(ActBase)
+
+
+    @classmethod
+    def _clear(cls):
+        """Clears Registry, Names and Index for testing purposes"""
+        ActBase.Registry = {}
+        ActBase.Names = {}
+        cls.Index = 0
+        cls._reregister()
+
+
 
     def __init__(self, *, name=None, iops=None, **kwa):
-        """
-        Initialization method for instance.
+        """Initialization method for instance.
 
         Parameters:
             name (str|None): unique name of this instance. When None then
@@ -159,7 +175,7 @@ class ActBase(Mixin):
 
 
     def __call__(self):
-        """Make Actor instance a callable object. run its .act method"""
+        """Make ActBase instance a callable object. run its .act method"""
         return self.act(**self.iops)
 
 
@@ -183,7 +199,7 @@ class ActBase(Mixin):
     def name(self, name=None):
         """Property setter for ._name
 
-        Paramaters:
+        Parameters:
             name (str|None): unique identifier of instance. When None generate
                 unique name using .Index
         """
@@ -206,6 +222,8 @@ class ActBase(Mixin):
             iops (dict): input-output-parameters for .act
         """
         return self._iops
+
+
 
 
 

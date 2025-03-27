@@ -144,7 +144,7 @@ class Box(Tymee):
     def name(self, name):
         """Property setter for ._name
 
-        Paramaters:
+        Parameters:
             name (str): unique identifier of instance
         """
         if not Reat.match(name):
@@ -285,7 +285,7 @@ class Boxer(Tymee):
     def name(self, name):
         """Property setter for ._name
 
-        Paramaters:
+        Parameters:
             name (str): unique identifier of instance
         """
         if not Reat.match(name):
@@ -603,7 +603,7 @@ class Maker(Mixin):
 
         Parameters:
             name (str): unique identifier of instance
-            bags (Haul | None): in memory data haul shared by all boxes in box work
+            bags (Haul|None): in memory data haul shared by all boxes in box work
 
 
         """
@@ -627,7 +627,7 @@ class Maker(Mixin):
     def name(self, name):
         """Property setter for ._name
 
-        Paramaters:
+        Parameters:
             name (str): unique identifier of instance
         """
         if not Reat.match(name):

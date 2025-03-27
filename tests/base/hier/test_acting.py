@@ -7,12 +7,16 @@ from __future__ import annotations  # so type hints of classes get resolved late
 
 import pytest
 
-from hio.base.hier import ActBase, actify
-from hio.base.hier.acting import Act, Tract
+from hio.base.hier import ActBase, actify, Act, Tract
+
 
 
 def test_act_basic():
     """Test Act class"""
+    # clear registries for debugging
+    Act._clear()
+
+
     act = Act()
     assert "Act" in Act.Registry
     assert Act.Registry["Act"] == Act
@@ -30,6 +34,10 @@ def test_act_basic():
 
 def test_tract_basic():
     """Test Tract class"""
+    # clear registries for debugging
+    Tract._clear()
+
+
     tract = Tract()
     assert "Tract" in Tract.Registry
     assert Tract.Registry["Tract"] == Tract

@@ -23,9 +23,7 @@ from dataclasses import dataclass, astuple, asdict, field
 from hio import hioing
 from hio.help import helping
 from hio.base import tyming
-from hio.base.hier import Reat, Haul, Maker, Boxer, Box
-from hio.base.hier import hiering
-from hio.base.hier.hiering import ActBase, actify
+from hio.base.hier import Reat, Haul, ActBase, actify, Box, Boxer, Maker
 
 
 def test_reat():
@@ -49,6 +47,9 @@ def test_reat():
 
 def test_actbase():
     """Test ActBase Class"""
+
+    # clear registries for debugging
+    ActBase._clear()
 
     assert ActBase.__name__ == 'ActBase'
     assert ActBase.__name__ in ActBase.Registry

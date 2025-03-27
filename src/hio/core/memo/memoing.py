@@ -724,7 +724,7 @@ class Memoer(hioing.Mixin):
     def code(self, code):
         """Property setter for ._code
 
-        Paramaters:
+        Parameters:
             code (str): two char base64 gram code
         """
         if code not in self.Codex:
@@ -750,7 +750,7 @@ class Memoer(hioing.Mixin):
     def curt(self, curt):
         """Property setter for ._curt
 
-        Paramaters:
+        Parameters:
             curt (bool): True means when rending for tx encode header in base2
                          False means when rending for tx encode header in base64
         """

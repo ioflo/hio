@@ -16,67 +16,6 @@ from .hiering import Reat, Haul, ActBase, register
 
 
 
-class Need(Mixin):
-    """Need is conditional callable class whose callable returns a boolean.
-    The calling it evaluates a need expression. May be used as the transition
-    condition of a Gact.
-
-    Inherited Class Attributes:
-        Registry (dict): subclass registry whose items are (name, cls) where:
-                name is unique name for subclass
-                cls is reference to class object
-        Names (dict): instance registry whose items are (name, instance) where:
-                name is unique instance name and instance is instance reference
-
-    Overridden Class Attributes
-        Index (int): default naming index for subclass instances. Each subclass
-                overrides with a subclass specific Index value to track
-                subclass specific instance default names.
-
-
-
-    Inherited Properties:
-        name (str): unique name string of instance
-        iops (dict): input-output-parameters for .act
-
-    Hidden
-        ._name (str|None): unique name of instance
-        ._iopts (dict): input-output-paramters for .act
-
-    """
-    Index = 0  # naming index for default names of this subclasses instances
-
-
-    def __init__(self,  *, name=None, iops=None, **kwa):
-        """
-        Initialization method for instance.
-
-        Inherited Parameters:
-            name (str|None): unique name of this instance. When None then
-                generate name from .Index
-            iops (dict|None): input-output-parameters for .act. When None then
-                set to empty dict.
-
-        Parameters:
-
-
-        """
-        super(Need, self).__init__(**kwa)
-        self._code = None  # compiled conditional
-
-
-
-    def act(self, **iops):
-        """Act called by Actor. Should override in subclass."""
-
-        return None  # conditional not met
-
-
-    def compile(self):
-        """Compile ands into compiled code object to be evaluated
-        Because code objects are not pickleable the compilation must happen
-        at prep (enter) time not init time.
-        """
 
 @register
 class Act(ActBase):
@@ -107,10 +46,17 @@ class Act(ActBase):
     """
     Index = 0  # naming index for default names of this subclasses instances
 
+    @classmethod
+    def _reregister(cls):
+        """Reregisters cls after clear.
+        Need to override in each subclass with super to reregister the class hierarchy
+        """
+        super(Act, cls)._reregister()
+        register(Act)
+
 
     def __init__(self, dest=None, need=None, **kwa):
-        """
-        Initialization method for instance.
+        """Initialization method for instance.
 
         Inherited Parameters:
             name (str|None): unique name of this instance. When None then
@@ -172,10 +118,17 @@ class Tract(ActBase):
     """
     Index = 0  # naming index for default names of this subclasses instances
 
+    @classmethod
+    def _reregister(cls):
+        """Reregisters cls after clear.
+        Need to override in each subclass with super to reregister the class hierarchy
+        """
+        super(Tract, cls)._reregister()
+        register(Tract)
+
 
     def __init__(self, dest=None, need=None, **kwa):
-        """
-        Initialization method for instance.
+        """Initialization method for instance.
 
         Inherited Parameters:
             name (str|None): unique name of this instance. When None then
