@@ -23,7 +23,7 @@ from dataclasses import dataclass, astuple, asdict, field
 from hio import hioing
 from hio.help import helping
 from hio.base import tyming
-from hio.base.hier import Reat, Haul, ActBase, actify, Box, Boxer, Maker
+from hio.base.hier import Reat, Moor, ActBase, actify, Box, Boxer, Maker
 
 
 def test_reat():
@@ -152,129 +152,129 @@ def test_actify():
     """Done Test"""
 
 
-def test_haul_basic():
-    """Basic test Haul class"""
+def test_moor_basic():
+    """Basic test Moor class"""
     keys = ('a', 'b', 'c')
     key = '.'.join(keys)
     assert key == 'a.b.c'
 
     # test staticmethod .tokey()
-    assert Haul.tokey(keys) == key
-    assert Haul.tokey('a') == 'a'  # str unchanged
-    assert Haul.tokey('a.b') == 'a.b'  # str unchanged
-    assert Haul.tokey(keys)
+    assert Moor.tokey(keys) == key
+    assert Moor.tokey('a') == 'a'  # str unchanged
+    assert Moor.tokey('a.b') == 'a.b'  # str unchanged
+    assert Moor.tokey(keys)
 
     with pytest.raises(KeyError):
-        key = Haul.tokey((1, 2, 3))
+        key = Moor.tokey((1, 2, 3))
 
     with pytest.raises(KeyError):
-        key = Haul.tokey(1)
+        key = Moor.tokey(1)
 
 
     # Test staticmethod .tokeys()
-    assert Haul.tokeys(key) == keys
-    assert Haul.tokeys('') == ('', )
-    assert Haul.tokeys('a') == ('a', )
+    assert Moor.tokeys(key) == keys
+    assert Moor.tokeys('') == ('', )
+    assert Moor.tokeys('a') == ('a', )
 
-    assert Haul.tokey(Haul.tokeys(key)) == key
-    assert Haul.tokeys(Haul.tokey(keys)) == keys
+    assert Moor.tokey(Moor.tokeys(key)) == key
+    assert Moor.tokeys(Moor.tokey(keys)) == keys
 
-    haul = Haul()  # defaults
-    assert haul == {}
+    moor = Moor()  # defaults
+    assert moor == {}
 
-    assert isinstance(haul, dict)
-    assert issubclass(Haul, dict)
+    assert isinstance(moor, dict)
+    assert issubclass(Moor, dict)
 
-    haul['a'] = 5
-    haul['a_b'] = 6
-    assert haul['a'] == 5
-    assert 'a' in haul
-    assert haul.get('a') == 5
+    moor['a'] = 5
+    moor['a_b'] = 6
+    assert moor['a'] == 5
+    assert 'a' in moor
+    assert moor.get('a') == 5
 
 
-    haul[keys] = 7
-    assert list(haul.items()) == [('a', 5), ('a_b', 6), ('a.b.c', 7)]
+    moor[keys] = 7
+    assert list(moor.items()) == [('a', 5), ('a_b', 6), ('a.b.c', 7)]
 
-    assert haul[keys] == 7
-    assert keys in haul
-    assert haul.get(keys) == 7
+    assert moor[keys] == 7
+    assert keys in moor
+    assert moor.get(keys) == 7
 
-    assert haul[key] == 7
-    assert key in haul
-    assert haul.get(key) == 7
+    assert moor[key] == 7
+    assert key in moor
+    assert moor.get(key) == 7
 
-    haul[key] = 8
-    assert haul[keys] == 8
+    moor[key] = 8
+    assert moor[keys] == 8
 
-    del haul[keys]
-    assert key not in haul
-
-    with pytest.raises(KeyError):
-        del haul[key]
+    del moor[keys]
+    assert key not in moor
 
     with pytest.raises(KeyError):
-        del haul[keys]
-
-    haul[keys] = 8
-    del haul[key]
+        del moor[key]
 
     with pytest.raises(KeyError):
-        del haul[keys]
+        del moor[keys]
+
+    moor[keys] = 8
+    del moor[key]
 
     with pytest.raises(KeyError):
-        del haul[key]
+        del moor[keys]
 
-    assert haul.get('c') == None
-    assert haul.get(("b", "c")) == None
+    with pytest.raises(KeyError):
+        del moor[key]
 
-    haul[''] = 10
-    assert '' in haul
-    assert haul[''] == 10
+    assert moor.get('c') == None
+    assert moor.get(("b", "c")) == None
+
+    moor[''] = 10
+    assert '' in moor
+    assert moor[''] == 10
 
 
     with pytest.raises(KeyError):
-        haul['c']
+        moor['c']
 
     with pytest.raises(KeyError):
-        haul[1] = 'A'
+        moor[1] = 'A'
 
     with pytest.raises(KeyError):
-        haul[("a", 2)] = 'B'
+        moor[("a", 2)] = 'B'
 
     with pytest.raises(KeyError):
-        haul[("a", 2)]
+        moor[("a", 2)]
 
-    haul = Haul(a=0, a_b=1, a_b_c=2)
-    assert list(haul.items()) == [('a', 0), ('a_b', 1), ('a_b_c', 2)]
+    moor = Moor(a=0, a_b=1, a_b_c=2)
+    assert list(moor.items()) == [('a', 0), ('a_b', 1), ('a_b_c', 2)]
 
-    haul = Haul([('a', 0), ('a.b', 1), ('a.b.c', 2)])
-    assert list(haul.items()) == [('a', 0), ('a.b', 1), ('a.b.c', 2)]
+    moor = Moor([('a', 0), ('a.b', 1), ('a.b.c', 2)])
+    assert list(moor.items()) == [('a', 0), ('a.b', 1), ('a.b.c', 2)]
 
     # test init with iterable using keys as tuples
-    haul = Haul([(('a', ), 0), (('a', 'b'), 1), (('a','b', 'c'), 2)], d=4)
-    assert list(haul.items()) == [('a', 0), ('a.b', 1), ('a.b.c', 2), ('d', 4)]
+    moor = Moor([(('a', ), 0), (('a', 'b'), 1), (('a','b', 'c'), 2)], d=4)
+    assert list(moor.items()) == [('a', 0), ('a.b', 1), ('a.b.c', 2), ('d', 4)]
 
     # test init with dict using keys as tuples
     d = {}
     d[("a", )] = 0
     d[("a", "b")] = 1
     d[("a", "b", "c")] = 2
-    haul = Haul(d, d=4)
-    assert list(haul.items()) == [('a', 0), ('a.b', 1), ('a.b.c', 2), ('d', 4)]
+    moor = Moor(d, d=4)
+    assert list(moor.items()) == [('a', 0), ('a.b', 1), ('a.b.c', 2), ('d', 4)]
 
     # test update with iterable using keys as tuples
-    haul = Haul()
-    haul.update([(('a', ), 0), (('a', 'b'), 1), (('a','b', 'c'), 2)], d=4)
-    assert list(haul.items()) == [('a', 0), ('a.b', 1), ('a.b.c', 2), ('d', 4)]
+    moor = Moor()
+    moor.update([(('a', ), 0), (('a', 'b'), 1), (('a','b', 'c'), 2)], d=4)
+    assert list(moor.items()) == [('a', 0), ('a.b', 1), ('a.b.c', 2), ('d', 4)]
 
     # test update with dict using keys as tuples
     d = {}
     d[("a", )] = 0
     d[("a", "b")] = 1
     d[("a", "b", "c")] = 2
-    haul = Haul()
-    haul.update(d, d=4)
-    assert list(haul.items()) == [('a', 0), ('a.b', 1), ('a.b.c', 2), ('d', 4)]
+    moor = Moor()
+    moor.update(d, d=4)
+    assert list(moor.items()) == [('a', 0), ('a.b', 1), ('a.b.c', 2), ('d', 4)]
 
     """Done Test"""
 
@@ -411,5 +411,5 @@ if __name__ == "__main__":
     test_reat()
     test_actbase()
     test_actify()
-    test_haul_basic()
+    test_moor_basic()
     test_inspect_stuff()

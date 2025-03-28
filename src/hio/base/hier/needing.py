@@ -15,7 +15,7 @@ from ... import hioing
 from ...hioing import Mixin, HierError
 from ...help.helping import NonStringIterable
 
-from .hiering import Haul
+from .hiering import Moor
 
 
 class Need(Mixin):
@@ -24,7 +24,8 @@ class Need(Mixin):
     condition of a Gact.
 
     Attributes:
-        bags (Haul): in memory data haul shared by boxwork
+        mbags (Moor): ephemeral bags in moor (in memory) shared by boxwork
+        dbags (Dock): durable bags in dock (on disc) shared by boxwork
 
     Properties:
         terms (tuple[str]): of string need expression terms, each
@@ -105,20 +106,22 @@ class Need(Mixin):
     """
 
 
-    def __init__(self,  *, terms=None, bags=None, strict=False, **kwa):
+    def __init__(self,  *, terms=None, mbags=None, dbags=None, strict=False, **kwa):
         """Initialization method for instance.
 
         Parameters:
             terms (NonStringIterable[str]): of string need expression terms, each
                 to be logically ANDed together to  form evable boolean expression.
-            bags (None|Haul): in memory data haul shared by boxwork
+            mbags (None|Moor): ephemeral bags in moor (in memory) shared by boxwork
+            dbags (None|Dock): durable bags in dock (on disc) shared by boxwork
             strict (bool): True means use strict Python syntax with no substituion
                            False means use shorthand syntax with substitution
 
         """
         super(Need, self).__init__(**kwa)
         self.terms = terms
-        self.bags = bags if bags is not None else Haul()
+        self.mbags = mbags if mbags is not None else Moor()
+        self.dbags = dbags   # stub fix later when have Dock class
         self.strict = True if strict else False
 
 
@@ -126,7 +129,8 @@ class Need(Mixin):
         """Make Need instance a callable object."""
         if not self.compiled:  # not yet compiled so lazy
             self.compile()  # first time only recompile forces recompose
-        B = self.bags  # ensure B in in locals() for eval
+        M = self.mbags  # ensure M is in locals() for eval
+        D = self.dbags  # ensure D is in locals() for eval
         return eval(self._code)
 
 

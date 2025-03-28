@@ -251,8 +251,8 @@ class WorkDom(MapDom):
 
 
 
-class Haul(dict):
-    """Haul subclass of dict with custom methods dunder methods and get that
+class Moor(dict):
+    """Moor subclass of dict with custom methods dunder methods and get that
     will only allow actual keys as str. Iterables passed in as key are converted
     to a "_' joined str. Uses "_" so can use dict constuctor if need be with str
     path. Assumes items in Iterable do not contain '_'.
@@ -277,19 +277,19 @@ class Haul(dict):
 
 
     def __setitem__(self, k, v):
-        return super(Haul, self).__setitem__(self.tokey(k), v)
+        return super(Moor, self).__setitem__(self.tokey(k), v)
 
 
     def __getitem__(self, k):
-        return super(Haul, self).__getitem__(self.tokey(k))
+        return super(Moor, self).__getitem__(self.tokey(k))
 
 
     def __delitem__(self, k):
-        return super(Haul, self).__delitem__(self.tokey(k))
+        return super(Moor, self).__delitem__(self.tokey(k))
 
 
     def __contains__(self, k):
-        return super(Haul, self).__contains__(self.tokey(k))
+        return super(Moor, self).__contains__(self.tokey(k))
 
 
     def get(self, k, default=None):
@@ -321,19 +321,19 @@ class Haul(dict):
                 rd = {}
                 for k, v in di.items():
                     rd[self.tokey(k)] = v
-                super(Haul, self).update(rd, **kwa)
+                super(Moor, self).update(rd, **kwa)
 
             elif isinstance(di, Iterable):
                 ri = []
                 for k, v in di:
                     ri.append((self.tokey(k), v))
-                super(Haul, self).update(ri, **kwa)
+                super(Moor, self).update(ri, **kwa)
 
             else:
                 raise TypeError(f"Expected Mapping or Iterable got {type(di)}.")
 
         else:
-            super(Haul, self).update(**kwa)
+            super(Moor, self).update(**kwa)
 
 
     @staticmethod

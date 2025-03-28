@@ -24,7 +24,7 @@ from hio import hioing
 from hio.help import helping
 from hio.help.helping import modify
 from hio.base import tyming
-from hio.base.hier import Reat, Haul, Box, Boxer, Maker
+from hio.base.hier import Reat, Moor, Box, Boxer, Maker
 from hio.base.hier import hiering
 
 
@@ -35,7 +35,7 @@ def test_box_basic():
     assert box.tyme == None
     assert box.tymth == None
     assert box.name == 'box'
-    assert isinstance(box.bags, Haul)
+    assert isinstance(box.mbags, Moor)
     assert box.over == None
     assert box.unders == []
 
@@ -174,7 +174,7 @@ def test_boxer_basic():
     assert boxer.tyme == None
     assert boxer.tymth == None
     assert boxer.name == 'boxer'
-    assert boxer.bags == Haul()
+    assert boxer.mbags == Moor()
     assert boxer.boxes == {}
     assert boxer.first == None
     assert boxer.doer == None
@@ -227,7 +227,7 @@ def test_maker_basic():
     """Basic test Maker class"""
     maker = Maker()  # defaults
     assert maker.name == 'maker'
-    assert maker.bags == Haul()
+    assert maker.mbags == Moor()
     assert maker.boxer == None
     assert maker.box == None
 
@@ -245,7 +245,7 @@ def test_concept_be_box_nonlocal():
     """
     #global B, _bags, _boxer, _boxes, _box, _over, _proem, _index
 
-    B = _bags = Haul()
+    B = _bags = Moor()
     _boxer = None
     _boxes = {}  # default boxes dict now a global
     _box = None
@@ -268,7 +268,7 @@ def test_concept_be_box_nonlocal():
                                     when empty then same level use _over
 
         Globals:
-            B, _bags: (Haul): data haul for this box work
+            B, _bags: (Moor): data moor for this box work
             _boxer (Boxer | None): instance to which this box belongs
             _boxes (dict): map of boxes in this box work
             _box (Box | None): current box in box work. None if not yet a box
@@ -307,7 +307,7 @@ def test_concept_be_box_nonlocal():
             elif over.name not in _boxes:  # stray over box
                 _boxes[over.name] = over  # add to boxes
 
-        box = Box(name=name, over=over, bags=_bags, boxer=_boxer)
+        box = Box(name=name, over=over, mbags=_bags, boxer=_boxer)
         if box.over is not None:  # not at top level
             box.over.unders.append(box)  # add to over.unders list
 
@@ -394,7 +394,7 @@ def test_concept_be_box_global():
     """
     global B, _bags, _boxer, _boxes, _box, _over, _proem, _index
 
-    B = _bags = Haul()
+    B = _bags = Moor()
     _boxer = None
     _boxes = {}  # default boxes dict now a global
     _box = None
@@ -417,7 +417,7 @@ def test_concept_be_box_global():
                                     when empty then same level use _over
 
         Globals:
-            B, _bags: (Haul): data haul for this box work
+            B, _bags: (Moor): data moor for this box work
             _boxer (Boxer | None): instance to which this box belongs
             _boxes (dict): map of boxes in this box work
             _box (Box | None): current box in box work. None if not yet a box
@@ -455,7 +455,7 @@ def test_concept_be_box_global():
             elif over.name not in _boxes:  # stray over box
                 _boxes[over.name] = over  # add to boxes
 
-        box = Box(name=name, over=over, bags=_bags, boxer=_boxer)
+        box = Box(name=name, over=over, mbags=_bags, boxer=_boxer)
         if box.over is not None:  # not at top level
             box.over.unders.append(box)  # add to over.unders list
 

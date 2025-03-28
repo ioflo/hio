@@ -7,14 +7,14 @@ from __future__ import annotations  # so type hints of classes get resolved late
 
 import pytest
 
-from hio.base.hier import Need, Haul
+from hio.base.hier import Need, Moor
 
 
 def test_need_basic():
     """Test Need class"""
 
     need = Need()
-    assert need.bags == Haul()
+    assert need.mbags == Moor()
     assert need.terms == tuple()
     assert need.strict == False
     assert need.composed == False
@@ -22,9 +22,9 @@ def test_need_basic():
 
     assert need() == True  # lazy compose, compile and eval
 
-    bags = Haul()
-    need = Need(bags=bags)
-    assert need.bags == bags
+    mbags = Moor()
+    need = Need(mbags=mbags)
+    assert need.mbags == mbags
     assert need.terms == tuple()
     assert need.strict == False
     assert need.composed == False
