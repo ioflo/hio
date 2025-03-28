@@ -21,8 +21,7 @@ from dataclasses import dataclass, astuple, asdict, field
 
 
 from hio import hioing
-from hio.help import helping
-from hio.help.helping import modify
+from hio.help import helping, modify
 from hio.base import tyming
 from hio.base.hier import Reat, Moor, Box, Boxer, Maker
 from hio.base.hier import hiering

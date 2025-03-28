@@ -25,11 +25,8 @@ from . import tyming
 from .doing import Doist, Doer
 from .. import hioing
 from .. import help
-from ..help import timing, helping
-from ..help.helping import RawDom, IceMapDom
-from ..help import ogling
+from ..help import ogling, timing, helping, Namer, RawDom, IceMapDom
 
-from ..help.naming import Namer
 from ..core.uxd import PeerMemoer
 
 ogler = ogling.initOgler(prefix='hio_mp', name="Boss", level=logging.ERROR)
