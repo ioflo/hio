@@ -62,12 +62,15 @@ class Moor(dict):
 
 
     def __setattr__(self, k, v):
-        return self.__setitem__(k, v)
+        try:
+            return self.__setitem__(k, v)
+        except Exception as ex:
+            raise AttributeError(ex.args) from ex
 
 
     def __getattr__(self, k):
         if k not in self:
-            raise AttributeError(f"{self.__class__.__name__} has not attribute '{k}'")
+            raise AttributeError(f"{self.__class__.__name__} has no attribute '{k}'")
         return self.__getitem__(k)
 
 

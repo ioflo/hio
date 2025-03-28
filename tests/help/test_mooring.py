@@ -88,6 +88,9 @@ def test_moor_basic():
     moor.a_b = 4
     assert moor.a_b == 4
 
+    with pytest.raises(AttributeError):
+        moor.c_d_e
+
     assert moor[keys] == 7
     assert keys in moor
     assert moor.get(keys) == 7
