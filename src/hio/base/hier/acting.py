@@ -12,7 +12,8 @@ from collections import namedtuple
 
 from ... import hioing
 from ...hioing import Mixin, HierError
-from .hiering import Reat, Moor, ActBase, register
+from ...help import Moor, Renam
+from .hiering import ActBase, register
 from .needing import Need
 
 

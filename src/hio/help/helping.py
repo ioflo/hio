@@ -613,3 +613,12 @@ def nabSextets(b, l):
     return (i.to_bytes(n, 'big'))
 
 
+# Miscellaneous
+
+
+# Regular expression to detect valid attribute names for Boxes
+ATREX = r'^[a-zA-Z_][a-zA-Z0-9_]*$'
+# Usage: if Reat.match(name): or if not Reat.match(name):
+Reat = re.compile(ATREX)  # compile is faster
+
+

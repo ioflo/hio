@@ -26,14 +26,7 @@ from dataclasses import dataclass, astuple, asdict, field
 from ..tyming import Tymee
 from ... import hioing
 from ...hioing import Mixin, HierError
-from ...help import isNonStringIterable, MapDom, modify
-
-
-# Regular expression to detect valid attribute names for Boxes
-ATREX = r'^[a-zA-Z_][a-zA-Z0-9_]*$'
-# Usage: if Reat.match(name): or if not Reat.match(name):
-Reat = re.compile(ATREX)  # compile is faster
-
+from ...help import isNonStringIterable, MapDom, modify, Renam
 
 
 
@@ -207,7 +200,7 @@ class ActBase(Mixin):
                 name = self.__class__.__name__ + str(self.Index)
                 self.__class__.Index += 1   # do not shadow class attribute
 
-        if not Reat.match(name):
+        if not Renam.match(name):
             raise HierError(f"Invalid {name=}.")
 
         self.Names[name] = self
@@ -246,131 +239,6 @@ class WorkDom(MapDom):
     over: None | Box = None  # current over box in boxwork. None if not yet any over
     bxpre: str = 'box'  # default box name prefix when name not provided
     bxidx: int = 0  # default box name index when name not provided
-
-
-
-
-
-class Moor(dict):
-    """Moor subclass of dict with custom methods dunder methods and get that
-    will only allow actual keys as str. Iterables passed in as key are converted
-    to a "_' joined str. Uses "_" so can use dict constuctor if need be with str
-    path. Assumes items in Iterable do not contain '_'.
-
-    Special staticmethods:
-        tokeys(k) returns split of k at separator '_' as tuple.
-
-    """
-    def __init__(self, *pa, **kwa):
-        """Convert keys that are tuples when positional argument is Iterable or
-        Mapping to '.' joined strings
-
-        dict __init__ signature options are:
-            dict(**kwa)
-            dict(mapping, **kwa)
-            dict(iterable, **kwa)
-        dict.update has same call signature
-            d.update({"a": 5, "b": 2,}, c=3 , d=4)
-
-        """
-        self.update(*pa, **kwa)
-
-
-    def __setitem__(self, k, v):
-        return super(Moor, self).__setitem__(self.tokey(k), v)
-
-
-    def __getitem__(self, k):
-        return super(Moor, self).__getitem__(self.tokey(k))
-
-
-    def __delitem__(self, k):
-        return super(Moor, self).__delitem__(self.tokey(k))
-
-
-    def __contains__(self, k):
-        return super(Moor, self).__contains__(self.tokey(k))
-
-
-    def get(self, k, default=None):
-        if not self.__contains__(k):
-            return default
-        else:
-            return self.__getitem__(k)
-
-
-
-    def update(self, *pa, **kwa):
-        """Convert keys that are tuples when positional argument is Iterable or
-        Mapping to '.' joined strings
-
-        dict __init__ signature options are:
-            dict(**kwa)
-            dict(mapping, **kwa)
-            dict(iterable, **kwa)
-        dict.update has same call signature
-            d.update({"a": 5, "b": 2,}, c=3 , d=4)
-
-        """
-        if len(pa) > 1:
-            raise TypeError(f"Expected 1 positional argument got {len(pa)}.")
-
-        if pa:
-            di = pa[0]
-            if isinstance(di, Mapping):
-                rd = {}
-                for k, v in di.items():
-                    rd[self.tokey(k)] = v
-                super(Moor, self).update(rd, **kwa)
-
-            elif isinstance(di, Iterable):
-                ri = []
-                for k, v in di:
-                    ri.append((self.tokey(k), v))
-                super(Moor, self).update(ri, **kwa)
-
-            else:
-                raise TypeError(f"Expected Mapping or Iterable got {type(di)}.")
-
-        else:
-            super(Moor, self).update(**kwa)
-
-
-    @staticmethod
-    def tokey(keys):
-        """Joins tuple of strings keys to '.' joined string key. If already
-        str then returns unchanged.
-
-        Parameters:
-            keys (Iterable[str] | str ): non-string Iteralble of path key
-                    components to be '.' joined into key.
-                    If keys is already str then returns unchanged
-
-        Returns:
-            key (str): '.' joined string
-        """
-        if isNonStringIterable(keys):
-            try:
-                key = '.'.join(keys)
-            except Exception as ex:
-                raise KeyError(ex.args) from ex
-        else:
-            key = keys
-        if not isinstance(key, str):
-            raise KeyError(f"Expected str got {key}.")
-        return key
-
-
-    @staticmethod
-    def tokeys(key):
-        """Converts '.' joined string key to tuple of keys by splitting on '.'
-
-        Parameters:
-            key (str): '.' joined string to be split
-        Returns:
-            keys (tuple[str]): split of key on '.' into path key components
-        """
-        return tuple(key.split("."))
 
 
 

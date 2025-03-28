@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-"""keri.help.doming module
+"""hio.help.doming module
 
 Support for Dataclass Object Mapper Dom classes
 """

@@ -11,7 +11,7 @@ import json
 import msgpack
 import cbor2 as cbor
 
-from hio.help import helping, Hict
+from hio.help import helping, Hict, Reat
 from hio.help.helping import isign, sceil
 
 def test_utilities():
@@ -489,7 +489,28 @@ def test_b64_helpers():
 
 
 
+def test_reat():
+    """Test regular expression Reat for attribute name """
+    name = "hello"
+    assert Reat.match(name)
+
+    name = "_hello"
+    assert Reat.match(name)
+
+    name = "hell1"
+    assert Reat.match(name)
+
+    name = "1hello"
+    assert not Reat.match(name)
+
+    name = "hello.hello"
+    assert not Reat.match(name)
+    """Done Test"""
+
+
+
 if __name__ == "__main__":
     test_utilities()
     test_attributize()
     test_b64_helpers()
+    test_reat()

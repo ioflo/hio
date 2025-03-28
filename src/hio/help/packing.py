@@ -1,6 +1,5 @@
 # -*- encoding: utf-8 -*-
-"""
-hio.help.packing Module
+"""hio.help.packing Module
 
 Packs and unpacks bit fields using format string whereas struct in std lib only
 packs and unpacks byte fields.

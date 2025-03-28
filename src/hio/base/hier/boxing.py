@@ -13,8 +13,8 @@ from __future__ import annotations  # so type hints of classes get resolved late
 
 from ..tyming import Tymee
 from ...hioing import Mixin, HierError
-from .hiering import Reat, Moor, WorkDom, ActBase
-from ...help import modify
+from .hiering import WorkDom, ActBase
+from ...help import modify, Moor, Renam
 
 
 class Box(Tymee):
@@ -150,7 +150,7 @@ class Box(Tymee):
         Parameters:
             name (str): unique identifier of instance
         """
-        if not Reat.match(name):
+        if not Renam.match(name):
             raise HierError(f"Invalid {name=}.")
         self._name = name
 
@@ -294,7 +294,7 @@ class Boxer(Tymee):
         Parameters:
             name (str): unique identifier of instance
         """
-        if not Reat.match(name):
+        if not Renam.match(name):
             raise HierError(f"Invalid {name=}.")
         self._name = name
 
@@ -502,7 +502,7 @@ class Boxer(Tymee):
             if dest is None:
                 pass
 
-        if not Reat.match(dest):
+        if not Renam.match(dest):
             raise HierError(f"Invalid {dest=}.")
 
 
@@ -639,7 +639,7 @@ class Maker(Mixin):
         Parameters:
             name (str): unique identifier of instance
         """
-        if not Reat.match(name):
+        if not Renam.match(name):
             raise HierError(f"Invalid {name=}.")
 
         self._name = name

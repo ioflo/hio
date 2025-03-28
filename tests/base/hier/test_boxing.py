@@ -21,9 +21,9 @@ from dataclasses import dataclass, astuple, asdict, field
 
 
 from hio import hioing
-from hio.help import helping, modify
+from hio.help import helping, modify, Moor, Renam
 from hio.base import tyming
-from hio.base.hier import Reat, Moor, Box, Boxer, Maker
+from hio.base.hier import Box, Boxer, Maker
 from hio.base.hier import hiering
 
 
@@ -249,7 +249,7 @@ def test_concept_be_box_nonlocal():
     _boxes = {}  # default boxes dict now a global
     _box = None
     _over = None # default top box now a global
-    _proem = '_box'  #  default box name prefix now a global
+    _proem = 'box'  #  default box name prefix now a global
     _index = 0  # default box name index
 
     def be(name: None|str=None, over: None|str|Box="")->Box:
@@ -352,7 +352,7 @@ def test_concept_be_box_nonlocal():
     assert _over == None
     assert b3._next == b4
 
-    b5 = be(over="_box0")
+    b5 = be(over="box0")
     assert _box == b5
     assert _over == b0
     assert b4._next == b5
@@ -367,22 +367,22 @@ def test_concept_be_box_nonlocal():
 
 
     assert _boxes == {'top': btop,
-                    '_box0': b0,
-                    '_box1': b1,
-                    '_box2': b2,
-                    '_box3': b3,
-                    '_box4': b4,
-                    '_box5': b5,
-                    '_box6': b6,}
+                    'box0': b0,
+                    'box1': b1,
+                    'box2': b2,
+                    'box3': b3,
+                    'box4': b4,
+                    'box5': b5,
+                    'box6': b6,}
 
-    assert str(btop) == 'Box(<top>_box0>_box5)'
-    assert str(b0) == 'Box(top<_box0>_box5)'
-    assert str(b1) == 'Box(top<_box1>_box2)'
-    assert str(b2) == 'Box(top<_box1<_box2>)'
-    assert str(b3) == 'Box(<_box3>)'
-    assert str(b4) == 'Box(<_box4>)'
-    assert str(b5) == 'Box(top<_box0<_box5>)'
-    assert str(b6) == 'Box(top<_box0<_box6>)'
+    assert str(btop) == 'Box(<top>box0>box5)'
+    assert str(b0) == 'Box(top<box0>box5)'
+    assert str(b1) == 'Box(top<box1>box2)'
+    assert str(b2) == 'Box(top<box1<box2>)'
+    assert str(b3) == 'Box(<box3>)'
+    assert str(b4) == 'Box(<box4>)'
+    assert str(b5) == 'Box(top<box0<box5>)'
+    assert str(b6) == 'Box(top<box0<box6>)'
 
 
     """Done Test"""
@@ -398,7 +398,7 @@ def test_concept_be_box_global():
     _boxes = {}  # default boxes dict now a global
     _box = None
     _over = None # default top box now a global
-    _proem = '_box'  #  default box name prefix now a global
+    _proem = 'box'  #  default box name prefix now a global
     _index = 0  # default box name index
 
     def be(name: None|str=None, over: None|str|Box="")->Box:
@@ -500,7 +500,7 @@ def test_concept_be_box_global():
     assert _over == None
     assert b3._next == b4
 
-    b5 = be(over="_box0")
+    b5 = be(over="box0")
     assert _box == b5
     assert _over == b0
     assert b4._next == b5
@@ -515,22 +515,22 @@ def test_concept_be_box_global():
 
 
     assert _boxes == {'top': btop,
-                    '_box0': b0,
-                    '_box1': b1,
-                    '_box2': b2,
-                    '_box3': b3,
-                    '_box4': b4,
-                    '_box5': b5,
-                    '_box6': b6,}
+                    'box0': b0,
+                    'box1': b1,
+                    'box2': b2,
+                    'box3': b3,
+                    'box4': b4,
+                    'box5': b5,
+                    'box6': b6,}
 
-    assert str(btop) == 'Box(<top>_box0>_box5)'
-    assert str(b0) == 'Box(top<_box0>_box5)'
-    assert str(b1) == 'Box(top<_box1>_box2)'
-    assert str(b2) == 'Box(top<_box1<_box2>)'
-    assert str(b3) == 'Box(<_box3>)'
-    assert str(b4) == 'Box(<_box4>)'
-    assert str(b5) == 'Box(top<_box0<_box5>)'
-    assert str(b6) == 'Box(top<_box0<_box6>)'
+    assert str(btop) == 'Box(<top>box0>box5)'
+    assert str(b0) == 'Box(top<box0>box5)'
+    assert str(b1) == 'Box(top<box1>box2)'
+    assert str(b2) == 'Box(top<box1<box2>)'
+    assert str(b3) == 'Box(<box3>)'
+    assert str(b4) == 'Box(<box4>)'
+    assert str(b5) == 'Box(top<box0<box5>)'
+    assert str(b6) == 'Box(top<box0<box6>)'
 
 
     """Done Test"""

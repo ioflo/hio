@@ -7,7 +7,8 @@ from __future__ import annotations  # so type hints of classes get resolved late
 
 import pytest
 
-from hio.base.hier import Need, Moor
+from hio.base.hier import Need
+from hio.help import Moor
 
 
 def test_need_basic():

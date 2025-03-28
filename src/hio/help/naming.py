@@ -1,6 +1,5 @@
 # -*- encoding: utf-8 -*-
-"""
-hio.help.naming Module
+"""hio.help.naming Module
 
 Mixin Base Class for one-to-one mapping with inverse: name-to-addr and addr-to-name
 that add support for MemoGrams to datagram based transports.

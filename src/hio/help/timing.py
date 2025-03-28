@@ -1,6 +1,5 @@
 # -*- encoding: utf-8 -*-
-"""
-hio.help.timing module
+"""hio.help.timing module
 
 """
 import time

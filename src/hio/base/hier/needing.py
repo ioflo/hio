@@ -13,9 +13,7 @@ from types import CodeType
 
 from ... import hioing
 from ...hioing import Mixin, HierError
-from ...help.helping import NonStringIterable
-
-from .hiering import Moor
+from ...help import Moor
 
 
 class Need(Mixin):
