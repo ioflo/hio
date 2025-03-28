@@ -14,12 +14,12 @@ from __future__ import annotations  # so type hints of classes get resolved late
 from ..tyming import Tymee
 from ...hioing import Mixin, HierError
 from .hiering import WorkDom, ActBase
-from ...help import modify, Moor, Renam
+from ...help import modify, Mew, Renam
 
 
 class Box(Tymee):
     """Box Class for hierarchical action framework (boxwork) instances.
-    Box instance holds reference to in-memory data moor shared by all the boxes in a
+    Box instance holds reference to in-memory data mew shared by all the boxes in a
     given boxwork as well as its executing Boxer.
     Box instance holds references (links) to its over box and its under boxes.
     Box instance holds the acts to be executed in their context.
@@ -28,7 +28,7 @@ class Box(Tymee):
         see Tymee
 
     Attributes:
-        mbags (Moor): ephemeral bags in moor (in memory) shared by boxwork
+        mbags (Mew): ephemeral bags in mew (in memory) shared by boxwork
         dbags (Dock): durable bags in dock (on disc) shared by boxwork
         over (Box | None): this box's over box instance or None
         unders (list[Box]): this box's under box instances or empty
@@ -74,13 +74,13 @@ class Box(Tymee):
 
         Parameters:
             name (str): unique identifier of box
-            mbags (None|Moor): ephemeral bags in moor (in memory) shared by boxwork
+            mbags (None|Mew): ephemeral bags in mew (in memory) shared by boxwork
             dbags (None|Dock): durable bags in dock (on disc) shared by boxwork
             over (Box | None): this box's over box instance or None
         """
         super(Box, self).__init__(**kwa)
         self.name = name
-        self.mbags = mbags if mbags is not None else Moor()
+        self.mbags = mbags if mbags is not None else Mew()
         self.dbags = dbags   # stub for now until create Dock class
         self._pile = None  # force .trace on first access of .pile property
         self._spot = None  # zero based offset into .pile of this box
@@ -204,7 +204,7 @@ class Box(Tymee):
 
 class Boxer(Tymee):
     """Boxer Class that executes hierarchical action framework (boxwork) instances.
-    Boxer instance holds reference to in-memory data moor shared by all its boxes
+    Boxer instance holds reference to in-memory data mew shared by all its boxes
     and other Boxers in a given boxwork.
     Box instance holds a reference to its first (beginning) box.
     Box instance holds references to all its boxes in dict keyed by box name.
@@ -213,7 +213,7 @@ class Boxer(Tymee):
         see Tymee
 
     Attributes:
-        mbags (Moor): ephemeral bags in moor (in memory) shared by boxwork
+        mbags (Mew): ephemeral bags in mew (in memory) shared by boxwork
         dbags (Dock): durable bags in dock (on disc) shared by boxwork
         first (Box | None):  beginning box
         doer (Doer | None): doer running this boxer  (do we need this?)
@@ -259,7 +259,7 @@ class Boxer(Tymee):
 
         Parameters:
             name (str): unique identifier of box
-            mbags (None|Moor): ephemeral bags in moor (in memory) shared by boxwork
+            mbags (None|Mew): ephemeral bags in mew (in memory) shared by boxwork
             dbags (None|Dock): durable bags in dock (on disc) shared by boxwork
             first (Box | None):  beginning box
             doer (Doer | None): Doer running this Boxer doe we need this?
@@ -268,7 +268,7 @@ class Boxer(Tymee):
         """
         super(Boxer, self).__init__(**kwa)
         self.name = name
-        self.mbags = mbags if mbags is not None else Moor()
+        self.mbags = mbags if mbags is not None else Mew()
         self.dbags = dbags  # stub until create Dock class
         self.first = first
         self.doer = doer
@@ -586,14 +586,14 @@ class Boxer(Tymee):
 
 class Maker(Mixin):
     """Maker Class makes boxworks of Boxer and Box instances.
-    Holds reference to in-memory moor shared by all boxes in boxwork
+    Holds reference to in-memory mew shared by all boxes in boxwork
     Holds reference to current Boxer and Boxe being built
 
     ****Placeholder for now. Future to be able to make multiple boxers from
     single fun or in multiple iterations making.****
 
     Attributes:
-        mbags (Moor): ephemeral bags in moor (in memory) shared by boxwork
+        mbags (Mew): ephemeral bags in mew (in memory) shared by boxwork
         dbags (Dock): durable bags in dock (on disc) shared by boxwork
         boxer (Boxer | None): current boxer
         box (Box | None): cureent box
@@ -610,14 +610,14 @@ class Maker(Mixin):
 
         Parameters:
             name (str): unique identifier of instance
-            mbags (None|Moor): ephemeral bags in moor (in memory) shared by boxwork
+            mbags (None|Mew): ephemeral bags in mew (in memory) shared by boxwork
             dbags (None|Dock): durable bags in dock (on disc) shared by boxwork
 
 
         """
         super(Maker, self).__init__(**kwa)
         self.name = name
-        self.mbags = mbags if mbags is not None else Moor()
+        self.mbags = mbags if mbags is not None else Mew()
         self.dbags = dbags  # stub until create Dock class
         self.boxer = None
         self.box = None
@@ -649,7 +649,7 @@ class Maker(Mixin):
         Parameters:
             fun (function):  employs be, do, on, go maker functions with
                               globals
-            bags (None|Moor):  shared data Moor for all made Boxers
+            bags (None|Mew):  shared data Mew for all made Boxers
             boxes (None|dict): shared boxes map
 
 
@@ -658,7 +658,7 @@ class Maker(Mixin):
 
         # bags, boxes, and boxers can be referenced by fun in its nonlocal
         # enclosing scope. collections references so do not need to be global
-        mbags = mbags if mbags is not None else Moor()  # create new if not provided
+        mbags = mbags if mbags is not None else Mew()  # create new if not provided
         boxes = boxes if boxes is not None else {}  # create new if not provided
         boxers = []  # list of made boxers
 

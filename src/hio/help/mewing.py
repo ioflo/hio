@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
-"""hio.help.mooring module
+"""hio.help.mewing module
 
-Support for Moor dict subclass for shared in memory database
+Support for Mew dict subclass for shared in memory database
 """
 
 from __future__ import annotations  # so type hints of classes get resolved later
@@ -12,7 +12,7 @@ from ..help import isNonStringIterable
 
 
 
-# Regular expression to detect valid attribute names for Components that use Moor
+# Regular expression to detect valid attribute names for Components that use Mew
 # same as attribute name except '_' not allowed
 NAMREX = r'^[a-zA-Z][a-zA-Z0-9]*$'
 # Usage: if Renam.match(name): or if not Renam.match(name):
@@ -20,11 +20,13 @@ Renam = re.compile(NAMREX)  # compile is faster
 
 
 
-class Moor(dict):
-    """Moor subclass of dict with custom methods dunder methods and get that
+class Mew(dict):
+    """Mew subclass of dict with custom methods dunder methods and get that
     will only allow actual keys as str. Iterables passed in as key are converted
     to a "_' joined str. Uses "_" so can use dict constuctor if need be with str
     path. Assumes items in Iterable do not contain '_'.
+
+    a mew is a cage for hawks or a small enclosure.
 
     Special staticmethods:
         tokeys(k) returns split of k at separator '_' as tuple.
@@ -46,19 +48,19 @@ class Moor(dict):
 
 
     def __setitem__(self, k, v):
-        return super(Moor, self).__setitem__(self.tokey(k), v)
+        return super(Mew, self).__setitem__(self.tokey(k), v)
 
 
     def __getitem__(self, k):
-        return super(Moor, self).__getitem__(self.tokey(k))
+        return super(Mew, self).__getitem__(self.tokey(k))
 
 
     def __delitem__(self, k):
-        return super(Moor, self).__delitem__(self.tokey(k))
+        return super(Mew, self).__delitem__(self.tokey(k))
 
 
     def __contains__(self, k):
-        return super(Moor, self).__contains__(self.tokey(k))
+        return super(Mew, self).__contains__(self.tokey(k))
 
 
     def __setattr__(self, k, v):
@@ -103,19 +105,19 @@ class Moor(dict):
                 rd = {}
                 for k, v in di.items():
                     rd[self.tokey(k)] = v
-                super(Moor, self).update(rd, **kwa)
+                super(Mew, self).update(rd, **kwa)
 
             elif isinstance(di, Iterable):
                 ri = []
                 for k, v in di:
                     ri.append((self.tokey(k), v))
-                super(Moor, self).update(ri, **kwa)
+                super(Mew, self).update(ri, **kwa)
 
             else:
                 raise TypeError(f"Expected Mapping or Iterable got {type(di)}.")
 
         else:
-            super(Moor, self).update(**kwa)
+            super(Mew, self).update(**kwa)
 
 
     @staticmethod

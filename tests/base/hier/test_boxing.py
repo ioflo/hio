@@ -21,7 +21,7 @@ from dataclasses import dataclass, astuple, asdict, field
 
 
 from hio import hioing
-from hio.help import helping, modify, Moor, Renam
+from hio.help import helping, modify, Mew, Renam
 from hio.base import tyming
 from hio.base.hier import Box, Boxer, Maker
 from hio.base.hier import hiering
@@ -34,7 +34,7 @@ def test_box_basic():
     assert box.tyme == None
     assert box.tymth == None
     assert box.name == 'box'
-    assert isinstance(box.mbags, Moor)
+    assert isinstance(box.mbags, Mew)
     assert box.over == None
     assert box.unders == []
 
@@ -173,7 +173,7 @@ def test_boxer_basic():
     assert boxer.tyme == None
     assert boxer.tymth == None
     assert boxer.name == 'boxer'
-    assert boxer.mbags == Moor()
+    assert boxer.mbags == Mew()
     assert boxer.boxes == {}
     assert boxer.first == None
     assert boxer.doer == None
@@ -226,7 +226,7 @@ def test_maker_basic():
     """Basic test Maker class"""
     maker = Maker()  # defaults
     assert maker.name == 'maker'
-    assert maker.mbags == Moor()
+    assert maker.mbags == Mew()
     assert maker.boxer == None
     assert maker.box == None
 
@@ -244,7 +244,7 @@ def test_concept_be_box_nonlocal():
     """
     #global B, _bags, _boxer, _boxes, _box, _over, _proem, _index
 
-    B = _bags = Moor()
+    B = _bags = Mew()
     _boxer = None
     _boxes = {}  # default boxes dict now a global
     _box = None
@@ -267,7 +267,7 @@ def test_concept_be_box_nonlocal():
                                     when empty then same level use _over
 
         Globals:
-            B, _bags: (Moor): data moor for this box work
+            B, _bags: (Mew): data mew for this box work
             _boxer (Boxer | None): instance to which this box belongs
             _boxes (dict): map of boxes in this box work
             _box (Box | None): current box in box work. None if not yet a box
@@ -393,7 +393,7 @@ def test_concept_be_box_global():
     """
     global B, _bags, _boxer, _boxes, _box, _over, _proem, _index
 
-    B = _bags = Moor()
+    B = _bags = Mew()
     _boxer = None
     _boxes = {}  # default boxes dict now a global
     _box = None
@@ -416,7 +416,7 @@ def test_concept_be_box_global():
                                     when empty then same level use _over
 
         Globals:
-            B, _bags: (Moor): data moor for this box work
+            B, _bags: (Mew): data mew for this box work
             _boxer (Boxer | None): instance to which this box belongs
             _boxes (dict): map of boxes in this box work
             _box (Box | None): current box in box work. None if not yet a box

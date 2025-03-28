@@ -13,7 +13,7 @@ from types import CodeType
 
 from ... import hioing
 from ...hioing import Mixin, HierError
-from ...help import Moor
+from ...help import Mew
 
 
 class Need(Mixin):
@@ -22,7 +22,7 @@ class Need(Mixin):
     condition of a Gact.
 
     Attributes:
-        mbags (Moor): ephemeral bags in moor (in memory) shared by boxwork
+        mbags (Mew): ephemeral bags in mew (in memory) shared by boxwork
         dbags (Dock): durable bags in dock (on disc) shared by boxwork
 
     Properties:
@@ -110,7 +110,7 @@ class Need(Mixin):
         Parameters:
             terms (NonStringIterable[str]): of string need expression terms, each
                 to be logically ANDed together to  form evable boolean expression.
-            mbags (None|Moor): ephemeral bags in moor (in memory) shared by boxwork
+            mbags (None|Mew): ephemeral bags in mew (in memory) shared by boxwork
             dbags (None|Dock): durable bags in dock (on disc) shared by boxwork
             strict (bool): True means use strict Python syntax with no substituion
                            False means use shorthand syntax with substitution
@@ -118,7 +118,7 @@ class Need(Mixin):
         """
         super(Need, self).__init__(**kwa)
         self.terms = terms
-        self.mbags = mbags if mbags is not None else Moor()
+        self.mbags = mbags if mbags is not None else Mew()
         self.dbags = dbags   # stub fix later when have Dock class
         self.strict = True if strict else False
 
