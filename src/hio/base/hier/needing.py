@@ -71,6 +71,37 @@ class Need(Mixin):
         pickleable and must be recompiled inside the child process.
         Also having the string rep around can be helpful in debugging if define
         __repr__ and __str__ for need objects.
+
+    Shorthand syntax notes:
+        Use regex to parse out == != <= >= < > not is is not or
+        have a strict=True parameters to use explicit python syntax not shorthand
+
+        Not shorthand:
+          "H['root.top'].val > 5"
+
+        Shorthand
+
+          "root.top.val > 5"
+
+
+
+        But for conditional expression for need an Iterable list of clauses that
+        are implicity ANDed together for evaluation.
+
+
+        ["H['root.top'].val > 5", "H['root.bottom'].val < 6"]
+
+        Implied H[] and where last part is the dom attribute
+
+        ["root.top.val > 5", "root.bottom.val < 6"]
+
+        for needs  "root.top.val" is resolved as H["root.top"].val
+
+        If access the whole dom then end with dot
+        "root.top."  This ensures that no matter what always
+        has a '.' in the path for the bag itself not a bag attribute.
+
+         "root.top.  or True"
     """
 
 
@@ -95,6 +126,7 @@ class Need(Mixin):
         """Make Need instance a callable object."""
         if not self.compiled:  # not yet compiled so lazy
             self.compile()  # first time only recompile forces recompose
+        B = self.bags  # ensure B in in locals() for eval
         return eval(self._code)
 
 

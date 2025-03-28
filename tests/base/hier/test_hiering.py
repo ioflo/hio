@@ -191,6 +191,7 @@ def test_haul_basic():
     assert 'a' in haul
     assert haul.get('a') == 5
 
+
     haul[keys] = 7
     assert list(haul.items()) == [('a', 5), ('a_b', 6), ('a.b.c', 7)]
 
@@ -222,8 +223,6 @@ def test_haul_basic():
 
     with pytest.raises(KeyError):
         del haul[key]
-
-
 
     assert haul.get('c') == None
     assert haul.get(("b", "c")) == None
