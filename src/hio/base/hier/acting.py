@@ -12,7 +12,7 @@ from collections import namedtuple
 
 from ... import hioing
 from ...hioing import Mixin, HierError
-from ...help import Mew, Renam
+from ...help import Mine, Renam
 from .hiering import ActBase, register
 from .needing import Need
 

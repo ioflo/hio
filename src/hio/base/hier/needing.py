@@ -13,7 +13,7 @@ from types import CodeType
 
 from ... import hioing
 from ...hioing import Mixin, HierError
-from ...help import Mew
+from ...help import Mine
 
 
 class Need(Mixin):
@@ -22,7 +22,7 @@ class Need(Mixin):
     condition of a Gact.
 
     Attributes:
-        mbags (Mew): ephemeral bags in mew (in memory) shared by boxwork
+        mbags (Mine): ephemeral bags in mine (in memory) shared by boxwork
         dbags (Dock): durable bags in dock (on disc) shared by boxwork
 
     Properties:
@@ -71,36 +71,28 @@ class Need(Mixin):
         Also having the string rep around can be helpful in debugging if define
         __repr__ and __str__ for need objects.
 
-    Shorthand syntax notes:
-        Use regex to parse out == != <= >= < > not is is not or
-        have a strict=True parameters to use explicit python syntax not shorthand
-
-        Not shorthand:
-          "H['root.top'].val > 5"
-
-        Shorthand
-
-          "root.top.val > 5"
+    Expr syntax notes:
+        mbags (Mine) memory and dbags (Dock) durable support attribute syntax
+        with locally scope variables M ref for mbags and D ref for dbags.
 
 
+        so need syntax does not heed to "quote" paths keys into the bags
+        containers Mine dict subclasses with attribute support.
 
-        But for conditional expression for need an Iterable list of clauses that
-        are implicity ANDed together for evaluation.
+        M.root_dog.value  is equivalent to self.mbags["root_dog"].value or
+                                           self.mbags[("root", "dog")].value
 
+        So need term  "M.root_dog.value > 5" should compile directly and eval
+        as long as M is in the locals() and M is a Mine instance.
 
-        ["H['root.top'].val > 5", "H['root.bottom'].val < 6"]
+        Likewise for
+        D.root_dog.value where D is a Dock and root_dog is a key in the Dock.
 
-        Implied H[] and where last part is the dom attribute
+        So no need to do substitutions or shorthand
+        The hierarchy in the .mbags .dbags is indicated by '_' separated keys
+        The Box Boxer Actor names are forbidden from having '_" as an element
+        with Renam regex test.
 
-        ["root.top.val > 5", "root.bottom.val < 6"]
-
-        for needs  "root.top.val" is resolved as H["root.top"].val
-
-        If access the whole dom then end with dot
-        "root.top."  This ensures that no matter what always
-        has a '.' in the path for the bag itself not a bag attribute.
-
-         "root.top.  or True"
     """
 
 
@@ -110,7 +102,7 @@ class Need(Mixin):
         Parameters:
             terms (NonStringIterable[str]): of string need expression terms, each
                 to be logically ANDed together to  form evable boolean expression.
-            mbags (None|Mew): ephemeral bags in mew (in memory) shared by boxwork
+            mbags (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dbags (None|Dock): durable bags in dock (on disc) shared by boxwork
             strict (bool): True means use strict Python syntax with no substituion
                            False means use shorthand syntax with substitution
@@ -118,7 +110,7 @@ class Need(Mixin):
         """
         super(Need, self).__init__(**kwa)
         self.terms = terms
-        self.mbags = mbags if mbags is not None else Mew()
+        self.mbags = mbags if mbags is not None else Mine()
         self.dbags = dbags   # stub fix later when have Dock class
         self.strict = True if strict else False
 

@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
-"""hio.help.mewing module
+"""hio.help.mining module
 
-Support for Mew dict subclass for shared in memory database
+Support for Mine dict subclass for shared in memory database
 """
 
 from __future__ import annotations  # so type hints of classes get resolved later
@@ -12,7 +12,7 @@ from ..help import isNonStringIterable
 
 
 
-# Regular expression to detect valid attribute names for Components that use Mew
+# Regular expression to detect valid attribute names for Components that use Mine
 # same as attribute name except '_' not allowed
 NAMREX = r'^[a-zA-Z][a-zA-Z0-9]*$'
 # Usage: if Renam.match(name): or if not Renam.match(name):
@@ -20,13 +20,14 @@ Renam = re.compile(NAMREX)  # compile is faster
 
 
 
-class Mew(dict):
-    """Mew subclass of dict with custom methods dunder methods and get that
+class Mine(dict):
+    """Mine subclass of dict with custom methods dunder methods and get that
     will only allow actual keys as str. Iterables passed in as key are converted
     to a "_' joined str. Uses "_" so can use dict constuctor if need be with str
     path. Assumes items in Iterable do not contain '_'.
-
-    a mew is a cage for hawks or a small enclosure.
+    Supports attribute syntax to access items:
+        mine.a = 5
+        mine.a_b = 4
 
     Special staticmethods:
         tokeys(k) returns split of k at separator '_' as tuple.
@@ -48,19 +49,19 @@ class Mew(dict):
 
 
     def __setitem__(self, k, v):
-        return super(Mew, self).__setitem__(self.tokey(k), v)
+        return super(Mine, self).__setitem__(self.tokey(k), v)
 
 
     def __getitem__(self, k):
-        return super(Mew, self).__getitem__(self.tokey(k))
+        return super(Mine, self).__getitem__(self.tokey(k))
 
 
     def __delitem__(self, k):
-        return super(Mew, self).__delitem__(self.tokey(k))
+        return super(Mine, self).__delitem__(self.tokey(k))
 
 
     def __contains__(self, k):
-        return super(Mew, self).__contains__(self.tokey(k))
+        return super(Mine, self).__contains__(self.tokey(k))
 
 
     def __setattr__(self, k, v):
@@ -105,19 +106,19 @@ class Mew(dict):
                 rd = {}
                 for k, v in di.items():
                     rd[self.tokey(k)] = v
-                super(Mew, self).update(rd, **kwa)
+                super(Mine, self).update(rd, **kwa)
 
             elif isinstance(di, Iterable):
                 ri = []
                 for k, v in di:
                     ri.append((self.tokey(k), v))
-                super(Mew, self).update(ri, **kwa)
+                super(Mine, self).update(ri, **kwa)
 
             else:
                 raise TypeError(f"Expected Mapping or Iterable got {type(di)}.")
 
         else:
-            super(Mew, self).update(**kwa)
+            super(Mine, self).update(**kwa)
 
 
     @staticmethod
