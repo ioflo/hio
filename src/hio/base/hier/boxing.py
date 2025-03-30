@@ -313,7 +313,7 @@ class Boxer(Tymee):
             fun (function):  employs be, do, on, go maker functions injected
                              works (boxwork state vars)
 
-        def fun(be):
+        def fun(bx):
 
 
         Injects works as WorkDom dataclass instance whose attributes are used to
@@ -328,15 +328,15 @@ class Boxer(Tymee):
 
         """
         works = WorkDom()  # standard defaults
-        be = modify(mods=works)(self.be)
+        bx = modify(mods=works)(self.bx)
         do = modify(mods=works)(self.do)
-        fun(be=be, do=do)  # calling fun will build boxer.boxes
+        fun(bx=bx, do=do)  # calling fun will build boxer.boxes
 
         return works  # for debugging analysis
 
 
 
-    def be(self, name: None|str=None, over: None|str|Box="",
+    def bx(self, name: None|str=None, over: None|str|Box="",
                 *, mods: WorkDom|None=None)->Box:
         """Make a box and add to box work
 

@@ -196,12 +196,12 @@ def test_boxer_basic():
 
 def test_boxer_make():
     """Test make method of Boxer and modify wrapper"""
-    def fun(be, do):
-        be(name='top')
-        be(over='top')
-        be()
-        b = be()
-        be(over=b)
+    def fun(bx, do):
+        bx(name='top')
+        bx(over='top')
+        bx()
+        b = bx()
+        bx(over=b)
         do(deed="sing")
         do()
 
@@ -238,8 +238,8 @@ def test_maker_basic():
 
 
 
-def test_concept_be_box_nonlocal():
-    """Test concept for be function for adding box to box work
+def test_concept_bx_nonlocal():
+    """Test concept for bx function for adding box to box work
 
     """
     #global B, _bags, _boxer, _boxes, _box, _over, _proem, _index
@@ -252,7 +252,7 @@ def test_concept_be_box_nonlocal():
     _proem = 'box'  #  default box name prefix now a global
     _index = 0  # default box name index
 
-    def be(name: None|str=None, over: None|str|Box="")->Box:
+    def bx(name: None|str=None, over: None|str|Box="")->Box:
         """Make a box and add to box work
 
         Parameters:
@@ -322,42 +322,42 @@ def test_concept_be_box_nonlocal():
     assert _over == None
     assert _index == 0
 
-    btop = be(name="top")
+    btop = bx(name="top")
     assert _box == btop
     assert _over == None
     assert not btop._next
 
-    b0 = be(over="top")
+    b0 = bx(over="top")
     assert _box == b0
     assert _over == btop
     assert btop._next == b0
 
-    b1 = be()
+    b1 = bx()
     assert _box == b1
     assert _over == btop
     assert b0._next == b1
 
-    b2 = be(over=b1)
+    b2 = bx(over=b1)
     assert _box == b2
     assert _over == b1
     assert b1._next == b2
 
-    b3 = be(over=None)
+    b3 = bx(over=None)
     assert _box == b3
     assert _over == None
     assert b2._next == b3
 
-    b4 = be()
+    b4 = bx()
     assert _box == b4
     assert _over == None
     assert b3._next == b4
 
-    b5 = be(over="box0")
+    b5 = bx(over="box0")
     assert _box == b5
     assert _over == b0
     assert b4._next == b5
 
-    b6 = be()
+    b6 = bx()
     assert _box == b6
     assert _over == b0
     assert b5._next == b6
@@ -387,8 +387,8 @@ def test_concept_be_box_nonlocal():
 
     """Done Test"""
 
-def test_concept_be_box_global():
-    """Test concept for be function for adding box to box work
+def test_concept_bx_global():
+    """Test concept for bx function for adding box to box work
 
     """
     global B, _bags, _boxer, _boxes, _box, _over, _proem, _index
@@ -401,7 +401,7 @@ def test_concept_be_box_global():
     _proem = 'box'  #  default box name prefix now a global
     _index = 0  # default box name index
 
-    def be(name: None|str=None, over: None|str|Box="")->Box:
+    def bx(name: None|str=None, over: None|str|Box="")->Box:
         """Make a box and add to box work
 
         Parameters:
@@ -470,42 +470,42 @@ def test_concept_be_box_global():
     assert _over == None
     assert _index == 0
 
-    btop = be(name="top")
+    btop = bx(name="top")
     assert _box == btop
     assert _over == None
     assert not btop._next
 
-    b0 = be(over="top")
+    b0 = bx(over="top")
     assert _box == b0
     assert _over == btop
     assert btop._next == b0
 
-    b1 = be()
+    b1 = bx()
     assert _box == b1
     assert _over == btop
     assert b0._next == b1
 
-    b2 = be(over=b1)
+    b2 = bx(over=b1)
     assert _box == b2
     assert _over == b1
     assert b1._next == b2
 
-    b3 = be(over=None)
+    b3 = bx(over=None)
     assert _box == b3
     assert _over == None
     assert b2._next == b3
 
-    b4 = be()
+    b4 = bx()
     assert _box == b4
     assert _over == None
     assert b3._next == b4
 
-    b5 = be(over="box0")
+    b5 = bx(over="box0")
     assert _box == b5
     assert _over == b0
     assert b4._next == b5
 
-    b6 = be()
+    b6 = bx()
     assert _box == b6
     assert _over == b0
     assert b5._next == b6
@@ -541,5 +541,5 @@ if __name__ == "__main__":
     test_boxer_basic()
     test_boxer_make()
     test_maker_basic()
-    test_concept_be_box_nonlocal()
-    test_concept_be_box_global()
+    test_concept_bx_nonlocal()
+    test_concept_bx_global()
