@@ -34,7 +34,7 @@ def test_box_basic():
     assert box.tyme == None
     assert box.tymth == None
     assert box.name == 'box'
-    assert isinstance(box.mbags, Mine)
+    assert isinstance(box.mine, Mine)
     assert box.over == None
     assert box.unders == []
 
@@ -173,7 +173,7 @@ def test_boxer_basic():
     assert boxer.tyme == None
     assert boxer.tymth == None
     assert boxer.name == 'boxer'
-    assert boxer.mbags == Mine()
+    assert boxer.mine == Mine()
     assert boxer.boxes == {}
     assert boxer.first == None
     assert boxer.doer == None
@@ -226,7 +226,7 @@ def test_maker_basic():
     """Basic test Maker class"""
     maker = Maker()  # defaults
     assert maker.name == 'maker'
-    assert maker.mbags == Mine()
+    assert maker.mine == Mine()
     assert maker.boxer == None
     assert maker.box == None
 
@@ -306,7 +306,7 @@ def test_concept_bx_nonlocal():
             elif over.name not in _boxes:  # stray over box
                 _boxes[over.name] = over  # add to boxes
 
-        box = Box(name=name, over=over, mbags=_bags, boxer=_boxer)
+        box = Box(name=name, over=over, mine=_bags, boxer=_boxer)
         if box.over is not None:  # not at top level
             box.over.unders.append(box)  # add to over.unders list
 
@@ -454,7 +454,7 @@ def test_concept_bx_global():
             elif over.name not in _boxes:  # stray over box
                 _boxes[over.name] = over  # add to boxes
 
-        box = Box(name=name, over=over, mbags=_bags, boxer=_boxer)
+        box = Box(name=name, over=over, mine=_bags, boxer=_boxer)
         if box.over is not None:  # not at top level
             box.over.unders.append(box)  # add to over.unders list
 

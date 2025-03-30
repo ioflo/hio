@@ -15,7 +15,7 @@ def test_need_basic():
     """Test Need class"""
 
     need = Need()
-    assert need.mbags == Mine()
+    assert need.mine == Mine()
     assert need.terms == tuple()
     assert need.strict == False
     assert need.composed == False
@@ -23,9 +23,9 @@ def test_need_basic():
 
     assert need() == True  # lazy compose, compile and eval
 
-    mbags = Mine()
-    need = Need(mbags=mbags)
-    assert need.mbags == mbags
+    mine = Mine()
+    need = Need(mine=mine)
+    assert need.mine == mine
     assert need.terms == tuple()
     assert need.strict == False
     assert need.composed == False

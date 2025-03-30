@@ -22,8 +22,8 @@ class Need(Mixin):
     condition of a Gact.
 
     Attributes:
-        mbags (Mine): ephemeral bags in mine (in memory) shared by boxwork
-        dbags (Dock): durable bags in dock (on disc) shared by boxwork
+        mine (Mine): ephemeral bags in mine (in memory) shared by boxwork
+        dock (Dock): durable bags in dock (on disc) shared by boxwork
 
     Properties:
         terms (tuple[str]): of string need expression terms, each
@@ -72,15 +72,15 @@ class Need(Mixin):
         __repr__ and __str__ for need objects.
 
     Expr syntax notes:
-        mbags (Mine) memory and dbags (Dock) durable support attribute syntax
-        with locally scope variables M ref for mbags and D ref for dbags.
+        M (Mine) memory (non-durable) and D (Dock) durable support attribute syntax
+        with locally scope variables M ref for mine and D ref for dock.
 
 
         so need syntax does not heed to "quote" paths keys into the bags
         containers Mine dict subclasses with attribute support.
 
-        M.root_dog.value  is equivalent to self.mbags["root_dog"].value or
-                                           self.mbags[("root", "dog")].value
+        M.root_dog.value  is equivalent to self.mine["root_dog"].value or
+                                           self.mine[("root", "dog")].value
 
         So need term  "M.root_dog.value > 5" should compile directly and eval
         as long as M is in the locals() and M is a Mine instance.
@@ -89,29 +89,29 @@ class Need(Mixin):
         D.root_dog.value where D is a Dock and root_dog is a key in the Dock.
 
         So no need to do substitutions or shorthand
-        The hierarchy in the .mbags .dbags is indicated by '_' separated keys
+        The hierarchy in the .mine and .dock is indicated by '_' separated keys
         The Box Boxer Actor names are forbidden from having '_" as an element
         with Renam regex test.
 
     """
 
 
-    def __init__(self,  *, terms=None, mbags=None, dbags=None, strict=False, **kwa):
+    def __init__(self,  *, terms=None, mine=None, dock=None, strict=False, **kwa):
         """Initialization method for instance.
 
         Parameters:
             terms (NonStringIterable[str]): of string need expression terms, each
                 to be logically ANDed together to  form evable boolean expression.
-            mbags (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
-            dbags (None|Dock): durable bags in dock (on disc) shared by boxwork
+            mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
+            dock (None|Dock): durable bags in dock (on disc) shared by boxwork
             strict (bool): True means use strict Python syntax with no substituion
                            False means use shorthand syntax with substitution
 
         """
         super(Need, self).__init__(**kwa)
         self.terms = terms
-        self.mbags = mbags if mbags is not None else Mine()
-        self.dbags = dbags   # stub fix later when have Dock class
+        self.mine = mine if mine is not None else Mine()
+        self.dock = dock   # stub fix later when have Dock class
         self.strict = True if strict else False
 
 
@@ -119,8 +119,8 @@ class Need(Mixin):
         """Make Need instance a callable object."""
         if not self.compiled:  # not yet compiled so lazy
             self.compile()  # first time only recompile forces recompose
-        M = self.mbags  # ensure M is in locals() for eval
-        D = self.dbags  # ensure D is in locals() for eval
+        M = self.mine  # ensure M is in locals() for eval
+        D = self.dock  # ensure D is in locals() for eval
         return eval(self._code)
 
 

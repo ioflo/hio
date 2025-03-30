@@ -8,16 +8,16 @@ Provides hierarchical action support
 
 
 Syntax notes for Mine and Dock use in boxwork:
-    M mbags (Mine) memory non-durable attribute syntax
-    D dbags (Dock) durable attribute syntax
-    with locally scope variables M ref for mbags and D ref for dbags.
+    M mine (Mine) memory non-durable attribute syntax
+    D dock (Dock) durable attribute syntax
+    with locally scope variables M ref for mine and D ref for dock.
 
 
     so need syntax does not heed to "quote" paths keys into the bags
     containers Mine dict subclasses with attribute support.
 
-    M.root_dog.value  is equivalent to self.mbags["root_dog"].value or
-                                       self.mbags[("root", "dog")].value
+    M.root_dog.value  is equivalent to self.mine["root_dog"].value or
+                                       self.mine[("root", "dog")].value
 
     So need term  "M.root_dog.value > 5" should compile directly and eval
     as long as M is in the locals() and M is a Mine instance.
@@ -26,7 +26,7 @@ Syntax notes for Mine and Dock use in boxwork:
     D.root_dog.value where D is a Dock and root_dog is a key in the Dock.
 
     So no need to do substitutions or shorthand
-    The hierarchy in the .mbags .dbags is indicated by '_' separated keys
+    The hierarchy in the .mine/.dock is indicated by '_' separated keys
     The Box Boxer Actor names are forbidden from having '_" as an element
     with Renam regex test.
 

@@ -29,8 +29,8 @@ class Box(Tymee):
         see Tymee
 
     Attributes:
-        mbags (Mine): ephemeral bags in mine (in memory) shared by boxwork
-        dbags (Dock): durable bags in dock (on disc) shared by boxwork
+        mine (Mine): ephemeral bags in mine (in memory) shared by boxwork
+        dock (Dock): durable bags in dock (on disc) shared by boxwork
         over (Box | None): this box's over box instance or None
         unders (list[Box]): this box's under box instances or empty
                             zeroth entry is primary under
@@ -70,19 +70,19 @@ class Box(Tymee):
 
 
     """
-    def __init__(self, *, name='box', mbags=None, dbags=None, over=None, **kwa):
+    def __init__(self, *, name='box', mine=None, dock=None, over=None, **kwa):
         """Initialize instance.
 
         Parameters:
             name (str): unique identifier of box
-            mbags (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
-            dbags (None|Dock): durable bags in dock (on disc) shared by boxwork
+            mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
+            dock (None|Dock): durable bags in dock (on disc) shared by boxwork
             over (Box | None): this box's over box instance or None
         """
         super(Box, self).__init__(**kwa)
         self.name = name
-        self.mbags = mbags if mbags is not None else Mine()
-        self.dbags = dbags   # stub for now until create Dock class
+        self.mine = mine if mine is not None else Mine()
+        self.dock = dock   # stub for now until create Dock class
         self._pile = None  # force .trace on first access of .pile property
         self._spot = None  # zero based offset into .pile of this box
         self._trail = None  # delimited string representation of box names in .pile
@@ -214,8 +214,8 @@ class Boxer(Tymee):
         see Tymee
 
     Attributes:
-        mbags (Mine): ephemeral bags in mine (in memory) shared by boxwork
-        dbags (Dock): durable bags in dock (on disc) shared by boxwork
+        mine (Mine): ephemeral bags in mine (in memory) shared by boxwork
+        dock (Dock): durable bags in dock (on disc) shared by boxwork
         first (Box | None):  beginning box
         doer (Doer | None): doer running this boxer  (do we need this?)
         boxes (dict): all boxes mapping of (box name, box) pairs
@@ -254,14 +254,14 @@ class Boxer(Tymee):
 
 
     """
-    def __init__(self, *, name='boxer', mbags=None, dbags=None, first=None,
+    def __init__(self, *, name='boxer', mine=None, dock=None, first=None,
                  doer=None, **kwa):
         """Initialize instance.
 
         Parameters:
             name (str): unique identifier of box
-            mbags (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
-            dbags (None|Dock): durable bags in dock (on disc) shared by boxwork
+            mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
+            dock (None|Dock): durable bags in dock (on disc) shared by boxwork
             first (Box | None):  beginning box
             doer (Doer | None): Doer running this Boxer doe we need this?
 
@@ -269,8 +269,8 @@ class Boxer(Tymee):
         """
         super(Boxer, self).__init__(**kwa)
         self.name = name
-        self.mbags = mbags if mbags is not None else Mine()
-        self.dbags = dbags  # stub until create Dock class
+        self.mine = mine if mine is not None else Mine()
+        self.dock = dock  # stub until create Dock class
         self.first = first
         self.doer = doer
         self.boxes = {}
@@ -402,7 +402,7 @@ class Boxer(Tymee):
             elif over.name not in self.boxes:  # stray over box
                 self.boxes[over.name] = over  # add to boxes
 
-        box = Box(name=name, over=over, mbags=self.mbags, tymth=self.tymth)
+        box = Box(name=name, over=over, mine=self.mine, tymth=self.tymth)
         self.boxes[box.name] = box  # update box work
         if box.over is not None:  # not at top level
             box.over.unders.append(box)  # add to over.unders list
@@ -594,8 +594,8 @@ class Maker(Mixin):
     single fun or in multiple iterations making.****
 
     Attributes:
-        mbags (Mine): ephemeral bags in mine (in memory) shared by boxwork
-        dbags (Dock): durable bags in dock (on disc) shared by boxwork
+        mine (Mine): ephemeral bags in mine (in memory) shared by boxwork
+        dock (Dock): durable bags in dock (on disc) shared by boxwork
         boxer (Boxer | None): current boxer
         box (Box | None): cureent box
 
@@ -606,20 +606,20 @@ class Maker(Mixin):
         _name (str): unique identifier of instance
 
     """
-    def __init__(self, *, name='maker', mbags=None, dbags=None, **kwa):
+    def __init__(self, *, name='maker', mine=None, dock=None, **kwa):
         """Initialize instance.
 
         Parameters:
             name (str): unique identifier of instance
-            mbags (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
-            dbags (None|Dock): durable bags in dock (on disc) shared by boxwork
+            mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
+            dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
 
         """
         super(Maker, self).__init__(**kwa)
         self.name = name
-        self.mbags = mbags if mbags is not None else Mine()
-        self.dbags = dbags  # stub until create Dock class
+        self.mine = mine if mine is not None else Mine()
+        self.dock = dock  # stub until create Dock class
         self.boxer = None
         self.box = None
 
@@ -645,7 +645,7 @@ class Maker(Mixin):
 
         self._name = name
 
-    def make(self, fun, mbags=None, boxes=None):
+    def make(self, fun, mine=None, boxes=None):
         """Make box work from function fun
         Parameters:
             fun (function):  employs be, do, on, go maker functions with
@@ -659,12 +659,12 @@ class Maker(Mixin):
 
         # bags, boxes, and boxers can be referenced by fun in its nonlocal
         # enclosing scope. collections references so do not need to be global
-        mbags = mbags if mbags is not None else Mine()  # create new if not provided
+        mine = mine if mine is not None else Mine()  # create new if not provided
         boxes = boxes if boxes is not None else {}  # create new if not provided
         boxers = []  # list of made boxers
 
         # create a default boxer
-        boxer = Boxer(name='boxer', mbags=mbags, boxes=boxes)
+        boxer = Boxer(name='boxer', mine=mine, boxes=boxes)
         boxers.append(boxer)
 
         fun()
