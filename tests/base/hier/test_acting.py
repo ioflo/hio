@@ -1,6 +1,5 @@
 # -*- encoding: utf-8 -*-
-"""
-tests.base.hier.test_acting module
+"""tests.base.hier.test_acting module
 
 """
 from __future__ import annotations  # so type hints of classes get resolved later
