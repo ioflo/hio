@@ -4,6 +4,8 @@
 """
 import pytest
 
+import inspect
+
 from hio.help import Mine, Renam
 
 
@@ -39,6 +41,8 @@ def test_mine_basic():
     key = '_'.join(keys)
     assert key == 'a_b_c'
 
+    assert issubclass(Mine, dict)
+
     # test staticmethod .tokey()
     assert Mine.tokey(keys) == key == 'a_b_c'
     assert Mine.tokey('a') == 'a'  # str unchanged
@@ -66,10 +70,35 @@ def test_mine_basic():
     assert Mine.tokeys(Mine.tokey(keys)) == keys
 
     mine = Mine()  # defaults
+    assert isinstance(mine, dict)
+    assert isinstance(mine, Mine)
     assert mine == {}
 
-    assert isinstance(mine, dict)
-    assert issubclass(Mine, dict)
+    # dict methods bound and builtin are short circuted and never reach __getattr__
+    # bound since Mine overrides
+    assert inspect.ismethod(mine.get)  # since Mine overrides get
+    assert inspect.ismethod(mine.update)  # since Mine overrides get
+    # builtin since Mine does not override
+    assert inspect.isbuiltin(mine.clear)
+    assert inspect.isbuiltin(mine.copy)
+    assert inspect.isbuiltin(mine.items)
+    assert inspect.isbuiltin(mine.keys)
+    assert inspect.isbuiltin(mine.values)
+    assert inspect.isbuiltin(mine.pop)
+    assert inspect.isbuiltin(mine.popitem)
+    assert inspect.isbuiltin(mine.setdefault)
+
+
+    with pytest.raises(AttributeError):  # make bound same error readonly
+        mine.get = 5
+
+    with pytest.raises(AttributeError):
+        mine.update = 5
+
+    with pytest.raises(AttributeError):  # builtin method error readonly
+        mine.clear = 5
+
+
 
     mine['a'] = 5
     mine['a_b'] = 6

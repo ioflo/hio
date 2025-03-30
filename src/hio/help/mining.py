@@ -66,9 +66,16 @@ class Mine(dict):
 
     def __setattr__(self, k, v):
         try:
-            return self.__setitem__(k, v)
-        except Exception as ex:
-            raise AttributeError(ex.args) from ex
+            getattr(dict, k)
+        except AttributeError:
+            try:
+                return self.__setitem__(k, v)
+            except Exception as ex:
+                raise AttributeError(ex.args) from ex
+        else:
+            raise AttributeError(f"'{self.__class__.__name__}' attribute '{k}' "
+                                 f"is read only")
+
 
 
     def __getattr__(self, k):
