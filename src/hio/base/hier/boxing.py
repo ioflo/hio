@@ -307,6 +307,37 @@ class Boxer(Tymee):
     def quit(self):
         """"""
 
+
+    def resolve(self):
+        """Resolve both over box names and tract dest box names into boxes for
+        all boxes in .boxes
+
+        """
+        for name, box in self.boxes.items():
+            if isinstance(box.over, str):
+                try:
+                    over = self.boxes[over]  # resolve
+                except KeyError as ex:
+                    raise HierError(f"Unresolvable over box name={over} for"
+                                           f"box {name=}.") from ex
+                box.over = over  # resolve over as a box
+                box.over.unders.append(box)  # add box to its over.unders list
+
+            for tract in box.tracts:
+                if isinstance(tract.dest, str):
+                    try:
+                        dest = self.boxes[tract.dest]  # resolve
+                    except KeyError as ex:
+                        raise HierError(f"Unresolvable dest box={tract.dest}"
+                            f" for tract in box{name=}") from ex
+
+                    tract.dest = dest  # resolve dest as box
+
+
+
+
+
+
     def make(self, fun):
         """Make box work for this boxer from function fun
         Parameters:
