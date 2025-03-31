@@ -38,11 +38,7 @@ class Need(Mixin):
 
 
     Hidden:
-        _terms (tuple[str]): boolean expression terms.
-            ensures setter triggers lazy recompile
-        _strict (bool): ensures setter triggers lazy recompile
-        _expr (None|str): evalable boolean expression. None means recompose from
-            .terms
+        _expr (str): evalable boolean expression.
         _code (None|CodeType): compiled evalable boolean expression .expr
             None means not yet compiled from .expr
 
@@ -96,23 +92,21 @@ class Need(Mixin):
     """
 
 
-    def __init__(self,  *, terms=None, mine=None, dock=None, strict=False, **kwa):
+    def __init__(self,  *, expr='True', mine=None, dock=None, **kwa):
         """Initialization method for instance.
 
         Parameters:
-            terms (NonStringIterable[str]): of string need expression terms, each
-                to be logically ANDed together to  form evable boolean expression.
+            expr (str): evalable boolean expression.
+                        if empty or None then use default = 'True'
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
-            strict (bool): True means use strict Python syntax with no substituion
-                           False means use shorthand syntax with substitution
+
 
         """
         super(Need, self).__init__(**kwa)
-        self.terms = terms
+        self.expr = expr
         self.mine = mine if mine is not None else Mine()
         self.dock = dock   # stub fix later when have Dock class
-        self.strict = True if strict else False
 
 
     def __call__(self):
@@ -125,62 +119,25 @@ class Need(Mixin):
 
 
     @property
-    def terms(self):
-        """Property getter for ._terms. Returns tuple
+    def expr(self):
+        """Property getter for ._expr
 
         Returns:
-            terms (tuple[str]): of string need expression terms, each to be
-                logically ANDed together to form evable boolean expression.
+            expr (str): evalable boolean expression.
         """
-        return self._terms
+        return self._expr
 
 
-    @terms.setter
-    def terms(self, terms=None):
-        """Property setter for ._terms
+    @expr.setter
+    def expr(self, expr=None):
+        """Property setter for ._expr
 
         Parameters:
-            terms (NonStringIterable[str]): of string need expression terms, each
-                to be logically ANDed together to  form evable boolean expression.
+            expr (str): evalable boolean expression.
         """
-        self._terms = tuple((term for term in terms)) if terms is not None else ()
-        self._expr = None  # force lazy recomposition
+        self._expr = expr if expr else 'True'
         self._code = None  # force lazy recompilation
 
-
-    @property
-    def strict(self):
-        """Property getter for ._strict.
-
-        Returns:
-            strict (bool): True means use strict Python syntax with no substituion
-                           False means use shorthand syntax with substitution
-        """
-        return self._strict
-
-
-    @strict.setter
-    def strict(self, strict=False):
-        """Property setter for ._strict
-
-        Parameters:
-            strict (bool): True means use strict Python syntax with no substituion
-                           False means use shorthand syntax with substitution
-        """
-        self._strict = True if strict else False
-        self._expr = None  # force lazy recomposition
-        self._code = None  # force lazy recompilation
-
-
-    @property
-    def composed(self):
-        """Property composed
-
-        Returns:
-            composed (bool): True means ._expr holds composed .terms
-                             False means not yet composed
-        """
-        return True if self._expr is not None else False
 
     @property
     def compiled(self):
@@ -193,23 +150,11 @@ class Need(Mixin):
         return True if self._code is not None else False
 
 
-    def compose(self):
-        """Compile .terms into evalable boolean expression str .expr to be
-        compiled into ._code code object.
-        """
-        if not self.terms:  # default is to eval to True
-            self._expr = 'True'  # default need to fix
-            return
-
-
     def compile(self):
         """Compile evable boolean expression str ._expr into compiled code
         object ._code to be evaluated at run time.
         Because code objects are not pickleable the compilation must happen
         at prep (enter) time not init time.
         """
-        if not self.composed:
-            self.compose()
-
-        self._code = compile(self._expr, '<string>', 'eval')
+        self._code = compile(self.expr, '<string>', 'eval')
 

@@ -16,9 +16,7 @@ def test_need_basic():
 
     need = Need()
     assert need.mine == Mine()
-    assert need.terms == tuple()
-    assert need.strict == False
-    assert need.composed == False
+    assert need.expr == 'True'
     assert need.compiled == False
 
     assert need() == True  # lazy compose, compile and eval
@@ -26,12 +24,10 @@ def test_need_basic():
     mine = Mine()
     need = Need(mine=mine)
     assert need.mine == mine
-    assert need.terms == tuple()
-    assert need.strict == False
-    assert need.composed == False
+    assert need.expr == 'True'
     assert need.compiled == False
 
-    assert need() == True  # lazy compose, compile and eval
+    assert need() == True  # lazily compile and then eval
 
 
     """Done Test"""
