@@ -6,9 +6,10 @@ from __future__ import annotations  # so type hints of classes get resolved late
 
 import pytest
 
-from hio.base.hier import ActBase, actify, Act, Tract, Need
+from hio import Mixin, HierError
+from hio.base.hier import ActBase, actify, Act, Tract, Need, Box, Bag
 
-
+from hio.help import Mine
 
 def test_act_basic():
     """Test Act class"""
@@ -23,8 +24,7 @@ def test_act_basic():
     assert act.name == "Act0"
     assert act.Index == 1
     assert act.Names[act.name] == act
-    assert act.dest == None
-    assert act.need == None
+    assert act.stuff == None
 
     assert not act()
 
@@ -48,7 +48,23 @@ def test_tract_basic():
     assert isinstance(tract.need, Need)
     assert tract.need()
 
-    assert not tract()  # since not created default .dest
+    with pytest.raises(HierError):
+        assert not tract()  # since default .dest not yet resolved
+
+    mine = Mine()
+    mine.cycle = Bag(value=3)
+    box = Box(mine=Mine)
+    need = Need(expr='M.cycle.value >= 3', mine=mine)
+    tract = Tract(dest=box, need=need)
+    assert not tract.need.compiled
+
+    dest = tract()
+    assert dest == box
+    assert tract.need.compiled
+
+    mine.cycle.value = 1
+    assert not tract()
+
 
     """Done Test"""
 

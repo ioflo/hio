@@ -9,12 +9,11 @@ Provides hierarchical box work support
 from __future__ import annotations  # so type hints of classes get resolved later
 
 
-
-
-
 from ..tyming import Tymee
 from ...hioing import Mixin, HierError
 from .hiering import WorkDom, ActBase
+from .acting import Act, Tract
+from .needing import Need
 from ...help import modify, Mine, Renam
 
 
@@ -414,6 +413,62 @@ class Boxer(Tymee):
         return box
 
 
+    def go(self, dest: None|str=None, expr: None |str=None,
+                 *, mods: WorkDom|None=None, **kwa)->Tract:
+        """Make a Tract and add it to the tracts context of the current box.
+
+        Returns:
+            tract (Tract):  newly created tract
+
+        Parameters:
+            dest (None|str|Box): destination box its name for transition.
+                When None use next box if any
+                When str then resolve name to box if possible else save for
+                    later resolution
+                When Box instance that already resolved
+
+            expr (None|str): evabable boolean expression for transition to dest.
+                When None then conditional always True. Always transit.
+                When str then evalable python boolean expression to be
+                    resolved into a Need instance for eval at run time
+
+            mods (None | WorkDom):  state variables used to construct box work
+                None is just to allow definition as keyword arg. Assumes in
+                actual usage that mods is always provided as WorkDom instance of
+                form:
+
+                    box (Box|None): current box in box work. None if not yet a box
+                    over (Box|None): current over Box in box work. None if top level
+                    bxpre (str): default name prefix used to generate unique box
+                        name relative to boxer.boxes
+                    bxidx (int): default box index used to generate unique box
+                        name relative to boxer.boxes
+
+
+
+        """
+        m = mods  # alias more compact
+        defaults = dict(box=None, over=None, bxpre='box', bxidx=0)
+        for k, v in defaults.items():
+            if k not in m:
+                m[k] = v
+
+        if not dest or dest in ('next', 'Next', 'NEXT'):  # empty or None or next
+            if m.box._next:
+                dest = m.box._next
+            else:
+                dest = 'next'  # to be resolved later
+        elif isinstance(dest, str):
+            if not Renam.match(dest):
+                raise HierError(f"Invalid {dest=}.")
+            if dest in self.boxes:
+                dest = self.boxes[dest]
+
+        need = Need(expr=expr, mine=self.mine, dock=self.dock)
+
+        tract = Tract(dest=dest, need=need)
+        return tract
+
 
     def do(self, deed: None|str=None, *, mods: WorkDom|None=None)->str:
         """Make an act and add to box work
@@ -457,58 +512,6 @@ class Boxer(Tymee):
 
         return deed
 
-
-    def go(self, dest: None|str=None, need=None,
-                 *, mods: WorkDom|None=None, **kwa)->ActBase:
-        """Make a Tractor act and add it to the transit (tracts) context of
-        the current box. Return the
-
-        Parameters:
-            dest (None|str|Box): destination box its name for transition.
-                When None use next box if any
-                When str then resolve name to box if possible else save for
-                    later resolution
-                When Box instance that already resolved
-
-            need (None|str|Need): conditional expression for transition to dest.
-                When None then conditional always True. Always transit.
-                When str then evalable python boolean expression to be
-                    resolved into a Need instance with both raw str and
-                    compiled version either of which may be evaluated at run time.
-                When Need instance then already resolved and compiled to be
-                    evaluated at run time
-
-            mods (None | WorkDom):  state variables used to construct box work
-                None is just to allow definition as keyword arg. Assumes in
-                actual usage that mods is always provided as WorkDom instance of
-                form:
-
-                    box (Box|None): current box in box work. None if not yet a box
-                    over (Box|None): current over Box in box work. None if top level
-                    bxpre (str): default name prefix used to generate unique box
-                        name relative to boxer.boxes
-                    bxidx (int): default box index used to generate unique box
-                        name relative to boxer.boxes
-
-
-
-        """
-        m = mods  # alias more compact
-        defaults = dict(box=None, over=None, bxpre='box', bxidx=0)
-        for k, v in defaults.items():
-            if k not in m:
-                m[k] = v
-
-        if not dest:  # empty or None
-            if dest is None:
-                pass
-
-        if not Renam.match(dest):
-            raise HierError(f"Invalid {dest=}.")
-
-
-
-        return dest
 
     @staticmethod
     def exen(near,far):
@@ -588,7 +591,7 @@ class Boxer(Tymee):
 class Maker(Mixin):
     """Maker Class makes boxworks of Boxer and Box instances.
     Holds reference to in-memory mine shared by all boxes in boxwork
-    Holds reference to current Boxer and Boxe being built
+    Holds reference to current Boxer and Box being built
 
     ****Placeholder for now. Future to be able to make multiple boxers from
     single fun or in multiple iterations making.****

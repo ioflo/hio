@@ -14,7 +14,7 @@ from ...hioing import Mixin, HierError
 from ...help import Mine, Renam
 from .hiering import ActBase, register
 from .needing import Need
-
+from . import boxing
 
 
 @register
@@ -55,7 +55,7 @@ class Act(ActBase):
         register(Act)
 
 
-    def __init__(self, dest=None, need=None, **kwa):
+    def __init__(self, stuff=None, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:
@@ -65,19 +65,12 @@ class Act(ActBase):
                 set to empty dict.
 
         Parameters:
-            dest (None|str|Box): destination Box for this transition.
-                When None then resolve later to next box of current box
-                When str is box name then resolve to box with that name
-                When Box instance then use directly
-            need (None|str|Need): transition condition to be evaluated
-                When None then always evaluates to True
-                When str = bool expression then create Need from expression
-                When Need instance then use directly
+            stuff (None): TBD
+
 
         """
         super(Act, self).__init__(**kwa)
-        self.dest = dest
-        self.need = need
+        self.stuff = stuff
 
 
 
@@ -156,6 +149,8 @@ class Tract(ActBase):
     def act(self, **iops):
         """Act called by Actor. Should override in subclass."""
         if self.need():
+            if not isinstance(self.dest, boxing.Box):
+                raise HierError(f"Unresolved dest={self.dest}")
             return self.dest
         else:
             return None
