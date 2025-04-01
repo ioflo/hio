@@ -196,7 +196,7 @@ def test_boxer_basic():
 
 def test_boxer_make():
     """Test make method of Boxer and modify wrapper"""
-    def fun(bx, do):
+    def fun(bx, on, go, do, *pa):
         bx(name='top')
         bx(over='top')
         bx()
@@ -218,9 +218,50 @@ def test_boxer_make():
     assert mods["over"].name == 'box2'
     assert mods['box'].name == 'box3'
 
+    for name, box in boxer.boxes.items():  # test resolve
+        assert isinstance(box.over, Box) or box.over is None
+        for tract in box.tracts:
+            assert isinstance(tract.dest, Box)
+
+
     """Done Test"""
 
+def test_boxer_make_go():
+    """Test make method of Boxer and modify wrapper with bx and go verbs
+    """
+    def fun(bx, on, go, do, *pa):
+        bx(name='top')
+        bx(over='top')
+        go("next")
+        bx(over="")  #same as prior
+        go()
+        b = bx(name='mow', over=None)
+        bx(name='leg0', over=b)
+        go()
+        bx(name='leg1', over="")
+        go()
+        bx(name='leg2', over="")
+        go("top")
 
+
+
+    boxer = Boxer()
+    assert boxer.boxes == {}
+    mods = boxer.make(fun)
+    assert boxer.boxes
+    assert len(boxer.boxes) == 7
+    assert list(boxer.boxes) == ['top', 'box0', 'box1', 'mow', 'leg0', 'leg1', 'leg2']
+    assert str(boxer.boxes['top']) == 'Box(<top>box0)'
+    assert str(boxer.boxes['mow']) == 'Box(<mow>leg0)'
+
+    for name, box in boxer.boxes.items():  # test resolve
+        assert isinstance(box.over, Box) or box.over is None
+        for tract in box.tracts:
+            assert isinstance(tract.dest, Box)
+
+
+
+    """Done Test"""
 
 def test_maker_basic():
     """Basic test Maker class"""
@@ -540,6 +581,7 @@ if __name__ == "__main__":
     test_boxer_exen()
     test_boxer_basic()
     test_boxer_make()
+    test_boxer_make_go()
     test_maker_basic()
     test_concept_bx_nonlocal()
     test_concept_bx_global()

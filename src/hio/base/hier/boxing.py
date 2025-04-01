@@ -325,11 +325,17 @@ class Boxer(Tymee):
 
             for tract in box.tracts:
                 if isinstance(tract.dest, str):
-                    try:
-                        dest = self.boxes[tract.dest]  # resolve
-                    except KeyError as ex:
-                        raise HierError(f"Unresolvable dest box={tract.dest}"
-                            f" for tract in box{name=}") from ex
+                    if tract.dest == 'next':  # next
+                        if not box._next:
+                            HierError(f"Unresolvable dest 'next' for tract in "
+                                      f"box{name=}")
+                        dest = box._next
+                    else:
+                        try:
+                            dest = self.boxes[tract.dest]  # resolve
+                        except KeyError as ex:
+                            raise HierError(f"Unresolvable dest box={tract.dest}"
+                                f" for tract in box{name=}") from ex
 
                     tract.dest = dest  # resolve dest as box
 
@@ -360,9 +366,11 @@ class Boxer(Tymee):
         """
         works = WorkDom()  # standard defaults
         bx = modify(mods=works)(self.bx)
+        on = modify(mods=works)(self.on)
+        go = modify(mods=works)(self.go)
         do = modify(mods=works)(self.do)
-        fun(bx=bx, do=do)  # calling fun will build boxer.boxes
-
+        fun(bx=bx, on=on, go=go, do=do)  # calling fun will build boxer.boxes
+        self.resolve()
         return works  # for debugging analysis
 
 
@@ -399,10 +407,6 @@ class Boxer(Tymee):
 
         """
         m = mods  # alias more compact
-        defaults = dict(box=None, over=None, bxpre='box', bxidx=0)
-        for k, v in defaults.items():
-            if k not in m:
-                m[k] = v
 
         if not name:  # empty or None
             if name is None:
@@ -444,7 +448,70 @@ class Boxer(Tymee):
         return box
 
 
-    def go(self, dest: None|str=None, expr: None |str=None,
+    def on(self, cond: None|str=None, key: None|str=None, expr: None|str=None,
+                 *, mods: WorkDom|None=None, **kwa)->Need:
+        """Make a special Need and return it.
+
+        Returns:
+            need (Need):  newly created special need
+
+        Parameters:
+            cond (None|str): special need condition to be satisfied. This is
+                resolved in evalable boolean expression.
+                When None then default condition
+                When str then special need condition to be resolved into evalable
+                boolean expression
+
+            key (None|str): key to mine item ref for special need cond when
+                applicable, i.e. cond is with respect to mine at key that is
+                not predetermined solely by cond. Otherwise None.
+                When None use default for cond
+                When str then resolve key to mine at key
+
+
+            expr (None|str): evalable boolean expression as additional constraint(s)
+                ANDed with result of cond.
+                When None or empty then ignore
+                When str then evalable python boolean expression to be ANDed with
+                    the result of cond resolution.
+
+            mods (None | WorkDom):  state variables used to construct box work
+                None is just to allow definition as keyword arg. Assumes in
+                actual usage that mods is always provided as WorkDom instance of
+                form:
+
+                    box (Box|None): current box in box work. None if not yet a box
+                    over (Box|None): current over Box in box work. None if top level
+                    bxpre (str): default name prefix used to generate unique box
+                        name relative to boxer.boxes
+                    bxidx (int): default box index used to generate unique box
+                        name relative to boxer.boxes
+
+
+
+        """
+        m = mods  # alias more compact
+
+        if not cond:  # default cond
+            cond = "updated"
+
+        if cond == "updated":
+            pass
+
+        _expr = "True"
+
+        if expr:
+            _expr = "(" + _expr + ") and (" + expr + ")"
+
+        need = Need(expr=_expr, mine=self.mine, dock=self.dock)
+
+
+        return need
+
+
+
+
+    def go(self, dest: None|str=None, expr: None|str=None,
                  *, mods: WorkDom|None=None, **kwa)->Tract:
         """Make a Tract and add it to the tracts context of the current box.
 
@@ -458,7 +525,7 @@ class Boxer(Tymee):
                     later resolution
                 When Box instance that already resolved
 
-            expr (None|str): evabable boolean expression for transition to dest.
+            expr (None|str): evalable boolean expression for transition to dest.
                 When None then conditional always True. Always transit.
                 When str then evalable python boolean expression to be
                     resolved into a Need instance for eval at run time
@@ -479,10 +546,6 @@ class Boxer(Tymee):
 
         """
         m = mods  # alias more compact
-        defaults = dict(box=None, over=None, bxpre='box', bxidx=0)
-        for k, v in defaults.items():
-            if k not in m:
-                m[k] = v
 
         if not dest or dest in ('next', 'Next', 'NEXT'):  # empty or None or next
             if m.box._next:
@@ -498,7 +561,9 @@ class Boxer(Tymee):
         need = Need(expr=expr, mine=self.mine, dock=self.dock)
 
         tract = Tract(dest=dest, need=need)
+        m.box.tracts.append(tract)
         return tract
+
 
 
     def do(self, deed: None|str=None, *, mods: WorkDom|None=None)->str:
@@ -524,10 +589,6 @@ class Boxer(Tymee):
 
         """
         m = mods  # alias more compact
-        defaults = dict(box=None, over=None, bxpre='box', bxidx=0)
-        for k, v in defaults.items():
-            if k not in m:
-                m[k] = v
 
         if not deed:  # empty or None
             if deed is None:
