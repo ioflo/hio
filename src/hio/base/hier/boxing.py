@@ -229,28 +229,77 @@ class Boxer(Tymee):
         _name (str): unique identifier of instance
 
 
-    Order of Execution of Contexts:
-        time[k=0]  First Time
-            precur preacts (marks)
-            benter beacts
-            enter enacts
-            recur reacts
-            while not done:
-                time[k=k+1]  Next Time
-                    precur preacts (marks)
-                    transit
-                        if tract in tracts is True and benter beacts new pile is True:
-                            segue to new pile
-                                old pile:
-                                    exit exacts
-                                    rexit rexacts
-                                new pile:
-                                    renter renacts
-                                    enter enacts
-                    else:
-                        recur reacts (current pile)
-            exit exacts
+    Cycle Context Order
 
+    Init:
+
+    all tymes in bags are None from init
+    all tyme in marks are None
+
+
+
+    tyme = start tyme (default ) 0.0
+    Prep:
+
+        First box assigned to active box
+        actives = active box.pile
+        .renters is empty
+        .enters == actives
+        exits is empty
+        rexits is empty
+
+        for each box in enters top down:
+            precond:
+                if not all true then done with boxwork
+                    return from Prep (used for .done True done False not done)
+
+        for box in renters top down: (empty)
+            remark renter mark subcontext
+            renter
+        for box in enters top down: (not empty)
+            emark enter mark subcontext  (mark tyme set to bag._tyme which is None)
+            enter
+        Check for done complete stop of boxwork boxer.want stop desire stop
+        for box in actives top down:
+            recur
+            after
+            if transit need is true:  (short circuit recur of lower level boxes)
+                compute renters enters exits rexits. save box.renters and box.enters
+                for each box in enters (top down):
+                    precond:
+                        if not all true then do not proceed with transit return
+
+                for box in exits bottom up:
+                    exits
+                for box in rexits bottom up:
+                    rexits
+                set new .active box
+                return from prep False  (equiv of yield)
+
+
+    tyme increment
+    Run:
+        for box in renters: (may be empty)
+            remark renter mark subcontext
+            renter
+        for box in enters: (may be empty)
+            emark enter mark subcontext  (mark tyme set to bag._tyme which is None)
+            enter
+        Check for done complete stop of boxwork boxer.want stop desire stop
+        for box in actives top down:
+            recur
+            after
+            if transit need is true:   (short circuit recur of lower level boxes)
+                compute renters enters exits rexits,.
+                    precond:
+                        if not all true then do not proceed with transit return
+
+                for box in exits bottom up:
+                    exit
+                for box in rexits bottom up:
+                    rexit
+                set new .active box
+                return from run False  (equiv of yield)
 
     """
     def __init__(self, *, name='boxer', mine=None, dock=None, first=None,
@@ -451,6 +500,7 @@ class Boxer(Tymee):
     def on(self, cond: None|str=None, key: None|str=None, expr: None|str=None,
                  *, mods: WorkDom|None=None, **kwa)->Need:
         """Make a special Need and return it.
+        Used for special needs for tracts and also for beacts (before enter)
 
         Returns:
             need (Need):  newly created special need
@@ -458,7 +508,7 @@ class Boxer(Tymee):
         Parameters:
             cond (None|str): special need condition to be satisfied. This is
                 resolved in evalable boolean expression.
-                When None then default condition
+                When None then ignore
                 When str then special need condition to be resolved into evalable
                 boolean expression
 
@@ -492,16 +542,27 @@ class Boxer(Tymee):
         """
         m = mods  # alias more compact
 
-        if not cond:  # default cond
-            cond = "updated"
+        _expr = None
 
-        if cond == "updated":
-            pass
+        if not cond:
+            if not expr:
+                cond = "updated"  # default
+            else:  # no cond but with expr
+                _expr = expr  # use expr instead of resolved cond
+                expr = None  # can't have both _expr and expr same below
 
-        _expr = "True"
+        if not _expr:  # cond above so need to resolve cond into _expr
+            if cond == "updated":
+                _expr = "True"
+            else:
+                pass  # raise error since must have valid _expr after here
 
-        if expr:
+        # now _expr is valid
+
+        if expr:  # both resolved cond as _expr and expr so AND together
             _expr = "(" + _expr + ") and (" + expr + ")"
+
+
 
         need = Need(expr=_expr, mine=self.mine, dock=self.dock)
 

@@ -755,7 +755,7 @@ class ReDoer(Doer):
 
         yield the current .tock
         accepts the current tyme
-        returns the .done
+        return value is used for .done  (true done false not done but ended)
 
         Parameters:
             tyme is initial output of send fed to do yield, Doist feeds its .tyme

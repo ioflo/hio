@@ -17,6 +17,7 @@ from .needing import Need
 from . import boxing
 
 
+
 @register
 class Act(ActBase):
     """Act is generic subclass of ActBase meant for do verb acts.
