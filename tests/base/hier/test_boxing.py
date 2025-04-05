@@ -41,10 +41,10 @@ def test_box_basic():
     assert box.preacts == []
     assert box.remacts == []
     assert box.renacts == []
-    assert box.emacts == []
+    assert box.enmacts == []
     assert box.enacts == []
     assert box.reacts == []
-    assert box.lacts == []
+    assert box.tacts == []
     assert box.tracts == []
     assert box.exacts == []
     assert box.rexacts == []
@@ -181,17 +181,16 @@ def test_boxer_basic():
     assert boxer.boxes == {}
     assert boxer.first == None
     assert boxer.box == None
-    assert boxer.pile == []
     assert boxer.renters == []
     assert boxer.enters == []
 
 
-    prep = boxer.prep  # make alias
-    prep()
-    run = boxer.run
-    run()
-    end = boxer.end
-    end()
+    #begin = boxer.begin  # make alias
+    #begin()
+    #run = boxer.run
+    #run()
+    #end = boxer.end
+    #end()
 
 
     with pytest.raises(hioing.HierError):
@@ -216,7 +215,10 @@ def test_boxer_make():
 
     boxer = Boxer()
     assert boxer.boxes == {}
+    boxer.first = 'top'
     mods = boxer.make(fun)
+    assert isinstance(boxer.first, Box)
+    assert boxer.first == boxer.boxes['top']
     assert boxer.boxes
     assert len(boxer.boxes) == 5
     assert list(boxer.boxes) == ['top', 'box0', 'box1', 'box2', 'box3']

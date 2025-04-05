@@ -100,10 +100,13 @@ class Tract(ActBase):
                 subclass specific instance default names.
 
 
-
     Inherited Properties:
         name (str): unique name string of instance
         iops (dict): input-output-parameters for .act
+
+    Attributes:
+        dest (Box): destination Box for this transition.
+        need (Need): transition condition to be evaluated
 
     Hidden
         ._name (str|None): unique name of instance

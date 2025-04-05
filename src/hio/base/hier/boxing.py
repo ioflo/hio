@@ -13,6 +13,7 @@ from ..tyming import Tymee
 from ...hioing import Mixin, HierError
 from .hiering import WorkDom, ActBase
 from .acting import Act, Tract
+from .bagging import Bag
 from .needing import Need
 from ...help import modify, Mine, Renam
 
@@ -34,13 +35,13 @@ class Box(Tymee):
         unders (list[Box]): this box's under box instances or empty
                             zeroth entry is primary under
 
-        preacts (list[act]): precond (pre-conditions for entry) context acts
-        remacts (list[act]): remark renter mark subcontext acts
+        preacts (list[act]): precon (pre-conditions for entry) context acts
+        remacts (list[act]): remark re-enter mark subcontext acts
         renacts (list[act]): renter (re-enter) context acts
-        emacts (list[act]): emark enter mark subcontext acts
+        enmacts (list[act]): enmark enter mark subcontext acts
         enacts (list[act]):  enter context acts
         reacts (list[act]): recur context acts
-        lacts (list[act]): last context acts
+        tacts (list[act]): tail context acts
         tracts (list[act]): transit context acts
         exacts (list[act]): exit context acts
         rexacts (list[act]): rexit (re-exit) context acts
@@ -91,13 +92,13 @@ class Box(Tymee):
         self.unders = []  # list of under boxes,
 
         # acts by contexts
-        self.preacts = []  # precond context list of pre-entry acts
-        self.remacts = []  # renter mark subcontext list of re-mark acts
+        self.preacts = []  # precon context list of pre-entry acts
+        self.remacts = []  # re-enter mark subcontext list of re-mark acts
         self.renacts = []  # renter context list of re-enter acts
-        self.emacts = []  # enter mark subcontext list of e-mark acts
+        self.enmacts = []  # enter mark subcontext list of en-mark acts
         self.enacts = []  # enter context list of enter acts
         self.reacts = []  # recur context list of recurring acts
-        self.lacts = []  # last context list of last acts
+        self.tacts = []  # tail context list of trailing acts
         self.tracts = []  # transit context list of transition acts
         self.exacts = []  # exit context list of exit acts
         self.rexacts = []  # rexit context list of re-exit acts
@@ -222,10 +223,9 @@ class Boxer(Tymee):
         doer (Doer | None): doer running this boxer  (do we need this?)
         boxes (dict): all boxes mapping of (box name, box) pairs
         first (Box | None):  beginning box
-        box (Box | None):  active box in pile
-        pile (list[Box]): active pile of boxes
-        renters (list[Box]): boxes to re-enter on this prep/run
-        enters (list[Box]): boxes to enter on this prep/run
+        box (Box | None):  active box
+        renters (list[Box]): boxes to re-enter on this run
+        enters (list[Box]): boxes to enter on this begin/run
 
     Properties:
         name (str): unique identifier of instance
@@ -244,7 +244,7 @@ class Boxer(Tymee):
 
 
     tyme = start tyme (default ) 0.0
-    Prep:
+    Begin:
 
         First box assigned to active box
         actives = active box.pile
@@ -256,22 +256,23 @@ class Boxer(Tymee):
         for each box in enters top down:
             precond:
                 if not all true then done with boxwork
-                    return from Prep (used for .done True done False not done)
+                    End
 
         for box in renters top down: (empty)
             remark renter mark subcontext
             renter
         for box in enters top down: (not empty)
-            emark enter mark subcontext  (mark tyme set to bag._tyme which is None)
+            enmark enter mark subcontext  (mark tyme set to bag._tyme which is None)
             enter
-        Check for done complete stop of boxwork boxer.want stop desire stop
+        If complete:
+            End boxwork boxer.want stop desire stop
         for box in actives top down:
             recur
-            after
+            tail
             if transit need is true:  (short circuit recur of lower level boxes)
                 compute renters enters exits rexits. save box.renters and box.enters
                 for each box in enters (top down):
-                    precond:
+                    precon:
                         if not all true then do not proceed with transit return
 
                 for box in exits bottom up:
@@ -279,7 +280,8 @@ class Boxer(Tymee):
                 for box in rexits bottom up:
                     rexits
                 set new .active box
-                return from prep False  (equiv of yield)
+                break
+        return from prep True == completed begin  (or yield if generator)
 
 
     tyme increment
@@ -288,15 +290,16 @@ class Boxer(Tymee):
             remark renter mark subcontext
             renter
         for box in enters: (may be empty)
-            emark enter mark subcontext  (mark tyme set to bag._tyme which is None)
+            enmark enter mark subcontext  (mark tyme set to bag._tyme which is None)
             enter
-        Check for done complete stop of boxwork boxer.want stop desire stop
+        If complete:
+            End boxwork boxer.want stop desire stop
         for box in actives top down:
             recur
-            after
+            tail
             if transit need is true:   (short circuit recur of lower level boxes)
                 compute renters enters exits rexits,.
-                    precond:
+                    precon:
                         if not all true then do not proceed with transit return
 
                 for box in exits bottom up:
@@ -304,7 +307,8 @@ class Boxer(Tymee):
                 for box in rexits bottom up:
                     rexit
                 set new .active box
-                return from run False  (equiv of yield)
+                break
+        return from run False == not done continue  (or if generator yield)
 
     """
     def __init__(self, *, name='boxer', mine=None, dock=None, doer=None, **kwa):
@@ -326,10 +330,9 @@ class Boxer(Tymee):
 
         self.boxes = {}
         self.first = None  # box to start in
-        self.box = None  # current active box in active pile
-        self.pile = []  # current active pile
-        self.renters = []  # list of re-enter boxes for this prep/run
-        self.enters = []  # list of enter boxes for this prep/run
+        self.box = None  # current active box  whose pile is active pile
+        self.renters = []  # list of re-enter boxes for this run
+        self.enters = []  # list of enter boxes for this begin/run
 
 
     @property
@@ -354,17 +357,163 @@ class Boxer(Tymee):
         self._name = name
 
 
-    def prep(self):
+    def begin(self):
         """Prepare and execute first pass
         """
+        if not self.first:
+            self.first = self.boxes[0]  # first box in boxes is default first
+        self.box = self.first
+        self.renters = []  # first pass no rentry of any boxes
+        self.enters = self.box.pile
+        if not self.precon():  # uses .enters preconditions for entry not satisfied
+            # do end stuff since no entry yet then no exit
+            return False  # signal end beginning did not complete
+
+        #self.renter()  # uses saved .renters
+        #self.renters = []  # re-entry completed
+        self.enter()  # uses saved .enters to en-mark and enter
+        self.enters = []  # entry completed
+        # check for End here if so .end()
+        for box in self.box.pile:
+            for react in box.reacts:   # recur context top down
+                react()
+            for tact in box.tacts:   # trail context top down
+                tact()
+            if self.end():  # exits all active boxes
+                return True  # beginning completed already
+
+            for tract in box.tracts:  # transit context top down
+                if tract():  # transition condition satisfied
+                    exits, enters, renters, rexits = self.exen(box, tract.dest)
+                    if not self.precon(enters):  # transit not satisfied
+                        continue  # keep trying
+                    self.exit(exits)  # exit bottom up
+                    self.rexit(rexits)  # rexit bottom up
+                    self.renters = renters  # save for next pass
+                    self.enters = enters  # save for next pass
+                    self.box = tract.dest  # set new active box
+                    break
+
+        return True  # successfully completed beginning
+
 
     def run(self):
         """Execute another pass
         """
+        self.renter()  # uses saved .renters to re-mark and re-enter
+        self.renters = []  # re-entry completed so make empty
+        self.enter()  # uses saved .enters to en-mark and enter
+        self.enters = []  # entry completed so make empty
+
+        for box in self.box.pile:
+            for react in box.reacts:   # recur context top down
+                react()
+            for tact in box.tacts:   # trail context top down
+                tact()
+            if self.end():  # exits all active boxes
+                return True  # done
+
+            for tract in box.tracts:  # transit context top down
+                if tract():  # transition condition satisfied
+                    exits, enters, renters, rexits = self.exen(box, tract.dest)
+                    if not self.precon(enters):  # transit not satisfied
+                        continue  # keep trying
+                    self.exit(exits)  # exit bottom up
+                    self.rexit(rexits)  # rexit bottom up
+                    self.renters = renters  # save for next pass
+                    self.enters = enters  # save for next pass
+                    self.box = tract.dest  # set new active box
+                    break
+
+        return False  # continue running not done
+
 
     def end(self):
-        """End execution
+        """Check for desire to end execution and if so then exit all active boxes.
+        End condition if bag alue at mine._boxer_name_end.value == True
+
+        Returns:
+            end (bool): True means end condition satisfied and active boxes exited.
+                        False means not end nothing done
         """
+        keys = ("", self.name, "end")  # _boxername_end
+        if keys not in self.mine:
+            self.mine[keys] = Bag()  # create bag at end default value = None
+
+        if self.mine[keys].value:
+            self.exit(self.box.pile)  # exit all active boxes
+            return True
+        return False
+
+
+    def precon(self, enters=None):
+        """Evaluate preconditions for entry of boxes in enters in top down order
+
+        Parameters:
+            enters (None|list[Box]): boxes to be entered if precons are satisfied
+                                default when None is .enters
+
+        Returns:
+            met (bool): True means all preconditions are satisfied for enters.
+                        False otherwise
+                    When no preconditions then returns True.
+
+        """
+        enters = enters if enters is not None else self.enters
+        met = True
+        for box in self.enters:
+            for preact in box.preacts:
+                if not preact():
+                    met = False
+                    break
+            if not met:
+                break
+        return met
+
+
+    def renter(self):
+        """Action re-mark (remacts) and re-enter (renacts) acts of boxes in
+        .renters in top down order
+        """
+        for box in self.renters:
+            for remact in box.remacts:
+                remact()
+            for renact in box.renacts:
+                renact()
+
+
+    def enter(self):
+        """Action e-mark (emacts) and enter (enacts) acts of boxes in .enters
+        in top down order
+        """
+        for box in self.enters:
+            for enmact in box.enmacts:
+                enmact()
+            for enact in box.enacts:
+                enact()
+
+
+    def exit(self, exits):
+        """Action exacts of boxes in exits
+
+        Parameters:
+            exits (None|list[Box]): boxes to be exited in bottom up order
+
+        """
+        for box in exits:
+            for exact in box.exact:
+                exact()
+
+
+    def rexit(self, rexits):
+        """Action rexacts of boxes in rexits
+
+        Parameters:
+            rexits (None|list[Box]): boxes to be re-exited in bottom up order
+        """
+        for box in rexits:
+            for rexact in box.rexact:
+                rexact()
 
 
     def resolve(self):
@@ -397,6 +546,13 @@ class Boxer(Tymee):
                                 f" for tract in box{name=}") from ex
 
                     tract.dest = dest  # resolve dest as box
+
+        if isinstance(self.first, str):  # resolve first box
+            try:
+                self.first = self.boxes[self.first]  # resolve
+            except KeyError as ex:
+                raise HierError(f"Unresolvable over box name={self.first} for"
+                                       f"boxer {self.name}.") from ex
 
 
     def make(self, fun):
