@@ -34,7 +34,6 @@ class Box(Tymee):
         unders (list[Box]): this box's under box instances or empty
                             zeroth entry is primary under
 
-
         preacts (list[act]): precond (pre-conditions for entry) context acts
         remacts (list[act]): remark renter mark subcontext acts
         renacts (list[act]): renter (re-enter) context acts
@@ -220,12 +219,13 @@ class Boxer(Tymee):
     Attributes:
         mine (Mine): ephemeral bags in mine (in memory) shared by boxwork
         dock (Dock): durable bags in dock (on disc) shared by boxwork
-        first (Box | None):  beginning box
         doer (Doer | None): doer running this boxer  (do we need this?)
         boxes (dict): all boxes mapping of (box name, box) pairs
-
-        pile (list[Box]): active pile of boxes
+        first (Box | None):  beginning box
         box (Box | None):  active box in pile
+        pile (list[Box]): active pile of boxes
+        renters (list[Box]): boxes to re-enter on this prep/run
+        enters (list[Box]): boxes to enter on this prep/run
 
     Properties:
         name (str): unique identifier of instance
@@ -307,15 +307,13 @@ class Boxer(Tymee):
                 return from run False  (equiv of yield)
 
     """
-    def __init__(self, *, name='boxer', mine=None, dock=None, first=None,
-                 doer=None, **kwa):
+    def __init__(self, *, name='boxer', mine=None, dock=None, doer=None, **kwa):
         """Initialize instance.
 
         Parameters:
             name (str): unique identifier of box
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
-            first (Box | None):  beginning box
             doer (Doer | None): Doer running this Boxer doe we need this?
 
 
@@ -324,11 +322,14 @@ class Boxer(Tymee):
         self.name = name
         self.mine = mine if mine is not None else Mine()
         self.dock = dock  # stub until create Dock class
-        self.first = first
         self.doer = doer
+
         self.boxes = {}
-        self.pile = []  # current active pile
+        self.first = None  # box to start in
         self.box = None  # current active box in active pile
+        self.pile = []  # current active pile
+        self.renters = []  # list of re-enter boxes for this prep/run
+        self.enters = []  # list of enter boxes for this prep/run
 
 
     @property
@@ -352,14 +353,18 @@ class Boxer(Tymee):
             raise HierError(f"Invalid {name=}.")
         self._name = name
 
+
     def prep(self):
-        """"""
+        """Prepare and execute first pass
+        """
 
     def run(self):
-        """"""
+        """Execute another pass
+        """
 
-    def quit(self):
-        """"""
+    def end(self):
+        """End execution
+        """
 
 
     def resolve(self):
@@ -392,10 +397,6 @@ class Boxer(Tymee):
                                 f" for tract in box{name=}") from ex
 
                     tract.dest = dest  # resolve dest as box
-
-
-
-
 
 
     def make(self, fun):

@@ -176,15 +176,22 @@ def test_boxer_basic():
     assert boxer.tymth == None
     assert boxer.name == 'boxer'
     assert boxer.mine == Mine()
-    assert boxer.boxes == {}
-    assert boxer.first == None
     assert boxer.doer == None
 
-    assert boxer.pile == []
+    assert boxer.boxes == {}
+    assert boxer.first == None
     assert boxer.box == None
+    assert boxer.pile == []
+    assert boxer.renters == []
+    assert boxer.enters == []
+
 
     prep = boxer.prep  # make alias
     prep()
+    run = boxer.run
+    run()
+    end = boxer.end
+    end()
 
 
     with pytest.raises(hioing.HierError):
