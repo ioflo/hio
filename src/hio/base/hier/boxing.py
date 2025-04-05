@@ -35,10 +35,13 @@ class Box(Tymee):
                             zeroth entry is primary under
 
 
-        preacts (list[act]): precur (pre-occurence pre-transit) context acts
-        beacts (list[act]): benter (before enter) context acts
+        preacts (list[act]): precond (pre-conditions for entry) context acts
+        remacts (list[act]): remark renter mark subcontext acts
         renacts (list[act]): renter (re-enter) context acts
+        emacts (list[act]): emark enter mark subcontext acts
+        enacts (list[act]):  enter context acts
         reacts (list[act]): recur context acts
+        lacts (list[act]): last context acts
         tracts (list[act]): transit context acts
         exacts (list[act]): exit context acts
         rexacts (list[act]): rexit (re-exit) context acts
@@ -89,11 +92,13 @@ class Box(Tymee):
         self.unders = []  # list of under boxes,
 
         # acts by contexts
-        self.preacts = []  # precur context list of pre-occurence pre-transit acts
-        self.beacts = []  # benter context list of before enter acts
+        self.preacts = []  # precond context list of pre-entry acts
+        self.remacts = []  # renter mark subcontext list of re-mark acts
         self.renacts = []  # renter context list of re-enter acts
+        self.emacts = []  # enter mark subcontext list of e-mark acts
         self.enacts = []  # enter context list of enter acts
         self.reacts = []  # recur context list of recurring acts
+        self.lacts = []  # last context list of last acts
         self.tracts = []  # transit context list of transition acts
         self.exacts = []  # exit context list of exit acts
         self.rexacts = []  # rexit context list of re-exit acts

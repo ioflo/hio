@@ -39,10 +39,12 @@ def test_box_basic():
     assert box.unders == []
 
     assert box.preacts == []
-    assert box.beacts == []
+    assert box.remacts == []
     assert box.renacts == []
+    assert box.emacts == []
     assert box.enacts == []
     assert box.reacts == []
+    assert box.lacts == []
     assert box.tracts == []
     assert box.exacts == []
     assert box.rexacts == []
