@@ -255,7 +255,7 @@ class ActBase(Mixin):
     Registry = {}  # subclass registry
     Instances = {}  # instance name registry
     Index = 0  # naming index for default names of this subclasses instances
-    Aliases = ()  # tuple of aliases for this subclass in Registry
+    #Aliases = ()  # tuple of aliases for this subclass in Registry
 
 
     @classmethod
