@@ -19,7 +19,7 @@ from . import boxing
 
 
 
-@register
+@register()
 class Act(ActBase):
     """Act is generic subclass of ActBase meant for do verb acts.
 
@@ -48,6 +48,7 @@ class Act(ActBase):
 
     """
     Index = 0  # naming index for default names of this subclasses instances
+    Aliases = ()  # aliases other names under which this subclass is registered
 
     @classmethod
     def _reregister(cls):
@@ -55,7 +56,7 @@ class Act(ActBase):
         Need to override in each subclass with super to reregister the class hierarchy
         """
         super(Act, cls)._reregister()
-        register(Act)
+        Act.registerbyname()
 
 
     def __init__(self, stuff=None, **kwa):
@@ -84,7 +85,7 @@ class Act(ActBase):
         return None  # conditional not met
 
 
-@register
+@register()
 class Tract(ActBase):
     """Tract (transit act) is subclass of ActBase whose .act evaluates conditional
     need expression to determine if a transition condition is satified for
@@ -119,6 +120,7 @@ class Tract(ActBase):
 
     """
     Index = 0  # naming index for default names of this subclasses instances
+    Aliases = ()  # aliases other names under which this subclass is registered
 
     @classmethod
     def _reregister(cls):
@@ -126,7 +128,7 @@ class Tract(ActBase):
         Need to override in each subclass with super to reregister the class hierarchy
         """
         super(Tract, cls)._reregister()
-        register(Tract)
+        Tract.registerbyname()
 
 
     def __init__(self, dest=None, need=None, context=Context.transit, **kwa):

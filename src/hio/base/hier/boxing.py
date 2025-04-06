@@ -36,15 +36,15 @@ class Box(Tymee):
                             zeroth entry is primary under
 
         preacts (list[act]): precon (pre-conditions for entry) context acts
-        remacts (list[act]): remark re-enter mark subcontext acts
-        renacts (list[act]): renter (re-enter) context acts
+        remacts (list[act]): remark re-enter mark subcontext acts (retained)
+        renacts (list[act]): renter (re-enter) context acts  (retained)
         enmacts (list[act]): enmark enter mark subcontext acts
         enacts (list[act]):  enter context acts
         reacts (list[act]): recur context acts
         tacts (list[act]): tail context acts
         tracts (list[act]): transit context acts
         exacts (list[act]): exit context acts
-        rexacts (list[act]): rexit (re-exit) context acts
+        rexacts (list[act]): rexit (re-exit) context acts  (retained)
 
     Properties:
         name (str): unique identifier of instance
@@ -94,14 +94,14 @@ class Box(Tymee):
         # acts by contexts
         self.preacts = []  # precon context list of pre-entry acts
         self.remacts = []  # re-enter mark subcontext list of re-mark acts
-        self.renacts = []  # renter context list of re-enter acts
+        self.renacts = []  # renter context list of re-enter acts (retained)
         self.enmacts = []  # enter mark subcontext list of en-mark acts
         self.enacts = []  # enter context list of enter acts
         self.reacts = []  # recur context list of recurring acts
         self.tacts = []  # tail context list of trailing acts
         self.tracts = []  # transit context list of transition acts
         self.exacts = []  # exit context list of exit acts
-        self.rexacts = []  # rexit context list of re-exit acts
+        self.rexacts = []  # rexit context list of re-exit acts (retained)
 
         #lexical context
         self._next = None  # next box lexically
@@ -224,7 +224,7 @@ class Boxer(Tymee):
         boxes (dict): all boxes mapping of (box name, box) pairs
         first (Box | None):  beginning box
         box (Box | None):  active box
-        renters (list[Box]): boxes to re-enter on this run
+        renters (list[Box]): boxes to re-enter on this run (boxes retained)
         enters (list[Box]): boxes to enter on this begin/run
 
     Properties:
@@ -331,7 +331,7 @@ class Boxer(Tymee):
         self.boxes = {}
         self.first = None  # box to start in
         self.box = None  # current active box  whose pile is active pile
-        self.renters = []  # list of re-enter boxes for this run
+        self.renters = []  # list of re-enter boxes for this run (boxes retained)
         self.enters = []  # list of enter boxes for this begin/run
 
 
@@ -419,7 +419,7 @@ class Boxer(Tymee):
                     if not self.precon(enters):  # transit not satisfied
                         continue  # keep trying
                     self.exit(exits)  # exit bottom up
-                    self.rexit(rexits)  # rexit bottom up
+                    self.rexit(rexits)  # rexit bottom up  (boxes retained)
                     self.renters = renters  # save for next pass
                     self.enters = enters  # save for next pass
                     self.box = tract.dest  # set new active box
@@ -473,7 +473,7 @@ class Boxer(Tymee):
 
     def renter(self):
         """Action re-mark (remacts) and re-enter (renacts) acts of boxes in
-        .renters in top down order
+        .renters in top down order. Boxes retained in hierarchical state.
         """
         for box in self.renters:
             for remact in box.remacts:
@@ -494,7 +494,7 @@ class Boxer(Tymee):
 
 
     def exit(self, exits):
-        """Action exacts of boxes in exits
+        """Action exacts of boxes in exits in bottom up order.
 
         Parameters:
             exits (None|list[Box]): boxes to be exited in bottom up order
@@ -506,7 +506,8 @@ class Boxer(Tymee):
 
 
     def rexit(self, rexits):
-        """Action rexacts of boxes in rexits
+        """Action rexacts of boxes in rexits (re-exits) in bottom up order.
+        Boxes retained in hierarchical state.
 
         Parameters:
             rexits (None|list[Box]): boxes to be re-exited in bottom up order
@@ -846,11 +847,13 @@ class Boxer(Tymee):
                     Reversed to bottom up order.
                 enters is list of uncommon boxes in fars but not in nears to be entered
                 rexits is list of common boxes in both nears and fars to be re-exited
-                    Reversed to bottom up order.
+                    Reversed to bottom up order. These are boxes retained in pile.
                 renters is list of common boxes in both nears and fars to be re-entered
-
+                    These are boxes retained in pile.
                 The sets of boxes in rexits and renters are the same set but rexits
-                is reversed to bottum up order.
+                is reversed to bottum up order. These are boxes retained in the
+                pile before and after the transition. This is where common exit/enter
+                actions for the non-common boxes can be actioned non-redundantly.
 
 
         Supports forced reentry transitions when far is in nears. This means fars

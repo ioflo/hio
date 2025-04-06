@@ -49,8 +49,9 @@ def test_actbase():
     assert ActBase.__name__ == 'ActBase'
     assert ActBase.__name__ in ActBase.Registry
     assert ActBase.Registry[ActBase.__name__] == ActBase
-    assert ActBase.Names == {}
+    assert ActBase.Instances == {}
     assert ActBase.Index == 0
+    assert ActBase.Aliases == ()
 
     act = ActBase()
     assert isinstance(act, Callable)
@@ -58,9 +59,10 @@ def test_actbase():
     assert act.iops == {}
     assert act.context == Context.enter
     assert hasattr(act, 'name')   # hasattr works for properties and attributes
-    assert act.name in ActBase.Names
-    assert ActBase.Names[act.name] == act
+    assert act.name in ActBase.Instances
+    assert ActBase.Instances[act.name] == act
     assert ActBase.Index == 1
+    assert ActBase.Aliases == ()
     assert act() == {}
 
 
@@ -70,9 +72,10 @@ def test_actbase():
     assert act.iops == {}
     assert act.context == Context.enter
     assert hasattr(act, 'name')   # hasattr works for properties and attributes
-    assert act.name in ActBase.Names
-    assert ActBase.Names[act.name] == act
+    assert act.name in ActBase.Instances
+    assert ActBase.Instances[act.name] == act
     assert ActBase.Index == 2
+    assert ActBase.Aliases == ()
     assert act() == {}
 
 
@@ -94,10 +97,11 @@ def test_actify():
     assert t.__class__.__name__ == "Tact"
     assert t.__class__.__name__ in t.Registry
     assert t.Registry[t.__class__.__name__] == t.__class__
-    assert t.name in t.Names
-    assert t.Names[t.name] == t
+    assert t.name in t.Instances
+    assert t.Instances[t.name] == t
     assert isinstance(t, ActBase)
     assert t() == t.iops
+    assert t.Aliases == ()
 
     x = test(bye="bye")  # signature for Act.__init__
     assert x.name == "Tact1"
@@ -106,10 +110,11 @@ def test_actify():
     assert x.__class__.__name__ == "Tact"
     assert x.__class__.__name__ in t.Registry
     assert x.Registry[t.__class__.__name__] == t.__class__
-    assert x.name in t.Names
-    assert x.Names[t.name] == t
+    assert x.name in t.Instances
+    assert x.Instances[t.name] == t
     assert isinstance(t, ActBase)
     assert x() == x.iops
+    assert t.Aliases == ()
 
     assert x.__class__ == t.__class__
     klas = ActBase.Registry["Tact"]
@@ -130,8 +135,9 @@ def test_actify():
     assert "Pact" in p.Registry
     klas = p.Registry["Pact"]
     assert isinstance(p, klas)
-    assert p.Names[p.name] == p
+    assert p.Instances[p.name] == p
     assert p() == dict(why=1)
+    assert t.Aliases == ()
 
     @actify(name="Bact")
     def best(self, *, how=None):  # signature for .act
@@ -146,8 +152,9 @@ def test_actify():
     assert "Bact" in b.Registry
     klas = b.Registry["Bact"]
     assert isinstance(b, klas)
-    assert b.Names[b.name] == b
+    assert b.Instances[b.name] == b
     assert b() == dict(how=5)
+    assert t.Aliases == ()
 
 
     """Done Test"""

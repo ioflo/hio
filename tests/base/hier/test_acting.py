@@ -25,7 +25,7 @@ def test_act_basic():
     assert act.iops == {}
     assert act.context == Context.enter
     assert act.Index == 1
-    assert act.Names[act.name] == act
+    assert act.Instances[act.name] == act
     assert act.stuff == None
 
     assert not act()
@@ -47,7 +47,7 @@ def test_tract_basic():
     assert tract.iops == {}
     assert tract.context == Context.transit
     assert tract.Index == 1
-    assert tract.Names[tract.name] == tract
+    assert tract.Instances[tract.name] == tract
     assert tract.dest == None
     assert isinstance(tract.need, Need)
     assert tract.need()

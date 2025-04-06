@@ -124,9 +124,11 @@ def actify(name, *, base=None, attrs=None):
 
     attrs = attrs if attrs is not None else {}
     # assign Act attrs
-    attrs.update(dict(Registry=base.Registry, Names=base.Names, Index=0))
+    attrs.update(dict(Registry=base.Registry, Instances=base.Instances, Index=0,
+                      Aliases=() ))
     cls = type(name, (base, ), attrs)  # create new subclass of base of Act.
-    register(cls)  # register subclass in cls.Registry
+    #registerone(cls)  # register subclass in cls.Registry
+    cls.registerbyname()  # register subclass in cls.Registry by cls.__name__
 
     def decorator(func):
         if not isinstance(func, Callable):
@@ -140,7 +142,7 @@ def actify(name, *, base=None, attrs=None):
     return decorator
 
 
-def register(cls):
+def registerone(cls):
     """Class Decorator to add cls as cls.Registry entry for itself keyed by its
     own .__name__. Need class decorator so that class object is already created
     by registration time when decorator is applied
@@ -152,7 +154,41 @@ def register(cls):
     return cls
 
 
-@register
+def register(names=None):
+    """Parametrized class Decorator to add cls as cls.Registry entry for itself
+    keyed by its own .__name__ as well as being keyed by alises in names.
+    A class decorator is necessary so that the class object is already created
+    when decorator is applied.
+
+    Parameters:
+        names (None|str|Iterator): iterator of names as alises besides class
+                name to register class in Act registry.
+
+    """
+    if not names:
+        names = tuple()
+    elif isinstance(names, str):
+        names = (names, )  # make one tuple of str
+    else:
+        names = tuple(names)  # make tuple of iterable
+
+    def decorator(cls):
+        name = cls.__name__
+        if name in cls.Registry:
+            raise hioing.HierError(f"Act by {name=} already registered.")
+        cls.Registry[name] = cls
+        cls.Aliases = names
+        for name in names:
+            if name in cls.Registry:
+                raise hioing.HierError(f"Act by {name=} already registered.")
+            cls.Registry[name] = cls
+        return cls
+    return decorator
+
+
+
+
+@register()
 class ActBase(Mixin):
     """Act Base Class. Callable with Registry of itself and its subclasses.
 
@@ -160,11 +196,13 @@ class ActBase(Mixin):
         Registry (dict): subclass registry whose items are (name, cls) where:
                 name is unique name for subclass
                 cls is reference to class object
-        Names (dict): instance registry whose items are (name, instance) where:
+        Instances (dict): instance registry whose items are (name, instance) where:
                 name is unique instance name and instance is instance reference
         Index (int): default naming index for subclass instances. Each subclass
                 overrides with a subclass specific Index value to track
                 subclass specific instance default names.
+        Aliases (tuple[str]): tuple of aliases (names) under which this subclas
+                            appears in .Registry
 
 
 
@@ -180,23 +218,42 @@ class ActBase(Mixin):
 
     """
     Registry = {}  # subclass registry
-    Names = {}  # instance name registry
+    Instances = {}  # instance name registry
     Index = 0  # naming index for default names of this subclasses instances
+    Aliases = ()  # tuple of aliases for this subclass in Registry
+
+
+    @classmethod
+    def registerbyname(cls, name=None):
+        """Adds cls to cls.Registry entry by name. Raises HierError if already
+        registered.
+
+        Parameters:
+            cls (Type[Act]): class to be registered
+            name (None|str): key to register cls under.
+                             When None then use cls.__name__
+        """
+        name = name if name is not None else cls.__name__
+        if name in cls.Registry:
+            raise hioing.HierError(f"Act by {name=} already registered.")
+        cls.Registry[name] = cls
+        return cls
 
     @classmethod
     def _reregister(cls):
         """Reregisters cls after clear.
         Need to override in each subclass with super to reregister the class hierarchy
         """
-        register(ActBase)
+        ActBase.registerbyname()  # defaults to cls.__name__
 
 
     @classmethod
     def _clear(cls):
         """Clears Registry, Names and Index for testing purposes"""
         ActBase.Registry = {}
-        ActBase.Names = {}
+        ActBase.Instances = {}
         cls.Index = 0
+        cls.Aliases = ()
         cls._reregister()
 
 
@@ -246,14 +303,14 @@ class ActBase(Mixin):
             name (str|None): unique identifier of instance. When None generate
                 unique name using .Index
         """
-        while name is None or name in self.Names:
+        while name is None or name in self.Instances:
                 name = self.__class__.__name__ + str(self.Index)
                 self.__class__.Index += 1   # do not shadow class attribute
 
         if not Renam.match(name):
             raise HierError(f"Invalid {name=}.")
 
-        self.Names[name] = self
+        self.Instances[name] = self
         self._name = name
 
 
