@@ -78,10 +78,32 @@ Context = Contextage(native="native", precon="precon", renter="renter",
                      transit="transit", exit="exit", rexit="rexit")
 
 
-# ToDo  any callable usually function that is not already a subclass of Actor.
-# can be converted so a subclass of Actor and then registered in the Registry.
-# normally if defining a class then inhereit from Actor. But if simply a function
-# then decorate with actify so that a a new subclass is created and registered
+
+
+
+
+@dataclass
+class WorkDom(MapDom):
+    """WorkDom provides state for building boxwork by a boxer to be injected
+    make methods of Boxer by workify wrapper.
+
+
+    Attributes:
+        box (Box | None): current box in box work. None if not yet a box
+        over (Box | None): current over Box in box work. None if top level
+        bxpre (str):  default box name prefix used to generate unique box name
+                    relative to boxer.boxes
+        bxidx (int): default box name index used to generate unique box name
+                    relative to boxer.boxes
+        acts (dict):  registry of ActBase subclasses by name (including aliases)
+    """
+    box: None | Box = None  # current box in boxwork. None if not yet any box
+    over: None | Box = None  # current over box in boxwork. None if not yet any over
+    bxpre: str = 'box'  # default box name prefix when name not provided
+    bxidx: int = 0  # default box name index when name not provided
+    acts: dict = field(default_factory=dict)  # registry of Acts by name & aliases
+
+
 
 def actify(name, *, base=None, attrs=None):
     """Parametrized decorator that converts the decorated function func into
@@ -95,11 +117,24 @@ def actify(name, *, base=None, attrs=None):
 
     Updates the class attributes of new subclass with attrs if any.
 
+    Any callable usually function that is not already a subclass of ActBase can be
+    converted to a subclass of ActBase and then registered in the Registry by its
+    given name. Usually when defining a class simply make is a subclass of ActBase.
+    But when given a function on can decorate it with actify so that a new
+    subclass of ActBase is created and registered.
+
     Usage:
+        @actify(name="Tact")
+        def test(self, **kwa):  # signature for .act with **iops as **kwa
+            assert kwa == self.iops
+            return self.iops
 
+        t = test(iops=dict(what=1), hello="hello", context=Context.recur)
 
-    Assigning a function to a class the value of an attribute automatically
-    makes that attribute a bound method with injected self as first argument.
+    Notes:
+    In Python, when a function is assigned as the value of a class attribute,
+    the value of that attribute is automagically converted to a bound method of
+    that class with injected self as first argument.
 
     class A():
         def a(self):
@@ -332,30 +367,5 @@ class ActBase(Mixin):
             context (str): action context for .act
         """
         return self._context
-
-
-
-
-
-
-@dataclass
-class WorkDom(MapDom):
-    """WorkDom provides state for building boxwork by a boxer to be injected
-    make methods of Boxer by workify wrapper.
-
-
-    Attributes:
-        box (Box | None): current box in box work. None if not yet a box
-        over (Box | None): current over Box in box work. None if top level
-        bxpre (str):  default box name prefix used to generate unique box name
-                    relative to boxer.boxes
-        bxidx (int): default box name index used to generate unique box name
-                    relative to boxer.boxes
-    """
-    box: None | Box = None  # current box in boxwork. None if not yet any box
-    over: None | Box = None  # current over box in boxwork. None if not yet any over
-    bxpre: str = 'box'  # default box name prefix when name not provided
-    bxidx: int = 0  # default box name index when name not provided
-
 
 

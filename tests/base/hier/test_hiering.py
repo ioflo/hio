@@ -23,7 +23,7 @@ from dataclasses import dataclass, astuple, asdict, field
 from hio import hioing
 from hio.help import helping, Mine, Renam
 from hio.base import tyming
-from hio.base.hier import Context, ActBase, actify, Box, Boxer, Maker
+from hio.base.hier import WorkDom, Context, ActBase, actify, Box, Boxer, Maker
 
 
 def test_context():
@@ -39,6 +39,20 @@ def test_context():
                                 'transit': 'transit',
                                 'exit': 'exit',
                                 'rexit': 'rexit'}
+
+
+def test_workdom():
+    """Test WorkDom dataclass"""
+
+    w = WorkDom()
+    assert isinstance(w, WorkDom)
+    assert w.box is None
+    assert w.over is None
+    assert w.bxpre == 'box'
+    assert w.bxidx == 0
+    assert w.acts == {}
+
+
 
 def test_actbase():
     """Test ActBase Class"""
@@ -288,6 +302,7 @@ def test_inspect_stuff():
 
 if __name__ == "__main__":
     test_context()
+    test_workdom()
     test_actbase()
     test_actify()
     test_inspect_stuff()
