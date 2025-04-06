@@ -23,10 +23,22 @@ from dataclasses import dataclass, astuple, asdict, field
 from hio import hioing
 from hio.help import helping, Mine, Renam
 from hio.base import tyming
-from hio.base.hier import ActBase, actify, Box, Boxer, Maker
+from hio.base.hier import Context, ActBase, actify, Box, Boxer, Maker
 
 
+def test_context():
+    """Test Context namedtuple"""
 
+    assert Context.native == "native"
+    assert Context._asdict() == {'native': 'native',
+                                'precon': 'precon',
+                                'renter': 'renter',
+                                'enter': 'enter',
+                                'recur': 'recur',
+                                'tail': 'tail',
+                                'transit': 'transit',
+                                'exit': 'exit',
+                                'rexit': 'rexit'}
 
 def test_actbase():
     """Test ActBase Class"""
@@ -44,6 +56,7 @@ def test_actbase():
     assert isinstance(act, Callable)
     assert act.name == 'ActBase0'
     assert act.iops == {}
+    assert act.context == Context.enter
     assert hasattr(act, 'name')   # hasattr works for properties and attributes
     assert act.name in ActBase.Names
     assert ActBase.Names[act.name] == act
@@ -55,6 +68,7 @@ def test_actbase():
     assert isinstance(act, Callable)
     assert act.name == 'ActBase1'
     assert act.iops == {}
+    assert act.context == Context.enter
     assert hasattr(act, 'name')   # hasattr works for properties and attributes
     assert act.name in ActBase.Names
     assert ActBase.Names[act.name] == act
@@ -73,9 +87,10 @@ def test_actify():
         assert kwa == self.iops
         return self.iops
 
-    t = test(iops=dict(what=1), hello="hello")  # signature for Act.__init__
+    t = test(iops=dict(what=1), hello="hello", context=Context.recur)  # signature for Act.__init__
     assert t.name == "Tact0"
     assert t.iops == dict(what=1)
+    assert t.context == Context.recur
     assert t.__class__.__name__ == "Tact"
     assert t.__class__.__name__ in t.Registry
     assert t.Registry[t.__class__.__name__] == t.__class__
@@ -87,6 +102,7 @@ def test_actify():
     x = test(bye="bye")  # signature for Act.__init__
     assert x.name == "Tact1"
     assert x.iops == {}
+    assert x.context == Context.enter
     assert x.__class__.__name__ == "Tact"
     assert x.__class__.__name__ in t.Registry
     assert x.Registry[t.__class__.__name__] == t.__class__
@@ -110,6 +126,7 @@ def test_actify():
     p = pest(name="spot", iops=dict(why=1))  # same signature as Act.__init__
     assert p.name == 'spot'
     assert p.iops == dict(why=1)
+    assert p.context == Context.enter
     assert "Pact" in p.Registry
     klas = p.Registry["Pact"]
     assert isinstance(p, klas)
@@ -125,6 +142,7 @@ def test_actify():
     b = best(iops=dict(how=5))  # signature for Act.__init__
     assert b.name == 'Bact0'
     assert b.iops == dict(how=5)
+    assert b.context == Context.enter
     assert "Bact" in b.Registry
     klas = b.Registry["Bact"]
     assert isinstance(b, klas)
@@ -262,7 +280,7 @@ def test_inspect_stuff():
 
 
 if __name__ == "__main__":
-    test_reat()
+    test_context()
     test_actbase()
     test_actify()
     test_inspect_stuff()

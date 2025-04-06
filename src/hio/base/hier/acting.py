@@ -12,9 +12,10 @@ from collections import namedtuple
 from ... import hioing
 from ...hioing import Mixin, HierError
 from ...help import Mine, Renam
-from .hiering import ActBase, register
+from .hiering import Context, ActBase, register
 from .needing import Need
 from . import boxing
+
 
 
 
@@ -35,14 +36,15 @@ class Act(ActBase):
                 subclass specific instance default names.
 
 
-
     Inherited Properties:
         name (str): unique name string of instance
         iops (dict): input-output-parameters for .act
+        context (str): action context for .act
 
     Hidden
         ._name (str|None): unique name of instance
         ._iopts (dict): input-output-paramters for .act
+        ._context (str): action context for .act
 
     """
     Index = 0  # naming index for default names of this subclasses instances
@@ -64,6 +66,7 @@ class Act(ActBase):
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
                 set to empty dict.
+            context (str|None): action context for .act. Default is "enter"
 
         Parameters:
             stuff (None): TBD
@@ -103,6 +106,7 @@ class Tract(ActBase):
     Inherited Properties:
         name (str): unique name string of instance
         iops (dict): input-output-parameters for .act
+        context (str): action context for .act
 
     Attributes:
         dest (Box): destination Box for this transition.
@@ -111,6 +115,7 @@ class Tract(ActBase):
     Hidden
         ._name (str|None): unique name of instance
         ._iopts (dict): input-output-paramters for .act
+        ._context (str): action context for .act
 
     """
     Index = 0  # naming index for default names of this subclasses instances
@@ -124,7 +129,7 @@ class Tract(ActBase):
         register(Tract)
 
 
-    def __init__(self, dest=None, need=None, **kwa):
+    def __init__(self, dest=None, need=None, context=Context.transit, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:
@@ -132,6 +137,7 @@ class Tract(ActBase):
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
                 set to empty dict.
+            context (str): action context for .act
 
         Parameters:
             dest (None|str|Box): destination Box for this transition.
@@ -144,7 +150,7 @@ class Tract(ActBase):
                 When Need instance then use directly
 
         """
-        super(Tract, self).__init__(**kwa)
+        super(Tract, self).__init__(context=context, **kwa)
         self.dest = dest  # fix this so default is next
         self.need = need if need is not None else Need()  # default need evals to True
 

@@ -57,6 +57,25 @@ from ...hioing import Mixin, HierError
 from ...help import isNonStringIterable, MapDom, modify, Renam
 
 
+"""Contextage (namedtuple):
+Action contexts for Acts
+
+Fields:
+   native (str): native context
+   precon (str): precon context
+   renter (str): renter context
+   enter (str): enter context
+   recur (str): recur context
+   tail (str): tail context
+   transit (str): transit context
+   exit (str): exit context
+   rexit (str): rexit context
+"""
+Contextage = namedtuple("Contextage", "native precon renter enter recur tail transit exit rexit")
+
+Context = Contextage(native="native", precon="precon", renter="renter",
+                     enter="enter", recur="recur", tail="tail",
+                     transit="transit", exit="exit", rexit="rexit")
 
 
 # ToDo  any callable usually function that is not already a subclass of Actor.
@@ -152,10 +171,12 @@ class ActBase(Mixin):
     Properties:
         name (str): unique name string of instance
         iops (dict): input-output-parameters for .act
+        context (str): action context for .act
 
     Hidden
         ._name (str|None): unique name of instance
         ._iopts (dict): input-output-paramters for .act
+        ._context (str): action context for .act
 
     """
     Registry = {}  # subclass registry
@@ -180,7 +201,7 @@ class ActBase(Mixin):
 
 
 
-    def __init__(self, *, name=None, iops=None, **kwa):
+    def __init__(self, *, name=None, iops=None, context=Context.enter, **kwa):
         """Initialization method for instance.
 
         Parameters:
@@ -188,11 +209,13 @@ class ActBase(Mixin):
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
                 set to empty dict.
+            context (str): action context for act. default is "enter"
 
         """
         super(ActBase, self).__init__(**kwa) # in case of MRO
         self.name = name  # set name property
         self._iops = iops if iops is not None else {}  #
+        self._context = context
 
 
     def __call__(self):
@@ -203,7 +226,6 @@ class ActBase(Mixin):
     def act(self, **iops):
         """Act called by Actor. Should override in subclass."""
         return iops  # for debugging
-
 
 
     @property
@@ -243,6 +265,16 @@ class ActBase(Mixin):
             iops (dict): input-output-parameters for .act
         """
         return self._iops
+
+
+    @property
+    def context(self):
+        """Property getter for ._context. Makes ._context read only
+
+        Returns:
+            context (str): action context for .act
+        """
+        return self._context
 
 
 

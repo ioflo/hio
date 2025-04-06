@@ -7,7 +7,7 @@ from __future__ import annotations  # so type hints of classes get resolved late
 import pytest
 
 from hio import Mixin, HierError
-from hio.base.hier import ActBase, actify, Act, Tract, Need, Box, Bag
+from hio.base.hier import Context, ActBase, actify, Act, Tract, Need, Box, Bag
 
 from hio.help import Mine
 
@@ -22,6 +22,8 @@ def test_act_basic():
     assert Act.Registry["Act"] == Act
 
     assert act.name == "Act0"
+    assert act.iops == {}
+    assert act.context == Context.enter
     assert act.Index == 1
     assert act.Names[act.name] == act
     assert act.stuff == None
@@ -42,6 +44,8 @@ def test_tract_basic():
     assert Tract.Registry["Tract"] == Tract
 
     assert tract.name == "Tract0"
+    assert tract.iops == {}
+    assert tract.context == Context.transit
     assert tract.Index == 1
     assert tract.Names[tract.name] == tract
     assert tract.dest == None
