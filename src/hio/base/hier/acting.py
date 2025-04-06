@@ -57,6 +57,8 @@ class Act(ActBase):
         """
         super(Act, cls)._reregister()
         Act.registerbyname()
+        for name in Act.Aliases:
+            Act.registerbyname(name)
 
 
     def __init__(self, stuff=None, **kwa):
@@ -129,6 +131,8 @@ class Tract(ActBase):
         """
         super(Tract, cls)._reregister()
         Tract.registerbyname()
+        for name in Tract.Aliases:
+            Tract.registerbyname(name)
 
 
     def __init__(self, dest=None, need=None, context=Context.transit, **kwa):

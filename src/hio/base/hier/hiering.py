@@ -280,6 +280,8 @@ class ActBase(Mixin):
         Need to override in each subclass with super to reregister the class hierarchy
         """
         ActBase.registerbyname()  # defaults to cls.__name__
+        for name in ActBase.Aliases:
+            ActBase.registerbyname(name)
 
 
     @classmethod
