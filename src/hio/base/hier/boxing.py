@@ -367,6 +367,7 @@ class Boxer(Tymee):
         self.enters = self.box.pile
         if not self.precon():  # uses .enters preconditions for entry not satisfied
             # do end stuff since no entry yet then no exit
+            self.box = None  # no active box anymore
             return False  # signal end beginning did not complete
 
         #self.renter()  # uses saved .renters
@@ -379,7 +380,9 @@ class Boxer(Tymee):
                 react()
             for tact in box.tacts:   # trail context top down
                 tact()
-            if self.end():  # exits all active boxes
+            if self.endial():  # actioned desire to end
+                self.end()  # exits all active boxes in self.box.pile
+                self.box = None  # no active box
                 return True  # beginning completed already
 
             for tract in box.tracts:  # transit context top down
@@ -410,8 +413,11 @@ class Boxer(Tymee):
                 react()
             for tact in box.tacts:   # trail context top down
                 tact()
-            if self.end():  # exits all active boxes
-                return True  # done
+
+            if self.endial():  # actioned desire to end
+                self.end()  # exits all active boxes in self.box.pile
+                self.box = None  # no active box
+                return True  # beginning completed already
 
             for tract in box.tracts:  # transit context top down
                 if tract():  # transition condition satisfied
@@ -429,20 +435,27 @@ class Boxer(Tymee):
 
 
     def end(self):
-        """Check for desire to end execution and if so then exit all active boxes.
+        """Exit all active boxes.
+
+        """
+        self.exit(self.box.pile)  # exit all active boxes
+
+
+    def endial(self):
+        """Check for desire to end execution and return True otherwise False
         End condition if bag alue at mine._boxer_name_end.value == True
 
         Returns:
-            end (bool): True means end condition satisfied and active boxes exited.
-                        False means not end nothing done
-        """
-        keys = ("", self.name, "end")  # _boxername_end
+            end (bool): True means end condition satisfied
+                        False otherwise
+
         if keys not in self.mine:
             self.mine[keys] = Bag()  # create bag at end default value = None
-
-        if self.mine[keys].value:
-            self.exit(self.box.pile)  # exit all active boxes
+        """
+        keys = ("", "boxer", self.name, "end")  # _boxer_boxername_end
+        if keys in self.mine and self.mine[keys].value:
             return True
+
         return False
 
 
