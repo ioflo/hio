@@ -54,7 +54,7 @@ from dataclasses import dataclass, astuple, asdict, field
 from ..tyming import Tymee
 from ... import hioing
 from ...hioing import Mixin, HierError
-from ...help import isNonStringIterable, MapDom, modify, Renam
+from ...help import isNonStringIterable, MapDom, modify, Renam, Mine
 
 
 """Contextage (namedtuple):
@@ -160,7 +160,7 @@ def actify(name, *, base=None, attrs=None):
     attrs = attrs if attrs is not None else {}
     # assign Act attrs
     attrs.update(dict(Registry=base.Registry, Instances=base.Instances, Index=0,
-                      Aliases=() ))
+                      Names=() ))
     cls = type(name, (base, ), attrs)  # create new subclass of base of Act.
     #registerone(cls)  # register subclass in cls.Registry
     cls.registerbyname()  # register subclass in cls.Registry by cls.__name__
@@ -196,8 +196,8 @@ def register(names=None):
     when decorator is applied.
 
     Parameters:
-        names (None|str|Iterator): iterator of names as alises besides class
-                name to register class in Act registry.
+        names (None|str|Iterator): iterator of names as aliases besides class
+            name to register class in Act registry and assigned to cls.Names
 
     """
     if not names:
@@ -212,15 +212,13 @@ def register(names=None):
         if name in cls.Registry:
             raise hioing.HierError(f"Act by {name=} already registered.")
         cls.Registry[name] = cls
-        cls.Aliases = names
+        cls.Names = names  # creates class specific attribute .Names
         for name in names:
             if name in cls.Registry:
                 raise hioing.HierError(f"Act by {name=} already registered.")
             cls.Registry[name] = cls
         return cls
     return decorator
-
-
 
 
 @register()
@@ -236,10 +234,12 @@ class ActBase(Mixin):
         Index (int): default naming index for subclass instances. Each subclass
                 overrides with a subclass specific Index value to track
                 subclass specific instance default names.
-        Aliases (tuple[str]): tuple of aliases (names) under which this subclas
-                            appears in .Registry
+        Names (tuple[str]): tuple of aliases (names) under which this subclas
+                            appears in .Registry. Created by @register
 
-
+    Attributes:
+        mine (Mine): ephemeral bags in mine (in memory) shared by boxwork
+        dock (Dock): durable bags in dock (on disc) shared by boxwork
 
     Properties:
         name (str): unique name string of instance
@@ -255,7 +255,7 @@ class ActBase(Mixin):
     Registry = {}  # subclass registry
     Instances = {}  # instance name registry
     Index = 0  # naming index for default names of this subclasses instances
-    #Aliases = ()  # tuple of aliases for this subclass in Registry
+    #Names = ()  # tuple of aliases for this subclass created by @register
 
 
     @classmethod
@@ -280,7 +280,7 @@ class ActBase(Mixin):
         Need to override in each subclass with super to reregister the class hierarchy
         """
         ActBase.registerbyname()  # defaults to cls.__name__
-        for name in ActBase.Aliases:
+        for name in ActBase.Names:
             ActBase.registerbyname(name)
 
 
@@ -290,12 +290,12 @@ class ActBase(Mixin):
         ActBase.Registry = {}
         ActBase.Instances = {}
         cls.Index = 0
-        cls.Aliases = ()
+        #cls.Names = () tuple of aliases for this subclass created by @register
         cls._reregister()
 
 
-
-    def __init__(self, *, name=None, iops=None, context=Context.enter, **kwa):
+    def __init__(self, *, name=None, iops=None, context=Context.enter,
+                 mine=None, dock=None, **kwa):
         """Initialization method for instance.
 
         Parameters:
@@ -304,12 +304,16 @@ class ActBase(Mixin):
             iops (dict|None): input-output-parameters for .act. When None then
                 set to empty dict.
             context (str): action context for act. default is "enter"
+            mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
+            dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
         """
         super(ActBase, self).__init__(**kwa) # in case of MRO
         self.name = name  # set name property
         self._iops = iops if iops is not None else {}  #
         self._context = context
+        self.mine = mine if mine is not None else Mine()
+        self.dock = dock   # stub fix later when have Dock class
 
 
     def __call__(self):

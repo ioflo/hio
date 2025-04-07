@@ -26,13 +26,7 @@ class Need(Mixin):
         dock (Dock): durable bags in dock (on disc) shared by boxwork
 
     Properties:
-        terms (tuple[str]): of string need expression terms, each
-            to be logically ANDed together to  form evable boolean expression.
-        strict (bool): True means use strict Python syntax with no substituion
-                       False means use shorthand syntax with substitution
-
-        composed (bool): True means ._expr holds composed .terms
-                         False means not yet composed
+        expr (str): evalable boolean expression.
         compiled (bool): True means ._code holds compiled ._expr
                          False means not yet compiled
 

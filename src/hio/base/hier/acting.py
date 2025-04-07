@@ -14,6 +14,7 @@ from ...hioing import Mixin, HierError
 from ...help import Mine, Renam
 from .hiering import Context, ActBase, register
 from .needing import Need
+from .bagging import Bag
 from . import boxing
 
 
@@ -27,14 +28,22 @@ class Act(ActBase):
         Registry (dict): subclass registry whose items are (name, cls) where:
                 name is unique name for subclass
                 cls is reference to class object
-        Names (dict): instance registry whose items are (name, instance) where:
+        Instances (dict): instance registry whose items are (name, instance) where:
                 name is unique instance name and instance is instance reference
+        Index (int): default naming index for subclass instances. Each subclass
+                overrides with a subclass specific Index value to track
+                subclass specific instance default names.
+        Names (tuple[str]): tuple of aliases (names) under which this subclas
+                            appears in .Registry. Created by @register
 
     Overridden Class Attributes
         Index (int): default naming index for subclass instances. Each subclass
                 overrides with a subclass specific Index value to track
                 subclass specific instance default names.
 
+    Inherited Attributes:
+        mine (Mine): ephemeral bags in mine (in memory) shared by boxwork
+        dock (Dock): durable bags in dock (on disc) shared by boxwork
 
     Inherited Properties:
         name (str): unique name string of instance
@@ -48,7 +57,7 @@ class Act(ActBase):
 
     """
     Index = 0  # naming index for default names of this subclasses instances
-    Aliases = ()  # aliases other names under which this subclass is registered
+    #Names = () tuple of aliases for this subclass created by @register
 
     @classmethod
     def _reregister(cls):
@@ -57,11 +66,11 @@ class Act(ActBase):
         """
         super(Act, cls)._reregister()
         Act.registerbyname()
-        for name in Act.Aliases:
+        for name in Act.Names:
             Act.registerbyname(name)
 
 
-    def __init__(self, stuff=None, **kwa):
+    def __init__(self, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:
@@ -70,21 +79,20 @@ class Act(ActBase):
             iops (dict|None): input-output-parameters for .act. When None then
                 set to empty dict.
             context (str|None): action context for .act. Default is "enter"
+            mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
+            dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
         Parameters:
-            stuff (None): TBD
 
 
         """
         super(Act, self).__init__(**kwa)
-        self.stuff = stuff
 
 
 
     def act(self, **iops):
         """Act called by Actor. Should override in subclass."""
-
-        return None  # conditional not met
+        return None
 
 
 @register()
@@ -97,19 +105,27 @@ class Tract(ActBase):
         Registry (dict): subclass registry whose items are (name, cls) where:
                 name is unique name for subclass
                 cls is reference to class object
-        Names (dict): instance registry whose items are (name, instance) where:
+        Instances (dict): instance registry whose items are (name, instance) where:
                 name is unique instance name and instance is instance reference
+        Index (int): default naming index for subclass instances. Each subclass
+                overrides with a subclass specific Index value to track
+                subclass specific instance default names.
+        Names (tuple[str]): tuple of aliases (names) under which this subclas
+                            appears in .Registry. Created by @register
 
     Overridden Class Attributes
         Index (int): default naming index for subclass instances. Each subclass
                 overrides with a subclass specific Index value to track
                 subclass specific instance default names.
 
-
     Inherited Properties:
         name (str): unique name string of instance
         iops (dict): input-output-parameters for .act
         context (str): action context for .act
+
+    Inherited Attributes:
+        mine (Mine): ephemeral bags in mine (in memory) shared by boxwork
+        dock (Dock): durable bags in dock (on disc) shared by boxwork
 
     Attributes:
         dest (Box): destination Box for this transition.
@@ -122,7 +138,7 @@ class Tract(ActBase):
 
     """
     Index = 0  # naming index for default names of this subclasses instances
-    Aliases = ()  # aliases other names under which this subclass is registered
+    #Names = () tuple of aliases for this subclass created by @register
 
     @classmethod
     def _reregister(cls):
@@ -131,11 +147,11 @@ class Tract(ActBase):
         """
         super(Tract, cls)._reregister()
         Tract.registerbyname()
-        for name in Tract.Aliases:
+        for name in Tract.Names:
             Tract.registerbyname(name)
 
 
-    def __init__(self, dest=None, need=None, context=Context.transit, **kwa):
+    def __init__(self, dest=None, need=None, *, context=Context.transit, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:
@@ -144,6 +160,8 @@ class Tract(ActBase):
             iops (dict|None): input-output-parameters for .act. When None then
                 set to empty dict.
             context (str): action context for .act
+            mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
+            dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
         Parameters:
             dest (None|str|Box): destination Box for this transition.
@@ -157,7 +175,7 @@ class Tract(ActBase):
 
         """
         super(Tract, self).__init__(context=context, **kwa)
-        self.dest = dest  # fix this so default is next
+        self.dest = dest if dest is not None else 'next'  # default is next
         self.need = need if need is not None else Need()  # default need evals to True
 
 
@@ -171,3 +189,90 @@ class Tract(ActBase):
         else:
             return None
 
+
+@register(names=('end', 'End'))
+class EndAct(ActBase):
+    """EndAct is subclass of ActBase whose .act indicates a desire to end the
+    boxer by setting bag at .iops "end" .value to True. Where "end" is at key
+    "_boxer_boxername_end".
+
+
+
+    Inherited Class Attributes:
+        Registry (dict): subclass registry whose items are (name, cls) where:
+                name is unique name for subclass
+                cls is reference to class object
+        Instances (dict): instance registry whose items are (name, instance) where:
+                name is unique instance name and instance is instance reference
+        Index (int): default naming index for subclass instances. Each subclass
+                overrides with a subclass specific Index value to track
+                subclass specific instance default names.
+        Names (tuple[str]): tuple of aliases (names) under which this subclas
+                            appears in .Registry. Created by @register
+
+    Overridden Class Attributes
+        Index (int): default naming index for subclass instances. Each subclass
+                overrides with a subclass specific Index value to track
+                subclass specific instance default names.
+
+
+    Inherited Properties:
+        name (str): unique name string of instance
+        iops (dict): input-output-parameters for .act
+        context (str): action context for .act
+
+    Inherited Attributes:
+        mine (Mine): ephemeral bags in mine (in memory) shared by boxwork
+        dock (Dock): durable bags in dock (on disc) shared by boxwork
+
+    Attributes:
+        boxer (Boxer): instance to be ended
+
+    Hidden
+        ._name (str|None): unique name of instance
+        ._iopts (dict): input-output-paramters for .act
+        ._context (str): action context for .act
+
+    """
+    Index = 0  # naming index for default names of this subclasses instances
+    #Names = () tuple of aliases for this subclass created by @register
+
+    @classmethod
+    def _reregister(cls):
+        """Reregisters cls after clear.
+        Need to override in each subclass with super to reregister the class hierarchy
+        """
+        super(EndAct, cls)._reregister()
+        EndAct.registerbyname()
+        for name in EndAct.Names:
+            EndAct.registerbyname(name)
+
+
+    def __init__(self, boxer, *, context=Context.enter, **kwa):
+        """Initialization method for instance.
+
+        Inherited Parameters:
+            name (str|None): unique name of this instance. When None then
+                generate name from .Index
+            iops (dict|None): input-output-parameters for .act. When None then
+                set to empty dict.
+            context (str): action context for .act
+            mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
+            dock (None|Dock): durable bags in dock (on disc) shared by boxwork
+
+        Parameters:
+            boxer (Boxer): boxer to be ended
+
+        """
+        super(EndAct, self).__init__(context=context, **kwa)
+        self.boxer = boxer
+
+        keys = ("", "boxer", self.boxer.name, "end")  # _boxer_boxername_end
+        if keys not in self.mine:
+            self.mine[keys] = Bag()  # create bag at end default value = None
+
+
+    def act(self, **iops):
+        """Act called by Actor. Should override in subclass."""
+        keys = ("", "boxer", self.boxer.name, "end")
+        self.mine[keys].value = True

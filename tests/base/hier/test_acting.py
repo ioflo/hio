@@ -7,7 +7,8 @@ from __future__ import annotations  # so type hints of classes get resolved late
 import pytest
 
 from hio import Mixin, HierError
-from hio.base.hier import Context, ActBase, actify, Act, Tract, Need, Box, Bag
+from hio.base.hier import Context, ActBase, actify, Need, Box, Boxer, Bag
+from hio.base.hier import Act, Tract, EndAct
 
 from hio.help import Mine
 
@@ -16,17 +17,17 @@ def test_act_basic():
     # clear registries for debugging
     Act._clear()
 
-
-    act = Act()
     assert "Act" in Act.Registry
     assert Act.Registry["Act"] == Act
 
+    act = Act()
     assert act.name == "Act0"
     assert act.iops == {}
     assert act.context == Context.enter
     assert act.Index == 1
     assert act.Instances[act.name] == act
-    assert act.stuff == None
+    assert act.mine == Mine()
+    assert act.dock == None
 
     assert not act()
 
@@ -38,17 +39,18 @@ def test_tract_basic():
     # clear registries for debugging
     Tract._clear()
 
-
-    tract = Tract()
     assert "Tract" in Tract.Registry
     assert Tract.Registry["Tract"] == Tract
 
+    tract = Tract()
     assert tract.name == "Tract0"
     assert tract.iops == {}
     assert tract.context == Context.transit
+    assert tract.mine == Mine()
+    assert tract.dock == None
     assert tract.Index == 1
     assert tract.Instances[tract.name] == tract
-    assert tract.dest == None
+    assert tract.dest == 'next'
     assert isinstance(tract.need, Need)
     assert tract.need()
 
@@ -72,6 +74,39 @@ def test_tract_basic():
 
     """Done Test"""
 
+def test_endact_basic():
+    """Test EndAct class"""
+    # clear registries for debugging
+    EndAct._clear()
+
+    assert "EndAct" in EndAct.Registry
+    assert EndAct.Registry["EndAct"] == EndAct
+    assert EndAct.Names == ("end", "End")
+    for name in EndAct.Names:
+        assert name in EndAct.Registry
+        assert EndAct.Registry[name] == EndAct
+
+    mine = Mine()
+    boxer = Boxer(mine=mine)
+
+    eact = EndAct(boxer=boxer, mine=mine)
+    assert eact.name == "EndAct0"
+    assert eact.iops == {}
+    assert eact.context == Context.enter
+    assert eact.mine == mine
+    assert eact.dock == None
+    assert eact.boxer == boxer
+    assert eact.Index == 1
+    assert eact.Instances[eact.name] == eact
+    keys = ("", "boxer", eact.boxer.name, "end")
+    assert keys in eact.mine
+    assert not eact.mine[keys].value
+    eact()
+    assert eact.mine[keys].value
+
+    """Done Test"""
+
 if __name__ == "__main__":
     test_act_basic()
     test_tract_basic()
+    test_endact_basic()
