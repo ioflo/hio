@@ -51,6 +51,7 @@ def test_workdom():
     assert w.bxpre == 'box'
     assert w.bxidx == 0
     assert w.acts == {}
+    assert w.context == Context.native
 
 
 
@@ -58,7 +59,7 @@ def test_actbase():
     """Test ActBase Class"""
 
     # clear registries for debugging
-    ActBase._clear()
+    ActBase._clearall()
 
     assert ActBase.__name__ == 'ActBase'
     assert ActBase.__name__ in ActBase.Registry

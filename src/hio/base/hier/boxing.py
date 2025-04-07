@@ -11,7 +11,7 @@ from __future__ import annotations  # so type hints of classes get resolved late
 
 from ..tyming import Tymee
 from ...hioing import Mixin, HierError
-from .hiering import WorkDom, ActBase
+from .hiering import Context, WorkDom, ActBase
 from .acting import Act, Tract
 from .bagging import Bag
 from .needing import Need
@@ -590,6 +590,7 @@ class Boxer(Tymee):
 
         """
         works = WorkDom()  # standard defaults
+        works.acts = ActBase.Registry
         bx = modify(mods=works)(self.bx)
         on = modify(mods=works)(self.on)
         go = modify(mods=works)(self.go)
@@ -803,43 +804,41 @@ class Boxer(Tymee):
 
 
 
-    def do(self, deed: None|str=None, *, mods: WorkDom|None=None)->str:
+    def do(self, deed: None|str=None, *, name: str|None=None,
+           mods: WorkDom|None=None, **iops)->str:
         """Make an act and add to box work
 
         Parameters:
-            deed (None | str):
+            deed (None|str): Name of Act class in ActBase registry.
+                             None means use Act.
 
 
             mods (None | WorkDom):  state variables used to construct box work
                 None is just to allow definition as keyword arg. Assumes in
-                actual usage that mods is always provided as WorkDom instance of
-                form:
+                actual usage that mods is always provided as WorkDom instance.
 
-                    box (Box|None): current box in box work. None if not yet a box
-                    over (Box|None): current over Box in box work. None if top level
-                    bxpre (str): default name prefix used to generate unique box
-                        name relative to boxer.boxes
-                    bxidx (int): default box index used to generate unique box
-                        name relative to boxer.boxes
-
-
+            iops (dict): input-output-parms for Act
 
         """
         m = mods  # alias more compact
 
-        if not deed:  # empty or None
-            if deed is None:
-                deed = 'act' + str(m.bxidx)
-                m.bxidx += 1
-                while deed in self.boxes:
-                    deed = 'act' + str(m.bxidx)
-                    m.bxidx += 1
+        deed = deed if deed is not None else "Act"
+        try:
+            klas = m.acts[deed]
+        except KeyError as ex:
+            raise HierError(f"Unregistered deed='{deed}'") from ex
 
-            else:
-                raise HierError(f"Missing deed.")
+        parms = dict(name=name, mine=self.mine, dock=self.dock)
+        if m.context != Context.native:
+            parms.update(context=m.context)  # override default context for klas
+
+        iops = dict(_boxer=self.name, _box=m.box.name, **iops)
+        parms.update(iops=iops)
+
+        act = klas(**parms)
 
 
-        return deed
+        return act
 
 
     @staticmethod

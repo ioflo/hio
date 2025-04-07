@@ -78,10 +78,6 @@ Context = Contextage(native="native", precon="precon", renter="renter",
                      transit="transit", exit="exit", rexit="rexit")
 
 
-
-
-
-
 @dataclass
 class WorkDom(MapDom):
     """WorkDom provides state for building boxwork by a boxer to be injected
@@ -102,6 +98,7 @@ class WorkDom(MapDom):
     bxpre: str = 'box'  # default box name prefix when name not provided
     bxidx: int = 0  # default box name index when name not provided
     acts: dict = field(default_factory=dict)  # registry of Acts by name & aliases
+    context: str = Context.native  # current context
 
 
 
@@ -162,7 +159,6 @@ def actify(name, *, base=None, attrs=None):
     attrs.update(dict(Registry=base.Registry, Instances=base.Instances, Index=0,
                       Names=() ))
     cls = type(name, (base, ), attrs)  # create new subclass of base of Act.
-    #registerone(cls)  # register subclass in cls.Registry
     cls.registerbyname()  # register subclass in cls.Registry by cls.__name__
 
     def decorator(func):
@@ -209,14 +205,20 @@ def register(names=None):
 
     def decorator(cls):
         name = cls.__name__
-        if name in cls.Registry:
-            raise hioing.HierError(f"Act by {name=} already registered.")
-        cls.Registry[name] = cls
+        if name in cls.Registry:  # already registration for name
+            if cls.Registry[name] is not cls:  # different cls at name
+                raise hioing.HierError(f"Different Act by same {name=} already "
+                                       f"registered.")
+        else:  # not yet regisered under name
+            cls.Registry[name] = cls
         cls.Names = names  # creates class specific attribute .Names
         for name in names:
-            if name in cls.Registry:
-                raise hioing.HierError(f"Act by {name=} already registered.")
-            cls.Registry[name] = cls
+            if name in cls.Registry:   # already registration for name
+                if cls.Registry[name] is not cls:  # different cls at name
+                    raise hioing.HierError(f"Different Act by same {name=} already "
+                                           f"registered.")
+            else:  # not yet registered under name
+                cls.Registry[name] = cls
         return cls
     return decorator
 
@@ -269,29 +271,29 @@ class ActBase(Mixin):
                              When None then use cls.__name__
         """
         name = name if name is not None else cls.__name__
-        if name in cls.Registry:
-            raise hioing.HierError(f"Act by {name=} already registered.")
-        cls.Registry[name] = cls
+        if name in cls.Registry:  # already registration for name
+            if cls.Registry[name] is not cls:  # different cls at name
+                raise hioing.HierError(f"Different Act by same {name=} already "
+                                           f"registered.")
+        else:  # not yet registered under name
+            cls.Registry[name] = cls
         return cls
 
     @classmethod
-    def _reregister(cls):
-        """Reregisters cls after clear.
-        Need to override in each subclass with super to reregister the class hierarchy
-        """
-        ActBase.registerbyname()  # defaults to cls.__name__
-        for name in ActBase.Names:
-            ActBase.registerbyname(name)
+    def _clear(cls):
+        """Clears Instances and and Index for testing purposes"""
+        cls.Instances = {}
+        cls.Index = 0
 
 
     @classmethod
-    def _clear(cls):
-        """Clears Registry, Names and Index for testing purposes"""
-        ActBase.Registry = {}
-        ActBase.Instances = {}
-        cls.Index = 0
-        #cls.Names = () tuple of aliases for this subclass created by @register
-        cls._reregister()
+    def _clearall(cls):
+        """Clears Instances and and Index for testing purposes"""
+        registry = ActBase.Registry.values()
+        registry = set(registry)  # so only one copy, accounts for aliases
+        for klas in registry:
+            klas._clear()
+
 
 
     def __init__(self, *, name=None, iops=None, context=Context.enter,

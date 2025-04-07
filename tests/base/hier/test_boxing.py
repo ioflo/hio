@@ -23,7 +23,7 @@ from dataclasses import dataclass, astuple, asdict, field
 from hio import hioing
 from hio.help import helping, modify, Mine, Renam
 from hio.base import tyming
-from hio.base.hier import Box, Boxer, Maker
+from hio.base.hier import Box, Boxer, Maker, ActBase
 from hio.base.hier import hiering
 
 
@@ -210,8 +210,11 @@ def test_boxer_make():
         bx()
         b = bx()
         bx(over=b)
-        do(deed="sing")
+        do(deed="end")
         do()
+
+
+    assert "end" in ActBase.Registry
 
     boxer = Boxer()
     assert boxer.boxes == {}
@@ -225,7 +228,7 @@ def test_boxer_make():
     assert str(boxer.boxes['top']) == 'Box(<top>box0)'
     assert str(boxer.boxes['box3']) == 'Box(top<box2<box3>)'
     assert mods["bxpre"] == 'box'
-    assert mods["bxidx"] == 5
+    assert mods["bxidx"] == 4
     assert mods["over"].name == 'box2'
     assert mods['box'].name == 'box3'
 

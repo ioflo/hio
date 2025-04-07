@@ -14,8 +14,8 @@ from hio.help import Mine
 
 def test_act_basic():
     """Test Act class"""
-    # clear registries for debugging
-    Act._clear()
+
+    Act._clearall()  # clear instances for debugging
 
     assert "Act" in Act.Registry
     assert Act.Registry["Act"] == Act
@@ -36,8 +36,8 @@ def test_act_basic():
 
 def test_tract_basic():
     """Test Tract class"""
-    # clear registries for debugging
-    Tract._clear()
+
+    Tract._clearall()  # clear instances for debugging
 
     assert "Tract" in Tract.Registry
     assert Tract.Registry["Tract"] == Tract
@@ -76,8 +76,8 @@ def test_tract_basic():
 
 def test_endact_basic():
     """Test EndAct class"""
-    # clear registries for debugging
-    EndAct._clear()
+
+    EndAct._clearall()  # clear instances for debugging
 
     assert "EndAct" in EndAct.Registry
     assert EndAct.Registry["EndAct"] == EndAct

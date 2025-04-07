@@ -59,15 +59,6 @@ class Act(ActBase):
     Index = 0  # naming index for default names of this subclasses instances
     #Names = () tuple of aliases for this subclass created by @register
 
-    @classmethod
-    def _reregister(cls):
-        """Reregisters cls after clear.
-        Need to override in each subclass with super to reregister the class hierarchy
-        """
-        super(Act, cls)._reregister()
-        Act.registerbyname()
-        for name in Act.Names:
-            Act.registerbyname(name)
 
 
     def __init__(self, **kwa):
@@ -140,18 +131,9 @@ class Tract(ActBase):
     Index = 0  # naming index for default names of this subclasses instances
     #Names = () tuple of aliases for this subclass created by @register
 
-    @classmethod
-    def _reregister(cls):
-        """Reregisters cls after clear.
-        Need to override in each subclass with super to reregister the class hierarchy
-        """
-        super(Tract, cls)._reregister()
-        Tract.registerbyname()
-        for name in Tract.Names:
-            Tract.registerbyname(name)
 
 
-    def __init__(self, dest=None, need=None, *, context=Context.transit, **kwa):
+    def __init__(self, dest=None, need=None, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:
@@ -174,9 +156,13 @@ class Tract(ActBase):
                 When Need instance then use directly
 
         """
-        super(Tract, self).__init__(context=context, **kwa)
+        kwa.update(context=Context.transit)  # override must be transit context
+        super(Tract, self).__init__(**kwa)
         self.dest = dest if dest is not None else 'next'  # default is next
         self.need = need if need is not None else Need()  # default need evals to True
+        if self.context != Context.transit:
+            raise HierError(f"Invalid context='{self.context}' for Tract "
+                            f"'{self.name}'")
 
 
 
@@ -240,15 +226,6 @@ class EndAct(ActBase):
     Index = 0  # naming index for default names of this subclasses instances
     #Names = () tuple of aliases for this subclass created by @register
 
-    @classmethod
-    def _reregister(cls):
-        """Reregisters cls after clear.
-        Need to override in each subclass with super to reregister the class hierarchy
-        """
-        super(EndAct, cls)._reregister()
-        EndAct.registerbyname()
-        for name in EndAct.Names:
-            EndAct.registerbyname(name)
 
 
     def __init__(self, context=Context.enter, **kwa):
