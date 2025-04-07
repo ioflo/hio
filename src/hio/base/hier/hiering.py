@@ -313,7 +313,7 @@ class ActBase(Mixin):
         super(ActBase, self).__init__(**kwa) # in case of MRO
         self.name = name  # set name property
         self._iops = dict(iops) if iops is not None else {}  # make copy
-        self._context = context
+        self._context = context if context is not Context.native else Context.enter
         self.mine = mine if mine is not None else Mine()
         self.dock = dock   # stub fix later when have Dock class
 

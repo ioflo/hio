@@ -209,9 +209,10 @@ def test_boxer_make():
         bx(over='top')
         bx()
         b = bx()
+        do()
         bx(over=b)
         do(deed="end")
-        do()
+
 
 
     assert "end" in ActBase.Registry

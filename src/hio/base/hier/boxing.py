@@ -18,6 +18,16 @@ from .needing import Need
 from ...help import modify, Mine, Renam
 
 
+contextDispatch = dict(precon="preacts",
+                       renter="renacts",
+                       enter="enacts",
+                       recur="reacts",
+                       tail="tacts",
+                       transit="tracts",
+                       exit="exacts",
+                       rexit="rexacts")
+
+
 class Box(Tymee):
     """Box Class for hierarchical action framework (boxwork) instances.
     Box instance holds reference to in-memory data mine shared by all the boxes in a
@@ -34,7 +44,6 @@ class Box(Tymee):
         over (Box | None): this box's over box instance or None
         unders (list[Box]): this box's under box instances or empty
                             zeroth entry is primary under
-
         preacts (list[act]): precon (pre-conditions for entry) context acts
         remacts (list[act]): remark re-enter mark subcontext acts (retained)
         renacts (list[act]): renter (re-enter) context acts  (retained)
@@ -836,6 +845,44 @@ class Boxer(Tymee):
         parms.update(iops=iops)
 
         act = klas(**parms)
+        context = act.context  # act init may override passed in context
+
+        """
+        precon (str): precon context
+        renter (str): renter context
+        enter (str): enter context
+        recur (str): recur context
+        tail (str): tail context
+        transit (str): transit context
+        exit (str): exit context
+        rexit (str): rexit context
+        """
+
+        # make this a dispatch with dict mapping context to attr name and
+        # then use getattr
+        #if context == Context.precon:
+            #m.box.preacts.append(act)
+        #elif context == Context.renter:
+            #m.box.renacts.append(act)
+        #elif context == Context.enter:
+            #m.box.enacts.append(act)
+        #elif context == Context.recur:
+            #m.box.reacts.append(act)
+        #elif context == Context.tail:
+            #m.box.tacts.append(act)
+        #elif context == Context.transit:
+            #m.box.tracts.append(act)
+        #elif context == Context.exit:
+            #m.box.exacts.append(act)
+        #elif context == Context.rexit:
+            #m.box.rexacts.append(act)
+        #else:
+            #raise HierError("Unrecognized context='{context}'")
+
+        try:
+            getattr(m.box, contextDispatch[context]).append(act)
+        except (KeyError, AttributeError) as ex:
+            raise HierError("Unrecognized context='{context}'") from ex
 
 
         return act
