@@ -226,7 +226,10 @@ class EndAct(ActBase):
         dock (Dock): durable bags in dock (on disc) shared by boxwork
 
     Attributes:
-        boxer (Boxer): instance to be ended
+
+    Used iops:
+        _boxer (str):  boxer name
+
 
     Hidden
         ._name (str|None): unique name of instance
@@ -248,7 +251,7 @@ class EndAct(ActBase):
             EndAct.registerbyname(name)
 
 
-    def __init__(self, boxer, *, context=Context.enter, **kwa):
+    def __init__(self, context=Context.enter, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:
@@ -261,18 +264,28 @@ class EndAct(ActBase):
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
         Parameters:
-            boxer (Boxer): boxer to be ended
+
+        Used iops:
+            _boxer (str): boxer name. Implicit iop injected by verb (do etc)
+
 
         """
         super(EndAct, self).__init__(context=context, **kwa)
-        self.boxer = boxer
 
-        keys = ("", "boxer", self.boxer.name, "end")  # _boxer_boxername_end
+        try:
+            boxer = self.iops['_boxer']  # get boxer name
+        except KeyError as ex:
+            raise HierError(f"Missing iops for '{self.name}' instance "
+                            f"of Act self.__class__.__name__") from ex
+
+
+        keys = ("", "boxer", boxer, "end")  # _boxer_boxername_end
         if keys not in self.mine:
             self.mine[keys] = Bag()  # create bag at end default value = None
 
 
     def act(self, **iops):
         """Act called by Actor. Should override in subclass."""
-        keys = ("", "boxer", self.boxer.name, "end")
+        boxer = self.iops['_boxer']  # get boxer name
+        keys = ("", "boxer", boxer, "end")
         self.mine[keys].value = True

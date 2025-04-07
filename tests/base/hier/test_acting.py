@@ -86,23 +86,28 @@ def test_endact_basic():
         assert name in EndAct.Registry
         assert EndAct.Registry[name] == EndAct
 
+    with pytest.raises(HierError):
+        eact = EndAct()  # requires iops with boxer=boxer.name
+
+
     mine = Mine()
     boxer = Boxer(mine=mine)
+    iops = dict(_boxer=boxer.name)
 
-    eact = EndAct(boxer=boxer, mine=mine)
-    assert eact.name == "EndAct0"
-    assert eact.iops == {}
+    eact = EndAct(iops=iops, mine=mine)
+    assert eact.name == "EndAct1"
+    assert eact.iops == iops
     assert eact.context == Context.enter
     assert eact.mine == mine
     assert eact.dock == None
-    assert eact.boxer == boxer
-    assert eact.Index == 1
+    assert eact.Index == 2
     assert eact.Instances[eact.name] == eact
-    keys = ("", "boxer", eact.boxer.name, "end")
+    keys = ("", "boxer", boxer.name, "end")
     assert keys in eact.mine
     assert not eact.mine[keys].value
     eact()
     assert eact.mine[keys].value
+
 
     """Done Test"""
 
