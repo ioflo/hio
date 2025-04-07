@@ -23,8 +23,8 @@ from dataclasses import dataclass, astuple, asdict, field
 from hio import hioing
 from hio.help import helping, modify, Mine, Renam
 from hio.base import tyming
-from hio.base.hier import Box, Boxer, Maker, ActBase
-from hio.base.hier import hiering
+from hio.base.hier import Box, Boxer, Maker, ActBase, Act, EndAct
+
 
 
 
@@ -232,6 +232,8 @@ def test_boxer_make():
     assert mods["bxidx"] == 4
     assert mods["over"].name == 'box2'
     assert mods['box'].name == 'box3'
+    assert isinstance(boxer.boxes['box2'].enacts[0], Act)
+    assert isinstance(boxer.boxes['box3'].enacts[0], EndAct)
 
     for name, box in boxer.boxes.items():  # test resolve
         assert isinstance(box.over, Box) or box.over is None
