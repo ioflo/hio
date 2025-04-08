@@ -22,7 +22,12 @@ from . import boxing
 
 @register()
 class Act(ActBase):
-    """Act for do verb deeds as callables.
+    """Act for do verb deeds as callables. At make (compile) time any callable
+    that is available in the scope of the do verb in the boxer.make method
+    can be passed in as the deed parameter and will be executed with ,iops as
+    its parameters.
+
+    do(deed, **iops)
 
     Inherited Class Attributes:
         Registry (dict): subclass registry whose items are (name, cls) where:

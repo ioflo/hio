@@ -8,6 +8,7 @@ Provides hierarchical box work support
 """
 from __future__ import annotations  # so type hints of classes get resolved later
 
+from collections.abc import Callable
 
 from ..tyming import Tymee
 from ...hioing import Mixin, HierError
@@ -813,13 +814,14 @@ class Boxer(Tymee):
 
 
 
-    def do(self, deed: None|str=None, *, name: str|None=None,
+    def do(self, deed: None|str|Callable=None, *, name: str|None=None,
            mods: WorkDom|None=None, **iops)->str:
         """Make an act and add to box work
 
         Parameters:
-            deed (None|str): Name of Act class in ActBase registry.
-                             None means use Act.
+            deed (None|str|Callable): When str name of class in ActBase registry.
+                    When None use Act with default lambda and iops as parameters.
+                    When Callable use Act with iops as parameters.
 
 
             mods (None | WorkDom):  state variables used to construct box work
@@ -831,12 +833,6 @@ class Boxer(Tymee):
         """
         m = mods  # alias more compact
 
-        deed = deed if deed is not None else "Act"
-        try:
-            klas = m.acts[deed]
-        except KeyError as ex:
-            raise HierError(f"Unregistered deed='{deed}'") from ex
-
         parms = dict(name=name, mine=self.mine, dock=self.dock)
         if m.context != Context.native:
             parms.update(context=m.context)  # override default context for klas
@@ -844,40 +840,24 @@ class Boxer(Tymee):
         iops = dict(_boxer=self.name, _box=m.box.name, **iops)
         parms.update(iops=iops)
 
-        act = klas(**parms)
+
+        deed = deed if deed is not None else "Act"
+
+        if isinstance(deed, str):
+            try:
+                klas = m.acts[deed]
+            except KeyError as ex:
+                raise HierError(f"Unregistered deed='{deed}'") from ex
+
+            act = klas(**parms)
+
+        elif callable(deed):
+            act = Act(deed=deed, **parms)
+
+        else:
+            raise HierError(f"Invalid {deed=}")
+
         context = act.context  # act init may override passed in context
-
-        """
-        precon (str): precon context
-        renter (str): renter context
-        enter (str): enter context
-        recur (str): recur context
-        tail (str): tail context
-        transit (str): transit context
-        exit (str): exit context
-        rexit (str): rexit context
-        """
-
-        # make this a dispatch with dict mapping context to attr name and
-        # then use getattr
-        #if context == Context.precon:
-            #m.box.preacts.append(act)
-        #elif context == Context.renter:
-            #m.box.renacts.append(act)
-        #elif context == Context.enter:
-            #m.box.enacts.append(act)
-        #elif context == Context.recur:
-            #m.box.reacts.append(act)
-        #elif context == Context.tail:
-            #m.box.tacts.append(act)
-        #elif context == Context.transit:
-            #m.box.tracts.append(act)
-        #elif context == Context.exit:
-            #m.box.exacts.append(act)
-        #elif context == Context.rexit:
-            #m.box.rexacts.append(act)
-        #else:
-            #raise HierError("Unrecognized context='{context}'")
 
         try:
             getattr(m.box, contextDispatch[context]).append(act)
