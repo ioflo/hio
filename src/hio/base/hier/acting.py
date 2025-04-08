@@ -22,7 +22,7 @@ from . import boxing
 
 @register()
 class Act(ActBase):
-    """Act is generic subclass of ActBase meant for do verb acts.
+    """Act for do verb deeds as callables.
 
     Inherited Class Attributes:
         Registry (dict): subclass registry whose items are (name, cls) where:
@@ -41,14 +41,18 @@ class Act(ActBase):
                 overrides with a subclass specific Index value to track
                 subclass specific instance default names.
 
-    Inherited Attributes:
-        mine (Mine): ephemeral bags in mine (in memory) shared by boxwork
-        dock (Dock): durable bags in dock (on disc) shared by boxwork
 
     Inherited Properties:
         name (str): unique name string of instance
         iops (dict): input-output-parameters for .act
         context (str): action context for .act
+
+    Inherited Attributes:
+        mine (Mine): ephemeral bags in mine (in memory) shared by boxwork
+        dock (Dock): durable bags in dock (on disc) shared by boxwork
+
+    Attributes:
+        deed (Callable): action to be called with .iops as parameters
 
     Hidden
         ._name (str|None): unique name of instance
@@ -61,7 +65,7 @@ class Act(ActBase):
 
 
 
-    def __init__(self, **kwa):
+    def __init__(self, deed=None, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:
@@ -74,16 +78,19 @@ class Act(ActBase):
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
         Parameters:
-
+            deed (None|Callable):  callable to be actioned with iops
 
         """
         super(Act, self).__init__(**kwa)
-
+        deed = deed if deed is not None else (lambda **iops: iops)
+        if not callable(deed):
+            raise HierError("Non-callable {deed=} for Act")
+        self.deed = deed
 
 
     def act(self, **iops):
-        """Act called by Actor. Should override in subclass."""
-        return None
+        """Act called by Actor."""
+        return self.deed(**iops)
 
 
 @register()

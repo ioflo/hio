@@ -31,6 +31,18 @@ def test_act_basic():
 
     assert not act()
 
+    iops = dict(a=1, b=2)
+    act = Act(iops=iops, context=Context.recur)
+    assert act.name == "Act1"
+    assert act.iops == iops
+    assert act.context == Context.recur
+    assert act.Index == 2
+    assert act.Instances[act.name] == act
+    assert act.mine == Mine()
+    assert act.dock == None
+
+    assert act() == iops
+
     """Done Test"""
 
 
