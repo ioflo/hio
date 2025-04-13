@@ -57,12 +57,26 @@ class Act(ActBase):
         dock (Dock): durable bags in dock (on disc) shared by boxwork
 
     Attributes:
-        deed (Callable): action to be called with .iops as parameters
+        deed (Callable): action to be called with .iops as parameters else
+                executable set of statements with M and D as locals
+
+    Properties:
+        compiled (bool): True means ._code holds compiled .deed
+                         False means not yet compiled
+
+
+    Hidden:
+
+        _code (None|CodeType): compiled evalable boolean expression .expr
+            None means not yet compiled from .expr
+
 
     Hidden
-        ._name (str|None): unique name of instance
-        ._iopts (dict): input-output-paramters for .act
-        ._context (str): action context for .act
+        _name (str|None): unique name of instance
+        _iopts (dict): input-output-paramters for .act
+        _context (str): action context for .act
+        _code (CodeType): compiled executable set of statements that execs .deed
+            when it is a noncallable str.  M and D are in the locals of the exec.
 
     """
     Index = 0  # naming index for default names of this subclasses instances
@@ -87,15 +101,44 @@ class Act(ActBase):
 
         """
         super(Act, self).__init__(**kwa)
-        deed = deed if deed is not None else (lambda **iops: iops)
-        if not callable(deed):
-            raise HierError("Non-callable {deed=} for Act")
-        self.deed = deed
+        self.deed = deed if deed is not None else (lambda **iops: iops)
+        self.iops.update(M=self.mine, D=self.dock)  # inject .mine and .dock
+        self._code = None
 
 
-    def act(self, **iops):
-        """Act called by Actor."""
-        return self.deed(**iops)
+    def act(self, **iops):  # passed in by call
+        """Act called by ActBase."""
+        if callable(self.deed):
+            return self.deed(**iops)
+
+        if not self.compiled:  # not yet compiled so lazy
+            self.compile()  # first time only recompile to ._code
+        M = self.mine  # ensure M is in locals() for eval
+        D = self.dock  # ensure D is in locals() for eval
+        return exec(self._code)
+
+
+
+    @property
+    def compiled(self):
+        """Property compiled
+
+        Returns:
+            compiled (bool): True means ._code holds compiled ._expr
+                             False means not yet compiled
+        """
+        return True if self._code is not None else False
+
+
+    def compile(self):
+        """Compile evable boolean expression str ._expr into compiled code
+        object ._code to be evaluated at run time.
+        Because code objects are not pickleable the compilation must happen
+        at prep (enter) time not init time.
+        """
+        self._code = compile(self.deed, '<string>', 'exec')
+
+
 
 
 @register()
@@ -135,9 +178,9 @@ class Tract(ActBase):
         need (Need): transition condition to be evaluated
 
     Hidden
-        ._name (str|None): unique name of instance
-        ._iopts (dict): input-output-paramters for .act
-        ._context (str): action context for .act
+        _name (str|None): unique name of instance
+        _iopts (dict): input-output-paramters for .act
+        _context (str): action context for .act
 
     """
     Index = 0  # naming index for default names of this subclasses instances
@@ -179,7 +222,7 @@ class Tract(ActBase):
 
 
     def act(self, **iops):
-        """Act called by Actor. Should override in subclass."""
+        """Act called by ActBase."""
         if self.need():
             if not isinstance(self.dest, boxing.Box):
                 raise HierError(f"Unresolved dest={self.dest}")
@@ -230,9 +273,9 @@ class EndAct(ActBase):
 
 
     Hidden
-        ._name (str|None): unique name of instance
-        ._iopts (dict): input-output-paramters for .act
-        ._context (str): action context for .act
+        _name (str|None): unique name of instance
+        _iopts (dict): input-output-paramters for .act
+        _context (str): action context for .act
 
     """
     Index = 0  # naming index for default names of this subclasses instances
@@ -274,7 +317,7 @@ class EndAct(ActBase):
 
 
     def act(self, **iops):
-        """Act called by Actor. Should override in subclass."""
+        """Act called by ActBase."""
         boxer = self.iops['_boxer']  # get boxer name
         keys = ("", "boxer", boxer, "end")
         self.mine[keys].value = True

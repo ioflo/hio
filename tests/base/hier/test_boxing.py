@@ -23,7 +23,7 @@ from dataclasses import dataclass, astuple, asdict, field
 from hio import hioing
 from hio.help import helping, modify, Mine, Renam
 from hio.base import tyming
-from hio.base.hier import Box, Boxer, Maker, ActBase, Act, EndAct
+from hio.base.hier import Box, Boxer, Maker, ActBase, Act, EndAct, Bag
 
 
 
@@ -277,8 +277,63 @@ def test_boxer_make_go():
             assert isinstance(tract.dest, Box)
 
 
+    """Done Test"""
+
+def test_boxer_make_run():
+    """Test make method of Boxer and modify wrapper with bx and go verbs
+    """
+    def count(**iops):
+        M = iops['M']
+        if M.count.value is None:
+            M.count.value = 0
+        else:
+            M.count.value += 1
+        return M.count.value
+
+
+    def fun(bx, on, go, do, *pa):
+        bx(name='top')
+        bx(name='mid', over='top')
+        go('done', "M.count.value==2")
+        bx(name='bot0', over='mid')
+        do(count)
+        go("next")
+        bx(name='bot1', over='mid')
+        do(count)
+        go("next")
+        bx(name='bot2', over='mid')
+        do(count)
+        go("bot0")
+        bx(name='done', over=None)
+        do('end')
+
+
+    mine = Mine()
+    mine['count'] = Bag()
+
+    boxer = Boxer(mine=mine)
+    assert boxer.boxes == {}
+    mods = boxer.make(fun)
+    assert len(boxer.boxes) == 6
+    assert list(boxer.boxes) == ['top', 'mid', 'bot0', 'bot1', 'bot2', 'done']
+
+    boxer.begin()
+    assert boxer.box.name == "bot1"  # half trans at end of first pass
+    assert mine.count.value == 0
+    boxer.run()
+    assert boxer.box.name == "bot2"
+    assert mine.count.value == 1
+    boxer.run()
+    assert boxer.box.name == "done"
+    assert mine.count.value == 2
+    boxer.run()
+    assert boxer.box is None
+    assert mine.count.value == 2
+    assert boxer.endial()
 
     """Done Test"""
+
+
 
 def test_maker_basic():
     """Basic test Maker class"""
@@ -599,6 +654,7 @@ if __name__ == "__main__":
     test_boxer_basic()
     test_boxer_make()
     test_boxer_make_go()
+    test_boxer_make_run()
     test_maker_basic()
     test_concept_bx_nonlocal()
     test_concept_bx_global()

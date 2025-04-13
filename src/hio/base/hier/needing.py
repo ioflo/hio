@@ -106,7 +106,7 @@ class Need(Mixin):
     def __call__(self):
         """Make Need instance a callable object."""
         if not self.compiled:  # not yet compiled so lazy
-            self.compile()  # first time only recompile forces recompose
+            self.compile()  # first time only recompile
         M = self.mine  # ensure M is in locals() for eval
         D = self.dock  # ensure D is in locals() for eval
         return eval(self._code)

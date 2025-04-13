@@ -22,26 +22,88 @@ def test_act_basic():
 
     act = Act()
     assert act.name == "Act0"
-    assert act.iops == {}
+    assert act.iops == {'M': {}, 'D': None}
     assert act.context == Context.enter
     assert act.Index == 1
     assert act.Instances[act.name] == act
     assert act.mine == Mine()
     assert act.dock == None
+    assert callable(act.deed)
+    assert act._code is None
+    assert not act.compiled
 
-    assert not act()
+    assert act() == act.iops
 
     iops = dict(a=1, b=2)
     act = Act(iops=iops, context=Context.recur)
     assert act.name == "Act1"
-    assert act.iops == iops
+    assert act.iops == {'a': 1, 'b': 2, 'M': {}, 'D': None}
     assert act.context == Context.recur
     assert act.Index == 2
     assert act.Instances[act.name] == act
     assert act.mine == Mine()
     assert act.dock == None
+    assert callable(act.deed)
+    assert act._code is None
+    assert not act.compiled
 
-    assert act() == iops
+    assert act() == act.iops
+
+    def dumb(**iops):
+        M = iops['M']
+        if 'count' not in M:
+            M['count'] = Bag()
+        if M.count.value is None:
+            M.count.value = 0
+        M.count.value += 1
+        return (M.count.value, len(iops), iops)
+
+    iops = dict(when="now", why="because")
+    act = Act(dumb, iops=iops)
+    assert act.name == "Act2"
+    assert act.iops == {'when': 'now', 'why': 'because', 'M': {}, 'D': None}
+    assert act.context == Context.enter
+    assert act.Index == 3
+    assert act.Instances[act.name] == act
+    assert act.mine == Mine()
+    assert act.dock == None
+    assert callable(act.deed)
+    assert act.deed == dumb
+    assert act._code is None
+    assert not act.compiled
+
+    assert act() == (1, 4, {'when': 'now',
+                            'why': 'because',
+                            'M': {'count': Bag(_tyme=None, value=1)},
+                            'D': None})
+
+    iops = dict(fix=3)
+    mine = Mine()
+    mine.stuff = Bag()
+    mine.stuff.value = 0
+    deed = "M.stuff.value += 1\n"
+    act = Act(deed, mine=mine, iops=iops)
+    assert act.name == "Act3"
+    assert act.iops == {'fix': 3, 'M': {'stuff': Bag(_tyme=None, value=0)}, 'D': None}
+    assert act.context == Context.enter
+    assert act.Index == 4
+    assert act.Instances[act.name] == act
+    assert act.mine == mine
+    assert act.dock == None
+    assert not callable(act.deed)
+    assert act.deed == deed
+    assert act._code is None
+    assert not act.compiled
+
+    assert act() == None
+    assert act._code is not None
+    assert act.compiled
+    assert mine.stuff.value == 1
+
+    assert act() == None
+    assert act.compiled
+    assert mine.stuff.value == 2
+
 
     """Done Test"""
 

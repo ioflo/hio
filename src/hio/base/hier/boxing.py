@@ -371,7 +371,7 @@ class Boxer(Tymee):
         """Prepare and execute first pass
         """
         if not self.first:
-            self.first = self.boxes[0]  # first box in boxes is default first
+            self.first = list(self.boxes.values())[0]  # first box in boxes is default first
         self.box = self.first
         self.renters = []  # first pass no rentry of any boxes
         self.enters = self.box.pile
@@ -418,7 +418,7 @@ class Boxer(Tymee):
         self.enter()  # uses saved .enters to en-mark and enter
         self.enters = []  # entry completed so make empty
 
-        for box in self.box.pile:
+        for box in self.box.pile:  # top down
             for react in box.reacts:   # recur context top down
                 react()
             for tact in box.tacts:   # trail context top down
@@ -430,16 +430,16 @@ class Boxer(Tymee):
                 return True  # beginning completed already
 
             for tract in box.tracts:  # transit context top down
-                if tract():  # transition condition satisfied
-                    exits, enters, renters, rexits = self.exen(box, tract.dest)
+                if dest := tract():  # transition condition satisfied
+                    exits, enters, renters, rexits = self.exen(box, dest)
                     if not self.precon(enters):  # transit not satisfied
                         continue  # keep trying
                     self.exit(exits)  # exit bottom up
                     self.rexit(rexits)  # rexit bottom up  (boxes retained)
                     self.renters = renters  # save for next pass
                     self.enters = enters  # save for next pass
-                    self.box = tract.dest  # set new active box
-                    break
+                    self.box = dest  # set new active box
+                    return False  # transition so stop iteration over pile
 
         return False  # continue running not done
 
@@ -524,7 +524,7 @@ class Boxer(Tymee):
 
         """
         for box in exits:
-            for exact in box.exact:
+            for exact in box.exacts:
                 exact()
 
 
@@ -536,7 +536,7 @@ class Boxer(Tymee):
             rexits (None|list[Box]): boxes to be re-exited in bottom up order
         """
         for box in rexits:
-            for rexact in box.rexact:
+            for rexact in box.rexacts:
                 rexact()
 
 
