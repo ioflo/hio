@@ -298,10 +298,10 @@ def test_boxer_make_run():
         bx(name='bot0', over='mid')
         do(count)
         go("next")
-        bx(name='bot1', over='mid')
+        bx(name='bot1')  # over defaults to same as prev box
         do(count)
         go("next")
-        bx(name='bot2', over='mid')
+        bx(name='bot2')  # over defaults to same as prev box
         do(count)
         go("bot0")
         bx(name='done', over=None)
