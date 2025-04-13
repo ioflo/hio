@@ -113,8 +113,9 @@ class Act(ActBase):
 
         if not self.compiled:  # not yet compiled so lazy
             self.compile()  # first time only recompile to ._code
-        M = self.mine  # ensure M is in locals() for eval
-        D = self.dock  # ensure D is in locals() for eval
+        M = self.mine  # ensure M is in locals() for exec
+        D = self.dock  # ensure D is in locals() for exec
+        # note iops already in locals() for exec
         return exec(self._code)
 
 
