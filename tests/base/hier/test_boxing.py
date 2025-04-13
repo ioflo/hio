@@ -204,7 +204,7 @@ def test_boxer_basic():
 
 def test_boxer_make():
     """Test make method of Boxer and modify wrapper"""
-    def fun(bx, on, go, do, *pa):
+    def fun(bx, go, do, on, *pa):
         bx(name='top')
         bx(over='top')
         bx()
@@ -246,7 +246,7 @@ def test_boxer_make():
 def test_boxer_make_go():
     """Test make method of Boxer and modify wrapper with bx and go verbs
     """
-    def fun(bx, on, go, do, *pa):
+    def fun(bx, go, do, on, *pa):
         bx(name='top')
         bx(over='top')
         go("next")
@@ -291,7 +291,7 @@ def test_boxer_make_run():
         return M.count.value
 
 
-    def fun(bx, on, go, do, *pa):
+    def fun(bx, go, do, on, *pa):
         bx(name='top')
         bx(name='mid', over='top')
         go('done', "M.count.value==2")

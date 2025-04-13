@@ -20,7 +20,9 @@ from ...help import modify, Mine, Renam
 
 
 contextDispatch = dict(precon="preacts",
+                       remark="remacts",
                        renter="renacts",
+                       enmark="enmacts",
                        enter="enacts",
                        recur="reacts",
                        tail="tacts",
@@ -602,10 +604,10 @@ class Boxer(Tymee):
         works = WorkDom()  # standard defaults
         works.acts = ActBase.Registry
         bx = modify(mods=works)(self.bx)
-        on = modify(mods=works)(self.on)
         go = modify(mods=works)(self.go)
         do = modify(mods=works)(self.do)
-        fun(bx=bx, on=on, go=go, do=do)  # calling fun will build boxer.boxes
+        on = modify(mods=works)(self.on)
+        fun(bx=bx, go=go, do=do, on=on)  # calling fun will build boxer.boxes
         self.resolve()
         return works  # for debugging analysis
 
@@ -682,80 +684,6 @@ class Boxer(Tymee):
             m.box._next = box
         m.box = box  # update current box
         return box
-
-
-    def on(self, cond: None|str=None, key: None|str=None, expr: None|str=None,
-                 *, mods: WorkDom|None=None, **kwa)->Need:
-        """Make a Need with support for special Need conditions and return it.
-        Use inside go verb as need argument for special need condition
-        Use inside do verb as deed argument for preact or tact
-
-        Returns:
-            need (Need):  newly created special need
-
-        Parameters:
-            cond (None|str): special need condition to be satisfied. This is
-                resolved in evalable boolean expression.
-                When None then ignore
-                When str then special need condition to be resolved into evalable
-                boolean expression
-
-            key (None|str): key to mine item ref for special need cond when
-                applicable, i.e. cond is with respect to mine at key that is
-                not predetermined solely by cond. Otherwise None.
-                When None use default for cond
-                When str then resolve key to mine at key
-
-
-            expr (None|str): evalable boolean expression as additional constraint(s)
-                ANDed with result of cond.
-                When None or empty then ignore
-                When str then evalable python boolean expression to be ANDed with
-                    the result of cond resolution.
-
-            mods (None | WorkDom):  state variables used to construct box work
-                None is just to allow definition as keyword arg. Assumes in
-                actual usage that mods is always provided as WorkDom instance of
-                form:
-
-                    box (Box|None): current box in box work. None if not yet a box
-                    over (Box|None): current over Box in box work. None if top level
-                    bxpre (str): default name prefix used to generate unique box
-                        name relative to boxer.boxes
-                    bxidx (int): default box index used to generate unique box
-                        name relative to boxer.boxes
-
-        """
-        m = mods  # alias more compact
-
-        _expr = None
-
-        if not cond:
-            if not expr:
-                cond = "updated"  # default
-            else:  # no cond but with expr
-                _expr = expr  # use expr instead of resolved cond
-                expr = None  # can't have both _expr and expr same below
-
-        if not _expr:  # cond above so need to resolve cond into _expr
-            if cond == "updated":
-                _expr = "True"
-            else:
-                pass  # raise error since must have valid _expr after here
-
-        # now _expr is valid
-
-        if expr:  # both resolved cond as _expr and expr so AND together
-            _expr = "(" + _expr + ") and (" + expr + ")"
-
-
-
-        need = Need(expr=_expr, mine=self.mine, dock=self.dock)
-
-
-        return need
-
-
 
 
     def go(self, dest: None|str=None, expr: None|str=None,
@@ -865,6 +793,82 @@ class Boxer(Tymee):
 
 
         return act
+
+
+
+    def on(self, cond: None|str=None, key: None|str=None, expr: None|str=None,
+                 *, mods: WorkDom|None=None, **kwa)->Need:
+        """Make a Need with support for special Need conditions and return it.
+        Use inside go verb as need argument for special need condition
+        Use inside do verb as deed argument for preact or tact
+
+        Returns:
+            need (Need):  newly created special need
+
+        Parameters:
+            cond (None|str): special need condition to be satisfied. This is
+                resolved in evalable boolean expression.
+                When None then ignore
+                When str then special need condition to be resolved into evalable
+                boolean expression
+
+            key (None|str): key to mine item ref for special need cond when
+                applicable, i.e. cond is with respect to mine at key that is
+                not predetermined solely by cond. Otherwise None.
+                When None use default for cond
+                When str then resolve key to mine at key
+
+
+            expr (None|str): evalable boolean expression as additional constraint(s)
+                ANDed with result of cond.
+                When None or empty then ignore
+                When str then evalable python boolean expression to be ANDed with
+                    the result of cond resolution.
+
+            mods (None | WorkDom):  state variables used to construct box work
+                None is just to allow definition as keyword arg. Assumes in
+                actual usage that mods is always provided as WorkDom instance of
+                form:
+
+                    box (Box|None): current box in box work. None if not yet a box
+                    over (Box|None): current over Box in box work. None if top level
+                    bxpre (str): default name prefix used to generate unique box
+                        name relative to boxer.boxes
+                    bxidx (int): default box index used to generate unique box
+                        name relative to boxer.boxes
+
+        """
+        m = mods  # alias more compact
+
+        _expr = None
+
+        if not cond:
+            if not expr:
+                cond = "updated"  # default
+            else:  # no cond but with expr
+                _expr = expr  # use expr instead of resolved cond
+                expr = None  # can't have both _expr and expr same below
+
+        if not _expr:  # cond above so need to resolve cond into _expr
+            if cond == "updated":
+                _expr = "True"
+            else:
+                pass  # raise error since must have valid _expr after here
+
+        # now _expr is valid
+
+        if expr:  # both resolved cond as _expr and expr so AND together
+            _expr = "(" + _expr + ") and (" + expr + ")"
+
+
+
+        need = Need(expr=_expr, mine=self.mine, dock=self.dock)
+
+
+        return need
+
+
+
 
 
     @staticmethod

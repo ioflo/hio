@@ -63,7 +63,9 @@ Action contexts for Acts
 Fields:
    native (str): native context
    precon (str): precon context
+   remark (str): remark context
    renter (str): renter context
+   enmark (str): enmark context
    enter (str): enter context
    recur (str): recur context
    tail (str): tail context
@@ -71,11 +73,13 @@ Fields:
    exit (str): exit context
    rexit (str): rexit context
 """
-Contextage = namedtuple("Contextage", "native precon renter enter recur tail transit exit rexit")
+Contextage = namedtuple("Contextage", "native precon remark renter enmark enter"
+                                      " recur tail transit exit rexit")
 
-Context = Contextage(native="native", precon="precon", renter="renter",
-                     enter="enter", recur="recur", tail="tail",
-                     transit="transit", exit="exit", rexit="rexit")
+Context = Contextage(native="native", precon="precon", remark="remark",
+                     renter="renter", enmark="enmark", enter="enter",
+                     recur="recur", tail="tail", transit="transit",
+                     exit="exit", rexit="rexit")
 
 
 @dataclass

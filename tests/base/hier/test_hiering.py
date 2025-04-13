@@ -32,7 +32,9 @@ def test_context():
     assert Context.native == "native"
     assert Context._asdict() == {'native': 'native',
                                 'precon': 'precon',
+                                'remark': 'remark',
                                 'renter': 'renter',
+                                'enmark': 'enmark',
                                 'enter': 'enter',
                                 'recur': 'recur',
                                 'tail': 'tail',
