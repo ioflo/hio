@@ -1,6 +1,5 @@
 # -*- encoding: utf-8 -*-
-"""
-tests.help.test_decking module
+"""tests.help.test_decking module
 
 """
 import pytest

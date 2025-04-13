@@ -101,7 +101,7 @@ class MultiError(HioError):
 
 class HierError(HioError):
     """
-    Error using or configuring hierdoing support classes
+    Error using or configuring hiering support classes
 
     Usage:
         raise HierError("error message")

@@ -1,6 +1,5 @@
 # -*- encoding: utf-8 -*-
-"""
-keri.help.decking module
+"""hio.help.decking module
 
 Support for Deck class
 

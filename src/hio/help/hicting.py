@@ -1,6 +1,5 @@
 # -*- encoding: utf-8 -*-
-"""
-hio.help.hicting module
+"""hio.help.hicting module
 
 """
 from multidict import MultiDict, CIMultiDict

@@ -16,7 +16,7 @@ import json
 from dataclasses import dataclass, astuple, asdict, field
 
 from hio.help import helping
-from hio.help.helping import datify, dictify
+from hio.help.doming import datify, dictify
 from hio.base import tyming
 from hio.base import doing, multidoing, Doist
 from hio.base.doing import ExDoer

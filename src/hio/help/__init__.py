@@ -14,10 +14,11 @@ from . import ogling
 # initialize global ogler at hio.help.ogler always instantiated by default
 ogler = ogling.initOgler(prefix='hio')  # init only runs  once on import
 
+from .helping import isNonStringIterable, isNonStringSequence, isIterator, Reat
 from .decking import Deck
 from .hicting import Hict, Mict
 from .timing import Timer, MonoTimer, TimerError, RetroTimerError
 from .naming import Namer
-from .helping import (isNonStringIterable, isNonStringSequence, isIterator,
-                      RawDom, MapDom, IceMapDom, modify, modize)
+from .doming import RawDom, MapDom, IceMapDom, modify, modize
+from .mining import Renam, Mine
 

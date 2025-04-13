@@ -1,6 +1,5 @@
 # -*- encoding: utf-8 -*-
-"""
-hio.help.ogling module
+"""hio.help.ogling module
 
 Provides python stdlib logging module support
 
