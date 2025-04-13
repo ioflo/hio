@@ -104,7 +104,26 @@ def test_act_basic():
     assert act.compiled
     assert mine.stuff.value == 2
 
+    """Done Test"""
 
+def test_need_act():
+    """Test Act using Need as its deed"""
+
+    mine = Mine()
+    need = Need(mine=mine)
+    act = Act(need, mine=mine)
+    assert act() == True
+
+
+    mine.cycle = Bag(value=2)
+    mine.turn = Bag(value=2)
+    expr = "M.cycle.value > 3 and M.turn.value <= 2"
+    need = Need(expr=expr, mine=mine)
+    act = Act(deed=need, mine=mine)
+    assert act() == False
+
+    mine.cycle.value = 5
+    assert act() == True
     """Done Test"""
 
 
@@ -144,9 +163,8 @@ def test_tract_basic():
 
     mine.cycle.value = 1
     assert not tract()
-
-
     """Done Test"""
+
 
 def test_endact_basic():
     """Test EndAct class"""
@@ -187,5 +205,6 @@ def test_endact_basic():
 
 if __name__ == "__main__":
     test_act_basic()
+    test_need_act()
     test_tract_basic()
     test_endact_basic()

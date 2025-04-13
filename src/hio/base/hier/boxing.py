@@ -686,8 +686,9 @@ class Boxer(Tymee):
 
     def on(self, cond: None|str=None, key: None|str=None, expr: None|str=None,
                  *, mods: WorkDom|None=None, **kwa)->Need:
-        """Make a special Need and return it.
-        Used for special needs for tracts and also for beacts (before enter)
+        """Make a Need with support for special Need conditions and return it.
+        Use inside go verb as need argument for special need condition
+        Use inside do verb as deed argument for preact or tact
 
         Returns:
             need (Need):  newly created special need
@@ -723,8 +724,6 @@ class Boxer(Tymee):
                         name relative to boxer.boxes
                     bxidx (int): default box index used to generate unique box
                         name relative to boxer.boxes
-
-
 
         """
         m = mods  # alias more compact

@@ -319,7 +319,9 @@ class ActBase(Mixin):
 
 
     def __call__(self):
-        """Make ActBase instance a callable object. run its .act method"""
+        """Make ActBase instance a callable object.
+        Call its .act method with self.iops as parameters
+        """
         return self.act(**self.iops)
 
 

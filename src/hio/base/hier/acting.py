@@ -107,7 +107,13 @@ class Act(ActBase):
 
 
     def act(self, **iops):  # passed in by call
-        """Act called by ActBase."""
+        """Act called by ActBase.
+
+        Parameters:
+            iops (dict): input output parms for deed when deed is callable.
+
+
+        """
         if callable(self.deed):
             return self.deed(**iops)
 
@@ -223,7 +229,12 @@ class Tract(ActBase):
 
 
     def act(self, **iops):
-        """Act called by ActBase."""
+        """Act called by ActBase.
+
+        Parameters:
+            iops (dict): input output parms
+
+        """
         if self.need():
             if not isinstance(self.dest, boxing.Box):
                 raise HierError(f"Unresolved dest={self.dest}")
@@ -318,7 +329,12 @@ class EndAct(ActBase):
 
 
     def act(self, **iops):
-        """Act called by ActBase."""
+        """Act called by ActBase.
+
+        Parameters:
+            iops (dict): input output parms
+
+        """
         boxer = self.iops['_boxer']  # get boxer name
         keys = ("", "boxer", boxer, "end")
         self.mine[keys].value = True
