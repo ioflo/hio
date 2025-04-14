@@ -427,9 +427,6 @@ class Mark(ActBase):
             raise HierError(f"Missing iops '_box' for '{self.name}' instance "
                             f"of Act self.__class__.__name__") from ex
 
-        keys = ("", "boxer", boxer, "box", box, "mark", self.name)
-        if keys not in self.mine:
-            self.mine[keys] = Bag()  # create bag default value = None
 
         try:
             key = self.iops['_key']  # get bag key
@@ -487,6 +484,13 @@ class UpdateMark(Mark):
 
         """
         super(UpdateMark, self).__init__(context=context, **kwa)
+        boxer = self.iops['_boxer']  # get boxer name
+        box = self.iops['_box']
+        key = self.iops['_key']
+        keys = ("", "boxer", boxer, "box", box, "update", key)
+        if keys not in self.mine:
+            self.mine[keys] = Bag()  # create bag default value = None
+
 
 
     def act(self, **iops):
@@ -501,7 +505,7 @@ class UpdateMark(Mark):
         key = self.iops['_key']
         keys = ("", "boxer", boxer, "box", box, "update", key)
         # mark bag tyme
-        self.mine[keys].value = self.mine[key].tyme
+        self.mine[keys].value = self.mine[key]._tyme
 
 
 @register()
@@ -535,6 +539,12 @@ class ChangeMark(Mark):
 
         """
         super(ChangeMark, self).__init__(context=context, **kwa)
+        boxer = self.iops['_boxer']  # get boxer name
+        box = self.iops['_box']
+        key = self.iops['_key']
+        keys = ("", "boxer", boxer, "box", box, "change", key)
+        if keys not in self.mine:
+            self.mine[keys] = Bag()  # create bag default value = None
 
 
     def act(self, **iops):

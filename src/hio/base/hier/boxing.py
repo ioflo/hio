@@ -686,7 +686,7 @@ class Boxer(Tymee):
         return box
 
 
-    def go(self, dest: None|str=None, expr: None|str=None,
+    def go(self, dest: None|str=None, expr: None|str|Need=None,
                  *, mods: WorkDom|None=None, **kwa)->Tract:
         """Make a Tract and add it to the tracts context of the current box.
 
@@ -700,10 +700,11 @@ class Boxer(Tymee):
                     later resolution
                 When Box instance that already resolved
 
-            expr (None|str): evalable boolean expression for transition to dest.
+            expr (None|str|Need): need for transition to dest.
                 When None then conditional always True. Always transit.
                 When str then evalable python boolean expression to be
                     resolved into a Need instance for eval at run time
+                When Need instance then use as is
 
             mods (None | WorkDom):  state variables used to construct box work
                 None is just to allow definition as keyword arg. Assumes in
@@ -733,7 +734,10 @@ class Boxer(Tymee):
             if dest in self.boxes:
                 dest = self.boxes[dest]
 
-        need = Need(expr=expr, mine=self.mine, dock=self.dock)
+        if isinstance(expr, Need):
+            need = expr
+        else:   # assumes evalable expr str
+            need = Need(expr=expr, mine=self.mine, dock=self.dock)
 
         tract = Tract(dest=dest, need=need)
         m.box.tracts.append(tract)
@@ -855,6 +859,8 @@ class Boxer(Tymee):
 
         if not _expr:  # cond above so need to resolve cond into _expr
             if cond == "update":
+                if not key:
+                    raise HierError("Missing bag key for special need 'update'")
                 iops.update(_key=key)
                 mks =  ("", "boxer", self.name, "box", m.box.name, "update", key)
                 mk = self.mine.tokey(mks)  # mark bag key
@@ -864,12 +870,12 @@ class Boxer(Tymee):
                     if mark.name == name:
                         found = True
                         break
-                if not found:  # no preexisting mark so make one
+                if not found:  # no preexisting UpdateMark for this key
                     mark = UpdateMark(name=name, iops=iops, mine=self.mine, dock=self.dock)
-                    m.box.enmarks.append(mark)  # update is always enmark
+                    m.box.enmacts.append(mark)  # update is always enmark
 
-                _expr = (f"(M[{mk}].value is None and M[{key}]._tyme is not None) or "
-                        f"(M[{mk}].value is not None and M[{key}]._tyme > M[{mk}].value)")
+                _expr = (f"(M.{mk}.value is None and M.{key}._tyme is not None) or "
+                         f"(M.{mk}.value is not None and M.{key}._tyme > M.{mk}.value)")
             else:
                 pass  # raise error since must have valid _expr after here
 
