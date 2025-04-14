@@ -57,26 +57,26 @@ from ...hioing import Mixin, HierError
 from ...help import isNonStringIterable, MapDom, modify, Renam, Mine
 
 
-"""Contextage (namedtuple):
-Action contexts for Acts
+"""Nabage (namedtuple):
+Action nabes (contexts mileu neighborhood) for Acts
 
 Fields:
-   native (str): native context
-   precon (str): precon context
-   remark (str): remark context
-   renter (str): renter context
-   enmark (str): enmark context
-   enter (str): enter context
-   recur (str): recur context
-   tail (str): tail context
-   transit (str): transit context
-   exit (str): exit context
-   rexit (str): rexit context
+   native (str): native nabe
+   precon (str): precon nabe
+   remark (str): remark nabe
+   renter (str): renter nabe
+   enmark (str): enmark nabe
+   enter (str): enter nabe
+   recur (str): recur nabe
+   tail (str): tail nabe
+   transit (str): transit nabe
+   exit (str): exit nabe
+   rexit (str): rexit nabe
 """
-Contextage = namedtuple("Contextage", "native precon remark renter enmark enter"
+Nabage = namedtuple("Nabage", "native precon remark renter enmark enter"
                                       " recur tail transit exit rexit")
 
-Context = Contextage(native="native", precon="precon", remark="remark",
+Nabe = Nabage(native="native", precon="precon", remark="remark",
                      renter="renter", enmark="enmark", enter="enter",
                      recur="recur", tail="tail", transit="transit",
                      exit="exit", rexit="rexit")
@@ -103,7 +103,7 @@ class WorkDom(MapDom):
     bxpre: str = 'box'  # default box name prefix when name not provided
     bxidx: int = 0  # default box name index when name not provided
     acts: dict = field(default_factory=dict)  # registry of Acts by name & aliases
-    context: str = Context.native  # current context
+    nabe: str = Nabe.native  # current action nabe (context)
 
 
 
@@ -131,7 +131,7 @@ def actify(name, *, base=None, attrs=None):
             assert kwa == self.iops
             return self.iops
 
-        t = test(iops=dict(what=1), hello="hello", context=Context.recur)
+        t = test(iops=dict(what=1), hello="hello", nabe=Nabe.recur)
 
     Notes:
     In Python, when a function is assigned as the value of a class attribute,
@@ -251,12 +251,12 @@ class ActBase(Mixin):
     Properties:
         name (str): unique name string of instance
         iops (dict): input-output-parameters for .act
-        context (str): action context for .act
+        nabe (str): action nabe (context) for .act
 
     Hidden
         ._name (str|None): unique name of instance
         ._iopts (dict): input-output-paramters for .act
-        ._context (str): action context for .act
+        ._nabe (str): action nabe (context) for .act
 
     """
     Registry = {}  # subclass registry
@@ -301,7 +301,7 @@ class ActBase(Mixin):
 
 
 
-    def __init__(self, *, name=None, iops=None, context=Context.enter,
+    def __init__(self, *, name=None, iops=None, nabe=Nabe.enter,
                  mine=None, dock=None, **kwa):
         """Initialization method for instance.
 
@@ -310,7 +310,7 @@ class ActBase(Mixin):
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
                 set to empty dict.
-            context (str): action context for act. default is "enter"
+            nabe (str): action nabe (context) for act. default is "enter"
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
@@ -318,7 +318,7 @@ class ActBase(Mixin):
         super(ActBase, self).__init__(**kwa) # in case of MRO
         self.name = name  # set name property
         self._iops = dict(iops) if iops is not None else {}  # make copy
-        self._context = context if context is not Context.native else Context.enter
+        self._nabe = nabe if nabe is not Nabe.native else Nabe.enter
         self.mine = mine if mine is not None else Mine()
         self.dock = dock   # stub fix later when have Dock class
 
@@ -375,12 +375,12 @@ class ActBase(Mixin):
 
 
     @property
-    def context(self):
-        """Property getter for ._context. Makes ._context read only
+    def nabe(self):
+        """Property getter for ._nabe. Makes ._nabe read only
 
         Returns:
-            context (str): action context for .act
+            nabe (str): action nabe (context) for .act
         """
-        return self._context
+        return self._nabe
 
 

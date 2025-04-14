@@ -12,7 +12,7 @@ from collections import namedtuple
 from ... import hioing
 from ...hioing import Mixin, HierError
 from ...help import Mine, Renam
-from .hiering import Context, ActBase, register
+from .hiering import Nabe, ActBase, register
 from .needing import Need
 from .bagging import Bag
 from . import boxing
@@ -50,7 +50,7 @@ class Act(ActBase):
     Inherited Properties:
         name (str): unique name string of instance
         iops (dict): input-output-parameters for .act
-        context (str): action context for .act
+        nabe (str): action nabe (context) for .act
 
     Inherited Attributes:
         mine (Mine): ephemeral bags in mine (in memory) shared by boxwork
@@ -74,7 +74,7 @@ class Act(ActBase):
     Hidden
         _name (str|None): unique name of instance
         _iopts (dict): input-output-paramters for .act
-        _context (str): action context for .act
+        _nabe (str): action nabe (context) for .act
         _code (CodeType): compiled executable set of statements that execs .deed
             when it is a noncallable str.  M and D are in the locals of the exec.
 
@@ -92,7 +92,7 @@ class Act(ActBase):
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
                 set to empty dict.
-            context (str|None): action context for .act. Default is "enter"
+            nabe (str|None): action nabe (context) for .act. Default is "enter"
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
@@ -174,7 +174,7 @@ class Tract(ActBase):
     Inherited Properties:
         name (str): unique name string of instance
         iops (dict): input-output-parameters for .act
-        context (str): action context for .act
+        nabe (str): action nabe (context) for .act
 
     Inherited Attributes:
         mine (Mine): ephemeral bags in mine (in memory) shared by boxwork
@@ -203,7 +203,7 @@ class Tract(ActBase):
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
                 set to empty dict.
-            context (str): action context for .act
+            nabe (str): action nabe (context) for .act
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
@@ -218,12 +218,12 @@ class Tract(ActBase):
                 When Need instance then use directly
 
         """
-        kwa.update(context=Context.transit)  # override must be transit context
+        kwa.update(nabe=Nabe.transit)  # override must be transit nabe
         super(Tract, self).__init__(**kwa)
         self.dest = dest if dest is not None else 'next'  # default is next
         self.need = need if need is not None else Need()  # default need evals to True
-        if self.context != Context.transit:
-            raise HierError(f"Invalid context='{self.context}' for Tract "
+        if self.nabe != Nabe.transit:
+            raise HierError(f"Invalid nabe='{self.nabe}' for Tract "
                             f"'{self.name}'")
 
 
@@ -272,7 +272,7 @@ class EndAct(ActBase):
     Inherited Properties:
         name (str): unique name string of instance
         iops (dict): input-output-parameters for .act
-        context (str): action context for .act
+        nabe (str): action nabe (context) for .act
 
     Inherited Attributes:
         mine (Mine): ephemeral bags in mine (in memory) shared by boxwork
@@ -287,15 +287,12 @@ class EndAct(ActBase):
     Hidden
         _name (str|None): unique name of instance
         _iops (dict): input-output-parameters for .act
-        _context (str): action context for .act
+        _nabe (str): action nabe (context) for .act
 
     """
     Index = 0  # naming index for default names of this subclasses instances
-    #Names = () tuple of aliases for this subclass created by @register
 
-
-
-    def __init__(self, context=Context.enter, **kwa):
+    def __init__(self, nabe=Nabe.enter, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:
@@ -303,7 +300,7 @@ class EndAct(ActBase):
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
                 set to empty dict.
-            context (str): action context for .act
+            nabe (str): action nabe (context) for .act
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
@@ -314,7 +311,7 @@ class EndAct(ActBase):
 
 
         """
-        super(EndAct, self).__init__(context=context, **kwa)
+        super(EndAct, self).__init__(nabe=nabe, **kwa)
 
         try:
             boxer = self.iops['_boxer']  # get boxer name
@@ -367,7 +364,7 @@ class Mark(ActBase):
     Inherited Properties:
         name (str): unique name string of instance
         iops (dict): input-output-parameters for .act
-        context (str): action context for .act
+        nabe (str): action nabe (context) for .act
 
     Inherited Attributes:
         mine (Mine): ephemeral bags in mine (in memory) shared by boxwork
@@ -385,14 +382,14 @@ class Mark(ActBase):
     Hidden
         _name (str|None): unique name of instance
         _iopts (dict): input-output-paramters for .act
-        _context (str): action context for .act
+        _nabe (str): action nabe (context) for .act
 
 
     """
     Index = 0  # naming index for default names of this subclasses instances
 
 
-    def __init__(self, context=Context.enmark, **kwa):
+    def __init__(self, nabe=Nabe.enmark, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:
@@ -400,7 +397,7 @@ class Mark(ActBase):
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
                 set to empty dict.
-            context (str): action context for .act
+            nabe (str): action nabe (context) for .act
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
@@ -413,7 +410,7 @@ class Mark(ActBase):
 
 
         """
-        super(Mark, self).__init__(context=context, **kwa)
+        super(Mark, self).__init__(nabe=nabe, **kwa)
 
         try:
             boxer = self.iops['_boxer']  # get boxer name
@@ -462,7 +459,7 @@ class UpdateMark(Mark):
     Index = 0  # naming index for default names of this subclasses instances
 
 
-    def __init__(self, context=Context.enmark, **kwa):
+    def __init__(self, nabe=Nabe.enmark, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:
@@ -470,7 +467,7 @@ class UpdateMark(Mark):
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
                 set to empty dict.
-            context (str): action context for .act
+            nabe (str): action nabe (context) for .act
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
@@ -483,7 +480,7 @@ class UpdateMark(Mark):
 
 
         """
-        super(UpdateMark, self).__init__(context=context, **kwa)
+        super(UpdateMark, self).__init__(nabe=nabe, **kwa)
         boxer = self.iops['_boxer']  # get boxer name
         box = self.iops['_box']  # get box name
         key = self.iops['_key']  # get bag key in mine
@@ -517,7 +514,7 @@ class ChangeMark(Mark):
     Index = 0  # naming index for default names of this subclasses instances
 
 
-    def __init__(self, context=Context.enmark, **kwa):
+    def __init__(self, nabe=Nabe.enmark, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:
@@ -525,7 +522,7 @@ class ChangeMark(Mark):
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
                 set to empty dict.
-            context (str): action context for .act
+            nabe (str): action nabe (context) for .act
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
@@ -538,7 +535,7 @@ class ChangeMark(Mark):
 
 
         """
-        super(ChangeMark, self).__init__(context=context, **kwa)
+        super(ChangeMark, self).__init__(nabe=nabe, **kwa)
         boxer = self.iops['_boxer']  # get boxer name
         box = self.iops['_box']  # get box name
         key = self.iops['_key']  # get bag key in mine
@@ -570,7 +567,7 @@ class Count(ActBase):
     Index = 0  # naming index for default names of this subclasses instances
 
 
-    def __init__(self, context=Context.recur, **kwa):
+    def __init__(self, nabe=Nabe.recur, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:
@@ -578,7 +575,7 @@ class Count(ActBase):
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
                 set to empty dict.
-            context (str): action context for .act
+            nabe (str): action nabe (context) for .act
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
@@ -589,7 +586,7 @@ class Count(ActBase):
             _box (str): box name in boxer.  Implicit iop injected by verb
 
         """
-        super(Count, self).__init__(context=context, **kwa)
+        super(Count, self).__init__(nabe=nabe, **kwa)
 
         try:
             boxer = self.iops['_boxer']  # get boxer name
@@ -634,7 +631,7 @@ class Discount(ActBase):
     Index = 0  # naming index for default names of this subclasses instances
 
 
-    def __init__(self, context=Context.exit, **kwa):
+    def __init__(self, nabe=Nabe.exit, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:
@@ -642,7 +639,7 @@ class Discount(ActBase):
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
                 set to empty dict.
-            context (str): action context for .act
+            nabe (str): action  nabe (context) for .act
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
@@ -653,7 +650,7 @@ class Discount(ActBase):
             _box (str): box name in boxer.  Implicit iop injected by verb
 
         """
-        super(Discount, self).__init__(context=context, **kwa)
+        super(Discount, self).__init__(nabe=nabe, **kwa)
         try:
             boxer = self.iops['_boxer']  # get boxer name
         except KeyError as ex:

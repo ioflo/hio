@@ -12,23 +12,23 @@ from collections.abc import Callable
 
 from ..tyming import Tymee
 from ...hioing import Mixin, HierError
-from .hiering import Context, WorkDom, ActBase
+from .hiering import Nabe, WorkDom, ActBase
 from .acting import Act, Tract, UpdateMark, ChangeMark, Count, Discount
 from .bagging import Bag
 from .needing import Need
 from ...help import modify, Mine, Renam
 
 
-contextDispatch = dict(precon="preacts",
-                       remark="remacts",
-                       renter="renacts",
-                       enmark="enmacts",
-                       enter="enacts",
-                       recur="reacts",
-                       tail="tacts",
-                       transit="tracts",
-                       exit="exacts",
-                       rexit="rexacts")
+nabeDispatch = dict(precon="preacts",
+                    remark="remacts",
+                    renter="renacts",
+                    enmark="enmacts",
+                    enter="enacts",
+                    recur="reacts",
+                    tail="tacts",
+                    transit="tracts",
+                    exit="exacts",
+                    rexit="rexacts")
 
 
 class Box(Tymee):
@@ -36,7 +36,7 @@ class Box(Tymee):
     Box instance holds reference to in-memory data mine shared by all the boxes in a
     given boxwork as well as its executing Boxer.
     Box instance holds references (links) to its over box and its under boxes.
-    Box instance holds the acts to be executed in their context.
+    Box instance holds the acts to be executed in their nabe.
 
     Inherited Attributes, Properties
         see Tymee
@@ -47,16 +47,16 @@ class Box(Tymee):
         over (Box | None): this box's over box instance or None
         unders (list[Box]): this box's under box instances or empty
                             zeroth entry is primary under
-        preacts (list[act]): precon (pre-conditions for entry) context acts
+        preacts (list[act]): precon (pre-conditions for entry) nabe acts
         remacts (list[act]): remark re-enter mark subcontext acts (retained)
-        renacts (list[act]): renter (re-enter) context acts  (retained)
+        renacts (list[act]): renter (re-enter) nabe acts  (retained)
         enmacts (list[act]): enmark enter mark subcontext acts
-        enacts (list[act]):  enter context acts
-        reacts (list[act]): recur context acts
-        tacts (list[act]): tail context acts
-        tracts (list[act]): transit context acts
-        exacts (list[act]): exit context acts
-        rexacts (list[act]): rexit (re-exit) context acts  (retained)
+        enacts (list[act]):  enter nabe acts
+        reacts (list[act]): recur nabe acts
+        tacts (list[act]): tail nabe acts
+        tracts (list[act]): transit nabe acts
+        exacts (list[act]): exit nabe acts
+        rexacts (list[act]): rexit (re-exit) nabe acts  (retained)
 
     Properties:
         name (str): unique identifier of instance
@@ -104,16 +104,16 @@ class Box(Tymee):
         self.unders = []  # list of under boxes,
 
         # acts by contexts
-        self.preacts = []  # precon context list of pre-entry acts
+        self.preacts = []  # precon nabe list of pre-entry acts
         self.remacts = []  # re-enter mark subcontext list of re-mark acts
-        self.renacts = []  # renter context list of re-enter acts (retained)
+        self.renacts = []  # renter nabe list of re-enter acts (retained)
         self.enmacts = []  # enter mark subcontext list of en-mark acts
-        self.enacts = []  # enter context list of enter acts
-        self.reacts = []  # recur context list of recurring acts
-        self.tacts = []  # tail context list of trailing acts
-        self.tracts = []  # transit context list of transition acts
-        self.exacts = []  # exit context list of exit acts
-        self.rexacts = []  # rexit context list of re-exit acts (retained)
+        self.enacts = []  # enter nabe list of enter acts
+        self.reacts = []  # recur nabe list of recurring acts
+        self.tacts = []  # tail nabe list of trailing acts
+        self.tracts = []  # transit nabe list of transition acts
+        self.exacts = []  # exit nabe list of exit acts
+        self.rexacts = []  # rexit nabe list of re-exit acts (retained)
 
         #lexical context
         self._next = None  # next box lexically
@@ -246,7 +246,7 @@ class Boxer(Tymee):
         _name (str): unique identifier of instance
 
 
-    Cycle Context Order
+    Cycle Nabe Order
 
     Init:
 
@@ -400,16 +400,16 @@ class Boxer(Tymee):
         self.enters = []  # entry completed
         # check for End here if so .end()
         for box in self.box.pile:
-            for react in box.reacts:   # recur context top down
+            for react in box.reacts:   # recur nabe top down
                 react()
-            for tact in box.tacts:   # trail context top down
+            for tact in box.tacts:   # trail nabe top down
                 tact()
             if self.endial():  # actioned desire to end
                 self.end()  # exits all active boxes in self.box.pile
                 self.box = None  # no active box
                 return True  # beginning completed already
 
-            for tract in box.tracts:  # transit context top down
+            for tract in box.tracts:  # transit nabe top down
                 if tract():  # transition condition satisfied
                     exits, enters, renters, rexits = self.exen(box, tract.dest)
                     if not self.precon(enters):  # transit not satisfied
@@ -433,9 +433,9 @@ class Boxer(Tymee):
         self.enters = []  # entry completed so make empty
 
         for box in self.box.pile:  # top down
-            for react in box.reacts:   # recur context top down
+            for react in box.reacts:   # recur nabe top down
                 react()
-            for tact in box.tacts:   # trail context top down
+            for tact in box.tacts:   # trail nabe top down
                 tact()
 
             if self.endial():  # actioned desire to end
@@ -443,7 +443,7 @@ class Boxer(Tymee):
                 self.box = None  # no active box
                 return True  # beginning completed already
 
-            for tract in box.tracts:  # transit context top down
+            for tract in box.tracts:  # transit nabe top down
                 if dest := tract():  # transition condition satisfied
                     exits, enters, renters, rexits = self.exen(box, dest)
                     if not self.precon(enters):  # transit not satisfied
@@ -700,7 +700,7 @@ class Boxer(Tymee):
 
     def go(self, dest: None|str=None, expr: None|str|Need=None,
                  *, mods: WorkDom|None=None, **kwa)->Tract:
-        """Make a Tract and add it to the tracts context of the current box.
+        """Make a Tract and add it to the tracts nabe of the current box.
 
         Returns:
             tract (Tract):  newly created tract
@@ -777,8 +777,8 @@ class Boxer(Tymee):
         m = mods  # alias more compact
 
         parms = dict(name=name, mine=self.mine, dock=self.dock)
-        if m.context != Context.native:
-            parms.update(context=m.context)  # override default context for klas
+        if m.nabe != Nabe.native:
+            parms.update(nabe=m.nabe)  # override default nabe for klas
 
         iops = dict(_boxer=self.name, _box=m.box.name, **iops)
         parms.update(iops=iops)
@@ -800,12 +800,12 @@ class Boxer(Tymee):
         else:
             raise HierError(f"Invalid {deed=}")
 
-        context = act.context  # act init may override passed in context
+        nabe = act.nabe  # act init may override passed in nabe
 
         try:
-            getattr(m.box, contextDispatch[context]).append(act)
+            getattr(m.box, nabeDispatch[nabe]).append(act)
         except (KeyError, AttributeError) as ex:
-            raise HierError("Unrecognized context='{context}'") from ex
+            raise HierError("Unrecognized nabe='{nabe}'") from ex
 
 
         return act
@@ -851,7 +851,7 @@ class Boxer(Tymee):
                     bxidx (int): default box name index used to generate unique box name
                                 relative to boxer.boxes
                     acts (dict):  registry of ActBase subclasses by name (including aliases)
-                    context (str): action context for act
+                    nabe (str): action nabe (context) for act
 
             iops (dict): input-output-parms for Act
 

@@ -23,14 +23,14 @@ from dataclasses import dataclass, astuple, asdict, field
 from hio import hioing
 from hio.help import helping, Mine, Renam
 from hio.base import tyming
-from hio.base.hier import WorkDom, Context, ActBase, actify, Box, Boxer, Maker
+from hio.base.hier import WorkDom, Nabe, ActBase, actify, Box, Boxer, Maker
 
 
-def test_context():
-    """Test Context namedtuple"""
+def test_nabe():
+    """Test Nabe namedtuple"""
 
-    assert Context.native == "native"
-    assert Context._asdict() == {'native': 'native',
+    assert Nabe.native == "native"
+    assert Nabe._asdict() == {'native': 'native',
                                 'precon': 'precon',
                                 'remark': 'remark',
                                 'renter': 'renter',
@@ -53,7 +53,7 @@ def test_workdom():
     assert w.bxpre == 'box'
     assert w.bxidx == 0
     assert w.acts == {}
-    assert w.context == Context.native
+    assert w.nabe == Nabe.native
 
 
 
@@ -75,7 +75,7 @@ def test_actbase():
     assert isinstance(act, Callable)
     assert act.name == 'ActBase0'
     assert act.iops == {}
-    assert act.context == Context.enter
+    assert act.nabe == Nabe.enter
     assert act.mine == Mine()
     assert act.dock == None
     assert hasattr(act, 'name')   # hasattr works for properties and attributes
@@ -90,7 +90,7 @@ def test_actbase():
     assert isinstance(act, Callable)
     assert act.name == 'ActBase1'
     assert act.iops == {}
-    assert act.context == Context.enter
+    assert act.nabe == Nabe.enter
     assert act.mine == Mine()
     assert act.dock == None
     assert hasattr(act, 'name')   # hasattr works for properties and attributes
@@ -111,10 +111,10 @@ def test_actify():
         assert kwa == self.iops
         return self.iops
 
-    t = test(iops=dict(what=1), hello="hello", context=Context.recur)  # signature for Act.__init__
+    t = test(iops=dict(what=1), hello="hello", nabe=Nabe.recur)  # signature for Act.__init__
     assert t.name == "Tact0"
     assert t.iops == dict(what=1)
-    assert t.context == Context.recur
+    assert t.nabe == Nabe.recur
     assert t.__class__.__name__ == "Tact"
     assert t.__class__.__name__ in t.Registry
     assert t.Registry[t.__class__.__name__] == t.__class__
@@ -127,7 +127,7 @@ def test_actify():
     x = test(bye="bye")  # signature for Act.__init__
     assert x.name == "Tact1"
     assert x.iops == {}
-    assert x.context == Context.enter
+    assert x.nabe == Nabe.enter
     assert x.__class__.__name__ == "Tact"
     assert x.__class__.__name__ in t.Registry
     assert x.Registry[t.__class__.__name__] == t.__class__
@@ -152,7 +152,7 @@ def test_actify():
     p = pest(name="spot", iops=dict(why=1))  # same signature as Act.__init__
     assert p.name == 'spot'
     assert p.iops == dict(why=1)
-    assert p.context == Context.enter
+    assert p.nabe == Nabe.enter
     assert "Pact" in p.Registry
     klas = p.Registry["Pact"]
     assert isinstance(p, klas)
@@ -169,7 +169,7 @@ def test_actify():
     b = best(iops=dict(how=5))  # signature for Act.__init__
     assert b.name == 'Bact0'
     assert b.iops == dict(how=5)
-    assert b.context == Context.enter
+    assert b.nabe == Nabe.enter
     assert "Bact" in b.Registry
     klas = b.Registry["Bact"]
     assert isinstance(b, klas)
@@ -308,7 +308,7 @@ def test_inspect_stuff():
 
 
 if __name__ == "__main__":
-    test_context()
+    test_nabe()
     test_workdom()
     test_actbase()
     test_actify()

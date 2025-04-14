@@ -7,7 +7,7 @@ from __future__ import annotations  # so type hints of classes get resolved late
 import pytest
 
 from hio import Mixin, HierError
-from hio.base.hier import Context, ActBase, actify, Need, Box, Boxer, Bag
+from hio.base.hier import Nabe, ActBase, actify, Need, Box, Boxer, Bag
 from hio.base.hier import Act, Tract, EndAct
 
 from hio.help import Mine
@@ -23,7 +23,7 @@ def test_act_basic():
     act = Act()
     assert act.name == "Act0"
     assert act.iops == {'M': {}, 'D': None}
-    assert act.context == Context.enter
+    assert act.nabe == Nabe.enter
     assert act.Index == 1
     assert act.Instances[act.name] == act
     assert act.mine == Mine()
@@ -35,10 +35,10 @@ def test_act_basic():
     assert act() == act.iops
 
     iops = dict(a=1, b=2)
-    act = Act(iops=iops, context=Context.recur)
+    act = Act(iops=iops, nabe=Nabe.recur)
     assert act.name == "Act1"
     assert act.iops == {'a': 1, 'b': 2, 'M': {}, 'D': None}
-    assert act.context == Context.recur
+    assert act.nabe == Nabe.recur
     assert act.Index == 2
     assert act.Instances[act.name] == act
     assert act.mine == Mine()
@@ -62,7 +62,7 @@ def test_act_basic():
     act = Act(dumb, iops=iops)
     assert act.name == "Act2"
     assert act.iops == {'when': 'now', 'why': 'because', 'M': {}, 'D': None}
-    assert act.context == Context.enter
+    assert act.nabe == Nabe.enter
     assert act.Index == 3
     assert act.Instances[act.name] == act
     assert act.mine == Mine()
@@ -85,7 +85,7 @@ def test_act_basic():
     act = Act(deed, mine=mine, iops=iops)
     assert act.name == "Act3"
     assert act.iops == {'fix': 3, 'M': {'stuff': Bag(value=0)}, 'D': None}
-    assert act.context == Context.enter
+    assert act.nabe == Nabe.enter
     assert act.Index == 4
     assert act.Instances[act.name] == act
     assert act.mine == mine
@@ -138,7 +138,7 @@ def test_tract_basic():
     tract = Tract()
     assert tract.name == "Tract0"
     assert tract.iops == {}
-    assert tract.context == Context.transit
+    assert tract.nabe == Nabe.transit
     assert tract.mine == Mine()
     assert tract.dock == None
     assert tract.Index == 1
@@ -189,7 +189,7 @@ def test_endact_basic():
     eact = EndAct(iops=iops, mine=mine)
     assert eact.name == "EndAct1"
     assert eact.iops == iops
-    assert eact.context == Context.enter
+    assert eact.nabe == Nabe.enter
     assert eact.mine == mine
     assert eact.dock == None
     assert eact.Index == 2
