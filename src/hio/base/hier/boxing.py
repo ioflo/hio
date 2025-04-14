@@ -13,7 +13,7 @@ from collections.abc import Callable
 from ..tyming import Tymee
 from ...hioing import Mixin, HierError
 from .hiering import Context, WorkDom, ActBase
-from .acting import Act, Tract
+from .acting import Act, Tract, UpdateMark, ChangeMark, Count, Discount
 from .bagging import Bag
 from .needing import Need
 from ...help import modify, Mine, Renam
@@ -797,7 +797,7 @@ class Boxer(Tymee):
 
 
     def on(self, cond: None|str=None, key: None|str=None, expr: None|str=None,
-                 *, mods: WorkDom|None=None, **kwa)->Need:
+                 *, mods: WorkDom|None=None, **iops)->Need:
         """Make a Need with support for special Need conditions and return it.
         Use inside go verb as need argument for special need condition
         Use inside do verb as deed argument for preact or tact
@@ -826,19 +826,23 @@ class Boxer(Tymee):
                     the result of cond resolution.
 
             mods (None | WorkDom):  state variables used to construct box work
-                None is just to allow definition as keyword arg. Assumes in
-                actual usage that mods is always provided as WorkDom instance of
-                form:
+                None is just to allow definition as keyword arg. Assumes that
+                mods is always provided as WorkDom instance of form:
+                    box (Box| None): current box in box work. None if not yet a box
+                    over (Box | None): current over Box in box work. None if top level
+                    bxpre (str):  default box name prefix used to generate unique box name
+                                relative to boxer.boxes
+                    bxidx (int): default box name index used to generate unique box name
+                                relative to boxer.boxes
+                    acts (dict):  registry of ActBase subclasses by name (including aliases)
+                    context (str): action context for act
 
-                    box (Box|None): current box in box work. None if not yet a box
-                    over (Box|None): current over Box in box work. None if top level
-                    bxpre (str): default name prefix used to generate unique box
-                        name relative to boxer.boxes
-                    bxidx (int): default box index used to generate unique box
-                        name relative to boxer.boxes
+            iops (dict): input-output-parms for Act
 
         """
         m = mods  # alias more compact
+        iops = dict(_boxer=self.name, _box=m.box.name, **iops)
+
 
         _expr = None
 
@@ -850,8 +854,22 @@ class Boxer(Tymee):
                 expr = None  # can't have both _expr and expr same below
 
         if not _expr:  # cond above so need to resolve cond into _expr
-            if cond == "updated":
-                _expr = "True"
+            if cond == "update":
+                iops.update(_key=key)
+                mks =  ("", "boxer", self.name, "box", m.box.name, "update", key)
+                mk = self.mine.tokey(mks)  # mark bag key
+                name = UpdateMark.__name__ + key
+                found = False
+                for mark in m.box.enmacts:  # check if already has mark for key
+                    if mark.name == name:
+                        found = True
+                        break
+                if not found:  # no preexisting mark so make one
+                    mark = UpdateMark(name=name, iops=iops, mine=self.mine, dock=self.dock)
+                    m.box.enmarks.append(mark)  # update is always enmark
+
+                _expr = (f"(M[{mk}].value is None and M[{key}]._tyme is not None) or "
+                        f"(M[{mk}].value is not None and M[{key}]._tyme > M[{mk}].value)")
             else:
                 pass  # raise error since must have valid _expr after here
 
@@ -860,10 +878,7 @@ class Boxer(Tymee):
         if expr:  # both resolved cond as _expr and expr so AND together
             _expr = "(" + _expr + ") and (" + expr + ")"
 
-
-
         need = Need(expr=_expr, mine=self.mine, dock=self.dock)
-
 
         return need
 

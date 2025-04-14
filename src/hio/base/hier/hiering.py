@@ -96,6 +96,7 @@ class WorkDom(MapDom):
         bxidx (int): default box name index used to generate unique box name
                     relative to boxer.boxes
         acts (dict):  registry of ActBase subclasses by name (including aliases)
+        context (str): action context for act
     """
     box: None | Box = None  # current box in boxwork. None if not yet any box
     over: None | Box = None  # current over box in boxwork. None if not yet any over

@@ -186,7 +186,7 @@ class Tract(ActBase):
 
     Hidden
         _name (str|None): unique name of instance
-        _iopts (dict): input-output-paramters for .act
+        _iops (dict): input-output-paramters for .act
         _context (str): action context for .act
 
     """
@@ -286,7 +286,7 @@ class EndAct(ActBase):
 
     Hidden
         _name (str|None): unique name of instance
-        _iopts (dict): input-output-paramters for .act
+        _iops (dict): input-output-parameters for .act
         _context (str): action context for .act
 
     """
@@ -379,7 +379,7 @@ class Mark(ActBase):
     Used iops:
         _boxer (str):  boxer name
         _box (str): box name in boxer
-        _bag (str): marked bag key
+        _key (str): marked bag key
 
 
     Hidden
@@ -409,7 +409,7 @@ class Mark(ActBase):
         Used iops:
             _boxer (str): boxer name. Implicit iop injected by verb
             _box (str): box name in boxer.  Implicit iop injected by verb
-            _bag (str): marked bag key. Injected by on verb
+            _key (str): marked bag key. Injected by on verb
 
 
         """
@@ -429,16 +429,16 @@ class Mark(ActBase):
 
         keys = ("", "boxer", boxer, "box", box, "mark", self.name)
         if keys not in self.mine:
-            self.mine[keys] = Bag()  # create bag at end default value = None
+            self.mine[keys] = Bag()  # create bag default value = None
 
         try:
-            bag = self.iops['_bag']  # get bag key
+            key = self.iops['_key']  # get bag key
         except KeyError as ex:
-            raise HierError(f"Missing iops '_bag' for '{self.name}' instance "
+            raise HierError(f"Missing iops '_key' for '{self.name}' instance "
                             f"of Act self.__class__.__name__") from ex
 
-        if bag not in self.mine:
-            raise HierError("Missing bag at '{bag}' for mark.")
+        if key not in self.mine:
+            raise HierError("Missing bag at '{key=}' for mark.")
 
 
 
@@ -453,7 +453,8 @@ class Mark(ActBase):
         """
         boxer = self.iops['_boxer']  # get boxer name
         box = self.iops['_box']
-        keys = ("", "boxer", boxer, "box", box, "mark", self.name)
+        key = self.iops['_key']
+
 
 
 @register()
@@ -481,7 +482,7 @@ class UpdateMark(Mark):
         Used iops:
             _boxer (str): boxer name. Implicit iop injected by verb
             _box (str): box name in boxer.  Implicit iop injected by verb
-            _bag (str): mark bag key. Injected by on verb
+            _key (str): marked bag key. Injected by on verb
 
 
         """
@@ -497,10 +498,10 @@ class UpdateMark(Mark):
         """
         boxer = self.iops['_boxer']  # get boxer name
         box = self.iops['_box']
-        bag = self.iops['_bag']
-        keys = ("", "boxer", boxer, "box", box, "mark", self.name)
+        key = self.iops['_key']
+        keys = ("", "boxer", boxer, "box", box, "update", key)
         # mark bag tyme
-        self.mine[keys].value = self.mine[bag].tyme
+        self.mine[keys].value = self.mine[key].tyme
 
 
 @register()
@@ -529,7 +530,7 @@ class ChangeMark(Mark):
         Used iops:
             _boxer (str): boxer name. Implicit iop injected by verb
             _box (str): box name in boxer.  Implicit iop injected by verb
-            _bag (str): marked bag key. Injected by on verb
+            _key (str): marked bag key. Injected by on verb
 
 
         """
@@ -545,22 +546,22 @@ class ChangeMark(Mark):
         """
         boxer = self.iops['_boxer']  # get boxer name
         box = self.iops['_box']
-        bag = self.iops['_bag']
-        bag = self.mine[bag]
-        mark = tuple(val for key, val in bag._asdict().items() if Renam.match(key))
-        keys = ("", "boxer", boxer, "box", box, "mark", self.name)
+        key = self.iops['_bag']
+        bag = self.mine[key]
+        mark = tuple(v for k, v in bag._asdict().items() if Renam.match(k))
+        keys = ("", "boxer", boxer, "box", box, "change", key)
         self.mine[keys].value = mark  # mark bag field value tuple
 
 
 @register()
-class CountMark(ActBase):
-    """CountMark marks recur count of box in mine for count special need
+class Count(ActBase):
+    """Count tracks recur count of box in mine for count special need
 
     """
     Index = 0  # naming index for default names of this subclasses instances
 
 
-    def __init__(self, context=Context.enmark, **kwa):
+    def __init__(self, context=Context.recur, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:
@@ -579,7 +580,7 @@ class CountMark(ActBase):
             _box (str): box name in boxer.  Implicit iop injected by verb
 
         """
-        super(CountMark, self).__init__(context=context, **kwa)
+        super(Count, self).__init__(context=context, **kwa)
 
         try:
             boxer = self.iops['_boxer']  # get boxer name
@@ -593,9 +594,9 @@ class CountMark(ActBase):
             raise HierError(f"Missing iops '_box' for '{self.name}' instance "
                             f"of Act self.__class__.__name__") from ex
 
-        keys = ("", "boxer", boxer, "box", box, "mark", "count")
+        keys = ("", "boxer", boxer, "box", box, "count")
         if keys not in self.mine:
-            self.mine[keys] = Bag()  # create bag at end default value = None
+            self.mine[keys] = Bag()  # create bag default value = None
 
 
 
@@ -608,17 +609,17 @@ class CountMark(ActBase):
         """
         boxer = self.iops['_boxer']  # get boxer name
         box = self.iops['_box']
-        keys = ("", "boxer", boxer, "box", box, "mark", "count")
+        keys = ("", "boxer", boxer, "box", box, "count")
         bag = self.mine[keys]  # count bag
         if bag.value is None:
             bag.value = 0  # start counter
         else:
-            bag.value += 1  # increment counter
+            bag.value += 1  # inc counter
 
 
 @register()
-class DiscountMark(ActBase):
-    """DiscountMark resets to None recur count of box in mine for count special need
+class Discount(ActBase):
+    """Discount resets recur count to None of box in mine for count special need
 
     """
     Index = 0  # naming index for default names of this subclasses instances
@@ -643,7 +644,7 @@ class DiscountMark(ActBase):
             _box (str): box name in boxer.  Implicit iop injected by verb
 
         """
-        super(DiscountMark, self).__init__(context=context, **kwa)
+        super(Discount, self).__init__(context=context, **kwa)
         try:
             boxer = self.iops['_boxer']  # get boxer name
         except KeyError as ex:
@@ -656,9 +657,9 @@ class DiscountMark(ActBase):
             raise HierError(f"Missing iops '_box' for '{self.name}' instance "
                             f"of Act self.__class__.__name__") from ex
 
-        keys = ("", "boxer", boxer, "box", box, "mark", "count")
+        keys = ("", "boxer", boxer, "box", box, "count")
         if keys not in self.mine:
-            self.mine[keys] = Bag()  # create bag at end default value = None
+            self.mine[keys] = Bag()  # create bag default value = None
 
 
     def act(self, **iops):
@@ -670,5 +671,5 @@ class DiscountMark(ActBase):
         """
         boxer = self.iops['_boxer']  # get boxer name
         box = self.iops['_box']
-        keys = ("", "boxer", boxer, "box", box, "mark", "count")
-        self.mine[keys].value = None  # reset marker to None
+        keys = ("", "boxer", boxer, "box", box, "count")
+        self.mine[keys].value = None  # reset count to None
