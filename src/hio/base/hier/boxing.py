@@ -369,6 +369,18 @@ class Boxer(Tymee):
         self._name = name
 
 
+    def wind(self, tymth):
+        """
+        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+        Override in subclasses to update any dependencies on a change in
+        tymist.tymth base
+        """
+        super().wind(tymth)
+        for bag in self.mine.values():
+            if isinstance(bag, Bag):
+                bag._wind(tymth=tymth)
+
+
     def begin(self):
         """Prepare and execute first pass
         """

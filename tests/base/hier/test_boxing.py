@@ -22,7 +22,7 @@ from dataclasses import dataclass, astuple, asdict, field
 
 from hio import hioing
 from hio.help import helping, modify, Mine, Renam
-from hio.base import tyming
+from hio.base import Tymist
 from hio.base.hier import Box, Boxer, Maker, ActBase, Act, EndAct, Bag
 
 
@@ -171,6 +171,9 @@ def test_boxer_exen():
 
 def test_boxer_basic():
     """Basic test Boxer class"""
+
+    tymist = Tymist()
+
     boxer = Boxer()  # defaults
     assert boxer.tyme == None
     assert boxer.tymth == None
@@ -184,22 +187,45 @@ def test_boxer_basic():
     assert boxer.renters == []
     assert boxer.enters == []
 
-
-    #begin = boxer.begin  # make alias
-    #begin()
-    #run = boxer.run
-    #run()
-    #end = boxer.end
-    #end()
-
-
     with pytest.raises(hioing.HierError):
         boxer.name = "A.B"
 
     with pytest.raises(hioing.HierError):
         boxer.name = ".boxer"
 
+    boxer.wind(tymist.tymen())
+    assert boxer.tymth
+    assert boxer.tyme == tymist.tyme == 0.0
 
+    boxer.mine["test"] = Bag()
+    assert boxer.mine.test.value == None
+    assert boxer.mine.test._tymth == None
+    assert boxer.mine.test._now == None
+    assert boxer.mine.test._tyme == None
+
+    boxer.wind(tymist.tymen())
+    assert boxer.mine.test.value == None
+    assert boxer.mine.test._tymth
+    assert boxer.mine.test._now == 0.0 == tymist.tyme
+    assert boxer.mine.test._tyme == None
+
+    boxer.mine.test.value = 1
+    assert boxer.mine.test.value == 1
+    assert boxer.mine.test._tymth
+    assert boxer.mine.test._now == 0.0 == tymist.tyme
+    assert boxer.mine.test._tyme == 0.0
+
+    boxer.mine["best"] = Bag(_tymth=tymist.tymen())
+    assert boxer.mine.best.value == None
+    assert boxer.mine.best._tymth
+    assert boxer.mine.best._now == 0.0
+    assert boxer.mine.best._tyme == None
+
+    boxer.mine.best.value = 1
+    assert boxer.mine.best.value == 1
+    assert boxer.mine.best._tyme == 0.0
+
+    """Done Test"""
 
 
 def test_boxer_make():
@@ -336,14 +362,14 @@ def test_boxer_make_run():
 def test_boxer_make_run_on():
     """Test make method of Boxer with on verb special need update
     """
+    tymist = Tymist()
+
     def count(**iops):
         M = iops['M']
         if M.count.value is None:
             M.count.value = 0
-            M.count._tyme = 0
         else:
             M.count.value += 1
-            M.count._tyme += 1
         return M.count.value
 
 
@@ -370,6 +396,7 @@ def test_boxer_make_run_on():
     mods = boxer.make(fun)
     assert len(boxer.boxes) == 6
     assert list(boxer.boxes) == ['top', 'mid', 'bot0', 'bot1', 'bot2', 'done']
+    boxer.wind(tymth=tymist.tymen())
 
     boxer.begin()
     assert boxer.box.name == "bot1"  # half trans at end of first pass
@@ -381,7 +408,7 @@ def test_boxer_make_run_on():
     boxer.run()
     assert boxer.box.name == "done"
     assert mine.count.value == 0
-    assert mine.count._tyme == 0
+    assert mine.count._tyme == 0.0
     assert mine._boxer_boxer_box_mid_update_count.value is None
     boxer.run()
     assert boxer.box is None

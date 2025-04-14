@@ -485,8 +485,8 @@ class UpdateMark(Mark):
         """
         super(UpdateMark, self).__init__(context=context, **kwa)
         boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']
-        key = self.iops['_key']
+        box = self.iops['_box']  # get box name
+        key = self.iops['_key']  # get bag key in mine
         keys = ("", "boxer", boxer, "box", box, "update", key)
         if keys not in self.mine:
             self.mine[keys] = Bag()  # create bag default value = None
@@ -540,8 +540,8 @@ class ChangeMark(Mark):
         """
         super(ChangeMark, self).__init__(context=context, **kwa)
         boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']
-        key = self.iops['_key']
+        box = self.iops['_box']  # get box name
+        key = self.iops['_key']  # get bag key in mine
         keys = ("", "boxer", boxer, "box", box, "change", key)
         if keys not in self.mine:
             self.mine[keys] = Bag()  # create bag default value = None

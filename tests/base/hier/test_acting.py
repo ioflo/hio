@@ -74,7 +74,7 @@ def test_act_basic():
 
     assert act() == (1, 4, {'when': 'now',
                             'why': 'because',
-                            'M': {'count': Bag(_tyme=None, value=1)},
+                            'M': {'count': Bag(value=1)},
                             'D': None})
 
     iops = dict(fix=3)
@@ -84,7 +84,7 @@ def test_act_basic():
     deed = "M.stuff.value += 1\n"
     act = Act(deed, mine=mine, iops=iops)
     assert act.name == "Act3"
-    assert act.iops == {'fix': 3, 'M': {'stuff': Bag(_tyme=None, value=0)}, 'D': None}
+    assert act.iops == {'fix': 3, 'M': {'stuff': Bag(value=0)}, 'D': None}
     assert act.context == Context.enter
     assert act.Index == 4
     assert act.Instances[act.name] == act
