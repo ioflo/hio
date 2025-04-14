@@ -359,7 +359,8 @@ def test_boxer_make_run():
 
     """Done Test"""
 
-def test_boxer_make_run_on():
+
+def test_boxer_make_run_on_update():
     """Test make method of Boxer with on verb special need update
     """
     tymist = Tymist()
@@ -415,6 +416,66 @@ def test_boxer_make_run_on():
     assert boxer.endial()
 
     """Done Test"""
+
+
+def test_boxer_make_run_on_change():
+    """Test make method of Boxer with on verb special need change
+    """
+    tymist = Tymist()
+
+    def count(**iops):
+        M = iops['M']
+        if M.count.value is None:
+            M.count.value = 0
+        else:
+            M.count.value += 1
+        return M.count.value
+
+
+    def fun(bx, go, do, on, *pa):
+        bx(name='top')
+        bx(name='mid', over='top')
+        go('done', on("change", "count"))
+        bx(name='bot0', over='mid')
+        go("next")
+        bx(name='bot1')  # over defaults to same as prev box
+        go("next")
+        bx(name='bot2')  # over defaults to same as prev box
+        do(count)
+        go("bot0")
+        bx(name='done', over=None)
+        do('end')
+
+
+    mine = Mine()
+    mine['count'] = Bag()
+
+    boxer = Boxer(mine=mine)
+    assert boxer.boxes == {}
+    mods = boxer.make(fun)
+    assert len(boxer.boxes) == 6
+    assert list(boxer.boxes) == ['top', 'mid', 'bot0', 'bot1', 'bot2', 'done']
+    boxer.wind(tymth=tymist.tymen())
+
+    boxer.begin()
+    assert boxer.box.name == "bot1"  # half trans at end of first pass
+    assert mine.count.value is None
+    assert mine.count._tyme is None
+    assert mine._boxer_boxer_box_mid_change_count.value == (None, )
+    assert mine.count.value == None
+    boxer.run()
+    assert boxer.box.name == "bot2"
+    boxer.run()
+    assert boxer.box.name == "done"
+    assert mine.count.value == 0
+    assert mine.count._tyme == 0.0
+    assert mine._boxer_boxer_box_mid_change_count.value == (None, )
+    boxer.run()
+    assert boxer.box is None
+    assert boxer.endial()
+
+    """Done Test"""
+
 
 def test_maker_basic():
     """Basic test Maker class"""
@@ -736,7 +797,8 @@ if __name__ == "__main__":
     test_boxer_make()
     test_boxer_make_go()
     test_boxer_make_run()
-    test_boxer_make_run_on()
+    test_boxer_make_run_on_update()
+    test_boxer_make_run_on_change()
     test_maker_basic()
     test_concept_bx_nonlocal()
     test_concept_bx_global()

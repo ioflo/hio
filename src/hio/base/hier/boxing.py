@@ -872,7 +872,7 @@ class Boxer(Tymee):
         if not _expr:  # cond above so need to resolve cond into _expr
             if cond == "update":
                 if not key:
-                    raise HierError("Missing bag key for special need 'update'")
+                    raise HierError(f"Missing bag key for special need '{cond=}'")
                 iops.update(_key=key)
                 mks =  ("", "boxer", self.name, "box", m.box.name, "update", key)
                 mk = self.mine.tokey(mks)  # mark bag key
@@ -888,8 +888,26 @@ class Boxer(Tymee):
 
                 _expr = (f"(M.{mk}.value is None and M.{key}._tyme is not None) or "
                          f"(M.{mk}.value is not None and M.{key}._tyme > M.{mk}.value)")
+
+            elif cond == "change":
+                if not key:
+                    raise HierError(f"Missing bag key for special need '{cond=}'")
+                iops.update(_key=key)
+                mks =  ("", "boxer", self.name, "box", m.box.name, "change", key)
+                mk = self.mine.tokey(mks)  # mark bag key
+                name = ChangeMark.__name__ + key
+                found = False
+                for mark in m.box.enmacts:  # check if already has mark for key
+                    if mark.name == name:
+                        found = True
+                        break
+                if not found:  # no preexisting ChangeMark for this key
+                    mark = ChangeMark(name=name, iops=iops, mine=self.mine, dock=self.dock)
+                    m.box.enmacts.append(mark)  # update is always enmark
+
+                _expr = (f"M.{mk}.value != M.{key}._astuple()")
             else:
-                pass  # raise error since must have valid _expr after here
+                raise HierError(f"Invalid special need {cond=}")
 
         # now _expr is valid
 

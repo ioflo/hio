@@ -449,8 +449,8 @@ class Mark(ActBase):
 
         """
         boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']
-        key = self.iops['_key']
+        box = self.iops['_box']  # get box name
+        key = self.iops['_key']  # get marked bag key
 
 
 
@@ -556,11 +556,10 @@ class ChangeMark(Mark):
         """
         boxer = self.iops['_boxer']  # get boxer name
         box = self.iops['_box']
-        key = self.iops['_bag']
+        key = self.iops['_key']
         bag = self.mine[key]
-        mark = tuple(v for k, v in bag._asdict().items() if Renam.match(k))
         keys = ("", "boxer", boxer, "box", box, "change", key)
-        self.mine[keys].value = mark  # mark bag field value tuple
+        self.mine[keys].value = bag._astuple()  # bag field value tuple as mark
 
 
 @register()
