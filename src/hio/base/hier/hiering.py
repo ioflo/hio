@@ -64,22 +64,22 @@ Fields:
    native (str): native nabe
    precon (str): precon nabe
    remark (str): remark nabe
-   rentry (str): rentry nabe
+   rendo (str): rendo nabe
    enmark (str): enmark nabe
-   entry (str): entry nabe
+   endo (str): endo nabe
    redo (str): redo nabe
    tail (str): tail nabe
    transit (str): transit nabe
-   quit (str): quit nabe
-   requit (str): requit nabe
+   exdo (str): exdo nabe
+   rexdo (str): rexdo nabe
 """
-Nabage = namedtuple("Nabage", "native precon remark rentry enmark entry"
-                                      " redo tail transit quit requit")
+Nabage = namedtuple("Nabage", "native precon remark rendo enmark endo"
+                                      " redo tail transit exdo rexdo")
 
 Nabe = Nabage(native="native", precon="precon", remark="remark",
-                     rentry="rentry", enmark="enmark", entry="entry",
+                     rendo="rendo", enmark="enmark", endo="endo",
                      redo="redo", tail="tail", transit="transit",
-                     quit="quit", requit="requit")
+                     exdo="exdo", rexdo="rexdo")
 
 
 @dataclass
@@ -301,7 +301,7 @@ class ActBase(Mixin):
 
 
 
-    def __init__(self, *, name=None, iops=None, nabe=Nabe.entry,
+    def __init__(self, *, name=None, iops=None, nabe=Nabe.endo,
                  mine=None, dock=None, **kwa):
         """Initialization method for instance.
 
@@ -310,7 +310,7 @@ class ActBase(Mixin):
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
                 set to empty dict.
-            nabe (str): action nabe (context) for act. default is "entry"
+            nabe (str): action nabe (context) for act. default is "endo"
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
@@ -318,7 +318,7 @@ class ActBase(Mixin):
         super(ActBase, self).__init__(**kwa) # in case of MRO
         self.name = name  # set name property
         self._iops = dict(iops) if iops is not None else {}  # make copy
-        self._nabe = nabe if nabe is not Nabe.native else Nabe.entry
+        self._nabe = nabe if nabe is not Nabe.native else Nabe.endo
         self.mine = mine if mine is not None else Mine()
         self.dock = dock   # stub fix later when have Dock class
 

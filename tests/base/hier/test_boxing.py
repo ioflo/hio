@@ -67,9 +67,9 @@ def test_box_basic():
 
 
 
-def test_boxer_quen():
+def test_boxer_exen():
     """Test exen function for finding common/uncommon boxes in near far staks
-    for computing exits, entries, requits, rentries on a transition
+    for computing exits, endos, rexdos, rendos on a transition
     """
     a = Box(name='a')
     b = Box(name='b')
@@ -115,55 +115,55 @@ def test_boxer_quen():
 
 
     # test exen staticmethod
-    quen = Boxer.quen  # exen is staticmethod of Boxer
+    exen = Boxer.exen  # exen is staticmethod of Boxer
 
-    quits, entries, requits, rentries = quen(d, e)
-    assert quits == [d]
-    assert entries == [e, f]
-    assert requits == [c, b, a]
-    assert rentries == [a, b, c]
+    exdos, endos, rexdos, rendos = exen(d, e)
+    assert exdos == [d]
+    assert endos == [e, f]
+    assert rexdos == [c, b, a]
+    assert rendos == [a, b, c]
 
-    quits, entries, requits, rentries = quen(d, f)
-    assert quits == [d]
-    assert entries == [e, f]
-    assert requits == [c, b, a]
-    assert rentries == [a, b, c]
+    exdos, endos, rexdos, rendos = exen(d, f)
+    assert exdos == [d]
+    assert endos == [e, f]
+    assert rexdos == [c, b, a]
+    assert rendos == [a, b, c]
 
-    quits, entries, requits, rentries = quen(a, e)
-    assert quits == [d]
-    assert entries == [e, f]
-    assert requits == [c, b, a]
-    assert rentries == [a, b, c]
+    exdos, endos, rexdos, rendos = exen(a, e)
+    assert exdos == [d]
+    assert endos == [e, f]
+    assert rexdos == [c, b, a]
+    assert rendos == [a, b, c]
 
-    quits, entries, requits, rentries = quen(c, b)
-    assert quits == [d, c, b]
-    assert entries == [b, c, d]
-    assert requits == [a]
-    assert rentries == [a]
+    exdos, endos, rexdos, rendos = exen(c, b)
+    assert exdos == [d, c, b]
+    assert endos == [b, c, d]
+    assert rexdos == [a]
+    assert rendos == [a]
 
-    quits, entries, requits, rentries = quen(c, c)
-    assert quits == [d, c]
-    assert entries == [c, d]
-    assert requits == [b, a]
-    assert rentries == [a, b]
+    exdos, endos, rexdos, rendos = exen(c, c)
+    assert exdos == [d, c]
+    assert endos == [c, d]
+    assert rexdos == [b, a]
+    assert rendos == [a, b]
 
-    quits, entries, requits, rentries = quen(c, d)
-    assert quits == [d]
-    assert entries == [d]
-    assert requits == [c, b, a]
-    assert rentries == [a, b, c]
+    exdos, endos, rexdos, rendos = exen(c, d)
+    assert exdos == [d]
+    assert endos == [d]
+    assert rexdos == [c, b, a]
+    assert rendos == [a, b, c]
 
-    quits, entries, requits, rentries = quen(e, d)
-    assert quits == [f, e]
-    assert entries == [d]
-    assert requits == [c, b, a]
-    assert rentries == [a, b, c]
+    exdos, endos, rexdos, rendos = exen(e, d)
+    assert exdos == [f, e]
+    assert endos == [d]
+    assert rexdos == [c, b, a]
+    assert rendos == [a, b, c]
 
-    quits, entries, requits, rentries = quen(f, f)
-    assert quits == [f]
-    assert entries == [f]
-    assert requits == [e, c, b, a]
-    assert rentries == [a, b, c, e]
+    exdos, endos, rexdos, rendos = exen(f, f)
+    assert exdos == [f]
+    assert endos == [f]
+    assert rexdos == [e, c, b, a]
+    assert rendos == [a, b, c, e]
 
     """Done Test"""
 
@@ -184,8 +184,8 @@ def test_boxer_basic():
     assert boxer.boxes == {}
     assert boxer.first == None
     assert boxer.box == None
-    assert boxer.rentries == []
-    assert boxer.entries == []
+    assert boxer.rendos == []
+    assert boxer.endos == []
 
     with pytest.raises(hioing.HierError):
         boxer.name = "A.B"
@@ -792,7 +792,7 @@ def test_concept_bx_global():
 
 if __name__ == "__main__":
     test_box_basic()
-    test_boxer_quen()
+    test_boxer_exen()
     test_boxer_basic()
     test_boxer_make()
     test_boxer_make_go()

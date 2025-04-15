@@ -33,14 +33,14 @@ def test_nabe():
     assert Nabe._asdict() == {'native': 'native',
                                 'precon': 'precon',
                                 'remark': 'remark',
-                                'rentry': 'rentry',
+                                'rendo': 'rendo',
                                 'enmark': 'enmark',
-                                'entry': 'entry',
+                                'endo': 'endo',
                                 'redo': 'redo',
                                 'tail': 'tail',
                                 'transit': 'transit',
-                                'quit': 'quit',
-                                'requit': 'requit'}
+                                'exdo': 'exdo',
+                                'rexdo': 'rexdo'}
 
 
 def test_workdom():
@@ -75,7 +75,7 @@ def test_actbase():
     assert isinstance(act, Callable)
     assert act.name == 'ActBase0'
     assert act.iops == {}
-    assert act.nabe == Nabe.entry
+    assert act.nabe == Nabe.endo
     assert act.mine == Mine()
     assert act.dock == None
     assert hasattr(act, 'name')   # hasattr works for properties and attributes
@@ -90,7 +90,7 @@ def test_actbase():
     assert isinstance(act, Callable)
     assert act.name == 'ActBase1'
     assert act.iops == {}
-    assert act.nabe == Nabe.entry
+    assert act.nabe == Nabe.endo
     assert act.mine == Mine()
     assert act.dock == None
     assert hasattr(act, 'name')   # hasattr works for properties and attributes
@@ -127,7 +127,7 @@ def test_actify():
     x = test(bye="bye")  # signature for Act.__init__
     assert x.name == "Tact1"
     assert x.iops == {}
-    assert x.nabe == Nabe.entry
+    assert x.nabe == Nabe.endo
     assert x.__class__.__name__ == "Tact"
     assert x.__class__.__name__ in t.Registry
     assert x.Registry[t.__class__.__name__] == t.__class__
@@ -152,7 +152,7 @@ def test_actify():
     p = pest(name="spot", iops=dict(why=1))  # same signature as Act.__init__
     assert p.name == 'spot'
     assert p.iops == dict(why=1)
-    assert p.nabe == Nabe.entry
+    assert p.nabe == Nabe.endo
     assert "Pact" in p.Registry
     klas = p.Registry["Pact"]
     assert isinstance(p, klas)
@@ -169,7 +169,7 @@ def test_actify():
     b = best(iops=dict(how=5))  # signature for Act.__init__
     assert b.name == 'Bact0'
     assert b.iops == dict(how=5)
-    assert b.nabe == Nabe.entry
+    assert b.nabe == Nabe.endo
     assert "Bact" in b.Registry
     klas = b.Registry["Bact"]
     assert isinstance(b, klas)

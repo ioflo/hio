@@ -92,7 +92,7 @@ class Act(ActBase):
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
                 set to empty dict.
-            nabe (str|None): action nabe (context) for .act. Default is "entry"
+            nabe (str|None): action nabe (context) for .act. Default is "endo"
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
@@ -141,7 +141,7 @@ class Act(ActBase):
         """Compile evable boolean expression str ._expr into compiled code
         object ._code to be evaluated at run time.
         Because code objects are not pickleable the compilation must happen
-        at prep (entry) time not init time.
+        at prep (endo) time not init time.
         """
         self._code = compile(self.deed, '<string>', 'exec')
 
@@ -292,7 +292,7 @@ class EndAct(ActBase):
     """
     Index = 0  # naming index for default names of this subclasses instances
 
-    def __init__(self, nabe=Nabe.entry, **kwa):
+    def __init__(self, nabe=Nabe.endo, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:
@@ -631,7 +631,7 @@ class Discount(ActBase):
     Index = 0  # naming index for default names of this subclasses instances
 
 
-    def __init__(self, nabe=Nabe.quit, **kwa):
+    def __init__(self, nabe=Nabe.exdo, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:

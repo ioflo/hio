@@ -21,14 +21,14 @@ from ...help import modify, Mine, Renam
 
 nabeDispatch = dict(precon="preacts",
                     remark="remacts",
-                    rentry="renacts",
+                    rendo="renacts",
                     enmark="enmacts",
-                    entry="enacts",
+                    endo="enacts",
                     redo="reacts",
                     tail="tacts",
                     transit="tracts",
-                    quit="exacts",
-                    requit="requacts")
+                    exdo="exacts",
+                    rexdo="requacts")
 
 
 class Box(Tymee):
@@ -47,16 +47,16 @@ class Box(Tymee):
         over (Box | None): this box's over box instance or None
         unders (list[Box]): this box's under box instances or empty
                             zeroth entry is primary under
-        preacts (list[act]): precon (pre-conditions for entry) nabe acts
-        remacts (list[act]): remark re-entry mark subcontext acts (retained)
-        renacts (list[act]): rentry (re-entry) nabe acts  (retained)
-        enmacts (list[act]): enmark entry mark subcontext acts
-        enacts (list[act]):  entry nabe acts
+        preacts (list[act]): precon (pre-conditions for endo) nabe acts
+        remacts (list[act]): remark re-endo mark subcontext acts (retained)
+        renacts (list[act]): rendo (re-endo) nabe acts  (retained)
+        enmacts (list[act]): enmark endo mark subcontext acts
+        enacts (list[act]):  endo nabe acts
         reacts (list[act]): redo nabe acts
         tacts (list[act]): tail nabe acts
         tracts (list[act]): transit nabe acts
-        exacts (list[act]): quit nabe acts
-        requacts (list[act]): requit (re-quit) nabe acts  (retained)
+        exacts (list[act]): exdo nabe acts
+        requacts (list[act]): rexdo (re-exdo) nabe acts  (retained)
 
     Properties:
         name (str): unique identifier of instance
@@ -105,15 +105,15 @@ class Box(Tymee):
 
         # acts by contexts
         self.preacts = []  # precon nabe list of pre-entry acts
-        self.remacts = []  # re-entry mark subcontext list of re-mark acts
-        self.renacts = []  # rentry nabe list of re-entry acts (retained)
-        self.enmacts = []  # entry mark subcontext list of en-mark acts
-        self.enacts = []  # entry nabe list of entry acts
+        self.remacts = []  # re-endo mark subcontext list of re-mark acts
+        self.renacts = []  # rendo nabe list of re-endo acts (retained)
+        self.enmacts = []  # endo mark subcontext list of en-mark acts
+        self.enacts = []  # endo nabe list of endo acts
         self.reacts = []  # redo nabe list of recurring acts
         self.tacts = []  # tail nabe list of trailing acts
         self.tracts = []  # transit nabe list of transition acts
-        self.quacts = []  # quit nabe list of quit acts
-        self.requacts = []  # requit nabe list of re-quit acts (retained)
+        self.quacts = []  # exdo nabe list of exdo acts
+        self.requacts = []  # rexdo nabe list of re-exdo acts (retained)
 
         #lexical context
         self._next = None  # next box lexically
@@ -236,8 +236,8 @@ class Boxer(Tymee):
         boxes (dict): all boxes mapping of (box name, box) pairs
         first (Box | None):  beginning box
         box (Box | None):  active box
-        rentries (list[Box]): boxes to re-entry on this run (boxes retained)
-        entries (list[Box]): boxes to entry on this begin/run
+        rendos (list[Box]): boxes to re-endo on this run (boxes retained)
+        endos (list[Box]): boxes to endo on this begin/run
 
     Properties:
         name (str): unique identifier of instance
@@ -260,37 +260,37 @@ class Boxer(Tymee):
 
         First box assigned to active box
         actives = active box.pile
-        .rentries is empty
-        .entries == actives
-        quits is empty
-        requits is empty
+        .rendos is empty
+        .endos == actives
+        exdos is empty
+        rexdos is empty
 
-        for each box in entries top down:
+        for each box in endos top down:
             precond:
                 if not all true then done with boxwork
                     End
 
-        for box in rentries top down: (empty)
-            remark rentry mark subcontext
-            rentry
-        for box in entries top down: (not empty)
-            enmark entry mark subcontext  (mark tyme set to bag._tyme which is None)
-            entry
+        for box in rendos top down: (empty)
+            remark rendo mark subcontext
+            rendo
+        for box in endos top down: (not empty)
+            enmark endo mark subcontext  (mark tyme set to bag._tyme which is None)
+            endo
         If complete:
             End boxwork boxer.want stop desire stop
         for box in actives top down:
             redo
             tail
             if transit need is true:  (short circuit redo of lower level boxes)
-                compute rentries entries quits requits. save box.rentries and box.entries
-                for each box in entries (top down):
+                compute rendos endos exdos rexdos. save box.rendos and box.endos
+                for each box in endos (top down):
                     precon:
                         if not all true then do not proceed with transit return
 
-                for box in quits bottom up:
-                    quits
-                for box in requits bottom up:
-                    requits
+                for box in exdos bottom up:
+                    exdos
+                for box in rexdos bottom up:
+                    rexdos
                 set new .active box
                 break
         return from prep True == completed begin  (or yield if generator)
@@ -298,26 +298,26 @@ class Boxer(Tymee):
 
     tyme increment
     Run:
-        for box in rentries: (may be empty)
-            remark rentry mark subcontext
-            rentry
-        for box in entries: (may be empty)
-            enmark entry mark subcontext  (mark tyme set to bag._tyme which is None)
-            entry
+        for box in rendos: (may be empty)
+            remark rendo mark subcontext
+            rendo
+        for box in endos: (may be empty)
+            enmark endo mark subcontext  (mark tyme set to bag._tyme which is None)
+            endo
         If complete:
             End boxwork boxer.want stop desire stop
         for box in actives top down:
             redo
             tail
             if transit need is true:   (short circuit redo of lower level boxes)
-                compute rentries entries quits requits,.
+                compute rendos endos exdos rexdos,.
                     precon:
                         if not all true then do not proceed with transit return
 
-                for box in quits bottom up:
-                    quit
-                for box in requits bottom up:
-                    requit
+                for box in exdos bottom up:
+                    exdo
+                for box in rexdos bottom up:
+                    rexdo
                 set new .active box
                 break
         return from run False == not done continue  (or if generator yield)
@@ -343,8 +343,8 @@ class Boxer(Tymee):
         self.boxes = {}
         self.first = None  # box to start in
         self.box = None  # current active box  whose pile is active pile
-        self.rentries = []  # list of re-entry boxes for this run (boxes retained)
-        self.entries = []  # list of entry boxes for this begin/run
+        self.rendos = []  # list of re-endo boxes for this run (boxes retained)
+        self.endos = []  # list of endo boxes for this begin/run
 
 
     @property
@@ -387,15 +387,15 @@ class Boxer(Tymee):
         if not self.first:
             self.first = list(self.boxes.values())[0]  # first box in boxes is default first
         self.box = self.first
-        self.rentries = []  # first pass no rentry of any boxes
-        self.entries = self.box.pile
-        if not self.precon():  # uses .entries preconditions for entry not satisfied
-            # do end stuff since no entry yet then no quit
+        self.rendos = []  # first pass no rendo of any boxes
+        self.endos = self.box.pile
+        if not self.precon():  # uses .endos preconditions for entry not satisfied
+            # do end stuff since no entry yet then no exdo
             self.box = None  # no active box anymore
             return False  # signal end beginning did not complete
 
-        self.entry()  # uses saved .entries to en-mark and entry
-        self.entries = []  # entry completed
+        self.endo()  # uses saved .endos to en-mark and endo
+        self.endos = []  # endo completed
         # check for End here if so .end()
         for box in self.box.pile:
             for react in box.reacts:   # redo nabe top down
@@ -403,19 +403,19 @@ class Boxer(Tymee):
             for tact in box.tacts:   # trail nabe top down
                 tact()
             if self.endial():  # actioned desire to end
-                self.end()  # quits all active boxes in self.box.pile
+                self.end()  # exdos all active boxes in self.box.pile
                 self.box = None  # no active box
                 return True  # beginning completed already
 
             for tract in box.tracts:  # transit nabe top down
                 if tract():  # transition condition satisfied
-                    quits, entries, rentries, requits = self.quen(box, tract.dest)
-                    if not self.precon(entries):  # transit not satisfied
+                    exdos, endos, rendos, rexdos = self.exen(box, tract.dest)
+                    if not self.precon(endos):  # transit not satisfied
                         continue  # keep trying
-                    self.quit(quits)  # quit bottom up
-                    self.requit(requits)  # requit bottom up
-                    self.rentries = rentries  # save for next pass
-                    self.entries = entries  # save for next pass
+                    self.exdo(exdos)  # exdo bottom up
+                    self.rexdo(rexdos)  # rexdo bottom up
+                    self.rendos = rendos  # save for next pass
+                    self.endos = endos  # save for next pass
                     self.box = tract.dest  # set new active box
                     break
 
@@ -425,10 +425,10 @@ class Boxer(Tymee):
     def run(self):
         """Execute another pass
         """
-        self.rentry()  # uses saved .rentries to re-mark and re-entry
-        self.rentries = []  # re-entry completed so make empty
-        self.entry()  # uses saved .entries to en-mark and entry
-        self.entries = []  # entry completed so make empty
+        self.rendo()  # uses saved .rendos to re-mark and re-endo
+        self.rendos = []  # re-endo completed so make empty
+        self.endo()  # uses saved .endos to en-mark and endo
+        self.endos = []  # endo completed so make empty
 
         for box in self.box.pile:  # top down
             for react in box.reacts:   # redo nabe top down
@@ -437,19 +437,19 @@ class Boxer(Tymee):
                 tact()
 
             if self.endial():  # actioned desire to end
-                self.end()  # quits all active boxes in self.box.pile
+                self.end()  # exdos all active boxes in self.box.pile
                 self.box = None  # no active box
                 return True  # beginning completed already
 
             for tract in box.tracts:  # transit nabe top down
                 if dest := tract():  # transition condition satisfied
-                    quits, entries, rentries, requits = self.quen(box, dest)
-                    if not self.precon(entries):  # transit not satisfied
+                    exdos, endos, rendos, rexdos = self.exen(box, dest)
+                    if not self.precon(endos):  # transit not satisfied
                         continue  # keep trying
-                    self.quit(quits)  # quit bottom up
-                    self.requit(requits)  # requit bottom up  (boxes retained)
-                    self.rentries = rentries  # save for next pass
-                    self.entries = entries  # save for next pass
+                    self.exdo(exdos)  # exdo bottom up
+                    self.rexdo(rexdos)  # rexdo bottom up  (boxes retained)
+                    self.rendos = rendos  # save for next pass
+                    self.endos = endos  # save for next pass
                     self.box = dest  # set new active box
                     return False  # transition so stop iteration over pile
 
@@ -460,7 +460,7 @@ class Boxer(Tymee):
         """Exit all active boxes.
 
         """
-        self.quit(self.box.pile)  # quit all active boxes
+        self.exdo(self.box.pile)  # exdo all active boxes
 
 
     def endial(self):
@@ -481,22 +481,22 @@ class Boxer(Tymee):
         return False
 
 
-    def precon(self, entries=None):
-        """Evaluate preconditions for entry of boxes in entries in top down order
+    def precon(self, endos=None):
+        """Evaluate preconditions for entry of boxes in endos in top down order
 
         Parameters:
-            entries (None|list[Box]): boxes to be entered if precons are satisfied
-                                when arg is None then defaults to .entries
+            endos (None|list[Box]): boxes to be entered if precons are satisfied
+                                when arg is None then defaults to .endos
 
         Returns:
-            met (bool): True means all preconditions are satisfied for entries.
+            met (bool): True means all preconditions are satisfied for endos.
                         False otherwise
                     When no preconditions then returns True.
 
         """
-        entries = entries if entries is not None else self.entries
+        endos = endos if endos is not None else self.endos
         met = True
-        for box in self.entries:
+        for box in self.endos:
             for preact in box.preacts:
                 if not preact():
                     met = False
@@ -506,48 +506,48 @@ class Boxer(Tymee):
         return met
 
 
-    def rentry(self):
-        """Action re-mark (remacts) and re-entry (renacts) acts of boxes in
-        .rentries in top down order. Boxes retained in hierarchical state.
+    def rendo(self):
+        """Action re-mark (remacts) and re-endo (renacts) acts of boxes in
+        .rendos in top down order. Boxes retained in hierarchical state.
         """
-        for box in self.rentries:
+        for box in self.rendos:
             for remact in box.remacts:
                 remact()
             for renact in box.renacts:
                 renact()
 
 
-    def entry(self):
-        """Action e-mark (emacts) and entry (enacts) acts of boxes in .entries
+    def endo(self):
+        """Action e-mark (emacts) and endo (enacts) acts of boxes in .endos
         in top down order
         """
-        for box in self.entries:
+        for box in self.endos:
             for enmact in box.enmacts:
                 enmact()
             for enact in box.enacts:
                 enact()
 
 
-    def quit(self, quits):
-        """Action quacts of boxes in quits in bottom up order.
+    def exdo(self, exdos):
+        """Action quacts of boxes in exdos in bottom up order.
 
         Parameters:
-            quits (None|list[Box]): boxes to be quit in bottom up order
+            exdos (None|list[Box]): boxes to be exdo in bottom up order
 
         """
-        for box in quits:
+        for box in exdos:
             for quact in box.quacts:
                 quact()
 
 
-    def requit(self, requits):
-        """Action requacts of boxes in requits (re-quits) in bottom up order.
+    def rexdo(self, rexdos):
+        """Action requacts of boxes in rexdos (re-exdos) in bottom up order.
         Boxes retained in hierarchical state.
 
         Parameters:
-            requits (None|list[Box]): boxes to be re-quit in bottom up order
+            rexdos (None|list[Box]): boxes to be re-exdo in bottom up order
         """
-        for box in requits:
+        for box in rexdos:
             for requact in box.requacts:
                 requact()
 
@@ -921,7 +921,7 @@ class Boxer(Tymee):
 
 
     @staticmethod
-    def quen(near, far):
+    def exen(near, far):
         """Computes the relative differences (uncommon  and common parts) between
         the box pile lists nears passed in and fars from box far.pile
 
@@ -933,17 +933,17 @@ class Boxer(Tymee):
 
         Returns:
             quadruple (tuple[list]): quadruple of lists of form:
-                (quits, entries, rentries, requits) where:
-                quits is list of uncommon boxes in nears but not in fars to be exited.
+                (exdos, endos, rendos, rexdos) where:
+                exdos is list of uncommon boxes in nears but not in fars to be exited.
                     Reversed to bottom up order.
-                entries is list of uncommon boxes in fars but not in nears to be entered
-                requits is list of common boxes in both nears and fars to be re-exited
+                endos is list of uncommon boxes in fars but not in nears to be entered
+                rexdos is list of common boxes in both nears and fars to be re-exited
                     Reversed to bottom up order. These are boxes retained in pile.
-                rentries is list of common boxes in both nears and fars to be re-entered
+                rendos is list of common boxes in both nears and fars to be re-entered
                     These are boxes retained in pile.
-                The sets of boxes in requits and rentries are the same set but requits
+                The sets of boxes in rexdos and rendos are the same set but rexdos
                 is reversed to bottum up order. These are boxes retained in the
-                pile before and after the transition. This is where common quit/entry
+                pile before and after the transition. This is where common exdo/endo
                 actions for the non-common boxes can be actioned non-redundantly.
 
 
@@ -952,8 +952,8 @@ class Boxer(Tymee):
             The common part of nears/fars from far down is force exited
             The common part of nears/fars from far down is force entered
 
-        When far in nears then forced entry at far so far is nears[i]
-        catches that case for forced entry at some far in nears. Since
+        When far in nears then forced endo at far so far is nears[i]
+        catches that case for forced endo at some far in nears. Since
         far is in fars, then when far == nears[i] then fars == nears.
 
         Since a given box's pile is always traced up via its .over if any and down via
@@ -962,7 +962,7 @@ class Boxer(Tymee):
 
         Otherwise when far not in nears then i where fars[i] is not nears[i]
         indicates first box where fars down and nears down is uncommon i.e. the pile
-        tree branches at i. This is the normal non-forced entry case for transition.
+        tree branches at i. This is the normal non-forced endo case for transition.
 
         Two different topologies are accounted for with this code.
         Recall that python slice of list is zero based where:
@@ -971,18 +971,18 @@ class Boxer(Tymee):
            this means fars[:0] == nears[:0] == [] empty list
 
         1.0 near and far in same tree either on same branch or different branches
-            1.1 on same branch forced entry where nears == fars so far in nears.
+            1.1 on same branch forced endo where nears == fars so far in nears.
                Walk down from shared root to find where far is nears[i]. Boxes above
-               far given by fars[:i] == nears[:i] are re-quit re-entry set of boxes.
-               Boxes at far and below are forced quit entry.
+               far given by fars[:i] == nears[:i] are re-exdo re-endo set of boxes.
+               Boxes at far and below are forced exdo endo.
             1.2 on different branch to walk down from root until find fork where
                fars[i] is not nears[i]. So fars[:i] == nears[:i] above fork at i,
-               and are re-quit and re-entry set of boxes. Boxes at i and below in
-               nears are quit and boxes at i and below in fars are entry
+               and are re-exdo and re-endo set of boxes. Boxes at i and below in
+               nears are exdo and boxes at i and below in fars are endo
         2.0 near and far not in same tree. In this case top of nears at nears[0] is
             not top of fars ar fars[0] i.e. different tree roots, far[0] != near[0]
-            and fars[:0] == nears[:0] = [] means empty re-quits and re-entries and
-            all nears are quit and all fars are entry.
+            and fars[:0] == nears[:0] = [] means empty re-exdos and re-endos and
+            all nears are exdo and all fars are endo.
 
         """
         nears = near.pile  # top down order
@@ -990,7 +990,7 @@ class Boxer(Tymee):
         l = min(len(nears), len(fars))  # l >= 1 since far in fars & near in nears
         for i in range(l):  # start at the top of both nears and fars
             if (far is nears[i]) or (fars[i] is not nears[i]): #first effective uncommon member
-                # (quits, entries, requits, rentries)
+                # (exdos, endos, rexdos, rendos)
                 return (list(reversed(nears[i:])), fars[i:],
                         list(reversed(nears[:i])), fars[:i])
 
