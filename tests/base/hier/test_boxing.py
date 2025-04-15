@@ -23,7 +23,55 @@ from dataclasses import dataclass, astuple, asdict, field
 from hio import hioing
 from hio.help import helping, modify, Mine, Renam
 from hio.base import Tymist
-from hio.base.hier import Box, Boxer, Maker, ActBase, Act, EndAct, Bag
+from hio.base.hier import (Nabe, Rexcnt, Box, Boxer, Maker, ActBase, Act,
+                           EndAct, Bag)
+
+
+def test_rexcnt():
+    """Test regular expression Rexcnt special need condition 'count' """
+    cond = "count"
+    assert Rexcnt.match(cond).group("cnt", "cmp") == ("count", "")
+
+    cond = "count>=2"
+    assert Rexcnt.match(cond).group("cnt", "cmp") == ("count", ">=2")
+
+    cond = "count>=2\nwhat"  # ignores newline and stuff after
+    assert Rexcnt.match(cond).group("cnt", "cmp") == ("count", ">=2")
+
+    cond = " count >= 2 "  # ignores whitespace before count
+    assert Rexcnt.match(cond).group("cnt", "cmp") == ("count", " >= 2 ")
+
+    cond = " count\t >= 2 "  # any whitespace after count
+    assert Rexcnt.match(cond).group("cnt", "cmp") == ('count', '\t >= 2 ')
+
+    cond = "count != 2"  # any whitespace after count
+    assert Rexcnt.match(cond).group("cnt", "cmp") == ("count", " != 2")
+
+    cond = "count > 2"  # any whitespace after count
+    assert Rexcnt.match(cond).group("cnt", "cmp") == ("count", " > 2")
+
+    cond = "count == 2"  # any whitespace after count
+    assert Rexcnt.match(cond).group("cnt", "cmp") == ("count", " == 2")
+
+    cond = "counter >= 2"  # does not match other word with 'count' prefix
+    assert not Rexcnt.match(cond)
+
+    cond = "count1 >= 2"  # does not match other word with 'count' prefix
+    assert not Rexcnt.match(cond)
+
+    cond = "count_ >= 2"  # does not match other word with 'count' prefix
+    assert not Rexcnt.match(cond)
+
+    cond = "_count >= 2"  # does not match other word with 'count' suffix
+    assert not Rexcnt.match(cond)
+
+    cond = "0count >= 2"  # does not match other word with 'count' suffix
+    assert not Rexcnt.match(cond)
+
+    cond = "my count >= 2"  # does not match other word with 'count' suffix
+    assert not Rexcnt.match(cond)
+
+    """Done Test"""
 
 
 
@@ -403,7 +451,7 @@ def test_boxer_make_run_on_update():
     boxer.wind(tymth=tymist.tymen())
 
     boxer.begin()
-    assert boxer.box.name == "top"  # half trans at end of first pass
+    assert boxer.box.name == "top"  # default first
     assert mine.count.value is None
     assert mine.count._tyme is None
     assert mine._boxer_boxer_box_mid_update_count.value is None
@@ -466,7 +514,7 @@ def test_boxer_make_run_on_change():
     boxer.wind(tymth=tymist.tymen())
 
     boxer.begin()
-    assert boxer.box.name == "top"  # half trans at end of first pass
+    assert boxer.box.name == "top"  # default first
     assert mine.count.value is None
     assert mine.count._tyme is None
     assert mine._boxer_boxer_box_mid_change_count.value is None
@@ -483,6 +531,56 @@ def test_boxer_make_run_on_change():
     assert mine.count.value == 0
     assert mine.count._tyme == 0.0
     assert mine._boxer_boxer_box_mid_change_count.value == (None, )
+    boxer.run()
+    assert boxer.box is None
+    assert boxer.endial()
+
+    """Done Test"""
+
+def test_boxer_make_run_on_count():
+    """Test make method of Boxer with on verb special need count
+    """
+    tymist = Tymist()
+
+    def fun(bx, go, do, on, *pa):
+        bx(name='top')
+        bx('mid', 'top')
+        do("count", "redo")
+        do("discount", "exdo")
+        go('done', on("count >= 2"))
+        bx('bot0', 'mid', first=True)
+        go("next")
+        bx('bot1')  # over defaults to same as prev box
+        go("next")
+        bx('bot2')  # over defaults to same as prev box
+        go("bot0")
+        bx(name='done', over=None)
+        do('end')
+
+
+    mine = Mine()
+
+    boxer = Boxer(mine=mine)
+    assert boxer.boxes == {}
+    mods = boxer.make(fun)
+    assert len(boxer.boxes) == 6
+    assert list(boxer.boxes) == ['top', 'mid', 'bot0', 'bot1', 'bot2', 'done']
+    boxer.wind(tymth=tymist.tymen())
+    assert boxer.boxes["mid"].reacts
+    assert boxer.boxes["mid"].exacts
+
+    boxer.begin()
+    assert boxer.box.name == "bot0"   # since set as first
+    assert mine._boxer_boxer_box_mid_count.value is None
+    boxer.run()
+    assert boxer.box.name == "bot1"  # half trans at end of first pass
+    assert mine._boxer_boxer_box_mid_count.value == 0
+    boxer.run()
+    assert boxer.box.name == "bot2"
+    assert mine._boxer_boxer_box_mid_count.value == 1
+    boxer.run()
+    assert boxer.box.name == "done"
+    assert mine._boxer_boxer_box_mid_count.value is None
     boxer.run()
     assert boxer.box is None
     assert boxer.endial()
@@ -804,6 +902,7 @@ def test_concept_bx_global():
     """Done Test"""
 
 if __name__ == "__main__":
+    test_rexcnt()
     test_box_basic()
     test_boxer_exen()
     test_boxer_basic()
@@ -812,6 +911,7 @@ if __name__ == "__main__":
     test_boxer_make_run()
     test_boxer_make_run_on_update()
     test_boxer_make_run_on_change()
+    test_boxer_make_run_on_count()
     test_maker_basic()
     test_concept_bx_nonlocal()
     test_concept_bx_global()

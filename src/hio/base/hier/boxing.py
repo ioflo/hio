@@ -8,15 +8,31 @@ Provides hierarchical box work support
 """
 from __future__ import annotations  # so type hints of classes get resolved later
 
+import re
 from collections.abc import Callable
 
 from ..tyming import Tymee
 from ...hioing import Mixin, HierError
 from .hiering import Nabe, WorkDom, ActBase
-from .acting import Act, Goact, UpdateMark, ChangeMark, Count, Discount
+from .acting import (Act, Goact, UpdateMark, ChangeMark,
+                     ReupdateMark, RechangeMark, Count, Discount)
 from .bagging import Bag
 from .needing import Need
 from ...help import modify, Mine, Renam
+
+
+
+
+# Regular expression to detect special need 'count' condition
+COUNTREX = r'^\s*(?P<cnt>count)(?P<cmp>(\s|\W|\Z).*)'
+Rexcnt = re.compile(COUNTREX)  # compile is faster
+"""Usage:
+if m := Rexcnt.match("count >= 1"):
+    cnt, cmp = m.group("cnt","cmp")
+
+if not Recnt.match("count >= 1"):
+    return
+"""
 
 
 nabeDispatch = dict(predo="preacts",
@@ -599,7 +615,7 @@ class Boxer(Tymee):
 
 
 
-    def bx(self, name: None|str=None, over: None|str|Box="",
+    def bx(self, name: None|str=None, over: None|str|Box="", first: bool=False,
                 *, mods: WorkDom|None=None)->Box:
         """Make a box and add to box work
 
@@ -614,6 +630,8 @@ class Boxer(Tymee):
                                     when box then actual over box
                                     when None then no over box (top level)
                                     when empty then same level use _over
+            first (bool): True means set this box as boxer.first
+                          False (default) to not change boxer.first
 
             mods (None | WorkDom):  state variables used to construct box work
                 None is just to allow definition as keyword arg. Assumes in
@@ -669,6 +687,10 @@ class Boxer(Tymee):
         if m.box:  # update last boxes lexical ._next to this box
             m.box._next = box
         m.box = box  # update current box
+
+        if first:
+            self.first = box
+
         return box
 
 
@@ -731,16 +753,18 @@ class Boxer(Tymee):
 
 
 
-    def do(self, deed: None|str|Callable=None, *, name: str|None=None,
-           mods: WorkDom|None=None, **iops)->str:
+    def do(self, deed: None|str|Callable=None, nabe=None, *,
+                 name: str|None=None, mods: WorkDom|None=None, **iops)->str:
         """Make an act and add to box work
 
         Parameters:
             deed (None|str|Callable): When str name of class in ActBase registry.
                     When None use Act with default lambda and iops as parameters.
                     When Callable use Act with iops as parameters.
-
-
+            name (None|str): name of act instance created by do.
+                    When None use default indexed name created by Act.
+            nabe (None|str): action nabe (context) for act instance created by do.
+                    None means use nabe from mods.
             mods (None | WorkDom):  state variables used to construct box work
                 None is just to allow definition as keyword arg. Assumes in
                 actual usage that mods is always provided as WorkDom instance.
@@ -751,12 +775,13 @@ class Boxer(Tymee):
         m = mods  # alias more compact
 
         parms = dict(name=name, mine=self.mine, dock=self.dock)
-        if m.nabe != Nabe.native:
-            parms.update(nabe=m.nabe)  # override default nabe for klas
+        if nabe is None:
+            nabe = m.nabe
+        if nabe != Nabe.native:
+            parms.update(nabe=nabe)   # override native nabe for klas
 
         iops = dict(_boxer=self.name, _box=m.box.name, **iops)
         parms.update(iops=iops)
-
 
         deed = deed if deed is not None else "Act"
 
@@ -863,6 +888,25 @@ class Boxer(Tymee):
                 _expr = (f"(M.{mk}.value is None and M.{key}._tyme is not None) or "
                          f"(M.{mk}.value is not None and M.{key}._tyme > M.{mk}.value)")
 
+            elif cond == "reupdate":
+                if not key:
+                    raise HierError(f"Missing bag key for special need '{cond=}'")
+                iops.update(_key=key)
+                mks =  ("", "boxer", self.name, "box", m.box.name, "reupdate", key)
+                mk = self.mine.tokey(mks)  # mark bag key
+                name = ReupdateMark.__name__ + key
+                found = False
+                for mark in m.box.enmarks:  # check if already has mark for key
+                    if mark.name == name:
+                        found = True
+                        break
+                if not found:  # no preexisting UpdateMark for this key
+                    mark = ReupdateMark(name=name, iops=iops, mine=self.mine, dock=self.dock)
+                    m.box.remarks.append(mark)  # update is always enmark
+
+                _expr = (f"(M.{mk}.value is None and M.{key}._tyme is not None) or "
+                         f"(M.{mk}.value is not None and M.{key}._tyme > M.{mk}.value)")
+
             elif cond == "change":
                 if not key:
                     raise HierError(f"Missing bag key for special need '{cond=}'")
@@ -880,6 +924,35 @@ class Boxer(Tymee):
                     m.box.enmarks.append(mark)  # update is always enmark
 
                 _expr = (f"M.{mk}.value != M.{key}._astuple()")
+
+            elif cond == "rechange":
+                if not key:
+                    raise HierError(f"Missing bag key for special need '{cond=}'")
+                iops.update(_key=key)
+                mks =  ("", "boxer", self.name, "box", m.box.name, "rechange", key)
+                mk = self.mine.tokey(mks)  # mark bag key
+                name = RechangeMark.__name__ + key
+                found = False
+                for mark in m.box.enmarks:  # check if already has mark for key
+                    if mark.name == name:
+                        found = True
+                        break
+                if not found:  # no preexisting ChangeMark for this key
+                    mark = RechangeMark(name=name, iops=iops, mine=self.mine, dock=self.dock)
+                    m.box.remarks.append(mark)  # update is always enmark
+
+                _expr = (f"M.{mk}.value != M.{key}._astuple()")
+
+            elif match := Rexcnt.match(cond):  # count special need
+                mks =  ("", "boxer", self.name, "box", m.box.name, "count")
+                mk = self.mine.tokey(mks)  # count mark bag key
+                if mk not in self.mine:
+                    self.mine[mk] = Bag()  # create bag default value = None
+
+                _, cmp = match.group("cnt", "cmp")
+                _expr = (f"M.{mk}.value" + cmp)
+
+
             else:
                 raise HierError(f"Invalid special need {cond=}")
 

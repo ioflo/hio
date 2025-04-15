@@ -507,7 +507,7 @@ class UpdateMark(Mark):
 
 @register()
 class ChangeMark(Mark):
-    """ChangeMark marks bag in mine for value change update special need
+    """ChangeMark marks bag in mine for value change special need
     Creates tuple of non-hidden fields in associated bag.
 
     """
@@ -560,8 +560,117 @@ class ChangeMark(Mark):
 
 
 @register()
+class ReupdateMark(Mark):
+    """ReupdateMark marks bag in mine for tyme reupdate special need
+
+    """
+    Index = 0  # naming index for default names of this subclasses instances
+
+
+    def __init__(self, nabe=Nabe.remark, **kwa):
+        """Initialization method for instance.
+
+        Inherited Parameters:
+            name (str|None): unique name of this instance. When None then
+                generate name from .Index
+            iops (dict|None): input-output-parameters for .act. When None then
+                set to empty dict.
+            nabe (str): action nabe (context) for .act
+            mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
+            dock (None|Dock): durable bags in dock (on disc) shared by boxwork
+
+        Parameters:
+
+        Used iops:
+            _boxer (str): boxer name. Implicit iop injected by verb
+            _box (str): box name in boxer.  Implicit iop injected by verb
+            _key (str): marked bag key. Injected by on verb
+
+
+        """
+        super(ReupdateMark, self).__init__(nabe=nabe, **kwa)
+        boxer = self.iops['_boxer']  # get boxer name
+        box = self.iops['_box']  # get box name
+        key = self.iops['_key']  # get bag key in mine
+        keys = ("", "boxer", boxer, "box", box, "reupdate", key)
+        if keys not in self.mine:
+            self.mine[keys] = Bag()  # create bag default value = None
+
+
+
+    def act(self, **iops):
+        """Act called by ActBase.
+
+        Parameters:
+            iops (dict): input output parms
+
+        """
+        boxer = self.iops['_boxer']  # get boxer name
+        box = self.iops['_box']
+        key = self.iops['_key']
+        keys = ("", "boxer", boxer, "box", box, "reupdate", key)
+        # mark bag tyme
+        self.mine[keys].value = self.mine[key]._tyme
+
+
+@register()
+class RechangeMark(Mark):
+    """RechangeMark marks bag in mine for value rechange special need
+    Creates tuple of non-hidden fields in associated bag.
+
+    """
+    Index = 0  # naming index for default names of this subclasses instances
+
+
+    def __init__(self, nabe=Nabe.remark, **kwa):
+        """Initialization method for instance.
+
+        Inherited Parameters:
+            name (str|None): unique name of this instance. When None then
+                generate name from .Index
+            iops (dict|None): input-output-parameters for .act. When None then
+                set to empty dict.
+            nabe (str): action nabe (context) for .act
+            mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
+            dock (None|Dock): durable bags in dock (on disc) shared by boxwork
+
+        Parameters:
+
+        Used iops:
+            _boxer (str): boxer name. Implicit iop injected by verb
+            _box (str): box name in boxer.  Implicit iop injected by verb
+            _key (str): marked bag key. Injected by on verb
+
+
+        """
+        super(ChangeMark, self).__init__(nabe=nabe, **kwa)
+        boxer = self.iops['_boxer']  # get boxer name
+        box = self.iops['_box']  # get box name
+        key = self.iops['_key']  # get bag key in mine
+        keys = ("", "boxer", boxer, "box", box, "rechange", key)
+        if keys not in self.mine:
+            self.mine[keys] = Bag()  # create bag default value = None
+
+
+    def act(self, **iops):
+        """Act called by ActBase.
+
+        Parameters:
+            iops (dict): input output parms
+
+        """
+        boxer = self.iops['_boxer']  # get boxer name
+        box = self.iops['_box']
+        key = self.iops['_key']
+        bag = self.mine[key]
+        keys = ("", "boxer", boxer, "box", box, "rechange", key)
+        self.mine[keys].value = bag._astuple()  # bag field value tuple as mark
+
+
+@register(names=('count',))
 class Count(ActBase):
-    """Count tracks redo count of box in mine for count special need
+    """Count tracks count of box in mine for count special need in the nabe
+    where this act is actioned.
 
     """
     Index = 0  # naming index for default names of this subclasses instances
@@ -623,9 +732,10 @@ class Count(ActBase):
             bag.value += 1  # inc counter
 
 
-@register()
+@register(names=('discount',))
 class Discount(ActBase):
-    """Discount resets redo count to None of box in mine for count special need
+    """Discount resets count to None of box in mine for count special need
+    in the nabe where this act is actioned, usually Nabe.exdo.
 
     """
     Index = 0  # naming index for default names of this subclasses instances
@@ -679,3 +789,5 @@ class Discount(ActBase):
         box = self.iops['_box']
         keys = ("", "boxer", boxer, "box", box, "count")
         self.mine[keys].value = None  # reset count to None
+
+
