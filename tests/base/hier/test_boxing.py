@@ -44,8 +44,8 @@ def test_box_basic():
     assert box.enmacts == []
     assert box.enacts == []
     assert box.reacts == []
-    assert box.tacts == []
-    assert box.tracts == []
+    assert box.anacts == []
+    assert box.goacts == []
     assert box.exacts == []
     assert box.rexacts == []
 
@@ -263,8 +263,8 @@ def test_boxer_make():
 
     for name, box in boxer.boxes.items():  # test resolve
         assert isinstance(box.over, Box) or box.over is None
-        for tract in box.tracts:
-            assert isinstance(tract.dest, Box)
+        for goact in box.goacts:
+            assert isinstance(goact.dest, Box)
 
 
     """Done Test"""
@@ -299,8 +299,8 @@ def test_boxer_make_go():
 
     for name, box in boxer.boxes.items():  # test resolve
         assert isinstance(box.over, Box) or box.over is None
-        for tract in box.tracts:
-            assert isinstance(tract.dest, Box)
+        for goact in box.goacts:
+            assert isinstance(goact.dest, Box)
 
 
     """Done Test"""

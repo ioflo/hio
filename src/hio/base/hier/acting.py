@@ -149,8 +149,8 @@ class Act(ActBase):
 
 
 @register()
-class Tract(ActBase):
-    """Tract (transit act) is subclass of ActBase whose .act evaluates conditional
+class Goact(ActBase):
+    """Goact (go act) is subclass of ActBase whose .act evaluates conditional
     need expression to determine if a transition condition is satified for
     transition to its destination box.
 
@@ -218,12 +218,12 @@ class Tract(ActBase):
                 When Need instance then use directly
 
         """
-        kwa.update(nabe=Nabe.transit)  # override must be transit nabe
-        super(Tract, self).__init__(**kwa)
+        kwa.update(nabe=Nabe.godo)  # override must be godo nabe
+        super(Goact, self).__init__(**kwa)
         self.dest = dest if dest is not None else 'next'  # default is next
         self.need = need if need is not None else Need()  # default need evals to True
-        if self.nabe != Nabe.transit:
-            raise HierError(f"Invalid nabe='{self.nabe}' for Tract "
+        if self.nabe != Nabe.godo:
+            raise HierError(f"Invalid nabe='{self.nabe}' for Goact "
                             f"'{self.name}'")
 
 

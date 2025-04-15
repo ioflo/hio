@@ -68,17 +68,17 @@ Fields:
    enmark (str): enmark nabe
    endo (str): endo nabe
    redo (str): redo nabe
-   tail (str): tail nabe
-   transit (str): transit nabe
+   ando (str): ando nabe
+   godo (str): godo nabe
    exdo (str): exdo nabe
    rexdo (str): rexdo nabe
 """
 Nabage = namedtuple("Nabage", "native predo remark rendo enmark endo"
-                                      " redo tail transit exdo rexdo")
+                                      " redo ando godo exdo rexdo")
 
 Nabe = Nabage(native="native", predo="predo", remark="remark",
                      rendo="rendo", enmark="enmark", endo="endo",
-                     redo="redo", tail="tail", transit="transit",
+                     redo="redo", ando="ando", godo="godo",
                      exdo="exdo", rexdo="rexdo")
 
 

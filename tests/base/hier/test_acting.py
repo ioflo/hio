@@ -8,7 +8,7 @@ import pytest
 
 from hio import Mixin, HierError
 from hio.base.hier import Nabe, ActBase, actify, Need, Box, Boxer, Bag
-from hio.base.hier import Act, Tract, EndAct
+from hio.base.hier import Act, Goact, EndAct
 
 from hio.help import Mine
 
@@ -127,42 +127,42 @@ def test_need_act():
     """Done Test"""
 
 
-def test_tract_basic():
-    """Test Tract class"""
+def test_goact_basic():
+    """Test Goact class"""
 
-    Tract._clearall()  # clear instances for debugging
+    Goact._clearall()  # clear instances for debugging
 
-    assert "Tract" in Tract.Registry
-    assert Tract.Registry["Tract"] == Tract
+    assert "Goact" in Goact.Registry
+    assert Goact.Registry["Goact"] == Goact
 
-    tract = Tract()
-    assert tract.name == "Tract0"
-    assert tract.iops == {}
-    assert tract.nabe == Nabe.transit
-    assert tract.mine == Mine()
-    assert tract.dock == None
-    assert tract.Index == 1
-    assert tract.Instances[tract.name] == tract
-    assert tract.dest == 'next'
-    assert isinstance(tract.need, Need)
-    assert tract.need()
+    goact = Goact()
+    assert goact.name == "Goact0"
+    assert goact.iops == {}
+    assert goact.nabe == Nabe.godo
+    assert goact.mine == Mine()
+    assert goact.dock == None
+    assert goact.Index == 1
+    assert goact.Instances[goact.name] == goact
+    assert goact.dest == 'next'
+    assert isinstance(goact.need, Need)
+    assert goact.need()
 
     with pytest.raises(HierError):
-        assert not tract()  # since default .dest not yet resolved
+        assert not goact()  # since default .dest not yet resolved
 
     mine = Mine()
     mine.cycle = Bag(value=3)
     box = Box(mine=Mine)
     need = Need(expr='M.cycle.value >= 3', mine=mine)
-    tract = Tract(dest=box, need=need)
-    assert not tract.need.compiled
+    goact = Goact(dest=box, need=need)
+    assert not goact.need.compiled
 
-    dest = tract()
+    dest = goact()
     assert dest == box
-    assert tract.need.compiled
+    assert goact.need.compiled
 
     mine.cycle.value = 1
-    assert not tract()
+    assert not goact()
     """Done Test"""
 
 
@@ -206,5 +206,5 @@ def test_endact_basic():
 if __name__ == "__main__":
     test_act_basic()
     test_need_act()
-    test_tract_basic()
+    test_goact_basic()
     test_endact_basic()

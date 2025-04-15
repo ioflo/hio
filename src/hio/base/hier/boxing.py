@@ -13,7 +13,7 @@ from collections.abc import Callable
 from ..tyming import Tymee
 from ...hioing import Mixin, HierError
 from .hiering import Nabe, WorkDom, ActBase
-from .acting import Act, Tract, UpdateMark, ChangeMark, Count, Discount
+from .acting import Act, Goact, UpdateMark, ChangeMark, Count, Discount
 from .bagging import Bag
 from .needing import Need
 from ...help import modify, Mine, Renam
@@ -25,8 +25,8 @@ nabeDispatch = dict(predo="preacts",
                     enmark="enmacts",
                     endo="enacts",
                     redo="reacts",
-                    tail="tacts",
-                    transit="tracts",
+                    ando="anacts",
+                    godo="tracts",
                     exdo="exacts",
                     rexdo="rexacts")
 
@@ -53,8 +53,8 @@ class Box(Tymee):
         enmacts (list[act]): enmark endo mark subcontext acts
         enacts (list[act]):  endo nabe acts
         reacts (list[act]): redo nabe acts
-        tacts (list[act]): tail nabe acts
-        tracts (list[act]): transit nabe acts
+        anacts (list[act]): ando nabe acts
+        tracts (list[act]): godo nabe acts
         exacts (list[act]): exdo nabe acts
         rexacts (list[act]): rexdo (re-exdo) nabe acts  (retained)
 
@@ -110,8 +110,8 @@ class Box(Tymee):
         self.enmacts = []  # endo mark subcontext list of en-mark acts
         self.enacts = []  # endo nabe list of endo acts
         self.reacts = []  # redo nabe list of recurring acts
-        self.tacts = []  # tail nabe list of trailing acts
-        self.tracts = []  # transit nabe list of transition acts
+        self.anacts = []  # ando nabe list of trailing acts
+        self.goacts = []  # godo nabe list of transition acts
         self.exacts = []  # exdo nabe list of exdo acts
         self.rexacts = []  # rexdo nabe list of re-exdo acts (retained)
 
@@ -280,12 +280,12 @@ class Boxer(Tymee):
             End boxwork boxer.want stop desire stop
         for box in actives top down:
             redo
-            tail
-            if transit need is true:  (short circuit redo of lower level boxes)
+            ando
+            if godo need is true:  (short circuit redo of lower level boxes)
                 compute rendos endos exdos rexdos. save box.rendos and box.endos
                 for each box in endos (top down):
                     predo:
-                        if not all true then do not proceed with transit return
+                        if not all true then do not proceed with godo return
 
                 for box in exdos bottom up:
                     exdos
@@ -308,11 +308,11 @@ class Boxer(Tymee):
             End boxwork boxer.want stop desire stop
         for box in actives top down:
             redo
-            tail
-            if transit need is true:   (short circuit redo of lower level boxes)
+            ando
+            if godo need is true:   (short circuit redo of lower level boxes)
                 compute rendos endos exdos rexdos,.
                     predo:
-                        if not all true then do not proceed with transit return
+                        if not all true then do not proceed with godo return
 
                 for box in exdos bottom up:
                     exdo
@@ -400,23 +400,23 @@ class Boxer(Tymee):
         for box in self.box.pile:
             for react in box.reacts:   # redo nabe top down
                 react()
-            for tact in box.tacts:   # trail nabe top down
-                tact()
+            for anact in box.anacts:   # ando nabe top down
+                anact()
             if self.endial():  # actioned desire to end
                 self.end()  # exdos all active boxes in self.box.pile
                 self.box = None  # no active box
                 return True  # beginning completed already
 
-            for tract in box.tracts:  # transit nabe top down
-                if tract():  # transition condition satisfied
-                    exdos, endos, rendos, rexdos = self.exen(box, tract.dest)
-                    if not self.predo(endos):  # transit not satisfied
+            for goact in box.goacts:  # godo nabe top down
+                if goact():  # transition condition satisfied
+                    exdos, endos, rendos, rexdos = self.exen(box, goact.dest)
+                    if not self.predo(endos):  # godo not satisfied
                         continue  # keep trying
                     self.exdo(exdos)  # exdo bottom up
                     self.rexdo(rexdos)  # rexdo bottom up
                     self.rendos = rendos  # save for next pass
                     self.endos = endos  # save for next pass
-                    self.box = tract.dest  # set new active box
+                    self.box = goact.dest  # set new active box
                     break
 
         return True  # successfully completed beginning
@@ -433,18 +433,18 @@ class Boxer(Tymee):
         for box in self.box.pile:  # top down
             for react in box.reacts:   # redo nabe top down
                 react()
-            for tact in box.tacts:   # trail nabe top down
-                tact()
+            for anact in box.anacts:   # ando nabe top down
+                anact()
 
             if self.endial():  # actioned desire to end
                 self.end()  # exdos all active boxes in self.box.pile
                 self.box = None  # no active box
                 return True  # beginning completed already
 
-            for tract in box.tracts:  # transit nabe top down
-                if dest := tract():  # transition condition satisfied
+            for goact in box.goacts:  # godo nabe top down
+                if dest := goact():  # transition condition satisfied
                     exdos, endos, rendos, rexdos = self.exen(box, dest)
-                    if not self.predo(endos):  # transit not satisfied
+                    if not self.predo(endos):  # godo not satisfied
                         continue  # keep trying
                     self.exdo(exdos)  # exdo bottom up
                     self.rexdo(rexdos)  # rexdo bottom up  (boxes retained)
@@ -553,7 +553,7 @@ class Boxer(Tymee):
 
 
     def resolve(self):
-        """Resolve both over box names and tract dest box names into boxes for
+        """Resolve both over box names and goact dest box names into boxes for
         all boxes in .boxes
 
         """
@@ -567,21 +567,21 @@ class Boxer(Tymee):
                 box.over = over  # resolve over as a box
                 box.over.unders.append(box)  # add box to its over.unders list
 
-            for tract in box.tracts:
-                if isinstance(tract.dest, str):
-                    if tract.dest == 'next':  # next
+            for goact in box.goacts:
+                if isinstance(goact.dest, str):
+                    if goact.dest == 'next':  # next
                         if not box._next:
-                            HierError(f"Unresolvable dest 'next' for tract in "
+                            HierError(f"Unresolvable dest 'next' for goact in "
                                       f"box{name=}")
                         dest = box._next
                     else:
                         try:
-                            dest = self.boxes[tract.dest]  # resolve
+                            dest = self.boxes[goact.dest]  # resolve
                         except KeyError as ex:
-                            raise HierError(f"Unresolvable dest box={tract.dest}"
-                                f" for tract in box{name=}") from ex
+                            raise HierError(f"Unresolvable dest box={goact.dest}"
+                                f" for goact in box{name=}") from ex
 
-                    tract.dest = dest  # resolve dest as box
+                    goact.dest = dest  # resolve dest as box
 
         if isinstance(self.first, str):  # resolve first box
             try:
@@ -697,11 +697,11 @@ class Boxer(Tymee):
 
 
     def go(self, dest: None|str=None, expr: None|str|Need=None,
-                 *, mods: WorkDom|None=None, **kwa)->Tract:
-        """Make a Tract and add it to the tracts nabe of the current box.
+                 *, mods: WorkDom|None=None, **kwa)->Goact:
+        """Make a Goact and add it to the tracts nabe of the current box.
 
         Returns:
-            tract (Tract):  newly created tract
+            goact (Goact):  newly created goact
 
         Parameters:
             dest (None|str|Box): destination box its name for transition.
@@ -711,7 +711,7 @@ class Boxer(Tymee):
                 When Box instance that already resolved
 
             expr (None|str|Need): need for transition to dest.
-                When None then conditional always True. Always transit.
+                When None then conditional always True. Always godo.
                 When str then evalable python boolean expression to be
                     resolved into a Need instance for eval at run time
                 When Need instance then use as is
@@ -749,9 +749,9 @@ class Boxer(Tymee):
         else:   # assumes evalable expr str
             need = Need(expr=expr, mine=self.mine, dock=self.dock)
 
-        tract = Tract(dest=dest, need=need)
-        m.box.tracts.append(tract)
-        return tract
+        goact = Goact(dest=dest, need=need)
+        m.box.goacts.append(goact)
+        return goact
 
 
 
@@ -814,7 +814,7 @@ class Boxer(Tymee):
                  *, mods: WorkDom|None=None, **iops)->Need:
         """Make a Need with support for special Need conditions and return it.
         Use inside go verb as need argument for special need condition
-        Use inside do verb as deed argument for preact or tact
+        Use inside do verb as deed argument for preact or anact
 
         Returns:
             need (Need):  newly created special need
