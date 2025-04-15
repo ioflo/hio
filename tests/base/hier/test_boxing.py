@@ -46,8 +46,8 @@ def test_box_basic():
     assert box.reacts == []
     assert box.tacts == []
     assert box.tracts == []
-    assert box.quacts == []
-    assert box.requacts == []
+    assert box.exacts == []
+    assert box.rexacts == []
 
     assert box.pile == [box]
     assert box.spot == 0

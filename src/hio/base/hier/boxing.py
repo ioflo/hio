@@ -28,7 +28,7 @@ nabeDispatch = dict(precon="preacts",
                     tail="tacts",
                     transit="tracts",
                     exdo="exacts",
-                    rexdo="requacts")
+                    rexdo="rexacts")
 
 
 class Box(Tymee):
@@ -56,7 +56,7 @@ class Box(Tymee):
         tacts (list[act]): tail nabe acts
         tracts (list[act]): transit nabe acts
         exacts (list[act]): exdo nabe acts
-        requacts (list[act]): rexdo (re-exdo) nabe acts  (retained)
+        rexacts (list[act]): rexdo (re-exdo) nabe acts  (retained)
 
     Properties:
         name (str): unique identifier of instance
@@ -112,8 +112,8 @@ class Box(Tymee):
         self.reacts = []  # redo nabe list of recurring acts
         self.tacts = []  # tail nabe list of trailing acts
         self.tracts = []  # transit nabe list of transition acts
-        self.quacts = []  # exdo nabe list of exdo acts
-        self.requacts = []  # rexdo nabe list of re-exdo acts (retained)
+        self.exacts = []  # exdo nabe list of exdo acts
+        self.rexacts = []  # rexdo nabe list of re-exdo acts (retained)
 
         #lexical context
         self._next = None  # next box lexically
@@ -529,27 +529,27 @@ class Boxer(Tymee):
 
 
     def exdo(self, exdos):
-        """Action quacts of boxes in exdos in bottom up order.
+        """Action exacts of boxes in exdos in bottom up order.
 
         Parameters:
             exdos (None|list[Box]): boxes to be exdo in bottom up order
 
         """
         for box in exdos:
-            for quact in box.quacts:
-                quact()
+            for exact in box.exacts:
+                exact()
 
 
     def rexdo(self, rexdos):
-        """Action requacts of boxes in rexdos (re-exdos) in bottom up order.
+        """Action rexacts of boxes in rexdos (re-exdos) in bottom up order.
         Boxes retained in hierarchical state.
 
         Parameters:
             rexdos (None|list[Box]): boxes to be re-exdo in bottom up order
         """
         for box in rexdos:
-            for requact in box.requacts:
-                requact()
+            for rexact in box.rexacts:
+                rexact()
 
 
     def resolve(self):
