@@ -19,7 +19,7 @@ from .needing import Need
 from ...help import modify, Mine, Renam
 
 
-nabeDispatch = dict(precon="preacts",
+nabeDispatch = dict(predo="preacts",
                     remark="remacts",
                     rendo="renacts",
                     enmark="enmacts",
@@ -47,7 +47,7 @@ class Box(Tymee):
         over (Box | None): this box's over box instance or None
         unders (list[Box]): this box's under box instances or empty
                             zeroth entry is primary under
-        preacts (list[act]): precon (pre-conditions for endo) nabe acts
+        preacts (list[act]): predo (pre-conditions for endo) nabe acts
         remacts (list[act]): remark re-endo mark subcontext acts (retained)
         renacts (list[act]): rendo (re-endo) nabe acts  (retained)
         enmacts (list[act]): enmark endo mark subcontext acts
@@ -104,7 +104,7 @@ class Box(Tymee):
         self.unders = []  # list of under boxes,
 
         # acts by contexts
-        self.preacts = []  # precon nabe list of pre-entry acts
+        self.preacts = []  # predo nabe list of pre-entry acts
         self.remacts = []  # re-endo mark subcontext list of re-mark acts
         self.renacts = []  # rendo nabe list of re-endo acts (retained)
         self.enmacts = []  # endo mark subcontext list of en-mark acts
@@ -284,7 +284,7 @@ class Boxer(Tymee):
             if transit need is true:  (short circuit redo of lower level boxes)
                 compute rendos endos exdos rexdos. save box.rendos and box.endos
                 for each box in endos (top down):
-                    precon:
+                    predo:
                         if not all true then do not proceed with transit return
 
                 for box in exdos bottom up:
@@ -311,7 +311,7 @@ class Boxer(Tymee):
             tail
             if transit need is true:   (short circuit redo of lower level boxes)
                 compute rendos endos exdos rexdos,.
-                    precon:
+                    predo:
                         if not all true then do not proceed with transit return
 
                 for box in exdos bottom up:
@@ -389,7 +389,7 @@ class Boxer(Tymee):
         self.box = self.first
         self.rendos = []  # first pass no rendo of any boxes
         self.endos = self.box.pile
-        if not self.precon():  # uses .endos preconditions for entry not satisfied
+        if not self.predo():  # uses .endos preconditions for entry not satisfied
             # do end stuff since no entry yet then no exdo
             self.box = None  # no active box anymore
             return False  # signal end beginning did not complete
@@ -410,7 +410,7 @@ class Boxer(Tymee):
             for tract in box.tracts:  # transit nabe top down
                 if tract():  # transition condition satisfied
                     exdos, endos, rendos, rexdos = self.exen(box, tract.dest)
-                    if not self.precon(endos):  # transit not satisfied
+                    if not self.predo(endos):  # transit not satisfied
                         continue  # keep trying
                     self.exdo(exdos)  # exdo bottom up
                     self.rexdo(rexdos)  # rexdo bottom up
@@ -444,7 +444,7 @@ class Boxer(Tymee):
             for tract in box.tracts:  # transit nabe top down
                 if dest := tract():  # transition condition satisfied
                     exdos, endos, rendos, rexdos = self.exen(box, dest)
-                    if not self.precon(endos):  # transit not satisfied
+                    if not self.predo(endos):  # transit not satisfied
                         continue  # keep trying
                     self.exdo(exdos)  # exdo bottom up
                     self.rexdo(rexdos)  # rexdo bottom up  (boxes retained)
@@ -481,11 +481,11 @@ class Boxer(Tymee):
         return False
 
 
-    def precon(self, endos=None):
+    def predo(self, endos=None):
         """Evaluate preconditions for entry of boxes in endos in top down order
 
         Parameters:
-            endos (None|list[Box]): boxes to be entered if precons are satisfied
+            endos (None|list[Box]): boxes to be entered if predos are satisfied
                                 when arg is None then defaults to .endos
 
         Returns:

@@ -62,7 +62,7 @@ Action nabes (contexts mileu neighborhood) for Acts
 
 Fields:
    native (str): native nabe
-   precon (str): precon nabe
+   predo (str): predo nabe
    remark (str): remark nabe
    rendo (str): rendo nabe
    enmark (str): enmark nabe
@@ -73,10 +73,10 @@ Fields:
    exdo (str): exdo nabe
    rexdo (str): rexdo nabe
 """
-Nabage = namedtuple("Nabage", "native precon remark rendo enmark endo"
+Nabage = namedtuple("Nabage", "native predo remark rendo enmark endo"
                                       " redo tail transit exdo rexdo")
 
-Nabe = Nabage(native="native", precon="precon", remark="remark",
+Nabe = Nabage(native="native", predo="predo", remark="remark",
                      rendo="rendo", enmark="enmark", endo="endo",
                      redo="redo", tail="tail", transit="transit",
                      exdo="exdo", rexdo="rexdo")

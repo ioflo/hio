@@ -31,7 +31,7 @@ def test_nabe():
 
     assert Nabe.native == "native"
     assert Nabe._asdict() == {'native': 'native',
-                                'precon': 'precon',
+                                'predo': 'predo',
                                 'remark': 'remark',
                                 'rendo': 'rendo',
                                 'enmark': 'enmark',
