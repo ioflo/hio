@@ -23,7 +23,7 @@ nabeDispatch = dict(precon="preacts",
                     remark="remacts",
                     rentry="renacts",
                     enmark="enmacts",
-                    enter="enacts",
+                    entry="enacts",
                     redo="reacts",
                     tail="tacts",
                     transit="tracts",
@@ -48,10 +48,10 @@ class Box(Tymee):
         unders (list[Box]): this box's under box instances or empty
                             zeroth entry is primary under
         preacts (list[act]): precon (pre-conditions for entry) nabe acts
-        remacts (list[act]): remark re-enter mark subcontext acts (retained)
+        remacts (list[act]): remark re-entry mark subcontext acts (retained)
         renacts (list[act]): rentry (re-entry) nabe acts  (retained)
-        enmacts (list[act]): enmark enter mark subcontext acts
-        enacts (list[act]):  enter nabe acts
+        enmacts (list[act]): enmark entry mark subcontext acts
+        enacts (list[act]):  entry nabe acts
         reacts (list[act]): redo nabe acts
         tacts (list[act]): tail nabe acts
         tracts (list[act]): transit nabe acts
@@ -105,10 +105,10 @@ class Box(Tymee):
 
         # acts by contexts
         self.preacts = []  # precon nabe list of pre-entry acts
-        self.remacts = []  # re-enter mark subcontext list of re-mark acts
+        self.remacts = []  # re-entry mark subcontext list of re-mark acts
         self.renacts = []  # rentry nabe list of re-entry acts (retained)
-        self.enmacts = []  # enter mark subcontext list of en-mark acts
-        self.enacts = []  # enter nabe list of enter acts
+        self.enmacts = []  # entry mark subcontext list of en-mark acts
+        self.enacts = []  # entry nabe list of entry acts
         self.reacts = []  # redo nabe list of recurring acts
         self.tacts = []  # tail nabe list of trailing acts
         self.tracts = []  # transit nabe list of transition acts
@@ -237,7 +237,7 @@ class Boxer(Tymee):
         first (Box | None):  beginning box
         box (Box | None):  active box
         rentries (list[Box]): boxes to re-entry on this run (boxes retained)
-        enters (list[Box]): boxes to enter on this begin/run
+        enters (list[Box]): boxes to entry on this begin/run
 
     Properties:
         name (str): unique identifier of instance
@@ -274,8 +274,8 @@ class Boxer(Tymee):
             remark rentry mark subcontext
             rentry
         for box in enters top down: (not empty)
-            enmark enter mark subcontext  (mark tyme set to bag._tyme which is None)
-            enter
+            enmark entry mark subcontext  (mark tyme set to bag._tyme which is None)
+            entry
         If complete:
             End boxwork boxer.want stop desire stop
         for box in actives top down:
@@ -302,8 +302,8 @@ class Boxer(Tymee):
             remark rentry mark subcontext
             rentry
         for box in enters: (may be empty)
-            enmark enter mark subcontext  (mark tyme set to bag._tyme which is None)
-            enter
+            enmark entry mark subcontext  (mark tyme set to bag._tyme which is None)
+            entry
         If complete:
             End boxwork boxer.want stop desire stop
         for box in actives top down:
@@ -343,8 +343,8 @@ class Boxer(Tymee):
         self.boxes = {}
         self.first = None  # box to start in
         self.box = None  # current active box  whose pile is active pile
-        self.rentries = []  # list of re-enter boxes for this run (boxes retained)
-        self.enters = []  # list of enter boxes for this begin/run
+        self.rentries = []  # list of re-entry boxes for this run (boxes retained)
+        self.enters = []  # list of entry boxes for this begin/run
 
 
     @property
@@ -394,7 +394,7 @@ class Boxer(Tymee):
             self.box = None  # no active box anymore
             return False  # signal end beginning did not complete
 
-        self.enter()  # uses saved .enters to en-mark and enter
+        self.entry()  # uses saved .enters to en-mark and entry
         self.enters = []  # entry completed
         # check for End here if so .end()
         for box in self.box.pile:
@@ -425,9 +425,9 @@ class Boxer(Tymee):
     def run(self):
         """Execute another pass
         """
-        self.rentry()  # uses saved .rentries to re-mark and re-enter
+        self.rentry()  # uses saved .rentries to re-mark and re-entry
         self.rentries = []  # re-entry completed so make empty
-        self.enter()  # uses saved .enters to en-mark and enter
+        self.entry()  # uses saved .enters to en-mark and entry
         self.enters = []  # entry completed so make empty
 
         for box in self.box.pile:  # top down
@@ -517,8 +517,8 @@ class Boxer(Tymee):
                 renact()
 
 
-    def enter(self):
-        """Action e-mark (emacts) and enter (enacts) acts of boxes in .enters
+    def entry(self):
+        """Action e-mark (emacts) and entry (enacts) acts of boxes in .enters
         in top down order
         """
         for box in self.enters:
@@ -943,7 +943,7 @@ class Boxer(Tymee):
                     These are boxes retained in pile.
                 The sets of boxes in requits and rentries are the same set but requits
                 is reversed to bottum up order. These are boxes retained in the
-                pile before and after the transition. This is where common exit/enter
+                pile before and after the transition. This is where common quit/entry
                 actions for the non-common boxes can be actioned non-redundantly.
 
 
@@ -973,12 +973,12 @@ class Boxer(Tymee):
         1.0 near and far in same tree either on same branch or different branches
             1.1 on same branch forced entry where nears == fars so far in nears.
                Walk down from shared root to find where far is nears[i]. Boxes above
-               far given by fars[:i] == nears[:i] are re-exit re-enter set of boxes.
+               far given by fars[:i] == nears[:i] are re-exit re-entry set of boxes.
                Boxes at far and below are forced exit entry.
             1.2 on different branch to walk down from root until find fork where
                fars[i] is not nears[i]. So fars[:i] == nears[:i] above fork at i,
-               and are re-exit and re-enter set of boxes. Boxes at i and below in
-               nears are exit and boxes at i and below in fars are enter
+               and are re-exit and re-entry set of boxes. Boxes at i and below in
+               nears are exit and boxes at i and below in fars are entry
         2.0 near and far not in same tree. In this case top of nears at nears[0] is
             not top of fars ar fars[0] i.e. different tree roots, far[0] != near[0]
             and fars[:0] == nears[:0] = [] means empty re-exits and re-enters and

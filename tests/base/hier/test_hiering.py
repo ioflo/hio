@@ -35,7 +35,7 @@ def test_nabe():
                                 'remark': 'remark',
                                 'rentry': 'rentry',
                                 'enmark': 'enmark',
-                                'enter': 'enter',
+                                'entry': 'entry',
                                 'redo': 'redo',
                                 'tail': 'tail',
                                 'transit': 'transit',
@@ -75,7 +75,7 @@ def test_actbase():
     assert isinstance(act, Callable)
     assert act.name == 'ActBase0'
     assert act.iops == {}
-    assert act.nabe == Nabe.enter
+    assert act.nabe == Nabe.entry
     assert act.mine == Mine()
     assert act.dock == None
     assert hasattr(act, 'name')   # hasattr works for properties and attributes
@@ -90,7 +90,7 @@ def test_actbase():
     assert isinstance(act, Callable)
     assert act.name == 'ActBase1'
     assert act.iops == {}
-    assert act.nabe == Nabe.enter
+    assert act.nabe == Nabe.entry
     assert act.mine == Mine()
     assert act.dock == None
     assert hasattr(act, 'name')   # hasattr works for properties and attributes
@@ -127,7 +127,7 @@ def test_actify():
     x = test(bye="bye")  # signature for Act.__init__
     assert x.name == "Tact1"
     assert x.iops == {}
-    assert x.nabe == Nabe.enter
+    assert x.nabe == Nabe.entry
     assert x.__class__.__name__ == "Tact"
     assert x.__class__.__name__ in t.Registry
     assert x.Registry[t.__class__.__name__] == t.__class__
@@ -152,7 +152,7 @@ def test_actify():
     p = pest(name="spot", iops=dict(why=1))  # same signature as Act.__init__
     assert p.name == 'spot'
     assert p.iops == dict(why=1)
-    assert p.nabe == Nabe.enter
+    assert p.nabe == Nabe.entry
     assert "Pact" in p.Registry
     klas = p.Registry["Pact"]
     assert isinstance(p, klas)
@@ -169,7 +169,7 @@ def test_actify():
     b = best(iops=dict(how=5))  # signature for Act.__init__
     assert b.name == 'Bact0'
     assert b.iops == dict(how=5)
-    assert b.nabe == Nabe.enter
+    assert b.nabe == Nabe.entry
     assert "Bact" in b.Registry
     klas = b.Registry["Bact"]
     assert isinstance(b, klas)

@@ -23,7 +23,7 @@ def test_act_basic():
     act = Act()
     assert act.name == "Act0"
     assert act.iops == {'M': {}, 'D': None}
-    assert act.nabe == Nabe.enter
+    assert act.nabe == Nabe.entry
     assert act.Index == 1
     assert act.Instances[act.name] == act
     assert act.mine == Mine()
@@ -62,7 +62,7 @@ def test_act_basic():
     act = Act(dumb, iops=iops)
     assert act.name == "Act2"
     assert act.iops == {'when': 'now', 'why': 'because', 'M': {}, 'D': None}
-    assert act.nabe == Nabe.enter
+    assert act.nabe == Nabe.entry
     assert act.Index == 3
     assert act.Instances[act.name] == act
     assert act.mine == Mine()
@@ -85,7 +85,7 @@ def test_act_basic():
     act = Act(deed, mine=mine, iops=iops)
     assert act.name == "Act3"
     assert act.iops == {'fix': 3, 'M': {'stuff': Bag(value=0)}, 'D': None}
-    assert act.nabe == Nabe.enter
+    assert act.nabe == Nabe.entry
     assert act.Index == 4
     assert act.Instances[act.name] == act
     assert act.mine == mine
@@ -189,7 +189,7 @@ def test_endact_basic():
     eact = EndAct(iops=iops, mine=mine)
     assert eact.name == "EndAct1"
     assert eact.iops == iops
-    assert eact.nabe == Nabe.enter
+    assert eact.nabe == Nabe.entry
     assert eact.mine == mine
     assert eact.dock == None
     assert eact.Index == 2

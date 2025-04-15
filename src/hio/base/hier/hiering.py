@@ -66,18 +66,18 @@ Fields:
    remark (str): remark nabe
    rentry (str): rentry nabe
    enmark (str): enmark nabe
-   enter (str): enter nabe
+   entry (str): entry nabe
    redo (str): redo nabe
    tail (str): tail nabe
    transit (str): transit nabe
    exit (str): exit nabe
    requit (str): requit nabe
 """
-Nabage = namedtuple("Nabage", "native precon remark rentry enmark enter"
+Nabage = namedtuple("Nabage", "native precon remark rentry enmark entry"
                                       " redo tail transit exit requit")
 
 Nabe = Nabage(native="native", precon="precon", remark="remark",
-                     rentry="rentry", enmark="enmark", enter="enter",
+                     rentry="rentry", enmark="enmark", entry="entry",
                      redo="redo", tail="tail", transit="transit",
                      exit="exit", requit="requit")
 
@@ -301,7 +301,7 @@ class ActBase(Mixin):
 
 
 
-    def __init__(self, *, name=None, iops=None, nabe=Nabe.enter,
+    def __init__(self, *, name=None, iops=None, nabe=Nabe.entry,
                  mine=None, dock=None, **kwa):
         """Initialization method for instance.
 
@@ -310,7 +310,7 @@ class ActBase(Mixin):
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
                 set to empty dict.
-            nabe (str): action nabe (context) for act. default is "enter"
+            nabe (str): action nabe (context) for act. default is "entry"
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
@@ -318,7 +318,7 @@ class ActBase(Mixin):
         super(ActBase, self).__init__(**kwa) # in case of MRO
         self.name = name  # set name property
         self._iops = dict(iops) if iops is not None else {}  # make copy
-        self._nabe = nabe if nabe is not Nabe.native else Nabe.enter
+        self._nabe = nabe if nabe is not Nabe.native else Nabe.entry
         self.mine = mine if mine is not None else Mine()
         self.dock = dock   # stub fix later when have Dock class
 
