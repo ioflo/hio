@@ -63,9 +63,9 @@ Action nabes (contexts mileu neighborhood) for Acts
 Fields:
    native (str): native nabe
    predo (str): predo nabe
-   remark (str): remark nabe
+   remark (str): remark sub-nabe of rendo
    rendo (str): rendo nabe
-   enmark (str): enmark nabe
+   enmark (str): enmark sub-nabe of endo
    endo (str): endo nabe
    redo (str): redo nabe
    ando (str): ando nabe

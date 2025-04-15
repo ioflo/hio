@@ -20,9 +20,9 @@ from ...help import modify, Mine, Renam
 
 
 nabeDispatch = dict(predo="preacts",
-                    remark="remacts",
+                    remark="remarks",
                     rendo="renacts",
-                    enmark="enmacts",
+                    enmark="enmarks",
                     endo="enacts",
                     redo="reacts",
                     ando="anacts",
@@ -48,9 +48,9 @@ class Box(Tymee):
         unders (list[Box]): this box's under box instances or empty
                             zeroth entry is primary under
         preacts (list[act]): predo (pre-conditions for endo) nabe acts
-        remacts (list[act]): remark re-endo mark subcontext acts (retained)
+        remarks (list[act]): remark re-endo mark subcontext acts (retained)
         renacts (list[act]): rendo (re-endo) nabe acts  (retained)
-        enmacts (list[act]): enmark endo mark subcontext acts
+        enmarks (list[act]): enmark endo mark subcontext acts
         enacts (list[act]):  endo nabe acts
         reacts (list[act]): redo nabe acts
         anacts (list[act]): ando nabe acts
@@ -105,9 +105,9 @@ class Box(Tymee):
 
         # acts by contexts
         self.preacts = []  # predo nabe list of pre-entry acts
-        self.remacts = []  # re-endo mark subcontext list of re-mark acts
+        self.remarks = []  # remark subcontext of rendo list of mark acts
         self.renacts = []  # rendo nabe list of re-endo acts (retained)
-        self.enmacts = []  # endo mark subcontext list of en-mark acts
+        self.enmarks = []  # enmark subcontext of endo list of mark acts
         self.enacts = []  # endo nabe list of endo acts
         self.reacts = []  # redo nabe list of recurring acts
         self.anacts = []  # ando nabe list of trailing acts
@@ -382,7 +382,7 @@ class Boxer(Tymee):
 
 
     def begin(self):
-        """Prepare and execute first pass
+        """Prepare for first pass
         """
         if not self.first:
             self.first = list(self.boxes.values())[0]  # first box in boxes is default first
@@ -394,36 +394,11 @@ class Boxer(Tymee):
             self.box = None  # no active box anymore
             return False  # signal end beginning did not complete
 
-        self.endo()  # uses saved .endos to en-mark and endo
-        self.endos = []  # endo completed
-        # check for End here if so .end()
-        for box in self.box.pile:
-            for react in box.reacts:   # redo nabe top down
-                react()
-            for anact in box.anacts:   # ando nabe top down
-                anact()
-            if self.endial():  # actioned desire to end
-                self.end()  # exdos all active boxes in self.box.pile
-                self.box = None  # no active box
-                return True  # beginning completed already
-
-            for goact in box.goacts:  # godo nabe top down
-                if goact():  # transition condition satisfied
-                    exdos, endos, rendos, rexdos = self.exen(box, goact.dest)
-                    if not self.predo(endos):  # godo not satisfied
-                        continue  # keep trying
-                    self.exdo(exdos)  # exdo bottom up
-                    self.rexdo(rexdos)  # rexdo bottom up
-                    self.rendos = rendos  # save for next pass
-                    self.endos = endos  # save for next pass
-                    self.box = goact.dest  # set new active box
-                    break
-
         return True  # successfully completed beginning
 
 
     def run(self):
-        """Execute another pass
+        """Execute pass
         """
         self.rendo()  # uses saved .rendos to re-mark and re-endo
         self.rendos = []  # re-endo completed so make empty
@@ -507,29 +482,30 @@ class Boxer(Tymee):
 
 
     def rendo(self):
-        """Action re-mark (remacts) and re-endo (renacts) acts of boxes in
+        """Action re-mark (remarks) and re-endo (renacts) acts of boxes in
         .rendos in top down order. Boxes retained in hierarchical state.
+        Re-enter box
         """
         for box in self.rendos:
-            for remact in box.remacts:
-                remact()
+            for mark in box.remarks:
+                mark()
             for renact in box.renacts:
                 renact()
 
 
     def endo(self):
         """Action e-mark (emacts) and endo (enacts) acts of boxes in .endos
-        in top down order
+        in top down order. Enter box.
         """
         for box in self.endos:
-            for enmact in box.enmacts:
-                enmact()
+            for mark in box.enmarks:
+                mark()
             for enact in box.enacts:
                 enact()
 
 
     def exdo(self, exdos):
-        """Action exacts of boxes in exdos in bottom up order.
+        """Action exacts of boxes in exdos in bottom up order. Exit box.
 
         Parameters:
             exdos (None|list[Box]): boxes to be exdo in bottom up order
@@ -542,7 +518,7 @@ class Boxer(Tymee):
 
     def rexdo(self, rexdos):
         """Action rexacts of boxes in rexdos (re-exdos) in bottom up order.
-        Boxes retained in hierarchical state.
+        Boxes retained in hierarchical state. Re-exit box.
 
         Parameters:
             rexdos (None|list[Box]): boxes to be re-exdo in bottom up order
@@ -876,13 +852,13 @@ class Boxer(Tymee):
                 mk = self.mine.tokey(mks)  # mark bag key
                 name = UpdateMark.__name__ + key
                 found = False
-                for mark in m.box.enmacts:  # check if already has mark for key
+                for mark in m.box.enmarks:  # check if already has mark for key
                     if mark.name == name:
                         found = True
                         break
                 if not found:  # no preexisting UpdateMark for this key
                     mark = UpdateMark(name=name, iops=iops, mine=self.mine, dock=self.dock)
-                    m.box.enmacts.append(mark)  # update is always enmark
+                    m.box.enmarks.append(mark)  # update is always enmark
 
                 _expr = (f"(M.{mk}.value is None and M.{key}._tyme is not None) or "
                          f"(M.{mk}.value is not None and M.{key}._tyme > M.{mk}.value)")
@@ -895,13 +871,13 @@ class Boxer(Tymee):
                 mk = self.mine.tokey(mks)  # mark bag key
                 name = ChangeMark.__name__ + key
                 found = False
-                for mark in m.box.enmacts:  # check if already has mark for key
+                for mark in m.box.enmarks:  # check if already has mark for key
                     if mark.name == name:
                         found = True
                         break
                 if not found:  # no preexisting ChangeMark for this key
                     mark = ChangeMark(name=name, iops=iops, mine=self.mine, dock=self.dock)
-                    m.box.enmacts.append(mark)  # update is always enmark
+                    m.box.enmarks.append(mark)  # update is always enmark
 
                 _expr = (f"M.{mk}.value != M.{key}._astuple()")
             else:

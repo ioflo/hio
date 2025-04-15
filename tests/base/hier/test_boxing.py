@@ -39,9 +39,9 @@ def test_box_basic():
     assert box.unders == []
 
     assert box.preacts == []
-    assert box.remacts == []
+    assert box.remarks == []
     assert box.renacts == []
-    assert box.enmacts == []
+    assert box.enmarks == []
     assert box.enacts == []
     assert box.reacts == []
     assert box.anacts == []
@@ -344,6 +344,9 @@ def test_boxer_make_run():
     assert list(boxer.boxes) == ['top', 'mid', 'bot0', 'bot1', 'bot2', 'done']
 
     boxer.begin()
+    assert boxer.box.name == "top"
+    assert mine.count.value is None
+    boxer.run()
     assert boxer.box.name == "bot1"  # half trans at end of first pass
     assert mine.count.value == 0
     boxer.run()
@@ -400,6 +403,11 @@ def test_boxer_make_run_on_update():
     boxer.wind(tymth=tymist.tymen())
 
     boxer.begin()
+    assert boxer.box.name == "top"  # half trans at end of first pass
+    assert mine.count.value is None
+    assert mine.count._tyme is None
+    assert mine._boxer_boxer_box_mid_update_count.value is None
+    boxer.run()
     assert boxer.box.name == "bot1"  # half trans at end of first pass
     assert mine.count.value is None
     assert mine.count._tyme is None
@@ -458,6 +466,11 @@ def test_boxer_make_run_on_change():
     boxer.wind(tymth=tymist.tymen())
 
     boxer.begin()
+    assert boxer.box.name == "top"  # half trans at end of first pass
+    assert mine.count.value is None
+    assert mine.count._tyme is None
+    assert mine._boxer_boxer_box_mid_change_count.value is None
+    boxer.run()
     assert boxer.box.name == "bot1"  # half trans at end of first pass
     assert mine.count.value is None
     assert mine.count._tyme is None
