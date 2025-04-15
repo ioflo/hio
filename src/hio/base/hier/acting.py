@@ -631,7 +631,7 @@ class Discount(ActBase):
     Index = 0  # naming index for default names of this subclasses instances
 
 
-    def __init__(self, nabe=Nabe.exit, **kwa):
+    def __init__(self, nabe=Nabe.quit, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:

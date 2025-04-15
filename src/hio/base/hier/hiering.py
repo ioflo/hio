@@ -70,16 +70,16 @@ Fields:
    redo (str): redo nabe
    tail (str): tail nabe
    transit (str): transit nabe
-   exit (str): exit nabe
+   quit (str): quit nabe
    requit (str): requit nabe
 """
 Nabage = namedtuple("Nabage", "native precon remark rentry enmark entry"
-                                      " redo tail transit exit requit")
+                                      " redo tail transit quit requit")
 
 Nabe = Nabage(native="native", precon="precon", remark="remark",
                      rentry="rentry", enmark="enmark", entry="entry",
                      redo="redo", tail="tail", transit="transit",
-                     exit="exit", requit="requit")
+                     quit="quit", requit="requit")
 
 
 @dataclass

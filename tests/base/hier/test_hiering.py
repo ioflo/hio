@@ -39,7 +39,7 @@ def test_nabe():
                                 'redo': 'redo',
                                 'tail': 'tail',
                                 'transit': 'transit',
-                                'exit': 'exit',
+                                'quit': 'quit',
                                 'requit': 'requit'}
 
 
