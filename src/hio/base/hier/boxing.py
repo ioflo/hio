@@ -12,21 +12,23 @@ from collections.abc import Callable
 
 from ..tyming import Tymee
 from ...hioing import Mixin, HierError
-from .hiering import Context, WorkDom, ActBase
-from .acting import Act, Tract
+from .hiering import Nabe, WorkDom, ActBase
+from .acting import Act, Goact, UpdateMark, ChangeMark, Count, Discount
 from .bagging import Bag
 from .needing import Need
 from ...help import modify, Mine, Renam
 
 
-contextDispatch = dict(precon="preacts",
-                       renter="renacts",
-                       enter="enacts",
-                       recur="reacts",
-                       tail="tacts",
-                       transit="tracts",
-                       exit="exacts",
-                       rexit="rexacts")
+nabeDispatch = dict(predo="preacts",
+                    remark="remarks",
+                    rendo="renacts",
+                    enmark="enmarks",
+                    endo="enacts",
+                    redo="reacts",
+                    ando="anacts",
+                    godo="tracts",
+                    exdo="exacts",
+                    rexdo="rexacts")
 
 
 class Box(Tymee):
@@ -34,7 +36,7 @@ class Box(Tymee):
     Box instance holds reference to in-memory data mine shared by all the boxes in a
     given boxwork as well as its executing Boxer.
     Box instance holds references (links) to its over box and its under boxes.
-    Box instance holds the acts to be executed in their context.
+    Box instance holds the acts to be executed in their nabe.
 
     Inherited Attributes, Properties
         see Tymee
@@ -45,16 +47,16 @@ class Box(Tymee):
         over (Box | None): this box's over box instance or None
         unders (list[Box]): this box's under box instances or empty
                             zeroth entry is primary under
-        preacts (list[act]): precon (pre-conditions for entry) context acts
-        remacts (list[act]): remark re-enter mark subcontext acts (retained)
-        renacts (list[act]): renter (re-enter) context acts  (retained)
-        enmacts (list[act]): enmark enter mark subcontext acts
-        enacts (list[act]):  enter context acts
-        reacts (list[act]): recur context acts
-        tacts (list[act]): tail context acts
-        tracts (list[act]): transit context acts
-        exacts (list[act]): exit context acts
-        rexacts (list[act]): rexit (re-exit) context acts  (retained)
+        preacts (list[act]): predo (pre-conditions for endo) nabe acts
+        remarks (list[act]): remark re-endo mark subcontext acts (retained)
+        renacts (list[act]): rendo (re-endo) nabe acts  (retained)
+        enmarks (list[act]): enmark endo mark subcontext acts
+        enacts (list[act]):  endo nabe acts
+        reacts (list[act]): redo nabe acts
+        anacts (list[act]): ando nabe acts
+        tracts (list[act]): godo nabe acts
+        exacts (list[act]): exdo nabe acts
+        rexacts (list[act]): rexdo (re-exdo) nabe acts  (retained)
 
     Properties:
         name (str): unique identifier of instance
@@ -102,16 +104,16 @@ class Box(Tymee):
         self.unders = []  # list of under boxes,
 
         # acts by contexts
-        self.preacts = []  # precon context list of pre-entry acts
-        self.remacts = []  # re-enter mark subcontext list of re-mark acts
-        self.renacts = []  # renter context list of re-enter acts (retained)
-        self.enmacts = []  # enter mark subcontext list of en-mark acts
-        self.enacts = []  # enter context list of enter acts
-        self.reacts = []  # recur context list of recurring acts
-        self.tacts = []  # tail context list of trailing acts
-        self.tracts = []  # transit context list of transition acts
-        self.exacts = []  # exit context list of exit acts
-        self.rexacts = []  # rexit context list of re-exit acts (retained)
+        self.preacts = []  # predo nabe list of pre-entry acts
+        self.remarks = []  # remark subcontext of rendo list of mark acts
+        self.renacts = []  # rendo nabe list of re-endo acts (retained)
+        self.enmarks = []  # enmark subcontext of endo list of mark acts
+        self.enacts = []  # endo nabe list of endo acts
+        self.reacts = []  # redo nabe list of recurring acts
+        self.anacts = []  # ando nabe list of trailing acts
+        self.goacts = []  # godo nabe list of transition acts
+        self.exacts = []  # exdo nabe list of exdo acts
+        self.rexacts = []  # rexdo nabe list of re-exdo acts (retained)
 
         #lexical context
         self._next = None  # next box lexically
@@ -234,8 +236,8 @@ class Boxer(Tymee):
         boxes (dict): all boxes mapping of (box name, box) pairs
         first (Box | None):  beginning box
         box (Box | None):  active box
-        renters (list[Box]): boxes to re-enter on this run (boxes retained)
-        enters (list[Box]): boxes to enter on this begin/run
+        rendos (list[Box]): boxes to re-endo on this run (boxes retained)
+        endos (list[Box]): boxes to endo on this begin/run
 
     Properties:
         name (str): unique identifier of instance
@@ -244,7 +246,7 @@ class Boxer(Tymee):
         _name (str): unique identifier of instance
 
 
-    Cycle Context Order
+    Cycle Nabe Order
 
     Init:
 
@@ -258,37 +260,37 @@ class Boxer(Tymee):
 
         First box assigned to active box
         actives = active box.pile
-        .renters is empty
-        .enters == actives
-        exits is empty
-        rexits is empty
+        .rendos is empty
+        .endos == actives
+        exdos is empty
+        rexdos is empty
 
-        for each box in enters top down:
+        for each box in endos top down:
             precond:
                 if not all true then done with boxwork
                     End
 
-        for box in renters top down: (empty)
-            remark renter mark subcontext
-            renter
-        for box in enters top down: (not empty)
-            enmark enter mark subcontext  (mark tyme set to bag._tyme which is None)
-            enter
+        for box in rendos top down: (empty)
+            remark rendo mark subcontext
+            rendo
+        for box in endos top down: (not empty)
+            enmark endo mark subcontext  (mark tyme set to bag._tyme which is None)
+            endo
         If complete:
             End boxwork boxer.want stop desire stop
         for box in actives top down:
-            recur
-            tail
-            if transit need is true:  (short circuit recur of lower level boxes)
-                compute renters enters exits rexits. save box.renters and box.enters
-                for each box in enters (top down):
-                    precon:
-                        if not all true then do not proceed with transit return
+            redo
+            ando
+            if godo need is true:  (short circuit redo of lower level boxes)
+                compute rendos endos exdos rexdos. save box.rendos and box.endos
+                for each box in endos (top down):
+                    predo:
+                        if not all true then do not proceed with godo return
 
-                for box in exits bottom up:
-                    exits
-                for box in rexits bottom up:
-                    rexits
+                for box in exdos bottom up:
+                    exdos
+                for box in rexdos bottom up:
+                    rexdos
                 set new .active box
                 break
         return from prep True == completed begin  (or yield if generator)
@@ -296,26 +298,26 @@ class Boxer(Tymee):
 
     tyme increment
     Run:
-        for box in renters: (may be empty)
-            remark renter mark subcontext
-            renter
-        for box in enters: (may be empty)
-            enmark enter mark subcontext  (mark tyme set to bag._tyme which is None)
-            enter
+        for box in rendos: (may be empty)
+            remark rendo mark subcontext
+            rendo
+        for box in endos: (may be empty)
+            enmark endo mark subcontext  (mark tyme set to bag._tyme which is None)
+            endo
         If complete:
             End boxwork boxer.want stop desire stop
         for box in actives top down:
-            recur
-            tail
-            if transit need is true:   (short circuit recur of lower level boxes)
-                compute renters enters exits rexits,.
-                    precon:
-                        if not all true then do not proceed with transit return
+            redo
+            ando
+            if godo need is true:   (short circuit redo of lower level boxes)
+                compute rendos endos exdos rexdos,.
+                    predo:
+                        if not all true then do not proceed with godo return
 
-                for box in exits bottom up:
-                    exit
-                for box in rexits bottom up:
-                    rexit
+                for box in exdos bottom up:
+                    exdo
+                for box in rexdos bottom up:
+                    rexdo
                 set new .active box
                 break
         return from run False == not done continue  (or if generator yield)
@@ -341,8 +343,8 @@ class Boxer(Tymee):
         self.boxes = {}
         self.first = None  # box to start in
         self.box = None  # current active box  whose pile is active pile
-        self.renters = []  # list of re-enter boxes for this run (boxes retained)
-        self.enters = []  # list of enter boxes for this begin/run
+        self.rendos = []  # list of re-endo boxes for this run (boxes retained)
+        self.endos = []  # list of endo boxes for this begin/run
 
 
     @property
@@ -367,77 +369,62 @@ class Boxer(Tymee):
         self._name = name
 
 
+    def wind(self, tymth):
+        """
+        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+        Override in subclasses to update any dependencies on a change in
+        tymist.tymth base
+        """
+        super().wind(tymth)
+        for bag in self.mine.values():
+            if isinstance(bag, Bag):
+                bag._wind(tymth=tymth)
+
+
     def begin(self):
-        """Prepare and execute first pass
+        """Prepare for first pass
         """
         if not self.first:
             self.first = list(self.boxes.values())[0]  # first box in boxes is default first
         self.box = self.first
-        self.renters = []  # first pass no rentry of any boxes
-        self.enters = self.box.pile
-        if not self.precon():  # uses .enters preconditions for entry not satisfied
-            # do end stuff since no entry yet then no exit
+        self.rendos = []  # first pass no rendo of any boxes
+        self.endos = self.box.pile
+        if not self.predo():  # uses .endos preconditions for entry not satisfied
+            # do end stuff since no entry yet then no exdo
             self.box = None  # no active box anymore
             return False  # signal end beginning did not complete
-
-        #self.renter()  # uses saved .renters
-        #self.renters = []  # re-entry completed
-        self.enter()  # uses saved .enters to en-mark and enter
-        self.enters = []  # entry completed
-        # check for End here if so .end()
-        for box in self.box.pile:
-            for react in box.reacts:   # recur context top down
-                react()
-            for tact in box.tacts:   # trail context top down
-                tact()
-            if self.endial():  # actioned desire to end
-                self.end()  # exits all active boxes in self.box.pile
-                self.box = None  # no active box
-                return True  # beginning completed already
-
-            for tract in box.tracts:  # transit context top down
-                if tract():  # transition condition satisfied
-                    exits, enters, renters, rexits = self.exen(box, tract.dest)
-                    if not self.precon(enters):  # transit not satisfied
-                        continue  # keep trying
-                    self.exit(exits)  # exit bottom up
-                    self.rexit(rexits)  # rexit bottom up
-                    self.renters = renters  # save for next pass
-                    self.enters = enters  # save for next pass
-                    self.box = tract.dest  # set new active box
-                    break
 
         return True  # successfully completed beginning
 
 
     def run(self):
-        """Execute another pass
+        """Execute pass
         """
-        self.renter()  # uses saved .renters to re-mark and re-enter
-        self.renters = []  # re-entry completed so make empty
-        self.enter()  # uses saved .enters to en-mark and enter
-        self.enters = []  # entry completed so make empty
+        self.rendo()  # uses saved .rendos to re-mark and re-endo
+        self.rendos = []  # re-endo completed so make empty
+        self.endo()  # uses saved .endos to en-mark and endo
+        self.endos = []  # endo completed so make empty
 
         for box in self.box.pile:  # top down
-            for react in box.reacts:   # recur context top down
+            for react in box.reacts:   # redo nabe top down
                 react()
-            for tact in box.tacts:   # trail context top down
-                tact()
+            for anact in box.anacts:   # ando nabe top down
+                anact()
 
             if self.endial():  # actioned desire to end
-                self.end()  # exits all active boxes in self.box.pile
+                self.end()  # exdos all active boxes in self.box.pile
                 self.box = None  # no active box
                 return True  # beginning completed already
 
-            for tract in box.tracts:  # transit context top down
-                if dest := tract():  # transition condition satisfied
-                    exits, enters, renters, rexits = self.exen(box, dest)
-                    if not self.precon(enters):  # transit not satisfied
+            for goact in box.goacts:  # godo nabe top down
+                if dest := goact():  # transition condition satisfied
+                    exdos, endos, rendos, rexdos = self.exen(box, dest)
+                    if not self.predo(endos):  # godo not satisfied
                         continue  # keep trying
-                    self.exit(exits)  # exit bottom up
-                    self.rexit(rexits)  # rexit bottom up  (boxes retained)
-                    self.renters = renters  # save for next pass
-                    self.enters = enters  # save for next pass
+                    self.exdo(exdos)  # exdo bottom up
+                    self.rexdo(rexdos)  # rexdo bottom up  (boxes retained)
+                    self.rendos = rendos  # save for next pass
+                    self.endos = endos  # save for next pass
                     self.box = dest  # set new active box
                     return False  # transition so stop iteration over pile
 
@@ -448,7 +435,7 @@ class Boxer(Tymee):
         """Exit all active boxes.
 
         """
-        self.exit(self.box.pile)  # exit all active boxes
+        self.exdo(self.box.pile)  # exdo all active boxes
 
 
     def endial(self):
@@ -469,22 +456,22 @@ class Boxer(Tymee):
         return False
 
 
-    def precon(self, enters=None):
-        """Evaluate preconditions for entry of boxes in enters in top down order
+    def predo(self, endos=None):
+        """Evaluate preconditions for entry of boxes in endos in top down order
 
         Parameters:
-            enters (None|list[Box]): boxes to be entered if precons are satisfied
-                                default when None is .enters
+            endos (None|list[Box]): boxes to be entered if predos are satisfied
+                                when arg is None then defaults to .endos
 
         Returns:
-            met (bool): True means all preconditions are satisfied for enters.
+            met (bool): True means all preconditions are satisfied for endos.
                         False otherwise
                     When no preconditions then returns True.
 
         """
-        enters = enters if enters is not None else self.enters
+        endos = endos if endos is not None else self.endos
         met = True
-        for box in self.enters:
+        for box in self.endos:
             for preact in box.preacts:
                 if not preact():
                     met = False
@@ -494,54 +481,55 @@ class Boxer(Tymee):
         return met
 
 
-    def renter(self):
-        """Action re-mark (remacts) and re-enter (renacts) acts of boxes in
-        .renters in top down order. Boxes retained in hierarchical state.
+    def rendo(self):
+        """Action re-mark (remarks) and re-endo (renacts) acts of boxes in
+        .rendos in top down order. Boxes retained in hierarchical state.
+        Re-enter box
         """
-        for box in self.renters:
-            for remact in box.remacts:
-                remact()
+        for box in self.rendos:
+            for mark in box.remarks:
+                mark()
             for renact in box.renacts:
                 renact()
 
 
-    def enter(self):
-        """Action e-mark (emacts) and enter (enacts) acts of boxes in .enters
-        in top down order
+    def endo(self):
+        """Action e-mark (emacts) and endo (enacts) acts of boxes in .endos
+        in top down order. Enter box.
         """
-        for box in self.enters:
-            for enmact in box.enmacts:
-                enmact()
+        for box in self.endos:
+            for mark in box.enmarks:
+                mark()
             for enact in box.enacts:
                 enact()
 
 
-    def exit(self, exits):
-        """Action exacts of boxes in exits in bottom up order.
+    def exdo(self, exdos):
+        """Action exacts of boxes in exdos in bottom up order. Exit box.
 
         Parameters:
-            exits (None|list[Box]): boxes to be exited in bottom up order
+            exdos (None|list[Box]): boxes to be exdo in bottom up order
 
         """
-        for box in exits:
+        for box in exdos:
             for exact in box.exacts:
                 exact()
 
 
-    def rexit(self, rexits):
-        """Action rexacts of boxes in rexits (re-exits) in bottom up order.
-        Boxes retained in hierarchical state.
+    def rexdo(self, rexdos):
+        """Action rexacts of boxes in rexdos (re-exdos) in bottom up order.
+        Boxes retained in hierarchical state. Re-exit box.
 
         Parameters:
-            rexits (None|list[Box]): boxes to be re-exited in bottom up order
+            rexdos (None|list[Box]): boxes to be re-exdo in bottom up order
         """
-        for box in rexits:
+        for box in rexdos:
             for rexact in box.rexacts:
                 rexact()
 
 
     def resolve(self):
-        """Resolve both over box names and tract dest box names into boxes for
+        """Resolve both over box names and goact dest box names into boxes for
         all boxes in .boxes
 
         """
@@ -555,21 +543,21 @@ class Boxer(Tymee):
                 box.over = over  # resolve over as a box
                 box.over.unders.append(box)  # add box to its over.unders list
 
-            for tract in box.tracts:
-                if isinstance(tract.dest, str):
-                    if tract.dest == 'next':  # next
+            for goact in box.goacts:
+                if isinstance(goact.dest, str):
+                    if goact.dest == 'next':  # next
                         if not box._next:
-                            HierError(f"Unresolvable dest 'next' for tract in "
+                            HierError(f"Unresolvable dest 'next' for goact in "
                                       f"box{name=}")
                         dest = box._next
                     else:
                         try:
-                            dest = self.boxes[tract.dest]  # resolve
+                            dest = self.boxes[goact.dest]  # resolve
                         except KeyError as ex:
-                            raise HierError(f"Unresolvable dest box={tract.dest}"
-                                f" for tract in box{name=}") from ex
+                            raise HierError(f"Unresolvable dest box={goact.dest}"
+                                f" for goact in box{name=}") from ex
 
-                    tract.dest = dest  # resolve dest as box
+                    goact.dest = dest  # resolve dest as box
 
         if isinstance(self.first, str):  # resolve first box
             try:
@@ -602,10 +590,10 @@ class Boxer(Tymee):
         works = WorkDom()  # standard defaults
         works.acts = ActBase.Registry
         bx = modify(mods=works)(self.bx)
-        on = modify(mods=works)(self.on)
         go = modify(mods=works)(self.go)
         do = modify(mods=works)(self.do)
-        fun(bx=bx, on=on, go=go, do=do)  # calling fun will build boxer.boxes
+        on = modify(mods=works)(self.on)
+        fun(bx=bx, go=go, do=do, on=on)  # calling fun will build boxer.boxes
         self.resolve()
         return works  # for debugging analysis
 
@@ -684,87 +672,12 @@ class Boxer(Tymee):
         return box
 
 
-    def on(self, cond: None|str=None, key: None|str=None, expr: None|str=None,
-                 *, mods: WorkDom|None=None, **kwa)->Need:
-        """Make a special Need and return it.
-        Used for special needs for tracts and also for beacts (before enter)
+    def go(self, dest: None|str=None, expr: None|str|Need=None,
+                 *, mods: WorkDom|None=None, **kwa)->Goact:
+        """Make a Goact and add it to the tracts nabe of the current box.
 
         Returns:
-            need (Need):  newly created special need
-
-        Parameters:
-            cond (None|str): special need condition to be satisfied. This is
-                resolved in evalable boolean expression.
-                When None then ignore
-                When str then special need condition to be resolved into evalable
-                boolean expression
-
-            key (None|str): key to mine item ref for special need cond when
-                applicable, i.e. cond is with respect to mine at key that is
-                not predetermined solely by cond. Otherwise None.
-                When None use default for cond
-                When str then resolve key to mine at key
-
-
-            expr (None|str): evalable boolean expression as additional constraint(s)
-                ANDed with result of cond.
-                When None or empty then ignore
-                When str then evalable python boolean expression to be ANDed with
-                    the result of cond resolution.
-
-            mods (None | WorkDom):  state variables used to construct box work
-                None is just to allow definition as keyword arg. Assumes in
-                actual usage that mods is always provided as WorkDom instance of
-                form:
-
-                    box (Box|None): current box in box work. None if not yet a box
-                    over (Box|None): current over Box in box work. None if top level
-                    bxpre (str): default name prefix used to generate unique box
-                        name relative to boxer.boxes
-                    bxidx (int): default box index used to generate unique box
-                        name relative to boxer.boxes
-
-
-
-        """
-        m = mods  # alias more compact
-
-        _expr = None
-
-        if not cond:
-            if not expr:
-                cond = "updated"  # default
-            else:  # no cond but with expr
-                _expr = expr  # use expr instead of resolved cond
-                expr = None  # can't have both _expr and expr same below
-
-        if not _expr:  # cond above so need to resolve cond into _expr
-            if cond == "updated":
-                _expr = "True"
-            else:
-                pass  # raise error since must have valid _expr after here
-
-        # now _expr is valid
-
-        if expr:  # both resolved cond as _expr and expr so AND together
-            _expr = "(" + _expr + ") and (" + expr + ")"
-
-
-
-        need = Need(expr=_expr, mine=self.mine, dock=self.dock)
-
-
-        return need
-
-
-
-
-    def go(self, dest: None|str=None, expr: None|str=None,
-                 *, mods: WorkDom|None=None, **kwa)->Tract:
-        """Make a Tract and add it to the tracts context of the current box.
-
-        Returns:
-            tract (Tract):  newly created tract
+            goact (Goact):  newly created goact
 
         Parameters:
             dest (None|str|Box): destination box its name for transition.
@@ -773,10 +686,11 @@ class Boxer(Tymee):
                     later resolution
                 When Box instance that already resolved
 
-            expr (None|str): evalable boolean expression for transition to dest.
-                When None then conditional always True. Always transit.
+            expr (None|str|Need): need for transition to dest.
+                When None then conditional always True. Always godo.
                 When str then evalable python boolean expression to be
                     resolved into a Need instance for eval at run time
+                When Need instance then use as is
 
             mods (None | WorkDom):  state variables used to construct box work
                 None is just to allow definition as keyword arg. Assumes in
@@ -806,11 +720,14 @@ class Boxer(Tymee):
             if dest in self.boxes:
                 dest = self.boxes[dest]
 
-        need = Need(expr=expr, mine=self.mine, dock=self.dock)
+        if isinstance(expr, Need):
+            need = expr
+        else:   # assumes evalable expr str
+            need = Need(expr=expr, mine=self.mine, dock=self.dock)
 
-        tract = Tract(dest=dest, need=need)
-        m.box.tracts.append(tract)
-        return tract
+        goact = Goact(dest=dest, need=need)
+        m.box.goacts.append(goact)
+        return goact
 
 
 
@@ -834,8 +751,8 @@ class Boxer(Tymee):
         m = mods  # alias more compact
 
         parms = dict(name=name, mine=self.mine, dock=self.dock)
-        if m.context != Context.native:
-            parms.update(context=m.context)  # override default context for klas
+        if m.nabe != Nabe.native:
+            parms.update(nabe=m.nabe)  # override default nabe for klas
 
         iops = dict(_boxer=self.name, _box=m.box.name, **iops)
         parms.update(iops=iops)
@@ -857,19 +774,130 @@ class Boxer(Tymee):
         else:
             raise HierError(f"Invalid {deed=}")
 
-        context = act.context  # act init may override passed in context
+        nabe = act.nabe  # act init may override passed in nabe
 
         try:
-            getattr(m.box, contextDispatch[context]).append(act)
+            getattr(m.box, nabeDispatch[nabe]).append(act)
         except (KeyError, AttributeError) as ex:
-            raise HierError("Unrecognized context='{context}'") from ex
+            raise HierError("Unrecognized nabe='{nabe}'") from ex
 
 
         return act
 
 
+
+    def on(self, cond: None|str=None, key: None|str=None, expr: None|str=None,
+                 *, mods: WorkDom|None=None, **iops)->Need:
+        """Make a Need with support for special Need conditions and return it.
+        Use inside go verb as need argument for special need condition
+        Use inside do verb as deed argument for preact or anact
+
+        Returns:
+            need (Need):  newly created special need
+
+        Parameters:
+            cond (None|str): special need condition to be satisfied. This is
+                resolved in evalable boolean expression.
+                When None then ignore
+                When str then special need condition to be resolved into evalable
+                boolean expression
+
+            key (None|str): key to mine item ref for special need cond when
+                applicable, i.e. cond is with respect to mine at key that is
+                not predetermined solely by cond. Otherwise None.
+                When None use default for cond
+                When str then resolve key to mine at key
+
+
+            expr (None|str): evalable boolean expression as additional constraint(s)
+                ANDed with result of cond.
+                When None or empty then ignore
+                When str then evalable python boolean expression to be ANDed with
+                    the result of cond resolution.
+
+            mods (None | WorkDom):  state variables used to construct box work
+                None is just to allow definition as keyword arg. Assumes that
+                mods is always provided as WorkDom instance of form:
+                    box (Box| None): current box in box work. None if not yet a box
+                    over (Box | None): current over Box in box work. None if top level
+                    bxpre (str):  default box name prefix used to generate unique box name
+                                relative to boxer.boxes
+                    bxidx (int): default box name index used to generate unique box name
+                                relative to boxer.boxes
+                    acts (dict):  registry of ActBase subclasses by name (including aliases)
+                    nabe (str): action nabe (context) for act
+
+            iops (dict): input-output-parms for Act
+
+        """
+        m = mods  # alias more compact
+        iops = dict(_boxer=self.name, _box=m.box.name, **iops)
+
+
+        _expr = None
+
+        if not cond:
+            if not expr:
+                cond = "updated"  # default
+            else:  # no cond but with expr
+                _expr = expr  # use expr instead of resolved cond
+                expr = None  # can't have both _expr and expr same below
+
+        if not _expr:  # cond above so need to resolve cond into _expr
+            if cond == "update":
+                if not key:
+                    raise HierError(f"Missing bag key for special need '{cond=}'")
+                iops.update(_key=key)
+                mks =  ("", "boxer", self.name, "box", m.box.name, "update", key)
+                mk = self.mine.tokey(mks)  # mark bag key
+                name = UpdateMark.__name__ + key
+                found = False
+                for mark in m.box.enmarks:  # check if already has mark for key
+                    if mark.name == name:
+                        found = True
+                        break
+                if not found:  # no preexisting UpdateMark for this key
+                    mark = UpdateMark(name=name, iops=iops, mine=self.mine, dock=self.dock)
+                    m.box.enmarks.append(mark)  # update is always enmark
+
+                _expr = (f"(M.{mk}.value is None and M.{key}._tyme is not None) or "
+                         f"(M.{mk}.value is not None and M.{key}._tyme > M.{mk}.value)")
+
+            elif cond == "change":
+                if not key:
+                    raise HierError(f"Missing bag key for special need '{cond=}'")
+                iops.update(_key=key)
+                mks =  ("", "boxer", self.name, "box", m.box.name, "change", key)
+                mk = self.mine.tokey(mks)  # mark bag key
+                name = ChangeMark.__name__ + key
+                found = False
+                for mark in m.box.enmarks:  # check if already has mark for key
+                    if mark.name == name:
+                        found = True
+                        break
+                if not found:  # no preexisting ChangeMark for this key
+                    mark = ChangeMark(name=name, iops=iops, mine=self.mine, dock=self.dock)
+                    m.box.enmarks.append(mark)  # update is always enmark
+
+                _expr = (f"M.{mk}.value != M.{key}._astuple()")
+            else:
+                raise HierError(f"Invalid special need {cond=}")
+
+        # now _expr is valid
+
+        if expr:  # both resolved cond as _expr and expr so AND together
+            _expr = "(" + _expr + ") and (" + expr + ")"
+
+        need = Need(expr=_expr, mine=self.mine, dock=self.dock)
+
+        return need
+
+
+
+
+
     @staticmethod
-    def exen(near,far):
+    def exen(near, far):
         """Computes the relative differences (uncommon  and common parts) between
         the box pile lists nears passed in and fars from box far.pile
 
@@ -881,17 +909,17 @@ class Boxer(Tymee):
 
         Returns:
             quadruple (tuple[list]): quadruple of lists of form:
-                (exits, enters, renters, rexits) where:
-                exits is list of uncommon boxes in nears but not in fars to be exited.
+                (exdos, endos, rendos, rexdos) where:
+                exdos is list of uncommon boxes in nears but not in fars to be exited.
                     Reversed to bottom up order.
-                enters is list of uncommon boxes in fars but not in nears to be entered
-                rexits is list of common boxes in both nears and fars to be re-exited
+                endos is list of uncommon boxes in fars but not in nears to be entered
+                rexdos is list of common boxes in both nears and fars to be re-exited
                     Reversed to bottom up order. These are boxes retained in pile.
-                renters is list of common boxes in both nears and fars to be re-entered
+                rendos is list of common boxes in both nears and fars to be re-entered
                     These are boxes retained in pile.
-                The sets of boxes in rexits and renters are the same set but rexits
+                The sets of boxes in rexdos and rendos are the same set but rexdos
                 is reversed to bottum up order. These are boxes retained in the
-                pile before and after the transition. This is where common exit/enter
+                pile before and after the transition. This is where common exdo/endo
                 actions for the non-common boxes can be actioned non-redundantly.
 
 
@@ -900,8 +928,8 @@ class Boxer(Tymee):
             The common part of nears/fars from far down is force exited
             The common part of nears/fars from far down is force entered
 
-        When far in nears then forced entry at far so far is nears[i]
-        catches that case for forced entry at some far in nears. Since
+        When far in nears then forced endo at far so far is nears[i]
+        catches that case for forced endo at some far in nears. Since
         far is in fars, then when far == nears[i] then fars == nears.
 
         Since a given box's pile is always traced up via its .over if any and down via
@@ -910,7 +938,7 @@ class Boxer(Tymee):
 
         Otherwise when far not in nears then i where fars[i] is not nears[i]
         indicates first box where fars down and nears down is uncommon i.e. the pile
-        tree branches at i. This is the normal non-forced entry case for transition.
+        tree branches at i. This is the normal non-forced endo case for transition.
 
         Two different topologies are accounted for with this code.
         Recall that python slice of list is zero based where:
@@ -919,18 +947,18 @@ class Boxer(Tymee):
            this means fars[:0] == nears[:0] == [] empty list
 
         1.0 near and far in same tree either on same branch or different branches
-            1.1 on same branch forced entry where nears == fars so far in nears.
+            1.1 on same branch forced endo where nears == fars so far in nears.
                Walk down from shared root to find where far is nears[i]. Boxes above
-               far given by fars[:i] == nears[:i] are re-exit re-enter set of boxes.
-               Boxes at far and below are forced exit entry.
+               far given by fars[:i] == nears[:i] are re-exdo re-endo set of boxes.
+               Boxes at far and below are forced exdo endo.
             1.2 on different branch to walk down from root until find fork where
                fars[i] is not nears[i]. So fars[:i] == nears[:i] above fork at i,
-               and are re-exit and re-enter set of boxes. Boxes at i and below in
-               nears are exit and boxes at i and below in fars are enter
+               and are re-exdo and re-endo set of boxes. Boxes at i and below in
+               nears are exdo and boxes at i and below in fars are endo
         2.0 near and far not in same tree. In this case top of nears at nears[0] is
             not top of fars ar fars[0] i.e. different tree roots, far[0] != near[0]
-            and fars[:0] == nears[:0] = [] means empty re-exits and re-enters and
-            all nears are exit and all fars are entry.
+            and fars[:0] == nears[:0] = [] means empty re-exdos and re-endos and
+            all nears are exdo and all fars are endo.
 
         """
         nears = near.pile  # top down order
@@ -938,7 +966,7 @@ class Boxer(Tymee):
         l = min(len(nears), len(fars))  # l >= 1 since far in fars & near in nears
         for i in range(l):  # start at the top of both nears and fars
             if (far is nears[i]) or (fars[i] is not nears[i]): #first effective uncommon member
-                # (exits, enters, rexits, renters)
+                # (exdos, endos, rexdos, rendos)
                 return (list(reversed(nears[i:])), fars[i:],
                         list(reversed(nears[:i])), fars[:i])
 

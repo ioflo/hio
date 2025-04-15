@@ -103,8 +103,14 @@ class Need(Mixin):
         self.dock = dock   # stub fix later when have Dock class
 
 
-    def __call__(self):
-        """Make Need instance a callable object."""
+    def __call__(self, **iops):
+        """Make Need instance a callable object.
+
+        Parameters:
+            iops (dict):  run time input output parms for need.
+                          Usually provided when need is Act deed.
+
+        """
         if not self.compiled:  # not yet compiled so lazy
             self.compile()  # first time only recompile
         M = self.mine  # ensure M is in locals() for eval

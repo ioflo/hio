@@ -22,7 +22,7 @@ from dataclasses import dataclass, astuple, asdict, field
 
 from hio import hioing
 from hio.help import helping, modify, Mine, Renam
-from hio.base import tyming
+from hio.base import Tymist
 from hio.base.hier import Box, Boxer, Maker, ActBase, Act, EndAct, Bag
 
 
@@ -39,13 +39,13 @@ def test_box_basic():
     assert box.unders == []
 
     assert box.preacts == []
-    assert box.remacts == []
+    assert box.remarks == []
     assert box.renacts == []
-    assert box.enmacts == []
+    assert box.enmarks == []
     assert box.enacts == []
     assert box.reacts == []
-    assert box.tacts == []
-    assert box.tracts == []
+    assert box.anacts == []
+    assert box.goacts == []
     assert box.exacts == []
     assert box.rexacts == []
 
@@ -69,7 +69,7 @@ def test_box_basic():
 
 def test_boxer_exen():
     """Test exen function for finding common/uncommon boxes in near far staks
-    for computing exits, enters, rexits, renters on a transition
+    for computing exits, endos, rexdos, rendos on a transition
     """
     a = Box(name='a')
     b = Box(name='b')
@@ -117,53 +117,53 @@ def test_boxer_exen():
     # test exen staticmethod
     exen = Boxer.exen  # exen is staticmethod of Boxer
 
-    exits, enters, rexits, renters = exen(d, e)
-    assert exits == [d]
-    assert enters == [e, f]
-    assert rexits == [c, b, a]
-    assert renters == [a, b, c]
+    exdos, endos, rexdos, rendos = exen(d, e)
+    assert exdos == [d]
+    assert endos == [e, f]
+    assert rexdos == [c, b, a]
+    assert rendos == [a, b, c]
 
-    exits, enters, rexits, renters = exen(d, f)
-    assert exits == [d]
-    assert enters == [e, f]
-    assert rexits == [c, b, a]
-    assert renters == [a, b, c]
+    exdos, endos, rexdos, rendos = exen(d, f)
+    assert exdos == [d]
+    assert endos == [e, f]
+    assert rexdos == [c, b, a]
+    assert rendos == [a, b, c]
 
-    exits, enters, rexits, renters = exen(a, e)
-    assert exits == [d]
-    assert enters == [e, f]
-    assert rexits == [c, b, a]
-    assert renters == [a, b, c]
+    exdos, endos, rexdos, rendos = exen(a, e)
+    assert exdos == [d]
+    assert endos == [e, f]
+    assert rexdos == [c, b, a]
+    assert rendos == [a, b, c]
 
-    exits, enters, rexits, renters = exen(c, b)
-    assert exits == [d, c, b]
-    assert enters == [b, c, d]
-    assert rexits == [a]
-    assert renters == [a]
+    exdos, endos, rexdos, rendos = exen(c, b)
+    assert exdos == [d, c, b]
+    assert endos == [b, c, d]
+    assert rexdos == [a]
+    assert rendos == [a]
 
-    exits, enters, rexits, renters = exen(c, c)
-    assert exits == [d, c]
-    assert enters == [c, d]
-    assert rexits == [b, a]
-    assert renters == [a, b]
+    exdos, endos, rexdos, rendos = exen(c, c)
+    assert exdos == [d, c]
+    assert endos == [c, d]
+    assert rexdos == [b, a]
+    assert rendos == [a, b]
 
-    exits, enters, rexits, renters = exen(c, d)
-    assert exits == [d]
-    assert enters == [d]
-    assert rexits == [c, b, a]
-    assert renters == [a, b, c]
+    exdos, endos, rexdos, rendos = exen(c, d)
+    assert exdos == [d]
+    assert endos == [d]
+    assert rexdos == [c, b, a]
+    assert rendos == [a, b, c]
 
-    exits, enters, rexits, renters = exen(e, d)
-    assert exits == [f, e]
-    assert enters == [d]
-    assert rexits == [c, b, a]
-    assert renters == [a, b, c]
+    exdos, endos, rexdos, rendos = exen(e, d)
+    assert exdos == [f, e]
+    assert endos == [d]
+    assert rexdos == [c, b, a]
+    assert rendos == [a, b, c]
 
-    exits, enters, rexits, renters = exen(f, f)
-    assert exits == [f]
-    assert enters == [f]
-    assert rexits == [e, c, b, a]
-    assert renters == [a, b, c, e]
+    exdos, endos, rexdos, rendos = exen(f, f)
+    assert exdos == [f]
+    assert endos == [f]
+    assert rexdos == [e, c, b, a]
+    assert rendos == [a, b, c, e]
 
     """Done Test"""
 
@@ -171,6 +171,9 @@ def test_boxer_exen():
 
 def test_boxer_basic():
     """Basic test Boxer class"""
+
+    tymist = Tymist()
+
     boxer = Boxer()  # defaults
     assert boxer.tyme == None
     assert boxer.tymth == None
@@ -181,17 +184,8 @@ def test_boxer_basic():
     assert boxer.boxes == {}
     assert boxer.first == None
     assert boxer.box == None
-    assert boxer.renters == []
-    assert boxer.enters == []
-
-
-    #begin = boxer.begin  # make alias
-    #begin()
-    #run = boxer.run
-    #run()
-    #end = boxer.end
-    #end()
-
+    assert boxer.rendos == []
+    assert boxer.endos == []
 
     with pytest.raises(hioing.HierError):
         boxer.name = "A.B"
@@ -199,12 +193,44 @@ def test_boxer_basic():
     with pytest.raises(hioing.HierError):
         boxer.name = ".boxer"
 
+    boxer.wind(tymist.tymen())
+    assert boxer.tymth
+    assert boxer.tyme == tymist.tyme == 0.0
 
+    boxer.mine["test"] = Bag()
+    assert boxer.mine.test.value == None
+    assert boxer.mine.test._tymth == None
+    assert boxer.mine.test._now == None
+    assert boxer.mine.test._tyme == None
+
+    boxer.wind(tymist.tymen())
+    assert boxer.mine.test.value == None
+    assert boxer.mine.test._tymth
+    assert boxer.mine.test._now == 0.0 == tymist.tyme
+    assert boxer.mine.test._tyme == None
+
+    boxer.mine.test.value = 1
+    assert boxer.mine.test.value == 1
+    assert boxer.mine.test._tymth
+    assert boxer.mine.test._now == 0.0 == tymist.tyme
+    assert boxer.mine.test._tyme == 0.0
+
+    boxer.mine["best"] = Bag(_tymth=tymist.tymen())
+    assert boxer.mine.best.value == None
+    assert boxer.mine.best._tymth
+    assert boxer.mine.best._now == 0.0
+    assert boxer.mine.best._tyme == None
+
+    boxer.mine.best.value = 1
+    assert boxer.mine.best.value == 1
+    assert boxer.mine.best._tyme == 0.0
+
+    """Done Test"""
 
 
 def test_boxer_make():
     """Test make method of Boxer and modify wrapper"""
-    def fun(bx, on, go, do, *pa):
+    def fun(bx, go, do, on, *pa):
         bx(name='top')
         bx(over='top')
         bx()
@@ -237,8 +263,8 @@ def test_boxer_make():
 
     for name, box in boxer.boxes.items():  # test resolve
         assert isinstance(box.over, Box) or box.over is None
-        for tract in box.tracts:
-            assert isinstance(tract.dest, Box)
+        for goact in box.goacts:
+            assert isinstance(goact.dest, Box)
 
 
     """Done Test"""
@@ -246,7 +272,7 @@ def test_boxer_make():
 def test_boxer_make_go():
     """Test make method of Boxer and modify wrapper with bx and go verbs
     """
-    def fun(bx, on, go, do, *pa):
+    def fun(bx, go, do, on, *pa):
         bx(name='top')
         bx(over='top')
         go("next")
@@ -273,8 +299,8 @@ def test_boxer_make_go():
 
     for name, box in boxer.boxes.items():  # test resolve
         assert isinstance(box.over, Box) or box.over is None
-        for tract in box.tracts:
-            assert isinstance(tract.dest, Box)
+        for goact in box.goacts:
+            assert isinstance(goact.dest, Box)
 
 
     """Done Test"""
@@ -291,7 +317,7 @@ def test_boxer_make_run():
         return M.count.value
 
 
-    def fun(bx, on, go, do, *pa):
+    def fun(bx, go, do, on, *pa):
         bx(name='top')
         bx(name='mid', over='top')
         go('done', "M.count.value==2")
@@ -318,6 +344,9 @@ def test_boxer_make_run():
     assert list(boxer.boxes) == ['top', 'mid', 'bot0', 'bot1', 'bot2', 'done']
 
     boxer.begin()
+    assert boxer.box.name == "top"
+    assert mine.count.value is None
+    boxer.run()
     assert boxer.box.name == "bot1"  # half trans at end of first pass
     assert mine.count.value == 0
     boxer.run()
@@ -333,6 +362,132 @@ def test_boxer_make_run():
 
     """Done Test"""
 
+
+def test_boxer_make_run_on_update():
+    """Test make method of Boxer with on verb special need update
+    """
+    tymist = Tymist()
+
+    def count(**iops):
+        M = iops['M']
+        if M.count.value is None:
+            M.count.value = 0
+        else:
+            M.count.value += 1
+        return M.count.value
+
+
+    def fun(bx, go, do, on, *pa):
+        bx(name='top')
+        bx(name='mid', over='top')
+        go('done', on("update", "count"))
+        bx(name='bot0', over='mid')
+        go("next")
+        bx(name='bot1')  # over defaults to same as prev box
+        go("next")
+        bx(name='bot2')  # over defaults to same as prev box
+        do(count)
+        go("bot0")
+        bx(name='done', over=None)
+        do('end')
+
+
+    mine = Mine()
+    mine['count'] = Bag()
+
+    boxer = Boxer(mine=mine)
+    assert boxer.boxes == {}
+    mods = boxer.make(fun)
+    assert len(boxer.boxes) == 6
+    assert list(boxer.boxes) == ['top', 'mid', 'bot0', 'bot1', 'bot2', 'done']
+    boxer.wind(tymth=tymist.tymen())
+
+    boxer.begin()
+    assert boxer.box.name == "top"  # half trans at end of first pass
+    assert mine.count.value is None
+    assert mine.count._tyme is None
+    assert mine._boxer_boxer_box_mid_update_count.value is None
+    boxer.run()
+    assert boxer.box.name == "bot1"  # half trans at end of first pass
+    assert mine.count.value is None
+    assert mine.count._tyme is None
+    assert mine._boxer_boxer_box_mid_update_count.value is None
+    boxer.run()
+    assert boxer.box.name == "bot2"
+    boxer.run()
+    assert boxer.box.name == "done"
+    assert mine.count.value == 0
+    assert mine.count._tyme == 0.0
+    assert mine._boxer_boxer_box_mid_update_count.value is None
+    boxer.run()
+    assert boxer.box is None
+    assert boxer.endial()
+
+    """Done Test"""
+
+
+def test_boxer_make_run_on_change():
+    """Test make method of Boxer with on verb special need change
+    """
+    tymist = Tymist()
+
+    def count(**iops):
+        M = iops['M']
+        if M.count.value is None:
+            M.count.value = 0
+        else:
+            M.count.value += 1
+        return M.count.value
+
+
+    def fun(bx, go, do, on, *pa):
+        bx(name='top')
+        bx(name='mid', over='top')
+        go('done', on("change", "count"))
+        bx(name='bot0', over='mid')
+        go("next")
+        bx(name='bot1')  # over defaults to same as prev box
+        go("next")
+        bx(name='bot2')  # over defaults to same as prev box
+        do(count)
+        go("bot0")
+        bx(name='done', over=None)
+        do('end')
+
+
+    mine = Mine()
+    mine['count'] = Bag()
+
+    boxer = Boxer(mine=mine)
+    assert boxer.boxes == {}
+    mods = boxer.make(fun)
+    assert len(boxer.boxes) == 6
+    assert list(boxer.boxes) == ['top', 'mid', 'bot0', 'bot1', 'bot2', 'done']
+    boxer.wind(tymth=tymist.tymen())
+
+    boxer.begin()
+    assert boxer.box.name == "top"  # half trans at end of first pass
+    assert mine.count.value is None
+    assert mine.count._tyme is None
+    assert mine._boxer_boxer_box_mid_change_count.value is None
+    boxer.run()
+    assert boxer.box.name == "bot1"  # half trans at end of first pass
+    assert mine.count.value is None
+    assert mine.count._tyme is None
+    assert mine._boxer_boxer_box_mid_change_count.value == (None, )
+    assert mine.count.value == None
+    boxer.run()
+    assert boxer.box.name == "bot2"
+    boxer.run()
+    assert boxer.box.name == "done"
+    assert mine.count.value == 0
+    assert mine.count._tyme == 0.0
+    assert mine._boxer_boxer_box_mid_change_count.value == (None, )
+    boxer.run()
+    assert boxer.box is None
+    assert boxer.endial()
+
+    """Done Test"""
 
 
 def test_maker_basic():
@@ -655,6 +810,8 @@ if __name__ == "__main__":
     test_boxer_make()
     test_boxer_make_go()
     test_boxer_make_run()
+    test_boxer_make_run_on_update()
+    test_boxer_make_run_on_change()
     test_maker_basic()
     test_concept_bx_nonlocal()
     test_concept_bx_global()

@@ -111,7 +111,7 @@ class Tymee(hioing.Mixin):
             provided by calling .tymth function wrapper closure which is obtained
             from Tymist.tymen().
             None means not assigned yet.
-        .tymth (closure | None): function wrapper closure returned by
+        .tymth (Callable | None): function wrapper closure returned by
             Tymist.tymen() method. When .tymth is called it returns associated
             Tymist.tyme. Provides injected dependency on Tymist cycle tyme base.
             None means not assigned yet.
