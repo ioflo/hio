@@ -21,14 +21,14 @@ from ...help import modify, Mine, Renam
 
 nabeDispatch = dict(precon="preacts",
                     remark="remacts",
-                    renter="renacts",
+                    rentry="renacts",
                     enmark="enmacts",
                     enter="enacts",
                     recur="reacts",
                     tail="tacts",
                     transit="tracts",
                     exit="exacts",
-                    rexit="rexacts")
+                    requit="requacts")
 
 
 class Box(Tymee):
@@ -49,14 +49,14 @@ class Box(Tymee):
                             zeroth entry is primary under
         preacts (list[act]): precon (pre-conditions for entry) nabe acts
         remacts (list[act]): remark re-enter mark subcontext acts (retained)
-        renacts (list[act]): renter (re-enter) nabe acts  (retained)
+        renacts (list[act]): rentry (re-entry) nabe acts  (retained)
         enmacts (list[act]): enmark enter mark subcontext acts
         enacts (list[act]):  enter nabe acts
         reacts (list[act]): recur nabe acts
         tacts (list[act]): tail nabe acts
         tracts (list[act]): transit nabe acts
         exacts (list[act]): exit nabe acts
-        rexacts (list[act]): rexit (re-exit) nabe acts  (retained)
+        requacts (list[act]): requit (re-quit) nabe acts  (retained)
 
     Properties:
         name (str): unique identifier of instance
@@ -106,14 +106,14 @@ class Box(Tymee):
         # acts by contexts
         self.preacts = []  # precon nabe list of pre-entry acts
         self.remacts = []  # re-enter mark subcontext list of re-mark acts
-        self.renacts = []  # renter nabe list of re-enter acts (retained)
+        self.renacts = []  # rentry nabe list of re-entry acts (retained)
         self.enmacts = []  # enter mark subcontext list of en-mark acts
         self.enacts = []  # enter nabe list of enter acts
         self.reacts = []  # recur nabe list of recurring acts
         self.tacts = []  # tail nabe list of trailing acts
         self.tracts = []  # transit nabe list of transition acts
         self.exacts = []  # exit nabe list of exit acts
-        self.rexacts = []  # rexit nabe list of re-exit acts (retained)
+        self.requacts = []  # requit nabe list of re-exit acts (retained)
 
         #lexical context
         self._next = None  # next box lexically
@@ -236,7 +236,7 @@ class Boxer(Tymee):
         boxes (dict): all boxes mapping of (box name, box) pairs
         first (Box | None):  beginning box
         box (Box | None):  active box
-        renters (list[Box]): boxes to re-enter on this run (boxes retained)
+        rentries (list[Box]): boxes to re-entry on this run (boxes retained)
         enters (list[Box]): boxes to enter on this begin/run
 
     Properties:
@@ -260,19 +260,19 @@ class Boxer(Tymee):
 
         First box assigned to active box
         actives = active box.pile
-        .renters is empty
+        .rentries is empty
         .enters == actives
         exits is empty
-        rexits is empty
+        requits is empty
 
         for each box in enters top down:
             precond:
                 if not all true then done with boxwork
                     End
 
-        for box in renters top down: (empty)
-            remark renter mark subcontext
-            renter
+        for box in rentries top down: (empty)
+            remark rentry mark subcontext
+            rentry
         for box in enters top down: (not empty)
             enmark enter mark subcontext  (mark tyme set to bag._tyme which is None)
             enter
@@ -282,15 +282,15 @@ class Boxer(Tymee):
             recur
             tail
             if transit need is true:  (short circuit recur of lower level boxes)
-                compute renters enters exits rexits. save box.renters and box.enters
+                compute rentries enters exits requits. save box.rentries and box.enters
                 for each box in enters (top down):
                     precon:
                         if not all true then do not proceed with transit return
 
                 for box in exits bottom up:
                     exits
-                for box in rexits bottom up:
-                    rexits
+                for box in requits bottom up:
+                    requits
                 set new .active box
                 break
         return from prep True == completed begin  (or yield if generator)
@@ -298,9 +298,9 @@ class Boxer(Tymee):
 
     tyme increment
     Run:
-        for box in renters: (may be empty)
-            remark renter mark subcontext
-            renter
+        for box in rentries: (may be empty)
+            remark rentry mark subcontext
+            rentry
         for box in enters: (may be empty)
             enmark enter mark subcontext  (mark tyme set to bag._tyme which is None)
             enter
@@ -310,14 +310,14 @@ class Boxer(Tymee):
             recur
             tail
             if transit need is true:   (short circuit recur of lower level boxes)
-                compute renters enters exits rexits,.
+                compute rentries enters exits requits,.
                     precon:
                         if not all true then do not proceed with transit return
 
                 for box in exits bottom up:
                     exit
-                for box in rexits bottom up:
-                    rexit
+                for box in requits bottom up:
+                    requit
                 set new .active box
                 break
         return from run False == not done continue  (or if generator yield)
@@ -343,7 +343,7 @@ class Boxer(Tymee):
         self.boxes = {}
         self.first = None  # box to start in
         self.box = None  # current active box  whose pile is active pile
-        self.renters = []  # list of re-enter boxes for this run (boxes retained)
+        self.rentries = []  # list of re-enter boxes for this run (boxes retained)
         self.enters = []  # list of enter boxes for this begin/run
 
 
@@ -387,15 +387,13 @@ class Boxer(Tymee):
         if not self.first:
             self.first = list(self.boxes.values())[0]  # first box in boxes is default first
         self.box = self.first
-        self.renters = []  # first pass no rentry of any boxes
+        self.rentries = []  # first pass no rentry of any boxes
         self.enters = self.box.pile
         if not self.precon():  # uses .enters preconditions for entry not satisfied
             # do end stuff since no entry yet then no exit
             self.box = None  # no active box anymore
             return False  # signal end beginning did not complete
 
-        #self.renter()  # uses saved .renters
-        #self.renters = []  # re-entry completed
         self.enter()  # uses saved .enters to en-mark and enter
         self.enters = []  # entry completed
         # check for End here if so .end()
@@ -411,12 +409,12 @@ class Boxer(Tymee):
 
             for tract in box.tracts:  # transit nabe top down
                 if tract():  # transition condition satisfied
-                    exits, enters, renters, rexits = self.exen(box, tract.dest)
+                    exits, enters, rentries, requits = self.quen(box, tract.dest)
                     if not self.precon(enters):  # transit not satisfied
                         continue  # keep trying
                     self.exit(exits)  # exit bottom up
-                    self.rexit(rexits)  # rexit bottom up
-                    self.renters = renters  # save for next pass
+                    self.requit(requits)  # requit bottom up
+                    self.rentries = rentries  # save for next pass
                     self.enters = enters  # save for next pass
                     self.box = tract.dest  # set new active box
                     break
@@ -427,8 +425,8 @@ class Boxer(Tymee):
     def run(self):
         """Execute another pass
         """
-        self.renter()  # uses saved .renters to re-mark and re-enter
-        self.renters = []  # re-entry completed so make empty
+        self.rentry()  # uses saved .rentries to re-mark and re-enter
+        self.rentries = []  # re-entry completed so make empty
         self.enter()  # uses saved .enters to en-mark and enter
         self.enters = []  # entry completed so make empty
 
@@ -445,12 +443,12 @@ class Boxer(Tymee):
 
             for tract in box.tracts:  # transit nabe top down
                 if dest := tract():  # transition condition satisfied
-                    exits, enters, renters, rexits = self.exen(box, dest)
+                    exits, enters, rentries, requits = self.quen(box, dest)
                     if not self.precon(enters):  # transit not satisfied
                         continue  # keep trying
                     self.exit(exits)  # exit bottom up
-                    self.rexit(rexits)  # rexit bottom up  (boxes retained)
-                    self.renters = renters  # save for next pass
+                    self.requit(requits)  # requit bottom up  (boxes retained)
+                    self.rentries = rentries  # save for next pass
                     self.enters = enters  # save for next pass
                     self.box = dest  # set new active box
                     return False  # transition so stop iteration over pile
@@ -508,11 +506,11 @@ class Boxer(Tymee):
         return met
 
 
-    def renter(self):
-        """Action re-mark (remacts) and re-enter (renacts) acts of boxes in
-        .renters in top down order. Boxes retained in hierarchical state.
+    def rentry(self):
+        """Action re-mark (remacts) and re-entry (renacts) acts of boxes in
+        .rentries in top down order. Boxes retained in hierarchical state.
         """
-        for box in self.renters:
+        for box in self.rentries:
             for remact in box.remacts:
                 remact()
             for renact in box.renacts:
@@ -542,16 +540,16 @@ class Boxer(Tymee):
                 exact()
 
 
-    def rexit(self, rexits):
-        """Action rexacts of boxes in rexits (re-exits) in bottom up order.
+    def requit(self, requits):
+        """Action requacts of boxes in requits (re-quits) in bottom up order.
         Boxes retained in hierarchical state.
 
         Parameters:
-            rexits (None|list[Box]): boxes to be re-exited in bottom up order
+            requits (None|list[Box]): boxes to be re-quit in bottom up order
         """
-        for box in rexits:
-            for rexact in box.rexacts:
-                rexact()
+        for box in requits:
+            for requact in box.requacts:
+                requact()
 
 
     def resolve(self):
@@ -923,7 +921,7 @@ class Boxer(Tymee):
 
 
     @staticmethod
-    def exen(near,far):
+    def quen(near, far):
         """Computes the relative differences (uncommon  and common parts) between
         the box pile lists nears passed in and fars from box far.pile
 
@@ -935,15 +933,15 @@ class Boxer(Tymee):
 
         Returns:
             quadruple (tuple[list]): quadruple of lists of form:
-                (exits, enters, renters, rexits) where:
+                (quits, entries, rentries, requits) where:
                 exits is list of uncommon boxes in nears but not in fars to be exited.
                     Reversed to bottom up order.
                 enters is list of uncommon boxes in fars but not in nears to be entered
-                rexits is list of common boxes in both nears and fars to be re-exited
+                requits is list of common boxes in both nears and fars to be re-exited
                     Reversed to bottom up order. These are boxes retained in pile.
-                renters is list of common boxes in both nears and fars to be re-entered
+                rentries is list of common boxes in both nears and fars to be re-entered
                     These are boxes retained in pile.
-                The sets of boxes in rexits and renters are the same set but rexits
+                The sets of boxes in requits and rentries are the same set but requits
                 is reversed to bottum up order. These are boxes retained in the
                 pile before and after the transition. This is where common exit/enter
                 actions for the non-common boxes can be actioned non-redundantly.
@@ -992,7 +990,7 @@ class Boxer(Tymee):
         l = min(len(nears), len(fars))  # l >= 1 since far in fars & near in nears
         for i in range(l):  # start at the top of both nears and fars
             if (far is nears[i]) or (fars[i] is not nears[i]): #first effective uncommon member
-                # (exits, enters, rexits, renters)
+                # (exits, enters, requits, rentries)
                 return (list(reversed(nears[i:])), fars[i:],
                         list(reversed(nears[:i])), fars[:i])
 

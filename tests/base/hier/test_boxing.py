@@ -47,7 +47,7 @@ def test_box_basic():
     assert box.tacts == []
     assert box.tracts == []
     assert box.exacts == []
-    assert box.rexacts == []
+    assert box.requacts == []
 
     assert box.pile == [box]
     assert box.spot == 0
@@ -69,7 +69,7 @@ def test_box_basic():
 
 def test_boxer_exen():
     """Test exen function for finding common/uncommon boxes in near far staks
-    for computing exits, enters, rexits, renters on a transition
+    for computing exits, enters, requits, rentries on a transition
     """
     a = Box(name='a')
     b = Box(name='b')
@@ -115,55 +115,55 @@ def test_boxer_exen():
 
 
     # test exen staticmethod
-    exen = Boxer.exen  # exen is staticmethod of Boxer
+    quen = Boxer.quen  # exen is staticmethod of Boxer
 
-    exits, enters, rexits, renters = exen(d, e)
+    exits, enters, requits, rentries = quen(d, e)
     assert exits == [d]
     assert enters == [e, f]
-    assert rexits == [c, b, a]
-    assert renters == [a, b, c]
+    assert requits == [c, b, a]
+    assert rentries == [a, b, c]
 
-    exits, enters, rexits, renters = exen(d, f)
+    exits, enters, requits, rentries = quen(d, f)
     assert exits == [d]
     assert enters == [e, f]
-    assert rexits == [c, b, a]
-    assert renters == [a, b, c]
+    assert requits == [c, b, a]
+    assert rentries == [a, b, c]
 
-    exits, enters, rexits, renters = exen(a, e)
+    exits, enters, requits, rentries = quen(a, e)
     assert exits == [d]
     assert enters == [e, f]
-    assert rexits == [c, b, a]
-    assert renters == [a, b, c]
+    assert requits == [c, b, a]
+    assert rentries == [a, b, c]
 
-    exits, enters, rexits, renters = exen(c, b)
+    exits, enters, requits, rentries = quen(c, b)
     assert exits == [d, c, b]
     assert enters == [b, c, d]
-    assert rexits == [a]
-    assert renters == [a]
+    assert requits == [a]
+    assert rentries == [a]
 
-    exits, enters, rexits, renters = exen(c, c)
+    exits, enters, requits, rentries = quen(c, c)
     assert exits == [d, c]
     assert enters == [c, d]
-    assert rexits == [b, a]
-    assert renters == [a, b]
+    assert requits == [b, a]
+    assert rentries == [a, b]
 
-    exits, enters, rexits, renters = exen(c, d)
+    exits, enters, requits, rentries = quen(c, d)
     assert exits == [d]
     assert enters == [d]
-    assert rexits == [c, b, a]
-    assert renters == [a, b, c]
+    assert requits == [c, b, a]
+    assert rentries == [a, b, c]
 
-    exits, enters, rexits, renters = exen(e, d)
+    exits, enters, requits, rentries = quen(e, d)
     assert exits == [f, e]
     assert enters == [d]
-    assert rexits == [c, b, a]
-    assert renters == [a, b, c]
+    assert requits == [c, b, a]
+    assert rentries == [a, b, c]
 
-    exits, enters, rexits, renters = exen(f, f)
+    exits, enters, requits, rentries = quen(f, f)
     assert exits == [f]
     assert enters == [f]
-    assert rexits == [e, c, b, a]
-    assert renters == [a, b, c, e]
+    assert requits == [e, c, b, a]
+    assert rentries == [a, b, c, e]
 
     """Done Test"""
 
@@ -184,7 +184,7 @@ def test_boxer_basic():
     assert boxer.boxes == {}
     assert boxer.first == None
     assert boxer.box == None
-    assert boxer.renters == []
+    assert boxer.rentries == []
     assert boxer.enters == []
 
     with pytest.raises(hioing.HierError):

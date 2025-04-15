@@ -64,22 +64,22 @@ Fields:
    native (str): native nabe
    precon (str): precon nabe
    remark (str): remark nabe
-   renter (str): renter nabe
+   rentry (str): rentry nabe
    enmark (str): enmark nabe
    enter (str): enter nabe
    recur (str): recur nabe
    tail (str): tail nabe
    transit (str): transit nabe
    exit (str): exit nabe
-   rexit (str): rexit nabe
+   requit (str): requit nabe
 """
-Nabage = namedtuple("Nabage", "native precon remark renter enmark enter"
-                                      " recur tail transit exit rexit")
+Nabage = namedtuple("Nabage", "native precon remark rentry enmark enter"
+                                      " recur tail transit exit requit")
 
 Nabe = Nabage(native="native", precon="precon", remark="remark",
-                     renter="renter", enmark="enmark", enter="enter",
+                     rentry="rentry", enmark="enmark", enter="enter",
                      recur="recur", tail="tail", transit="transit",
-                     exit="exit", rexit="rexit")
+                     exit="exit", requit="requit")
 
 
 @dataclass

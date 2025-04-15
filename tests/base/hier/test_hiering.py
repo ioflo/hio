@@ -33,14 +33,14 @@ def test_nabe():
     assert Nabe._asdict() == {'native': 'native',
                                 'precon': 'precon',
                                 'remark': 'remark',
-                                'renter': 'renter',
+                                'rentry': 'rentry',
                                 'enmark': 'enmark',
                                 'enter': 'enter',
                                 'recur': 'recur',
                                 'tail': 'tail',
                                 'transit': 'transit',
                                 'exit': 'exit',
-                                'rexit': 'rexit'}
+                                'requit': 'requit'}
 
 
 def test_workdom():
