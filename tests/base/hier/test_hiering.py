@@ -36,7 +36,7 @@ def test_nabe():
                                 'rentry': 'rentry',
                                 'enmark': 'enmark',
                                 'enter': 'enter',
-                                'recur': 'recur',
+                                'redo': 'redo',
                                 'tail': 'tail',
                                 'transit': 'transit',
                                 'exit': 'exit',
@@ -111,10 +111,10 @@ def test_actify():
         assert kwa == self.iops
         return self.iops
 
-    t = test(iops=dict(what=1), hello="hello", nabe=Nabe.recur)  # signature for Act.__init__
+    t = test(iops=dict(what=1), hello="hello", nabe=Nabe.redo)  # signature for Act.__init__
     assert t.name == "Tact0"
     assert t.iops == dict(what=1)
-    assert t.nabe == Nabe.recur
+    assert t.nabe == Nabe.redo
     assert t.__class__.__name__ == "Tact"
     assert t.__class__.__name__ in t.Registry
     assert t.Registry[t.__class__.__name__] == t.__class__

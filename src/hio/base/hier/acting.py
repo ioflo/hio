@@ -561,13 +561,13 @@ class ChangeMark(Mark):
 
 @register()
 class Count(ActBase):
-    """Count tracks recur count of box in mine for count special need
+    """Count tracks redo count of box in mine for count special need
 
     """
     Index = 0  # naming index for default names of this subclasses instances
 
 
-    def __init__(self, nabe=Nabe.recur, **kwa):
+    def __init__(self, nabe=Nabe.redo, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:
@@ -625,7 +625,7 @@ class Count(ActBase):
 
 @register()
 class Discount(ActBase):
-    """Discount resets recur count to None of box in mine for count special need
+    """Discount resets redo count to None of box in mine for count special need
 
     """
     Index = 0  # naming index for default names of this subclasses instances

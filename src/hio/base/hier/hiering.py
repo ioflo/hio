@@ -67,18 +67,18 @@ Fields:
    rentry (str): rentry nabe
    enmark (str): enmark nabe
    enter (str): enter nabe
-   recur (str): recur nabe
+   redo (str): redo nabe
    tail (str): tail nabe
    transit (str): transit nabe
    exit (str): exit nabe
    requit (str): requit nabe
 """
 Nabage = namedtuple("Nabage", "native precon remark rentry enmark enter"
-                                      " recur tail transit exit requit")
+                                      " redo tail transit exit requit")
 
 Nabe = Nabage(native="native", precon="precon", remark="remark",
                      rentry="rentry", enmark="enmark", enter="enter",
-                     recur="recur", tail="tail", transit="transit",
+                     redo="redo", tail="tail", transit="transit",
                      exit="exit", requit="requit")
 
 
@@ -131,7 +131,7 @@ def actify(name, *, base=None, attrs=None):
             assert kwa == self.iops
             return self.iops
 
-        t = test(iops=dict(what=1), hello="hello", nabe=Nabe.recur)
+        t = test(iops=dict(what=1), hello="hello", nabe=Nabe.redo)
 
     Notes:
     In Python, when a function is assigned as the value of a class attribute,

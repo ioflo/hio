@@ -24,7 +24,7 @@ nabeDispatch = dict(precon="preacts",
                     rentry="renacts",
                     enmark="enmacts",
                     enter="enacts",
-                    recur="reacts",
+                    redo="reacts",
                     tail="tacts",
                     transit="tracts",
                     exit="exacts",
@@ -52,7 +52,7 @@ class Box(Tymee):
         renacts (list[act]): rentry (re-entry) nabe acts  (retained)
         enmacts (list[act]): enmark enter mark subcontext acts
         enacts (list[act]):  enter nabe acts
-        reacts (list[act]): recur nabe acts
+        reacts (list[act]): redo nabe acts
         tacts (list[act]): tail nabe acts
         tracts (list[act]): transit nabe acts
         exacts (list[act]): exit nabe acts
@@ -109,7 +109,7 @@ class Box(Tymee):
         self.renacts = []  # rentry nabe list of re-entry acts (retained)
         self.enmacts = []  # enter mark subcontext list of en-mark acts
         self.enacts = []  # enter nabe list of enter acts
-        self.reacts = []  # recur nabe list of recurring acts
+        self.reacts = []  # redo nabe list of recurring acts
         self.tacts = []  # tail nabe list of trailing acts
         self.tracts = []  # transit nabe list of transition acts
         self.exacts = []  # exit nabe list of exit acts
@@ -279,9 +279,9 @@ class Boxer(Tymee):
         If complete:
             End boxwork boxer.want stop desire stop
         for box in actives top down:
-            recur
+            redo
             tail
-            if transit need is true:  (short circuit recur of lower level boxes)
+            if transit need is true:  (short circuit redo of lower level boxes)
                 compute rentries enters exits requits. save box.rentries and box.enters
                 for each box in enters (top down):
                     precon:
@@ -307,9 +307,9 @@ class Boxer(Tymee):
         If complete:
             End boxwork boxer.want stop desire stop
         for box in actives top down:
-            recur
+            redo
             tail
-            if transit need is true:   (short circuit recur of lower level boxes)
+            if transit need is true:   (short circuit redo of lower level boxes)
                 compute rentries enters exits requits,.
                     precon:
                         if not all true then do not proceed with transit return
@@ -398,7 +398,7 @@ class Boxer(Tymee):
         self.enters = []  # entry completed
         # check for End here if so .end()
         for box in self.box.pile:
-            for react in box.reacts:   # recur nabe top down
+            for react in box.reacts:   # redo nabe top down
                 react()
             for tact in box.tacts:   # trail nabe top down
                 tact()
@@ -431,7 +431,7 @@ class Boxer(Tymee):
         self.enters = []  # entry completed so make empty
 
         for box in self.box.pile:  # top down
-            for react in box.reacts:   # recur nabe top down
+            for react in box.reacts:   # redo nabe top down
                 react()
             for tact in box.tacts:   # trail nabe top down
                 tact()

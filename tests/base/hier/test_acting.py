@@ -35,10 +35,10 @@ def test_act_basic():
     assert act() == act.iops
 
     iops = dict(a=1, b=2)
-    act = Act(iops=iops, nabe=Nabe.recur)
+    act = Act(iops=iops, nabe=Nabe.redo)
     assert act.name == "Act1"
     assert act.iops == {'a': 1, 'b': 2, 'M': {}, 'D': None}
-    assert act.nabe == Nabe.recur
+    assert act.nabe == Nabe.redo
     assert act.Index == 2
     assert act.Instances[act.name] == act
     assert act.mine == Mine()
