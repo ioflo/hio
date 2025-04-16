@@ -611,6 +611,8 @@ def test_boxer_make_run_verbs():
         do('M.stuff.value += 1')
         go("next")
         bx('bot1')  # over defaults to same as prev box
+        do('M.stuff.value += 1')
+        be("crud.value", "2**4")
         go("next")
         bx('bot2')  # over defaults to same as prev box
         go("bot0")
@@ -622,6 +624,7 @@ def test_boxer_make_run_verbs():
     # init mine Bags
     mine.stuff = Bag()
     mine.stuff.value = 0
+    mine.crud = Bag()
 
     boxer = Boxer(mine=mine)
     assert boxer.boxes == {}
@@ -636,13 +639,17 @@ def test_boxer_make_run_verbs():
     assert boxer.box.name == "bot0"   # since set as first
     assert mine._boxer_boxer_box_mid_count.value is None
     assert mine.stuff.value == 0
+    assert mine.crud.value == None
     boxer.run()
     assert boxer.box.name == "bot1"  # half trans at end of first pass
     assert mine._boxer_boxer_box_mid_count.value == 0
     assert mine.stuff.value == 1
+    assert mine.crud.value == None
     boxer.run()
     assert boxer.box.name == "bot2"
     assert mine._boxer_boxer_box_mid_count.value == 1
+    assert mine.stuff.value == 2
+    assert mine.crud.value == 16
     boxer.run()
     assert boxer.box.name == "done"
     assert mine._boxer_boxer_box_mid_count.value is None
