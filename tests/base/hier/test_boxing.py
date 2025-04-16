@@ -599,6 +599,9 @@ def test_boxer_make_run_verbs():
     """
     tymist = Tymist()
 
+    def dumb(**iops):
+        return True
+
     def fun(bx, go, do, on, at, be, *pa):
         bx(name='top')
         bx('mid', 'top')
@@ -615,6 +618,7 @@ def test_boxer_make_run_verbs():
         be("crud.value", "2**4")
         go("next")
         bx('bot2')  # over defaults to same as prev box
+        be("crud.value", dumb)
         go("bot0")
         bx(name='done', over=None)
         do('end')
@@ -653,6 +657,8 @@ def test_boxer_make_run_verbs():
     boxer.run()
     assert boxer.box.name == "done"
     assert mine._boxer_boxer_box_mid_count.value is None
+    assert mine.stuff.value == 2
+    assert mine.crud.value == True
     boxer.run()
     assert boxer.box is None
     assert boxer.endial()
