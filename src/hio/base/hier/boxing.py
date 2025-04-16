@@ -1100,9 +1100,10 @@ class Boxer(Tymee):
 
 
 
-class Maker(Mixin):
-    """Maker Class makes boxworks of Boxer and Box instances.
-    Holds reference to in-memory mine shared by all boxes in boxwork
+class Boxery(Mixin):
+    """Boxery Class builds multiple boxworks of Boxer and Box instances.
+    Holds reference to in-memory mine shared by all boxers and their boxes in
+    multi-boxer boxworks
     Holds reference to current Boxer and Box being built
 
     ****Placeholder for now. Future to be able to make multiple boxers from
@@ -1131,7 +1132,7 @@ class Maker(Mixin):
 
 
         """
-        super(Maker, self).__init__(**kwa)
+        super(Boxery, self).__init__(**kwa)
         self.name = name
         self.mine = mine if mine is not None else Mine()
         self.dock = dock  # stub until create Dock class

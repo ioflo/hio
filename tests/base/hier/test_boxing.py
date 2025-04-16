@@ -23,7 +23,7 @@ from dataclasses import dataclass, astuple, asdict, field
 from hio import hioing
 from hio.help import helping, modify, Mine, Renam
 from hio.base import Tymist
-from hio.base.hier import (Nabes, Rexcnt, Box, Boxer, Maker, ActBase, Act,
+from hio.base.hier import (Nabes, Rexcnt, Box, Boxer, Boxery, ActBase, Act,
                            EndAct, Bag)
 
 
@@ -666,9 +666,9 @@ def test_boxer_make_run_verbs():
     """Done Test"""
 
 
-def test_maker_basic():
-    """Basic test Maker class"""
-    maker = Maker()  # defaults
+def test_boxery_basic():
+    """Basic test Boxery class"""
+    maker = Boxery()  # defaults
     assert maker.name == 'maker'
     assert maker.mine == Mine()
     assert maker.boxer == None
@@ -991,6 +991,6 @@ if __name__ == "__main__":
     test_boxer_make_run_on_change()
     test_boxer_make_run_on_count()
     test_boxer_make_run_verbs()
-    test_maker_basic()
+    test_boxery_basic()
     test_concept_bx_nonlocal()
     test_concept_bx_global()

@@ -23,7 +23,7 @@ from dataclasses import dataclass, astuple, asdict, field
 from hio import hioing
 from hio.help import helping, Mine, Renam
 from hio.base import tyming
-from hio.base.hier import WorkDom, Nabes, ActBase, actify, Box, Boxer, Maker
+from hio.base.hier import WorkDom, Nabes, ActBase, actify, Box, Boxer, Boxery
 
 
 def test_nabe():
