@@ -12,6 +12,7 @@ import re
 from collections.abc import Callable
 
 from ..tyming import Tymee
+from ..doing import Doer
 from ...hioing import Mixin, HierError
 from .hiering import Nabes, WorkDom, ActBase
 from .acting import (Act, Goact, Beact, UpdateMark, ChangeMark,
@@ -1184,3 +1185,10 @@ class Boxery(Mixin):
         boxers.append(boxer)
 
         fun()
+
+
+def BoxerDoer(Doer):
+    """BoxerDoer subclass of Doer that runs a Boxer boxwork
+
+
+    """
