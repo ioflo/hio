@@ -7,8 +7,8 @@ from __future__ import annotations  # so type hints of classes get resolved late
 import pytest
 
 from hio import Mixin, HierError
-from hio.base.hier import Nabe, ActBase, actify, Need, Box, Boxer, Bag
-from hio.base.hier import Act, Goact, EndAct
+from hio.base.hier import Nabes, ActBase, actify, Need, Box, Boxer, Bag
+from hio.base.hier import Act, Goact, EndAct, Beact
 
 from hio.help import Mine
 
@@ -23,7 +23,7 @@ def test_act_basic():
     act = Act()
     assert act.name == "Act0"
     assert act.iops == {'M': {}, 'D': None}
-    assert act.nabe == Nabe.endo
+    assert act.nabe == Nabes.endo
     assert act.Index == 1
     assert act.Instances[act.name] == act
     assert act.mine == Mine()
@@ -35,10 +35,10 @@ def test_act_basic():
     assert act() == act.iops
 
     iops = dict(a=1, b=2)
-    act = Act(iops=iops, nabe=Nabe.redo)
+    act = Act(iops=iops, nabe=Nabes.redo)
     assert act.name == "Act1"
     assert act.iops == {'a': 1, 'b': 2, 'M': {}, 'D': None}
-    assert act.nabe == Nabe.redo
+    assert act.nabe == Nabes.redo
     assert act.Index == 2
     assert act.Instances[act.name] == act
     assert act.mine == Mine()
@@ -62,7 +62,7 @@ def test_act_basic():
     act = Act(dumb, iops=iops)
     assert act.name == "Act2"
     assert act.iops == {'when': 'now', 'why': 'because', 'M': {}, 'D': None}
-    assert act.nabe == Nabe.endo
+    assert act.nabe == Nabes.endo
     assert act.Index == 3
     assert act.Instances[act.name] == act
     assert act.mine == Mine()
@@ -85,15 +85,15 @@ def test_act_basic():
     act = Act(deed, mine=mine, iops=iops)
     assert act.name == "Act3"
     assert act.iops == {'fix': 3, 'M': {'stuff': Bag(value=0)}, 'D': None}
-    assert act.nabe == Nabe.endo
+    assert act.nabe == Nabes.endo
     assert act.Index == 4
     assert act.Instances[act.name] == act
     assert act.mine == mine
     assert act.dock == None
     assert not callable(act.deed)
     assert act.deed == deed
-    assert act._code is None
-    assert not act.compiled
+    assert act._code
+    assert act.compiled
 
     assert act() == None
     assert act._code is not None
@@ -138,7 +138,7 @@ def test_goact_basic():
     goact = Goact()
     assert goact.name == "Goact0"
     assert goact.iops == {}
-    assert goact.nabe == Nabe.godo
+    assert goact.nabe == Nabes.godo
     assert goact.mine == Mine()
     assert goact.dock == None
     assert goact.Index == 1
@@ -155,7 +155,7 @@ def test_goact_basic():
     box = Box(mine=Mine)
     need = Need(expr='M.cycle.value >= 3', mine=mine)
     goact = Goact(dest=box, need=need)
-    assert not goact.need.compiled
+    assert goact.need.compiled
 
     dest = goact()
     assert dest == box
@@ -189,7 +189,7 @@ def test_endact_basic():
     eact = EndAct(iops=iops, mine=mine)
     assert eact.name == "EndAct1"
     assert eact.iops == iops
-    assert eact.nabe == Nabe.endo
+    assert eact.nabe == Nabes.endo
     assert eact.mine == mine
     assert eact.dock == None
     assert eact.Index == 2
@@ -203,8 +203,103 @@ def test_endact_basic():
 
     """Done Test"""
 
+def test_beact_basic():
+    """Test Beact class"""
+
+    Beact._clearall()  # clear instances for debugging
+
+    assert "Beact" in Beact.Registry
+    assert Beact.Registry["Beact"] == Beact
+
+    with pytest.raises(HierError):
+        act = Beact(lhs="stuff.value")
+
+    mine = Mine()
+    mine.stuff = Bag()
+
+    with pytest.raises(HierError):
+        act = Beact(lhs="stuff.kind", mine=mine)
+
+    Beact._clearall()  # clear instances for debugging
+
+    mine = Mine()
+    mine.stuff = Bag()
+
+    act = Beact(lhs=("stuff", "value"), mine=mine)
+    assert act.name == "Beact0"
+    assert act.iops == {'M': {'stuff': Bag(value=None)}, 'D': None}
+    assert act.nabe == Nabes.endo
+    assert act.Index == 1
+    assert act.Instances[act.name] == act
+    assert act.mine == mine
+    assert act.dock is None
+    assert act.lhs == ("stuff", "value")
+    assert act.rhs is None
+    assert act._code is None
+    assert not act.compiled
+    assert act() == None
+    assert mine["stuff"]["value"] == None
+
+    act.lhs = "stuff.value"
+    assert act.lhs == ("stuff", "value")
+    assert act() == None
+    assert mine["stuff"]["value"] == None
+    assert not act.compiled
+
+    act.rhs = "5"
+    assert not act.compiled
+    assert act() == 5
+    assert act.compiled
+    assert mine["stuff"]["value"] == 5
+
+    def dummy(**iops):
+        return True
+
+    act.rhs = dummy
+    assert not act.compiled
+    assert act() == True
+    assert not act.compiled
+    assert mine["stuff"]["value"] == True
+
+    iops = dict(a=1, b=2)
+    act = Beact(lhs="stuff.value", rhs=dummy, mine=mine, iops=iops, nabe=Nabes.redo)
+    assert act.name == "Beact1"
+    assert act.iops == {'a': 1, 'b': 2, 'M': {'stuff': Bag(value=True)}, 'D': None}
+    assert act.nabe == Nabes.redo
+    assert act.Index == 2
+    assert act.Instances[act.name] == act
+    assert act.mine == mine
+    assert act.dock is None
+    assert act.lhs == ("stuff", "value")
+    assert act.rhs is dummy
+    assert act._code is None
+    assert not act.compiled
+    assert act() == True
+    assert act.mine.stuff.value == True
+
+    act = Beact(lhs="stuff.value", rhs="2**5", mine=mine, nabe=Nabes.rendo)
+    assert act.name == "Beact2"
+    assert act.iops =={'M': {'stuff': Bag(value=True)}, 'D': None}
+    assert act.nabe == Nabes.rendo
+    assert act.Index == 3
+    assert act.Instances[act.name] == act
+    assert act.mine == mine
+    assert act.dock is None
+    assert act.lhs == ("stuff", "value")
+    assert act.rhs is "2**5"
+    assert act._code
+    assert act.compiled
+    assert act() == 32
+    assert act.mine.stuff.value == 32
+
+
+
+    """Done Test"""
+
+
 if __name__ == "__main__":
     test_act_basic()
     test_need_act()
     test_goact_basic()
     test_endact_basic()
+    test_beact_basic()

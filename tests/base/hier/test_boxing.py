@@ -23,7 +23,7 @@ from dataclasses import dataclass, astuple, asdict, field
 from hio import hioing
 from hio.help import helping, modify, Mine, Renam
 from hio.base import Tymist
-from hio.base.hier import (Nabe, Rexcnt, Box, Boxer, Maker, ActBase, Act,
+from hio.base.hier import (Nabes, Rexcnt, Box, Boxer, Maker, ActBase, Act,
                            EndAct, Bag)
 
 
@@ -278,7 +278,7 @@ def test_boxer_basic():
 
 def test_boxer_make():
     """Test make method of Boxer and modify wrapper"""
-    def fun(bx, go, do, on, *pa):
+    def fun(bx, go, do, on, at, be, *pa):
         bx(name='top')
         bx(over='top')
         bx()
@@ -320,7 +320,7 @@ def test_boxer_make():
 def test_boxer_make_go():
     """Test make method of Boxer and modify wrapper with bx and go verbs
     """
-    def fun(bx, go, do, on, *pa):
+    def fun(bx, go, do, on, at, be, *pa):
         bx(name='top')
         bx(over='top')
         go("next")
@@ -365,7 +365,7 @@ def test_boxer_make_run():
         return M.count.value
 
 
-    def fun(bx, go, do, on, *pa):
+    def fun(bx, go, do, on, at, be, *pa):
         bx(name='top')
         bx(name='mid', over='top')
         go('done', "M.count.value==2")
@@ -425,7 +425,7 @@ def test_boxer_make_run_on_update():
         return M.count.value
 
 
-    def fun(bx, go, do, on, *pa):
+    def fun(bx, go, do, on, at, be, *pa):
         bx(name='top')
         bx(name='mid', over='top')
         go('done', on("update", "count"))
@@ -488,7 +488,7 @@ def test_boxer_make_run_on_change():
         return M.count.value
 
 
-    def fun(bx, go, do, on, *pa):
+    def fun(bx, go, do, on, at, be, *pa):
         bx(name='top')
         bx(name='mid', over='top')
         go('done', on("change", "count"))
@@ -542,7 +542,7 @@ def test_boxer_make_run_on_count():
     """
     tymist = Tymist()
 
-    def fun(bx, go, do, on, *pa):
+    def fun(bx, go, do, on, at, be, *pa):
         bx(name='top')
         bx('mid', 'top')
         do("count", "redo")
@@ -575,6 +575,71 @@ def test_boxer_make_run_on_count():
     boxer.run()
     assert boxer.box.name == "bot1"  # half trans at end of first pass
     assert mine._boxer_boxer_box_mid_count.value == 0
+    boxer.run()
+    assert boxer.box.name == "bot2"
+    assert mine._boxer_boxer_box_mid_count.value == 1
+    boxer.run()
+    assert boxer.box.name == "done"
+    assert mine._boxer_boxer_box_mid_count.value is None
+    boxer.run()
+    assert boxer.box is None
+    assert boxer.endial()
+
+    """Done Test"""
+
+
+def test_boxer_make_run_verbs():
+    """Test make method of Boxer with all verbs
+
+    Need to test do with exec statment like
+        mine.stuff = Bag()
+        mine.stuff.value = 0
+        deed = "M.stuff.value += 1"
+        do(deed)
+    """
+    tymist = Tymist()
+
+    def fun(bx, go, do, on, at, be, *pa):
+        bx(name='top')
+        bx('mid', 'top')
+        at('redo')
+        do("count")
+        at("exdo")
+        do("discount")
+        go('done', on("count >= 2"))
+        bx('bot0', 'mid', first=True)
+        do('M.stuff.value += 1')
+        go("next")
+        bx('bot1')  # over defaults to same as prev box
+        go("next")
+        bx('bot2')  # over defaults to same as prev box
+        go("bot0")
+        bx(name='done', over=None)
+        do('end')
+
+
+    mine = Mine()
+    # init mine Bags
+    mine.stuff = Bag()
+    mine.stuff.value = 0
+
+    boxer = Boxer(mine=mine)
+    assert boxer.boxes == {}
+    mods = boxer.make(fun)
+    assert len(boxer.boxes) == 6
+    assert list(boxer.boxes) == ['top', 'mid', 'bot0', 'bot1', 'bot2', 'done']
+    boxer.wind(tymth=tymist.tymen())
+    assert boxer.boxes["mid"].reacts
+    assert boxer.boxes["mid"].exacts
+
+    boxer.begin()
+    assert boxer.box.name == "bot0"   # since set as first
+    assert mine._boxer_boxer_box_mid_count.value is None
+    assert mine.stuff.value == 0
+    boxer.run()
+    assert boxer.box.name == "bot1"  # half trans at end of first pass
+    assert mine._boxer_boxer_box_mid_count.value == 0
+    assert mine.stuff.value == 1
     boxer.run()
     assert boxer.box.name == "bot2"
     assert mine._boxer_boxer_box_mid_count.value == 1
@@ -912,6 +977,7 @@ if __name__ == "__main__":
     test_boxer_make_run_on_update()
     test_boxer_make_run_on_change()
     test_boxer_make_run_on_count()
+    test_boxer_make_run_verbs()
     test_maker_basic()
     test_concept_bx_nonlocal()
     test_concept_bx_global()

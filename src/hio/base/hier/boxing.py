@@ -13,8 +13,8 @@ from collections.abc import Callable
 
 from ..tyming import Tymee
 from ...hioing import Mixin, HierError
-from .hiering import Nabe, WorkDom, ActBase
-from .acting import (Act, Goact, UpdateMark, ChangeMark,
+from .hiering import Nabes, WorkDom, ActBase
+from .acting import (Act, Goact, Beact, UpdateMark, ChangeMark,
                      ReupdateMark, RechangeMark, Count, Discount)
 from .bagging import Bag
 from .needing import Need
@@ -586,20 +586,11 @@ class Boxer(Tymee):
     def make(self, fun):
         """Make box work for this boxer from function fun
         Parameters:
-            fun (function):  employs be, do, on, go maker functions injected
-                             works (boxwork state vars)
+            fun (function):  employs be, go, do, on, at, be, verb functions with
+                injected mods of boxwork state vars
 
-        def fun(bx):
-
-
-        Injects works as WorkDom dataclass instance whose attributes are used to
-        construct boxwork. WorkDom attributes include
-            box (Box|None): current box in box work. None if not yet a box
-            over (Box|None): current over Box in box work. None if top level
-            bxpre (str): default name prefix used to generate unique box
-                name relative to boxer.boxes
-            bxidx (int): default box index used to generate unique box
-                name relative to boxer.boxes
+        Injects mods as WorkDom dataclass instance whose attributes are used to
+        construct boxwork.
 
 
         """
@@ -609,7 +600,10 @@ class Boxer(Tymee):
         go = modify(mods=works)(self.go)
         do = modify(mods=works)(self.do)
         on = modify(mods=works)(self.on)
-        fun(bx=bx, go=go, do=do, on=on)  # calling fun will build boxer.boxes
+        at = modify(mods=works)(self.at)
+        be = modify(mods=works)(self.be)
+        # calling fun will build boxer.boxes
+        fun(bx=bx, go=go, do=do, on=on, at=at, be=be)
         self.resolve()
         return works  # for debugging analysis
 
@@ -687,6 +681,8 @@ class Boxer(Tymee):
         if m.box:  # update last boxes lexical ._next to this box
             m.box._next = box
         m.box = box  # update current box
+
+        m.nabe = Nabes.native  # reset nabe to native at creation of new box
 
         if first:
             self.first = box
@@ -777,7 +773,7 @@ class Boxer(Tymee):
         parms = dict(name=name, mine=self.mine, dock=self.dock)
         if nabe is None:
             nabe = m.nabe
-        if nabe != Nabe.native:
+        if nabe != Nabes.native:
             parms.update(nabe=nabe)   # override native nabe for klas
 
         iops = dict(_boxer=self.name, _box=m.box.name, **iops)
@@ -785,19 +781,12 @@ class Boxer(Tymee):
 
         deed = deed if deed is not None else "Act"
 
-        if isinstance(deed, str):
-            try:
-                klas = m.acts[deed]
-            except KeyError as ex:
-                raise HierError(f"Unregistered deed='{deed}'") from ex
-
-            act = klas(**parms)
-
-        elif callable(deed):
-            act = Act(deed=deed, **parms)
-
-        else:
-            raise HierError(f"Invalid {deed=}")
+        try:  # is deed registered act class name or alias
+            klas = m.acts[deed]  # get registered klas
+        except KeyError:  # not registered act class name
+            act = Act(deed=deed, **parms)  # executable statement(s) or callable
+        else:  # deed is registered act class name or alias
+            act = klas(**parms)  # create act from klas with **parms
 
         nabe = act.nabe  # act init may override passed in nabe
 
@@ -806,9 +795,7 @@ class Boxer(Tymee):
         except (KeyError, AttributeError) as ex:
             raise HierError("Unrecognized nabe='{nabe}'") from ex
 
-
         return act
-
 
 
     def on(self, cond: None|str=None, key: None|str=None, expr: None|str=None,
@@ -957,16 +944,83 @@ class Boxer(Tymee):
                 raise HierError(f"Invalid special need {cond=}")
 
         # now _expr is valid
-
         if expr:  # both resolved cond as _expr and expr so AND together
             _expr = "(" + _expr + ") and (" + expr + ")"
 
         need = Need(expr=_expr, mine=self.mine, dock=self.dock)
-
         return need
 
 
+    def at(self, nabe: str=Nabes.native, *, mods: WorkDom|None=None)->str:
+        """Make set mods.nabe to nabe
 
+        Parameters:
+            nabe (str): action nabe (context) for mods. Defualt is native
+
+            mods (None | WorkDom):  state variables used to construct box work
+                None is just to allow definition as keyword arg. Assumes in
+                actual usage that mods is always provided as WorkDom instance.
+
+        """
+        m = mods  # alias more compact
+        if nabe not in Nabes._fields:
+            raise HierError("Invalid {nabe=}")
+
+        m.nabe = nabe
+        return nabe
+
+
+    def be(self, lhs: str|tuple[str], rhs: None|str|Callable=None, nabe=None, *,
+                 name: str|None=None, mods: WorkDom|None=None, **iops)->str:
+        """Make Beact instance that assigns mine bag at lhs to value from rhs.
+        lhs is of form "key.field"
+        rhs may be either a Callable or an evalable expression or None.
+        Resulting act performs on of:
+        M.key.field = None   when rhs is None
+        M.key.field = eval(rhs)  when rhs is evalable str
+        M.key.field = rhs(**parms)  when rhs is callable
+
+        Usage:
+            be(lhs, rhs)
+
+        Parameters:
+            lhs (str|tuple[str]): key.field in mine to be assigned.
+                Resolves lhs to (key, field)
+            rhs (None|str|Callable):
+                When None assign directly
+                When str compile to evable expression
+                When Callable then call directly with iops
+            nabe (None|str): action nabe (context) for act instance created by do.
+                    None means use nabe from mods.
+            name (None|str): name of act instance created by do.
+                    When None use default indexed name created by Act.
+            mods (None | WorkDom):  state variables used to construct box work
+                None is just to allow definition as keyword arg. Assumes in
+                actual usage that mods is always provided as WorkDom instance.
+            iops (dict): input-output-parms for Beact
+
+        """
+        m = mods  # alias more compact
+
+        parms = dict(name=name, mine=self.mine, dock=self.dock)
+        if nabe is None:
+            nabe = m.nabe
+        if nabe != Nabes.native:
+            parms.update(nabe=nabe)   # override native nabe for klas
+
+        iops = dict(_boxer=self.name, _box=m.box.name, **iops)
+        parms.update(iops=iops)
+
+        # Create instance of Beact
+        act = Beact(rhs=rhs, lhs=lhs, **parms)
+        nabe = act.nabe  # act init may override passed in nabe
+
+        try:
+            getattr(m.box, nabeDispatch[nabe]).append(act)
+        except (KeyError, AttributeError) as ex:
+            raise HierError("Unrecognized nabe='{nabe}'") from ex
+
+        return act
 
 
     @staticmethod

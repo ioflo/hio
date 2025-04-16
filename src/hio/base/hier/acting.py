@@ -6,28 +6,28 @@ Provides hierarchical action support
 """
 from __future__ import annotations  # so type hints of classes get resolved later
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from collections import namedtuple
 
 from ... import hioing
 from ...hioing import Mixin, HierError
 from ...help import Mine, Renam
-from .hiering import Nabe, ActBase, register
+from .hiering import Nabes, ActBase, register
 from .needing import Need
 from .bagging import Bag
 from . import boxing
 
-
+from ...help import  NonStringIterable
 
 
 @register()
 class Act(ActBase):
-    """Act for do verb deeds as callables. At make (compile) time any callable
-    that is available in the scope of the do verb in the boxer.make method
-    can be passed in as the deed parameter and will be executed with ,iops as
-    its parameters.
+    """Act for do verb deeds as  or executable statements orcallables.
+    At make (compile) time any callable that is available in the scope of the
+    do verb in the boxer.make method can be passed in as the deed parameter and
+    will be executed with ,iops as its parameters.
 
-    do(deed, **iops)
+    do(deed)
 
     Inherited Class Attributes:
         Registry (dict): subclass registry whose items are (name, cls) where:
@@ -57,31 +57,25 @@ class Act(ActBase):
         dock (Dock): durable bags in dock (on disc) shared by boxwork
 
     Attributes:
-        deed (Callable): action to be called with .iops as parameters else
-                executable set of statements with M and D as locals
+
 
     Properties:
+        deed (Callable|str): action to be called with .iops as parameters else
+                executable set of statements with M and D as locals
         compiled (bool): True means ._code holds compiled .deed
                          False means not yet compiled
 
-
     Hidden:
-
-        _code (None|CodeType): compiled evalable boolean expression .expr
-            None means not yet compiled from .expr
-
-
-    Hidden
         _name (str|None): unique name of instance
         _iopts (dict): input-output-paramters for .act
         _nabe (str): action nabe (context) for .act
-        _code (CodeType): compiled executable set of statements that execs .deed
-            when it is a noncallable str.  M and D are in the locals of the exec.
+        _deed (Callable|str):  action to be called with .iops as parameters else
+                executable set of statements with M and D as locals
+        _code (None|CodeType): compiled executable boolean statements from .deed
+                               None means not yet compiled from .deed
 
     """
     Index = 0  # naming index for default names of this subclasses instances
-    #Names = () tuple of aliases for this subclass created by @register
-
 
 
     def __init__(self, deed=None, **kwa):
@@ -101,9 +95,11 @@ class Act(ActBase):
 
         """
         super(Act, self).__init__(**kwa)
-        self.deed = deed if deed is not None else (lambda **iops: iops)
-        self.iops.update(M=self.mine, D=self.dock)  # inject .mine and .dock
         self._code = None
+        self.iops.update(M=self.mine, D=self.dock)  # inject .mine and .dock
+        self.deed = deed if deed is not None else (lambda **iops: iops)
+        if not callable(self.deed):  # need to compile
+            self.compile()  # compile at init time so know if compilable
 
 
     def act(self, **iops):  # passed in by call
@@ -125,6 +121,26 @@ class Act(ActBase):
         return exec(self._code)
 
 
+    @property
+    def deed(self):
+        """Property getter for ._deed
+
+        Returns:
+            deed (str): evalable boolean expression or callable.
+        """
+        return self._deed
+
+
+    @deed.setter
+    def deed(self, deed):
+        """Property setter for ._expr
+
+        Parameters:
+            expr (str): evalable boolean expression.
+        """
+        self._deed = deed
+        self._code = None  # force lazy recompilation
+
 
     @property
     def compiled(self):
@@ -138,10 +154,10 @@ class Act(ActBase):
 
 
     def compile(self):
-        """Compile evable boolean expression str ._expr into compiled code
-        object ._code to be evaluated at run time.
-        Because code objects are not pickleable the compilation must happen
-        at prep (endo) time not init time.
+        """Compile executable statements in .deed to ._code
+        ._code to be executed (exec) at run time.
+        Because code objects are not pickleable the instantiation compilation
+        must happen after any unpickling of any instances if any.
         """
         self._code = compile(self.deed, '<string>', 'exec')
 
@@ -218,11 +234,11 @@ class Goact(ActBase):
                 When Need instance then use directly
 
         """
-        kwa.update(nabe=Nabe.godo)  # override must be godo nabe
+        kwa.update(nabe=Nabes.godo)  # override must be godo nabe
         super(Goact, self).__init__(**kwa)
         self.dest = dest if dest is not None else 'next'  # default is next
         self.need = need if need is not None else Need()  # default need evals to True
-        if self.nabe != Nabe.godo:
+        if self.nabe != Nabes.godo:
             raise HierError(f"Invalid nabe='{self.nabe}' for Goact "
                             f"'{self.name}'")
 
@@ -292,7 +308,7 @@ class EndAct(ActBase):
     """
     Index = 0  # naming index for default names of this subclasses instances
 
-    def __init__(self, nabe=Nabe.endo, **kwa):
+    def __init__(self, nabe=Nabes.endo, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:
@@ -335,6 +351,200 @@ class EndAct(ActBase):
         boxer = self.iops['_boxer']  # get boxer name
         keys = ("", "boxer", boxer, "end")
         self.mine[keys].value = True
+
+
+@register()
+class Beact(ActBase):
+    """Beact for be verb deeds
+
+    be(lhs, rhs)  left_hand_side = right_hand_side
+
+    Inherited Class Attributes:
+        Registry (dict): subclass registry whose items are (name, cls) where:
+                name is unique name for subclass
+                cls is reference to class object
+        Instances (dict): instance registry whose items are (name, instance) where:
+                name is unique instance name and instance is instance reference
+        Index (int): default naming index for subclass instances. Each subclass
+                overrides with a subclass specific Index value to track
+                subclass specific instance default names.
+        Names (tuple[str]): tuple of aliases (names) under which this subclas
+                            appears in .Registry. Created by @register
+
+    Overridden Class Attributes
+        Index (int): default naming index for subclass instances. Each subclass
+                overrides with a subclass specific Index value to track
+                subclass specific instance default names.
+
+
+    Inherited Properties:
+        name (str): unique name string of instance
+        iops (dict): input-output-parameters for .act
+        nabe (str): action nabe (context) for .act
+
+    Inherited Attributes:
+        mine (Mine): ephemeral bags in mine (in memory) shared by boxwork
+        dock (Dock): durable bags in dock (on disc) shared by boxwork
+
+
+    Properties:
+        lhs (tuple[str]): left hand sige of assignment of form (key,field)
+            to be assigned as .mine[key][field]
+        rhs (None|str|Callable):
+            When None assign directly
+            When str compile to evable expression
+            When Callable then call directly with iops
+        compiled (bool): True means ._code holds compiled rhs
+                         False means not yet compiled
+
+    Hidden:
+        _name (str|None): unique name of instance
+        _iopts (dict): input-output-paramters for .act
+        _nabe (str): action nabe (context) for .act
+        _lhs (tuple[str]): of form (key, field)
+        _rhs (None|str|Callable):  When None assign directly
+                                   When str compile to evable expression
+                                   When Callable then call directly with iops
+        _code (None|CodeType): compiled evalable boolean expression .rhs
+                               None means not yet compiled from .rhs
+
+    """
+    Index = 0  # naming index for default names of this subclasses instances
+
+
+    def __init__(self, lhs: str|tuple([str]), rhs: None|str|Callable=None, **kwa):
+        """Initialization method for instance.
+
+        Inherited Parameters:
+            name (str|None): unique name of this instance. When None then
+                generate name from .Index
+            iops (dict|None): input-output-parameters for .act. When None then
+                set to empty dict.
+            nabe (str|None): action nabe (context) for .act. Default is "endo"
+            mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
+            dock (None|Dock): durable bags in dock (on disc) shared by boxwork
+
+        Parameters:
+            lhs (str|tuple(str])): left hand side of assignment in mine[key][field]
+                when str of form key.field in mine to be assigned.
+                Resolves lhs to (key, field)
+            rhs (None|str|Callable): right hand side of assignment
+                When None assign directly
+                When str compile to evable expression
+                When Callable then call directly with iops
+
+        """
+        super(Beact, self).__init__(**kwa)
+        self._code = None
+        self.iops.update(M=self.mine, D=self.dock)  # inject .mine and .dock
+        self.lhs = lhs
+        self.rhs = rhs
+        if isinstance(self.rhs, str):
+            self.compile()
+        key, field = self.lhs
+        if key not in self.mine:
+            raise HierError(f"Missing mine bag at key='{key}'")
+        if field not in self.mine[key]:
+            raise HierError(f"Missing field='{field}' in mine bag at key='{key}'")
+
+
+    def act(self, **iops):  # passed in by call
+        """Act called by ActBase.
+
+        Parameters:
+            iops (dict): input output parms for deed when deed is callable.
+        """
+        key, field = self.lhs
+
+        if self.rhs is None:
+            self.mine[key][field] = self.rhs
+
+        elif callable(self.rhs):
+            self.mine[key][field] = self.rhs(**iops)
+
+        else:
+            if not self.compiled:  # not yet compiled so lazy
+                self.compile()  # first time only recompile to ._code
+            M = self.mine  # ensure M is in locals() for exec
+            D = self.dock  # ensure D is in locals() for exec
+            # note iops already in locals() for exec
+            self.mine[key][field] = eval(self._code)
+
+        return self.mine[key][field]
+
+
+    @property
+    def lhs(self):
+        """Property getter for ._lhs
+
+        Returns:
+            lhs (tuple[str]): of form (key, field)
+        """
+        return self._lhs
+
+
+    @lhs.setter
+    def lhs(self, lhs):
+        """Property setter for ._lhs
+
+        Parameters:
+            lhs (str|tuple[str]): left hand side of assignment in mine[key][field]
+                when str of form key.field in mine to be assigned.
+                Resolves lhs to (key, field)
+        """
+        if isinstance(lhs, str):
+            self._lhs = tuple(lhs.rsplit(".", maxsplit=1))
+        else:
+            self._lhs = (key, field) = tuple(lhs)
+
+
+    @property
+    def rhs(self):
+        """Property getter for ._rhs
+
+        Returns:
+            rhs (None|str|Callable):  right hand side of assignment
+                When None assign directly
+                When str compile to evable expression
+                When Callable then call directly with iops
+        """
+        return self._rhs
+
+
+    @rhs.setter
+    def rhs(self, rhs):
+        """Property setter for ._rhs
+
+        Parameters:
+            rhs (None|str|Callable):  right hand side of assignment
+                When None assign directly
+                When str compile to evable expression
+                When Callable then call directly with iops
+        """
+        self._rhs = rhs
+        self._code = None  # force lazy recompilation
+
+    @property
+    def compiled(self):
+        """Property compiled
+
+        Returns:
+            compiled (bool): True means ._code holds compiled ._expr
+                             False means not yet compiled
+        """
+        return True if self._code is not None else False
+
+
+    def compile(self):
+        """Compile evable boolean expression str ._expr into compiled code
+        object ._code to be evaluated at run time.
+        Because code objects are not pickleable the compilation must happen
+        at prep (enter) time not init time.
+        """
+        self._code = compile(self.rhs, '<string>', 'eval')
+
+
+
 
 # Dark  DockMark
 
@@ -389,7 +599,7 @@ class Mark(ActBase):
     Index = 0  # naming index for default names of this subclasses instances
 
 
-    def __init__(self, nabe=Nabe.enmark, **kwa):
+    def __init__(self, nabe=Nabes.enmark, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:
@@ -459,7 +669,7 @@ class UpdateMark(Mark):
     Index = 0  # naming index for default names of this subclasses instances
 
 
-    def __init__(self, nabe=Nabe.enmark, **kwa):
+    def __init__(self, nabe=Nabes.enmark, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:
@@ -514,7 +724,7 @@ class ChangeMark(Mark):
     Index = 0  # naming index for default names of this subclasses instances
 
 
-    def __init__(self, nabe=Nabe.enmark, **kwa):
+    def __init__(self, nabe=Nabes.enmark, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:
@@ -567,7 +777,7 @@ class ReupdateMark(Mark):
     Index = 0  # naming index for default names of this subclasses instances
 
 
-    def __init__(self, nabe=Nabe.remark, **kwa):
+    def __init__(self, nabe=Nabes.remark, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:
@@ -622,7 +832,7 @@ class RechangeMark(Mark):
     Index = 0  # naming index for default names of this subclasses instances
 
 
-    def __init__(self, nabe=Nabe.remark, **kwa):
+    def __init__(self, nabe=Nabes.remark, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:
@@ -676,7 +886,7 @@ class Count(ActBase):
     Index = 0  # naming index for default names of this subclasses instances
 
 
-    def __init__(self, nabe=Nabe.redo, **kwa):
+    def __init__(self, nabe=Nabes.redo, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:
@@ -741,7 +951,7 @@ class Discount(ActBase):
     Index = 0  # naming index for default names of this subclasses instances
 
 
-    def __init__(self, nabe=Nabe.exdo, **kwa):
+    def __init__(self, nabe=Nabes.exdo, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:
