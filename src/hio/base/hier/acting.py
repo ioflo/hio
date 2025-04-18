@@ -550,8 +550,8 @@ class Beact(ActBase):
 
 @register()
 class Mark(ActBase):
-    """Mark (Mine Mark) is base classubclass of ActBase whose .act marks a mine bag for
-    a special need condition.
+    """Mark (Mine Mark) is base classubclass of ActBase whose .act marks a
+    box for a special need condition.
 
     Inherited Class Attributes:
         Registry (dict): subclass registry whose items are (name, cls) where:
@@ -586,7 +586,158 @@ class Mark(ActBase):
     Used iops:
         _boxer (str):  boxer name
         _box (str): box name in boxer
-        _key (str): marked bag key
+
+
+    Hidden
+        _name (str|None): unique name of instance
+        _iopts (dict): input-output-paramters for .act
+        _nabe (str): action nabe (context) for .act
+
+
+    """
+    Index = 0  # naming index for default names of this subclasses instances
+
+
+    def __init__(self, nabe=Nabes.enmark, **kwa):
+        """Initialization method for instance.
+
+        Inherited Parameters:
+            name (str|None): unique name of this instance. When None then
+                generate name from .Index
+            iops (dict|None): input-output-parameters for .act. When None then
+                set to empty dict.
+            nabe (str): action nabe (context) for .act
+            mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
+            dock (None|Dock): durable bags in dock (on disc) shared by boxwork
+
+        Parameters:
+
+        Used iops:
+            _boxer (str): boxer name. Implicit iop injected by verb
+            _box (str): box name in boxer.  Implicit iop injected by verb
+
+
+        """
+        super(Mark, self).__init__(nabe=nabe, **kwa)
+
+        try:
+            boxer = self.iops['_boxer']  # get boxer name to ensure existence
+        except KeyError as ex:
+            raise HierError(f"Missing iops '_boxer' for '{self.name}' instance "
+                            f"of Act self.__class__.__name__") from ex
+
+        try:
+            box = self.iops['_box']  # get box name to ensure existence
+        except KeyError as ex:
+            raise HierError(f"Missing iops '_box' for '{self.name}' instance "
+                            f"of Act self.__class__.__name__") from ex
+
+    def act(self, **iops):
+        """Act called by ActBase.
+
+        Override in subclass
+
+        Parameters:
+            iops (dict): input output parms
+
+        """
+        boxer = self.iops['_boxer']  # get boxer name
+        box = self.iops['_box']  # get box name
+
+
+
+@register()
+class LapseMark(Mark):
+    """LapseMark marks box in mine for tyme lapse special need. Enables
+    condition to transit based on elapsed time in a box.
+
+    """
+    Index = 0  # naming index for default names of this subclasses instances
+
+
+    def __init__(self, nabe=Nabes.enmark, **kwa):
+        """Initialization method for instance.
+
+        Inherited Parameters:
+            name (str|None): unique name of this instance. When None then
+                generate name from .Index
+            iops (dict|None): input-output-parameters for .act. When None then
+                set to empty dict.
+            nabe (str): action nabe (context) for .act
+            mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
+            dock (None|Dock): durable bags in dock (on disc) shared by boxwork
+
+        Parameters:
+
+        Used iops:
+            _boxer (str): boxer name. Implicit iop injected by verb
+            _box (str): box name in boxer.  Implicit iop injected by verb
+            _key (str): marked bag key. Injected by on verb
+
+
+        """
+        super(LapseMark, self).__init__(nabe=nabe, **kwa)
+        boxer = self.iops['_boxer']  # get boxer name
+        box = self.iops['_box']  # get box name
+        keys = ("", "boxer", boxer, "box", box, "lapse")
+        if keys not in self.mine:
+            self.mine[keys] = Bag()  # create bag default value = None
+
+
+    def act(self, **iops):
+        """Act called by ActBase.
+
+        Parameters:
+            iops (dict): input output parms
+
+        """
+        boxer = self.iops['_boxer']  # get boxer name
+        box = self.iops['_box']  # get box name
+        keys = ("", "boxer", boxer, "box", box, "lapse")
+        # mark box tyme via bag._now tyme
+        self.mine[keys].value = self.mine[keys]._now  # _now tyme of mark bag
+        return self.mine[keys].value
+
+
+@register()
+class BagMark(Mark):
+    """BagMark (Mine Mark) is base classubclass of ActBase whose .act marks a
+    bag value when in a box for a special need condition.
+
+    Inherited Class Attributes:
+        Registry (dict): subclass registry whose items are (name, cls) where:
+                name is unique name for subclass
+                cls is reference to class object
+        Instances (dict): instance registry whose items are (name, instance) where:
+                name is unique instance name and instance is instance reference
+        Index (int): default naming index for subclass instances. Each subclass
+                overrides with a subclass specific Index value to track
+                subclass specific instance default names.
+        Names (tuple[str]): tuple of aliases (names) under which this subclas
+                            appears in .Registry. Created by @register
+
+    Overridden Class Attributes
+        Index (int): default naming index for subclass instances. Each subclass
+                overrides with a subclass specific Index value to track
+                subclass specific instance default names.
+
+
+    Inherited Properties:
+        name (str): unique name string of instance
+        iops (dict): input-output-parameters for .act
+        nabe (str): action nabe (context) for .act
+
+    Inherited Attributes:
+        mine (Mine): ephemeral bags in mine (in memory) shared by boxwork
+        dock (Dock): durable bags in dock (on disc) shared by boxwork
+
+    Attributes:
+        bag (Bag): marked bag in Mine
+
+    Used iops:
+        _boxer (str):  boxer name
+        _box (str): box name in boxer
+        _key (str): marked bag key. Injected by on verb
 
 
     Hidden
@@ -620,30 +771,16 @@ class Mark(ActBase):
 
 
         """
-        super(Mark, self).__init__(nabe=nabe, **kwa)
+        super(BagMark, self).__init__(nabe=nabe, **kwa)
 
         try:
-            boxer = self.iops['_boxer']  # get boxer name
-        except KeyError as ex:
-            raise HierError(f"Missing iops '_boxer' for '{self.name}' instance "
-                            f"of Act self.__class__.__name__") from ex
-
-        try:
-            box = self.iops['_box']  # get box name
-        except KeyError as ex:
-            raise HierError(f"Missing iops '_box' for '{self.name}' instance "
-                            f"of Act self.__class__.__name__") from ex
-
-
-        try:
-            key = self.iops['_key']  # get bag key
+            key = self.iops['_key']  # get bag key in mine to ensure existence
         except KeyError as ex:
             raise HierError(f"Missing iops '_key' for '{self.name}' instance "
                             f"of Act self.__class__.__name__") from ex
 
         if key not in self.mine:
             raise HierError("Missing bag at '{key=}' for mark.")
-
 
 
     def act(self, **iops):
@@ -657,7 +794,7 @@ class Mark(ActBase):
         """
         boxer = self.iops['_boxer']  # get boxer name
         box = self.iops['_box']  # get box name
-        key = self.iops['_key']  # get marked bag key
+        key = self.iops['_key']  # get bag key
 
 
 
@@ -693,7 +830,7 @@ class UpdateMark(Mark):
         super(UpdateMark, self).__init__(nabe=nabe, **kwa)
         boxer = self.iops['_boxer']  # get boxer name
         box = self.iops['_box']  # get box name
-        key = self.iops['_key']  # get bag key in mine
+        key = self.iops['_key']  # get bag key
         keys = ("", "boxer", boxer, "box", box, "update", key)
         if keys not in self.mine:
             self.mine[keys] = Bag()  # create bag default value = None
@@ -713,10 +850,11 @@ class UpdateMark(Mark):
         keys = ("", "boxer", boxer, "box", box, "update", key)
         # mark bag tyme
         self.mine[keys].value = self.mine[key]._tyme
+        return self.mine[keys].value
 
 
 @register()
-class ChangeMark(Mark):
+class ChangeMark(BagMark):
     """ChangeMark marks bag in mine for value change special need
     Creates tuple of non-hidden fields in associated bag.
 
@@ -748,7 +886,8 @@ class ChangeMark(Mark):
         super(ChangeMark, self).__init__(nabe=nabe, **kwa)
         boxer = self.iops['_boxer']  # get boxer name
         box = self.iops['_box']  # get box name
-        key = self.iops['_key']  # get bag key in mine
+        key = self.iops['_key']  # get bag key
+
         keys = ("", "boxer", boxer, "box", box, "change", key)
         if keys not in self.mine:
             self.mine[keys] = Bag()  # create bag default value = None
@@ -767,6 +906,7 @@ class ChangeMark(Mark):
         bag = self.mine[key]
         keys = ("", "boxer", boxer, "box", box, "change", key)
         self.mine[keys].value = bag._astuple()  # bag field value tuple as mark
+        return self.mine[keys].value
 
 
 @register()
@@ -801,7 +941,8 @@ class ReupdateMark(Mark):
         super(ReupdateMark, self).__init__(nabe=nabe, **kwa)
         boxer = self.iops['_boxer']  # get boxer name
         box = self.iops['_box']  # get box name
-        key = self.iops['_key']  # get bag key in mine
+        key = self.iops['_key']  # get bag key
+
         keys = ("", "boxer", boxer, "box", box, "reupdate", key)
         if keys not in self.mine:
             self.mine[keys] = Bag()  # create bag default value = None
@@ -821,6 +962,7 @@ class ReupdateMark(Mark):
         keys = ("", "boxer", boxer, "box", box, "reupdate", key)
         # mark bag tyme
         self.mine[keys].value = self.mine[key]._tyme
+        return self.mine[keys].value
 
 
 @register()
@@ -856,7 +998,8 @@ class RechangeMark(Mark):
         super(ChangeMark, self).__init__(nabe=nabe, **kwa)
         boxer = self.iops['_boxer']  # get boxer name
         box = self.iops['_box']  # get box name
-        key = self.iops['_key']  # get bag key in mine
+        key = self.iops['_key']  # get bag key
+
         keys = ("", "boxer", boxer, "box", box, "rechange", key)
         if keys not in self.mine:
             self.mine[keys] = Bag()  # create bag default value = None
@@ -875,6 +1018,9 @@ class RechangeMark(Mark):
         bag = self.mine[key]
         keys = ("", "boxer", boxer, "box", box, "rechange", key)
         self.mine[keys].value = bag._astuple()  # bag field value tuple as mark
+        return self.mine[keys].value
+
+
 
 
 @register(names=('count',))
@@ -940,6 +1086,7 @@ class Count(ActBase):
             bag.value = 0  # start counter
         else:
             bag.value += 1  # inc counter
+        return bag.value
 
 
 @register(names=('discount',))
@@ -999,5 +1146,5 @@ class Discount(ActBase):
         box = self.iops['_box']
         keys = ("", "boxer", boxer, "box", box, "count")
         self.mine[keys].value = None  # reset count to None
-
+        return self.mine[keys].value
 

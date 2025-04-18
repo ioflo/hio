@@ -7,8 +7,9 @@ from __future__ import annotations  # so type hints of classes get resolved late
 import pytest
 
 from hio import Mixin, HierError
+from hio.base import Tymist
 from hio.base.hier import Nabes, ActBase, actify, Need, Box, Boxer, Bag
-from hio.base.hier import Act, Goact, EndAct, Beact
+from hio.base.hier import Act, Goact, EndAct, Beact, LapseMark
 
 from hio.help import Mine
 
@@ -292,7 +293,71 @@ def test_beact_basic():
     assert act() == 32
     assert act.mine.stuff.value == 32
 
+    """Done Test"""
 
+def test_lapse_mark_basic():
+    """Test LapseMark class"""
+
+    LapseMark._clearall()  # clear instances for debugging
+
+    assert "LapseMark" in LapseMark.Registry
+    assert LapseMark.Registry["LapseMark"] == LapseMark
+    assert LapseMark.Names == ()
+
+    with pytest.raises(HierError):
+        act = LapseMark()  # requires iops with boxer=boxer.name
+
+
+    mine = Mine()
+    boxer = Boxer(mine=mine)
+    box = Box(mine=Mine)
+    iops = dict(_boxer=boxer.name, _box=box.name)
+
+    act = LapseMark(iops=iops, mine=mine)
+    assert act.name == 'LapseMark1'
+    assert act.iops == iops
+    assert act.nabe == Nabes.enmark
+    assert act.mine == mine
+    assert act.dock == None
+    assert act.Index == 2
+    assert act.Instances[act.name] == act
+    keys = ("", "boxer", boxer.name, "box", box.name, "lapse")
+    assert keys in act.mine
+    assert not act.mine[keys].value
+    assert act() is None
+    assert act.mine[keys].value is None
+
+    LapseMark._clearall()  # clear instances for debugging
+    tymist = Tymist(tock=1.0)
+    mine = Mine()
+    boxer = Boxer(tymth=tymist.tymen(), mine=mine)
+    assert boxer.tyme == tymist.tyme == 0.0
+    box = Box(mine=Mine)
+    iops = dict(_boxer=boxer.name, _box=box.name)
+
+    act = LapseMark(iops=iops, mine=mine)
+    assert act.name == 'LapseMark0'
+    assert act.iops == iops
+    assert act.nabe == Nabes.enmark
+    assert act.mine == mine
+    assert act.dock == None
+    assert act.Index == 1
+    assert act.Instances[act.name] == act
+
+    keys = ("", "boxer", boxer.name, "box", box.name, "lapse")
+    assert keys in act.mine
+    assert act.mine[keys].value is None
+    assert act.mine[keys]._tyme is None
+    assert act.mine[keys]._now is None
+    boxer.rewind()
+    assert act.mine[keys].value is None
+    assert act.mine[keys]._tyme is None
+    assert act.mine[keys]._now == 0.0
+
+    assert act() == 0.0
+    assert act.mine[keys].value == 0.0
+    assert act.mine[keys]._tyme == 0.0
+    assert act.mine[keys]._now == 0.0
 
     """Done Test"""
 
@@ -303,3 +368,4 @@ if __name__ == "__main__":
     test_goact_basic()
     test_endact_basic()
     test_beact_basic()
+    test_lapse_mark_basic()

@@ -15,13 +15,25 @@ from ..tyming import Tymee
 from ..doing import Doer
 from ...hioing import Mixin, HierError
 from .hiering import Nabes, WorkDom, ActBase
-from .acting import (Act, Goact, Beact, UpdateMark, ChangeMark,
-                     ReupdateMark, RechangeMark, Count, Discount)
+from .acting import (Act, Goact, Beact, UpdateMark, ReupdateMark,
+                     ChangeMark, RechangeMark,
+                     LapseMark,
+                     Count, Discount)
 from .bagging import Bag
 from .needing import Need
 from ...help import modify, Mine, Renam
 
 
+# Regular expression to detect special need 'count' condition
+LAPSEREX = r'^\s*(?P<lps>lapse)(?P<cmp>(\s|\W|\Z).*)'
+Rexlps = re.compile(LAPSEREX)  # compile is faster
+"""Usage:
+if m := Rexlps.match("lapse >= 1.0"):
+    lps, cmp = m.group("elp","cmp")
+
+if not Rexlps.match("lapse >= 1.0"):
+    return
+"""
 
 
 # Regular expression to detect special need 'count' condition
@@ -31,9 +43,10 @@ Rexcnt = re.compile(COUNTREX)  # compile is faster
 if m := Rexcnt.match("count >= 1"):
     cnt, cmp = m.group("cnt","cmp")
 
-if not Recnt.match("count >= 1"):
+if not Rexcnt.match("count >= 1"):
     return
 """
+
 
 
 nabeDispatch = dict(predo="preacts",
@@ -253,8 +266,6 @@ class Boxer(Tymee):
         boxes (dict): all boxes mapping of (box name, box) pairs
         first (Box | None):  beginning box
         box (Box | None):  active box
-        rendos (list[Box]): boxes to re-endo on this run (boxes retained)
-        endos (list[Box]): boxes to endo on this begin/run
 
     Properties:
         name (str): unique identifier of instance
@@ -262,82 +273,6 @@ class Boxer(Tymee):
     Hidden:
         _name (str): unique identifier of instance
 
-
-    Cycle Nabe Order
-
-    Init:
-
-    all tymes in bags are None from init
-    all tyme in marks are None
-
-
-
-    tyme = start tyme (default ) 0.0
-    Begin:
-
-        First box assigned to active box
-        actives = active box.pile
-        .rendos is empty
-        .endos == actives
-        exdos is empty
-        rexdos is empty
-
-        for each box in endos top down:
-            precond:
-                if not all true then done with boxwork
-                    End
-
-        for box in rendos top down: (empty)
-            remark rendo mark subcontext
-            rendo
-        for box in endos top down: (not empty)
-            enmark endo mark subcontext  (mark tyme set to bag._tyme which is None)
-            endo
-        If complete:
-            End boxwork boxer.want stop desire stop
-        for box in actives top down:
-            redo
-            ando
-            if godo need is true:  (short circuit redo of lower level boxes)
-                compute rendos endos exdos rexdos. save box.rendos and box.endos
-                for each box in endos (top down):
-                    predo:
-                        if not all true then do not proceed with godo return
-
-                for box in exdos bottom up:
-                    exdos
-                for box in rexdos bottom up:
-                    rexdos
-                set new .active box
-                break
-        return from prep True == completed begin  (or yield if generator)
-
-
-    tyme increment
-    Run:
-        for box in rendos: (may be empty)
-            remark rendo mark subcontext
-            rendo
-        for box in endos: (may be empty)
-            enmark endo mark subcontext  (mark tyme set to bag._tyme which is None)
-            endo
-        If complete:
-            End boxwork boxer.want stop desire stop
-        for box in actives top down:
-            redo
-            ando
-            if godo need is true:   (short circuit redo of lower level boxes)
-                compute rendos endos exdos rexdos,.
-                    predo:
-                        if not all true then do not proceed with godo return
-
-                for box in exdos bottom up:
-                    exdo
-                for box in rexdos bottom up:
-                    rexdo
-                set new .active box
-                break
-        return from run False == not done continue  (or if generator yield)
 
     """
     def __init__(self, *, name='boxer', mine=None, dock=None, doer=None, **kwa):
@@ -360,8 +295,6 @@ class Boxer(Tymee):
         self.boxes = {}
         self.first = None  # box to start in
         self.box = None  # current active box  whose pile is active pile
-        self.rendos = []  # list of re-endo boxes for this run (boxes retained)
-        self.endos = []  # list of endo boxes for this begin/run
 
 
     @property
@@ -386,52 +319,75 @@ class Boxer(Tymee):
         self._name = name
 
 
-    def wind(self, tymth):
-        """
-        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+    def wind(self, tymth=None):
+        """Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
         Override in subclasses to update any dependencies on a change in
         tymist.tymth base
+
+        Parameters:
+            tymth (Callable|None):  closure of injected tyme from tymist.tymen()
+                                    None if not yet injected
         """
-        super().wind(tymth)
+        super().wind(tymth=tymth)
         for bag in self.mine.values():
             if isinstance(bag, Bag):
-                bag._wind(tymth=tymth)
+                bag._wind(tymth=self.tymth)
+
+    def rewind(self, tymth=None):
+        """Inject new tymist.tymth as new ._tymth when tymth is not None.
+        Changes tymist.tyme base when not None. Winds bags in .mine.
+        When tymth is None then use .tymth
+
+        Parameters:
+            tymth (Callable|None):  closure of injected tyme from tymist.tymen()
+                                    None if not yet injected
+        """
+        if tymth is not None:
+            super().wind(tymth=tymth)
+        for bag in self.mine.values():
+            if isinstance(bag, Bag):
+                bag._wind(tymth=self.tymth)
 
 
     def begin(self):
-        """Prepare for first pass
+        """Prepare for and run first pass
         """
         if not self.first:
             self.first = list(self.boxes.values())[0]  # first box in boxes is default first
         self.box = self.first
-        self.rendos = []  # first pass no rendo of any boxes
-        self.endos = self.box.pile
-        if not self.predo():  # uses .endos preconditions for entry not satisfied
+        rendos = []  # first pass no rendo (re-enter) of any boxes
+        endos = self.box.pile  # endo (enter) all boxes in pile potential entry
+        if not self.predo(endos):  # predo nabe, action preacts not satisfied
             # do end stuff since no entry yet then no exdo
             self.box = None  # no active box anymore
-            return False  # signal end beginning did not complete
+            return True  # signal end before first pass
 
-        return True  # successfully completed beginning
+        # first run
+        self.rendo(rendos)  # rendo nabe, action remarks and renacts
+        self.endo(endos)  # endo nabe, action enmarks and enacts
+
+        for box in self.box.pile:  # top down redo
+            for react in box.reacts:   # redo nabe top down
+                react()
+
+        return False  # not end yet keep going
 
 
     def run(self):
-        """Execute pass
+        """Execute pass after tyme as ticked so lapsed time is known
         """
-        self.rendo()  # uses saved .rendos to re-mark and re-endo
-        self.rendos = []  # re-endo completed so make empty
-        self.endo()  # uses saved .endos to en-mark and endo
-        self.endos = []  # endo completed so make empty
+        rendos = []
+        endos = []
 
-        for box in self.box.pile:  # top down
-            for react in box.reacts:   # redo nabe top down
-                react()
-            for anact in box.anacts:   # ando nabe top down
+        if self.endial():  # previous pass actioned desire to end
+            self.end()  # exdos all active boxes in self.box.pile
+            self.box = None  # no active box
+            return True  # signal end after last pass
+
+        transit = False
+        for box in self.box.pile:  # top down evaluate andos and godos
+            for anact in box.anacts:   # ando nabe top down, after tyme tick
                 anact()
-
-            if self.endial():  # actioned desire to end
-                self.end()  # exdos all active boxes in self.box.pile
-                self.box = None  # no active box
-                return True  # beginning completed already
 
             for goact in box.goacts:  # godo nabe top down
                 if dest := goact():  # transition condition satisfied
@@ -440,10 +396,19 @@ class Boxer(Tymee):
                         continue  # keep trying
                     self.exdo(exdos)  # exdo bottom up
                     self.rexdo(rexdos)  # rexdo bottom up  (boxes retained)
-                    self.rendos = rendos  # save for next pass
-                    self.endos = endos  # save for next pass
                     self.box = dest  # set new active box
-                    return False  # transition so stop iteration over pile
+                    transit = True
+                    break
+
+            if transit:
+                break
+
+        self.rendo(rendos)  # rendo nabe, action remarks and renacts
+        self.endo(endos)  # endo nabe, action enmarks and enacts
+
+        for box in self.box.pile:  # top down
+            for react in box.reacts:   # redo nabe top down
+                react()
 
         return False  # continue running not done
 
@@ -473,22 +438,21 @@ class Boxer(Tymee):
         return False
 
 
-    def predo(self, endos=None):
+    def predo(self, predos):
         """Evaluate preconditions for entry of boxes in endos in top down order
 
         Parameters:
-            endos (None|list[Box]): boxes to be entered if predos are satisfied
-                                when arg is None then defaults to .endos
+            predos (list[Box]): boxes to be predo (checked for entry)
+                         given all their preacts are  satisfied
 
         Returns:
-            met (bool): True means all preconditions are satisfied for endos.
+            met (bool): True means all preconditions are satisfied for predos
                         False otherwise
                     When no preconditions then returns True.
 
         """
-        endos = endos if endos is not None else self.endos
         met = True
-        for box in self.endos:
+        for box in predos:
             for preact in box.preacts:
                 if not preact():
                     met = False
@@ -498,23 +462,30 @@ class Boxer(Tymee):
         return met
 
 
-    def rendo(self):
+    def rendo(self, rendos):
         """Action re-mark (remarks) and re-endo (renacts) acts of boxes in
         .rendos in top down order. Boxes retained in hierarchical state.
         Re-enter box
+
+        Parameters:
+            rendos (list[Box]): boxes to be rendo (re-entered)
         """
-        for box in self.rendos:
+        for box in rendos:
             for mark in box.remarks:
                 mark()
             for renact in box.renacts:
                 renact()
 
 
-    def endo(self):
+    def endo(self, endos):
         """Action e-mark (emacts) and endo (enacts) acts of boxes in .endos
         in top down order. Enter box.
+
+        Parameters:
+            endos (list[Box]): boxes to be endo (entered)
+
         """
-        for box in self.endos:
+        for box in endos:
             for mark in box.enmarks:
                 mark()
             for enact in box.enacts:
@@ -525,7 +496,7 @@ class Boxer(Tymee):
         """Action exacts of boxes in exdos in bottom up order. Exit box.
 
         Parameters:
-            exdos (None|list[Box]): boxes to be exdo in bottom up order
+            exdos (list[Box]): boxes to be exdo in bottom up order
 
         """
         for box in exdos:
@@ -538,7 +509,7 @@ class Boxer(Tymee):
         Boxes retained in hierarchical state. Re-exit box.
 
         Parameters:
-            rexdos (None|list[Box]): boxes to be re-exdo in bottom up order
+            rexdos (list[Box]): boxes to be re-exdo in bottom up order
         """
         for box in rexdos:
             for rexact in box.rexacts:
@@ -930,6 +901,24 @@ class Boxer(Tymee):
                     m.box.remarks.append(mark)  # update is always enmark
 
                 _expr = (f"M.{mk}.value != M.{key}._astuple()")
+
+            elif match := Rexlps.match(cond):  # lapse special need
+                mks =  ("", "boxer", self.name, "box", m.box.name, "lapse")
+                mk = self.mine.tokey(mks)  # mark bag key
+                name = LapseMark.__name__
+                found = False
+                for mark in m.box.enmarks:  # check if already has mark for key
+                    if mark.name == name:
+                        found = True
+                        break
+                if not found:  # no preexisting ElapseMark for this box
+                    mark = LapseMark(name=name, iops=iops, mine=self.mine, dock=self.dock)
+                    m.box.enmarks.append(mark)  # lapse is always enmark
+
+                _, cmp = match.group("lps", "cmp")
+
+                _expr = (f"((M.{mk}.value is not None) and (M.{mk}._now is not None)"
+                         f" and (M.{mk}._now - M.{mk}.value)" + cmp + ")")
 
             elif match := Rexcnt.match(cond):  # count special need
                 mks =  ("", "boxer", self.name, "box", m.box.name, "count")

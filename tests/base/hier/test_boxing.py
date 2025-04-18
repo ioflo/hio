@@ -23,8 +23,55 @@ from dataclasses import dataclass, astuple, asdict, field
 from hio import hioing
 from hio.help import helping, modify, Mine, Renam
 from hio.base import Tymist
-from hio.base.hier import (Nabes, Rexcnt, Box, Boxer, Boxery, ActBase, Act,
-                           EndAct, Bag)
+from hio.base.hier import (Nabes, Rexcnt, Rexlps, Bag, Box, Boxer, Boxery,
+                           ActBase, Act, EndAct, )
+
+
+def test_rexelp():
+    """Test regular expression Rexlps special need condition 'lapse' """
+    cond = "lapse"
+    assert Rexlps.match(cond).group("lps", "cmp") == ("lapse", "")
+
+    cond = "lapse>=2.0"
+    assert Rexlps.match(cond).group("lps", "cmp") == ("lapse", ">=2.0")
+
+    cond = "lapse>=2.0\nwhat"  # ignores newline and stuff after
+    assert Rexlps.match(cond).group("lps", "cmp") == ("lapse", ">=2.0")
+
+    cond = " lapse >= 2.0 "  # ignores whitespace before lapse
+    assert Rexlps.match(cond).group("lps", "cmp") == ("lapse", " >= 2.0 ")
+
+    cond = " lapse\t >= 2.0 "  # any whitespace after lapse
+    assert Rexlps.match(cond).group("lps", "cmp") == ('lapse', '\t >= 2.0 ')
+
+    cond = "lapse != 2"  # any whitespace after lapse
+    assert Rexlps.match(cond).group("lps", "cmp") == ("lapse", " != 2")
+
+    cond = "lapse > 2"  # any whitespace after lapse
+    assert Rexlps.match(cond).group("lps", "cmp") == ("lapse", " > 2")
+
+    cond = "lapse == 2"  # any whitespace after lapse
+    assert Rexlps.match(cond).group("lps", "cmp") == ("lapse", " == 2")
+
+    cond = "elapsed >= 2"  # does not match other word with 'lapse' prefix
+    assert not Rexlps.match(cond)
+
+    cond = "elapse1 >= 2"  # does not match other word with 'lapse' prefix
+    assert not Rexlps.match(cond)
+
+    cond = "elapse_ >= 2"  # does not match other word with 'lapse' prefix
+    assert not Rexlps.match(cond)
+
+    cond = "_elapse >= 2"  # does not match other word with 'lapse' suffix
+    assert not Rexlps.match(cond)
+
+    cond = "0elapse >= 2"  # does not match other word with 'lapse' suffix
+    assert not Rexlps.match(cond)
+
+    cond = "my lapse >= 2"  # does not match other word with 'lapse' suffix
+    assert not Rexlps.match(cond)
+
+    """Done Test"""
 
 
 def test_rexcnt():
@@ -232,8 +279,6 @@ def test_boxer_basic():
     assert boxer.boxes == {}
     assert boxer.first == None
     assert boxer.box == None
-    assert boxer.rendos == []
-    assert boxer.endos == []
 
     with pytest.raises(hioing.HierError):
         boxer.name = "A.B"
@@ -249,6 +294,10 @@ def test_boxer_basic():
     assert boxer.mine.test.value == None
     assert boxer.mine.test._tymth == None
     assert boxer.mine.test._now == None
+    assert boxer.mine.test._tyme == None
+    boxer.rewind()
+    assert boxer.mine.test._tymth
+    assert boxer.mine.test._now == boxer.tyme
     assert boxer.mine.test._tyme == None
 
     boxer.wind(tymist.tymen())
@@ -391,15 +440,17 @@ def test_boxer_make_run():
     assert len(boxer.boxes) == 6
     assert list(boxer.boxes) == ['top', 'mid', 'bot0', 'bot1', 'bot2', 'done']
 
+    assert mine.count.value is None
+
     boxer.begin()
     assert boxer.box.name == "top"
-    assert mine.count.value is None
-    boxer.run()
-    assert boxer.box.name == "bot1"  # half trans at end of first pass
     assert mine.count.value == 0
     boxer.run()
-    assert boxer.box.name == "bot2"
+    assert boxer.box.name == "bot1"  # half trans at end of first pass
     assert mine.count.value == 1
+    boxer.run()
+    assert boxer.box.name == "bot2"
+    assert mine.count.value == 2
     boxer.run()
     assert boxer.box.name == "done"
     assert mine.count.value == 2
@@ -450,11 +501,15 @@ def test_boxer_make_run_on_update():
     assert list(boxer.boxes) == ['top', 'mid', 'bot0', 'bot1', 'bot2', 'done']
     boxer.wind(tymth=tymist.tymen())
 
-    boxer.begin()
-    assert boxer.box.name == "top"  # default first
     assert mine.count.value is None
     assert mine.count._tyme is None
     assert mine._boxer_boxer_box_mid_update_count.value is None
+
+    boxer.begin()
+    assert boxer.box.name == "top"  # default first
+    assert mine.count.value == None
+    assert mine.count._tyme == None
+    assert mine._boxer_boxer_box_mid_update_count.value == None
     boxer.run()
     assert boxer.box.name == "bot1"  # half trans at end of first pass
     assert mine.count.value is None
@@ -513,11 +568,15 @@ def test_boxer_make_run_on_change():
     assert list(boxer.boxes) == ['top', 'mid', 'bot0', 'bot1', 'bot2', 'done']
     boxer.wind(tymth=tymist.tymen())
 
+    assert mine.count.value is None
+    assert mine.count._tyme is None
+    assert mine._boxer_boxer_box_mid_change_count.value is None
+
     boxer.begin()
     assert boxer.box.name == "top"  # default first
     assert mine.count.value is None
     assert mine.count._tyme is None
-    assert mine._boxer_boxer_box_mid_change_count.value is None
+    assert mine._boxer_boxer_box_mid_change_count.value == (None, )
     boxer.run()
     assert boxer.box.name == "bot1"  # half trans at end of first pass
     assert mine.count.value is None
@@ -569,15 +628,17 @@ def test_boxer_make_run_on_count():
     assert boxer.boxes["mid"].reacts
     assert boxer.boxes["mid"].exacts
 
+    assert mine._boxer_boxer_box_mid_count.value is None
+
     boxer.begin()
     assert boxer.box.name == "bot0"   # since set as first
-    assert mine._boxer_boxer_box_mid_count.value is None
-    boxer.run()
-    assert boxer.box.name == "bot1"  # half trans at end of first pass
     assert mine._boxer_boxer_box_mid_count.value == 0
     boxer.run()
-    assert boxer.box.name == "bot2"
+    assert boxer.box.name == "bot1"  # half trans at end of first pass
     assert mine._boxer_boxer_box_mid_count.value == 1
+    boxer.run()
+    assert boxer.box.name == "bot2"
+    assert mine._boxer_boxer_box_mid_count.value == 2
     boxer.run()
     assert boxer.box.name == "done"
     assert mine._boxer_boxer_box_mid_count.value is None
@@ -591,11 +652,6 @@ def test_boxer_make_run_on_count():
 def test_boxer_make_run_verbs():
     """Test make method of Boxer with all verbs
 
-    Need to test do with exec statment like
-        mine.stuff = Bag()
-        mine.stuff.value = 0
-        deed = "M.stuff.value += 1"
-        do(deed)
     """
     tymist = Tymist()
 
@@ -639,26 +695,128 @@ def test_boxer_make_run_verbs():
     assert boxer.boxes["mid"].reacts
     assert boxer.boxes["mid"].exacts
 
-    boxer.begin()
-    assert boxer.box.name == "bot0"   # since set as first
     assert mine._boxer_boxer_box_mid_count.value is None
     assert mine.stuff.value == 0
     assert mine.crud.value == None
-    boxer.run()
-    assert boxer.box.name == "bot1"  # half trans at end of first pass
+
+    boxer.begin()
+    assert boxer.box.name == "bot0"   # since set as first
     assert mine._boxer_boxer_box_mid_count.value == 0
     assert mine.stuff.value == 1
     assert mine.crud.value == None
     boxer.run()
-    assert boxer.box.name == "bot2"
+    assert boxer.box.name == "bot1"  # half trans at end of first pass
     assert mine._boxer_boxer_box_mid_count.value == 1
     assert mine.stuff.value == 2
     assert mine.crud.value == 16
+    boxer.run()
+    assert boxer.box.name == "bot2"
+    assert mine._boxer_boxer_box_mid_count.value == 2
+    assert mine.stuff.value == 2
+    assert mine.crud.value == True
     boxer.run()
     assert boxer.box.name == "done"
     assert mine._boxer_boxer_box_mid_count.value is None
     assert mine.stuff.value == 2
     assert mine.crud.value == True
+    boxer.run()
+    assert boxer.box is None
+    assert boxer.endial()
+
+    """Done Test"""
+
+def test_boxer_make_run_lapse():
+    """Test make method of Boxer with lapse condition
+
+    """
+    def fun(bx, go, do, on, at, be, *pa):
+        bx(name='top')
+        bx('mid', 'top')
+        at('redo')
+        do("count")
+        at("exdo")
+        do("discount")
+        go('done', on("count >= 5"))
+        bx('bot0', 'mid', first=True)
+        go("next", on("lapse >= 2.0"))
+        bx('bot1')  # over defaults to same as prev box
+        go("next", on("lapse >= 2.0"))
+        bx('bot2')  # over defaults to same as prev box
+        go("bot0")
+        bx(name='done', over=None)
+        do('end')
+
+
+    tymist = Tymist(tock=1.0)
+    mine = Mine()
+    # init mine Bags
+    mine.stuff = Bag()
+    mine.stuff.value = 0
+    mine.crud = Bag()
+
+    boxer = Boxer(tymth=tymist.tymen(), mine=mine)
+    assert boxer.boxes == {}
+    mods = boxer.make(fun)
+    assert len(boxer.boxes) == 6
+    assert list(boxer.boxes) == ['top', 'mid', 'bot0', 'bot1', 'bot2', 'done']
+    boxer.rewind()
+    assert boxer.boxes["mid"].reacts
+    assert boxer.boxes["mid"].exacts
+
+    assert mine._boxer_boxer_box_mid_count.value is None
+    assert mine._boxer_boxer_box_bot0_lapse.value is None
+    assert mine._boxer_boxer_box_bot0_lapse._now == 0.0
+    assert mine._boxer_boxer_box_bot1_lapse.value == None
+    assert mine._boxer_boxer_box_bot1_lapse._now == 0.0
+
+    boxer.begin()
+    assert boxer.box.name == "bot0"   # since set as first
+    assert mine._boxer_boxer_box_mid_count.value == 0
+    assert mine._boxer_boxer_box_bot0_lapse.value == 0.0
+    assert mine._boxer_boxer_box_bot0_lapse._now == 0.0
+    tymist.tick()
+    boxer.run()
+    assert boxer.box.name == "bot0"   # since set as first
+    assert mine._boxer_boxer_box_mid_count.value == 1
+    assert mine._boxer_boxer_box_bot0_lapse.value == 0.0
+    assert mine._boxer_boxer_box_bot0_lapse._now == 1.0
+    tymist.tick()
+    boxer.run()
+    assert boxer.box.name == "bot1"  # half trans at end of first pass
+    assert mine._boxer_boxer_box_mid_count.value == 2
+    assert mine._boxer_boxer_box_bot0_lapse.value == 0.0
+    assert mine._boxer_boxer_box_bot0_lapse._now == 2.0
+    assert mine._boxer_boxer_box_bot1_lapse.value == 2.0
+    assert mine._boxer_boxer_box_bot1_lapse._now == 2.0
+    tymist.tick()
+    boxer.run()
+    assert boxer.box.name == "bot1"
+    assert mine._boxer_boxer_box_mid_count.value == 3
+    assert mine._boxer_boxer_box_bot0_lapse.value == 0.0
+    assert mine._boxer_boxer_box_bot0_lapse._now == 3.0
+    assert mine._boxer_boxer_box_bot1_lapse.value == 2.0
+    assert mine._boxer_boxer_box_bot1_lapse._now == 3.0
+    tymist.tick()
+    boxer.run()
+    assert boxer.box.name == "bot2"
+    assert mine._boxer_boxer_box_mid_count.value == 4
+    assert mine._boxer_boxer_box_bot0_lapse.value == 0.0
+    assert mine._boxer_boxer_box_bot0_lapse._now == 4.0
+    assert mine._boxer_boxer_box_bot1_lapse.value == 2.0
+    assert mine._boxer_boxer_box_bot1_lapse._now == 4.0
+    tymist.tick()
+    boxer.run()
+    assert boxer.box.name == "bot0"
+    assert mine._boxer_boxer_box_mid_count.value == 5
+    assert mine._boxer_boxer_box_bot0_lapse.value == 5.0
+    assert mine._boxer_boxer_box_bot0_lapse._now == 5.0
+    assert mine._boxer_boxer_box_bot1_lapse.value == 2.0
+    assert mine._boxer_boxer_box_bot1_lapse._now == 5.0
+    tymist.tick()
+    boxer.run()
+    assert boxer.box.name == "done"
+    assert mine._boxer_boxer_box_mid_count.value is None
+    tymist.tick()
     boxer.run()
     assert boxer.box is None
     assert boxer.endial()
@@ -980,6 +1138,7 @@ def test_concept_bx_global():
     """Done Test"""
 
 if __name__ == "__main__":
+    test_rexelp()
     test_rexcnt()
     test_box_basic()
     test_boxer_exen()
@@ -991,6 +1150,7 @@ if __name__ == "__main__":
     test_boxer_make_run_on_change()
     test_boxer_make_run_on_count()
     test_boxer_make_run_verbs()
+    test_boxer_make_run_lapse()
     test_boxery_basic()
     test_concept_bx_nonlocal()
     test_concept_bx_global()
