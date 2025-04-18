@@ -375,7 +375,7 @@ def test_client_request_echo_port_empty():
 
     """
     with tcp.openServer(port = 80, bufsize=131072) as alpha:
-        if sys.platform == "linux":
+        if sys.platform == "linux" or sys.platform == "win32":
             assert alpha.ha == ('', 80)
             assert alpha.eha == ('127.0.0.1', 80)
         else:
@@ -399,7 +399,7 @@ def test_client_request_echo_port_empty():
             assert beta.requester.portOptional  # portOptional
             assert  beta.requester.lines == []
 
-            if sys.platform != "linux":
+            if sys.platform != "linux" and sys.platform != "win32":
                 # connect Client Beta to Server Alpha
                 while True:
                     beta.connector.serviceConnect()
@@ -445,7 +445,7 @@ def test_client_request_echo_port_empty():
                               b'\r\nAccept: application/json\r\n\r\n')
 
 
-            if sys.platform != "linux":
+            if sys.platform != "linux" and sys.platform != "win32":
                 beta.connector.tx(msgOut)
                 while beta.connector.txbs and not ixBeta.rxbs :
                     beta.connector.serviceSends()

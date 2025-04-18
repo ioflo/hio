@@ -13,14 +13,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ macos-latest, ubuntu-latest ]
+        os: [ macos-latest, ubuntu-latest, windows-latest ]
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python 3.13.x
         uses: actions/setup-python@v2
         with:
           python-version: '>=3.13.1  <3.14'
-      - name: Install dependencies
+      - name: Install dependencies (Unix)
+        if: runner.os != 'Windows'
         run: |
           sudo mkdir -p /usr/local/var/hio/test
           sudo mkdir -p /usr/local/var/hio/logs
@@ -29,6 +30,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          mkdir -Force -Path "C:usr\local\var\hio\test"
+          mkdir -Force -Path "C:usr\local\var\hio\logs"
+          mkdir -Force -Path "C:usr\local\var\hio\wirelogs"
+          python -m pip install --upgrade pip
+          pip install pytest
+          if (Test-Path -Path "requirements.txt") { pip install -r requirements.txt }
       - name: Run hio tests
         run: |
           pytest
