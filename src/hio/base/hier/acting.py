@@ -700,6 +700,59 @@ class LapseMark(Mark):
 
 
 @register()
+class RelapseMark(Mark):
+    """RelapseMark marks box in mine for tyme relapse special need. Enables
+    condition to transit based on elapsed time in a box.
+
+    """
+    Index = 0  # naming index for default names of this subclasses instances
+
+
+    def __init__(self, nabe=Nabes.enmark, **kwa):
+        """Initialization method for instance.
+
+        Inherited Parameters:
+            name (str|None): unique name of this instance. When None then
+                generate name from .Index
+            iops (dict|None): input-output-parameters for .act. When None then
+                set to empty dict.
+            nabe (str): action nabe (context) for .act
+            mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
+            dock (None|Dock): durable bags in dock (on disc) shared by boxwork
+
+        Parameters:
+
+        Used iops:
+            _boxer (str): boxer name. Implicit iop injected by verb
+            _box (str): box name in boxer.  Implicit iop injected by verb
+            _key (str): marked bag key. Injected by on verb
+
+
+        """
+        super(RelapseMark, self).__init__(nabe=nabe, **kwa)
+        boxer = self.iops['_boxer']  # get boxer name
+        box = self.iops['_box']  # get box name
+        keys = ("", "boxer", boxer, "box", box, "relapse")
+        if keys not in self.mine:
+            self.mine[keys] = Bag()  # create bag default value = None
+
+
+    def act(self, **iops):
+        """Act called by ActBase.
+
+        Parameters:
+            iops (dict): input output parms
+
+        """
+        boxer = self.iops['_boxer']  # get boxer name
+        box = self.iops['_box']  # get box name
+        keys = ("", "boxer", boxer, "box", box, "relapse")
+        # mark box tyme via bag._now tyme
+        self.mine[keys].value = self.mine[keys]._now  # _now tyme of mark bag
+        return self.mine[keys].value
+
+
+@register()
 class BagMark(Mark):
     """BagMark (Mine Mark) is base classubclass of ActBase whose .act marks a
     bag value when in a box for a special need condition.

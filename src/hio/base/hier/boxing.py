@@ -15,9 +15,9 @@ from ..tyming import Tymee
 from ..doing import Doer
 from ...hioing import Mixin, HierError
 from .hiering import Nabes, WorkDom, ActBase
-from .acting import (Act, Goact, Beact, UpdateMark, ReupdateMark,
+from .acting import (Act, Goact, Beact, LapseMark, RelapseMark,
+                     UpdateMark, ReupdateMark,
                      ChangeMark, RechangeMark,
-                     LapseMark,
                      Count, Discount)
 from .bagging import Bag
 from .needing import Need
@@ -29,9 +29,20 @@ LAPSEREX = r'^\s*(?P<lps>lapse)(?P<cmp>(\s|\W|\Z).*)'
 Rexlps = re.compile(LAPSEREX)  # compile is faster
 """Usage:
 if m := Rexlps.match("lapse >= 1.0"):
-    lps, cmp = m.group("elp","cmp")
+    lps, cmp = m.group("lps","cmp")
 
 if not Rexlps.match("lapse >= 1.0"):
+    return
+"""
+
+# Regular expression to detect special need 'count' condition
+RELAPSEREX = r'^\s*(?P<rlp>relapse)(?P<cmp>(\s|\W|\Z).*)'
+Rexrlp = re.compile(RELAPSEREX)  # compile is faster
+"""Usage:
+if m := Rexrlp.match("relapse >= 1.0"):
+    rel, cmp = m.group("rlp","cmp")
+
+if rel Rexrlp.match("relapse >= 1.0"):
     return
 """
 
@@ -916,6 +927,24 @@ class Boxer(Tymee):
                     m.box.enmarks.append(mark)  # lapse is always enmark
 
                 _, cmp = match.group("lps", "cmp")
+
+                _expr = (f"((M.{mk}.value is not None) and (M.{mk}._now is not None)"
+                         f" and (M.{mk}._now - M.{mk}.value)" + cmp + ")")
+
+            elif match := Rexrlp.match(cond):  # relapse special need
+                mks =  ("", "boxer", self.name, "box", m.box.name, "relapse")
+                mk = self.mine.tokey(mks)  # mark bag key
+                name = RelapseMark.__name__
+                found = False
+                for mark in m.box.enmarks:  # check if already has mark for key
+                    if mark.name == name:
+                        found = True
+                        break
+                if not found:  # no preexisting ElapseMark for this box
+                    mark = RelapseMark(name=name, iops=iops, mine=self.mine, dock=self.dock)
+                    m.box.enmarks.append(mark)  # lapse is always enmark
+
+                _, cmp = match.group("rlp", "cmp")
 
                 _expr = (f"((M.{mk}.value is not None) and (M.{mk}._now is not None)"
                          f" and (M.{mk}._now - M.{mk}.value)" + cmp + ")")

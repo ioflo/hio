@@ -23,11 +23,12 @@ from dataclasses import dataclass, astuple, asdict, field
 from hio import hioing
 from hio.help import helping, modify, Mine, Renam
 from hio.base import Tymist
-from hio.base.hier import (Nabes, Rexcnt, Rexlps, Bag, Box, Boxer, Boxery,
+from hio.base.hier import (Nabes, Rexcnt, Rexlps, Rexrlp, Bag,
+                           Box, Boxer, Boxery,
                            ActBase, Act, EndAct, )
 
 
-def test_rexelp():
+def test_rexlps():
     """Test regular expression Rexlps special need condition 'lapse' """
     cond = "lapse"
     assert Rexlps.match(cond).group("lps", "cmp") == ("lapse", "")
@@ -53,23 +54,70 @@ def test_rexelp():
     cond = "lapse == 2"  # any whitespace after lapse
     assert Rexlps.match(cond).group("lps", "cmp") == ("lapse", " == 2")
 
-    cond = "elapsed >= 2"  # does not match other word with 'lapse' prefix
+    cond = "lapsed >= 2"  # does not match other word with 'lapse' prefix
     assert not Rexlps.match(cond)
 
-    cond = "elapse1 >= 2"  # does not match other word with 'lapse' prefix
+    cond = "lapse1 >= 2"  # does not match other word with 'lapse' prefix
     assert not Rexlps.match(cond)
 
-    cond = "elapse_ >= 2"  # does not match other word with 'lapse' prefix
+    cond = "lapse_ >= 2"  # does not match other word with 'lapse' prefix
     assert not Rexlps.match(cond)
 
-    cond = "_elapse >= 2"  # does not match other word with 'lapse' suffix
+    cond = "_lapse >= 2"  # does not match other word with 'lapse' suffix
     assert not Rexlps.match(cond)
 
-    cond = "0elapse >= 2"  # does not match other word with 'lapse' suffix
+    cond = "0lapse >= 2"  # does not match other word with 'lapse' suffix
     assert not Rexlps.match(cond)
 
     cond = "my lapse >= 2"  # does not match other word with 'lapse' suffix
     assert not Rexlps.match(cond)
+
+    """Done Test"""
+
+
+def test_rexrlp():
+    """Test regular expression Rexrlp special need condition 'relapse' """
+    cond = "relapse"
+    assert Rexrlp.match(cond).group("rlp", "cmp") == ("relapse", "")
+
+    cond = "relapse>=2.0"
+    assert Rexrlp.match(cond).group("rlp", "cmp") == ("relapse", ">=2.0")
+
+    cond = "relapse>=2.0\nwhat"  # ignores newline and stuff after
+    assert Rexrlp.match(cond).group("rlp", "cmp") == ("relapse", ">=2.0")
+
+    cond = " relapse >= 2.0 "  # ignores whitespace before relapse
+    assert Rexrlp.match(cond).group("rlp", "cmp") == ("relapse", " >= 2.0 ")
+
+    cond = " relapse\t >= 2.0 "  # any whitespace after relapse
+    assert Rexrlp.match(cond).group("rlp", "cmp") == ('relapse', '\t >= 2.0 ')
+
+    cond = "relapse != 2"  # any whitespace after relapse
+    assert Rexrlp.match(cond).group("rlp", "cmp") == ("relapse", " != 2")
+
+    cond = "relapse > 2"  # any whitespace after relapse
+    assert Rexrlp.match(cond).group("rlp", "cmp") == ("relapse", " > 2")
+
+    cond = "relapse == 2"  # any whitespace after relapse
+    assert Rexrlp.match(cond).group("rlp", "cmp") == ("relapse", " == 2")
+
+    cond = "relapsed >= 2"  # does not match other word with 'relapse' prefix
+    assert not Rexrlp.match(cond)
+
+    cond = "relapse1 >= 2"  # does not match other word with 'relapse' prefix
+    assert not Rexrlp.match(cond)
+
+    cond = "relapse_ >= 2"  # does not match other word with 'relapse' prefix
+    assert not Rexrlp.match(cond)
+
+    cond = "_relapse >= 2"  # does not match other word with 'relapse' suffix
+    assert not Rexrlp.match(cond)
+
+    cond = "0relapse >= 2"  # does not match other word with 'relapse' suffix
+    assert not Rexrlp.match(cond)
+
+    cond = "my relapse >= 2"  # does not match other word with 'relapse' suffix
+    assert not Rexrlp.match(cond)
 
     """Done Test"""
 
@@ -823,6 +871,81 @@ def test_boxer_make_run_lapse():
 
     """Done Test"""
 
+def test_boxer_make_run_relapse():
+    """Test make method of Boxer with relapse condition
+
+    """
+    def fun(bx, go, do, on, at, be, *pa):
+        bx(name='top')
+        bx('mid', 'top')
+        at('redo')
+        do("count")
+        at("exdo")
+        do("discount")
+        go('done', on("count >= 5"))
+        go('done', on("relapse >= 3.0"))
+        bx('bot0', 'mid', first=True)
+        go("next")
+        bx('bot1')  # over defaults to same as prev box
+        go("next")
+        bx('bot2')  # over defaults to same as prev box
+        go("bot0")
+        bx(name='done', over=None)
+        do('end')
+
+
+    tymist = Tymist(tock=1.0)
+    mine = Mine()
+    # init mine Bags
+    mine.stuff = Bag()
+    mine.stuff.value = 0
+    mine.crud = Bag()
+
+    boxer = Boxer(tymth=tymist.tymen(), mine=mine)
+    assert boxer.boxes == {}
+    mods = boxer.make(fun)
+    assert len(boxer.boxes) == 6
+    assert list(boxer.boxes) == ['top', 'mid', 'bot0', 'bot1', 'bot2', 'done']
+    boxer.rewind()
+    assert boxer.boxes["mid"].reacts
+    assert boxer.boxes["mid"].exacts
+
+    assert mine._boxer_boxer_box_mid_count.value is None
+    assert mine._boxer_boxer_box_mid_relapse.value is None
+    assert mine._boxer_boxer_box_mid_relapse._now == 0.0
+
+
+    boxer.begin()
+    assert boxer.box.name == "bot0"   # since set as first
+    assert mine._boxer_boxer_box_mid_count.value == 0
+    assert mine._boxer_boxer_box_mid_relapse.value == 0.0
+    assert mine._boxer_boxer_box_mid_relapse._now == 0.0
+    tymist.tick()
+    boxer.run()
+    assert boxer.box.name == "bot1"   # since set as first
+    assert mine._boxer_boxer_box_mid_count.value == 1
+    assert mine._boxer_boxer_box_mid_relapse.value == 0.0
+    assert mine._boxer_boxer_box_mid_relapse._now == 1.0
+    tymist.tick()
+    boxer.run()
+    assert boxer.box.name == "bot2"  # half trans at end of first pass
+    assert mine._boxer_boxer_box_mid_count.value == 2
+    assert mine._boxer_boxer_box_mid_relapse.value == 0.0
+    assert mine._boxer_boxer_box_mid_relapse._now == 2.0
+    tymist.tick()
+    boxer.run()
+    assert boxer.box.name == "done"
+    assert mine._boxer_boxer_box_mid_count.value is None
+    assert mine._boxer_boxer_box_mid_relapse.value == 0.0
+    assert mine._boxer_boxer_box_mid_relapse._now == 3.0
+    tymist.tick()
+    boxer.run()
+    assert boxer.box is None
+    assert boxer.endial()
+
+    """Done Test"""
+
+
 
 def test_boxery_basic():
     """Basic test Boxery class"""
@@ -1138,7 +1261,8 @@ def test_concept_bx_global():
     """Done Test"""
 
 if __name__ == "__main__":
-    test_rexelp()
+    test_rexlps()
+    test_rexrlp()
     test_rexcnt()
     test_box_basic()
     test_boxer_exen()
@@ -1151,6 +1275,7 @@ if __name__ == "__main__":
     test_boxer_make_run_on_count()
     test_boxer_make_run_verbs()
     test_boxer_make_run_lapse()
+    test_boxer_make_run_relapse()
     test_boxery_basic()
     test_concept_bx_nonlocal()
     test_concept_bx_global()
