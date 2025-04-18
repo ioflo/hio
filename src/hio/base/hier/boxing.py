@@ -866,7 +866,7 @@ class Boxer(Tymee):
                 mk = self.mine.tokey(mks)  # mark bag key
                 name = ReupdateMark.__name__ + key
                 found = False
-                for mark in m.box.enmarks:  # check if already has mark for key
+                for mark in m.box.remarks:  # check if already has mark for key
                     if mark.name == name:
                         found = True
                         break
@@ -903,7 +903,7 @@ class Boxer(Tymee):
                 mk = self.mine.tokey(mks)  # mark bag key
                 name = RechangeMark.__name__ + key
                 found = False
-                for mark in m.box.enmarks:  # check if already has mark for key
+                for mark in m.box.remarks:  # check if already has mark for key
                     if mark.name == name:
                         found = True
                         break
@@ -936,13 +936,13 @@ class Boxer(Tymee):
                 mk = self.mine.tokey(mks)  # mark bag key
                 name = RelapseMark.__name__
                 found = False
-                for mark in m.box.enmarks:  # check if already has mark for key
+                for mark in m.box.remarks:  # check if already has mark for key
                     if mark.name == name:
                         found = True
                         break
                 if not found:  # no preexisting ElapseMark for this box
                     mark = RelapseMark(name=name, iops=iops, mine=self.mine, dock=self.dock)
-                    m.box.enmarks.append(mark)  # lapse is always enmark
+                    m.box.remarks.append(mark)  # relapse is always remark
 
                 _, cmp = match.group("rlp", "cmp")
 

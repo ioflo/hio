@@ -10,7 +10,10 @@ from hio import Mixin, HierError
 from hio.base import Tymist
 from hio.base.hier import Nabes, ActBase, actify, Need, Box, Boxer, Bag
 from hio.base.hier import (Act, Goact, EndAct, Beact,
-                          Mark, LapseMark, RelapseMark)
+                          Mark, LapseMark, RelapseMark,
+                          BagMark, UpdateMark, ReupdateMark,
+                          ChangeMark, RechangeMark,
+                          Count, Discount)
 
 from hio.help import Mine
 
@@ -415,7 +418,7 @@ def test_relapse_mark_basic():
     act = RelapseMark(iops=iops, mine=mine)
     assert act.name == 'RelapseMark1'
     assert act.iops == iops
-    assert act.nabe == Nabes.enmark
+    assert act.nabe == Nabes.remark
     assert act.mine == mine
     assert act.dock == None
     assert act.Index == 2
@@ -437,7 +440,7 @@ def test_relapse_mark_basic():
     act = RelapseMark(iops=iops, mine=mine)
     assert act.name == 'RelapseMark0'
     assert act.iops == iops
-    assert act.nabe == Nabes.enmark
+    assert act.nabe == Nabes.remark
     assert act.mine == mine
     assert act.dock == None
     assert act.Index == 1
@@ -461,6 +464,503 @@ def test_relapse_mark_basic():
     """Done Test"""
 
 
+def test_count_basic():
+    """Test Count class"""
+    Count._clearall()  # clear instances for debugging
+
+    assert "Count" in Count.Registry
+    assert Count.Registry["Count"] == Count
+    assert Count.Names == ('count',)
+
+    with pytest.raises(HierError):
+        act = Count()  # requires iops with _boxer=boxer.name and _box=box.name
+
+
+    mine = Mine()
+    boxer = Boxer(mine=mine)
+    box = Box(mine=Mine)
+    iops = dict(_boxer=boxer.name, _box=box.name)
+    keys = ("", "boxer", boxer.name, "box", box.name, "count")
+
+    act = Count(iops=iops, mine=mine)
+    assert act.name == 'Count1'
+    assert act.iops == iops
+    assert act.nabe == Nabes.redo
+    assert act.mine == mine
+    assert act.dock == None
+    assert act.Index == 2
+    assert act.Instances[act.name] == act
+
+    assert keys in act.mine
+    assert not act.mine[keys].value
+    assert act() == 0
+    assert act.mine[keys].value == 0
+
+    Count._clearall()  # clear instances for debugging
+    tymist = Tymist(tock=1.0)
+    mine = Mine()
+    boxer = Boxer(tymth=tymist.tymen(), mine=mine)
+    assert boxer.tyme == tymist.tyme == 0.0
+    box = Box(mine=Mine)
+    iops = dict(_boxer=boxer.name, _box=box.name)
+
+    act = Count(iops=iops, mine=mine)
+    assert act.name == 'Count0'
+    assert act.iops == iops
+    assert act.nabe == Nabes.redo
+    assert act.mine == mine
+    assert act.dock == None
+    assert act.Index == 1
+    assert act.Instances[act.name] == act
+
+    assert keys in act.mine
+    assert act.mine[keys].value is None
+    assert act.mine[keys]._tyme is None
+    assert act.mine[keys]._now is None
+    boxer.rewind()
+    assert act.mine[keys].value is None
+    assert act.mine[keys]._tyme is None
+    assert act.mine[keys]._now == 0.0
+
+    assert act() == 0
+    assert act.mine[keys].value == 0
+    assert act.mine[keys]._tyme == 0.0
+    assert act.mine[keys]._now == 0.0
+
+    tymist.tick()
+    assert act() == 1
+    assert act.mine[keys].value == 1
+    assert act.mine[keys]._tyme == 1.0
+    assert act.mine[keys]._now == 1.0
+
+    """Done Test"""
+
+
+def test_discount_basic():
+    """Test Discount class"""
+    Discount._clearall()  # clear instances for debugging
+
+    assert "Discount" in Discount.Registry
+    assert Discount.Registry["Discount"] == Discount
+    assert Discount.Names == ('discount',)
+
+    with pytest.raises(HierError):
+        act = Discount()  # requires iops with _boxer=boxer.name and _box=box.name
+
+
+    mine = Mine()
+    boxer = Boxer(mine=mine)
+    box = Box(mine=Mine)
+    iops = dict(_boxer=boxer.name, _box=box.name)
+    keys = ("", "boxer", boxer.name, "box", box.name, "count")
+
+    act = Discount(iops=iops, mine=mine)
+    assert act.name == 'Discount1'
+    assert act.iops == iops
+    assert act.nabe == Nabes.exdo
+    assert act.mine == mine
+    assert act.dock == None
+    assert act.Index == 2
+    assert act.Instances[act.name] == act
+
+    assert keys in act.mine
+    assert not act.mine[keys].value
+    assert act() == None
+    assert act.mine[keys].value == None
+
+    Discount._clearall()  # clear instances for debugging
+    tymist = Tymist(tock=1.0)
+    mine = Mine()
+    boxer = Boxer(tymth=tymist.tymen(), mine=mine)
+    assert boxer.tyme == tymist.tyme == 0.0
+    box = Box(mine=Mine)
+    iops = dict(_boxer=boxer.name, _box=box.name)
+
+    act = Discount(iops=iops, mine=mine)
+    assert act.name == 'Discount0'
+    assert act.iops == iops
+    assert act.nabe == Nabes.exdo
+    assert act.mine == mine
+    assert act.dock == None
+    assert act.Index == 1
+    assert act.Instances[act.name] == act
+
+    assert keys in act.mine
+    assert act.mine[keys].value is None
+    assert act.mine[keys]._tyme is None
+    assert act.mine[keys]._now is None
+    boxer.rewind()
+    assert act.mine[keys].value is None
+    assert act.mine[keys]._tyme is None
+    assert act.mine[keys]._now == 0.0
+
+    assert act() == None
+    assert act.mine[keys].value == None
+    assert act.mine[keys]._tyme == 0.0
+    assert act.mine[keys]._now == 0.0
+
+    tymist.tick()
+    act.mine[keys].value = 1
+    assert act.mine[keys].value == 1
+    assert act.mine[keys]._tyme == 1.0
+    assert act.mine[keys]._now == 1.0
+
+    assert act() == None  # resets
+    assert act.mine[keys].value == None
+    assert act.mine[keys]._tyme == 1.0
+    assert act.mine[keys]._now == 1.0
+
+    """Done Test"""
+
+
+def test_bag_mark_basic():
+    """Test BagMark class"""
+
+    Mark._clearall()  # clear instances for debugging
+
+    assert "BagMark" in BagMark.Registry
+    assert BagMark.Registry["BagMark"] == BagMark
+    assert BagMark.Names == ()
+
+    with pytest.raises(HierError):
+        # requires iops with _boxer=boxer.name and _box=box.name _key=Bag key
+        act = BagMark()  # requires iops with _boxer=boxer.name and _box=box.name
+
+
+    mine = Mine()
+    boxer = Boxer(mine=mine)
+    box = Box(mine=Mine)
+    key = "test"
+    mine[key] = Bag()
+    iops = dict(_boxer=boxer.name, _box=box.name, _key=key)
+
+    act = BagMark(iops=iops, mine=mine)
+    assert act.name == 'BagMark1'
+    assert act.iops == iops
+    assert act.nabe == Nabes.enmark
+    assert act.mine == mine
+    assert act.dock == None
+    assert act.Index == 2
+    assert act.Instances[act.name] == act
+    assert act() is None
+
+    """Done Test"""
+
+def test_update_mark_basic():
+    """Test UpdateMark class"""
+    UpdateMark._clearall()  # clear instances for debugging
+
+    assert "UpdateMark" in UpdateMark.Registry
+    assert UpdateMark.Registry["UpdateMark"] == UpdateMark
+    assert UpdateMark.Names == ()
+
+    with pytest.raises(HierError):
+        # requires iops with _boxer=boxer.name and _box=box.name and _key= bag key
+        act = UpdateMark()
+
+
+    mine = Mine()
+    boxer = Boxer(mine=mine)
+    box = Box(mine=Mine)
+    key = "test"
+    mine[key] = Bag()
+    iops = dict(_boxer=boxer.name, _box=box.name, _key=key)
+    keys = ("", "boxer", boxer.name, "box", box.name, "update", key)
+
+    act = UpdateMark(iops=iops, mine=mine)
+    assert act.name == 'UpdateMark1'
+    assert act.iops == iops
+    assert act.nabe == Nabes.enmark
+    assert act.mine == mine
+    assert act.dock == None
+    assert act.Index == 2
+    assert act.Instances[act.name] == act
+    assert keys in act.mine
+    assert not act.mine[keys].value
+    assert act() is None
+    assert act.mine[keys].value is None
+
+    UpdateMark._clearall()  # clear instances for debugging
+    tymist = Tymist(tock=1.0)
+    mine = Mine()
+    boxer = Boxer(tymth=tymist.tymen(), mine=mine)
+    assert boxer.tyme == tymist.tyme == 0.0
+    box = Box(mine=Mine)
+    key = "test"
+    mine[key] = Bag()
+    iops = dict(_boxer=boxer.name, _box=box.name, _key=key)
+
+    act = UpdateMark(iops=iops, mine=mine)
+    assert act.name == 'UpdateMark0'
+    assert act.iops == iops
+    assert act.nabe == Nabes.enmark
+    assert act.mine == mine
+    assert act.dock == None
+    assert act.Index == 1
+    assert act.Instances[act.name] == act
+
+    assert keys in act.mine
+    assert act.mine[keys].value is None
+    assert act.mine[keys]._tyme is None
+    assert act.mine[keys]._now is None
+    boxer.rewind()
+    assert act.mine[keys].value is None
+    assert act.mine[keys]._tyme is None
+    assert act.mine[keys]._now == 0.0
+    assert act() is None
+
+    tymist.tick()
+    assert act.mine[keys].value is None
+    assert act.mine[keys]._tyme == 0.0
+    assert act.mine[keys]._now == 1.0
+    assert act() is None
+
+    mine[key].value = True
+    assert act.mine[keys].value is None
+    assert act.mine[keys]._tyme == 1.0
+    assert act.mine[keys]._now == 1.0
+    assert act() == 1.0
+    assert act.mine[keys].value == 1.0
+
+    """Done Test"""
+
+
+def test_reupdate_mark_basic():
+    """Test ReupdateMark class"""
+    ReupdateMark._clearall()  # clear instances for debugging
+
+    assert "ReupdateMark" in ReupdateMark.Registry
+    assert ReupdateMark.Registry["ReupdateMark"] == ReupdateMark
+    assert ReupdateMark.Names == ()
+
+    with pytest.raises(HierError):
+        # requires iops with _boxer=boxer.name and _box=box.name and _key= bag key
+        act = ReupdateMark()
+
+
+    mine = Mine()
+    boxer = Boxer(mine=mine)
+    box = Box(mine=Mine)
+    key = "test"
+    mine[key] = Bag()
+    iops = dict(_boxer=boxer.name, _box=box.name, _key=key)
+    keys = ("", "boxer", boxer.name, "box", box.name, "reupdate", key)
+
+    act = ReupdateMark(iops=iops, mine=mine)
+    assert act.name == 'ReupdateMark1'
+    assert act.iops == iops
+    assert act.nabe == Nabes.remark
+    assert act.mine == mine
+    assert act.dock == None
+    assert act.Index == 2
+    assert act.Instances[act.name] == act
+    assert keys in act.mine
+    assert not act.mine[keys].value
+    assert act() is None
+    assert act.mine[keys].value is None
+
+    ReupdateMark._clearall()  # clear instances for debugging
+    tymist = Tymist(tock=1.0)
+    mine = Mine()
+    boxer = Boxer(tymth=tymist.tymen(), mine=mine)
+    assert boxer.tyme == tymist.tyme == 0.0
+    box = Box(mine=Mine)
+    key = "test"
+    mine[key] = Bag()
+    iops = dict(_boxer=boxer.name, _box=box.name, _key=key)
+
+    act = ReupdateMark(iops=iops, mine=mine)
+    assert act.name == 'ReupdateMark0'
+    assert act.iops == iops
+    assert act.nabe == Nabes.remark
+    assert act.mine == mine
+    assert act.dock == None
+    assert act.Index == 1
+    assert act.Instances[act.name] == act
+
+    assert keys in act.mine
+    assert act.mine[keys].value is None
+    assert act.mine[keys]._tyme is None
+    assert act.mine[keys]._now is None
+    boxer.rewind()
+    assert act.mine[keys].value is None
+    assert act.mine[keys]._tyme is None
+    assert act.mine[keys]._now == 0.0
+    assert act() is None
+
+    tymist.tick()
+    assert act.mine[keys].value is None
+    assert act.mine[keys]._tyme == 0.0
+    assert act.mine[keys]._now == 1.0
+    assert act() is None
+
+    mine[key].value = True
+    assert act.mine[keys].value is None
+    assert act.mine[keys]._tyme == 1.0
+    assert act.mine[keys]._now == 1.0
+    assert act() == 1.0
+    assert act.mine[keys].value == 1.0
+
+    """Done Test"""
+
+
+def test_change_mark_basic():
+    """Test ChangeMark class"""
+    ChangeMark._clearall()  # clear instances for debugging
+
+    assert "ChangeMark" in ChangeMark.Registry
+    assert ChangeMark.Registry["ChangeMark"] == ChangeMark
+    assert ChangeMark.Names == ()
+
+    with pytest.raises(HierError):
+        # requires iops with _boxer=boxer.name and _box=box.name and _key= bag key
+        act = ChangeMark()
+
+    mine = Mine()
+    boxer = Boxer(mine=mine)
+    box = Box(mine=Mine)
+    key = "test"
+    mine[key] = Bag()
+    iops = dict(_boxer=boxer.name, _box=box.name, _key=key)
+    keys = ("", "boxer", boxer.name, "box", box.name, "change", key)
+
+    act = ChangeMark(iops=iops, mine=mine)
+    assert act.name == 'ChangeMark1'
+    assert act.iops == iops
+    assert act.nabe == Nabes.enmark
+    assert act.mine == mine
+    assert act.dock == None
+    assert act.Index == 2
+    assert act.Instances[act.name] == act
+    assert keys in act.mine
+    assert not act.mine[keys].value
+    assert act() == (None, )
+    assert act.mine[keys].value == (None, )
+
+    ChangeMark._clearall()  # clear instances for debugging
+    tymist = Tymist(tock=1.0)
+    mine = Mine()
+    boxer = Boxer(tymth=tymist.tymen(), mine=mine)
+    assert boxer.tyme == tymist.tyme == 0.0
+    box = Box(mine=Mine)
+    key = "test"
+    mine[key] = Bag()
+    iops = dict(_boxer=boxer.name, _box=box.name, _key=key)
+
+    act = ChangeMark(iops=iops, mine=mine)
+    assert act.name == 'ChangeMark0'
+    assert act.iops == iops
+    assert act.nabe == Nabes.enmark
+    assert act.mine == mine
+    assert act.dock == None
+    assert act.Index == 1
+    assert act.Instances[act.name] == act
+
+    assert keys in act.mine
+    assert act.mine[keys].value is None
+    assert act.mine[keys]._tyme is None
+    assert act.mine[keys]._now is None
+    boxer.rewind()
+    assert act.mine[keys].value is None
+    assert act.mine[keys]._tyme is None
+    assert act.mine[keys]._now == 0.0
+    assert act() == (None,)
+
+    tymist.tick()
+    assert act.mine[keys].value == (None,)
+    assert act.mine[keys]._tyme == 0.0
+    assert act.mine[keys]._now == 1.0
+    assert act() == (None,)
+
+    mine[key].value = True
+    assert act.mine[keys].value == (None,)
+    assert act.mine[keys]._tyme == 1.0
+    assert act.mine[keys]._now == 1.0
+    assert act() == (True, )
+    assert act.mine[keys].value == (True, )
+    """Done Test"""
+
+
+def test_rechange_mark_basic():
+    """Test RechangeMark class"""
+    RechangeMark._clearall()  # clear instances for debugging
+
+    assert "RechangeMark" in RechangeMark.Registry
+    assert RechangeMark.Registry["RechangeMark"] == RechangeMark
+    assert RechangeMark.Names == ()
+
+    with pytest.raises(HierError):
+        # requires iops with _boxer=boxer.name and _box=box.name and _key= bag key
+        act = RechangeMark()
+
+    mine = Mine()
+    boxer = Boxer(mine=mine)
+    box = Box(mine=Mine)
+    key = "test"
+    mine[key] = Bag()
+    iops = dict(_boxer=boxer.name, _box=box.name, _key=key)
+    keys = ("", "boxer", boxer.name, "box", box.name, "rechange", key)
+
+    act = RechangeMark(iops=iops, mine=mine)
+    assert act.name == 'RechangeMark1'
+    assert act.iops == iops
+    assert act.nabe == Nabes.remark
+    assert act.mine == mine
+    assert act.dock == None
+    assert act.Index == 2
+    assert act.Instances[act.name] == act
+    assert keys in act.mine
+    assert not act.mine[keys].value
+    assert act() == (None, )
+    assert act.mine[keys].value == (None, )
+
+    RechangeMark._clearall()  # clear instances for debugging
+    tymist = Tymist(tock=1.0)
+    mine = Mine()
+    boxer = Boxer(tymth=tymist.tymen(), mine=mine)
+    assert boxer.tyme == tymist.tyme == 0.0
+    box = Box(mine=Mine)
+    key = "test"
+    mine[key] = Bag()
+    iops = dict(_boxer=boxer.name, _box=box.name, _key=key)
+
+    act = RechangeMark(iops=iops, mine=mine)
+    assert act.name == 'RechangeMark0'
+    assert act.iops == iops
+    assert act.nabe == Nabes.remark
+    assert act.mine == mine
+    assert act.dock == None
+    assert act.Index == 1
+    assert act.Instances[act.name] == act
+
+    assert keys in act.mine
+    assert act.mine[keys].value is None
+    assert act.mine[keys]._tyme is None
+    assert act.mine[keys]._now is None
+    boxer.rewind()
+    assert act.mine[keys].value is None
+    assert act.mine[keys]._tyme is None
+    assert act.mine[keys]._now == 0.0
+    assert act() == (None,)
+
+    tymist.tick()
+    assert act.mine[keys].value == (None,)
+    assert act.mine[keys]._tyme == 0.0
+    assert act.mine[keys]._now == 1.0
+    assert act() == (None,)
+
+    mine[key].value = True
+    assert act.mine[keys].value == (None,)
+    assert act.mine[keys]._tyme == 1.0
+    assert act.mine[keys]._now == 1.0
+    assert act() == (True, )
+    assert act.mine[keys].value == (True, )
+
+    """Done Test"""
+
+
+
+
 if __name__ == "__main__":
     test_act_basic()
     test_need_act()
@@ -470,3 +970,11 @@ if __name__ == "__main__":
     test_mark_basic()
     test_lapse_mark_basic()
     test_relapse_mark_basic()
+    test_count_basic()
+    test_discount_basic()
+    test_bag_mark_basic()
+    test_update_mark_basic()
+    test_reupdate_mark_basic()
+    test_change_mark_basic()
+    test_rechange_mark_basic()
+
