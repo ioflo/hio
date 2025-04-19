@@ -544,12 +544,12 @@ def test_redoer_with_doist():
     Debug Console:
 
     ****** ReDoer Test **********
-    ReDoer recur before yield: tyme=None, count=0 in doist.enter next
-    ReDoer recur after yield: tyme=0.0, count=1 in doist.recur send
-    ReDoer recur after yield: tyme=1.0, count=2 in doist.recur send
-    ReDoer recur after yield: tyme=2.0, count=3 in doist.recur send
+    ReDoer enter: temp=None in doist.enter next doer.do -> .enter
+    ReDoer recur before yield: tock=1.0, tyme=None, count=0 in doist.enter next doer.do enter
+    ReDoer recur after yield: tyme=0.0, count=1 in doist.recur send doer.do recur
+    ReDoer recur after yield: tyme=1.0, count=2 in doist.recur send doer.do recur
+    ReDoer recur after yield: tyme=2.0, count=3 in doist.recur send doer.do recur
     ReDoer recur after break: tyme=2.0, count=3
-
 
     """
     print("\n****** ReDoer Test **********")
