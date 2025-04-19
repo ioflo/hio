@@ -18,6 +18,60 @@ from hio.core.tcp import serving, clienting
 from hio.core.serial import serialing
 from hio.help import helping
 
+
+def test_generator_play():
+    """Test generator coroutine concepts"""
+
+    def chief():
+        tyme = 0.0
+        tock = 0.5
+        dog = boss(tock=tock)
+        done = None
+        print(f"chief {tyme=}")
+        # send(None) is next() equiv
+        tock = dog.send(None)  #receives tock on first send(None) == first next()
+        assert tock == 0.5
+        print(f"dog next {tock=}")
+        while (True):
+            try:  # send tyme. yield tock, tock may change during sended run
+                tock = dog.send(tyme)  # yielded tock == 0.0 means re-run asap
+            except StopIteration as ex:  # returned instead of yielded
+                done = ex.value
+                break
+            else:  # reappend for next pass
+                print(f"dog sent: {tyme=}, chief recieved: {tock=}")
+                tyme += tock
+                print(f"chief {tyme=}")
+
+        print(f"stop dog sent {tyme=}")
+        print(f"stop chief {tyme=}, {tock=}, {done=}")
+        assert tyme == 1.03
+        assert tock == 0.52
+        assert done
+
+        return done
+
+
+    def boss(tock=1.0):
+        # (yield from) yields back up yield hierarchy with each yield (not result)
+        # result is only assigned when  yield from gen target returns not yields
+        result = yield from run(tock)
+        return result  # raises StopIteration when not called in yield from
+
+
+    def run(tock):
+        print(f"first run {tock=}")
+        for i in range(3):
+            tyme = (yield tock)
+            tock = tock + 0.01
+            print(f"run yielded {tock=}, received {tyme=}")
+        return True # returns when yielded from otherwise raises StopIteration
+
+    done = chief()
+    assert done
+
+    """Done Test"""
+
 def test_deed():
     """
     Test Deed named tuple
@@ -383,17 +437,30 @@ def test_redoer():
     redoer.tock = 0.0
     assert redoer.tock ==  0.0
 
-    # create generator use send and run until normal exit. emulates Doist.enter()
+    # create generator use generator methods until normal exit. emulates Doist.enter()
     args = {}
     redoer.done = False  # set initial done state as would happen in doist.enter()
     dog = redoer(tymth=redoer.tymth, tock=redoer.tock, **args)
     assert inspect.isgenerator(dog)
 
-    result = dog.send(None)
+    # yield from automatically does .next() to advance to first yield
+    # .send(None) is the equivalent of .next().
+    # any attempt on first send() to send non-None results in following error.
+    # builtins.TypeError: can't send non-None value to a just-started generator
+
+    with pytest.raises(TypeError):
+        result = dog.send(tymist.tyme)
+
+    assert tymist.tyme == 0.0
+
+    # when used in (yield from) the yield from does an equivalent of enter
+    # by send(None) first time yield from is called to advance to yield then
+    # on the next time the yield from is called it
+    result = dog.send(None)  # can't send non None to just started generator
     assert result == redoer.tock == 0.0
 
-    tymist.tick()
-    result = dog.send(tymist.tyme)
+    assert tymist.tyme == 0.0
+    result = dog.send(tymist.tyme)  #
     assert result == redoer.tock == 0.0
 
     tymist.tick()
@@ -469,6 +536,44 @@ def test_redoer():
             raise
 
     """End Test """
+
+def test_redoer_with_doist():
+    """
+    Test ReDoer with doist class
+
+    Debug Console:
+
+    ****** ReDoer Test **********
+    ReDoer recur before yield: tyme=None, count=0 in doist.enter next
+    ReDoer recur after yield: tyme=0.0, count=1 in doist.recur send
+    ReDoer recur after yield: tyme=1.0, count=2 in doist.recur send
+    ReDoer recur after yield: tyme=2.0, count=3 in doist.recur send
+    ReDoer recur after break: tyme=2.0, count=3
+
+
+    """
+    print("\n****** ReDoer Test **********")
+    tock = 1.0
+    doist = doing.Doist(tock=tock)
+    assert doist.tyme == 0.0  # on next cycle
+    assert doist.tock == tock == 1.0
+    assert doist.real == False
+    assert doist.limit == None
+    assert doist.doers == []
+
+    redoer = doing.ReDoer(tock=tock)
+    assert redoer.tock == tock
+
+    doers = [redoer]
+
+    ticks = 4
+    limit = tock * ticks
+    assert limit == 4.0
+    doist.do(doers=doers, limit=limit)
+    assert doist.tyme == 3.0  # redoer exits before limit
+
+    """Done Test"""
+
 
 def test_dodoer():
     """
@@ -1211,7 +1316,7 @@ def test_trydoer_throw():
                            State(tyme=0.125, context='recur', feed='Hi', count=2)]
     tymist.tick()
     try:
-        result = do.throw(ValueError, "Bad")
+        result = do.throw(ValueError("Bad"))
     except ValueError as ex:
         assert ex.args[0] == "Bad"  # exception alue is thrown value
         assert doer.states == [State(tyme=0.0, context='enter', feed='Default', count=0),
@@ -1373,7 +1478,7 @@ def test_trydo_throw():
                            State(tyme=0.125, context='recur', feed='Hi', count=2)]
     tymist.tick()
     try:
-        result = do.throw(ValueError, "Bad")
+        result = do.throw(ValueError("Bad"))
     except ValueError as ex:
         assert ex.args[0] == "Bad"
         assert states == [State(tyme=0.0, context='enter', feed='Default', count=0),
@@ -1524,12 +1629,14 @@ def test_decoration():
 
 
 if __name__ == "__main__":
+    test_generator_play()
     test_deed()
     test_doify()
     test_doize()
     test_doize_dodoer_with_bound_method()
     test_doer()
     test_redoer()
+    test_redoer_with_doist()
     test_dodoer()
     test_dodoer_always()
     test_dodoer_remove()

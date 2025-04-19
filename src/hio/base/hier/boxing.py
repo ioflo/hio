@@ -267,8 +267,15 @@ class Boxer(Tymee):
     Box instance holds a reference to its first (beginning) box.
     Box instance holds references to all its boxes in dict keyed by box name.
 
-    Inherited Attributes, Properties
-        see Tymee
+    Inherited Properties:  (Tymee)
+        .tyme (float | None):  relative cycle time of associated Tymist which is
+            provided by calling .tymth function wrapper closure which is obtained
+            from Tymist.tymen().
+            None means not assigned yet.
+        .tymth (Callable | None): function wrapper closure returned by
+            Tymist.tymen() method. When .tymth is called it returns associated
+            Tymist.tyme. Provides injected dependency on Tymist cycle tyme base.
+            None means not assigned yet.
 
     Attributes:
         mine (Mine): ephemeral bags in mine (in memory) shared by boxwork
@@ -283,6 +290,8 @@ class Boxer(Tymee):
 
     Hidden:
         _name (str): unique identifier of instance
+        ._tymth is injected function wrapper closure returned by .tymen() of
+            associated Tymist instance that returns Tymist .tyme. when called.
 
 
     """
@@ -360,7 +369,7 @@ class Boxer(Tymee):
                 bag._wind(tymth=self.tymth)
 
 
-    def begin(self):
+    def beginOne(self):
         """Prepare for and run first pass
         """
         if not self.first:
@@ -384,7 +393,7 @@ class Boxer(Tymee):
         return False  # not end yet keep going
 
 
-    def run(self):
+    def runOne(self):
         """Execute pass after tyme as ticked so lapsed time is known
         """
         rendos = []

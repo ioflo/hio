@@ -490,19 +490,19 @@ def test_boxer_make_run():
 
     assert mine.count.value is None
 
-    boxer.begin()
+    boxer.beginOne()
     assert boxer.box.name == "top"
     assert mine.count.value == 0
-    boxer.run()
+    boxer.runOne()
     assert boxer.box.name == "bot1"  # half trans at end of first pass
     assert mine.count.value == 1
-    boxer.run()
+    boxer.runOne()
     assert boxer.box.name == "bot2"
     assert mine.count.value == 2
-    boxer.run()
+    boxer.runOne()
     assert boxer.box.name == "done"
     assert mine.count.value == 2
-    boxer.run()
+    boxer.runOne()
     assert boxer.box is None
     assert mine.count.value == 2
     assert boxer.endial()
@@ -553,24 +553,24 @@ def test_boxer_make_run_on_update():
     assert mine.count._tyme is None
     assert mine._boxer_boxer_box_mid_update_count.value is None
 
-    boxer.begin()
+    boxer.beginOne()
     assert boxer.box.name == "top"  # default first
     assert mine.count.value == None
     assert mine.count._tyme == None
     assert mine._boxer_boxer_box_mid_update_count.value == None
-    boxer.run()
+    boxer.runOne()
     assert boxer.box.name == "bot1"  # half trans at end of first pass
     assert mine.count.value is None
     assert mine.count._tyme is None
     assert mine._boxer_boxer_box_mid_update_count.value is None
-    boxer.run()
+    boxer.runOne()
     assert boxer.box.name == "bot2"
-    boxer.run()
+    boxer.runOne()
     assert boxer.box.name == "done"
     assert mine.count.value == 0
     assert mine.count._tyme == 0.0
     assert mine._boxer_boxer_box_mid_update_count.value is None
-    boxer.run()
+    boxer.runOne()
     assert boxer.box is None
     assert boxer.endial()
 
@@ -620,25 +620,25 @@ def test_boxer_make_run_on_change():
     assert mine.count._tyme is None
     assert mine._boxer_boxer_box_mid_change_count.value is None
 
-    boxer.begin()
+    boxer.beginOne()
     assert boxer.box.name == "top"  # default first
     assert mine.count.value is None
     assert mine.count._tyme is None
     assert mine._boxer_boxer_box_mid_change_count.value == (None, )
-    boxer.run()
+    boxer.runOne()
     assert boxer.box.name == "bot1"  # half trans at end of first pass
     assert mine.count.value is None
     assert mine.count._tyme is None
     assert mine._boxer_boxer_box_mid_change_count.value == (None, )
     assert mine.count.value == None
-    boxer.run()
+    boxer.runOne()
     assert boxer.box.name == "bot2"
-    boxer.run()
+    boxer.runOne()
     assert boxer.box.name == "done"
     assert mine.count.value == 0
     assert mine.count._tyme == 0.0
     assert mine._boxer_boxer_box_mid_change_count.value == (None, )
-    boxer.run()
+    boxer.runOne()
     assert boxer.box is None
     assert boxer.endial()
 
@@ -678,19 +678,19 @@ def test_boxer_make_run_on_count():
 
     assert mine._boxer_boxer_box_mid_count.value is None
 
-    boxer.begin()
+    boxer.beginOne()
     assert boxer.box.name == "bot0"   # since set as first
     assert mine._boxer_boxer_box_mid_count.value == 0
-    boxer.run()
+    boxer.runOne()
     assert boxer.box.name == "bot1"  # half trans at end of first pass
     assert mine._boxer_boxer_box_mid_count.value == 1
-    boxer.run()
+    boxer.runOne()
     assert boxer.box.name == "bot2"
     assert mine._boxer_boxer_box_mid_count.value == 2
-    boxer.run()
+    boxer.runOne()
     assert boxer.box.name == "done"
     assert mine._boxer_boxer_box_mid_count.value is None
-    boxer.run()
+    boxer.runOne()
     assert boxer.box is None
     assert boxer.endial()
 
@@ -747,27 +747,27 @@ def test_boxer_make_run_verbs():
     assert mine.stuff.value == 0
     assert mine.crud.value == None
 
-    boxer.begin()
+    boxer.beginOne()
     assert boxer.box.name == "bot0"   # since set as first
     assert mine._boxer_boxer_box_mid_count.value == 0
     assert mine.stuff.value == 1
     assert mine.crud.value == None
-    boxer.run()
+    boxer.runOne()
     assert boxer.box.name == "bot1"  # half trans at end of first pass
     assert mine._boxer_boxer_box_mid_count.value == 1
     assert mine.stuff.value == 2
     assert mine.crud.value == 16
-    boxer.run()
+    boxer.runOne()
     assert boxer.box.name == "bot2"
     assert mine._boxer_boxer_box_mid_count.value == 2
     assert mine.stuff.value == 2
     assert mine.crud.value == True
-    boxer.run()
+    boxer.runOne()
     assert boxer.box.name == "done"
     assert mine._boxer_boxer_box_mid_count.value is None
     assert mine.stuff.value == 2
     assert mine.crud.value == True
-    boxer.run()
+    boxer.runOne()
     assert boxer.box is None
     assert boxer.endial()
 
@@ -817,19 +817,19 @@ def test_boxer_make_run_lapse():
     assert mine._boxer_boxer_box_bot1_lapse.value == None
     assert mine._boxer_boxer_box_bot1_lapse._now == 0.0
 
-    boxer.begin()
+    boxer.beginOne()
     assert boxer.box.name == "bot0"   # since set as first
     assert mine._boxer_boxer_box_mid_count.value == 0
     assert mine._boxer_boxer_box_bot0_lapse.value == 0.0
     assert mine._boxer_boxer_box_bot0_lapse._now == 0.0
     tymist.tick()
-    boxer.run()
+    boxer.runOne()
     assert boxer.box.name == "bot0"
     assert mine._boxer_boxer_box_mid_count.value == 1
     assert mine._boxer_boxer_box_bot0_lapse.value == 0.0
     assert mine._boxer_boxer_box_bot0_lapse._now == 1.0
     tymist.tick()
-    boxer.run()
+    boxer.runOne()
     assert boxer.box.name == "bot1"
     assert mine._boxer_boxer_box_mid_count.value == 2
     assert mine._boxer_boxer_box_bot0_lapse.value == 0.0
@@ -837,7 +837,7 @@ def test_boxer_make_run_lapse():
     assert mine._boxer_boxer_box_bot1_lapse.value == 2.0
     assert mine._boxer_boxer_box_bot1_lapse._now == 2.0
     tymist.tick()
-    boxer.run()
+    boxer.runOne()
     assert boxer.box.name == "bot1"
     assert mine._boxer_boxer_box_mid_count.value == 3
     assert mine._boxer_boxer_box_bot0_lapse.value == 0.0
@@ -845,7 +845,7 @@ def test_boxer_make_run_lapse():
     assert mine._boxer_boxer_box_bot1_lapse.value == 2.0
     assert mine._boxer_boxer_box_bot1_lapse._now == 3.0
     tymist.tick()
-    boxer.run()
+    boxer.runOne()
     assert boxer.box.name == "bot2"
     assert mine._boxer_boxer_box_mid_count.value == 4
     assert mine._boxer_boxer_box_bot0_lapse.value == 0.0
@@ -853,7 +853,7 @@ def test_boxer_make_run_lapse():
     assert mine._boxer_boxer_box_bot1_lapse.value == 2.0
     assert mine._boxer_boxer_box_bot1_lapse._now == 4.0
     tymist.tick()
-    boxer.run()
+    boxer.runOne()
     assert boxer.box.name == "bot0"
     assert mine._boxer_boxer_box_mid_count.value == 5
     assert mine._boxer_boxer_box_bot0_lapse.value == 5.0
@@ -861,11 +861,11 @@ def test_boxer_make_run_lapse():
     assert mine._boxer_boxer_box_bot1_lapse.value == 2.0
     assert mine._boxer_boxer_box_bot1_lapse._now == 5.0
     tymist.tick()
-    boxer.run()
+    boxer.runOne()
     assert boxer.box.name == "done"
     assert mine._boxer_boxer_box_mid_count.value is None
     tymist.tick()
-    boxer.run()
+    boxer.runOne()
     assert boxer.box is None
     assert boxer.endial()
 
@@ -917,14 +917,14 @@ def test_boxer_make_run_relapse():
     assert mine._boxer_boxer_box_bot1_lapse._now == 0.0
 
     assert boxer.tyme == 0.0
-    boxer.begin()
+    boxer.beginOne()
     assert boxer.box.name == "bot0"   # since set as first
     assert mine._boxer_boxer_box_mid_count.value == 0
     assert mine._boxer_boxer_box_mid_relapse.value == None
     assert mine._boxer_boxer_box_mid_relapse._now == 0.0
     tymist.tick()
     assert boxer.tyme == 1.0
-    boxer.run()
+    boxer.runOne()
     assert boxer.box.name == "bot1"
     assert mine._boxer_boxer_box_mid_count.value == 1
     assert mine._boxer_boxer_box_mid_relapse.value == 1.0
@@ -933,7 +933,7 @@ def test_boxer_make_run_relapse():
     assert mine._boxer_boxer_box_bot1_lapse._now == 1.0
     tymist.tick()
     assert boxer.tyme == 2.0
-    boxer.run()
+    boxer.runOne()
     assert boxer.box.name == "bot1"
     assert mine._boxer_boxer_box_mid_count.value == 2
     assert mine._boxer_boxer_box_mid_relapse.value == 1.0
@@ -942,14 +942,14 @@ def test_boxer_make_run_relapse():
     assert mine._boxer_boxer_box_bot1_lapse._now == 2.0
     tymist.tick()
     assert boxer.tyme == 3.0
-    boxer.run()
+    boxer.runOne()
     assert boxer.box.name == "done"
     assert mine._boxer_boxer_box_mid_count.value is None
     assert mine._boxer_boxer_box_mid_relapse.value == 1.0
     assert mine._boxer_boxer_box_mid_relapse._now == 3.0
     tymist.tick()
     assert boxer.tyme == 4.0
-    boxer.run()
+    boxer.runOne()
     assert boxer.box is None
     assert boxer.endial()
 

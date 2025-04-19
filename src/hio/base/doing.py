@@ -604,6 +604,11 @@ class Doer(tyming.Tymee):
             self.enter(temp=temp)
 
             #recur context self.done set by super doist or dodoer prior to enter
+            # doist.enter() or dodoer.enter() advances via doer.next() to here
+            # if .recur method is generatorfunction then pauses at first yield
+            #    at bottom of yield from delegation chain, i.e. next() decends
+            # the yield from delegation chain until it reaches a plain yield.
+            # else (.recur method is not generator) pauses at yield below
             if isgeneratorfunction(self.recur):  #  .recur is generator method
                 self.done = yield from self.recur()  # recur context delegated
             else:  # .recur is standard method so iterate in while loop
@@ -748,7 +753,7 @@ class ReDoer(Doer):
     """
 
     def recur(self):
-        """
+        """ReDoer as example:
         Do 'recur' context actions as a generator method. Override in subclass.
         Assumes resource setup in .enter() and resource takedown in .exit()
         (see Doer for example of .recur that is a regular method)
@@ -765,17 +770,30 @@ class ReDoer(Doer):
         For base class do:
             yield from this generator recur method which runs until returns
 
+        ****** ReDoer Test **********
+        ReDoer recur before yield: tyme=None, count=0 in doist.enter next
+        ReDoer recur after yield: tyme=0.0, count=1 in doist.recur send
+        ReDoer recur after yield: tyme=1.0, count=2 in doist.recur send
+        ReDoer recur after yield: tyme=2.0, count=3 in doist.recur send
+        ReDoer recur after break: tyme=2.0, count=3
+
+
         """
+        tyme = None
         count = 0
-        # print("ReDoer recur before yield. tyme = {} count={}\n".format(tyme, count))
+        print(f"ReDoer recur before yield: {tyme=}, {count=} in doist.enter next")
         while (True):  # recur context
-            tyme = yield(self.tock)  # first yield of None
+            # yield from advances to first yield as next() same as send(None)
+            # so never see sent tyme ==0.0
+            # when is recieve  tyme it will be following iteration after tick()
+            # where tyme = tock
+            tyme = yield(self.tock)
             count += 1
-            # print("ReDoer recur after yield. tyme = {} count={}\n".format(tyme, count))
+            print(f"ReDoer recur after yield: {tyme=}, {count=} in doist.recur send")
             if count >= 3:
                 break
 
-        # print("ReDoer recur after break tyme = {} count={}\n".format(tyme, count))
+        print(f"ReDoer recur after break: {tyme=}, {count=}")
         return True  # done
 
 
