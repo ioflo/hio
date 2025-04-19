@@ -8,15 +8,56 @@ Provides hierarchical box work support
 """
 from __future__ import annotations  # so type hints of classes get resolved later
 
+import re
 from collections.abc import Callable
 
 from ..tyming import Tymee
+from ..doing import Doer
 from ...hioing import Mixin, HierError
-from .hiering import Nabe, WorkDom, ActBase
-from .acting import Act, Goact, UpdateMark, ChangeMark, Count, Discount
+from .hiering import Nabes, WorkDom, ActBase
+from .acting import (Act, Goact, Beact, LapseMark, RelapseMark,
+                     UpdateMark, ReupdateMark,
+                     ChangeMark, RechangeMark,
+                     Count, Discount)
 from .bagging import Bag
 from .needing import Need
 from ...help import modify, Mine, Renam
+
+
+# Regular expression to detect special need 'count' condition
+LAPSEREX = r'^\s*(?P<lps>lapse)(?P<cmp>(\s|\W|\Z).*)'
+Rexlps = re.compile(LAPSEREX)  # compile is faster
+"""Usage:
+if m := Rexlps.match("lapse >= 1.0"):
+    lps, cmp = m.group("lps","cmp")
+
+if not Rexlps.match("lapse >= 1.0"):
+    return
+"""
+
+# Regular expression to detect special need 'count' condition
+RELAPSEREX = r'^\s*(?P<rlp>relapse)(?P<cmp>(\s|\W|\Z).*)'
+Rexrlp = re.compile(RELAPSEREX)  # compile is faster
+"""Usage:
+if m := Rexrlp.match("relapse >= 1.0"):
+    rel, cmp = m.group("rlp","cmp")
+
+if rel Rexrlp.match("relapse >= 1.0"):
+    return
+"""
+
+
+# Regular expression to detect special need 'count' condition
+COUNTREX = r'^\s*(?P<cnt>count)(?P<cmp>(\s|\W|\Z).*)'
+Rexcnt = re.compile(COUNTREX)  # compile is faster
+"""Usage:
+if m := Rexcnt.match("count >= 1"):
+    cnt, cmp = m.group("cnt","cmp")
+
+if not Rexcnt.match("count >= 1"):
+    return
+"""
+
 
 
 nabeDispatch = dict(predo="preacts",
@@ -226,125 +267,52 @@ class Boxer(Tymee):
     Box instance holds a reference to its first (beginning) box.
     Box instance holds references to all its boxes in dict keyed by box name.
 
-    Inherited Attributes, Properties
-        see Tymee
+    Inherited Properties:  (Tymee)
+        .tyme (float | None):  relative cycle time of associated Tymist which is
+            provided by calling .tymth function wrapper closure which is obtained
+            from Tymist.tymen().
+            None means not assigned yet.
+        .tymth (Callable | None): function wrapper closure returned by
+            Tymist.tymen() method. When .tymth is called it returns associated
+            Tymist.tyme. Provides injected dependency on Tymist cycle tyme base.
+            None means not assigned yet.
 
     Attributes:
         mine (Mine): ephemeral bags in mine (in memory) shared by boxwork
         dock (Dock): durable bags in dock (on disc) shared by boxwork
-        doer (Doer | None): doer running this boxer  (do we need this?)
+        fun (Callable): function to make boxwork
         boxes (dict): all boxes mapping of (box name, box) pairs
         first (Box | None):  beginning box
         box (Box | None):  active box
-        rendos (list[Box]): boxes to re-endo on this run (boxes retained)
-        endos (list[Box]): boxes to endo on this begin/run
 
     Properties:
         name (str): unique identifier of instance
 
     Hidden:
         _name (str): unique identifier of instance
+        ._tymth is injected function wrapper closure returned by .tymen() of
+            associated Tymist instance that returns Tymist .tyme. when called.
 
-
-    Cycle Nabe Order
-
-    Init:
-
-    all tymes in bags are None from init
-    all tyme in marks are None
-
-
-
-    tyme = start tyme (default ) 0.0
-    Begin:
-
-        First box assigned to active box
-        actives = active box.pile
-        .rendos is empty
-        .endos == actives
-        exdos is empty
-        rexdos is empty
-
-        for each box in endos top down:
-            precond:
-                if not all true then done with boxwork
-                    End
-
-        for box in rendos top down: (empty)
-            remark rendo mark subcontext
-            rendo
-        for box in endos top down: (not empty)
-            enmark endo mark subcontext  (mark tyme set to bag._tyme which is None)
-            endo
-        If complete:
-            End boxwork boxer.want stop desire stop
-        for box in actives top down:
-            redo
-            ando
-            if godo need is true:  (short circuit redo of lower level boxes)
-                compute rendos endos exdos rexdos. save box.rendos and box.endos
-                for each box in endos (top down):
-                    predo:
-                        if not all true then do not proceed with godo return
-
-                for box in exdos bottom up:
-                    exdos
-                for box in rexdos bottom up:
-                    rexdos
-                set new .active box
-                break
-        return from prep True == completed begin  (or yield if generator)
-
-
-    tyme increment
-    Run:
-        for box in rendos: (may be empty)
-            remark rendo mark subcontext
-            rendo
-        for box in endos: (may be empty)
-            enmark endo mark subcontext  (mark tyme set to bag._tyme which is None)
-            endo
-        If complete:
-            End boxwork boxer.want stop desire stop
-        for box in actives top down:
-            redo
-            ando
-            if godo need is true:   (short circuit redo of lower level boxes)
-                compute rendos endos exdos rexdos,.
-                    predo:
-                        if not all true then do not proceed with godo return
-
-                for box in exdos bottom up:
-                    exdo
-                for box in rexdos bottom up:
-                    rexdo
-                set new .active box
-                break
-        return from run False == not done continue  (or if generator yield)
 
     """
-    def __init__(self, *, name='boxer', mine=None, dock=None, doer=None, **kwa):
+    def __init__(self, *, name='boxer', mine=None, dock=None, fun=None, **kwa):
         """Initialize instance.
 
         Parameters:
             name (str): unique identifier of box
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
-            doer (Doer | None): Doer running this Boxer doe we need this?
-
+            fun (None|Callable): function to make boxwork
 
         """
         super(Boxer, self).__init__(**kwa)
         self.name = name
         self.mine = mine if mine is not None else Mine()
         self.dock = dock  # stub until create Dock class
-        self.doer = doer
-
+        self.fun = fun
         self.boxes = {}
         self.first = None  # box to start in
         self.box = None  # current active box  whose pile is active pile
-        self.rendos = []  # list of re-endo boxes for this run (boxes retained)
-        self.endos = []  # list of endo boxes for this begin/run
 
 
     @property
@@ -369,66 +337,116 @@ class Boxer(Tymee):
         self._name = name
 
 
-    def wind(self, tymth):
-        """
-        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+    def wind(self, tymth=None):
+        """Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
         Override in subclasses to update any dependencies on a change in
         tymist.tymth base
+
+        Parameters:
+            tymth (Callable|None):  closure of injected tyme from tymist.tymen()
+                                    None if not yet injected
         """
-        super().wind(tymth)
+        super().wind(tymth=tymth)
         for bag in self.mine.values():
             if isinstance(bag, Bag):
-                bag._wind(tymth=tymth)
+                bag._wind(tymth=self.tymth)
 
 
-    def begin(self):
-        """Prepare for first pass
+    def rewind(self, tymth=None):
+        """Inject new tymist.tymth as new ._tymth when tymth is not None.
+        Changes tymist.tyme base when not None. Winds bags in .mine.
+        When tymth is None then use .tymth
+
+        Parameters:
+            tymth (Callable|None):  closure of injected tyme from tymist.tymen()
+                                    None if not yet injected
         """
-        if not self.first:
-            self.first = list(self.boxes.values())[0]  # first box in boxes is default first
+        if tymth is not None:
+            super().wind(tymth=tymth)
+        for bag in self.mine.values():
+            if isinstance(bag, Bag):
+                bag._wind(tymth=self.tymth)
+
+
+    def run(self, tock=0.0):
+        """Run boxer hierarchical state machine (boxwork) as generator.
+
+        Parameters:
+            tock (float|None): creation of generator supplies tock as parameter.
+                The doist tyme is delegated through 'yield from' delegations
+                to the eventual target yield at bottom of 'yield from' delegation
+                chain.
+                A tock value fed back to doist of None or 0.0 indicates to doist
+                to run again ASAP (on next iteration of doist.do)
+
+
+        Returns:
+           completion (bool): completion state boxwork.
+                              True means completed successfully
+                              False completed unsuccessfully
+
+        Note that "tyme" is not a parameter. The doist tyme is injected through
+        the explicit yields below.
+
+
+        """
+        if not self.first:  # first box in boxes is default first
+            self.first = list(self.boxes.values())[0]
         self.box = self.first
-        self.rendos = []  # first pass no rendo of any boxes
-        self.endos = self.box.pile
-        if not self.predo():  # uses .endos preconditions for entry not satisfied
-            # do end stuff since no entry yet then no exdo
+        rendos = []  # first pass no rendo (re-enter) of any boxes
+        endos = self.box.pile  # endo (enter) all boxes in pile potential entry
+
+        if not self.predo(endos):  # predo nabe, action preacts not satisfied
+            # since no entry yet then no exdo
             self.box = None  # no active box anymore
-            return False  # signal end beginning did not complete
+            return False  # signal failure due to end in enter before first pass
 
-        return True  # successfully completed beginning
+        # finished of enter next() delegation 'yield from' delegation
+        tyme = yield(tock)  # pause end of next, resume start of send
 
+        # first pass
+        self.rendo(rendos)  # rendo nabe, action remarks and renacts
+        self.endo(endos)  # endo nabe, action enmarks and enacts
 
-    def run(self):
-        """Execute pass
-        """
-        self.rendo()  # uses saved .rendos to re-mark and re-endo
-        self.rendos = []  # re-endo completed so make empty
-        self.endo()  # uses saved .endos to en-mark and endo
-        self.endos = []  # endo completed so make empty
-
-        for box in self.box.pile:  # top down
+        for box in self.box.pile:  # top down redo
             for react in box.reacts:   # redo nabe top down
                 react()
-            for anact in box.anacts:   # ando nabe top down
-                anact()
 
-            if self.endial():  # actioned desire to end
+        while True:  # run forever
+            tyme = yield(tock)  # resume on send
+            rendos = []
+            endos = []
+
+            if self.endial():  # previous pass actioned desire to end
                 self.end()  # exdos all active boxes in self.box.pile
                 self.box = None  # no active box
-                return True  # beginning completed already
+                return True  # signal successful end after last pass
 
-            for goact in box.goacts:  # godo nabe top down
-                if dest := goact():  # transition condition satisfied
-                    exdos, endos, rendos, rexdos = self.exen(box, dest)
-                    if not self.predo(endos):  # godo not satisfied
-                        continue  # keep trying
-                    self.exdo(exdos)  # exdo bottom up
-                    self.rexdo(rexdos)  # rexdo bottom up  (boxes retained)
-                    self.rendos = rendos  # save for next pass
-                    self.endos = endos  # save for next pass
-                    self.box = dest  # set new active box
-                    return False  # transition so stop iteration over pile
+            transit = False
+            for box in self.box.pile:  # top down evaluate andos and godos
+                for anact in box.anacts:   # ando nabe top down, after tyme tick
+                    anact()
 
-        return False  # continue running not done
+                for goact in box.goacts:  # godo nabe top down
+                    if dest := goact():  # transition condition satisfied
+                        exdos, endos, rendos, rexdos = self.exen(box, dest)
+                        if not self.predo(endos):  # godo not satisfied
+                            continue  # keep trying
+                        self.exdo(exdos)  # exdo bottom up
+                        self.rexdo(rexdos)  # rexdo bottom up  (boxes retained)
+                        self.box = dest  # set new active box
+                        transit = True
+                        break
+
+                if transit:
+                    break
+
+            self.rendo(rendos)  # rendo nabe, action remarks and renacts
+            self.endo(endos)  # endo nabe, action enmarks and enacts
+
+            for box in self.box.pile:  # top down
+                for react in box.reacts:   # redo nabe top down
+                    react()
 
 
     def end(self):
@@ -456,22 +474,21 @@ class Boxer(Tymee):
         return False
 
 
-    def predo(self, endos=None):
+    def predo(self, predos):
         """Evaluate preconditions for entry of boxes in endos in top down order
 
         Parameters:
-            endos (None|list[Box]): boxes to be entered if predos are satisfied
-                                when arg is None then defaults to .endos
+            predos (list[Box]): boxes to be predo (checked for entry)
+                         given all their preacts are  satisfied
 
         Returns:
-            met (bool): True means all preconditions are satisfied for endos.
+            met (bool): True means all preconditions are satisfied for predos
                         False otherwise
                     When no preconditions then returns True.
 
         """
-        endos = endos if endos is not None else self.endos
         met = True
-        for box in self.endos:
+        for box in predos:
             for preact in box.preacts:
                 if not preact():
                     met = False
@@ -481,23 +498,30 @@ class Boxer(Tymee):
         return met
 
 
-    def rendo(self):
+    def rendo(self, rendos):
         """Action re-mark (remarks) and re-endo (renacts) acts of boxes in
         .rendos in top down order. Boxes retained in hierarchical state.
         Re-enter box
+
+        Parameters:
+            rendos (list[Box]): boxes to be rendo (re-entered)
         """
-        for box in self.rendos:
+        for box in rendos:
             for mark in box.remarks:
                 mark()
             for renact in box.renacts:
                 renact()
 
 
-    def endo(self):
+    def endo(self, endos):
         """Action e-mark (emacts) and endo (enacts) acts of boxes in .endos
         in top down order. Enter box.
+
+        Parameters:
+            endos (list[Box]): boxes to be endo (entered)
+
         """
-        for box in self.endos:
+        for box in endos:
             for mark in box.enmarks:
                 mark()
             for enact in box.enacts:
@@ -508,7 +532,7 @@ class Boxer(Tymee):
         """Action exacts of boxes in exdos in bottom up order. Exit box.
 
         Parameters:
-            exdos (None|list[Box]): boxes to be exdo in bottom up order
+            exdos (list[Box]): boxes to be exdo in bottom up order
 
         """
         for box in exdos:
@@ -521,7 +545,7 @@ class Boxer(Tymee):
         Boxes retained in hierarchical state. Re-exit box.
 
         Parameters:
-            rexdos (None|list[Box]): boxes to be re-exdo in bottom up order
+            rexdos (list[Box]): boxes to be re-exdo in bottom up order
         """
         for box in rexdos:
             for rexact in box.rexacts:
@@ -567,39 +591,36 @@ class Boxer(Tymee):
                                        f"boxer {self.name}.") from ex
 
 
-    def make(self, fun):
+    def make(self, fun=None):
         """Make box work for this boxer from function fun
         Parameters:
-            fun (function):  employs be, do, on, go maker functions injected
-                             works (boxwork state vars)
+            fun (Callable|None):  employs be, go, do, on, at, be, verb functions with
+                injected mods of boxwork state vars
+                When None use self.fun
 
-        def fun(bx):
-
-
-        Injects works as WorkDom dataclass instance whose attributes are used to
-        construct boxwork. WorkDom attributes include
-            box (Box|None): current box in box work. None if not yet a box
-            over (Box|None): current over Box in box work. None if top level
-            bxpre (str): default name prefix used to generate unique box
-                name relative to boxer.boxes
-            bxidx (int): default box index used to generate unique box
-                name relative to boxer.boxes
-
+        Injects mods as WorkDom dataclass instance whose attributes are used to
+        construct boxwork.
 
         """
+        fun = fun if fun is not None else self.fun
+
         works = WorkDom()  # standard defaults
         works.acts = ActBase.Registry
         bx = modify(mods=works)(self.bx)
         go = modify(mods=works)(self.go)
         do = modify(mods=works)(self.do)
         on = modify(mods=works)(self.on)
-        fun(bx=bx, go=go, do=do, on=on)  # calling fun will build boxer.boxes
+        at = modify(mods=works)(self.at)
+        be = modify(mods=works)(self.be)
+
+        # calling fun will build boxer.boxes
+        fun(bx=bx, go=go, do=do, on=on, at=at, be=be)
         self.resolve()
         return works  # for debugging analysis
 
 
 
-    def bx(self, name: None|str=None, over: None|str|Box="",
+    def bx(self, name: None|str=None, over: None|str|Box="", first: bool=False,
                 *, mods: WorkDom|None=None)->Box:
         """Make a box and add to box work
 
@@ -614,6 +635,8 @@ class Boxer(Tymee):
                                     when box then actual over box
                                     when None then no over box (top level)
                                     when empty then same level use _over
+            first (bool): True means set this box as boxer.first
+                          False (default) to not change boxer.first
 
             mods (None | WorkDom):  state variables used to construct box work
                 None is just to allow definition as keyword arg. Assumes in
@@ -669,6 +692,12 @@ class Boxer(Tymee):
         if m.box:  # update last boxes lexical ._next to this box
             m.box._next = box
         m.box = box  # update current box
+
+        m.nabe = Nabes.native  # reset nabe to native at creation of new box
+
+        if first:
+            self.first = box
+
         return box
 
 
@@ -731,16 +760,18 @@ class Boxer(Tymee):
 
 
 
-    def do(self, deed: None|str|Callable=None, *, name: str|None=None,
-           mods: WorkDom|None=None, **iops)->str:
+    def do(self, deed: None|str|Callable=None, nabe=None, *,
+                 name: str|None=None, mods: WorkDom|None=None, **iops)->str:
         """Make an act and add to box work
 
         Parameters:
             deed (None|str|Callable): When str name of class in ActBase registry.
                     When None use Act with default lambda and iops as parameters.
                     When Callable use Act with iops as parameters.
-
-
+            name (None|str): name of act instance created by do.
+                    When None use default indexed name created by Act.
+            nabe (None|str): action nabe (context) for act instance created by do.
+                    None means use nabe from mods.
             mods (None | WorkDom):  state variables used to construct box work
                 None is just to allow definition as keyword arg. Assumes in
                 actual usage that mods is always provided as WorkDom instance.
@@ -751,28 +782,22 @@ class Boxer(Tymee):
         m = mods  # alias more compact
 
         parms = dict(name=name, mine=self.mine, dock=self.dock)
-        if m.nabe != Nabe.native:
-            parms.update(nabe=m.nabe)  # override default nabe for klas
+        if nabe is None:
+            nabe = m.nabe
+        if nabe != Nabes.native:
+            parms.update(nabe=nabe)   # override native nabe for klas
 
         iops = dict(_boxer=self.name, _box=m.box.name, **iops)
         parms.update(iops=iops)
 
-
         deed = deed if deed is not None else "Act"
 
-        if isinstance(deed, str):
-            try:
-                klas = m.acts[deed]
-            except KeyError as ex:
-                raise HierError(f"Unregistered deed='{deed}'") from ex
-
-            act = klas(**parms)
-
-        elif callable(deed):
-            act = Act(deed=deed, **parms)
-
-        else:
-            raise HierError(f"Invalid {deed=}")
+        try:  # is deed registered act class name or alias
+            klas = m.acts[deed]  # get registered klas
+        except KeyError:  # not registered act class name
+            act = Act(deed=deed, **parms)  # executable statement(s) or callable
+        else:  # deed is registered act class name or alias
+            act = klas(**parms)  # create act from klas with **parms
 
         nabe = act.nabe  # act init may override passed in nabe
 
@@ -781,9 +806,7 @@ class Boxer(Tymee):
         except (KeyError, AttributeError) as ex:
             raise HierError("Unrecognized nabe='{nabe}'") from ex
 
-
         return act
-
 
 
     def on(self, cond: None|str=None, key: None|str=None, expr: None|str=None,
@@ -863,6 +886,25 @@ class Boxer(Tymee):
                 _expr = (f"(M.{mk}.value is None and M.{key}._tyme is not None) or "
                          f"(M.{mk}.value is not None and M.{key}._tyme > M.{mk}.value)")
 
+            elif cond == "reupdate":
+                if not key:
+                    raise HierError(f"Missing bag key for special need '{cond=}'")
+                iops.update(_key=key)
+                mks =  ("", "boxer", self.name, "box", m.box.name, "reupdate", key)
+                mk = self.mine.tokey(mks)  # mark bag key
+                name = ReupdateMark.__name__ + key
+                found = False
+                for mark in m.box.remarks:  # check if already has mark for key
+                    if mark.name == name:
+                        found = True
+                        break
+                if not found:  # no preexisting UpdateMark for this key
+                    mark = ReupdateMark(name=name, iops=iops, mine=self.mine, dock=self.dock)
+                    m.box.remarks.append(mark)  # update is always enmark
+
+                _expr = (f"(M.{mk}.value is None and M.{key}._tyme is not None) or "
+                         f"(M.{mk}.value is not None and M.{key}._tyme > M.{mk}.value)")
+
             elif cond == "change":
                 if not key:
                     raise HierError(f"Missing bag key for special need '{cond=}'")
@@ -880,20 +922,152 @@ class Boxer(Tymee):
                     m.box.enmarks.append(mark)  # update is always enmark
 
                 _expr = (f"M.{mk}.value != M.{key}._astuple()")
+
+            elif cond == "rechange":
+                if not key:
+                    raise HierError(f"Missing bag key for special need '{cond=}'")
+                iops.update(_key=key)
+                mks =  ("", "boxer", self.name, "box", m.box.name, "rechange", key)
+                mk = self.mine.tokey(mks)  # mark bag key
+                name = RechangeMark.__name__ + key
+                found = False
+                for mark in m.box.remarks:  # check if already has mark for key
+                    if mark.name == name:
+                        found = True
+                        break
+                if not found:  # no preexisting ChangeMark for this key
+                    mark = RechangeMark(name=name, iops=iops, mine=self.mine, dock=self.dock)
+                    m.box.remarks.append(mark)  # update is always enmark
+
+                _expr = (f"M.{mk}.value != M.{key}._astuple()")
+
+            elif match := Rexlps.match(cond):  # lapse special need
+                mks =  ("", "boxer", self.name, "box", m.box.name, "lapse")
+                mk = self.mine.tokey(mks)  # mark bag key
+                name = LapseMark.__name__
+                found = False
+                for mark in m.box.enmarks:  # check if already has mark for key
+                    if mark.name == name:
+                        found = True
+                        break
+                if not found:  # no preexisting ElapseMark for this box
+                    mark = LapseMark(name=name, iops=iops, mine=self.mine, dock=self.dock)
+                    m.box.enmarks.append(mark)  # lapse is always enmark
+
+                _, cmp = match.group("lps", "cmp")
+
+                _expr = (f"((M.{mk}.value is not None) and (M.{mk}._now is not None)"
+                         f" and (M.{mk}._now - M.{mk}.value)" + cmp + ")")
+
+            elif match := Rexrlp.match(cond):  # relapse special need
+                mks =  ("", "boxer", self.name, "box", m.box.name, "relapse")
+                mk = self.mine.tokey(mks)  # mark bag key
+                name = RelapseMark.__name__
+                found = False
+                for mark in m.box.remarks:  # check if already has mark for key
+                    if mark.name == name:
+                        found = True
+                        break
+                if not found:  # no preexisting ElapseMark for this box
+                    mark = RelapseMark(name=name, iops=iops, mine=self.mine, dock=self.dock)
+                    m.box.remarks.append(mark)  # relapse is always remark
+
+                _, cmp = match.group("rlp", "cmp")
+
+                _expr = (f"((M.{mk}.value is not None) and (M.{mk}._now is not None)"
+                         f" and (M.{mk}._now - M.{mk}.value)" + cmp + ")")
+
+            elif match := Rexcnt.match(cond):  # count special need
+                mks =  ("", "boxer", self.name, "box", m.box.name, "count")
+                mk = self.mine.tokey(mks)  # count mark bag key
+                if mk not in self.mine:
+                    self.mine[mk] = Bag()  # create bag default value = None
+
+                _, cmp = match.group("cnt", "cmp")
+                _expr = (f"M.{mk}.value" + cmp)
+
+
             else:
                 raise HierError(f"Invalid special need {cond=}")
 
         # now _expr is valid
-
         if expr:  # both resolved cond as _expr and expr so AND together
             _expr = "(" + _expr + ") and (" + expr + ")"
 
         need = Need(expr=_expr, mine=self.mine, dock=self.dock)
-
         return need
 
 
+    def at(self, nabe: str=Nabes.native, *, mods: WorkDom|None=None)->str:
+        """Make set mods.nabe to nabe
 
+        Parameters:
+            nabe (str): action nabe (context) for mods. Defualt is native
+
+            mods (None | WorkDom):  state variables used to construct box work
+                None is just to allow definition as keyword arg. Assumes in
+                actual usage that mods is always provided as WorkDom instance.
+
+        """
+        m = mods  # alias more compact
+        if nabe not in Nabes._fields:
+            raise HierError("Invalid {nabe=}")
+
+        m.nabe = nabe
+        return nabe
+
+
+    def be(self, lhs: str|tuple[str], rhs: None|str|Callable=None, nabe=None, *,
+                 name: str|None=None, mods: WorkDom|None=None, **iops)->str:
+        """Make Beact instance that assigns mine bag at lhs to value from rhs.
+        lhs is of form "key.field"
+        rhs may be either a Callable or an evalable expression or None.
+        Resulting act performs on of:
+        M.key.field = None   when rhs is None
+        M.key.field = eval(rhs)  when rhs is evalable str
+        M.key.field = rhs(**parms)  when rhs is callable
+
+        Usage:
+            be(lhs, rhs)
+
+        Parameters:
+            lhs (str|tuple[str]): key.field in mine to be assigned.
+                Resolves lhs to (key, field)
+            rhs (None|str|Callable):
+                When None assign directly
+                When str compile to evable expression
+                When Callable then call directly with iops
+            nabe (None|str): action nabe (context) for act instance created by do.
+                    None means use nabe from mods.
+            name (None|str): name of act instance created by do.
+                    When None use default indexed name created by Act.
+            mods (None | WorkDom):  state variables used to construct box work
+                None is just to allow definition as keyword arg. Assumes in
+                actual usage that mods is always provided as WorkDom instance.
+            iops (dict): input-output-parms for Beact
+
+        """
+        m = mods  # alias more compact
+
+        parms = dict(name=name, mine=self.mine, dock=self.dock)
+        if nabe is None:
+            nabe = m.nabe
+        if nabe != Nabes.native:
+            parms.update(nabe=nabe)   # override native nabe for klas
+
+        iops = dict(_boxer=self.name, _box=m.box.name, **iops)
+        parms.update(iops=iops)
+
+        # Create instance of Beact
+        act = Beact(rhs=rhs, lhs=lhs, **parms)
+        nabe = act.nabe  # act init may override passed in nabe
+
+        try:
+            getattr(m.box, nabeDispatch[nabe]).append(act)
+        except (KeyError, AttributeError) as ex:
+            raise HierError("Unrecognized nabe='{nabe}'") from ex
+
+        return act
 
 
     @staticmethod
@@ -973,9 +1147,10 @@ class Boxer(Tymee):
 
 
 
-class Maker(Mixin):
-    """Maker Class makes boxworks of Boxer and Box instances.
-    Holds reference to in-memory mine shared by all boxes in boxwork
+class Boxery(Mixin):
+    """Boxery Class builds multiple boxworks of Boxer and Box instances.
+    Holds reference to in-memory mine shared by all boxers and their boxes in
+    multi-boxer boxworks
     Holds reference to current Boxer and Box being built
 
     ****Placeholder for now. Future to be able to make multiple boxers from
@@ -1004,7 +1179,7 @@ class Maker(Mixin):
 
 
         """
-        super(Maker, self).__init__(**kwa)
+        super(Boxery, self).__init__(**kwa)
         self.name = name
         self.mine = mine if mine is not None else Mine()
         self.dock = dock  # stub until create Dock class
@@ -1056,3 +1231,118 @@ class Maker(Mixin):
         boxers.append(boxer)
 
         fun()
+
+
+class BoxerDoer(Doer):
+    """BoxerDoer .recur method is a generator method that runs its boxer.run()
+    generator method with 'yield from' delegation. A Doer subclass whose recur
+    is a generator method is in turn run by its .do method using 'yield from'
+    delegation which is in turn run by a Doist or DoDoer using next() and generator
+    .send().
+
+
+    Inherited Attributes:
+        done (bool | None): completion state: True means completed
+            Otherwise incomplete. Incompletion maybe due to close or abort.
+        opts (dict): injected options into its .do generator by scheduler
+        temp (bool | None): use temporary file resources if any
+
+    Inherited Properties:
+        tyme (float): relative cycle time of associated Tymist .tyme obtained
+            via injected .tymth function wrapper closure.
+        tymth (closure): function wrapper closure returned by Tymist.tymen() method.
+            When .tymth is called it returns associated Tymist.tyme.
+            .tymth provides injected dependency on Tymist tyme base.
+        tock (float): desired time in seconds between runs or until next run,
+                 non negative, zero means run asap
+
+    Inherited Methods:
+        .wind  injects ._tymth dependency from associated Tymist to get its .tyme
+        .__call__ makes instance callable
+            Appears as generator function that returns generator
+        .do is generator method that returns generator
+        .enter is enter context action method
+        .recur is recur context action method or generator method
+        .exit is exit context method
+        .close is close context method
+        .abort is abort context method
+
+    Attributes:
+        boxer (Boxer): boxwork instance this doer runs
+
+    Overidden Methods:
+        .recur
+
+    Hidden:
+       ._tymth is injected function wrapper closure returned by .tymen() of
+            associated Tymist instance that returns Tymist .tyme. when called.
+       ._tock is hidden attribute for .tock property
+
+    """
+
+    def __init__(self, boxer, **kwa):
+        """
+        Initialize instance.
+
+        Parameters:
+            boxer (Boxer): instance of boxer to run
+
+        """
+        super(BoxerDoer, self).__init__(**kwa)
+        self.boxer = boxer
+
+
+
+    def wind(self, tymth):
+        """
+        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+        Updates winds .tymer .tymth
+        """
+        super(BoxerDoer, self).wind(tymth)
+        self.boxer.wind(tymth)
+
+
+    def enter(self, *, temp=None):
+        """Do 'enter' context actions. Not a generator method.
+        Set up resources. Comparable to context manager enter.
+
+        Parameters:
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value. Use self.temp
+
+        Inject temp or self.temp into file resources here if any
+        """
+        mods = self.boxer.make()
+        if not self.tymth:
+            raise HierError(f"Unable to wind boxer with doer's tymth")
+        self.boxer.wind(self.tymth)  # ensures are bags in boxer.mine are wound
+
+
+    def recur(self, tock=None):
+        """Do 'recur' context actions as a generator method.
+
+        Parameters:
+            tock (float|None): this doer when creating this generator in recur
+                section of its .do method supplies its .tock as this method's
+                tock parameter.
+                Note, the doist tyme is delegated through the 'yield from'
+                to the eventual target yield at the  bottom of delegation chain.
+                when tock fed back to doist is None or 0.0 it indicates to
+                run again ASAP (on next iteration of doist.do)
+
+
+        Returns:
+           completion (bool): completion state of recurrence actions.
+                              True means completed successfully
+                              False completed unsuccessfully
+
+        Note that "tyme" is not a parameter when recur is a generator method
+        since doist tyme is injected by the explicit yield below.
+        The recur method itself returns a generator so parameters
+        to this method are to setup the generator not to be used at recur time.
+
+        Assumes resource setup in .enter() and resource takedown in .exit()
+        """
+        tock = tock if tock is not None else self.tock
+        done = yield from self.boxer.run(tock=tock)
+        return done

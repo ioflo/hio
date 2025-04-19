@@ -2,8 +2,11 @@
 """
 hio.base.hier Package
 """
-from .hiering import Nabe, WorkDom, actify, register, ActBase
-from .boxing import Box, Boxer, Maker
-from .acting import Act, Goact, EndAct, UpdateMark, ChangeMark, Count, Discount
+from .hiering import Nabes, WorkDom, actify, register, ActBase
+from .boxing import Rexlps, Rexrlp, Rexcnt, Box, Boxer, BoxerDoer, Boxery
+from .acting import (Act, Goact, EndAct, Beact, Mark, LapseMark, RelapseMark,
+                     Count, Discount,
+                     BagMark, UpdateMark, ReupdateMark,
+                     ChangeMark, RechangeMark)
 from .needing import Need
 from .bagging import TymeDom, Bag
