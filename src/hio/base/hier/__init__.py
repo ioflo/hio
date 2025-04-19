@@ -3,7 +3,7 @@
 hio.base.hier Package
 """
 from .hiering import Nabes, WorkDom, actify, register, ActBase
-from .boxing import Rexlps, Rexrlp, Rexcnt, Box, Boxer, Boxery
+from .boxing import Rexlps, Rexrlp, Rexcnt, Box, Boxer, BoxerDoer, Boxery
 from .acting import (Act, Goact, EndAct, Beact, Mark, LapseMark, RelapseMark,
                      Count, Discount,
                      BagMark, UpdateMark, ReupdateMark,

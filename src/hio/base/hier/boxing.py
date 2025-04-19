@@ -280,7 +280,7 @@ class Boxer(Tymee):
     Attributes:
         mine (Mine): ephemeral bags in mine (in memory) shared by boxwork
         dock (Dock): durable bags in dock (on disc) shared by boxwork
-        doer (Doer | None): doer running this boxer  (do we need this?)
+        fun (Callable): function to make boxwork
         boxes (dict): all boxes mapping of (box name, box) pairs
         first (Box | None):  beginning box
         box (Box | None):  active box
@@ -295,23 +295,21 @@ class Boxer(Tymee):
 
 
     """
-    def __init__(self, *, name='boxer', mine=None, dock=None, doer=None, **kwa):
+    def __init__(self, *, name='boxer', mine=None, dock=None, fun=None, **kwa):
         """Initialize instance.
 
         Parameters:
             name (str): unique identifier of box
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
-            doer (Doer | None): Doer running this Boxer doe we need this?
-
+            fun (None|Callable): function to make boxwork
 
         """
         super(Boxer, self).__init__(**kwa)
         self.name = name
         self.mine = mine if mine is not None else Mine()
         self.dock = dock  # stub until create Dock class
-        self.doer = doer
-
+        self.fun = fun
         self.boxes = {}
         self.first = None  # box to start in
         self.box = None  # current active box  whose pile is active pile
@@ -352,6 +350,7 @@ class Boxer(Tymee):
         for bag in self.mine.values():
             if isinstance(bag, Bag):
                 bag._wind(tymth=self.tymth)
+
 
     def rewind(self, tymth=None):
         """Inject new tymist.tymth as new ._tymth when tymth is not None.
@@ -592,17 +591,19 @@ class Boxer(Tymee):
                                        f"boxer {self.name}.") from ex
 
 
-    def make(self, fun):
+    def make(self, fun=None):
         """Make box work for this boxer from function fun
         Parameters:
-            fun (function):  employs be, go, do, on, at, be, verb functions with
+            fun (Callable|None):  employs be, go, do, on, at, be, verb functions with
                 injected mods of boxwork state vars
+                When None use self.fun
 
         Injects mods as WorkDom dataclass instance whose attributes are used to
         construct boxwork.
 
-
         """
+        fun = fun if fun is not None else self.fun
+
         works = WorkDom()  # standard defaults
         works.acts = ActBase.Registry
         bx = modify(mods=works)(self.bx)
@@ -611,6 +612,7 @@ class Boxer(Tymee):
         on = modify(mods=works)(self.on)
         at = modify(mods=works)(self.at)
         be = modify(mods=works)(self.be)
+
         # calling fun will build boxer.boxes
         fun(bx=bx, go=go, do=do, on=on, at=at, be=be)
         self.resolve()
@@ -1231,8 +1233,116 @@ class Boxery(Mixin):
         fun()
 
 
-def BoxerDoer(Doer):
-    """BoxerDoer subclass of Doer that runs a Boxer boxwork
+class BoxerDoer(Doer):
+    """BoxerDoer .recur method is a generator method that runs its boxer.run()
+    generator method with 'yield from' delegation. A Doer subclass whose recur
+    is a generator method is in turn run by its .do method using 'yield from'
+    delegation which is in turn run by a Doist or DoDoer using next() and generator
+    .send().
 
+
+    Inherited Attributes:
+        done (bool | None): completion state: True means completed
+            Otherwise incomplete. Incompletion maybe due to close or abort.
+        opts (dict): injected options into its .do generator by scheduler
+        temp (bool | None): use temporary file resources if any
+
+    Inherited Properties:
+        tyme (float): relative cycle time of associated Tymist .tyme obtained
+            via injected .tymth function wrapper closure.
+        tymth (closure): function wrapper closure returned by Tymist.tymen() method.
+            When .tymth is called it returns associated Tymist.tyme.
+            .tymth provides injected dependency on Tymist tyme base.
+        tock (float): desired time in seconds between runs or until next run,
+                 non negative, zero means run asap
+
+    Inherited Methods:
+        .wind  injects ._tymth dependency from associated Tymist to get its .tyme
+        .__call__ makes instance callable
+            Appears as generator function that returns generator
+        .do is generator method that returns generator
+        .enter is enter context action method
+        .recur is recur context action method or generator method
+        .exit is exit context method
+        .close is close context method
+        .abort is abort context method
+
+    Attributes:
+        boxer (Boxer): boxwork instance this doer runs
+
+    Overidden Methods:
+        .recur
+
+    Hidden:
+       ._tymth is injected function wrapper closure returned by .tymen() of
+            associated Tymist instance that returns Tymist .tyme. when called.
+       ._tock is hidden attribute for .tock property
 
     """
+
+    def __init__(self, boxer, **kwa):
+        """
+        Initialize instance.
+
+        Parameters:
+            boxer (Boxer): instance of boxer to run
+
+        """
+        super(BoxerDoer, self).__init__(**kwa)
+        self.boxer = boxer
+
+
+
+    def wind(self, tymth):
+        """
+        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+        Updates winds .tymer .tymth
+        """
+        super(BoxerDoer, self).wind(tymth)
+        self.boxer.wind(tymth)
+
+
+    def enter(self, *, temp=None):
+        """Do 'enter' context actions. Not a generator method.
+        Set up resources. Comparable to context manager enter.
+
+        Parameters:
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value. Use self.temp
+
+        Inject temp or self.temp into file resources here if any
+        """
+        mods = self.boxer.make()
+        if not self.tymth:
+            raise HierError(f"Unable to wind boxer with doer's tymth")
+        self.boxer.wind(self.tymth)  # ensures are bags in boxer.mine are wound
+
+
+    def recur(self, tock=None):
+        """Do 'recur' context actions as a generator method.
+
+        Parameters:
+            tock (float|None): this doer when creating this generator in recur
+                section of its .do method supplies its .tock as this method's
+                tock parameter.
+                Note, the doist tyme is delegated through the 'yield from'
+                to the eventual target yield at the  bottom of delegation chain.
+                when tock fed back to doist is None or 0.0 it indicates to
+                run again ASAP (on next iteration of doist.do)
+
+
+        Returns:
+           completion (bool): completion state of recurrence actions.
+                              True means completed successfully
+                              False completed unsuccessfully
+
+        Note that "tyme" is not a parameter when recur is a generator method
+        since doist tyme is injected by the explicit yield below.
+        The recur method itself returns a generator so parameters
+        to this method are to setup the generator not to be used at recur time.
+
+        Assumes resource setup in .enter() and resource takedown in .exit()
+        """
+        tock = tock if tock is not None else self.tock
+        done = yield from self.boxer.run(tock=tock)
+        return done

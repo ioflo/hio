@@ -708,8 +708,7 @@ class Doer(tyming.Tymee):
 
 
 class ReDoer(Doer):
-    """
-    ReDoer is an example sub class whose .recur is a generator method not a
+    """ReDoer is an example sub class whose .recur is a generator method not a
     plain method. Its .do method detects that its .recur is a generator method
     and executes it using yield from instead of just calling the method.
 

@@ -21,9 +21,9 @@ from dataclasses import dataclass, astuple, asdict, field
 
 from hio import hioing
 from hio.help import helping, modify, Mine, Renam
-from hio.base import Tymist
+from hio.base import Tymist, Doist
 from hio.base.hier import (Nabes, Rexcnt, Rexlps, Rexrlp, Bag,
-                           Box, Boxer, Boxery,
+                           Box, Boxer, BoxerDoer, Boxery,
                            ActBase, Act, EndAct, )
 
 
@@ -321,7 +321,7 @@ def test_boxer_basic():
     assert boxer.tymth == None
     assert boxer.name == 'boxer'
     assert boxer.mine == Mine()
-    assert boxer.doer == None
+    assert boxer.fun == None
 
     assert boxer.boxes == {}
     assert boxer.first == None
@@ -987,7 +987,7 @@ def test_boxer_run_lapse():
 
     """Done Test"""
 
-def test_boxer_make_run_relapse():
+def test_boxer_run_relapse():
     """Test make method of Boxer with relapse condition
 
     """
@@ -1082,6 +1082,62 @@ def test_boxer_make_run_relapse():
         assert ex.args[0] == True
     assert boxer.box is None
     assert boxer.endial()
+
+    """Done Test"""
+
+
+def test_boxer_doer():
+    """Test BoxerDoer"""
+
+    def fun(bx, go, do, on, at, be, *pa):
+        bx(name='top')
+        bx('mid', 'top')
+        at('redo')
+        do("count")
+        at("exdo")
+        do("discount")
+        go('done', on("count >= 5"))
+        bx('bot0', 'mid', first=True)
+        go("next", on("lapse >= 2.0"))
+        bx('bot1')  # over defaults to same as prev box
+        go("next", on("lapse >= 2.0"))
+        bx('bot2')  # over defaults to same as prev box
+        go("bot0")
+        bx(name='done', over=None)
+        do('end')
+
+    tock = 1.0
+    doist = Doist(tock=tock)
+    assert doist.tyme == 0.0  # on next cycle
+    assert doist.tock == tock == 1.0
+    assert doist.real == False
+    assert doist.limit == None
+    assert doist.doers == []
+
+    mine = Mine()
+    boxer = Boxer(mine=mine, fun=fun)
+    assert boxer.fun == fun
+    assert boxer.boxes == {}
+
+    doer = BoxerDoer(boxer=boxer, tock=tock)
+    assert doer.boxer == boxer
+    assert doer.tock == tock
+
+    doers = [doer]
+
+    ticks = 10
+    limit = tock * ticks
+    assert limit == 10.0
+    doist.do(doers=doers, limit=limit)  # doist.do sets all doer.tymth to its tymth
+    assert doist.tyme == 8.0  # redoer exits before limit
+
+    assert mine._boxer_boxer_box_mid_count.value == None
+    assert mine._boxer_boxer_box_bot0_lapse.value == 5.0
+    assert mine._boxer_boxer_box_bot0_lapse._tyme == 5.0
+    assert mine._boxer_boxer_box_bot0_lapse._now == 8.0
+    assert mine._boxer_boxer_box_bot1_lapse.value == 2.0
+    assert mine._boxer_boxer_box_bot1_lapse._tyme == 2.0
+    assert mine._boxer_boxer_box_bot1_lapse._now == 8.0
 
     """Done Test"""
 
@@ -1249,8 +1305,8 @@ def test_concept_bx_nonlocal():
     assert str(b5) == 'Box(top<box0<box5>)'
     assert str(b6) == 'Box(top<box0<box6>)'
 
-
     """Done Test"""
+
 
 def test_concept_bx_global():
     """Test concept for bx function for adding box to box work
@@ -1415,7 +1471,8 @@ if __name__ == "__main__":
     test_boxer_run_on_count()
     test_boxer_run_verbs()
     test_boxer_run_lapse()
-    test_boxer_make_run_relapse()
+    test_boxer_run_relapse()
+    test_boxer_doer()
     test_boxery_basic()
     test_concept_bx_nonlocal()
     test_concept_bx_global()
