@@ -259,10 +259,6 @@ class Doist(tyming.Tymist):
                 except AttributeError:  # bount method generator
                     # write to doer.__func__.done read from doer.done
                     doer.__func__.done = ex.value if ex.value is not None else doer.done
-                #try:
-                    #doer.done = ex.value if ex.value else False  # assign done state
-                #except AttributeError:
-                    #doer.__func__.done = ex.value if ex.value else False  # assign done state
                 continue  # don't append
             deeds.append((dog, self.tyme, doer))
         return deeds
@@ -781,11 +777,19 @@ class ReDoer(Doer):
         """Do 'recur' context actions as a generator method. Override in subclass.
 
         Parameters:
-            tock (float|None): .do method feeds .tock as paramter when creating
-                generator in recur section of do.  The doist tyme is delegated
-                through the yield from to the eventual target yield at bottom of
-                delegation chain.
+            tock (float|None): this doer when creating this generator in recur
+                section of its .do method supplies its .tock as this method's
+                tock parameter.
+                Note, the doist tyme is delegated through the 'yield from'
+                to the eventual target yield at the  bottom of delegation chain.
+                when tock fed back to doist is None or 0.0 it indicates to
+                run again ASAP (on next iteration of doist.do)
 
+
+        Returns:
+           completion (bool): completion state of recurrence actions.
+                              True means completed successfully
+                              False completed unsuccessfully
 
         Note that "tyme" is not a parameter when recur is a generator method
         since doist tyme is injected by the explicit yield below.
@@ -799,10 +803,7 @@ class ReDoer(Doer):
         accepts the current tyme
         return value is used for .done  (true done false not done but ended)
 
-        Parameters:
-            tyme is initial output of send fed to do yield, Doist feeds its .tyme
-        Returns completion state of recurrence actions.
-           True means done False means continue
+
 
         For base class do:
             yield from this generator recur method which runs until returns

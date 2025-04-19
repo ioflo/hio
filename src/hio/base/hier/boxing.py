@@ -369,20 +369,43 @@ class Boxer(Tymee):
                 bag._wind(tymth=self.tymth)
 
 
-    def beginOne(self):
-        """Prepare for and run first pass
+    def run(self, tock=0.0):
+        """Run boxer hierarchical state machine (boxwork) as generator.
+
+        Parameters:
+            tock (float|None): creation of generator supplies tock as parameter.
+                The doist tyme is delegated through 'yield from' delegations
+                to the eventual target yield at bottom of 'yield from' delegation
+                chain.
+                A tock value fed back to doist of None or 0.0 indicates to doist
+                to run again ASAP (on next iteration of doist.do)
+
+
+        Returns:
+           completion (bool): completion state boxwork.
+                              True means completed successfully
+                              False completed unsuccessfully
+
+        Note that "tyme" is not a parameter. The doist tyme is injected through
+        the explicit yields below.
+
+
         """
-        if not self.first:
-            self.first = list(self.boxes.values())[0]  # first box in boxes is default first
+        if not self.first:  # first box in boxes is default first
+            self.first = list(self.boxes.values())[0]
         self.box = self.first
         rendos = []  # first pass no rendo (re-enter) of any boxes
         endos = self.box.pile  # endo (enter) all boxes in pile potential entry
-        if not self.predo(endos):  # predo nabe, action preacts not satisfied
-            # do end stuff since no entry yet then no exdo
-            self.box = None  # no active box anymore
-            return True  # signal end before first pass
 
-        # first run
+        if not self.predo(endos):  # predo nabe, action preacts not satisfied
+            # since no entry yet then no exdo
+            self.box = None  # no active box anymore
+            return False  # signal failure due to end in enter before first pass
+
+        # finished of enter next() delegation 'yield from' delegation
+        tyme = yield(tock)  # pause end of next, resume start of send
+
+        # first pass
         self.rendo(rendos)  # rendo nabe, action remarks and renacts
         self.endo(endos)  # endo nabe, action enmarks and enacts
 
@@ -390,47 +413,41 @@ class Boxer(Tymee):
             for react in box.reacts:   # redo nabe top down
                 react()
 
-        return False  # not end yet keep going
+        while True:  # run forever
+            tyme = yield(tock)  # resume on send
+            rendos = []
+            endos = []
 
+            if self.endial():  # previous pass actioned desire to end
+                self.end()  # exdos all active boxes in self.box.pile
+                self.box = None  # no active box
+                return True  # signal successful end after last pass
 
-    def runOne(self):
-        """Execute pass after tyme as ticked so lapsed time is known
-        """
-        rendos = []
-        endos = []
+            transit = False
+            for box in self.box.pile:  # top down evaluate andos and godos
+                for anact in box.anacts:   # ando nabe top down, after tyme tick
+                    anact()
 
-        if self.endial():  # previous pass actioned desire to end
-            self.end()  # exdos all active boxes in self.box.pile
-            self.box = None  # no active box
-            return True  # signal end after last pass
+                for goact in box.goacts:  # godo nabe top down
+                    if dest := goact():  # transition condition satisfied
+                        exdos, endos, rendos, rexdos = self.exen(box, dest)
+                        if not self.predo(endos):  # godo not satisfied
+                            continue  # keep trying
+                        self.exdo(exdos)  # exdo bottom up
+                        self.rexdo(rexdos)  # rexdo bottom up  (boxes retained)
+                        self.box = dest  # set new active box
+                        transit = True
+                        break
 
-        transit = False
-        for box in self.box.pile:  # top down evaluate andos and godos
-            for anact in box.anacts:   # ando nabe top down, after tyme tick
-                anact()
-
-            for goact in box.goacts:  # godo nabe top down
-                if dest := goact():  # transition condition satisfied
-                    exdos, endos, rendos, rexdos = self.exen(box, dest)
-                    if not self.predo(endos):  # godo not satisfied
-                        continue  # keep trying
-                    self.exdo(exdos)  # exdo bottom up
-                    self.rexdo(rexdos)  # rexdo bottom up  (boxes retained)
-                    self.box = dest  # set new active box
-                    transit = True
+                if transit:
                     break
 
-            if transit:
-                break
+            self.rendo(rendos)  # rendo nabe, action remarks and renacts
+            self.endo(endos)  # endo nabe, action enmarks and enacts
 
-        self.rendo(rendos)  # rendo nabe, action remarks and renacts
-        self.endo(endos)  # endo nabe, action enmarks and enacts
-
-        for box in self.box.pile:  # top down
-            for react in box.reacts:   # redo nabe top down
-                react()
-
-        return False  # continue running not done
+            for box in self.box.pile:  # top down
+                for react in box.reacts:   # redo nabe top down
+                    react()
 
 
     def end(self):
