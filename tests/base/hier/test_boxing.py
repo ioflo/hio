@@ -186,7 +186,7 @@ def test_box_basic():
     assert box.enmarks == []
     assert box.enacts == []
     assert box.reacts == []
-    assert box.anacts == []
+    assert box.afacts == []
     assert box.goacts == []
     assert box.exacts == []
     assert box.rexacts == []
