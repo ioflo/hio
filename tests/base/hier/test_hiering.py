@@ -37,7 +37,7 @@ def test_nabe():
                                 'enmark': 'enmark',
                                 'endo': 'endo',
                                 'redo': 'redo',
-                                'ando': 'ando',
+                                'afdo': 'afdo',
                                 'godo': 'godo',
                                 'exdo': 'exdo',
                                 'rexdo': 'rexdo'}

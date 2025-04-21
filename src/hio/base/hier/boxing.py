@@ -66,7 +66,7 @@ nabeDispatch = dict(predo="preacts",
                     enmark="enmarks",
                     endo="enacts",
                     redo="reacts",
-                    ando="anacts",
+                    afdo="afacts",
                     godo="tracts",
                     exdo="exacts",
                     rexdo="rexacts")
@@ -94,7 +94,7 @@ class Box(Tymee):
         enmarks (list[act]): enmark endo mark subcontext acts
         enacts (list[act]):  endo nabe acts
         reacts (list[act]): redo nabe acts
-        anacts (list[act]): ando nabe acts
+        afacts (list[act]): afdo nabe acts
         tracts (list[act]): godo nabe acts
         exacts (list[act]): exdo nabe acts
         rexacts (list[act]): rexdo (re-exdo) nabe acts  (retained)
@@ -151,7 +151,7 @@ class Box(Tymee):
         self.enmarks = []  # enmark subcontext of endo list of mark acts
         self.enacts = []  # endo nabe list of endo acts
         self.reacts = []  # redo nabe list of recurring acts
-        self.anacts = []  # ando nabe list of trailing acts
+        self.afacts = []  # afdo nabe list of trailing acts
         self.goacts = []  # godo nabe list of transition acts
         self.exacts = []  # exdo nabe list of exdo acts
         self.rexacts = []  # rexdo nabe list of re-exdo acts (retained)
@@ -424,8 +424,8 @@ class Boxer(Tymee):
 
             transit = False
             for box in self.box.pile:  # top down evaluate andos and godos
-                for anact in box.anacts:   # ando nabe top down, after tyme tick
-                    anact()
+                for afact in box.afacts:   # afdo nabe top down, after tyme tick
+                    afact()
 
                 for goact in box.goacts:  # godo nabe top down
                     if dest := goact():  # transition condition satisfied
