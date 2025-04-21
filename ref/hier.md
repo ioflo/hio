@@ -2,6 +2,52 @@
 
 ## Hierarchical State Machines
 
+Hierarchical State Machines herein is a euphamism for a hierarchical action framework,
+This is not a finite state machine in the mathematically defined sense. It is
+a graph of states, or frames, or boxes or containers of actions or behaviors
+ where some subset of the containers are active at any point in time
+ and the actions or behaviors in the containers in that active set get executed.
+
+For the sake of simplicity we call this a HAF for hierachical action framework.
+The advantage of a HAF are several. The hierachy of behavioirs minimizes redundant
+expression of behaviors. This significatntly reduces the apparent complexity of
+a complex HAF. This reduced apparent complexity in turn makes it easier to
+reason about the HAf and build more capable, and reliable HAFs.
+
+This hierarchy driven reduction in apparent complexity exibits as follows:
+
+1. Shared transitions in substates may be moved to super states. The number of
+actual transitions implemented in code may theyby be reduced by an order of magnitude.
+
+2. Share recuring behaviors in substates may be moved to super states. The number
+of actual behaviors implemented in code may thereby be reduced by an order of magnitude.
+
+3. Repeated entry and exit behaviors in substates may be moved to super states.
+The number of actual behaviors implemented in code may thereby be reduced by and
+order of magnitude.
+
+4. Hierarchical containers of actions with an inverted priorty vis-a-vis OOP
+where transitions at super states take priority over transitions in sub-states
+enables reusable reliable service envelopes of behaviors to ensure safety and
+fault-tolerance in complex systems while enabling use case specific transition
+logic at the lower layers. This is a critical enabling feature for any real-world
+automation system.
+
+5. Use of a key-value store shared by all states with behavior interfaces to/from
+this key-value store instead of with other behaviors directly enables a
+flow-based programming paradigm with true replacement independence of all
+behaviors. This also removes upstream and downstream scalability limits based
+on control flow dependencies. Indeed, this provides very loose coupling and
+removes dependencies on interfaces. All dependencies are data.
+
+6. Asynchronous IO and asynchronous execution at the HAF level enables ultra-fine
+execution granularity.
+
+7. Predefined components as actions or behaviors that may be flexibly composed
+provides high expressive power without rigidity. This is an enabler for
+for workflow based programming.
+
+
 
 ## Relationship with Ioflo
 
