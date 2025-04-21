@@ -41,7 +41,8 @@ on control flow dependencies. Indeed, this provides very loose coupling and
 removes dependencies on interfaces. All dependencies are data.
 
 6. Asynchronous IO and asynchronous execution at the HAF level enables ultra-fine
-execution granularity.
+execution granularity, scalability, and distribution across execution
+infrastructure such as coroutine, process, core, CPU, host or distributed hosts.
 
 7. Predefined components as actions or behaviors that may be flexibly composed
 provides high expressive power without rigidity. This is an enabler for
