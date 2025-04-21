@@ -255,7 +255,7 @@ The code for the boxer.run generator method is shown below.
 ```python
 
 if not self.first:  # first box in boxes is default first
-     self.first = list(self.boxes.values())[0]
+    self.first = list(self.boxes.values())[0]
 self.box = self.first
 rendos = []  # first pass no rendo (re-enter) of any boxes
 endos = self.box.pile  # endo (enter) all boxes in pile potential entry
@@ -265,10 +265,15 @@ if not self.predo(endos):  # predo nabe, action preacts not satisfied
     self.box = None  # no active box anymore
     return False  # signal failure due to end in enter before first pass
 
+akeys = ("", "boxer", self.name, "active")
+if akeys not in self.mine:
+    self.mine[akeys] = Bag()
+self.mine[akeys].value = self.box.name  # assign active box name
+
 # finished of enter next() delegation 'yield from' delegation
 tyme = yield(tock)  # pause end of next, resume start of send
 
-# first pass
+# begin first pass after send()
 self.rendo(rendos)  # rendo nabe, action remarks and renacts
 self.endo(endos)  # endo nabe, action enmarks and enacts
 
@@ -284,6 +289,7 @@ while True:  # run forever
     if self.endial():  # previous pass actioned desire to end
         self.end()  # exdos all active boxes in self.box.pile
         self.box = None  # no active box
+        self.mine[akeys].value = None  # assign active box name to None
         return True  # signal successful end after last pass
 
     transit = False
@@ -299,6 +305,7 @@ while True:  # run forever
                 self.exdo(exdos)  # exdo bottom up
                 self.rexdo(rexdos)  # rexdo bottom up  (boxes retained)
                 self.box = dest  # set new active box
+                self.mine[akeys].value = self.box.name  # active box name
                 transit = True
                 break
 

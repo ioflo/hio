@@ -991,7 +991,7 @@ def test_boxer_run_lapse():
         tock = rung.send(tymist.tyme)
     except StopIteration as ex:
         assert ex.args[0] == True
-    assert boxer.mine[akeys].value == "done"  # final box
+    assert boxer.mine[akeys].value == None  # no active box name
     assert boxer.box is None
     assert boxer.endial()
 

@@ -404,7 +404,7 @@ class Boxer(Tymee):
         akeys = ("", "boxer", self.name, "active")
         if akeys not in self.mine:
             self.mine[akeys] = Bag()
-        self.mine[akeys].value = self.box.name
+        self.mine[akeys].value = self.box.name  # assign active box name
 
         # finished of enter next() delegation 'yield from' delegation
         tyme = yield(tock)  # pause end of next, resume start of send
@@ -425,6 +425,7 @@ class Boxer(Tymee):
             if self.endial():  # previous pass actioned desire to end
                 self.end()  # exdos all active boxes in self.box.pile
                 self.box = None  # no active box
+                self.mine[akeys].value = None  # assign active box name to None
                 return True  # signal successful end after last pass
 
             transit = False
@@ -440,7 +441,7 @@ class Boxer(Tymee):
                         self.exdo(exdos)  # exdo bottom up
                         self.rexdo(rexdos)  # rexdo bottom up  (boxes retained)
                         self.box = dest  # set new active box
-                        self.mine[akeys].value = self.box.name
+                        self.mine[akeys].value = self.box.name  # active box name
                         transit = True
                         break
 
