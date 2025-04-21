@@ -48,6 +48,12 @@ infrastructure such as coroutine, process, core, CPU, host or distributed hosts.
 provides high expressive power without rigidity. This is an enabler for
 for workflow based programming.
 
+These properties are mutually supporting. Together they provide a the foundation
+for solving the hard problem of automation systems, that is, the coordination
+problem. The coordination problem is poses the following question; how best to
+coordinate the various components of an automation system especially
+a coordiantion system that is adaptive to both a changing environment and
+changing goals and objectives for mission success?
 
 
 ## Relationship with Ioflo
