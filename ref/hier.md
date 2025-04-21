@@ -23,7 +23,7 @@ actual transitions implemented in code may theyby be reduced by an order of magn
 of actual behaviors implemented in code may thereby be reduced by an order of magnitude.
 
 3. Repeated entry and exit behaviors in substates may be moved to super states.
-The number of actual behaviors implemented in code may thereby be reduced by and
+The number of actual behaviors implemented in code may thereby be reduced by an
 order of magnitude.
 
 4. Hierarchical containers of actions with an inverted priorty vis-a-vis OOP
