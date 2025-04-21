@@ -913,6 +913,7 @@ def test_boxer_run_lapse():
     boxer.rewind()
     assert boxer.boxes["mid"].reacts
     assert boxer.boxes["mid"].exacts
+    akeys = ("", "boxer", boxer.name, "active")
 
     assert mine._boxer_boxer_box_mid_count.value is None
     assert mine._boxer_boxer_box_bot0_lapse.value is None
@@ -923,7 +924,9 @@ def test_boxer_run_lapse():
     rung = boxer.run(tock=tock)  # make generator
     assert tymist.tyme == 0.0
     tock = next(rung)  # advance to first yield
+    assert boxer.mine[akeys].value == "bot0"
     tock = rung.send(tymist.tyme) # advance to end of first pass
+    assert boxer.mine[akeys].value == "bot0"
     assert boxer.box.name == "bot0"   # since set as first
     assert mine._boxer_boxer_box_mid_count.value == 0
     assert mine._boxer_boxer_box_bot0_lapse.value == 0.0
@@ -931,6 +934,7 @@ def test_boxer_run_lapse():
     tymist.tick()
     assert tymist.tyme == 1.0
     tock = rung.send(tymist.tyme)
+    assert boxer.mine[akeys].value == "bot0"
     assert boxer.box.name == "bot0"
     assert mine._boxer_boxer_box_mid_count.value == 1
     assert mine._boxer_boxer_box_bot0_lapse.value == 0.0
@@ -938,6 +942,7 @@ def test_boxer_run_lapse():
     tymist.tick()
     assert tymist.tyme == 2.0
     tock = rung.send(tymist.tyme)
+    assert boxer.mine[akeys].value == "bot1"
     assert boxer.box.name == "bot1"
     assert mine._boxer_boxer_box_mid_count.value == 2
     assert mine._boxer_boxer_box_bot0_lapse.value == 0.0
@@ -947,6 +952,7 @@ def test_boxer_run_lapse():
     tymist.tick()
     assert tymist.tyme == 3.0
     tock = rung.send(tymist.tyme)
+    assert boxer.mine[akeys].value == "bot1"
     assert boxer.box.name == "bot1"
     assert mine._boxer_boxer_box_mid_count.value == 3
     assert mine._boxer_boxer_box_bot0_lapse.value == 0.0
@@ -956,6 +962,7 @@ def test_boxer_run_lapse():
     tymist.tick()
     assert tymist.tyme == 4.0
     tock = rung.send(tymist.tyme)
+    assert boxer.mine[akeys].value == "bot2"
     assert boxer.box.name == "bot2"
     assert mine._boxer_boxer_box_mid_count.value == 4
     assert mine._boxer_boxer_box_bot0_lapse.value == 0.0
@@ -965,6 +972,7 @@ def test_boxer_run_lapse():
     tymist.tick()
     assert tymist.tyme == 5.0
     tock = rung.send(tymist.tyme)
+    assert boxer.mine[akeys].value == "bot0"
     assert boxer.box.name == "bot0"
     assert mine._boxer_boxer_box_mid_count.value == 5
     assert mine._boxer_boxer_box_bot0_lapse.value == 5.0
@@ -974,6 +982,7 @@ def test_boxer_run_lapse():
     tymist.tick()
     assert tymist.tyme == 6.0
     tock = rung.send(tymist.tyme)
+    assert boxer.mine[akeys].value == "done"
     assert boxer.box.name == "done"
     assert mine._boxer_boxer_box_mid_count.value is None
     tymist.tick()
@@ -982,6 +991,7 @@ def test_boxer_run_lapse():
         tock = rung.send(tymist.tyme)
     except StopIteration as ex:
         assert ex.args[0] == True
+    assert boxer.mine[akeys].value == "done"  # final box
     assert boxer.box is None
     assert boxer.endial()
 
