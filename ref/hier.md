@@ -27,33 +27,36 @@ The number of actual behaviors implemented in code may thereby be reduced by an
 order of magnitude.
 
 4. Hierarchical containers of actions with an inverted priorty vis-a-vis OOP
-where transitions at super states take priority over transitions in sub-states
-enables reusable reliable service envelopes of behaviors to ensure safety and
-fault-tolerance in complex systems while enabling use case specific transition
-logic at the lower layers. This is a critical enabling feature for any real-world
-automation system.
+where transitions at super states take priority over transitions in sub-states.
+This priorty inversion enables reusable reliable service envelopes of behaviors
+at higher layers to ensure safety and fault-tolerance in complex systems while
+enabling use case  specific transition logic at the lower layers. This is a
+critical enabling feature for any real-world automation system.
 
-5. Use of a key-value store shared by all states with behavior interfaces to/from
-this key-value store instead of with other behaviors directly enables a
+5. Use of a key-value store shared by all states with action/behavior access to
+this key-value store directly. Interaction between behaviors is modulated through
+the store, i.e. is indirect instead of direct. This indirect interaction enables a
 flow-based programming paradigm with true replacement independence of all
-behaviors. This also removes upstream and downstream scalability limits based
-on control flow dependencies. Indeed, this provides very loose coupling and
-removes dependencies on interfaces. All dependencies are data.
+behaviors while enabling observation and capture of all data flows vis-a-vis the
+shared key-value store. This also removes upstream and downstream scalability
+limits based on control flow dependencies. Indeed, this provides very loose
+coupling and removes dependencies on interfaces. All dependencies are data items
+in the shared key-value store.
 
 6. Asynchronous IO and asynchronous execution at the HAF level enables ultra-fine
 execution granularity, scalability, and distribution across execution
 infrastructure such as coroutine, process, core, CPU, host or distributed hosts.
 
 7. Predefined components as actions or behaviors that may be flexibly composed
-provides high expressive power without rigidity. This is an enabler for
-for workflow based programming.
+to provide high expressive power. This is a critical enabler for dynamic and
+adaptive workflow based programming.
 
-These properties are mutually supporting. Together they provide a the foundation
+These properties are mutually supporting. Together they provide a powerful foundation
 for solving the hard problem of automation systems, that is, the coordination
-problem. The coordination problem is poses the following question; how best to
+problem. The coordination problem poses the following question; how best to
 coordinate the various components of an automation system especially
-a coordiantion system that is adaptive to both a changing environment and
-changing goals and objectives for mission success?
+a coordiantion system that is dynamically adaptive (in-stride) to both a
+changing environment and changing goals and objectives for mission success?
 
 
 ## Relationship with Ioflo
