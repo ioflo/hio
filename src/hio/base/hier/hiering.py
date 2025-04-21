@@ -68,17 +68,17 @@ Fields:
    enmark (str): enmark sub-nabe of endo
    endo (str): endo nabe
    redo (str): redo nabe
-   ando (str): ando nabe
+   afdo (str): afdo nabe
    godo (str): godo nabe
    exdo (str): exdo nabe
    rexdo (str): rexdo nabe
 """
 Nabage = namedtuple("Nabage", "native predo remark rendo enmark endo"
-                                      " redo ando godo exdo rexdo")
+                                      " redo afdo godo exdo rexdo")
 
-Nabe = Nabage(native="native", predo="predo", remark="remark",
+Nabes = Nabage(native="native", predo="predo", remark="remark",
                      rendo="rendo", enmark="enmark", endo="endo",
-                     redo="redo", ando="ando", godo="godo",
+                     redo="redo", afdo="afdo", godo="godo",
                      exdo="exdo", rexdo="rexdo")
 
 
@@ -103,7 +103,7 @@ class WorkDom(MapDom):
     bxpre: str = 'box'  # default box name prefix when name not provided
     bxidx: int = 0  # default box name index when name not provided
     acts: dict = field(default_factory=dict)  # registry of Acts by name & aliases
-    nabe: str = Nabe.native  # current action nabe (context)
+    nabe: str = Nabes.native  # current action nabe (context)
 
 
 
@@ -301,7 +301,7 @@ class ActBase(Mixin):
 
 
 
-    def __init__(self, *, name=None, iops=None, nabe=Nabe.endo,
+    def __init__(self, *, name=None, iops=None, nabe=Nabes.endo,
                  mine=None, dock=None, **kwa):
         """Initialization method for instance.
 
@@ -318,7 +318,7 @@ class ActBase(Mixin):
         super(ActBase, self).__init__(**kwa) # in case of MRO
         self.name = name  # set name property
         self._iops = dict(iops) if iops is not None else {}  # make copy
-        self._nabe = nabe if nabe is not Nabe.native else Nabe.endo
+        self._nabe = nabe if nabe is not Nabes.native else Nabes.endo
         self.mine = mine if mine is not None else Mine()
         self.dock = dock   # stub fix later when have Dock class
 

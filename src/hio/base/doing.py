@@ -259,10 +259,6 @@ class Doist(tyming.Tymist):
                 except AttributeError:  # bount method generator
                     # write to doer.__func__.done read from doer.done
                     doer.__func__.done = ex.value if ex.value is not None else doer.done
-                #try:
-                    #doer.done = ex.value if ex.value else False  # assign done state
-                #except AttributeError:
-                    #doer.__func__.done = ex.value if ex.value else False  # assign done state
                 continue  # don't append
             deeds.append((dog, self.tyme, doer))
         return deeds
@@ -604,8 +600,15 @@ class Doer(tyming.Tymee):
             self.enter(temp=temp)
 
             #recur context self.done set by super doist or dodoer prior to enter
+            # doist.enter() or dodoer.enter() advances via doer.next() to here
+            # if .recur method is generatorfunction then pauses at first yield
+            #    at bottom of yield from delegation chain, i.e. next() decends
+            #    the yield from delegation chain until it reaches a plain yield.
+            #    note tock passed into .recur(tock) in this case is to setup
+            #    the generator at enter tyme
+            # else (.recur method is not generator) pauses at yield below
             if isgeneratorfunction(self.recur):  #  .recur is generator method
-                self.done = yield from self.recur()  # recur context delegated
+                self.done = yield from self.recur(tock=self.tock)  # recur context delegated
             else:  # .recur is standard method so iterate in while loop
                 while (not self.done):  # recur context
                     tyme = (yield (self.tock))  # yields .tock then waits for next send
@@ -644,8 +647,7 @@ class Doer(tyming.Tymee):
 
 
     def recur(self, tyme):
-        """
-        Do 'recur' context actions. Override in subclass.
+        """Do 'recur' context actions. Override in subclass.
         Regular method that perform repetitive actions once per invocation.
         Assumes resource setup in .enter() and resource takedown in .exit()
         (see ReDoer below for example of .recur that is a generator method)
@@ -706,10 +708,10 @@ class Doer(tyming.Tymee):
 
 
 class ReDoer(Doer):
-    """
-    ReDoer is an example sub class whose .recur is a generator method not a
+    """ReDoer is an example sub class whose .recur is a generator method not a
     plain method. Its .do method detects that its .recur is a generator method
     and executes it using yield from instead of just calling the method.
+
 
     Inherited Attributes:
         done (bool | None): completion state: True means completed
@@ -745,11 +747,54 @@ class ReDoer(Doer):
             associated Tymist instance that returns Tymist .tyme. when called.
        ._tock is hidden attribute for .tock property
 
+    Test Console:
+    ****** ReDoer Test **********
+    ReDoer enter: temp=None in doist.enter next doer.do -> .enter
+    ReDoer recur before yield: tock=1.0, tyme=None, count=0 in doist.enter next doer.do enter
+    ReDoer recur after yield: tyme=0.0, count=1 in doist.recur send doer.do recur
+    ReDoer recur after yield: tyme=1.0, count=2 in doist.recur send doer.do recur
+    ReDoer recur after yield: tyme=2.0, count=3 in doist.recur send doer.do recur
+    ReDoer recur after break: tyme=2.0, count=3
+
+
     """
 
-    def recur(self):
+    def enter(self, *, temp=None):
+        """Do 'enter' context actions. Override in subclass. Not a generator method.
+        Set up resources. Comparable to context manager enter.
+
+        Parameters:
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value. Use self.temp
+
+        Inject temp or self.temp into file resources here if any
         """
-        Do 'recur' context actions as a generator method. Override in subclass.
+        print(f"ReDoer enter: {temp=} in doist.enter next doer.do -> .enter")
+
+
+    def recur(self, tock=None):
+        """Do 'recur' context actions as a generator method. Override in subclass.
+
+        Parameters:
+            tock (float|None): this doer when creating this generator in recur
+                section of its .do method supplies its .tock as this method's
+                tock parameter.
+                Note, the doist tyme is delegated through the 'yield from'
+                to the eventual target yield at the  bottom of delegation chain.
+                when tock fed back to doist is None or 0.0 it indicates to
+                run again ASAP (on next iteration of doist.do)
+
+
+        Returns:
+           completion (bool): completion state of recurrence actions.
+                              True means completed successfully
+                              False completed unsuccessfully
+
+        Note that "tyme" is not a parameter when recur is a generator method
+        since doist tyme is injected by the explicit yield below.
+        The recur method itself returns a generator so parameters
+        to this method are to setup the generator not to be used at recur time.
+
         Assumes resource setup in .enter() and resource takedown in .exit()
         (see Doer for example of .recur that is a regular method)
 
@@ -757,25 +802,28 @@ class ReDoer(Doer):
         accepts the current tyme
         return value is used for .done  (true done false not done but ended)
 
-        Parameters:
-            tyme is initial output of send fed to do yield, Doist feeds its .tyme
-        Returns completion state of recurrence actions.
-           True means done False means continue
+
 
         For base class do:
             yield from this generator recur method which runs until returns
 
         """
+        tock = tock if tock is not None else self.tock
+        tyme = None
         count = 0
-        # print("ReDoer recur before yield. tyme = {} count={}\n".format(tyme, count))
+        print(f"ReDoer recur before yield: {tock=}, {tyme=}, {count=} in doist.enter next doer.do enter ")
         while (True):  # recur context
-            tyme = yield(self.tock)  # first yield of None
+            # yield from advances to first yield as next() same as send(None)
+            # so never see sent tyme ==0.0
+            # when is recieve  tyme it will be following iteration after tick()
+            # where tyme = tock
+            tyme = yield(tock)
             count += 1
-            # print("ReDoer recur after yield. tyme = {} count={}\n".format(tyme, count))
+            print(f"ReDoer recur after yield: {tyme=}, {count=} in doist.recur send doer.do recur")
             if count >= 3:
                 break
 
-        # print("ReDoer recur after break tyme = {} count={}\n".format(tyme, count))
+        print(f"ReDoer recur after break: {tyme=}, {count=}")
         return True  # done
 
 

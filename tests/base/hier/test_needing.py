@@ -17,31 +17,28 @@ def test_need_basic():
     need = Need()
     assert need.mine == Mine()
     assert need.expr == 'True'
-    assert need.compiled == False
+    assert need.compiled == True
 
-    assert need() == True  # lazy compose, compile and eval
+    assert need() == True  # lazy eval
 
     mine = Mine()
     need = Need(mine=mine)
     assert need.mine == mine
     assert need.expr == 'True'
-    assert need.compiled == False
+    assert need.compiled == True
 
-    assert need() == True  # lazily compile and then eval
+    assert need() == True  # lazily eval
 
 
     mine.cycle = Bag(value=5)
     mine.turn = Bag(value=2)
     need.expr = "M.cycle.value > 3 and M.turn.value <= 2"
-    assert not need.compiled
+    assert not need.compiled  # lazy compile
     assert need()
     assert need.compiled
 
     mine.cycle.value = 3
     assert not need()
-
-
-
 
     """Done Test"""
 

@@ -101,6 +101,7 @@ class Need(Mixin):
         self.expr = expr
         self.mine = mine if mine is not None else Mine()
         self.dock = dock   # stub fix later when have Dock class
+        self.compile()  # compile at init time so now it will compile
 
 
     def __call__(self, **iops):
@@ -129,7 +130,7 @@ class Need(Mixin):
 
 
     @expr.setter
-    def expr(self, expr=None):
+    def expr(self, expr):
         """Property setter for ._expr
 
         Parameters:
