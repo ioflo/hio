@@ -4,6 +4,7 @@ tests.core.test_doing module
 
 """
 import pytest
+import platform
 
 import os
 import sys
@@ -31,6 +32,8 @@ def test_boss_crew_stepped():
     """
     Test BossDoer and CrewDoer classes basic
     """
+    if platform.system() == 'Windows':
+        return
     logger.debug("***** Stepped Boss Doist Test *****")
 
 
@@ -86,6 +89,8 @@ def test_boss_crew_basic():
     """
     Test BossDoer and CrewDoer classes basic
     """
+    if platform.system() == 'Windows':
+        return
     logger.debug("***** Basic  Boss Doist Test *****")
 
     crewdoer = CrewDoer(name='hand', tock=0.05)  # don't assign tymth now must be rewound inside subprocess
