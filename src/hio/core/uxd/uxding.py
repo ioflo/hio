@@ -8,6 +8,7 @@ import os
 import stat
 import errno
 import socket
+import tempfile
 import shutil
 from contextlib import contextmanager
 
@@ -82,7 +83,7 @@ class Peer(filing.Filer):
     AltHeadDirPath = "~"  # put in ~ as fallback when desired not permitted
     AltTailDirPath = ".hio/uxd"
     AltCleanTailDirPath = ".hio/clean/uxd"
-    TempHeadDir = "/tmp"
+    TempHeadDir = os.path.join(os.path.sep, "tmp") if platform.system() == "Darwin" else tempfile.gettempdir()
     TempPrefix = "hio_uxd_"
     TempSuffix = "_test"
     Perm = stat.S_ISVTX | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR  # 0o1700==960
