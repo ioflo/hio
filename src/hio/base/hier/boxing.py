@@ -10,6 +10,7 @@ from __future__ import annotations  # so type hints of classes get resolved late
 
 import re
 from collections.abc import Callable
+from typing import Type
 
 from ..tyming import Tymee
 from ..doing import Doer
@@ -767,13 +768,15 @@ class Boxer(Tymee):
 
 
 
-    def do(self, deed: None|str|Callable=None, nabe=None, *,
+    def do(self, deed: None|str|Type[ActBase]|Callable=None, nabe=None, *,
                  name: str|None=None, mods: WorkDom|None=None, **iops)->str:
         """Make an act and add to box work
 
         Parameters:
-            deed (None|str|Callable): When str name of class in ActBase registry.
-                    When None use Act with default lambda and iops as parameters.
+            deed (None|str|Type[ActBase]|Callable):
+                    When None use Act with default lambda and iops as parameters
+                    When str name of class in ActBase registry.
+                    When issubclass of ActBase then create instance
                     When Callable use Act with iops as parameters.
             name (None|str): name of act instance created by do.
                     When None use default indexed name created by Act.
@@ -802,7 +805,10 @@ class Boxer(Tymee):
         try:  # is deed registered act class name or alias
             klas = m.acts[deed]  # get registered klas
         except KeyError:  # not registered act class name
-            act = Act(deed=deed, **parms)  # executable statement(s) or callable
+            if isinstance(deed, type) and issubclass(deed, ActBase):
+                act = deed(**parms)  # ActBase class so just instantiate
+            else:  # handles deed is None or callable(deed) or executable str
+                act = Act(deed=deed, **parms)  # executable statement(s) or callable
         else:  # deed is registered act class name or alias
             act = klas(**parms)  # create act from klas with **parms
 
