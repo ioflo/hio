@@ -407,6 +407,11 @@ class Boxer(Tymee):
             self.mine[akeys] = Bag()
         self.mine[akeys].value = self.box.name  # assign active box name
 
+        tkey = self.mine.tokey(("", "boxer", self.name, "tock"))
+        if tkey not in self.mine:
+            self.mine[tkey] = Bag()
+        self.mine[tkey].value = tock  # assign tock
+
         # finished of enter next() delegation 'yield from' delegation
         tyme = yield(tock)  # pause end of next, resume start of send
 
@@ -419,6 +424,7 @@ class Boxer(Tymee):
                 react()
 
         while True:  # run forever
+            tock = self.mine[tkey].value  # get tock in case it changed
             tyme = yield(tock)  # resume on send
             rendos = []
             endos = []

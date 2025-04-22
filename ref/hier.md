@@ -253,7 +253,6 @@ each bo in the pile in bottom up order. This terminates actioning of the boxwork
 The code for the boxer.run generator method is shown below.
 
 ```python
-
 if not self.first:  # first box in boxes is default first
     self.first = list(self.boxes.values())[0]
 self.box = self.first
@@ -270,6 +269,11 @@ if akeys not in self.mine:
     self.mine[akeys] = Bag()
 self.mine[akeys].value = self.box.name  # assign active box name
 
+tkey = self.mine.tokey(("", "boxer", self.name, "tock"))
+if tkey not in self.mine:
+    self.mine[tkey] = Bag()
+self.mine[tkey].value = tock  # assign tock
+
 # finished of enter next() delegation 'yield from' delegation
 tyme = yield(tock)  # pause end of next, resume start of send
 
@@ -282,6 +286,7 @@ for box in self.box.pile:  # top down redo
         react()
 
 while True:  # run forever
+    tock = self.mine[tkey].value  # get tock in case it changed
     tyme = yield(tock)  # resume on send
     rendos = []
     endos = []
@@ -318,7 +323,6 @@ while True:  # run forever
     for box in self.box.pile:  # top down
         for react in box.reacts:   # redo nabe top down
             react()
-
 ```
 
 ## Building a boxwork
