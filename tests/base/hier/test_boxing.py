@@ -553,7 +553,7 @@ def test_boxer_run_on_update():
         do(count)
         go("bot0")
         bx(name='done', over=None)
-        do('end')
+        do(EndAct)
 
 
     tock = 1.0
@@ -996,6 +996,7 @@ def test_boxer_run_lapse():
     assert boxer.endial()
 
     """Done Test"""
+
 
 def test_boxer_run_relapse():
     """Test make method of Boxer with relapse condition
