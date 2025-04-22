@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-hio.core.hier.needing Module
+hio.base.hier.needing Module
 
 Provides hierarchical action support
 

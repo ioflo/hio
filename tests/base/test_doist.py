@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-tests.core.test_cycling module
+tests.base.test_doist module
 
 """
 import pytest

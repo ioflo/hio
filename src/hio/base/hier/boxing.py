@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-hio.core.hier.boxing Module
+hio.base.hier.boxing Module
 
 Provides hierarchical box work support
 
