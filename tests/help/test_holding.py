@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-tests.base.test_holding module
+tests.help.test_holding module
 
 """
 import pytest

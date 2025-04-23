@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-"""hio.base.holding Module
+"""hio.help.holding Module
 
 Provides durable data storage bases on LMDB
 
