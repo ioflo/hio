@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-tests.core.test_doing module
+tests.base.test_doing module
 
 """
 import pytest

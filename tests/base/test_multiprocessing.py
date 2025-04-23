@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-tests.core.test_doing module
+tests.base.test_multiprocessing module
 
 
 Notes:

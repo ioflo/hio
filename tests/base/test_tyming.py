@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-tests.core.test_ticking module
+tests.base.test_tyming module
 
 """
 import inspect

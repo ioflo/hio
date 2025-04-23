@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-hio.core.hier.hiering Module
+hio.base.hier.hiering Module
 
 Provides hierarchical action support
 

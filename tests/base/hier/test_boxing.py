@@ -870,6 +870,10 @@ def test_boxer_run_verbs():
     assert boxer.box is None
     assert boxer.endial()
 
+    assert mine._boxer_boxer_active.value == None
+    assert mine._boxer_boxer_tock.value == 1.0
+    assert mine._boxer_boxer_end.value == True
+
     """Done Test"""
 
 def test_boxer_run_lapse():
@@ -995,6 +999,10 @@ def test_boxer_run_lapse():
     assert boxer.box is None
     assert boxer.endial()
 
+    assert mine._boxer_boxer_active.value == None
+    assert mine._boxer_boxer_tock.value == 1.0
+    assert mine._boxer_boxer_end.value == True
+
     """Done Test"""
 
 
@@ -1094,6 +1102,10 @@ def test_boxer_run_relapse():
     assert boxer.box is None
     assert boxer.endial()
 
+    assert mine._boxer_boxer_active.value == None
+    assert mine._boxer_boxer_tock.value == 1.0
+    assert mine._boxer_boxer_end.value == True
+
     """Done Test"""
 
 
@@ -1142,6 +1154,9 @@ def test_boxer_doer():
     doist.do(doers=doers, limit=limit)  # doist.do sets all doer.tymth to its tymth
     assert doist.tyme == 8.0  # redoer exits before limit
 
+    assert mine._boxer_boxer_active.value == None
+    assert mine._boxer_boxer_tock.value == 1.0
+    assert mine._boxer_boxer_end.value == True
     assert mine._boxer_boxer_box_mid_count.value == None
     assert mine._boxer_boxer_box_bot0_lapse.value == 5.0
     assert mine._boxer_boxer_box_bot0_lapse._tyme == 5.0

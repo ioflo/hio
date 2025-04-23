@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-tests.help.test_filing module
+tests.base.test_filing module
 
 """
 import platform

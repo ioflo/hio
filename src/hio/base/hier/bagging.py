@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-"""hio.core.hier.bagging Module
+"""hio.base.hier.bagging Module
 
 Provides dom support for items in Mine or Dock for shared data store support
 
