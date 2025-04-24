@@ -503,7 +503,6 @@ class Boxer(Tymee):
 
             self.rendo(rendos)  # rendo nabe, action remarks and renacts
             self.endo(endos)  # endo nabe, action enmarks and enacts
-
             self.redo()  # redo nabe all boxes in pile top down
 
 
