@@ -50,7 +50,7 @@ def test_datify():
         radius: float
 
         @staticmethod
-        def _der(d):
+        def _des(d):
             p = d["perimeter"]
             r = p / 2 / 3.14
 
@@ -59,9 +59,6 @@ def test_datify():
     d = {'area': 50.24, 'perimeter': 25.12}
     c = datify(Circle, d)
     assert c.radius == 4
-
-
-
 
     """End Test"""
 

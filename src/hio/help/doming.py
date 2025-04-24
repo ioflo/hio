@@ -35,7 +35,7 @@ def dictify(val):
 
 def datify(cls, d):
     """Returns instance of dataclass cls converted from dict d. If the dataclass
-    cls or any nested dataclasses contains a `_der` method, the use it instead
+    cls or any nested dataclasses contains a `_des` method, the use it instead
     of default fieldtypes conversion.
 
     Parameters:
@@ -43,9 +43,9 @@ def datify(cls, d):
     d is dict
     """
     try:
-        der = getattr(cls, "_der", None)
-        if callable(der):
-            return der(d)
+        des = getattr(cls, "_des", None)
+        if callable(des):
+            return des(d)
 
         fieldtypes = {f.name: f.type for f in fields(cls)}
         return cls(**{f: datify(fieldtypes[f], d[f]) for f in d})  # recursive
@@ -207,7 +207,6 @@ class RawDom(MapDom):
         _asmgpk(self): return bytes self converted to mgpk
     """
 
-
     @classmethod
     def _fromjson(cls, s: str | bytes):
         """returns instance of clas initialized from json str or bytes s """
@@ -285,7 +284,6 @@ class RawDom(MapDom):
         return iter(self._asdict())
 
 
-
     def _asdict(self):
         """Returns dict version of record"""
         return dictify(self)
@@ -303,11 +301,9 @@ class RawDom(MapDom):
                           ensure_ascii=False).encode()
 
 
-
     def _ascbor(self):
         """Returns cbor bytes version of record"""
         return cbor.dumps(self._asdict())
-
 
 
     def _asmgpk(self):

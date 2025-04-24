@@ -30,7 +30,7 @@ class TymeDom(RawDom):
 
     Non-Field Class Attributes:
         _names (ClassVar[tuple[str]|None]): tuple of field names for class
-            Assigned in .__post_init__
+            Assigned by @namify decorator
 
     Non-Field Attributes:
         _tymth (None|Callable): function wrapper closure returned by
@@ -116,7 +116,7 @@ class Bag(TymeDom):
 
     Inherited Non-Field Class Attributes:
         _names (ClassVar[tuple[str]|None]): tuple of field names for class
-            Assigned in .__post_init__
+            Assigned by @namify decorator
 
     Inherited Non-Field Attributes:
         _tymth (None|Callable): function wrapper closure returned by
