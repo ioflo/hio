@@ -2,4 +2,4 @@
 """
 hio.hold Package
 """
-from .holding import Holder, openHolder
+from .holding import Holder, openHolder, SuberBase, Suber, IoSetSuber

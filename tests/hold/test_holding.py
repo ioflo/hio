@@ -8,7 +8,7 @@ import os
 import lmdb
 from ordered_set import OrderedSet as oset
 
-from hio.hold import Holder, openHolder
+from hio.hold import Holder, openHolder, SuberBase, Suber, IoSetSuber
 
 
 def test_holder_basic():
@@ -363,9 +363,406 @@ def test_holder():
     """Done Test"""
 
 
+def test_suberbase():
+    """Test SuberBase Holder sub database class"""
+    with openHolder() as holder:
+        assert isinstance(holder, Holder)
+        assert holder.name == "test"
+        assert holder.opened
+
+        assert SuberBase.Sep == '_'
+
+        suber = SuberBase(db=holder, subkey='bags.')
+        assert isinstance(suber, SuberBase)
+        assert not suber.sdb.flags()["dupsort"]
+        assert suber.sep == "_"
+
+        keys = ('key', 'top')
+        key = suber._tokey(keys)
+        assert key == b'key_top'
+        assert suber._tokeys(key) == keys
+
+    assert not os.path.exists(holder.path)
+    assert not holder.opened
+    """Done Test"""
+
+
+
+def test_suber():
+    """Test Suber Holder sub database class"""
+
+    with openHolder() as holder:
+        assert isinstance(holder, Holder)
+        assert holder.name == "test"
+        assert holder.opened
+
+        assert Suber.Sep == '_'
+
+        suber = Suber(db=holder, subkey='bags.')
+        assert isinstance(suber, Suber)
+        assert not suber.sdb.flags()["dupsort"]
+        assert suber.sep == "_"
+
+        keys = ('key', 'top')
+        key = suber._tokey(keys)
+        assert key == b'key_top'
+        assert suber._tokeys(key) == keys
+
+
+        sue = "Hello sailer!"
+
+        keys = ("test_key", "0001")
+        suber.put(keys=keys, val=sue)
+        actual = suber.get(keys=keys)
+        assert actual == sue
+
+        suber.rem(keys)
+        actual = suber.get(keys=keys)
+        assert actual is None
+
+        suber.put(keys=keys, val=sue)
+        actual = suber.get(keys=keys)
+        assert actual == sue
+
+        kip = "Hey gorgeous!"
+        result = suber.put(keys=keys, val=kip)
+        assert not result
+        actual = suber.get(keys=keys)
+        assert actual == sue
+
+        result = suber.pin(keys=keys, val=kip)
+        assert result
+        actual = suber.get(keys=keys)
+        assert actual == kip
+
+        suber.rem(keys)
+        actual = suber.get(keys=keys)
+        assert actual is None
+
+        suber.put(keys=keys, val=sue)
+        actual = suber.get(keys=keys)
+        assert actual == sue
+
+        # test with keys as tuple of bytes
+        keys = (b"test_key", b"0001")
+        suber.rem(keys)
+        actual = suber.get(keys=keys)
+        assert actual is None
+
+        suber.put(keys=keys, val=sue)
+        actual = suber.get(keys=keys)
+        assert actual == sue
+
+        # test with keys as mixed tuple of bytes
+        keys = (b"test_key", "0001")
+        suber.rem(keys)
+        actual = suber.get(keys=keys)
+        assert actual is None
+
+        suber.put(keys=keys, val=sue)
+        actual = suber.get(keys=keys)
+        assert actual == sue
+
+
+        # test with keys as string not tuple
+        keys = "keystr"
+
+        bob = "Shove off!"
+
+        suber.put(keys=keys, val=bob)
+        actual = suber.get(keys=keys)
+        assert actual == bob
+
+        suber.rem(keys)
+
+        actual = suber.get(keys=keys)
+        assert actual is None
+
+
+        liz =  "May life is insane."
+        keys = ("test_key", "0002")
+
+        suber.put(keys=keys, val=liz)
+        actual = suber.get(("not_found", "0002"))
+        assert actual is None
+
+        w = "Blue dog"
+        x = "Green tree"
+        y = "Red apple"
+        z = "White snow"
+
+        suber = Suber(db=holder, subkey='pugs.')
+        assert isinstance(suber, Suber)
+
+        suber.put(keys=("a","1"), val=w)
+        suber.put(keys=("a","2"), val=x)
+        suber.put(keys=("a","3"), val=y)
+        suber.put(keys=("a","4"), val=z)
+
+        items = [(keys, val) for keys, val in suber.getItemIter()]
+        assert items == [(('a', '1'), w),
+                        (('a', '2'), x),
+                        (('a', '3'), y),
+                        (('a', '4'), z)]
+
+        suber.put(keys=("b","1"), val=w)
+        suber.put(keys=("b","2"), val=x)
+        suber.put(keys=("bc","3"), val=y)
+        suber.put(keys=("ac","4"), val=z)
+
+        items = [(keys, val) for keys, val in suber.getItemIter()]
+        assert items == [(('a', '1'), 'Blue dog'),
+                        (('a', '2'), 'Green tree'),
+                        (('a', '3'), 'Red apple'),
+                        (('a', '4'), 'White snow'),
+                        (('ac', '4'), 'White snow'),
+                        (('b', '1'), 'Blue dog'),
+                        (('b', '2'), 'Green tree'),
+                        (('bc', '3'), 'Red apple')]
+
+
+        # test with top keys for partial tree
+        topkeys = ("b","")  # last element empty to force trailing separator
+        items = [(keys, val) for keys, val in suber.getItemIter(keys=topkeys)]
+        assert items == [(('b', '1'), w),
+                         (('b', '2'), x)]
+
+        topkeys = ("a","")  # last element empty to force trailing separator
+        items = [(keys, val) for keys, val in suber.getItemIter(keys=topkeys)]
+        assert items == [(('a', '1'), w),
+                        (('a', '2'), x),
+                        (('a', '3'), y),
+                        (('a', '4'), z)]
+
+        # test with top parameter
+        keys = ("b", )  # last element empty to force trailing separator
+        items = [(keys, val) for keys, val in suber.getItemIter(keys=keys, topive=True)]
+        assert items == [(('b', '1'), w),
+                         (('b', '2'), x)]
+
+        keys = ("a", )  # last element empty to force trailing separator
+        items = [(keys, val) for keys, val in suber.getItemIter(keys=keys, topive=True)]
+        assert items == [(('a', '1'), w),
+                        (('a', '2'), x),
+                        (('a', '3'), y),
+                        (('a', '4'), z)]
+
+        # Test trim
+        assert suber.trim(keys=("b", ""))
+        items = [(keys, val) for keys, val in suber.getItemIter()]
+        assert items == [(('a', '1'), 'Blue dog'),
+                        (('a', '2'), 'Green tree'),
+                        (('a', '3'), 'Red apple'),
+                        (('a', '4'), 'White snow'),
+                        (('ac', '4'), 'White snow'),
+                        (('bc', '3'), 'Red apple')]
+
+        assert suber.trim(keys=("a", ""))
+        items = [(keys, val) for keys, val in suber.getItemIter()]
+        assert items == [(('ac', '4'), 'White snow'), (('bc', '3'), 'Red apple')]
+
+        # Test trim with top parameters
+        suber.put(keys=("a","1"), val=w)
+        suber.put(keys=("a","2"), val=x)
+        suber.put(keys=("a","3"), val=y)
+        suber.put(keys=("a","4"), val=z)
+        suber.put(keys=("b","1"), val=w)
+        suber.put(keys=("b","2"), val=x)
+
+        assert suber.trim(keys=("b",), topive=True)
+        items = [(keys, val) for keys, val in suber.getItemIter()]
+        assert items == [(('a', '1'), 'Blue dog'),
+                        (('a', '2'), 'Green tree'),
+                        (('a', '3'), 'Red apple'),
+                        (('a', '4'), 'White snow'),
+                        (('ac', '4'), 'White snow'),
+                        (('bc', '3'), 'Red apple')]
+
+        assert suber.trim(keys=("a",), topive=True)
+        items = [(keys, val) for keys, val in suber.getItemIter()]
+        assert items == [(('ac', '4'), 'White snow'),
+                         (('bc', '3'), 'Red apple')]
+
+        assert suber.trim()
+        items = [(keys, val) for keys, val in suber.getItemIter()]
+        assert items == []
+
+        assert not suber.trim()
+
+    assert not os.path.exists(holder.path)
+    assert not holder.opened
+    """Done Test"""
+
+
+def test_ioset_suber():
+    """Test IoSetSuber LMDBer sub database class"""
+
+    with openHolder() as holder:
+        assert isinstance(holder, Holder)
+        assert holder.name == "test"
+        assert holder.opened
+
+        assert IoSetSuber.Sep == '_'
+        assert IoSetSuber.IonSep == '.'
+
+        iosuber = IoSetSuber(db=holder, subkey='bags.')
+        assert isinstance(iosuber, IoSetSuber)
+        assert not iosuber.sdb.flags()["dupsort"]
+        assert iosuber.sep == '_'
+        assert iosuber.ionsep == '.'
+
+        sue = "Hello sailer!"
+        sal = "Not my type."
+
+        keys0 = ("testkey", "0001")
+        keys1 = ("testkey", "0002")
+
+        assert iosuber.put(keys=keys0, vals=[sal, sue])
+        actuals = iosuber.get(keys=keys0)
+        assert actuals == [sal, sue]  # insertion order not lexicographic
+        assert iosuber.cnt(keys0) == 2
+        actual = iosuber.getLast(keys=keys0)
+        assert actual == sue
+
+        assert iosuber.rem(keys0)
+        actuals = iosuber.get(keys=keys0)
+        assert not actuals
+        assert actuals == []
+        assert iosuber.cnt(keys0) == 0
+
+        assert iosuber.put(keys=keys0, vals=[sue, sal])
+        actuals = iosuber.get(keys=keys0)
+        assert actuals == [sue, sal]  # insertion order
+        actual = iosuber.getLast(keys=keys0)
+        assert actual == sal
+
+        sam = "A real charmer!"
+        result = iosuber.add(keys=keys0, val=sam)
+        assert result
+        actuals = iosuber.get(keys=keys0)
+        assert actuals == [sue, sal, sam]   # insertion order
+
+        zoe = "See ya later."
+        zia = "Hey gorgeous!"
+
+        result = iosuber.pin(keys=keys0, vals=[zoe, zia])
+        assert result
+        actuals = iosuber.get(keys=keys0)
+        assert actuals == [zoe, zia]  # insertion order
+
+        assert iosuber.put(keys=keys1, vals=[sal, sue, sam])
+        actuals = iosuber.get(keys=keys1)
+        assert actuals == [sal, sue, sam]
+
+        for i, val in enumerate(iosuber.getIter(keys=keys1)):
+            assert val == actuals[i]
+
+        items = [(keys, val) for keys, val in iosuber.getItemIter()]
+        assert items == [(('testkey', '0001'), 'See ya later.'),
+                        (('testkey', '0001'), 'Hey gorgeous!'),
+                        (('testkey', '0002'), 'Not my type.'),
+                        (('testkey', '0002'), 'Hello sailer!'),
+                        (('testkey', '0002'), 'A real charmer!')]
+
+        items = list(iosuber.getFullItemIter())
+        assert items ==  [(('testkey', '0001.00000000000000000000000000000000'), 'See ya later.'),
+                        (('testkey', '0001.00000000000000000000000000000001'), 'Hey gorgeous!'),
+                        (('testkey', '0002.00000000000000000000000000000000'), 'Not my type.'),
+                        (('testkey', '0002.00000000000000000000000000000001'), 'Hello sailer!'),
+                        (('testkey', '0002.00000000000000000000000000000002'), 'A real charmer!')]
+
+
+
+        items = [(keys, val) for keys,  val in  iosuber.getItemIter(keys=keys0)]
+        assert items == [(('testkey', '0001'), 'See ya later.'),
+                         (('testkey', '0001'), 'Hey gorgeous!')]
+
+        items = [(keys, val) for keys,  val in iosuber.getItemIter(keys=keys1)]
+        assert items == [(('testkey', '0002'), 'Not my type.'),
+                        (('testkey', '0002'), 'Hello sailer!'),
+                        (('testkey', '0002'), 'A real charmer!')]
+
+
+        # Test with top keys
+        assert iosuber.put(keys=("test", "pop"), vals=[sal, sue, sam])
+        topkeys = ("test", "")
+        items = [(keys, val) for keys, val in iosuber.getItemIter(keys=topkeys)]
+        assert items == [(('test', 'pop'), 'Not my type.'),
+                         (('test', 'pop'), 'Hello sailer!'),
+                         (('test', 'pop'), 'A real charmer!')]
+
+        # test with top parameter
+        keys = ("test", )
+        items = [(keys, val) for keys, val in iosuber.getItemIter(keys=keys, topive=True)]
+        assert items == [(('test', 'pop'), 'Not my type.'),
+                         (('test', 'pop'), 'Hello sailer!'),
+                         (('test', 'pop'), 'A real charmer!')]
+
+        # IoItems
+        items = list(iosuber.getFullItemIter(keys=topkeys))
+        assert items == [(('test', 'pop.00000000000000000000000000000000'), 'Not my type.'),
+                    (('test', 'pop.00000000000000000000000000000001'), 'Hello sailer!'),
+                    (('test', 'pop.00000000000000000000000000000002'), 'A real charmer!')]
+
+        # test remove with a specific val
+        assert iosuber.rem(keys=("testkey", "0002"), val=sue)
+        items = [(keys, val) for keys, val in iosuber.getItemIter()]
+        assert items == [(('test', 'pop'), 'Not my type.'),
+                        (('test', 'pop'), 'Hello sailer!'),
+                        (('test', 'pop'), 'A real charmer!'),
+                        (('testkey', '0001'), 'See ya later.'),
+                        (('testkey', '0001'), 'Hey gorgeous!'),
+                        (('testkey', '0002'), 'Not my type.'),
+                        (('testkey', '0002'), 'A real charmer!')]
+
+        assert iosuber.trim(keys=("test", ""))
+        items = [(keys, val) for keys, val in iosuber.getItemIter()]
+        assert items == [(('testkey', '0001'), 'See ya later.'),
+                        (('testkey', '0001'), 'Hey gorgeous!'),
+                        (('testkey', '0002'), 'Not my type.'),
+                        (('testkey', '0002'), 'A real charmer!')]
+
+
+
+        # test with keys as string not tuple
+        keys2 = "keystr"
+        bob = "Shove off!"
+        assert iosuber.put(keys=keys2, vals=[bob])
+        actuals = iosuber.get(keys=keys2)
+        assert actuals == [bob]
+        assert iosuber.cnt(keys2) == 1
+        assert iosuber.rem(keys2)
+        actuals = iosuber.get(keys=keys2)
+        assert actuals == []
+        assert iosuber.cnt(keys2) == 0
+
+        assert iosuber.put(keys=keys2, vals=[bob])
+        actuals = iosuber.get(keys=keys2)
+        assert actuals == [bob]
+
+        bil = "Go away."
+        assert iosuber.pin(keys=keys2, vals=[bil])
+        actuals = iosuber.get(keys=keys2)
+        assert actuals == [bil]
+
+        assert iosuber.add(keys=keys2, val=bob)
+        actuals = iosuber.get(keys=keys2)
+        assert actuals == [bil, bob]
+
+        # Test trim and append
+        assert iosuber.trim()  # default trims whole database
+        assert iosuber.put(keys=keys1, vals=[bob, bil])
+        assert iosuber.get(keys=keys1) == [bob, bil]
+
+    assert not os.path.exists(holder.path)
+    assert not holder.opened
+    """Done Test"""
 
 
 if __name__ == "__main__":
     test_holder_basic()
     test_openholder()
     test_holder()
+    test_suberbase()
+    test_suber()
+    test_ioset_suber()

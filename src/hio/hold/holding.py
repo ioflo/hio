@@ -18,7 +18,7 @@ from ordered_set import OrderedSet as oset
 import hio
 
 from ..base import Doer, Filer
-
+from ..help import isNonStringIterable
 
 
 def clearDatabaserDir(path):
@@ -901,7 +901,7 @@ class SuberBase():
         verify (bool): True means reverify when ._des from db when applicable
                        False means do not reverify. Default False
     """
-    Sep = '.'  # separator for combining key iterables
+    Sep = '_'  # separator for combining key iterables
 
     def __init__(self, db: Holder, *,
                        subkey: str='docs.',
@@ -1219,8 +1219,7 @@ class Suber(SuberBase):
 
 
 class IoSetSuber(SuberBase):
-    """
-    Insertion Ordered Set Suber factory class that supports
+    """Insertion Ordered Set Suber factory class that supports
     a set of distinct entries at a given effective database key but with
     dupsort==False. Effective data model is that there are multiple values in a
     set of values where every member of the set has the same key (duplicate key).
@@ -1236,14 +1235,23 @@ class IoSetSuber(SuberBase):
     duplicate keys are retrieved in insertion order when iterating or as a list
     of the set elements.
 
-    Attributes:
+    Inherited Attributes:
         db (dbing.LMDBer): base LMDB db
         sdb (lmdb._Database): instance of lmdb named sub db for this Suber
         sep (str): separator for combining keys tuple of strs into key bytes
+        verify (bool): True means reverify when ._des from db when applicable
+                       False means do not reverify. Default False
+
+    Attributes
+        ionsep (str): separator to suffix insertion order ordinal number
+                       default is self.IonSep == '.'
     """
+    IonSep = '.'  # separator for suffixing insertion order ordinal number
+
     def __init__(self, db: dbing.LMDBer, *,
                        subkey: str='docs.',
-                       dupsort: bool=False, **kwa):
+                       dupsort: bool=False,
+                       ionsep: str=None, **kwa):
         """
         Inherited Parameters:
             db (dbing.LMDBer): base db
@@ -1255,10 +1263,13 @@ class IoSetSuber(SuberBase):
                        default is self.Sep == '.'
             verify (bool): True means reverify when ._des from db when applicable
                            False means do not reverify. Default False
-            klas (Type[coring.Matter]): Class reference to subclass of Matter or
-                Indexer or Counter or any ducktyped class of Matter
+
+        Parameters:
+            ionsep (str|None): separator to suffix insertion order ordinal number
+                       default is self.IonSep == '.'
         """
         super(IoSetSuber, self).__init__(db=db, subkey=subkey, dupsort=False, **kwa)
+        self.ionsep = ionsep if ionsep is not None else self.IonSep
 
 
     def put(self, keys: str | bytes | memoryview | Iterable,
@@ -1276,12 +1287,12 @@ class IoSetSuber(SuberBase):
             result (bool): True If successful, False otherwise.
 
         """
-        if not nonStringIterable(vals):  # not iterable
+        if not isNonStringIterable(vals):  # not iterable
             vals = (vals, )  # make iterable
         return (self.db.putIoSetVals(sdb=self.sdb,
                                      key=self._tokey(keys),
                                      vals=[self._ser(val) for val in vals],
-                                     sep=self.sep))
+                                     sep=self.ionsep))
 
 
     def add(self, keys: str | bytes | memoryview | Iterable,
@@ -1305,7 +1316,7 @@ class IoSetSuber(SuberBase):
         return (self.db.addIoSetVal(sdb=self.sdb,
                                     key=self._tokey(keys),
                                     val=self._ser(val),
-                                    sep=self.sep))
+                                    sep=self.ionsep))
 
 
     def pin(self, keys: str | bytes | memoryview | Iterable,
@@ -1323,12 +1334,12 @@ class IoSetSuber(SuberBase):
             result (bool): True If successful, False otherwise.
 
         """
-        if not nonStringIterable(vals):  # not iterable
+        if not isNonStringIterable(vals):  # not iterable
             vals = (vals, )  # make iterable
         return (self.db.setIoSetVals(sdb=self.sdb,
                                      key=self._tokey(keys),
                                      vals=[self._ser(val) for val in vals],
-                                     sep=self.sep))
+                                     sep=self.ionsep))
 
 
     def get(self, keys: str | bytes | memoryview | Iterable):
@@ -1346,7 +1357,7 @@ class IoSetSuber(SuberBase):
         return ([self._des(val) for val in
                     self.db.getIoSetValsIter(sdb=self.sdb,
                                              key=self._tokey(keys),
-                                             sep=self.sep)])
+                                             sep=self.ionsep)])
 
 
     def getIter(self, keys: str | bytes | memoryview | Iterable):
@@ -1364,7 +1375,7 @@ class IoSetSuber(SuberBase):
         """
         for val in self.db.getIoSetValsIter(sdb=self.sdb,
                                             key=self._tokey(keys),
-                                            sep=self.sep):
+                                            sep=self.ionsep):
             yield self._des(val)
 
 
@@ -1406,11 +1417,11 @@ class IoSetSuber(SuberBase):
             return self.db.delIoSetVal(sdb=self.sdb,
                                        key=self._tokey(keys),
                                        val=self._ser(val),
-                                       sep=self.sep)
+                                       sep=self.ionsep)
         else:
             return self.db.delIoSetVals(sdb=self.sdb,
                                        key=self._tokey(keys),
-                                       sep=self.sep)
+                                       sep=self.ionsep)
 
 
     def cnt(self, keys: str | bytes | memoryview | Iterable):
@@ -1423,7 +1434,7 @@ class IoSetSuber(SuberBase):
         """
         return (self.db.cntIoSetVals(sdb=self.sdb,
                                      key=self._tokey(keys),
-                                     sep=self.sep))
+                                     sep=self.ionsep))
 
 
     def getItemIter(self, keys: str | bytes | memoryview | Iterable = "",
@@ -1459,5 +1470,5 @@ class IoSetSuber(SuberBase):
 
         """
         for key, val in self.db.getTopIoSetItemIter(sdb=self.sdb,
-                top=self._tokey(keys, topive=topive), sep=self.sep.encode()):
+                top=self._tokey(keys, topive=topive), sep=self.ionsep):
             yield (self._tokeys(key), self._des(val))
