@@ -21,21 +21,21 @@ from dataclasses import dataclass, astuple, asdict, fields, field
 def dictify(val):
     """
     Returns a serializable dict represention of a dataclass.  If the dataclass
-    contains a `_ser` method, use it instead of `asdict`
+    contains a `_dictify method, use it instead of `asdict`
 
     Parameters:
          val the dataclass instance to turn into a dict.
     """
-    ser = getattr(val, "_ser", None)
-    if callable(ser):
-        return ser()
+    dit = getattr(val, "_dictify", None)
+    if callable(dit):
+        return dit()
 
     return asdict(val)
 
 
 def datify(cls, d):
     """Returns instance of dataclass cls converted from dict d. If the dataclass
-    cls or any nested dataclasses contains a `_des` method, the use it instead
+    cls or any nested dataclasses contains a `_datify` method, the use it instead
     of default fieldtypes conversion.
 
     Parameters:
@@ -43,9 +43,9 @@ def datify(cls, d):
     d is dict
     """
     try:
-        des = getattr(cls, "_des", None)
-        if callable(des):
-            return des(d)
+        dat = getattr(cls, "_datify", None)
+        if callable(dat):
+            return dat(d)
 
         fieldtypes = {f.name: f.type for f in fields(cls)}
         return cls(**{f: datify(fieldtypes[f], d[f]) for f in d})  # recursive

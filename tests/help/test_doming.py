@@ -50,7 +50,7 @@ def test_datify():
         radius: float
 
         @staticmethod
-        def _des(d):
+        def _datify(d):
             p = d["perimeter"]
             r = p / 2 / 3.14
 
@@ -85,7 +85,7 @@ def test_dictify():
     class Circle:
         radius: float
 
-        def _ser(self):
+        def _dictify(self):
             d = dict(
                 area=self.radius**2*3.14,
                 perimeter=2*self.radius*3.14
