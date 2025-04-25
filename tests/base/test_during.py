@@ -1,81 +1,81 @@
 # -*- encoding: utf-8 -*-
-"""
-tests.hold.test_holding module
+"""tests.help.test_during module
 
 """
 import pytest
+
 import os
 import lmdb
 from ordered_set import OrderedSet as oset
 
-from hio.hold import (Holder, openHolder, SuberBase, Suber, DomSuber,
+from hio.base import (Duror, openDuror, SuberBase, Suber, DomSuber,
                       IoSetSuber)
 
 
-def test_holder_basic():
-    """Test Holder Class  """
-    holder = Holder()
-    assert isinstance(holder, Holder)
-    assert holder.name == "main"
-    assert holder.temp == False
-    assert isinstance(holder.env, lmdb.Environment)
-    assert holder.path.endswith(os.path.join("hio", "db", "main"))
-    assert holder.env.path() == holder.path
-    assert os.path.exists(holder.path)
-    assert holder.opened
+def test_duror_basic():
+    """Test Duror Class  """
+    duror = Duror()
+    assert isinstance(duror, Duror)
+    assert duror.name == "main"
+    assert duror.temp == False
+    assert isinstance(duror.env, lmdb.Environment)
+    assert duror.path.endswith(os.path.join("hio", "db", "main"))
+    assert duror.env.path() == duror.path
+    assert os.path.exists(duror.path)
+    assert duror.opened
 
-    holder.close(clear=True)
-    assert not os.path.exists(holder.path)
+    duror.close(clear=True)
+    assert not os.path.exists(duror.path)
 
-    assert Holder.SuffixSize == 32
-    assert Holder.MaxSuffix ==  340282366920938463463374607431768211455
+    assert Duror.SuffixSize == 32
+    assert Duror.MaxSuffix ==  340282366920938463463374607431768211455
 
 
     key = "ABCDEFG.FFFFFF"
     keyb = b"ABCDEFG.FFFFFF"
 
     ion = 0
-    iokey = Holder.suffix(key, ion)
+    iokey = Duror.suffix(key, ion)
     assert iokey == b'ABCDEFG.FFFFFF.00000000000000000000000000000000'
-    k, i = Holder.unsuffix(iokey)
+    k, i = Duror.unsuffix(iokey)
     assert k == keyb
     assert i == ion
 
     ion = 64
-    iokey = Holder.suffix(keyb, ion)
+    iokey = Duror.suffix(keyb, ion)
     assert iokey == b'ABCDEFG.FFFFFF.00000000000000000000000000000040'
-    k, i = Holder.unsuffix(iokey)
+    k, i = Duror.unsuffix(iokey)
     assert k == keyb
     assert i == ion
 
-    iokey = Holder.suffix(key, Holder.MaxSuffix)
+    iokey = Duror.suffix(key, Duror.MaxSuffix)
     assert iokey ==  b'ABCDEFG.FFFFFF.ffffffffffffffffffffffffffffffff'
-    k, i = Holder.unsuffix(iokey)
+    k, i = Duror.unsuffix(iokey)
     assert k == keyb
-    assert i == Holder.MaxSuffix
+    assert i == Duror.MaxSuffix
 
     key = "ABCDEFG_FFFFFF"
     keyb = b"ABCDEFG_FFFFFF"
 
     ion = 0
-    iokey = Holder.suffix(key, ion)
+    iokey = Duror.suffix(key, ion)
     assert iokey == b'ABCDEFG_FFFFFF.00000000000000000000000000000000'
-    k, i = Holder.unsuffix(iokey)
+    k, i = Duror.unsuffix(iokey)
     assert k == keyb
     assert i == ion
 
     ion = 64
-    iokey = Holder.suffix(keyb, ion)
+    iokey = Duror.suffix(keyb, ion)
     assert iokey == b'ABCDEFG_FFFFFF.00000000000000000000000000000040'
-    k, i = Holder.unsuffix(iokey)
+    k, i = Duror.unsuffix(iokey)
     assert k == keyb
     assert i == ion
 
-    iokey = Holder.suffix(key, Holder.MaxSuffix)
+    iokey = Duror.suffix(key, Duror.MaxSuffix)
     assert iokey ==  b'ABCDEFG_FFFFFF.ffffffffffffffffffffffffffffffff'
-    k, i = Holder.unsuffix(iokey)
+    k, i = Duror.unsuffix(iokey)
     assert k == keyb
-    assert i == Holder.MaxSuffix
+    assert i == Duror.MaxSuffix
     """Done Test"""
 
 
@@ -83,42 +83,42 @@ def test_openholder():
     """
     test contextmanager openHolder
     """
-    with openHolder() as holder:
-        assert isinstance(holder, Holder)
-        assert holder.name == "test"
-        assert isinstance(holder.env, lmdb.Environment)
-        _, path = os.path.splitdrive(os.path.normpath(holder.path))
+    with openDuror() as duror:
+        assert isinstance(duror, Duror)
+        assert duror.name == "test"
+        assert isinstance(duror.env, lmdb.Environment)
+        _, path = os.path.splitdrive(os.path.normpath(duror.path))
         assert path.startswith(os.path.join(os.path.sep, "tmp", "hio_lmdb_"))
-        assert holder.path.endswith(os.path.join("_test", "hio", "db", "test"))
-        assert holder.env.path() == holder.path
-        assert os.path.exists(holder.path)
-        assert holder.opened
+        assert duror.path.endswith(os.path.join("_test", "hio", "db", "test"))
+        assert duror.env.path() == duror.path
+        assert os.path.exists(duror.path)
+        assert duror.opened
 
-    assert not os.path.exists(holder.path)
-    assert not holder.opened
+    assert not os.path.exists(duror.path)
+    assert not duror.opened
 
-    with openHolder(name="blue") as holder:
-        assert isinstance(holder, Holder)
-        assert holder.name == "blue"
-        assert isinstance(holder.env, lmdb.Environment)
-        _, path = os.path.splitdrive(os.path.normpath(holder.path))
+    with openDuror(name="blue") as duror:
+        assert isinstance(duror, Duror)
+        assert duror.name == "blue"
+        assert isinstance(duror.env, lmdb.Environment)
+        _, path = os.path.splitdrive(os.path.normpath(duror.path))
         assert path.startswith(os.path.join(os.path.sep, "tmp", "hio_lmdb_"))
-        assert holder.path.endswith(os.path.join("_test", "hio", "db", "blue"))
-        assert holder.env.path() == holder.path
-        assert os.path.exists(holder.path)
-        assert holder.opened
+        assert duror.path.endswith(os.path.join("_test", "hio", "db", "blue"))
+        assert duror.env.path() == duror.path
+        assert os.path.exists(duror.path)
+        assert duror.opened
 
-    assert not os.path.exists(holder.path)
-    assert not holder.opened
+    assert not os.path.exists(duror.path)
+    assert not duror.opened
 
-    with openHolder(name="red") as redbaser, openHolder(name="tan") as tanbaser:
-        assert isinstance(redbaser, Holder)
+    with openDuror(name="red") as redbaser, openDuror(name="tan") as tanbaser:
+        assert isinstance(redbaser, Duror)
         assert redbaser.name == "red"
         assert redbaser.env.path() == redbaser.path
         assert os.path.exists(redbaser.path)
         assert redbaser.opened
 
-        assert isinstance(tanbaser, Holder)
+        assert isinstance(tanbaser, Duror)
         assert tanbaser.name == "tan"
         assert tanbaser.env.path() == tanbaser.path
         assert os.path.exists(tanbaser.path)
@@ -131,80 +131,80 @@ def test_openholder():
 
     """Done Test"""
 
-def test_holder():
-    """Test Holder methods"""
+def test_duror():
+    """Test Duror methods"""
 
-    holder = Holder()
-    assert isinstance(holder, Holder)
-    assert holder.name == "main"
-    assert holder.temp == False
-    assert isinstance(holder.env, lmdb.Environment)
-    assert holder.path.endswith(os.path.join("hio", "db", "main"))
-    assert holder.env.path() == holder.path
-    assert os.path.exists(holder.path)
-    assert holder.opened
-    holder.close(clear=True)
-    assert not os.path.exists(holder.path)
-    assert not holder.opened
+    duror = Duror()
+    assert isinstance(duror, Duror)
+    assert duror.name == "main"
+    assert duror.temp == False
+    assert isinstance(duror.env, lmdb.Environment)
+    assert duror.path.endswith(os.path.join("hio", "db", "main"))
+    assert duror.env.path() == duror.path
+    assert os.path.exists(duror.path)
+    assert duror.opened
+    duror.close(clear=True)
+    assert not os.path.exists(duror.path)
+    assert not duror.opened
 
     # test not opened on init
-    holder = Holder(reopen=False)
-    assert isinstance(holder, Holder)
-    assert holder.name == "main"
-    assert holder.temp == False
-    assert holder.opened == False
-    assert holder.path == None
-    assert holder.env == None
+    duror = Duror(reopen=False)
+    assert isinstance(duror, Duror)
+    assert duror.name == "main"
+    assert duror.temp == False
+    assert duror.opened == False
+    assert duror.path == None
+    assert duror.env == None
 
-    holder.reopen()
-    assert holder.opened
-    assert isinstance(holder.env, lmdb.Environment)
-    assert holder.path.endswith(os.path.join("hio", "db", "main"))
-    assert holder.env.path() == holder.path
-    assert os.path.exists(holder.path)
-    holder.close(clear=True)
-    assert not os.path.exists(holder.path)
-    assert not holder.opened
+    duror.reopen()
+    assert duror.opened
+    assert isinstance(duror.env, lmdb.Environment)
+    assert duror.path.endswith(os.path.join("hio", "db", "main"))
+    assert duror.env.path() == duror.path
+    assert os.path.exists(duror.path)
+    duror.close(clear=True)
+    assert not os.path.exists(duror.path)
+    assert not duror.opened
 
-    with openHolder() as holder:
-        assert holder.temp == True
+    with openDuror() as duror:
+        assert duror.temp == True
         #test Val methods put set get del cnt
         key = b'A'
         val = b'whatever'
-        sdb = holder.env.open_db(key=b'beep.')
+        sdb = duror.env.open_db(key=b'beep.')
 
-        assert holder.getVal(sdb, key) == None
-        assert holder.delVal(sdb, key) == False
-        assert holder.putVal(sdb, key, val) == True
-        assert holder.putVal(sdb, key, val) == False
-        assert holder.setVal(sdb, key, val) == True
-        assert holder.getVal(sdb, key) == val
-        assert holder.cntVals(sdb) == 1
-        assert holder.delVal(sdb, key) == True
-        assert holder.getVal(sdb, key) == None
-        assert holder.cntVals(sdb) == 0
+        assert duror.getVal(sdb, key) == None
+        assert duror.delVal(sdb, key) == False
+        assert duror.putVal(sdb, key, val) == True
+        assert duror.putVal(sdb, key, val) == False
+        assert duror.setVal(sdb, key, val) == True
+        assert duror.getVal(sdb, key) == val
+        assert duror.cntVals(sdb) == 1
+        assert duror.delVal(sdb, key) == True
+        assert duror.getVal(sdb, key) == None
+        assert duror.cntVals(sdb) == 0
 
         # Test getTopItemIter
         key = b"a.1"
         val = b"wow"
-        assert holder.putVal(sdb, key, val) == True
+        assert duror.putVal(sdb, key, val) == True
         key = b"a.2"
         val = b"wee"
-        assert holder.putVal(sdb, key, val) == True
+        assert duror.putVal(sdb, key, val) == True
         key = b"b.1"
         val = b"woo"
-        assert holder.putVal(sdb, key, val) == True
+        assert duror.putVal(sdb, key, val) == True
         assert [(bytes(key), bytes(val)) for key, val
-                     in holder.getTopItemIter(sdb=sdb)] == [(b'a.1', b'wow'),
+                     in duror.getTopItemIter(sdb=sdb)] == [(b'a.1', b'wow'),
                                                         (b'a.2', b'wee'),
                                                         (b'b.1', b'woo')]
         # Test delTopVals
-        assert holder.delTopVals(sdb, top=b"a.")
-        items = [ (key, bytes(val)) for key, val in holder.getTopItemIter(sdb=sdb )]
+        assert duror.delTopVals(sdb, top=b"a.")
+        items = [ (key, bytes(val)) for key, val in duror.getTopItemIter(sdb=sdb )]
         assert items == [(b'b.1', b'woo')]
 
-        assert holder.delTopVals(sdb)
-        assert holder.cntVals(sdb) == 0
+        assert duror.delTopVals(sdb)
+        assert duror.cntVals(sdb) == 0
 
 
         # Test ioset methods
@@ -239,75 +239,75 @@ def test_holder():
         vals4 = [b'p', b'm']
         vals5 = [b't', b'a']
 
-        sdb = holder.env.open_db(key=b'ioset.', dupsort=False)
+        sdb = duror.env.open_db(key=b'ioset.', dupsort=False)
 
-        assert holder.getIoSetVals(sdb, key0) == oset()
-        assert holder.getIoSetValLast(sdb, key0) == None
-        assert holder.cntIoSetVals(sdb, key0) == 0
-        assert holder.delIoSetVals(sdb, key0) == False
+        assert duror.getIoSetVals(sdb, key0) == oset()
+        assert duror.getIoSetValLast(sdb, key0) == None
+        assert duror.cntIoSetVals(sdb, key0) == 0
+        assert duror.delIoSetVals(sdb, key0) == False
 
-        assert holder.putIoSetVals(sdb, key0, vals0) == True
-        assert holder.getIoSetVals(sdb, key0) == vals0  # preserved insertion order
-        assert holder.cntIoSetVals(sdb, key0) == len(vals0) == 4
-        assert holder.getIoSetValLast(sdb, key0) == vals0[-1] == vals0[-1]
+        assert duror.putIoSetVals(sdb, key0, vals0) == True
+        assert duror.getIoSetVals(sdb, key0) == vals0  # preserved insertion order
+        assert duror.cntIoSetVals(sdb, key0) == len(vals0) == 4
+        assert duror.getIoSetValLast(sdb, key0) == vals0[-1] == vals0[-1]
 
-        assert holder.putIoSetVals(sdb, key0, vals=[b'a']) == False   # duplicate
-        assert holder.getIoSetVals(sdb, key0) == vals0  #  no change
-        assert holder.putIoSetVals(sdb, key0, vals=[b'f']) == True
-        assert holder.getIoSetVals(sdb, key0) == [b"z", b"m", b"x", b"a", b"f"]
-        assert holder.addIoSetVal(sdb, key0, val=b'b') == True
-        assert holder.addIoSetVal(sdb, key0, val=b'a') == False
-        assert holder.getIoSetVals(sdb, key0) == [b"z", b"m", b"x", b"a", b"f", b"b"]
+        assert duror.putIoSetVals(sdb, key0, vals=[b'a']) == False   # duplicate
+        assert duror.getIoSetVals(sdb, key0) == vals0  #  no change
+        assert duror.putIoSetVals(sdb, key0, vals=[b'f']) == True
+        assert duror.getIoSetVals(sdb, key0) == [b"z", b"m", b"x", b"a", b"f"]
+        assert duror.addIoSetVal(sdb, key0, val=b'b') == True
+        assert duror.addIoSetVal(sdb, key0, val=b'a') == False
+        assert duror.getIoSetVals(sdb, key0) == [b"z", b"m", b"x", b"a", b"f", b"b"]
 
-        assert [val for val in holder.getIoSetValsIter(sdb, key0)] == [b"z", b"m", b"x", b"a", b"f", b"b"]
-        assert holder.delIoSetVals(sdb, key0) == True
-        assert holder.getIoSetVals(sdb, key0) == []
+        assert [val for val in duror.getIoSetValsIter(sdb, key0)] == [b"z", b"m", b"x", b"a", b"f", b"b"]
+        assert duror.delIoSetVals(sdb, key0) == True
+        assert duror.getIoSetVals(sdb, key0) == []
 
-        assert holder.putIoSetVals(sdb, key0, vals0) == True
+        assert duror.putIoSetVals(sdb, key0, vals0) == True
         for val in vals0:
-            assert holder.delIoSetVal(sdb, key0, val)
-        assert holder.getIoSetVals(sdb, key0) == oset()
-        assert holder.putIoSetVals(sdb, key0, vals0) == True
+            assert duror.delIoSetVal(sdb, key0, val)
+        assert duror.getIoSetVals(sdb, key0) == oset()
+        assert duror.putIoSetVals(sdb, key0, vals0) == True
         for val in sorted(vals0):  # test deletion out of order
-            assert holder.delIoSetVal(sdb, key0, val)
-        assert holder.getIoSetVals(sdb, key0) == []
+            assert duror.delIoSetVal(sdb, key0, val)
+        assert duror.getIoSetVals(sdb, key0) == []
 
         #delete and add in odd order
-        assert holder.putIoSetVals(sdb, key0, vals0) == True
-        assert holder.delIoSetVal(sdb, key0, vals0[2])
-        assert holder.addIoSetVal(sdb, key0, b'w')
-        assert holder.delIoSetVal(sdb, key0, vals0[0])
-        assert holder.addIoSetVal(sdb, key0, b'e')
-        assert holder.getIoSetVals(sdb, key0) == [b'm', b'a', b'w', b'e']
+        assert duror.putIoSetVals(sdb, key0, vals0) == True
+        assert duror.delIoSetVal(sdb, key0, vals0[2])
+        assert duror.addIoSetVal(sdb, key0, b'w')
+        assert duror.delIoSetVal(sdb, key0, vals0[0])
+        assert duror.addIoSetVal(sdb, key0, b'e')
+        assert duror.getIoSetVals(sdb, key0) == [b'm', b'a', b'w', b'e']
 
-        assert holder.delIoSetVals(sdb, key0) == True
-        assert holder.getIoSetVals(sdb, key0) == oset()
+        assert duror.delIoSetVals(sdb, key0) == True
+        assert duror.getIoSetVals(sdb, key0) == oset()
 
-        assert holder.putIoSetVals(sdb, key0, vals0) == True
-        assert holder.putIoSetVals(sdb, key1, vals1) == True
-        assert holder.putIoSetVals(sdb, key2, vals2) == True
-        assert holder.getIoSetVals(sdb, key0) == vals0
-        assert holder.getIoSetVals(sdb, key1) == vals1
-        assert holder.getIoSetVals(sdb, key2) == vals2
+        assert duror.putIoSetVals(sdb, key0, vals0) == True
+        assert duror.putIoSetVals(sdb, key1, vals1) == True
+        assert duror.putIoSetVals(sdb, key2, vals2) == True
+        assert duror.getIoSetVals(sdb, key0) == vals0
+        assert duror.getIoSetVals(sdb, key1) == vals1
+        assert duror.getIoSetVals(sdb, key2) == vals2
 
-        assert holder.setIoSetVals(sdb, key2, vals3)
-        assert holder.getIoSetVals(sdb, key2) == vals3
-        assert holder.cntVals(sdb) == 10
+        assert duror.setIoSetVals(sdb, key2, vals3)
+        assert duror.getIoSetVals(sdb, key2) == vals3
+        assert duror.cntVals(sdb) == 10
 
-        assert holder.delTopVals(sdb)
-        assert holder.cntVals(sdb) == 0
+        assert duror.delTopVals(sdb)
+        assert duror.cntVals(sdb) == 0
 
         # Test setTopIoSetItemIter(self, sdb, pre)
-        assert holder.putIoSetVals(sdb, key0, vals0) == True
-        assert holder.putIoSetVals(sdb, key1, vals1) == True
-        assert holder.putIoSetVals(sdb, key2, vals2) == True
-        assert holder.putIoSetVals(sdb, key3, vals3) == True
-        assert holder.putIoSetVals(sdb, key4, vals4) == True
-        assert holder.putIoSetVals(sdb, key5, vals5) == True
-        assert holder.cntVals(sdb) == 18
+        assert duror.putIoSetVals(sdb, key0, vals0) == True
+        assert duror.putIoSetVals(sdb, key1, vals1) == True
+        assert duror.putIoSetVals(sdb, key2, vals2) == True
+        assert duror.putIoSetVals(sdb, key3, vals3) == True
+        assert duror.putIoSetVals(sdb, key4, vals4) == True
+        assert duror.putIoSetVals(sdb, key5, vals5) == True
+        assert duror.cntVals(sdb) == 18
 
         items = []
-        for key, val in holder.getTopIoSetItemIter(sdb):
+        for key, val in duror.getTopIoSetItemIter(sdb):
             items.append((key, bytes(val)))
 
         assert items == [(b'ABC_EFG', b'p'),
@@ -331,7 +331,7 @@ def test_holder():
 
 
         items = []
-        for key, val in holder.getTopIoSetItemIter(sdb, top=b'ABC_'):
+        for key, val in duror.getTopIoSetItemIter(sdb, top=b'ABC_'):
             items.append((key, bytes(val)))
 
         assert items == [(b'ABC_EFG', b'p'),
@@ -344,7 +344,7 @@ def test_holder():
                         (b'ABC_ZYX', b'a')]
 
         items = []
-        for key, val in holder.getTopIoSetItemIter(sdb, top=b'AB'):
+        for key, val in duror.getTopIoSetItemIter(sdb, top=b'AB'):
             items.append((key, bytes(val)))
 
         assert items == [(b'ABC_EFG', b'p'),
@@ -359,21 +359,21 @@ def test_holder():
                         (b'AB_CDE', b'e')]
 
 
-    assert not os.path.exists(holder.path)
+    assert not os.path.exists(duror.path)
 
     """Done Test"""
 
 
 def test_suberbase():
-    """Test SuberBase Holder sub database class"""
-    with openHolder() as holder:
-        assert isinstance(holder, Holder)
-        assert holder.name == "test"
-        assert holder.opened
+    """Test SuberBase Duror sub database class"""
+    with openDuror() as duror:
+        assert isinstance(duror, Duror)
+        assert duror.name == "test"
+        assert duror.opened
 
         assert SuberBase.Sep == '_'
 
-        suber = SuberBase(db=holder, subkey='bags.')
+        suber = SuberBase(db=duror, subkey='bags.')
         assert isinstance(suber, SuberBase)
         assert not suber.sdb.flags()["dupsort"]
         assert suber.sep == "_"
@@ -383,23 +383,23 @@ def test_suberbase():
         assert key == b'key_top'
         assert suber._tokeys(key) == keys
 
-    assert not os.path.exists(holder.path)
-    assert not holder.opened
+    assert not os.path.exists(duror.path)
+    assert not duror.opened
     """Done Test"""
 
 
 
 def test_suber():
-    """Test Suber Holder sub database class"""
+    """Test Suber Duror sub database class"""
 
-    with openHolder() as holder:
-        assert isinstance(holder, Holder)
-        assert holder.name == "test"
-        assert holder.opened
+    with openDuror() as duror:
+        assert isinstance(duror, Duror)
+        assert duror.name == "test"
+        assert duror.opened
 
         assert Suber.Sep == '_'
 
-        suber = Suber(db=holder, subkey='bags.')
+        suber = Suber(db=duror, subkey='bags.')
         assert isinstance(suber, Suber)
         assert not suber.sdb.flags()["dupsort"]
         assert suber.sep == "_"
@@ -492,7 +492,7 @@ def test_suber():
         y = "Red apple"
         z = "White snow"
 
-        suber = Suber(db=holder, subkey='pugs.')
+        suber = Suber(db=duror, subkey='pugs.')
         assert isinstance(suber, Suber)
 
         suber.put(keys=("a","1"), val=w)
@@ -590,22 +590,22 @@ def test_suber():
 
         assert not suber.trim()
 
-    assert not os.path.exists(holder.path)
-    assert not holder.opened
+    assert not os.path.exists(duror.path)
+    assert not duror.opened
     """Done Test"""
 
 
 def test_domsuber():
-    """Test DomSuber, Holder sub database class"""
+    """Test DomSuber, Duror sub database class"""
 
-    with openHolder() as holder:
-        assert isinstance(holder, Holder)
-        assert holder.name == "test"
-        assert holder.opened
+    with openDuror() as duror:
+        assert isinstance(duror, Duror)
+        assert duror.name == "test"
+        assert duror.opened
 
         assert Suber.Sep == '_'
 
-        suber = DomSuber(db=holder, subkey='bags.')
+        suber = DomSuber(db=duror, subkey='bags.')
         assert isinstance(suber, DomSuber)
         assert not suber.sdb.flags()["dupsort"]
         assert suber.sep == "_"
@@ -622,15 +622,15 @@ def test_domsuber():
 def test_ioset_suber():
     """Test IoSetSuber LMDBer sub database class"""
 
-    with openHolder() as holder:
-        assert isinstance(holder, Holder)
-        assert holder.name == "test"
-        assert holder.opened
+    with openDuror() as duror:
+        assert isinstance(duror, Duror)
+        assert duror.name == "test"
+        assert duror.opened
 
         assert IoSetSuber.Sep == '_'
         assert IoSetSuber.IonSep == '.'
 
-        iosuber = IoSetSuber(db=holder, subkey='bags.')
+        iosuber = IoSetSuber(db=duror, subkey='bags.')
         assert isinstance(iosuber, IoSetSuber)
         assert not iosuber.sdb.flags()["dupsort"]
         assert iosuber.sep == '_'
@@ -779,16 +779,17 @@ def test_ioset_suber():
         assert iosuber.put(keys=keys1, vals=[bob, bil])
         assert iosuber.get(keys=keys1) == [bob, bil]
 
-    assert not os.path.exists(holder.path)
-    assert not holder.opened
+    assert not os.path.exists(duror.path)
+    assert not duror.opened
     """Done Test"""
 
 
 if __name__ == "__main__":
-    test_holder_basic()
+    test_duror_basic()
     test_openholder()
-    test_holder()
+    test_duror()
     test_suberbase()
     test_suber()
     test_domsuber()
     test_ioset_suber()
+

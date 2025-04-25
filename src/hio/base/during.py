@@ -1,9 +1,9 @@
 # -*- encoding: utf-8 -*-
-"""hio.hold.holding Module
+"""hio.help.during module
 
-Provides durable data storage with LMDB
-
+Support for Durable storage using LMDB
 """
+
 from __future__ import annotations  # so type hints of classes get resolved later
 
 import os
@@ -17,20 +17,13 @@ from ordered_set import OrderedSet as oset
 
 import hio
 
-from ..base import Doer, Filer
+from .doing import Doer
+from .filing import Filer
 from ..help import isNonStringIterable
 
 
 
-def clearDatabaserDir(path):
-    """Remove directory path for testing and debugging purposes
-    """
-    if os.path.exists(path):
-        shutil.rmtree(path)
-
-
-
-class Holder(Filer):
+class Duror(Filer):
     """Manages an an LMDB database directory and environment.
 
     Inherited Class Attributes:  (see Filer)
@@ -150,7 +143,7 @@ class Holder(Filer):
         self.env = None
         self._version = None
         self.readonly = True if readonly else False
-        super(Holder, self).__init__(**kwa)
+        super(Duror, self).__init__(**kwa)
 
 
     def reopen(self, readonly=False, **kwa):
@@ -180,7 +173,7 @@ class Holder(Filer):
                                 False means open database in read/write mode
         """
         exists = self.exists(name=self.name, base=self.base)
-        opened = super(Holder, self).reopen(**kwa)
+        opened = super(Duror, self).reopen(**kwa)
         if readonly is not None:
             self.readonly = readonly
 
@@ -246,7 +239,7 @@ class Holder(Filer):
 
         self.env = None
 
-        return super(Holder, self).close(clear=clear)
+        return super(Duror, self).close(clear=clear)
 
 
     def getVer(self):
@@ -802,14 +795,14 @@ class Holder(Filer):
 
 
 @contextmanager
-def openHolder(*, cls=None, name="test", temp=True, **kwa):
-    """Context manager wrapper for Holder instances.
+def openDuror(*, cls=None, name="test", temp=True, **kwa):
+    """Context manager wrapper for Duror instances.
     Defaults to temporary databases.
     Context 'with' statements call .close on exit of 'with' block
 
     Parameters:
-        cls (Type[Holder]): Class (subclass) defaults to Holder when None
-        name (str):  of Holder dirPath so can have multiple holders
+        cls (Type[Duror]): Class (subclass) defaults to Duror when None
+        name (str):  of Duror dirPath so can have multiple holders
              that each use different dirPath name
         temp (bool):  True means open in temporary directory, clear on close
                     Otherwise open in persistent directory, do not clear on close
@@ -822,27 +815,27 @@ def openHolder(*, cls=None, name="test", temp=True, **kwa):
     with openHolder(name="gen2, cls=Baser)
 
     """
-    holder = None
+    duror = None
     if cls is None:
-        cls = Holder
+        cls = Duror
     try:
-        holder = cls(name=name, temp=temp, reopen=True, **kwa)
-        yield holder
+        duror = cls(name=name, temp=temp, reopen=True, **kwa)
+        yield duror
 
     finally:
-        if holder:
-            holder.close(clear=holder.temp)  # clears if lmdber.temp
+        if duror:
+            duror.close(clear=duror.temp)  # clears if lmdber.temp
 
 
 
-class HolderDoer(Doer):
-    """Holder Doer
+class DurorDoer(Doer):
+    """Duror Doer
 
     Attributes:
         done (bool): completion state:
             True means completed
             Otherwise incomplete. Incompletion maybe due to close or abort.
-        holder (Holder): instance
+        duror (Duror): instance
 
     Inherited Properties:
         tyme (float): relative cycle time of associated Tymist .tyme obtained
@@ -855,7 +848,7 @@ class HolderDoer(Doer):
 
     """
 
-    def __init__(self, filer, **kwa):
+    def __init__(self, duror, **kwa):
         """Init instance
 
         Inherited Parameters:
@@ -863,10 +856,10 @@ class HolderDoer(Doer):
            tock (float): initial value of .tock in seconds
 
         Parameters:
-           holder (Holder): instance
+           duror (Duror): instance
         """
-        super(HolderDoer, self).__init__(**kwa)
-        self.holder = holder
+        super(DurorDoer, self).__init__(**kwa)
+        self.duror = duror
 
 
     def enter(self, *, temp=None):
@@ -880,18 +873,18 @@ class HolderDoer(Doer):
         Inject temp or self.temp into file resources here if any
         """
         # inject temp into file resources here if any
-        if not self.holder.opened:
-            self.holder.reopen(temp=temp)
+        if not self.duror.opened:
+            self.duror.reopen(temp=temp)
 
 
     def exit(self):
         """"""
-        self.holder.close(clear=self.holder.temp)
+        self.duror.close(clear=self.duror.temp)
 
 
 
 class SuberBase():
-    """Base class for Sub DBs of Holder
+    """Base class for Sub DBs of Duror
     Provides common methods for subclasses
     Do not instantiate but use a subclass
 
@@ -904,7 +897,7 @@ class SuberBase():
     """
     Sep = '_'  # separator for combining key iterables
 
-    def __init__(self, db: Holder, *,
+    def __init__(self, db: Duror, *,
                        subkey: str='docs.',
                        dupsort: bool=False,
                        sep: str=None,
@@ -1129,7 +1122,7 @@ class Suber(SuberBase):
     """Subclass of SuberBase with no LMDB duplicates (i.e. multiple values at same key).
     """
 
-    def __init__(self, db: Holder, *,
+    def __init__(self, db: Duror, *,
                        subkey: str = 'docs.',
                        dupsort: bool=False, **kwa):
         """
@@ -1232,10 +1225,10 @@ class DomSuber(Suber):
 
     """
 
-    def __init__(self, db: Holder, *, subkey: str = 'cans.', sep='_', **kwa):
+    def __init__(self, db: Duror, *, subkey: str = 'cans.', sep='_', **kwa):
         """
         Inherited Parameters:
-            db (Holder): base db
+            db (Duror): base db
             subkey (str):  LMDB sub database key
             dupsort (bool): True means enable duplicates at each key
                                False (default) means do not enable duplicates at

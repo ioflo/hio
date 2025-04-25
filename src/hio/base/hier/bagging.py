@@ -12,7 +12,7 @@ from typing import Any, Type, ClassVar
 from dataclasses import dataclass, astuple, asdict, field, fields, InitVar
 
 from ...help import RawDom
-from ...hold import Suber
+from ..during import Suber
 
 def namify(cls):
     """Class decorator for dataclass to populate ClassVar ._names with names
