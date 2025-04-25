@@ -15,6 +15,10 @@ def test_tymedom():
     """Test TymeDom class"""
     tymist = Tymist()
 
+    assert TymeDom._registry
+    assert TymeDom.__name__ in TymeDom._registry
+    assert TymeDom._registry[TymeDom.__name__] == TymeDom
+
     assert TymeDom._names == ()
     # no fields just InitVar and ClassVar attributes
     fields = dataclasses.fields(TymeDom)
@@ -100,6 +104,10 @@ def test_bag():
     """Test Bag class"""
     tymist = Tymist()
 
+    assert Bag._registry
+    assert Bag.__name__ in Bag._registry
+    assert Bag._registry[Bag.__name__] == Bag
+
     assert Bag._names == ("value", )
     fields = dataclasses.fields(Bag)
     assert len(fields) == 1
@@ -184,6 +192,10 @@ def test_canbase():
     """Test CanBase class"""
     tymist = Tymist()
 
+    assert CanBase._registry
+    assert CanBase.__name__ in CanBase._registry
+    assert CanBase._registry[CanBase.__name__] == CanBase
+
     assert CanBase._names == ()
     # no fields just InitVar and ClassVar attributes
     fields = dataclasses.fields(CanBase)
@@ -195,7 +207,7 @@ def test_canbase():
     assert c._tymth == None
     assert c._now == None
     assert c._tyme == None
-    assert c._cans == None
+    assert c._sdb == None
     assert c._key == None
 
     c = CanBase(_tymth=tymist.tymen())
@@ -203,7 +215,7 @@ def test_canbase():
     assert c._tymth
     assert c._now == 0.0 == tymist.tyme
     assert c._tyme == None
-    assert c._cans == None
+    assert c._sdb == None
     assert c._key == None
 
     tymist.tick()

@@ -11,8 +11,22 @@ from collections.abc import Iterable, Mapping, Callable
 from typing import Any, Type, ClassVar
 from dataclasses import dataclass, astuple, asdict, field, fields, InitVar
 
+from ...hioing import HierError
+from ..during import SuberBase, Suber, DomSuber
 from ...help import RawDom
-from ..during import Suber
+
+
+def registerify(cls):
+    """Class Decorator to add cls as cls._registry entry for itself keyed by its
+    own .__name__. Need class decorator so that class object is already created
+    by registration time when decorator is applied
+    """
+    name = cls.__name__
+    if name in cls._registry:
+        raise HierError(f"TymeDom subclass {name=} already registered.")
+    cls._registry[name] = cls
+    return cls
+
 
 def namify(cls):
     """Class decorator for dataclass to populate ClassVar ._names with names
@@ -22,14 +36,18 @@ def namify(cls):
     return cls
 
 
+
 @namify
+@registerify
 @dataclass
 class TymeDom(RawDom):
-    """TymeDom is base class for Bag subclasses with common fields.
+    """TymeDom is base class for Bagish subclasses with common fields.
 
     Field Attributes:
 
     Non-Field Class Attributes:
+        _registry (ClassVar[dict]): dict of subclasses keyed by class.__name__
+            Assigned by @registerify decorator
         _names (ClassVar[tuple[str]|None]): tuple of field names for class
             Assigned by @namify decorator
 
@@ -47,6 +65,7 @@ class TymeDom(RawDom):
         _now (None|float): current tyme given by ._tymth if not None.
 
     """
+    _registry:  ClassVar[dict] = {}  # subclass registry
     _names: ClassVar[tuple[str]|None] = None  # Assigned in  __post_init__
     _tymth: InitVar[None|Callable] = None  # tymth closure not a field
     _tyme: InitVar[None|float] = None  # tyme of last update
@@ -109,8 +128,8 @@ class TymeDom(RawDom):
         self._tymth = tymth
 
 
-
 @namify
+@registerify
 @dataclass
 class Bag(TymeDom):
     """Bag is simple TymeDom sublclass with generic value field.
@@ -139,6 +158,7 @@ class Bag(TymeDom):
 
 
 @namify
+@registerify
 @dataclass
 class CanBase(TymeDom):
     """CanBase is base class that adds support for durable storage via its ._cans
@@ -162,17 +182,17 @@ class CanBase(TymeDom):
         _now (None|float): current tyme given by ._tymth if not None.
 
     Non-Field Attributes:
-        _cans (Suber|None): Durable lmdb based store
+        _sdb (DomSuber|None): SuberBase subclass instance of durable subdb of Duror
         _key (str|None): database key used to store serialized field in ._cans
 
 
     """
-    _cans: InitVar[None|Suber] = None  # durable storage of serialized fields
+    _sdb: InitVar[None|DomSuber] = None  # durable storage of serialized fields
     _key: InitVar[None|str] = None  # durable storage of serialized fields
 
-    def __post_init__(self, _tymth, _tyme, _cans, _key):
+    def __post_init__(self, _tymth, _tyme, _sdb, _key):
         super(CanBase, self).__post_init__(_tymth, _tyme)
-        self._cans = _cans
+        self._sdb = _sdb
         self._key = _key
 
 

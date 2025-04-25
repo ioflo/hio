@@ -23,33 +23,31 @@ from ..during import Duror, Suber, IoSetSuber
 from ...help import isNonStringIterable
 
 """Hold is Mine subclass that on writes intercepts key and keys and then
-also saves updates value in durable storage for value object RawDom serializations
+also saves updates value in durable storage for value object CanBase and Durq
+serializations
 Likewise on reads intercepts key and keys and reads from durable storage
 and extracts name of class so can deserialize into object subclass
 
-for durable deque then each value in deque is a RawDom which gets stored
+Hold has attribute of Duck whose attributes are subdbs
+.cans
+.drqs
+
+Hold injects reference to one of these based on the type of value and the Hold
+key  into ._sdb and ._key.  When not a durable value then no injection.
+This allows the value then to read/write to its ._sdb at ._key the fields
+of the Can when Can or Durq when Durq
+
+
+for durable deque then each value in deque is a Bag which gets stored
 in its one insertion ordered key in backing durable storage
 
 So python magic in Hold
-Each Can object has fields that ref appropriate Suber subclass so can store
-at key in the Suber.
 
-
+Need class registry for TymeDom subclasses so that DomSuber and DomIoSetSuber
+can look up class by name and deserialize
 
 """
 
-
-
-
-# in holding
-# todo DomSuber subclass that forces .ser to '_' and .ionser to '.'
-# changes ._ser and ._des methods to serialize RawDom subclasses for db
-
-# todo DomIoSetSuber subclass that forces .ser to '_' and .ionser to '.'
-# changes ._ser and ._des methods to serialize RawDom subclasses for db
-
-# here
-# change Dock to use DomSuber and DomIoSetSuber
 
 
 
@@ -57,6 +55,8 @@ at key in the Suber.
 
 class Duck(Duror):
     """Duck subclass of Duror for managing durable storage action data
+
+    ToDo:  change to use DomSuber and DomIoSetSuber
 
     """
     def __init__(self, **kwa):
