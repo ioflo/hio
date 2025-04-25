@@ -12,6 +12,7 @@ from typing import Any, Type, ClassVar
 from dataclasses import dataclass, astuple, asdict, field, fields, InitVar
 
 from ...help import RawDom
+from ...hold import Suber
 
 def namify(cls):
     """Class decorator for dataclass to populate ClassVar ._names with names
@@ -112,7 +113,7 @@ class TymeDom(RawDom):
 @namify
 @dataclass
 class Bag(TymeDom):
-    """Bag is simple BagDom sublclass with generic value field.
+    """Bag is simple TymeDom sublclass with generic value field.
 
     Inherited Non-Field Class Attributes:
         _names (ClassVar[tuple[str]|None]): tuple of field names for class
@@ -135,3 +136,43 @@ class Bag(TymeDom):
        value (Any):  generic value field
     """
     value: Any = None  # generic value
+
+
+@namify
+@dataclass
+class CanBase(TymeDom):
+    """CanBase is base class that adds support for durable storage via its ._cans
+    non-field attribute
+
+    Inherited Non-Field Class Attributes:
+        _names (ClassVar[tuple[str]|None]): tuple of field names for class
+            Assigned by @namify decorator
+
+    Inherited Non-Field Attributes:
+        _tymth (None|Callable): function wrapper closure returned by
+            Tymist.tymen() method. When .tymth is called it returns associated
+            Tymist.tyme. Provides injected dependency on Tymist cycle tyme base.
+            None means not assigned yet.
+            Use ._wind method to assign ._tymth after init of bag.
+        _tyme (None|Float): cycle tyme of last update of a bag field.
+            None means either ._tymth as not yet been assigned or this bag's
+            fields have not yet been updated.
+
+    Inherited Properties:
+        _now (None|float): current tyme given by ._tymth if not None.
+
+    Non-Field Attributes:
+        _cans (Suber|None): Durable lmdb based store
+        _key (str|None): database key used to store serialized field in ._cans
+
+
+    """
+    _cans: InitVar[None|Suber] = None  # durable storage of serialized fields
+    _key: InitVar[None|str] = None  # durable storage of serialized fields
+
+    def __post_init__(self, _tymth, _tyme, _cans, _key):
+        super(CanBase, self).__post_init__(_tymth, _tyme)
+        self._cans = _cans
+        self._key = _key
+
+

@@ -6,6 +6,16 @@ Support for Dock class
 """
 from ...hold import Holder, Suber, IoSetSuber
 
+# in holding
+# todo DomSuber subclass that forces .ser to '_' and .ionser to '.'
+# changes ._ser and ._des methods to serialize RawDom subclasses for db
+
+# todo DomIoSetSuber subclass that forces .ser to '_' and .ionser to '.'
+# changes ._ser and ._des methods to serialize RawDom subclasses for db
+
+# here
+# change Dock to use DomSuber and DomIoSetSuber
+
 
 class Dock(Holder):
     """Dock subclass of Holder for managing durable storage action data
