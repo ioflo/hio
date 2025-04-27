@@ -6,10 +6,8 @@ Mixin Base Classes that add support for  memograms over datagram based transport
 In this context, a memogram is a larger memogram that is partitioned into
 smaller parts as transport specific datagrams. This allows larger messages to
 be transported over datagram transports than the underlying transport can support.
-
-
-
 """
+
 import socket
 import errno
 import math
