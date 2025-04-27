@@ -405,20 +405,19 @@ logger = help.ogler.getLogger()
 Versionage = namedtuple("Versionage", "major minor")
 
 
-# namedtuple for gram header part size entries in Memoer code tables
-# cs is the code part size int number of chars in code part
-# ms is the mid part size int number of chars in the mid part (memoID)
-# vs is the vid  part size int number of chars in the vid part (verification ID)
-# ns is the neck part size int number of chars for the gram number in all grams
-#       and the additional neck that also appears in first gram for gram count
-# ss is the signature part size int number of chars in the signature part.
-#       the signature part is discontinuously attached after the body part but
-#       its size is included in over head computation for the body size
-# hs is the head size int number of chars for other grams no-neck.
-#       hs = cs + ms + vs + ns + ss. The size for the first gram with neck is
-#       hs + ns
-
-
+"""Sizage: namedtuple for gram header part size entries in Memoer code tables
+cs is the code part size int number of chars in code part
+ms is the mid part size int number of chars in the mid part (memoID)
+vs is the vid  part size int number of chars in the vid part (verification ID)
+ns is the neck part size int number of chars for the gram number in all grams
+      and the additional neck that also appears in first gram for gram count
+ss is the signature part size int number of chars in the signature part.
+      the signature part is discontinuously attached after the body part but
+      its size is included in over head computation for the body size
+hs is the head size int number of chars for other grams no-neck.
+      hs = cs + ms + vs + ns + ss. The size for the first gram with neck is
+      hs + ns
+"""
 Sizage = namedtuple("Sizage", "cs ms vs ss ns hs")
 
 @dataclass(frozen=True)
