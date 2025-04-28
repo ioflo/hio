@@ -370,7 +370,7 @@ def test_subery_basic():
         assert subery.env.path() == subery.path
         assert os.path.exists(subery.path)
 
-        assert isinstance(subery.cans, Suber)
+        assert isinstance(subery.cans, DomSuber)
         assert isinstance(subery.cans.sdb, lmdb._Database)
 
         assert isinstance(subery.drqs, IoSetSuber)
