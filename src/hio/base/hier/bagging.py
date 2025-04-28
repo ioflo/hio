@@ -136,6 +136,8 @@ class Bag(TymeDom):
     """Bag is simple TymeDom sublclass with generic value field.
 
     Inherited Non-Field Class Attributes:
+        _registry (ClassVar[dict]): dict of subclasses keyed by class.__name__
+            Assigned by @registerify decorator
         _names (ClassVar[tuple[str]|None]): tuple of field names for class
             Assigned by @namify decorator
 

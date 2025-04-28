@@ -888,6 +888,9 @@ class SuberBase():
     Provides common methods for subclasses
     Do not instantiate but use a subclass
 
+    Class Attribues:
+        Sep (str): default separator to convert keys iterator to key bytes for db key
+
     Attributes:
         db (dbing.LMDBer): base LMDB db
         sdb (lmdb._Database): instance of lmdb named sub db for this Suber
@@ -1120,6 +1123,17 @@ class SuberBase():
 
 class Suber(SuberBase):
     """Subclass of SuberBase with no LMDB duplicates (i.e. multiple values at same key).
+
+    Inherited Class Attribues:
+        Sep (str): default separator to convert keys iterator to key bytes for db key
+
+    Inherited Attributes:
+        db (dbing.LMDBer): base LMDB db
+        sdb (lmdb._Database): instance of lmdb named sub db for this Suber
+        sep (str): separator for combining keys tuple of strs into key bytes
+        verify (bool): True means reverify when ._des from db when applicable
+                       False means do not reverify. Default False
+
     """
 
     def __init__(self, db: Duror, *,
@@ -1238,6 +1252,12 @@ class IoSetSuber(SuberBase):
     is appended and stripped transparently. The set of multiple items with
     duplicate keys are retrieved in insertion order when iterating or as a list
     of the set elements.
+
+    Inherited Class Attribues:
+        Sep (str): default separator to convert keys iterator to key bytes for db key
+
+    ClassAttributes:
+        IonSep (str): default separator to suffix insertion order ordinal number
 
     Inherited Attributes:
         db (dbing.LMDBer): base LMDB db

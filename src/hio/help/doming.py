@@ -298,7 +298,7 @@ class RawDom(MapDom):
         """Returns json bytes version of record"""
         return json.dumps(self._asdict(),
                           separators=(",", ":"),
-                          ensure_ascii=False).encode()
+                          ensure_ascii=False).encode()  # ensure bytes
 
 
     def _ascbor(self):
