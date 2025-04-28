@@ -9,13 +9,36 @@ import lmdb
 
 
 from hio.base import Duror, openDuror, Suber, IoSetSuber
-from hio.base.hier import Duck
+from hio.base.hier import DomSuber, Duck
 
 def test_hold_basic():
     """Test Hold basic"""
 
     """Done Test"""
 
+
+
+def test_domsuber():
+    """Test DomSuber, Duror sub database class"""
+
+    with openDuror() as duror:
+        assert isinstance(duror, Duror)
+        assert duror.name == "test"
+        assert duror.opened
+
+        assert Suber.Sep == '_'
+
+        suber = DomSuber(db=duror, subkey='bags.')
+        assert isinstance(suber, DomSuber)
+        assert not suber.sdb.flags()["dupsort"]
+        assert suber.sep == "_"
+
+        keys = ('key', 'top')
+        key = suber._tokey(keys)
+        assert key == b'key_top'
+        assert suber._tokeys(key) == keys
+
+        """Done Test"""
 
 
 
@@ -99,4 +122,5 @@ def test_duck_basic():
 
 if __name__ == "__main__":
     test_hold_basic()
+    test_domsuber()
     test_duck_basic()

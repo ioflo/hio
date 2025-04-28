@@ -8,7 +8,7 @@ from __future__ import annotations  # so type hints of classes get resolved late
 
 import re
 from collections.abc import Iterable, Mapping
-from ..help import isNonStringIterable
+from ..help import isNonStringIterable, NonStringIterable
 
 
 
@@ -115,14 +115,15 @@ class Mine(dict):
                     rd[self.tokey(k)] = v
                 super(Mine, self).update(rd, **kwa)
 
-            elif isinstance(di, Iterable):
+            elif isinstance(di, NonStringIterable):
                 ri = []
                 for k, v in di:
                     ri.append((self.tokey(k), v))
                 super(Mine, self).update(ri, **kwa)
 
             else:
-                raise TypeError(f"Expected Mapping or Iterable got {type(di)}.")
+                raise TypeError(f"Expected Mapping or NonStringIterable got "
+                                f"{type(di)}.")
 
         else:
             super(Mine, self).update(**kwa)

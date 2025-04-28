@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 """hio.base.hier.bagging Module
 
-Provides dom support for items in Mine or Dock for shared data store support
+Provides dom support for items hold
 
 """
 from __future__ import annotations  # so type hints of classes get resolved later
@@ -11,9 +11,9 @@ from collections.abc import Iterable, Mapping, Callable
 from typing import Any, Type, ClassVar
 from dataclasses import dataclass, astuple, asdict, field, fields, InitVar
 
+from ...help import RawDom, NonStringIterable
 from ...hioing import HierError
-from ..during import SuberBase, Suber, DomSuber
-from ...help import RawDom
+from ..during import SuberBase, Suber
 
 
 def registerify(cls):
@@ -99,11 +99,12 @@ class TymeDom(RawDom):
             if isinstance(di, Mapping):
                 for k, v in di.items():
                     self[k] = v
-            elif isinstance(di, Iterable):
+            elif isinstance(di, NonStringIterable):
                 for k, v in di:
                     self[k] = v
             else:
-                raise TypeError(f"Expected Mapping or Iterable got {type(di)}.")
+                raise TypeError(f"Expected Mapping or NonStringIterable got"
+                                f" {type(di)}.")
 
         for k, v in kwa.items():
             self[k] = v
@@ -155,44 +156,5 @@ class Bag(TymeDom):
        value (Any):  generic value field
     """
     value: Any = None  # generic value
-
-
-@namify
-@registerify
-@dataclass
-class CanBase(TymeDom):
-    """CanBase is base class that adds support for durable storage via its ._cans
-    non-field attribute
-
-    Inherited Non-Field Class Attributes:
-        _names (ClassVar[tuple[str]|None]): tuple of field names for class
-            Assigned by @namify decorator
-
-    Inherited Non-Field Attributes:
-        _tymth (None|Callable): function wrapper closure returned by
-            Tymist.tymen() method. When .tymth is called it returns associated
-            Tymist.tyme. Provides injected dependency on Tymist cycle tyme base.
-            None means not assigned yet.
-            Use ._wind method to assign ._tymth after init of bag.
-        _tyme (None|Float): cycle tyme of last update of a bag field.
-            None means either ._tymth as not yet been assigned or this bag's
-            fields have not yet been updated.
-
-    Inherited Properties:
-        _now (None|float): current tyme given by ._tymth if not None.
-
-    Non-Field Attributes:
-        _sdb (DomSuber|None): SuberBase subclass instance of durable subdb of Duror
-        _key (str|None): database key used to store serialized field in ._cans
-
-
-    """
-    _sdb: InitVar[None|DomSuber] = None  # durable storage of serialized fields
-    _key: InitVar[None|str] = None  # durable storage of serialized fields
-
-    def __post_init__(self, _tymth, _tyme, _sdb, _key):
-        super(CanBase, self).__post_init__(_tymth, _tyme)
-        self._sdb = _sdb
-        self._key = _key
 
 

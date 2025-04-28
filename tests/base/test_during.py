@@ -8,8 +8,7 @@ import os
 import lmdb
 from ordered_set import OrderedSet as oset
 
-from hio.base import (Duror, openDuror, SuberBase, Suber, DomSuber,
-                      IoSetSuber)
+from hio.base import (Duror, openDuror, SuberBase, Suber, IoSetSuber)
 
 
 def test_duror_basic():
@@ -595,29 +594,6 @@ def test_suber():
     """Done Test"""
 
 
-def test_domsuber():
-    """Test DomSuber, Duror sub database class"""
-
-    with openDuror() as duror:
-        assert isinstance(duror, Duror)
-        assert duror.name == "test"
-        assert duror.opened
-
-        assert Suber.Sep == '_'
-
-        suber = DomSuber(db=duror, subkey='bags.')
-        assert isinstance(suber, DomSuber)
-        assert not suber.sdb.flags()["dupsort"]
-        assert suber.sep == "_"
-
-        keys = ('key', 'top')
-        key = suber._tokey(keys)
-        assert key == b'key_top'
-        assert suber._tokeys(key) == keys
-
-        """Done Test"""
-
-
 
 def test_ioset_suber():
     """Test IoSetSuber LMDBer sub database class"""
@@ -790,6 +766,5 @@ if __name__ == "__main__":
     test_duror()
     test_suberbase()
     test_suber()
-    test_domsuber()
     test_ioset_suber()
 
