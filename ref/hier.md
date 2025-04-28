@@ -280,16 +280,13 @@ tyme = yield(tock)  # pause end of next, resume start of send
 # begin first pass after send()
 self.rendo(rendos)  # rendo nabe, action remarks and renacts
 self.endo(endos)  # endo nabe, action enmarks and enacts
-
-for box in self.box.pile:  # top down redo
-    for react in box.reacts:   # redo nabe top down
-        react()
+self.redo()  # redo nabe all boxes in pile top down
 
 while True:  # run forever
     tock = self.mine[tkey].value  # get tock in case it changed
-    tyme = yield(tock)  # resume on send
-    rendos = []
-    endos = []
+    tyme = yield(tock)  # resume on send after tyme tick
+    rendos = []  # make empty for new pass, reset on transit
+    endos = []  # make empty for new pass, reset on transit
 
     if self.endial():  # previous pass actioned desire to end
         self.end()  # exdos all active boxes in self.box.pile
@@ -298,9 +295,8 @@ while True:  # run forever
         return True  # signal successful end after last pass
 
     transit = False
-    for box in self.box.pile:  # top down evaluate andos and godos
-        for afact in box.afacts:   # afdo nabe top down, after tyme tick
-            afact()
+    for box in self.box.pile:  # top down afdos and godos after tyme tick
+        box.afdo()   # afdo nabe
 
         for goact in box.goacts:  # godo nabe top down
             if dest := goact():  # transition condition satisfied
@@ -319,10 +315,7 @@ while True:  # run forever
 
     self.rendo(rendos)  # rendo nabe, action remarks and renacts
     self.endo(endos)  # endo nabe, action enmarks and enacts
-
-    for box in self.box.pile:  # top down
-        for react in box.reacts:   # redo nabe top down
-            react()
+    self.redo()  # redo nabe all boxes in pile top down
 ```
 
 ## Building a boxwork

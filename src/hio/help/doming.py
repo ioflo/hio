@@ -21,21 +21,21 @@ from dataclasses import dataclass, astuple, asdict, fields, field
 def dictify(val):
     """
     Returns a serializable dict represention of a dataclass.  If the dataclass
-    contains a `_ser` method, use it instead of `asdict`
+    contains a `_dictify method, use it instead of `asdict`
 
     Parameters:
          val the dataclass instance to turn into a dict.
     """
-    ser = getattr(val, "_ser", None)
-    if callable(ser):
-        return ser()
+    dit = getattr(val, "_dictify", None)
+    if callable(dit):
+        return dit()
 
     return asdict(val)
 
 
 def datify(cls, d):
     """Returns instance of dataclass cls converted from dict d. If the dataclass
-    cls or any nested dataclasses contains a `_der` method, the use it instead
+    cls or any nested dataclasses contains a `_datify` method, the use it instead
     of default fieldtypes conversion.
 
     Parameters:
@@ -43,9 +43,9 @@ def datify(cls, d):
     d is dict
     """
     try:
-        der = getattr(cls, "_der", None)
-        if callable(der):
-            return der(d)
+        dat = getattr(cls, "_datify", None)
+        if callable(dat):
+            return dat(d)
 
         fieldtypes = {f.name: f.type for f in fields(cls)}
         return cls(**{f: datify(fieldtypes[f], d[f]) for f in d})  # recursive
@@ -207,7 +207,6 @@ class RawDom(MapDom):
         _asmgpk(self): return bytes self converted to mgpk
     """
 
-
     @classmethod
     def _fromjson(cls, s: str | bytes):
         """returns instance of clas initialized from json str or bytes s """
@@ -285,7 +284,6 @@ class RawDom(MapDom):
         return iter(self._asdict())
 
 
-
     def _asdict(self):
         """Returns dict version of record"""
         return dictify(self)
@@ -300,14 +298,12 @@ class RawDom(MapDom):
         """Returns json bytes version of record"""
         return json.dumps(self._asdict(),
                           separators=(",", ":"),
-                          ensure_ascii=False).encode()
-
+                          ensure_ascii=False).encode()  # ensure bytes
 
 
     def _ascbor(self):
         """Returns cbor bytes version of record"""
         return cbor.dumps(self._asdict())
-
 
 
     def _asmgpk(self):

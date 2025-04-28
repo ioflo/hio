@@ -1,3 +1,3 @@
 """
-pytest module
+pytest package
 """

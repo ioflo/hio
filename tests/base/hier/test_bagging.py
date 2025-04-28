@@ -15,6 +15,10 @@ def test_tymedom():
     """Test TymeDom class"""
     tymist = Tymist()
 
+    assert TymeDom._registry
+    assert TymeDom.__name__ in TymeDom._registry
+    assert TymeDom._registry[TymeDom.__name__] == TymeDom
+
     assert TymeDom._names == ()
     # no fields just InitVar and ClassVar attributes
     fields = dataclasses.fields(TymeDom)
@@ -100,6 +104,10 @@ def test_bag():
     """Test Bag class"""
     tymist = Tymist()
 
+    assert Bag._registry
+    assert Bag.__name__ in Bag._registry
+    assert Bag._registry[Bag.__name__] == Bag
+
     assert Bag._names == ("value", )
     fields = dataclasses.fields(Bag)
     assert len(fields) == 1
@@ -180,6 +188,8 @@ def test_bag():
     """Done Test"""
 
 
+
 if __name__ == "__main__":
     test_tymedom()
     test_bag()
+

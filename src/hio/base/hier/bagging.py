@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 """hio.base.hier.bagging Module
 
-Provides dom support for items in Mine or Dock for shared data store support
+Provides dom support for items hold
 
 """
 from __future__ import annotations  # so type hints of classes get resolved later
@@ -11,7 +11,22 @@ from collections.abc import Iterable, Mapping, Callable
 from typing import Any, Type, ClassVar
 from dataclasses import dataclass, astuple, asdict, field, fields, InitVar
 
-from ...help import RawDom
+from ...help import RawDom, NonStringIterable
+from ...hioing import HierError
+from ..during import SuberBase, Suber
+
+
+def registerify(cls):
+    """Class Decorator to add cls as cls._registry entry for itself keyed by its
+    own .__name__. Need class decorator so that class object is already created
+    by registration time when decorator is applied
+    """
+    name = cls.__name__
+    if name in cls._registry:
+        raise HierError(f"TymeDom subclass {name=} already registered.")
+    cls._registry[name] = cls
+    return cls
+
 
 def namify(cls):
     """Class decorator for dataclass to populate ClassVar ._names with names
@@ -21,16 +36,20 @@ def namify(cls):
     return cls
 
 
+
 @namify
+@registerify
 @dataclass
 class TymeDom(RawDom):
-    """TymeDom is base class for Bag subclasses with common fields.
+    """TymeDom is base class for Bagish subclasses with common fields.
 
     Field Attributes:
 
     Non-Field Class Attributes:
+        _registry (ClassVar[dict]): dict of subclasses keyed by class.__name__
+            Assigned by @registerify decorator
         _names (ClassVar[tuple[str]|None]): tuple of field names for class
-            Assigned in .__post_init__
+            Assigned by @namify decorator
 
     Non-Field Attributes:
         _tymth (None|Callable): function wrapper closure returned by
@@ -46,6 +65,7 @@ class TymeDom(RawDom):
         _now (None|float): current tyme given by ._tymth if not None.
 
     """
+    _registry:  ClassVar[dict] = {}  # subclass registry
     _names: ClassVar[tuple[str]|None] = None  # Assigned in  __post_init__
     _tymth: InitVar[None|Callable] = None  # tymth closure not a field
     _tyme: InitVar[None|float] = None  # tyme of last update
@@ -79,11 +99,12 @@ class TymeDom(RawDom):
             if isinstance(di, Mapping):
                 for k, v in di.items():
                     self[k] = v
-            elif isinstance(di, Iterable):
+            elif isinstance(di, NonStringIterable):
                 for k, v in di:
                     self[k] = v
             else:
-                raise TypeError(f"Expected Mapping or Iterable got {type(di)}.")
+                raise TypeError(f"Expected Mapping or NonStringIterable got"
+                                f" {type(di)}.")
 
         for k, v in kwa.items():
             self[k] = v
@@ -108,15 +129,17 @@ class TymeDom(RawDom):
         self._tymth = tymth
 
 
-
 @namify
+@registerify
 @dataclass
 class Bag(TymeDom):
-    """Bag is simple BagDom sublclass with generic value field.
+    """Bag is simple TymeDom sublclass with generic value field.
 
     Inherited Non-Field Class Attributes:
+        _registry (ClassVar[dict]): dict of subclasses keyed by class.__name__
+            Assigned by @registerify decorator
         _names (ClassVar[tuple[str]|None]): tuple of field names for class
-            Assigned in .__post_init__
+            Assigned by @namify decorator
 
     Inherited Non-Field Attributes:
         _tymth (None|Callable): function wrapper closure returned by
@@ -135,3 +158,5 @@ class Bag(TymeDom):
        value (Any):  generic value field
     """
     value: Any = None  # generic value
+
+

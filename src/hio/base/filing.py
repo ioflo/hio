@@ -151,8 +151,7 @@ class Filer(hioing.Mixin):
 
     def reopen(self, temp=None, headDirPath=None, perm=None, clear=False,
                reuse=False, clean=False, mode=None, fext=None, **kwa):
-        """
-        Open if closed or close and reopen if opened or create and open if not
+        """Open if closed or close and reopen if opened or create and open if not
 
         Parameters:
             temp (bool): assign to .temp
@@ -207,8 +206,7 @@ class Filer(hioing.Mixin):
     def remake(self, *, name="", base="", temp=None, headDirPath=None, perm=None,
                 clean=False, filed=False, extensioned=False, mode=None,
                 fext=None, **kwa):
-        """
-        Make and return (path. file) by opening or creating and opening if not
+        """Make and return (path. file) by opening or creating and opening if not
         preexistent, directory or file at  path
 
         Parameters:
@@ -380,8 +378,7 @@ class Filer(hioing.Mixin):
 
     def exists(self, name="", base="", headDirPath=None, clean=False,
                filed=False, extensioned=False, fext=None):
-        """
-        Check if (path. file) exists for a given set of parameters for remake.
+        """Check if (path. file) exists for a given set of parameters for remake.
         Temp is not allowed.
 
         Parameters:
@@ -452,8 +449,7 @@ class Filer(hioing.Mixin):
 
 
     def close(self, clear=False):
-        """
-        Close .file if any and if clear rm directory or file at .path
+        """Close .file if any and if clear rm directory or file at .path
 
         Parameters:
            clear (bool): True means remove dir or file at .path
@@ -469,8 +465,7 @@ class Filer(hioing.Mixin):
 
 
     def _clearPath(self):
-        """
-        Remove directory/file at end of .path
+        """Remove directory/file at end of .path
         """
         if self.path and os.path.exists(self.path):
             if os.path.isfile(self.path):  # self.path points to File instance
@@ -497,8 +492,7 @@ class Filer(hioing.Mixin):
 
 @contextmanager
 def openFiler(cls=None, name="test", temp=True, reopen=True, clear=False, **kwa):
-    """
-    Context manager wrapper Filer instances for managing a filesystem directory
+    """Context manager wrapper Filer instances for managing a filesystem directory
     and or files in a directory.
 
     Defaults to using temporary directory path.

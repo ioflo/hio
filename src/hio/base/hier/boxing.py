@@ -258,6 +258,56 @@ class Box(Tymee):
         return self._trail
 
 
+    def predo(self):
+        """Action predo nabe
+
+        Returns:
+            met (bool): True if all preconditions met, True if no preconditions
+                        False if any precondition not met
+        """
+        for preact in self.preacts:
+            if not preact():
+                return False
+        return True
+
+
+    def rendo(self):
+        """Action rendo (remark sub-nabe) nabe"""
+        for mark in self.remarks:
+            mark()
+        for renact in self.renacts:
+            renact()
+
+
+    def endo(self):
+        """Action endo (enmark sub-nabe) nabe"""
+        for mark in self.enmarks:
+            mark()
+        for enact in self.enacts:
+            enact()
+
+
+    def redo(self):
+        """Action redo nabe"""
+        for react in self.reacts:
+            react()
+
+    def afdo(self):
+        """Action afdo nabe"""
+        for afact in self.afacts:
+            afact()
+
+
+    def exdo(self):
+        """Action exdo nabe"""
+        for exact in self.exacts:
+            exact()
+
+
+    def rexdo(self):
+        """Action rexdo nabe"""
+        for rexact in self.rexacts:
+            rexact()
 
 
 
@@ -418,16 +468,13 @@ class Boxer(Tymee):
         # begin first pass after send()
         self.rendo(rendos)  # rendo nabe, action remarks and renacts
         self.endo(endos)  # endo nabe, action enmarks and enacts
-
-        for box in self.box.pile:  # top down redo
-            for react in box.reacts:   # redo nabe top down
-                react()
+        self.redo()  # redo nabe all boxes in pile top down
 
         while True:  # run forever
             tock = self.mine[tkey].value  # get tock in case it changed
-            tyme = yield(tock)  # resume on send
-            rendos = []
-            endos = []
+            tyme = yield(tock)  # resume on send after tyme tick
+            rendos = []  # make empty for new pass, reset on transit
+            endos = []  # make empty for new pass, reset on transit
 
             if self.endial():  # previous pass actioned desire to end
                 self.end()  # exdos all active boxes in self.box.pile
@@ -436,9 +483,8 @@ class Boxer(Tymee):
                 return True  # signal successful end after last pass
 
             transit = False
-            for box in self.box.pile:  # top down evaluate andos and godos
-                for afact in box.afacts:   # afdo nabe top down, after tyme tick
-                    afact()
+            for box in self.box.pile:  # top down afdos and godos after tyme tick
+                box.afdo()   # afdo nabe
 
                 for goact in box.goacts:  # godo nabe top down
                     if dest := goact():  # transition condition satisfied
@@ -457,10 +503,7 @@ class Boxer(Tymee):
 
             self.rendo(rendos)  # rendo nabe, action remarks and renacts
             self.endo(endos)  # endo nabe, action enmarks and enacts
-
-            for box in self.box.pile:  # top down
-                for react in box.reacts:   # redo nabe top down
-                    react()
+            self.redo()  # redo nabe all boxes in pile top down
 
 
     def end(self):
@@ -503,10 +546,7 @@ class Boxer(Tymee):
         """
         met = True
         for box in predos:
-            for preact in box.preacts:
-                if not preact():
-                    met = False
-                    break
+            met = box.predo()
             if not met:
                 break
         return met
@@ -521,10 +561,7 @@ class Boxer(Tymee):
             rendos (list[Box]): boxes to be rendo (re-entered)
         """
         for box in rendos:
-            for mark in box.remarks:
-                mark()
-            for renact in box.renacts:
-                renact()
+            box.rendo()
 
 
     def endo(self, endos):
@@ -536,10 +573,12 @@ class Boxer(Tymee):
 
         """
         for box in endos:
-            for mark in box.enmarks:
-                mark()
-            for enact in box.enacts:
-                enact()
+            box.endo()
+
+    def redo(self):
+        """Action redo nabe for current .box.pile in top down order"""
+        for box in self.box.pile:
+            box.redo()
 
 
     def exdo(self, exdos):
@@ -550,8 +589,7 @@ class Boxer(Tymee):
 
         """
         for box in exdos:
-            for exact in box.exacts:
-                exact()
+            box.exdo()
 
 
     def rexdo(self, rexdos):
@@ -562,8 +600,7 @@ class Boxer(Tymee):
             rexdos (list[Box]): boxes to be re-exdo in bottom up order
         """
         for box in rexdos:
-            for rexact in box.rexacts:
-                rexact()
+            box.rexdo()
 
 
     def resolve(self):
