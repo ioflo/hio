@@ -9,7 +9,7 @@ import lmdb
 
 from hio import HierError
 from hio.base import Duror, openDuror, Suber, IoSetSuber
-from hio.base.hier import DomSuberBase, DomSuber, Durk
+from hio.base.hier import DomSuberBase, DomSuber, Subery
 from hio.base.hier import TymeDom, Bag, CanDom, Can
 
 
@@ -310,75 +310,75 @@ def test_domsuber():
     """Done Test"""
 
 
-def test_durk_basic():
-    """Test Durk class"""
+def test_subery_basic():
+    """Test Subery class"""
 
-    duck = Durk(reopen=True)  # default is to not reopen
-    assert isinstance(duck, Durk)
-    assert duck.name == "main"
-    assert duck.temp == False
-    assert isinstance(duck.env, lmdb.Environment)
-    assert duck.path.endswith(os.path.join("hio", "db", "main"))
-    assert duck.env.path() == duck.path
-    assert os.path.exists(duck.path)
+    subery = Subery(reopen=True)  # default is to not reopen
+    assert isinstance(subery, Subery)
+    assert subery.name == "main"
+    assert subery.temp == False
+    assert isinstance(subery.env, lmdb.Environment)
+    assert subery.path.endswith(os.path.join("hio", "db", "main"))
+    assert subery.env.path() == subery.path
+    assert os.path.exists(subery.path)
 
-    assert isinstance(duck.cans, Suber)
-    assert isinstance(duck.cans.sdb, lmdb._Database)
+    assert isinstance(subery.cans, DomSuber)
+    assert isinstance(subery.cans.sdb, lmdb._Database)
 
-    assert isinstance(duck.drqs, IoSetSuber)
-    assert isinstance(duck.drqs.sdb, lmdb._Database)
+    assert isinstance(subery.drqs, IoSetSuber)
+    assert isinstance(subery.drqs.sdb, lmdb._Database)
 
-    duck.close(clear=True)
-    assert not os.path.exists(duck.path)
-    assert not duck.opened
+    subery.close(clear=True)
+    assert not os.path.exists(subery.path)
+    assert not subery.opened
 
     # test not opened on init
-    duck = Durk(reopen=False)
-    assert isinstance(duck, Durk)
-    assert duck.name == "main"
-    assert duck.temp == False
-    assert duck.opened == False
-    assert duck.path == None
-    assert duck.env == None
+    subery = Subery(reopen=False)
+    assert isinstance(subery, Subery)
+    assert subery.name == "main"
+    assert subery.temp == False
+    assert subery.opened == False
+    assert subery.path == None
+    assert subery.env == None
 
-    duck.reopen()
-    assert duck.opened
-    assert isinstance(duck.env, lmdb.Environment)
-    assert duck.path.endswith(os.path.join("hio", "db", "main"))
-    assert duck.env.path() == duck.path
-    assert os.path.exists(duck.path)
+    subery.reopen()
+    assert subery.opened
+    assert isinstance(subery.env, lmdb.Environment)
+    assert subery.path.endswith(os.path.join("hio", "db", "main"))
+    assert subery.env.path() == subery.path
+    assert os.path.exists(subery.path)
 
-    assert isinstance(duck.cans, Suber)
-    assert isinstance(duck.cans.sdb, lmdb._Database)
+    assert isinstance(subery.cans, DomSuber)
+    assert isinstance(subery.cans.sdb, lmdb._Database)
 
-    assert isinstance(duck.drqs, IoSetSuber)
-    assert isinstance(duck.drqs.sdb, lmdb._Database)
+    assert isinstance(subery.drqs, IoSetSuber)
+    assert isinstance(subery.drqs.sdb, lmdb._Database)
 
-    duck.close(clear=True)
-    assert not os.path.exists(duck.path)
-    assert not duck.opened
+    subery.close(clear=True)
+    assert not os.path.exists(subery.path)
+    assert not subery.opened
 
     # Test using context manager
-    with openDuror(cls=Durk) as duck:  # opens with temp=True by default
-        assert isinstance(duck, Durk)
-        assert duck.name == "test"
-        assert duck.temp == True
-        assert isinstance(duck.env, lmdb.Environment)
-        _, path = os.path.splitdrive(os.path.normpath(duck.path))
+    with openDuror(cls=Subery) as subery:  # opens with temp=True by default
+        assert isinstance(subery, Subery)
+        assert subery.name == "test"
+        assert subery.temp == True
+        assert isinstance(subery.env, lmdb.Environment)
+        _, path = os.path.splitdrive(os.path.normpath(subery.path))
         assert path.startswith(os.path.join(os.path.sep, "tmp", "hio_lmdb_"))
-        assert duck.path.endswith(os.path.join("_test", "hio", "db", "test"))
-        assert duck.env.path() == duck.path
-        assert os.path.exists(duck.path)
+        assert subery.path.endswith(os.path.join("_test", "hio", "db", "test"))
+        assert subery.env.path() == subery.path
+        assert os.path.exists(subery.path)
 
-        assert isinstance(duck.cans, Suber)
-        assert isinstance(duck.cans.sdb, lmdb._Database)
+        assert isinstance(subery.cans, Suber)
+        assert isinstance(subery.cans.sdb, lmdb._Database)
 
-        assert isinstance(duck.drqs, IoSetSuber)
-        assert isinstance(duck.drqs.sdb, lmdb._Database)
+        assert isinstance(subery.drqs, IoSetSuber)
+        assert isinstance(subery.drqs.sdb, lmdb._Database)
 
 
-    assert not os.path.exists(duck.path)
-    assert not duck.opened
+    assert not os.path.exists(subery.path)
+    assert not subery.opened
 
     """Done Test"""
 
@@ -387,4 +387,4 @@ if __name__ == "__main__":
     test_hold_basic()
     test_domsuberbase()
     test_domsuber()
-    test_durk_basic()
+    test_subery_basic()
