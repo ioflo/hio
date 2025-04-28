@@ -29,7 +29,7 @@ serializations
 Likewise on reads intercepts key and keys and reads from durable storage
 and extracts name of class so can deserialize into object subclass
 
-Hold has attribute of Durk whose attributes are subdbs
+Hold has attribute of Subery whose attributes are subdbs
 .cans
 .drqs
 
@@ -268,10 +268,11 @@ class DomIoSetSuber(DomSuberBase, IoSetSuber):
 
 
 
-class Durk(Duror):
-    """Durk subclass of Duror for managing durable storage action data
+class Subery(Duror):
+    """Subery subclass of Duror for managing subdbs of Duror for durable storage
+    of action data
 
-    ToDo:  change to use DomSuber and DomIoSetSuber
+    ToDo:  change DomIoSetSuber
 
     """
     def __init__(self, **kwa):
@@ -282,7 +283,7 @@ class Durk(Duror):
 
 
         """
-        super(Durk, self).__init__(**kwa)
+        super(Subery, self).__init__(**kwa)
 
 
     def reopen(self, **kwa):
@@ -295,9 +296,9 @@ class Durk(Duror):
                 Durq is a durable Deck (deque)
 
         """
-        super(Durk, self).reopen(**kwa)
+        super(Subery, self).reopen(**kwa)
 
-        self.cans = Suber(db=self, subkey='cans.')
+        self.cans = DomSuber(db=self, subkey='cans.')
         self.drqs = IoSetSuber(db=self, subkey="drqs.")
 
         return self.env

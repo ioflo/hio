@@ -11,4 +11,4 @@ from .acting import (Act, Goact, EndAct, Beact, Mark, LapseMark, RelapseMark,
 from .needing import Need
 from .bagging import TymeDom, Bag
 from .canning import CanDom, Can
-from .holding import DomSuberBase, DomSuber, Durk
+from .holding import DomSuberBase, DomSuber, Subery
