@@ -81,7 +81,8 @@ class Filer(hioing.Mixin):
     AltHeadDirPath = os.path.expanduser("~")  # put in ~ as fallback when desired not permitted
     AltTailDirPath = ".hio"
     AltCleanTailDirPath = os.path.join(".hio", "clean")
-    TempHeadDir = os.path.join(os.path.sep, "tmp") if platform.system() == "Darwin" else tempfile.gettempdir()
+    TempHeadDir = (os.path.join(os.path.sep, "tmp")
+                   if platform.system() == "Darwin" else tempfile.gettempdir())
     TempPrefix = "hio_"
     TempSuffix = "_test"
     Perm = stat.S_ISVTX | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR  # 0o1700==960

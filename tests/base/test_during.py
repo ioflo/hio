@@ -84,14 +84,14 @@ def test_openduror():
     """
     test contextmanager openduror
     """
-    tempDirPath = (os.path.join(os.path.sep, "tmp")
-                   if platform.system() == "Darwin" else tempfile.gettempdir())
 
     with openDuror() as duror:
         assert isinstance(duror, Duror)
         assert duror.name == "test"
         assert isinstance(duror.env, lmdb.Environment)
-        _, path = os.path.splitdrive(os.path.normpath(duror.path))
+        tempDirPath = (os.path.join(os.path.sep, "tmp")
+                       if platform.system() == "Darwin" else tempfile.gettempdir())
+        #_, path = os.path.splitdrive(os.path.normpath(duror.path))
         assert path.startswith(os.path.join(tempDirPath, "hio_lmdb_"))
         assert duror.path.endswith(os.path.join("_test", "hio", "db", "test"))
         assert duror.env.path() == duror.path
@@ -105,7 +105,9 @@ def test_openduror():
         assert isinstance(duror, Duror)
         assert duror.name == "blue"
         assert isinstance(duror.env, lmdb.Environment)
-        _, path = os.path.splitdrive(os.path.normpath(duror.path))
+        tempDirPath = (os.path.join(os.path.sep, "tmp")
+                       if platform.system() == "Darwin" else tempfile.gettempdir())
+        #_, path = os.path.splitdrive(os.path.normpath(duror.path))
         assert path.startswith(os.path.join(tempDirPath, "hio_lmdb_"))
         assert duror.path.endswith(os.path.join("_test", "hio", "db", "blue"))
         assert duror.env.path() == duror.path

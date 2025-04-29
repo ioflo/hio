@@ -347,9 +347,6 @@ def test_domsuber():
 def test_subery_basic():
     """Test Subery class"""
 
-    tempDirPath = (os.path.join(os.path.sep, "tmp")
-                   if platform.system() == "Darwin" else tempfile.gettempdir())
-
     subery = Subery(reopen=True)  # default is to not reopen
     assert isinstance(subery, Subery)
     assert subery.name == "main"
@@ -401,7 +398,9 @@ def test_subery_basic():
         assert subery.name == "test"
         assert subery.temp == True
         assert isinstance(subery.env, lmdb.Environment)
-        _, path = os.path.splitdrive(os.path.normpath(subery.path))
+        tempDirPath = (os.path.join(os.path.sep, "tmp")
+                       if platform.system() == "Darwin" else tempfile.gettempdir())
+        #_, _, path = os.path.splitroot(os.path.normpath(subery.path))
         assert path.startswith(os.path.join(tempDirPath, "hio_lmdb_"))
         assert subery.path.endswith(os.path.join("_test", "hio", "db", "test"))
         assert subery.env.path() == subery.path
