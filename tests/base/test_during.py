@@ -5,6 +5,8 @@
 import pytest
 
 import os
+import platform
+import tempfile
 import lmdb
 from ordered_set import OrderedSet as oset
 
@@ -78,16 +80,21 @@ def test_duror_basic():
     """Done Test"""
 
 
-def test_openholder():
+def test_openduror():
     """
-    test contextmanager openHolder
+    test contextmanager openduror
     """
+
     with openDuror() as duror:
         assert isinstance(duror, Duror)
         assert duror.name == "test"
         assert isinstance(duror.env, lmdb.Environment)
-        _, path = os.path.splitdrive(os.path.normpath(duror.path))
-        assert path.startswith(os.path.join(os.path.sep, "tmp", "hio_lmdb_"))
+        tempDirPath = (os.path.join(os.path.sep, "tmp")
+                       if platform.system() == "Darwin" else tempfile.gettempdir())
+        tempDirPath = os.path.normpath(tempDirPath)
+        path = os.path.normpath(duror.path)
+        #_, path = os.path.splitdrive(os.path.normpath(duror.path))
+        assert path.startswith(os.path.join(tempDirPath, "hio_lmdb_"))
         assert duror.path.endswith(os.path.join("_test", "hio", "db", "test"))
         assert duror.env.path() == duror.path
         assert os.path.exists(duror.path)
@@ -100,8 +107,12 @@ def test_openholder():
         assert isinstance(duror, Duror)
         assert duror.name == "blue"
         assert isinstance(duror.env, lmdb.Environment)
-        _, path = os.path.splitdrive(os.path.normpath(duror.path))
-        assert path.startswith(os.path.join(os.path.sep, "tmp", "hio_lmdb_"))
+        tempDirPath = (os.path.join(os.path.sep, "tmp")
+                       if platform.system() == "Darwin" else tempfile.gettempdir())
+        tempDirPath = os.path.normpath(tempDirPath)
+        path = os.path.normpath(duror.path)
+        #_, path = os.path.splitdrive(os.path.normpath(duror.path))
+        assert path.startswith(os.path.join(tempDirPath, "hio_lmdb_"))
         assert duror.path.endswith(os.path.join("_test", "hio", "db", "blue"))
         assert duror.env.path() == duror.path
         assert os.path.exists(duror.path)
@@ -762,7 +773,7 @@ def test_ioset_suber():
 
 if __name__ == "__main__":
     test_duror_basic()
-    test_openholder()
+    test_openduror()
     test_duror()
     test_suberbase()
     test_suber()

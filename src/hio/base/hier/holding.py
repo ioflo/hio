@@ -21,33 +21,116 @@ from ..hier import bagging
 from ..hier import canning
 from ..doing import Doer
 from ..during import Duror, SuberBase, Suber, IoSetSuber
-from ...help import isNonStringIterable
-
-"""Hold is Mine subclass that on writes intercepts key and keys and then
-also saves updates value in durable storage for value object CanDom and Durq
-serializations
-Likewise on reads intercepts key and keys and reads from durable storage
-and extracts name of class so can deserialize into object subclass
-
-Hold has attribute of Subery whose attributes are subdbs
-.cans
-.drqs
-
-Hold injects reference to one of these based on the type of value and the Hold
-key  into ._sdb and ._key.  When not a durable value then no injection.
-This allows the value then to read/write to its ._sdb at ._key the fields
-of the Can when Can or Durq when Durq
+from ...help import NonStringIterable, isNonStringIterable, Mine
 
 
-for durable deque then each value in deque is a Bag which gets stored
-in its one insertion ordered key in backing durable storage
 
-So python magic in Hold
+class Hold(Mine):
+    """Hold is Mine subclass that on writes intercepts key and keys and then
+    also saves updates value in durable storage for value object CanDom and Durq
+    serializations
 
-Need class registry for TymeDom subclasses so that DomSuber and DomIoSetSuber
-can look up class by name and deserialize
+    Likewise on reads intercepts key and keys and reads from durable storage
+    and extracts name of class so can deserialize into object subclass
 
-"""
+    Hold has attribute of Subery whose attributes are subdbs
+    .cans
+    .drqs
+
+    Hold injects reference to one of these based on the type of value and the Hold
+    key  into ._sdb and ._key.  When not a durable value then no injection.
+    This allows the value then to read/write to its ._sdb at ._key the fields
+    of the Can when Can or Durq when Durq
+
+
+    for durable deque then each value in deque is a Bag which gets stored
+    in its one insertion ordered key in backing durable storage
+
+    So python magic in Hold
+
+    Need class registry for TymeDom subclasses so that DomSuber and DomIoSetSuber
+    can look up class by name and deserialize
+
+    """
+    def __init__(self, *pa, **kwa):
+        """Convert keys that are tuples when positional argument is Iterable or
+        Mapping to '.' joined strings
+
+        dict __init__ signature options are:
+            dict(**kwa)
+            dict(mapping, **kwa)
+            dict(iterable, **kwa)
+        dict.update has same call signature
+            d.update({"a": 5, "b": 2,}, c=3 , d=4)
+        """
+        self._hold_subery = None
+        super(Hold, self).__init__(*pa, **kwa)
+
+
+    def __setitem__(self, k, v):
+        k = self.tokey(k)  # get key to inject
+        result = super(Hold, self).__setitem__(k, v)
+        if isinstance(v, canning.CanDom):
+            v._key = k
+            v._sdb = self.subery.cans if self.subery else None
+        return result
+
+
+    def update(self, *pa, **kwa):
+        """Convert keys that are tuples when positional argument is Iterable or
+        Mapping to '.' joined strings
+
+        dict __init__ signature options are:
+            dict(**kwa)
+            dict(mapping, **kwa)
+            dict(iterable, **kwa)
+        dict.update has same call signature
+            d.update({"a": 5, "b": 2,}, c=3 , d=4)
+
+        """
+        if len(pa) > 1:
+            raise TypeError(f"Expected 1 positional argument got {len(pa)}.")
+
+        if pa:
+            di = pa[0]
+            if isinstance(di, Mapping):
+                rd = {}
+                for k, v in di.items():
+                    rd[self.tokey(k)] = v
+                super(Hold, self).update(rd, **kwa)
+
+            elif isinstance(di, NonStringIterable):
+                ri = []
+                for k, v in di:
+                    ri.append((self.tokey(k), v))
+                super(Hold, self).update(ri, **kwa)
+
+            else:
+                raise TypeError(f"Expected Mapping or NonStringIterable got "
+                                f"{type(di)}.")
+
+        else:
+            super(Hold, self).update(**kwa)
+
+
+
+    def inject(self, key, val):
+        """When val is instance of CanDom, injects .tokey(key) into val._key and
+        .subery.cans into val._sdb
+        """
+        pass
+
+    @property
+    def subery(self):
+        """Gets value of special item '_hold_subery'
+
+        Returns:
+            subery (None|Subery): instance or None
+        """
+        return self["_hold_subery"]
+
+
+
 
 class DomSuberBase(SuberBase):
     """Subclass of Suber with values that are serialized TymeDom subclasses.
@@ -302,3 +385,4 @@ class Subery(Duror):
         self.drqs = IoSetSuber(db=self, subkey="drqs.")
 
         return self.env
+

@@ -99,7 +99,8 @@ class Ogler():
     HeadDirPath = os.path.join(os.path.sep, "usr", "local", "var")  # default in /usr/local/var
     TailDirPath = "logs"
     AltHeadDirPath = os.path.expanduser("~")  #  put in ~ as fallback when desired dir not permitted
-    TempHeadDir = os.path.join(os.path.sep, "tmp") if platform.system() == "Darwin" else tempfile.gettempdir()
+    TempHeadDir = (os.path.join(os.path.sep, "tmp")
+                   if platform.system() == "Darwin" else tempfile.gettempdir())
     TempPrefix = "test_"
     TempSuffix = "_temp"
 
