@@ -9,13 +9,45 @@ import lmdb
 
 from hio import HierError
 from hio.base import Duror, openDuror, Suber, IoSetSuber
-from hio.base.hier import DomSuberBase, DomSuber, Subery
+from hio.base.hier import Hold, DomSuberBase, DomSuber, Subery
 from hio.base.hier import TymeDom, Bag, CanDom, Can
 
 
 
 def test_hold_basic():
     """Test Hold basic"""
+    hold = Hold()
+    assert hold.subery is None  # test property getter
+    assert isinstance(hold, dict)
+    assert isinstance(hold, Hold)
+
+    with openDuror(cls=Subery) as subery:  # opens with temp=True by default
+        assert isinstance(subery, Subery)
+        assert subery.name == "test"
+        assert subery.temp == True
+
+        hold = Hold(_hold_subery=subery)  # test on init
+        assert hold.subery == subery  # test property getter
+
+        hold = Hold()
+        assert hold.subery is None
+        hold._hold_subery = subery  # real item as property setter does not work
+        assert hold.subery == subery
+
+        hold.subery = None  # assign to item directly
+        assert hold.subery == subery  # item assignment does not shadow property
+        assert hold["subery"] == None  # can still get item
+
+        hold.update(a=1, b=2, c=3)
+        assert list(hold.items()) == [('_hold_subery', subery),
+                                        ('subery', None),
+                                        ('a', 1),
+                                        ('b', 2),
+                                        ('c', 3)]
+
+
+    assert not os.path.exists(subery.path)
+    assert not subery.opened
 
     """Done Test"""
 

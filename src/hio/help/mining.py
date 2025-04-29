@@ -31,8 +31,8 @@ class Mine(dict):
 
     Special staticmethods:
         tokeys(k) returns split of k at separator '_' as tuple.
-
     """
+
     def __init__(self, *pa, **kwa):
         """Convert keys that are tuples when positional argument is Iterable or
         Mapping to '.' joined strings
@@ -43,7 +43,6 @@ class Mine(dict):
             dict(iterable, **kwa)
         dict.update has same call signature
             d.update({"a": 5, "b": 2,}, c=3 , d=4)
-
         """
         self.update(*pa, **kwa)
 
@@ -77,7 +76,6 @@ class Mine(dict):
                                  f"is read only")
 
 
-
     def __getattr__(self, k):
         if k not in self:
             raise AttributeError(f"{self.__class__.__name__} has no attribute '{k}'")
@@ -89,7 +87,6 @@ class Mine(dict):
             return default
         else:
             return self.__getitem__(k)
-
 
 
     def update(self, *pa, **kwa):
