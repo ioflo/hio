@@ -3,6 +3,8 @@
 tests.base.test_multidoing module
 
 """
+import platform
+
 import pytest
 
 import os
@@ -264,6 +266,10 @@ def test_boss_crew_basic():
     """Test Bosser and Crewer classes basic. Crew doist exit at doist time limit
     which causes boss doer to exit done true because no active children
     """
+
+    if platform.system() == 'Windows':
+        pytest.skip("Windows not supported")
+
     logger.debug("***** Basic Boss Crew Test *****")
     name = 'hand'  # crew hand name
     crewdoer = Crewer(tock=0.01)  # don't assign tymth now must be rewound inside subprocess
@@ -307,6 +313,10 @@ def test_boss_crew_basic_multi():
     Each Crew doist exits at doist time limit which causes boss doer to exit
     done true once all exit because no active children
     """
+
+    if platform.system() == 'Windows':
+        pytest.skip("Windows not supported")
+
     logger.debug("***** Basic Boss with Multi Crew Test *****")
     loads = []
 
@@ -373,6 +383,10 @@ def test_boss_crew_terminate():
     sends SIGTERM to Crewer
 
     """
+
+    if platform.system() == 'Windows':
+        pytest.skip("Windows not supported")
+
     logger.debug("***** Boss Crew Terminate *****")
     name = 'hand'  # crew hand name
     crewdoer = Crewer(tock=0.01)  # don't assign tymth now must be rewound inside subprocess
@@ -450,6 +464,9 @@ def test_crewer_own_exit():
     Test Bosser and Crewer where crew doer exits on own based on tyme after
     registered which causes boss doer to exit because no active children.
     """
+
+    if platform.system() == 'Windows':
+        pytest.skip("Windows not supported")
 
     logger.debug("***** Boss with Crew Own Exit *****")
     name = 'hand'  # crew hand name
@@ -539,6 +556,10 @@ def test_boss_crew_memo_cmd_end():
     """
     Test Bosser and Crewer where boss sends memo to command end of crew.
     """
+
+    if platform.system() == 'Windows':
+        pytest.skip("Windows not supported")
+
     logger.debug("***** Boss Send Memo END Command Test *****")
     name = 'hand'  # crew hand name
     crewdoer = Test1Crewer(tock=0.01)  # don't assign tymth now must be rewound inside subprocess

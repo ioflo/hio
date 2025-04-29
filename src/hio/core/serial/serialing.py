@@ -108,6 +108,10 @@ class Console():
                 # For Windows, we'll use stdin/stdout file descriptors
                 # and rely on msvcrt for non-blocking operations
                 self.fd = 0  # Use 0 as a placeholder value for Windows console
+                # Check if stdin is a terminal on Windows
+                if not os.isatty(sys.stdin.fileno()):
+                    logger.error("Error: stdin is not a terminal on Windows\n")
+                    return False
                 # No specific open operation needed for Windows console via msvcrt
             else:
                 # Unix/macOS handling

@@ -3,6 +3,8 @@
 tests.base.test_doist module
 
 """
+import platform
+
 import pytest
 import inspect
 
@@ -162,6 +164,10 @@ def test_doist_dos():
     """
     Test doist.do with dos generator functions not generator methods
     """
+
+    if platform.system() == 'Windows':
+        pytest.skip("Windows not supported")
+
     tock = 0.03125
     doist = doing.Doist(tock=tock)
     assert doist.tyme == 0.0  # on next cycle
