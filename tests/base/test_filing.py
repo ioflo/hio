@@ -5,6 +5,7 @@ tests.help.test_filing module
 """
 import platform
 import shutil
+import tempfile
 
 import pytest
 import os
@@ -141,7 +142,7 @@ def test_filing():
 
     headDirPath = os.path.join(os.path.sep, 'root', 'hio')
     if platform.system() == 'Windows':
-        headDirPath = 'C:\\Windows\\System32\\hio'
+        headDirPath = 'C:\\System Volume Information\\hio'
     headDirPath = os.path.join(headDirPath, 'hio')
 
     # headDirPath that is not permitted to force using AltPath
@@ -251,7 +252,7 @@ def test_filing():
 
     headDirPath = os.path.join(os.path.sep, 'root', 'hio')
     if platform.system() == 'Windows':
-        headDirPath = 'C:\\Windows\\System32'
+        headDirPath = 'C:\\System Volume Information'
 
     # force altPath by using headDirPath of "/root/hio" which is not permitted
     filer = filing.Filer(name="test", base="conf", headDirPath=headDirPath, filed=True, reopen=False)
@@ -306,9 +307,9 @@ def test_filing():
 
     #test openfiler with defaults temp == True
     with filing.openFiler() as filer:
-        dirpath = os.path.join(os.path.sep, 'tmp', 'hio_hcbvwdnt_test', 'hio', 'test')
-        _, path = os.path.splitdrive(os.path.normpath(filer.path))
-        assert path.startswith(os.path.join(os.path.sep, 'tmp', 'hio_'))
+        tempDirPath = os.path.join(os.path.sep, "tmp") if platform.system() == "Darwin" else tempfile.gettempdir()
+        dirPath = os.path.join(tempDirPath, 'hio_hcbvwdnt_test', 'hio', 'test')
+        assert dirPath.startswith(os.path.join(tempDirPath, 'hio_'))
         assert filer.path.endswith(os.path.join('_test', 'hio', 'test'))
         assert filer.opened
         assert os.path.exists(filer.path)
@@ -317,9 +318,9 @@ def test_filing():
 
     #test openfiler with filed == True but otherwise defaults temp == True
     with filing.openFiler(filed=True) as filer:
-        dirpath = os.path.join(os.path.sep, 'tmp', 'hio_6t3vlv7c_test', 'hio', 'test.text')
-        _, path = os.path.splitdrive(os.path.normpath(filer.path))
-        assert path.startswith(os.path.join(os.path.sep, 'tmp', 'hio_'))
+        tempDirPath = os.path.join(os.path.sep, "tmp") if platform.system() == "Darwin" else tempfile.gettempdir()
+        dirPath = os.path.join(tempDirPath, 'hio_6t3vlv7c_test', 'hio', 'test.text')
+        assert dirPath.startswith(os.path.join(tempDirPath, 'hio_'))
         assert filer.path.endswith(os.path.join('_test', 'hio', 'test.text'))
         assert filer.opened
         assert os.path.exists(filer.path)
@@ -329,7 +330,7 @@ def test_filing():
 
     headDirPath = os.path.join(os.path.sep, 'root', 'hio')
     if platform.system() == 'Windows':
-        headDirPath = 'C:\\Windows\\System32'
+        headDirPath = 'C:\\System Volume Information'
     # test alternate path use headDirPath not permitted to force use altPath
     with filing.openFiler(filed=True, temp=False, headDirPath=headDirPath, clear=True) as  filer:
         assert filer.path.endswith(os.path.join('.hio', 'test.text'))  # uses altpath
