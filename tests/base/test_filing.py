@@ -308,8 +308,11 @@ def test_filing():
     #test openfiler with defaults temp == True
     with filing.openFiler() as filer:
         tempDirPath = os.path.join(os.path.sep, "tmp") if platform.system() == "Darwin" else tempfile.gettempdir()
-        dirPath = os.path.join(tempDirPath, 'hio_hcbvwdnt_test', 'hio', 'test')
-        assert dirPath.startswith(os.path.join(tempDirPath, 'hio_'))
+        #dirPath = os.path.join(tempDirPath, 'hio_hcbvwdnt_test', 'hio', 'test')
+        #assert dirPath.startswith(os.path.join(tempDirPath, 'hio_'))
+        tempDirPath = os.path.normpath(tempDirPath)
+        path = os.path.normpath(filer.path)
+        assert path.startswith(os.path.join(tempDirPath, "hio_"))
         assert filer.path.endswith(os.path.join('_test', 'hio', 'test'))
         assert filer.opened
         assert os.path.exists(filer.path)
@@ -319,8 +322,11 @@ def test_filing():
     #test openfiler with filed == True but otherwise defaults temp == True
     with filing.openFiler(filed=True) as filer:
         tempDirPath = os.path.join(os.path.sep, "tmp") if platform.system() == "Darwin" else tempfile.gettempdir()
-        dirPath = os.path.join(tempDirPath, 'hio_6t3vlv7c_test', 'hio', 'test.text')
-        assert dirPath.startswith(os.path.join(tempDirPath, 'hio_'))
+        #dirPath = os.path.join(tempDirPath, 'hio_6t3vlv7c_test', 'hio', 'test.text')
+        #assert dirPath.startswith(os.path.join(tempDirPath, 'hio_'))
+        tempDirPath = os.path.normpath(tempDirPath)
+        path = os.path.normpath(filer.path)
+        assert path.startswith(os.path.join(tempDirPath, "hio_"))
         assert filer.path.endswith(os.path.join('_test', 'hio', 'test.text'))
         assert filer.opened
         assert os.path.exists(filer.path)

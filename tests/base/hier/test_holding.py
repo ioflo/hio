@@ -401,8 +401,8 @@ def test_subery_basic():
         tempDirPath = (os.path.join(os.path.sep, "tmp")
                        if platform.system() == "Darwin" else tempfile.gettempdir())
         tempDirPath = os.path.normpath(tempDirPath)
-        #_, path = os.path.splitdrive(os.path.normpath(subery.path))
         path = os.path.normpath(subery.path)
+        #_, path = os.path.splitdrive(os.path.normpath(subery.path))
         assert path.startswith(os.path.join(tempDirPath, "hio_lmdb_"))
         assert subery.path.endswith(os.path.join("_test", "hio", "db", "test"))
         assert subery.env.path() == subery.path
