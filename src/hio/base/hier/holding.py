@@ -10,7 +10,9 @@ import os
 import platform
 import stat
 import tempfile
+from collections.abc import Mapping
 from contextlib import contextmanager
+from typing import Any
 
 import lmdb
 from ordered_set import OrderedSet as oset
@@ -67,12 +69,10 @@ class Hold(Mine):
         super(Hold, self).__init__(*pa, **kwa)
 
 
-    def __setitem__(self, k, v):
+    def __setitem__(self, k, v):  # __setattr__ calls __setitem__
         k = self.tokey(k)  # get key to inject
         result = super(Hold, self).__setitem__(k, v)
-        if isinstance(v, canning.CanDom):
-            v._key = k
-            v._sdb = self.subery.cans if self.subery else None
+        self.inject(k, v)
         return result
 
 
@@ -98,12 +98,16 @@ class Hold(Mine):
                 for k, v in di.items():
                     rd[self.tokey(k)] = v
                 super(Hold, self).update(rd, **kwa)
+                for k, v in rd.items():
+                    self.inject(k, v)
 
             elif isinstance(di, NonStringIterable):
                 ri = []
                 for k, v in di:
                     ri.append((self.tokey(k), v))
                 super(Hold, self).update(ri, **kwa)
+                for k, v in ri:
+                    self.inject(k, v)
 
             else:
                 raise TypeError(f"Expected Mapping or NonStringIterable got "
@@ -112,13 +116,23 @@ class Hold(Mine):
         else:
             super(Hold, self).update(**kwa)
 
+        for k, v in kwa.items():
+            self.inject(k, v)
+
 
 
     def inject(self, key, val):
         """When val is instance of CanDom, injects .tokey(key) into val._key and
         .subery.cans into val._sdb
+
+        Parameters:
+            key (str): for item
+            val (Any|CanDom): for item. When instance subclass of CanDom then
+                inject to ._key and ._sdb
         """
-        pass
+        if isinstance(val, canning.CanDom):
+            val._key = key
+            val._sdb = self.subery.cans if self.subery else None
 
     @property
     def subery(self):

@@ -47,6 +47,36 @@ def test_hold_basic():
                                         ('b', 2),
                                         ('c', 3)]
 
+        can = Can(value=10)
+        assert can._key == None
+        assert can._sdb == None
+        hold.blue = can
+        assert can._key == "blue"
+        assert can._sdb == subery.cans
+
+        can = Can(value="hello")
+        assert can._key == None
+        assert can._sdb == None
+        hold["red"] = can
+        assert can._key == "red"
+        assert can._sdb == subery.cans
+
+        can0 = Can(value=0)
+        can1 = Can(value=1)
+        can2 = Can(value=2)
+        can3 = Can(value=3)
+        can4 = Can(value=4)
+        can5 = Can(value=5)
+
+        d = dict(a=can0, b=can1, c=can2, d=can3, e=can4, f=can5)
+
+        hold.update([("a", can0), ("b", can1)], c=can2)
+        hold.update({"d": can3, "e": can4}, f=can5)
+
+        for k, v in d.items():
+            assert v._key == k
+            assert v._sdb == subery.cans
+
 
     assert not os.path.exists(subery.path)
     assert not subery.opened
