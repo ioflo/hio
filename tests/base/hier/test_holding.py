@@ -18,10 +18,15 @@ from hio.base.hier import TymeDom, Bag, CanDom, Can
 
 def test_hold_basic():
     """Test Hold basic"""
-    hold = Hold()
-    assert hold.subery is None  # test property getter
+    hold = Hold()  # test defaults
     assert isinstance(hold, dict)
     assert isinstance(hold, Hold)
+    assert hold.subery is None  # test property getter
+    #assert isinstance(hold.subery, Subery)
+    #assert hold.subery.name == "main"
+    #hold.subery.close(clear=True)
+    #assert not os.path.exists(hold.subery.path)
+
 
     with openDuror(cls=Subery) as subery:  # opens with temp=True by default
         assert isinstance(subery, Subery)
@@ -31,14 +36,12 @@ def test_hold_basic():
         hold = Hold(_hold_subery=subery)  # test on init
         assert hold.subery == subery  # test property getter
 
-        hold = Hold()
-        assert hold.subery is None
-        hold._hold_subery = subery  # real item as property setter does not work
+        hold._hold_subery = subery  # must use actual key not property
         assert hold.subery == subery
 
-        hold.subery = None  # assign to item directly
+        hold.subery = None  # assign to item directly does not shadow property
+        assert hold["subery"] == None  # can still get item property does not shadow
         assert hold.subery == subery  # item assignment does not shadow property
-        assert hold["subery"] == None  # can still get item
 
         hold.update(a=1, b=2, c=3)
         assert list(hold.items()) == [('_hold_subery', subery),
@@ -46,6 +49,84 @@ def test_hold_basic():
                                         ('a', 1),
                                         ('b', 2),
                                         ('c', 3)]
+
+        # test durable can with subery
+
+        can = Can(value=10)
+        assert can._key == None
+        assert can._sdb == None
+        assert can._stale == True
+        assert can._fresh == False
+
+        hold.blue = can  # now inject by adding to hold
+        assert can._key == "blue"
+        assert can._sdb == subery.cans
+        assert can._stale == True
+        assert can._fresh == False
+
+        can.value = 15  # now update gets written to disk
+        assert can._stale == False
+        assert can._fresh == False
+        assert can._sdb.get(can._key) == can
+        assert can.value == 15
+        assert can._read(force=True)
+        assert can._write()
+
+        can = Can(value="hello")
+        assert can._key == None
+        assert can._sdb == None
+        assert can._stale == True
+        assert can._fresh == False
+
+        hold["red"] = can  # now inject by adding to hold
+        assert can._key == "red"
+        assert can._sdb == subery.cans
+        assert can._stale == True
+        assert can._fresh == False
+
+        can["value"] = "goodbye"  # test update gets written to disk
+        assert can._stale == False
+        assert can._fresh == False
+        assert can._sdb.get(can._key) == can
+        assert can.value == "goodbye"
+
+        can0 = Can(value=0)
+        can1 = Can(value=1)
+        can2 = Can(value=2)
+        can3 = Can(value=3)
+        can4 = Can(value=4)
+        can5 = Can(value=5)
+
+        d = dict(a=can0, b=can1, c=can2, d=can3, e=can4, f=can5)
+
+        hold.update([("a", can0), ("b", can1)], c=can2)
+        hold.update({"d": can3, "e": can4}, f=can5)
+
+        for k, v in d.items():
+            assert v._key == k
+            assert v._sdb == subery.cans
+            assert v._stale == True
+            assert v._fresh == False
+            assert v._write()
+            assert v._stale == False
+
+        # test read of prestored can at key when new can assigned to key
+        can = Can(value=True)
+        key = "test"
+        assert subery.cans.put(key, can)
+        pan = subery.cans.get(key)
+        assert pan == can
+        assert pan.value == True
+
+        can = Can()  # new can with defaults
+        assert can.value is None
+        hold[key] = can  # assign to key
+        assert hold[key].value == True  # picks up saved value
+        assert hold[key]._stale == True
+        assert hold[key]._fresh == False
+        hold[key].value = False
+        assert hold[key]._stale == False
+        assert hold[key]._fresh == False
 
 
     assert not os.path.exists(subery.path)

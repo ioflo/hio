@@ -393,6 +393,14 @@ def test_suberbase():
         assert key == b'key_top'
         assert suber._tokeys(key) == keys
 
+        keys = 'bottom'
+        key = suber._tokey(keys)
+        assert key == b'bottom' == keys.encode()
+
+        keys = b'bottom'
+        key = suber._tokey(keys)
+        assert key == b'bottom' == keys
+
     assert not os.path.exists(duror.path)
     assert not duror.opened
     """Done Test"""
