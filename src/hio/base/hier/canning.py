@@ -50,6 +50,10 @@ class CanDom(TymeDom):
         _fresh (bool): True means fields have been synced by read from durable
                        False means fields have not yet been synced by read from durable
 
+    ToDo:
+       add ._bulk bool so when call ._update it sets ._bulk. Then change
+       __setattr__ so it does not write when ._bulk which means that it does not
+       rewrite for each field in ._update and lets ._update write once at its end
 
     """
     _sdb: InitVar[None|holding.DomSuber] = None  # durable storage of serialized fields
@@ -70,40 +74,6 @@ class CanDom(TymeDom):
         super().__setattr__(name, value)
         if name in self._names:
             super().__setattr__("_tyme", self._now)
-            self._write()
-
-
-    def _update(self, *pa, **kwa):
-        """Use item update syntax
-        """
-        write = False
-
-        if pa:
-            if len(pa) > 1:
-                raise TypeError(f"Expected 1 positional argument got {len(pa)}.")
-
-            di = pa[0]
-            if isinstance(di, Mapping):
-                for k, v in di.items():
-                    self[k] = v
-                    if k in self._names:
-                        write = True
-
-            elif isinstance(di, NonStringIterable):
-                for k, v in di:
-                    self[k] = v
-                    if k in self._names:
-                        write = True
-            else:
-                raise TypeError(f"Expected Mapping or NonStringIterable got"
-                                f" {type(di)}.")
-
-        for k, v in kwa.items():
-            self[k] = v
-            if k in self._names:
-                write = True
-
-        if write:
             self._write()
 
 

@@ -67,8 +67,6 @@ class Hold(Mine):
         """
         self._hold_subery = None
         super(Hold, self).__init__(*pa, **kwa)
-        if not self.subery:
-            self._hold_subery = Subery(reopen=True)  # default subery
 
 
     def __setitem__(self, k, v):  # __setattr__ calls __setitem__

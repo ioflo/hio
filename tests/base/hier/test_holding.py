@@ -21,10 +21,11 @@ def test_hold_basic():
     hold = Hold()  # test defaults
     assert isinstance(hold, dict)
     assert isinstance(hold, Hold)
-    assert isinstance(hold.subery, Subery)   # test property getter
-    assert hold.subery.name == "main"
-    hold.subery.close(clear=True)
-    assert not os.path.exists(hold.subery.path)
+    assert hold.subery is None  # test property getter
+    #assert isinstance(hold.subery, Subery)
+    #assert hold.subery.name == "main"
+    #hold.subery.close(clear=True)
+    #assert not os.path.exists(hold.subery.path)
 
 
     with openDuror(cls=Subery) as subery:  # opens with temp=True by default
