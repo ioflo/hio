@@ -9,6 +9,6 @@ from .acting import (Act, Goact, EndAct, Beact, Mark, LapseMark, RelapseMark,
                      BagMark, UpdateMark, ReupdateMark,
                      ChangeMark, RechangeMark)
 from .needing import Need
-from .bagging import TymeDom, Bag
+from .bagging import Bag
 from .canning import CanDom, Can
-from .holding import Hold, DomSuberBase, DomSuber, Subery
+from .holding import Hold

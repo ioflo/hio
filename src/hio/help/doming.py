@@ -11,9 +11,9 @@ import json
 import msgpack
 import cbor2 as cbor
 
-from typing import Any, Type
+from typing import Any, Type, ClassVar
 from collections.abc import Callable
-from dataclasses import dataclass, astuple, asdict, fields, field
+from dataclasses import dataclass, astuple, asdict, fields, field, InitVar
 
 # DOM Utilities dataclass utility classes
 
@@ -175,6 +175,154 @@ class MapDom:
 
 
 
+def modify(mods: MapDom|None=None, klas: Type[MapDom]=MapDom)->Callable[..., Any]:
+    """Wrapper with argument(s) that injects mods dataclass instance that must
+    be a subclass of MapDom. When mods is provided it is injected as the keyword
+    arg 'mods' into the wrapped function.
+    If mods is None then an instance of klas is created and injected instead.
+    This creates a lexical closure of this injection. The value of klas must
+    also be a a MapDom subclass.
+
+    Parameters:
+        mods (WorkDom|None): default None. Instance of dataclass to be injected
+        klas (Type[WorkDom]): defualt WorkDom. Class of dataclass to be injected
+                             as default when mods not provided.
+
+    If wrapped function call itself includes mods as an arg whose value is
+    not None then does not inject. This allows override of a single call.
+    Subsequent calls will resume using the lexical closure or the wrapped
+    injected mods whichever was provided.
+
+    Assumes wrapped function defines mods argument as a keyword only parameter
+    using '*' such as:
+       def f(name='box, over=None, *, mods=None):
+
+    To use inline:
+        mods = WorkDom(box=None, over=None, bepre='box', beidx=0)
+        g = modify(mods)(f)
+
+    Later calling g as:
+        g(name="mid", over="top")
+    Actually has mods inject as if called as:
+        g(name="mid", over="top", mods=mods)
+
+    Also can be used on a method not just a function.
+       def m(self, name='box, over=None, *, mods=None):
+
+    To use inline:
+        mods = dict(box=None, over=None, bepre='box', beidx=0)
+        m = modify(mods)(self.m)
+
+    Later calling m as:
+        m(name="mid", over="top")
+    Actually has mods injectd as if called as:
+        m(name="mid", over="top", mods=mods)  where self is also injected into method
+
+    Since mods is a mutable collection i.e. dataclass, not an immutable object
+    using @decorator syntax on could be problematic as the injected mods would
+    be a lexical closure defined in the defining scope not the calling scope.
+    Depends on what the use case it for it.
+
+    Example:
+        mods = WorkDom(box=None, over=None, bepre='box', beidx=0)
+        @modify(mods=mods)
+        def f(name="box), over=None, *, mods=None)
+
+    Later calling f as:
+        f(name="mid", over="top")
+    Actually has mods injected as if called as:
+        f(name="mid", over="top", mods=mods)
+
+    But the mods in this case is from the defining scope,not the calling scope.
+
+    Likewise passing in mods=None would result in a lexical closure of mods
+    with default values initially that would be shared everywhere f() is called.
+
+    When f() is called with an explicit mods such as f(mods=mods) then that
+    call will use the passed in mods not the injected mods. This allows a per
+    call override of the injected mods.
+
+    """
+    mods = mods if mods is not None else klas()  # lexical closure so not None
+    def decorator(f):
+        @functools.wraps(f)
+        def inner(*pa, **kwa):
+            if 'mods' not in kwa or kwa['mods'] is None:  # missing or None
+                kwa.update(mods=mods)  # replace or add mods to kwa
+            return f(*pa, **kwa)
+        return inner
+    return decorator
+
+
+def modize(mods: dict|None=None) -> Callable[..., Any]:
+    """Wrapper with argument(s) that injects dict or mods dataclass instance
+    that must be a subclass of MapDom as lexical closure into the wrapped function
+    as keyword parameter 'mods' .
+
+    If wrapped function call itself includes mods as an arg whose value is
+    not None then does not inject. This allows override of a single call.
+    Subsequent calls will resume using the lexical closure or the wrapped
+    injected mods whichever was provided.
+
+    Assumes wrapped function defines mods argument as a keyword only parameter
+    using '*' such as:
+       def f(name='box, over=None, *, mods=None):
+
+    To use inline:
+        mods = dict(box=None, over=None, bepre='box', beidx=0)
+        g = modize(mods)(f)
+
+    Later calling g as:
+        g(name="mid", over="top")
+    Actually has mods injected as if called as:
+        g(name="mid", over="top", mods=mods)
+
+    If method then works as well.
+       def f(self, name='box, over=None, *, mods=None):
+
+    To use inline:
+        mods = dict(box=None, over=None, bepre='box', beidx=0)
+        f = modize(mods)(self.f)
+
+    Later calling f as:
+        f(name="mid", over="top")
+    Actually has mods injected as if called as:
+        f(name="mid", over="top", mods=mods)  the self is automaticall supplied
+
+    Since mods is a mutable collection i.e. dict, not an immutable string then
+    using it as decorator could be problematic as the mods would have lexical
+    defining scope not calling scope.
+    Which is ok if mods has lexical module scope intentionally.
+
+    Example:
+        mods = dict(box=None, over=None, bepre='box', beidx=0)
+
+        @modize(mods=mods)
+        def f(name="box), over=None, *, mods=None)
+
+    Later calling as:
+        f(name="mid", over="top")
+    Actually has mods injected as if called as:
+        f(name="mid", over="top", mods=mods)
+
+    But the mods in this case is from the defining scope not the calling scope.
+
+    Likewise passing in mods=None would result in a lexical closure of mods
+    with default values initially that would be shared everywhere f() is called
+    with whatever values each call changes in the lexical closure of mods.
+    """
+    mods = mods if mods is not None else {}  # {} in lexical closure when None
+    def decorator(f):
+        @functools.wraps(f)
+        def inner(*pa, **kwa):
+            if 'mods' not in kwa or kwa['mods'] is None:  # missing or None
+                kwa.update(mods=mods)  # replace or add works to kwa
+            return f(*pa, **kwa)
+        return inner
+    return decorator
+
+
+
 @dataclass
 class RawDom(MapDom):
     """RawDom is subclass of MapDom that adds methods for converting to/from
@@ -312,151 +460,132 @@ class RawDom(MapDom):
 
 
 
-def modify(mods: MapDom|None=None, klas: Type[MapDom]=MapDom)->Callable[..., Any]:
-    """Wrapper with argument(s) that injects mods dataclass instance that must
-    be a subclass of MapDom. When mods is provided it is injected as the keyword
-    arg 'mods' into the wrapped function.
-    If mods is None then an instance of klas is created and injected instead.
-    This creates a lexical closure of this injection. The value of klas must
-    also be a a MapDom subclass.
+def registerify(cls):
+    """Class Decorator to add cls as cls._registry entry for itself keyed by its
+    own .__name__. Need class decorator so that class object is already created
+    by registration time when decorator is applied
+    """
+    name = cls.__name__
+    if name in cls._registry:
+        raise HierError(f"RegDom subclass {name=} already registered.")
+    cls._registry[name] = cls
+    return cls
 
-    Parameters:
-        mods (WorkDom|None): default None. Instance of dataclass to be injected
-        klas (Type[WorkDom]): defualt WorkDom. Class of dataclass to be injected
-                             as default when mods not provided.
 
-    If wrapped function call itself includes mods as an arg whose value is
-    not None then does not inject. This allows override of a single call.
-    Subsequent calls will resume using the lexical closure or the wrapped
-    injected mods whichever was provided.
+@registerify
+@dataclass
+class RegDom(RawDom):
+    """RegDom is base class for Dom subclasses that have class registry as
+    as non field ClassVar that holds mapping between class name and class object.
+    Use the registerify decorator to populate the registry with a given dataclass.
 
-    Assumes wrapped function defines mods argument as a keyword only parameter
-    using '*' such as:
-       def f(name='box, over=None, *, mods=None):
+    This allows registry based creation of instances from the class name.
 
-    To use inline:
-        mods = WorkDom(box=None, over=None, bepre='box', beidx=0)
-        g = modify(mods)(f)
-
-    Later calling g as:
-        g(name="mid", over="top")
-    Actually has mods inject as if called as:
-        g(name="mid", over="top", mods=mods)
-
-    Also can be used on a method not just a function.
-       def m(self, name='box, over=None, *, mods=None):
-
-    To use inline:
-        mods = dict(box=None, over=None, bepre='box', beidx=0)
-        m = modify(mods)(self.m)
-
-    Later calling m as:
-        m(name="mid", over="top")
-    Actually has mods injectd as if called as:
-        m(name="mid", over="top", mods=mods)  where self is also injected into method
-
-    Since mods is a mutable collection i.e. dataclass, not an immutable object
-    using @decorator syntax on could be problematic as the injected mods would
-    be a lexical closure defined in the defining scope not the calling scope.
-    Depends on what the use case it for it.
-
-    Example:
-        mods = WorkDom(box=None, over=None, bepre='box', beidx=0)
-        @modify(mods=mods)
-        def f(name="box), over=None, *, mods=None)
-
-    Later calling f as:
-        f(name="mid", over="top")
-    Actually has mods injected as if called as:
-        f(name="mid", over="top", mods=mods)
-
-    But the mods in this case is from the defining scope,not the calling scope.
-
-    Likewise passing in mods=None would result in a lexical closure of mods
-    with default values initially that would be shared everywhere f() is called.
-
-    When f() is called with an explicit mods such as f(mods=mods) then that
-    call will use the passed in mods not the injected mods. This allows a per
-    call override of the injected mods.
+    Non-Field Class Attributes:
+        _registry (ClassVar[dict]): dict of subclasses keyed by class.__name__
+            Assigned by @registerify decorator
 
     """
-    mods = mods if mods is not None else klas()  # lexical closure so not None
-    def decorator(f):
-        @functools.wraps(f)
-        def inner(*pa, **kwa):
-            if 'mods' not in kwa or kwa['mods'] is None:  # missing or None
-                kwa.update(mods=mods)  # replace or add mods to kwa
-            return f(*pa, **kwa)
-        return inner
-    return decorator
+    _registry:  ClassVar[dict] = {}  # subclass registry
 
 
-
-
-def modize(mods: dict|None=None) -> Callable[..., Any]:
-    """Wrapper with argument(s) that injects works dict  when provided as
-    keyword arg into wrapped function in order make a boxwork.
-    If works is None then creates and injects lexical closure of a dict.
-    If wrapped function call itself includes works as an arg whose value is
-    not None then does not inject. This allows override of a single call.
-    Subsequent calls will resume using the lexical closure or the wrapped
-    injected works whichever was provided.
-
-    Assumes wrapped function defines works argument as a keyword only parameter
-    using '*' such as:
-       def f(name='box, over=None, *, works=None):
-
-    To use inline:
-        works = dict(box=None, over=None, bepre='box', beidx=0)
-        g = modize(works)(f)
-
-    Later calling g as:
-        g(name="mid", over="top")
-    Actually has works inject as if called as:
-        g(name="mid", over="top", works=works)
-
-    If method then works as wells.
-       def f(self, name='box, over=None, *, works=None):
-
-    To use inline:
-        works = dict(box=None, over=None, bepre='box', beidx=0)
-        f = modize(works)(self.f)
-
-    Later calling f as:
-        f(name="mid", over="top")
-    Actually has works inject as if called as:
-        f(name="mid", over="top", works=works)  the self is automaticall supplied
-
-    Since works is a mutable collection i.e. dict, not an immutable string then
-    using it as decorator could be problematic as the works would have lexical
-    defining scope not calling scope.
-    Which is ok if works has lexical module scope intentionally.
-
-    Example:
-        works = dict(box=None, over=None, bepre='box', beidx=0)
-
-        @modize(works=works)
-        def f(name="box), over=None, *, works=None)
-
-    Later calling be as:
-        f(name="mid", over="top")
-    Actually has works inject as if called as:
-        f(name="mid", over="top", works=works)
-
-    But the works in this case is from the defining scope of be not the calling
-    scope.
-
-    Likewise passing in works=None would result in a lexical closure of works
-    with default values initially that would be shared everywhere f() is called
-    with whatever values each call changes in the lexical closure of works.
+def namify(cls):
+    """Class decorator for dataclass to populate ClassVar ._names with names
+    of all fields in dataclass
     """
-    mods = mods if mods is not None else {}  # {} in lexical closure when None
-    def decorator(f):
-        @functools.wraps(f)
-        def inner(*pa, **kwa):
-            if 'mods' not in kwa or kwa['mods'] is None:  # missing or None
-                kwa.update(mods=mods)  # replace or add works to kwa
-            return f(*pa, **kwa)
-        return inner
-    return decorator
+    cls._names = tuple(field.name for field in fields(cls))
+    return cls
 
+
+@namify
+@registerify
+@dataclass
+class TymeDom(RegDom):
+    """TymeDom is base class for Dom dataclasses that are registered and support
+    the cycle tyme stamping of updates to named fields using non-field attributes.
+    Use decorator registerify to populate ._registry
+    Use deocrator namify to populate ._names which holds names of field attributes
+
+    Inherited Non-Field Class Attributes:
+        _registry (ClassVar[dict]): dict of subclasses keyed by class.__name__
+            Assigned by @registerify decorator
+
+    Non-Field Class Attributes:
+        _names (ClassVar[tuple[str]|None]): tuple of field names for class
+            Assigned by @namify decorator
+
+    Non-Field Attributes:
+        _tymth (None|Callable): function wrapper closure returned by
+            Tymist.tymen() method. When .tymth is called it returns associated
+            Tymist.tyme. Provides injected dependency on Tymist cycle tyme base.
+            None means not assigned yet.
+            Use ._wind method to assign ._tymth after init of bag.
+        _tyme (None|Float): cycle tyme of last update of a bag field.
+            None means either ._tymth as not yet been assigned or this bag's
+            fields have not yet been updated.
+
+    Properties:
+        _now (None|float): current tyme given by ._tymth if not None.
+
+    """
+    _names: ClassVar[tuple[str]|None] = None  # Assigned in  __post_init__
+    _tymth: InitVar[None|Callable] = None  # tymth closure not a field
+    _tyme: InitVar[None|float] = None  # tyme of last update
+
+    def __post_init__(self, _tymth, _tyme):
+        self._tymth = _tymth
+        self._tyme = _tyme
+
+
+    def __setattr__(self, name, value):
+        super().__setattr__(name, value)
+        if name in self._names:
+            super().__setattr__("_tyme", self._now)
+
+
+    def __setitem__(self, k, v):
+        try:
+            return setattr(self, k, v)
+        except AttributeError as ex:
+            raise IndexError(ex.args) from ex
+
+
+    def _update(self, *pa, **kwa):
+        """Use item update syntax
+        """
+        if pa:
+            if len(pa) > 1:
+                raise TypeError(f"Expected 1 positional argument got {len(pa)}.")
+
+            di = pa[0]
+            if isinstance(di, Mapping):
+                for k, v in di.items():
+                    self[k] = v
+            elif isinstance(di, NonStringIterable):
+                for k, v in di:
+                    self[k] = v
+            else:
+                raise TypeError(f"Expected Mapping or NonStringIterable got"
+                                f" {type(di)}.")
+
+        for k, v in kwa.items():
+            self[k] = v
+
+
+    @property
+    def _now(self):
+        """Gets current tyme from injected ._tymth closure from Tymist.
+        tyme is float cycle time in seconds
+        Returns:
+            _now (float | None): tyme from self.tymth() when wound else None
+        """
+        return self._tymth() if self._tymth else None
+
+
+    def _wind(self, tymth):
+        """
+        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+        Override in subclasses to update any dependencies on a change in
+        tymist.tymth base
+        """
+        self._tymth = tymth
