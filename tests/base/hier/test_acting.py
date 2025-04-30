@@ -6,16 +6,140 @@ from __future__ import annotations  # so type hints of classes get resolved late
 
 import pytest
 
+from collections.abc import Callable
+
 from hio import Mixin, HierError
 from hio.base import Tymist
-from hio.base.hier import Nabes, ActBase, actify, Need, Box, Boxer, Bag
-from hio.base.hier import (Act, Goact, EndAct, Beact,
+from hio.base.hier import Nabes, Need, Box, Boxer, Bag, Hold
+from hio.base.hier import (ActBase, actify, Act, Goact, EndAct, Beact,
                           Mark, LapseMark, RelapseMark,
                           BagMark, UpdateMark, ReupdateMark,
                           ChangeMark, RechangeMark,
                           Count, Discount)
 
-from hio.help import Mine
+
+def test_actbase():
+    """Test ActBase Class"""
+
+    # clear registries for debugging
+    ActBase._clearall()
+
+    assert ActBase.__name__ == 'ActBase'
+    assert ActBase.__name__ in ActBase.Registry
+    assert ActBase.Registry[ActBase.__name__] == ActBase
+    assert ActBase.Instances == {}
+    assert ActBase.Index == 0
+    assert ActBase.Names == ()
+
+    act = ActBase()
+    assert ActBase.Names == ()
+    assert isinstance(act, Callable)
+    assert act.name == 'ActBase0'
+    assert act.iops == {}
+    assert act.nabe == Nabes.endo
+    assert act.hold == Hold()
+    assert hasattr(act, 'name')   # hasattr works for properties and attributes
+    assert act.name in ActBase.Instances
+    assert ActBase.Instances[act.name] == act
+    assert ActBase.Index == 1
+    assert act() == {}
+
+
+    act = ActBase()
+    assert ActBase.Names == ()
+    assert isinstance(act, Callable)
+    assert act.name == 'ActBase1'
+    assert act.iops == {}
+    assert act.nabe == Nabes.endo
+    assert act.hold == Hold()
+    assert hasattr(act, 'name')   # hasattr works for properties and attributes
+    assert act.name in ActBase.Instances
+    assert ActBase.Instances[act.name] == act
+    assert ActBase.Index == 2
+    assert act() == {}
+
+
+    """Done Test"""
+
+
+def test_actify():
+    """Test Actor registry base stuff class and subclasses"""
+
+    @actify(name="Tact")
+    def test(self, **kwa):  # signature for .act with **iops as **kwa
+        assert kwa == self.iops
+        return self.iops
+
+    t = test(iops=dict(what=1), hello="hello", nabe=Nabes.redo)  # signature for Act.__init__
+    assert t.name == "Tact0"
+    assert t.iops == dict(what=1)
+    assert t.nabe == Nabes.redo
+    assert t.__class__.__name__ == "Tact"
+    assert t.__class__.__name__ in t.Registry
+    assert t.Registry[t.__class__.__name__] == t.__class__
+    assert t.name in t.Instances
+    assert t.Instances[t.name] == t
+    assert isinstance(t, ActBase)
+    assert t() == t.iops
+    assert t.Names == ()
+
+    x = test(bye="bye")  # signature for Act.__init__
+    assert x.name == "Tact1"
+    assert x.iops == {}
+    assert x.nabe == Nabes.endo
+    assert x.__class__.__name__ == "Tact"
+    assert x.__class__.__name__ in t.Registry
+    assert x.Registry[t.__class__.__name__] == t.__class__
+    assert x.name in t.Instances
+    assert x.Instances[t.name] == t
+    assert isinstance(t, ActBase)
+    assert x() == x.iops
+    assert t.Names == ()
+
+    assert x.__class__ == t.__class__
+    klas = ActBase.Registry["Tact"]
+    assert isinstance(t, klas)
+    assert isinstance(x, klas)
+
+    @actify(name="Pact")
+    def pest(self, **kwa):  # signature for .act
+        assert kwa == self.iops
+        assert "why" in kwa
+        assert kwa["why"] == 1
+        return self.iops
+
+    p = pest(name="spot", iops=dict(why=1))  # same signature as Act.__init__
+    assert p.name == 'spot'
+    assert p.iops == dict(why=1)
+    assert p.nabe == Nabes.endo
+    assert "Pact" in p.Registry
+    klas = p.Registry["Pact"]
+    assert isinstance(p, klas)
+    assert p.Instances[p.name] == p
+    assert p() == dict(why=1)
+    assert t.Names == ()
+
+    @actify(name="Bact")
+    def best(self, *, how=None):  # signature for .act
+        assert how == 5
+        assert self.iops["how"] == how
+        return self.iops
+
+    b = best(iops=dict(how=5))  # signature for Act.__init__
+    assert b.name == 'Bact0'
+    assert b.iops == dict(how=5)
+    assert b.nabe == Nabes.endo
+    assert "Bact" in b.Registry
+    klas = b.Registry["Bact"]
+    assert isinstance(b, klas)
+    assert b.Instances[b.name] == b
+    assert b() == dict(how=5)
+    assert t.Names == ()
+
+
+    """Done Test"""
+
+
 
 def test_act_basic():
     """Test Act class"""
@@ -27,12 +151,11 @@ def test_act_basic():
 
     act = Act()
     assert act.name == "Act0"
-    assert act.iops == {'M': {}, 'D': None}
+    assert act.iops == {'H': {'_hold_subery': None}}
     assert act.nabe == Nabes.endo
     assert act.Index == 1
     assert act.Instances[act.name] == act
-    assert act.mine == Mine()
-    assert act.dock == None
+    assert act.hold == Hold()
     assert callable(act.deed)
     assert act._code is None
     assert not act.compiled
@@ -42,12 +165,11 @@ def test_act_basic():
     iops = dict(a=1, b=2)
     act = Act(iops=iops, nabe=Nabes.redo)
     assert act.name == "Act1"
-    assert act.iops == {'a': 1, 'b': 2, 'M': {}, 'D': None}
+    assert act.iops == {'a': 1, 'b': 2, 'H': {'_hold_subery': None}}
     assert act.nabe == Nabes.redo
     assert act.Index == 2
     assert act.Instances[act.name] == act
-    assert act.mine == Mine()
-    assert act.dock == None
+    assert act.hold == Hold()
     assert callable(act.deed)
     assert act._code is None
     assert not act.compiled
@@ -55,46 +177,45 @@ def test_act_basic():
     assert act() == act.iops
 
     def dumb(**iops):
-        M = iops['M']
-        if 'count' not in M:
-            M['count'] = Bag()
-        if M.count.value is None:
-            M.count.value = 0
-        M.count.value += 1
-        return (M.count.value, len(iops), iops)
+        H = iops['H']
+        if 'count' not in H:
+            H['count'] = Bag()
+        if H.count.value is None:
+            H.count.value = 0
+        H.count.value += 1
+        return (H.count.value, len(iops), iops)
 
     iops = dict(when="now", why="because")
     act = Act(dumb, iops=iops)
     assert act.name == "Act2"
-    assert act.iops == {'when': 'now', 'why': 'because', 'M': {}, 'D': None}
+    assert act.iops == {'when': 'now', 'why': 'because', 'H': {'_hold_subery': None}}
     assert act.nabe == Nabes.endo
     assert act.Index == 3
     assert act.Instances[act.name] == act
-    assert act.mine == Mine()
-    assert act.dock == None
+    assert act.hold == Hold()
     assert callable(act.deed)
     assert act.deed == dumb
     assert act._code is None
     assert not act.compiled
 
-    assert act() == (1, 4, {'when': 'now',
-                            'why': 'because',
-                            'M': {'count': Bag(value=1)},
-                            'D': None})
+    assert act() == (1,
+                    3,
+                    {'when': 'now',
+                     'why': 'because',
+                     'H': {'_hold_subery': None, 'count': Bag(value=1)}})
 
     iops = dict(fix=3)
-    mine = Mine()
-    mine.stuff = Bag()
-    mine.stuff.value = 0
-    deed = "M.stuff.value += 1\n"
-    act = Act(deed, mine=mine, iops=iops)
+    hold = Hold()
+    hold.stuff = Bag()
+    hold.stuff.value = 0
+    deed = "H.stuff.value += 1\n"
+    act = Act(deed, hold=hold, iops=iops)
     assert act.name == "Act3"
-    assert act.iops == {'fix': 3, 'M': {'stuff': Bag(value=0)}, 'D': None}
+    assert act.iops == {'fix': 3, 'H': {'_hold_subery': None, 'stuff': Bag(value=0)}}
     assert act.nabe == Nabes.endo
     assert act.Index == 4
     assert act.Instances[act.name] == act
-    assert act.mine == mine
-    assert act.dock == None
+    assert act.hold == hold
     assert not callable(act.deed)
     assert act.deed == deed
     assert act._code
@@ -103,31 +224,31 @@ def test_act_basic():
     assert act() == None
     assert act._code is not None
     assert act.compiled
-    assert mine.stuff.value == 1
+    assert hold.stuff.value == 1
 
     assert act() == None
     assert act.compiled
-    assert mine.stuff.value == 2
+    assert hold.stuff.value == 2
 
     """Done Test"""
 
 def test_need_act():
     """Test Act using Need as its deed"""
 
-    mine = Mine()
-    need = Need(mine=mine)
-    act = Act(need, mine=mine)
+    hold = Hold()
+    need = Need(hold=hold)
+    act = Act(need, hold=hold)
     assert act() == True
 
 
-    mine.cycle = Bag(value=2)
-    mine.turn = Bag(value=2)
-    expr = "M.cycle.value > 3 and M.turn.value <= 2"
-    need = Need(expr=expr, mine=mine)
-    act = Act(deed=need, mine=mine)
+    hold.cycle = Bag(value=2)
+    hold.turn = Bag(value=2)
+    expr = "H.cycle.value > 3 and H.turn.value <= 2"
+    need = Need(expr=expr, hold=hold)
+    act = Act(deed=need, hold=hold)
     assert act() == False
 
-    mine.cycle.value = 5
+    hold.cycle.value = 5
     assert act() == True
     """Done Test"""
 
@@ -144,8 +265,7 @@ def test_goact_basic():
     assert goact.name == "Goact0"
     assert goact.iops == {}
     assert goact.nabe == Nabes.godo
-    assert goact.mine == Mine()
-    assert goact.dock == None
+    assert goact.hold == Hold()
     assert goact.Index == 1
     assert goact.Instances[goact.name] == goact
     assert goact.dest == 'next'
@@ -155,10 +275,10 @@ def test_goact_basic():
     with pytest.raises(HierError):
         assert not goact()  # since default .dest not yet resolved
 
-    mine = Mine()
-    mine.cycle = Bag(value=3)
-    box = Box(mine=Mine)
-    need = Need(expr='M.cycle.value >= 3', mine=mine)
+    hold = Hold()
+    hold.cycle = Bag(value=3)
+    box = Box(hold=hold)
+    need = Need(expr='H.cycle.value >= 3', hold=hold)
     goact = Goact(dest=box, need=need)
     assert goact.need.compiled
 
@@ -166,7 +286,7 @@ def test_goact_basic():
     assert dest == box
     assert goact.need.compiled
 
-    mine.cycle.value = 1
+    hold.cycle.value = 1
     assert not goact()
     """Done Test"""
 
@@ -187,23 +307,22 @@ def test_endact_basic():
         eact = EndAct()  # requires iops with boxer=boxer.name
 
 
-    mine = Mine()
-    boxer = Boxer(mine=mine)
+    hold = Hold()
+    boxer = Boxer(hold=hold)
     iops = dict(_boxer=boxer.name)
 
-    eact = EndAct(iops=iops, mine=mine)
+    eact = EndAct(iops=iops, hold=hold)
     assert eact.name == "EndAct1"
     assert eact.iops == iops
     assert eact.nabe == Nabes.endo
-    assert eact.mine == mine
-    assert eact.dock == None
+    assert eact.hold == hold
     assert eact.Index == 2
     assert eact.Instances[eact.name] == eact
     keys = ("", "boxer", boxer.name, "end")
-    assert keys in eact.mine
-    assert not eact.mine[keys].value
+    assert keys in eact.hold
+    assert not eact.hold[keys].value
     eact()
-    assert eact.mine[keys].value
+    assert eact.hold[keys].value
 
 
     """Done Test"""
@@ -219,43 +338,42 @@ def test_beact_basic():
     with pytest.raises(HierError):
         act = Beact(lhs="stuff.value")
 
-    mine = Mine()
-    mine.stuff = Bag()
+    hold = Hold()
+    hold.stuff = Bag()
 
     with pytest.raises(HierError):
-        act = Beact(lhs="stuff.kind", mine=mine)
+        act = Beact(lhs="stuff.kind", hold=hold)
 
     Beact._clearall()  # clear instances for debugging
 
-    mine = Mine()
-    mine.stuff = Bag()
+    hold = Hold()
+    hold.stuff = Bag()
 
-    act = Beact(lhs=("stuff", "value"), mine=mine)
+    act = Beact(lhs=("stuff", "value"), hold=hold)
     assert act.name == "Beact0"
-    assert act.iops == {'M': {'stuff': Bag(value=None)}, 'D': None}
+    assert act.iops == {'H': {'_hold_subery': None, 'stuff': Bag(value=None)}}
     assert act.nabe == Nabes.endo
     assert act.Index == 1
     assert act.Instances[act.name] == act
-    assert act.mine == mine
-    assert act.dock is None
+    assert act.hold == hold
     assert act.lhs == ("stuff", "value")
     assert act.rhs is None
     assert act._code is None
     assert not act.compiled
     assert act() == None
-    assert mine["stuff"]["value"] == None
+    assert hold["stuff"]["value"] == None
 
     act.lhs = "stuff.value"
     assert act.lhs == ("stuff", "value")
     assert act() == None
-    assert mine["stuff"]["value"] == None
+    assert hold["stuff"]["value"] == None
     assert not act.compiled
 
     act.rhs = "5"
     assert not act.compiled
     assert act() == 5
     assert act.compiled
-    assert mine["stuff"]["value"] == 5
+    assert hold["stuff"]["value"] == 5
 
     def dummy(**iops):
         return True
@@ -264,38 +382,37 @@ def test_beact_basic():
     assert not act.compiled
     assert act() == True
     assert not act.compiled
-    assert mine["stuff"]["value"] == True
+    assert hold["stuff"]["value"] == True
 
     iops = dict(a=1, b=2)
-    act = Beact(lhs="stuff.value", rhs=dummy, mine=mine, iops=iops, nabe=Nabes.redo)
+    act = Beact(lhs="stuff.value", rhs=dummy, hold=hold, iops=iops, nabe=Nabes.redo)
     assert act.name == "Beact1"
-    assert act.iops == {'a': 1, 'b': 2, 'M': {'stuff': Bag(value=True)}, 'D': None}
+    assert act.iops == {'a': 1, 'b': 2, 'H': {'_hold_subery': None, 'stuff': Bag(value=True)}}
+
     assert act.nabe == Nabes.redo
     assert act.Index == 2
     assert act.Instances[act.name] == act
-    assert act.mine == mine
-    assert act.dock is None
+    assert act.hold == hold
     assert act.lhs == ("stuff", "value")
     assert act.rhs is dummy
     assert act._code is None
     assert not act.compiled
     assert act() == True
-    assert act.mine.stuff.value == True
+    assert act.hold.stuff.value == True
 
-    act = Beact(lhs="stuff.value", rhs="2**5", mine=mine, nabe=Nabes.rendo)
+    act = Beact(lhs="stuff.value", rhs="2**5", hold=hold, nabe=Nabes.rendo)
     assert act.name == "Beact2"
-    assert act.iops =={'M': {'stuff': Bag(value=True)}, 'D': None}
+    assert act.iops == {'H': {'_hold_subery': None, 'stuff': Bag(value=True)}}
     assert act.nabe == Nabes.rendo
     assert act.Index == 3
     assert act.Instances[act.name] == act
-    assert act.mine == mine
-    assert act.dock is None
+    assert act.hold == hold
     assert act.lhs == ("stuff", "value")
     assert act.rhs is "2**5"
     assert act._code
     assert act.compiled
     assert act() == 32
-    assert act.mine.stuff.value == 32
+    assert act.hold.stuff.value == 32
 
     """Done Test"""
 
@@ -313,17 +430,16 @@ def test_mark_basic():
         act = Mark()  # requires iops with _boxer=boxer.name and _box=box.name
 
 
-    mine = Mine()
-    boxer = Boxer(mine=mine)
-    box = Box(mine=Mine)
+    hold = Hold()
+    boxer = Boxer(hold=hold)
+    box = Box(hold=hold)
     iops = dict(_boxer=boxer.name, _box=box.name)
 
-    act = Mark(iops=iops, mine=mine)
+    act = Mark(iops=iops, hold=hold)
     assert act.name == 'Mark1'
     assert act.iops == iops
     assert act.nabe == Nabes.enmark
-    assert act.mine == mine
-    assert act.dock == None
+    assert act.hold == hold
     assert act.Index == 2
     assert act.Instances[act.name] == act
     assert act() is None
@@ -344,56 +460,54 @@ def test_lapse_mark_basic():
         act = LapseMark()  # requires iops with _boxer=boxer.name and _box=box.name
 
 
-    mine = Mine()
-    boxer = Boxer(mine=mine)
-    box = Box(mine=Mine)
+    hold = Hold()
+    boxer = Boxer(hold=hold)
+    box = Box(hold=hold)
     iops = dict(_boxer=boxer.name, _box=box.name)
 
-    act = LapseMark(iops=iops, mine=mine)
+    act = LapseMark(iops=iops, hold=hold)
     assert act.name == 'LapseMark1'
     assert act.iops == iops
     assert act.nabe == Nabes.enmark
-    assert act.mine == mine
-    assert act.dock == None
+    assert act.hold == hold
     assert act.Index == 2
     assert act.Instances[act.name] == act
     keys = ("", "boxer", boxer.name, "box", box.name, "lapse")
-    assert keys in act.mine
-    assert not act.mine[keys].value
+    assert keys in act.hold
+    assert not act.hold[keys].value
     assert act() is None
-    assert act.mine[keys].value is None
+    assert act.hold[keys].value is None
 
     LapseMark._clearall()  # clear instances for debugging
     tymist = Tymist(tock=1.0)
-    mine = Mine()
-    boxer = Boxer(tymth=tymist.tymen(), mine=mine)
+    hold = Hold()
+    boxer = Boxer(tymth=tymist.tymen(), hold=hold)
     assert boxer.tyme == tymist.tyme == 0.0
-    box = Box(mine=Mine)
+    box = Box(hold=hold)
     iops = dict(_boxer=boxer.name, _box=box.name)
 
-    act = LapseMark(iops=iops, mine=mine)
+    act = LapseMark(iops=iops, hold=hold)
     assert act.name == 'LapseMark0'
     assert act.iops == iops
     assert act.nabe == Nabes.enmark
-    assert act.mine == mine
-    assert act.dock == None
+    assert act.hold == hold
     assert act.Index == 1
     assert act.Instances[act.name] == act
 
     keys = ("", "boxer", boxer.name, "box", box.name, "lapse")
-    assert keys in act.mine
-    assert act.mine[keys].value is None
-    assert act.mine[keys]._tyme is None
-    assert act.mine[keys]._now is None
+    assert keys in act.hold
+    assert act.hold[keys].value is None
+    assert act.hold[keys]._tyme is None
+    assert act.hold[keys]._now is None
     boxer.rewind()
-    assert act.mine[keys].value is None
-    assert act.mine[keys]._tyme is None
-    assert act.mine[keys]._now == 0.0
+    assert act.hold[keys].value is None
+    assert act.hold[keys]._tyme is None
+    assert act.hold[keys]._now == 0.0
 
     assert act() == 0.0
-    assert act.mine[keys].value == 0.0
-    assert act.mine[keys]._tyme == 0.0
-    assert act.mine[keys]._now == 0.0
+    assert act.hold[keys].value == 0.0
+    assert act.hold[keys]._tyme == 0.0
+    assert act.hold[keys]._now == 0.0
 
     """Done Test"""
 
@@ -410,56 +524,54 @@ def test_relapse_mark_basic():
         act = RelapseMark()  # requires iops with _boxer=boxer.name and _box=box.name
 
 
-    mine = Mine()
-    boxer = Boxer(mine=mine)
-    box = Box(mine=Mine)
+    hold = Hold()
+    boxer = Boxer(hold=hold)
+    box = Box(hold=hold)
     iops = dict(_boxer=boxer.name, _box=box.name)
 
-    act = RelapseMark(iops=iops, mine=mine)
+    act = RelapseMark(iops=iops, hold=hold)
     assert act.name == 'RelapseMark1'
     assert act.iops == iops
     assert act.nabe == Nabes.remark
-    assert act.mine == mine
-    assert act.dock == None
+    assert act.hold == hold
     assert act.Index == 2
     assert act.Instances[act.name] == act
     keys = ("", "boxer", boxer.name, "box", box.name, "relapse")
-    assert keys in act.mine
-    assert not act.mine[keys].value
+    assert keys in act.hold
+    assert not act.hold[keys].value
     assert act() is None
-    assert act.mine[keys].value is None
+    assert act.hold[keys].value is None
 
     RelapseMark._clearall()  # clear instances for debugging
     tymist = Tymist(tock=1.0)
-    mine = Mine()
-    boxer = Boxer(tymth=tymist.tymen(), mine=mine)
+    hold = Hold()
+    boxer = Boxer(tymth=tymist.tymen(), hold=hold)
     assert boxer.tyme == tymist.tyme == 0.0
-    box = Box(mine=Mine)
+    box = Box(hold=hold)
     iops = dict(_boxer=boxer.name, _box=box.name)
 
-    act = RelapseMark(iops=iops, mine=mine)
+    act = RelapseMark(iops=iops, hold=hold)
     assert act.name == 'RelapseMark0'
     assert act.iops == iops
     assert act.nabe == Nabes.remark
-    assert act.mine == mine
-    assert act.dock == None
+    assert act.hold == hold
     assert act.Index == 1
     assert act.Instances[act.name] == act
 
     keys = ("", "boxer", boxer.name, "box", box.name, "relapse")
-    assert keys in act.mine
-    assert act.mine[keys].value is None
-    assert act.mine[keys]._tyme is None
-    assert act.mine[keys]._now is None
+    assert keys in act.hold
+    assert act.hold[keys].value is None
+    assert act.hold[keys]._tyme is None
+    assert act.hold[keys]._now is None
     boxer.rewind()
-    assert act.mine[keys].value is None
-    assert act.mine[keys]._tyme is None
-    assert act.mine[keys]._now == 0.0
+    assert act.hold[keys].value is None
+    assert act.hold[keys]._tyme is None
+    assert act.hold[keys]._now == 0.0
 
     assert act() == 0.0
-    assert act.mine[keys].value == 0.0
-    assert act.mine[keys]._tyme == 0.0
-    assert act.mine[keys]._now == 0.0
+    assert act.hold[keys].value == 0.0
+    assert act.hold[keys]._tyme == 0.0
+    assert act.hold[keys]._now == 0.0
 
     """Done Test"""
 
@@ -476,62 +588,60 @@ def test_count_basic():
         act = Count()  # requires iops with _boxer=boxer.name and _box=box.name
 
 
-    mine = Mine()
-    boxer = Boxer(mine=mine)
-    box = Box(mine=Mine)
+    hold = Hold()
+    boxer = Boxer(hold=hold)
+    box = Box(hold=hold)
     iops = dict(_boxer=boxer.name, _box=box.name)
     keys = ("", "boxer", boxer.name, "box", box.name, "count")
 
-    act = Count(iops=iops, mine=mine)
+    act = Count(iops=iops, hold=hold)
     assert act.name == 'Count1'
     assert act.iops == iops
     assert act.nabe == Nabes.redo
-    assert act.mine == mine
-    assert act.dock == None
+    assert act.hold == hold
     assert act.Index == 2
     assert act.Instances[act.name] == act
 
-    assert keys in act.mine
-    assert not act.mine[keys].value
+    assert keys in act.hold
+    assert not act.hold[keys].value
     assert act() == 0
-    assert act.mine[keys].value == 0
+    assert act.hold[keys].value == 0
 
     Count._clearall()  # clear instances for debugging
     tymist = Tymist(tock=1.0)
-    mine = Mine()
-    boxer = Boxer(tymth=tymist.tymen(), mine=mine)
+    hold = Hold()
+    boxer = Boxer(tymth=tymist.tymen(), hold=hold)
     assert boxer.tyme == tymist.tyme == 0.0
-    box = Box(mine=Mine)
+    box = Box(hold=hold)
     iops = dict(_boxer=boxer.name, _box=box.name)
 
-    act = Count(iops=iops, mine=mine)
+    act = Count(iops=iops, hold=hold)
     assert act.name == 'Count0'
     assert act.iops == iops
     assert act.nabe == Nabes.redo
-    assert act.mine == mine
-    assert act.dock == None
+    assert act.hold == hold
     assert act.Index == 1
     assert act.Instances[act.name] == act
 
-    assert keys in act.mine
-    assert act.mine[keys].value is None
-    assert act.mine[keys]._tyme is None
-    assert act.mine[keys]._now is None
+    assert keys in act.hold
+    assert act.hold[keys].value is None
+    assert act.hold[keys]._tyme is None
+    assert act.hold[keys]._now is None
     boxer.rewind()
-    assert act.mine[keys].value is None
-    assert act.mine[keys]._tyme is None
-    assert act.mine[keys]._now == 0.0
+    assert act.hold[keys].value is None
+    assert act.hold[keys]._tyme is None
+    assert act.hold[keys]._now == 0.0
 
     assert act() == 0
-    assert act.mine[keys].value == 0
-    assert act.mine[keys]._tyme == 0.0
-    assert act.mine[keys]._now == 0.0
+    assert act.hold[keys].value == 0
+    assert act.hold[keys]._tyme == 0.0
+    assert act.hold[keys]._now == 0.0
 
     tymist.tick()
     assert act() == 1
-    assert act.mine[keys].value == 1
-    assert act.mine[keys]._tyme == 1.0
-    assert act.mine[keys]._now == 1.0
+    assert act.hold[keys].value == 1
+    assert act.hold[keys]._tyme == 1.0
+    assert act.hold[keys]._now == 1.0
 
     """Done Test"""
 
@@ -548,67 +658,65 @@ def test_discount_basic():
         act = Discount()  # requires iops with _boxer=boxer.name and _box=box.name
 
 
-    mine = Mine()
-    boxer = Boxer(mine=mine)
-    box = Box(mine=Mine)
+    hold = Hold()
+    boxer = Boxer(hold=hold)
+    box = Box(hold=hold)
     iops = dict(_boxer=boxer.name, _box=box.name)
     keys = ("", "boxer", boxer.name, "box", box.name, "count")
 
-    act = Discount(iops=iops, mine=mine)
+    act = Discount(iops=iops, hold=hold)
     assert act.name == 'Discount1'
     assert act.iops == iops
     assert act.nabe == Nabes.exdo
-    assert act.mine == mine
-    assert act.dock == None
+    assert act.hold == hold
     assert act.Index == 2
     assert act.Instances[act.name] == act
 
-    assert keys in act.mine
-    assert not act.mine[keys].value
+    assert keys in act.hold
+    assert not act.hold[keys].value
     assert act() == None
-    assert act.mine[keys].value == None
+    assert act.hold[keys].value == None
 
     Discount._clearall()  # clear instances for debugging
     tymist = Tymist(tock=1.0)
-    mine = Mine()
-    boxer = Boxer(tymth=tymist.tymen(), mine=mine)
+    hold = Hold()
+    boxer = Boxer(tymth=tymist.tymen(), hold=hold)
     assert boxer.tyme == tymist.tyme == 0.0
-    box = Box(mine=Mine)
+    box = Box(hold=hold)
     iops = dict(_boxer=boxer.name, _box=box.name)
 
-    act = Discount(iops=iops, mine=mine)
+    act = Discount(iops=iops, hold=hold)
     assert act.name == 'Discount0'
     assert act.iops == iops
     assert act.nabe == Nabes.exdo
-    assert act.mine == mine
-    assert act.dock == None
+    assert act.hold == hold
     assert act.Index == 1
     assert act.Instances[act.name] == act
 
-    assert keys in act.mine
-    assert act.mine[keys].value is None
-    assert act.mine[keys]._tyme is None
-    assert act.mine[keys]._now is None
+    assert keys in act.hold
+    assert act.hold[keys].value is None
+    assert act.hold[keys]._tyme is None
+    assert act.hold[keys]._now is None
     boxer.rewind()
-    assert act.mine[keys].value is None
-    assert act.mine[keys]._tyme is None
-    assert act.mine[keys]._now == 0.0
+    assert act.hold[keys].value is None
+    assert act.hold[keys]._tyme is None
+    assert act.hold[keys]._now == 0.0
 
     assert act() == None
-    assert act.mine[keys].value == None
-    assert act.mine[keys]._tyme == 0.0
-    assert act.mine[keys]._now == 0.0
+    assert act.hold[keys].value == None
+    assert act.hold[keys]._tyme == 0.0
+    assert act.hold[keys]._now == 0.0
 
     tymist.tick()
-    act.mine[keys].value = 1
-    assert act.mine[keys].value == 1
-    assert act.mine[keys]._tyme == 1.0
-    assert act.mine[keys]._now == 1.0
+    act.hold[keys].value = 1
+    assert act.hold[keys].value == 1
+    assert act.hold[keys]._tyme == 1.0
+    assert act.hold[keys]._now == 1.0
 
     assert act() == None  # resets
-    assert act.mine[keys].value == None
-    assert act.mine[keys]._tyme == 1.0
-    assert act.mine[keys]._now == 1.0
+    assert act.hold[keys].value == None
+    assert act.hold[keys]._tyme == 1.0
+    assert act.hold[keys]._now == 1.0
 
     """Done Test"""
 
@@ -627,19 +735,18 @@ def test_bag_mark_basic():
         act = BagMark()  # requires iops with _boxer=boxer.name and _box=box.name
 
 
-    mine = Mine()
-    boxer = Boxer(mine=mine)
-    box = Box(mine=Mine)
+    hold = Hold()
+    boxer = Boxer(hold=hold)
+    box = Box(hold=hold)
     key = "test"
-    mine[key] = Bag()
+    hold[key] = Bag()
     iops = dict(_boxer=boxer.name, _box=box.name, _key=key)
 
-    act = BagMark(iops=iops, mine=mine)
+    act = BagMark(iops=iops, hold=hold)
     assert act.name == 'BagMark1'
     assert act.iops == iops
     assert act.nabe == Nabes.enmark
-    assert act.mine == mine
-    assert act.dock == None
+    assert act.hold == hold
     assert act.Index == 2
     assert act.Instances[act.name] == act
     assert act() is None
@@ -659,68 +766,66 @@ def test_update_mark_basic():
         act = UpdateMark()
 
 
-    mine = Mine()
-    boxer = Boxer(mine=mine)
-    box = Box(mine=Mine)
+    hold = Hold()
+    boxer = Boxer(hold=hold)
+    box = Box(hold=hold)
     key = "test"
-    mine[key] = Bag()
+    hold[key] = Bag()
     iops = dict(_boxer=boxer.name, _box=box.name, _key=key)
     keys = ("", "boxer", boxer.name, "box", box.name, "update", key)
 
-    act = UpdateMark(iops=iops, mine=mine)
+    act = UpdateMark(iops=iops, hold=hold)
     assert act.name == 'UpdateMark1'
     assert act.iops == iops
     assert act.nabe == Nabes.enmark
-    assert act.mine == mine
-    assert act.dock == None
+    assert act.hold == hold
     assert act.Index == 2
     assert act.Instances[act.name] == act
-    assert keys in act.mine
-    assert not act.mine[keys].value
+    assert keys in act.hold
+    assert not act.hold[keys].value
     assert act() is None
-    assert act.mine[keys].value is None
+    assert act.hold[keys].value is None
 
     UpdateMark._clearall()  # clear instances for debugging
     tymist = Tymist(tock=1.0)
-    mine = Mine()
-    boxer = Boxer(tymth=tymist.tymen(), mine=mine)
+    hold = Hold()
+    boxer = Boxer(tymth=tymist.tymen(), hold=hold)
     assert boxer.tyme == tymist.tyme == 0.0
-    box = Box(mine=Mine)
+    box = Box(hold=hold)
     key = "test"
-    mine[key] = Bag()
+    hold[key] = Bag()
     iops = dict(_boxer=boxer.name, _box=box.name, _key=key)
 
-    act = UpdateMark(iops=iops, mine=mine)
+    act = UpdateMark(iops=iops, hold=hold)
     assert act.name == 'UpdateMark0'
     assert act.iops == iops
     assert act.nabe == Nabes.enmark
-    assert act.mine == mine
-    assert act.dock == None
+    assert act.hold == hold
     assert act.Index == 1
     assert act.Instances[act.name] == act
 
-    assert keys in act.mine
-    assert act.mine[keys].value is None
-    assert act.mine[keys]._tyme is None
-    assert act.mine[keys]._now is None
+    assert keys in act.hold
+    assert act.hold[keys].value is None
+    assert act.hold[keys]._tyme is None
+    assert act.hold[keys]._now is None
     boxer.rewind()
-    assert act.mine[keys].value is None
-    assert act.mine[keys]._tyme is None
-    assert act.mine[keys]._now == 0.0
+    assert act.hold[keys].value is None
+    assert act.hold[keys]._tyme is None
+    assert act.hold[keys]._now == 0.0
     assert act() is None
 
     tymist.tick()
-    assert act.mine[keys].value is None
-    assert act.mine[keys]._tyme == 0.0
-    assert act.mine[keys]._now == 1.0
+    assert act.hold[keys].value is None
+    assert act.hold[keys]._tyme == 0.0
+    assert act.hold[keys]._now == 1.0
     assert act() is None
 
-    mine[key].value = True
-    assert act.mine[keys].value is None
-    assert act.mine[keys]._tyme == 1.0
-    assert act.mine[keys]._now == 1.0
+    hold[key].value = True
+    assert act.hold[keys].value is None
+    assert act.hold[keys]._tyme == 1.0
+    assert act.hold[keys]._now == 1.0
     assert act() == 1.0
-    assert act.mine[keys].value == 1.0
+    assert act.hold[keys].value == 1.0
 
     """Done Test"""
 
@@ -738,68 +843,66 @@ def test_reupdate_mark_basic():
         act = ReupdateMark()
 
 
-    mine = Mine()
-    boxer = Boxer(mine=mine)
-    box = Box(mine=Mine)
+    hold = Hold()
+    boxer = Boxer(hold=hold)
+    box = Box(hold=hold)
     key = "test"
-    mine[key] = Bag()
+    hold[key] = Bag()
     iops = dict(_boxer=boxer.name, _box=box.name, _key=key)
     keys = ("", "boxer", boxer.name, "box", box.name, "reupdate", key)
 
-    act = ReupdateMark(iops=iops, mine=mine)
+    act = ReupdateMark(iops=iops, hold=hold)
     assert act.name == 'ReupdateMark1'
     assert act.iops == iops
     assert act.nabe == Nabes.remark
-    assert act.mine == mine
-    assert act.dock == None
+    assert act.hold == hold
     assert act.Index == 2
     assert act.Instances[act.name] == act
-    assert keys in act.mine
-    assert not act.mine[keys].value
+    assert keys in act.hold
+    assert not act.hold[keys].value
     assert act() is None
-    assert act.mine[keys].value is None
+    assert act.hold[keys].value is None
 
     ReupdateMark._clearall()  # clear instances for debugging
     tymist = Tymist(tock=1.0)
-    mine = Mine()
-    boxer = Boxer(tymth=tymist.tymen(), mine=mine)
+    hold = Hold()
+    boxer = Boxer(tymth=tymist.tymen(), hold=hold)
     assert boxer.tyme == tymist.tyme == 0.0
-    box = Box(mine=Mine)
+    box = Box(hold=hold)
     key = "test"
-    mine[key] = Bag()
+    hold[key] = Bag()
     iops = dict(_boxer=boxer.name, _box=box.name, _key=key)
 
-    act = ReupdateMark(iops=iops, mine=mine)
+    act = ReupdateMark(iops=iops, hold=hold)
     assert act.name == 'ReupdateMark0'
     assert act.iops == iops
     assert act.nabe == Nabes.remark
-    assert act.mine == mine
-    assert act.dock == None
+    assert act.hold == hold
     assert act.Index == 1
     assert act.Instances[act.name] == act
 
-    assert keys in act.mine
-    assert act.mine[keys].value is None
-    assert act.mine[keys]._tyme is None
-    assert act.mine[keys]._now is None
+    assert keys in act.hold
+    assert act.hold[keys].value is None
+    assert act.hold[keys]._tyme is None
+    assert act.hold[keys]._now is None
     boxer.rewind()
-    assert act.mine[keys].value is None
-    assert act.mine[keys]._tyme is None
-    assert act.mine[keys]._now == 0.0
+    assert act.hold[keys].value is None
+    assert act.hold[keys]._tyme is None
+    assert act.hold[keys]._now == 0.0
     assert act() is None
 
     tymist.tick()
-    assert act.mine[keys].value is None
-    assert act.mine[keys]._tyme == 0.0
-    assert act.mine[keys]._now == 1.0
+    assert act.hold[keys].value is None
+    assert act.hold[keys]._tyme == 0.0
+    assert act.hold[keys]._now == 1.0
     assert act() is None
 
-    mine[key].value = True
-    assert act.mine[keys].value is None
-    assert act.mine[keys]._tyme == 1.0
-    assert act.mine[keys]._now == 1.0
+    hold[key].value = True
+    assert act.hold[keys].value is None
+    assert act.hold[keys]._tyme == 1.0
+    assert act.hold[keys]._now == 1.0
     assert act() == 1.0
-    assert act.mine[keys].value == 1.0
+    assert act.hold[keys].value == 1.0
 
     """Done Test"""
 
@@ -816,68 +919,66 @@ def test_change_mark_basic():
         # requires iops with _boxer=boxer.name and _box=box.name and _key= bag key
         act = ChangeMark()
 
-    mine = Mine()
-    boxer = Boxer(mine=mine)
-    box = Box(mine=Mine)
+    hold = Hold()
+    boxer = Boxer(hold=hold)
+    box = Box(hold=hold)
     key = "test"
-    mine[key] = Bag()
+    hold[key] = Bag()
     iops = dict(_boxer=boxer.name, _box=box.name, _key=key)
     keys = ("", "boxer", boxer.name, "box", box.name, "change", key)
 
-    act = ChangeMark(iops=iops, mine=mine)
+    act = ChangeMark(iops=iops, hold=hold)
     assert act.name == 'ChangeMark1'
     assert act.iops == iops
     assert act.nabe == Nabes.enmark
-    assert act.mine == mine
-    assert act.dock == None
+    assert act.hold == hold
     assert act.Index == 2
     assert act.Instances[act.name] == act
-    assert keys in act.mine
-    assert not act.mine[keys].value
+    assert keys in act.hold
+    assert not act.hold[keys].value
     assert act() == (None, )
-    assert act.mine[keys].value == (None, )
+    assert act.hold[keys].value == (None, )
 
     ChangeMark._clearall()  # clear instances for debugging
     tymist = Tymist(tock=1.0)
-    mine = Mine()
-    boxer = Boxer(tymth=tymist.tymen(), mine=mine)
+    hold = Hold()
+    boxer = Boxer(tymth=tymist.tymen(), hold=hold)
     assert boxer.tyme == tymist.tyme == 0.0
-    box = Box(mine=Mine)
+    box = Box(hold=hold)
     key = "test"
-    mine[key] = Bag()
+    hold[key] = Bag()
     iops = dict(_boxer=boxer.name, _box=box.name, _key=key)
 
-    act = ChangeMark(iops=iops, mine=mine)
+    act = ChangeMark(iops=iops, hold=hold)
     assert act.name == 'ChangeMark0'
     assert act.iops == iops
     assert act.nabe == Nabes.enmark
-    assert act.mine == mine
-    assert act.dock == None
+    assert act.hold == hold
     assert act.Index == 1
     assert act.Instances[act.name] == act
 
-    assert keys in act.mine
-    assert act.mine[keys].value is None
-    assert act.mine[keys]._tyme is None
-    assert act.mine[keys]._now is None
+    assert keys in act.hold
+    assert act.hold[keys].value is None
+    assert act.hold[keys]._tyme is None
+    assert act.hold[keys]._now is None
     boxer.rewind()
-    assert act.mine[keys].value is None
-    assert act.mine[keys]._tyme is None
-    assert act.mine[keys]._now == 0.0
+    assert act.hold[keys].value is None
+    assert act.hold[keys]._tyme is None
+    assert act.hold[keys]._now == 0.0
     assert act() == (None,)
 
     tymist.tick()
-    assert act.mine[keys].value == (None,)
-    assert act.mine[keys]._tyme == 0.0
-    assert act.mine[keys]._now == 1.0
+    assert act.hold[keys].value == (None,)
+    assert act.hold[keys]._tyme == 0.0
+    assert act.hold[keys]._now == 1.0
     assert act() == (None,)
 
-    mine[key].value = True
-    assert act.mine[keys].value == (None,)
-    assert act.mine[keys]._tyme == 1.0
-    assert act.mine[keys]._now == 1.0
+    hold[key].value = True
+    assert act.hold[keys].value == (None,)
+    assert act.hold[keys]._tyme == 1.0
+    assert act.hold[keys]._now == 1.0
     assert act() == (True, )
-    assert act.mine[keys].value == (True, )
+    assert act.hold[keys].value == (True, )
     """Done Test"""
 
 
@@ -893,68 +994,66 @@ def test_rechange_mark_basic():
         # requires iops with _boxer=boxer.name and _box=box.name and _key= bag key
         act = RechangeMark()
 
-    mine = Mine()
-    boxer = Boxer(mine=mine)
-    box = Box(mine=Mine)
+    hold = Hold()
+    boxer = Boxer(hold=hold)
+    box = Box(hold=hold)
     key = "test"
-    mine[key] = Bag()
+    hold[key] = Bag()
     iops = dict(_boxer=boxer.name, _box=box.name, _key=key)
     keys = ("", "boxer", boxer.name, "box", box.name, "rechange", key)
 
-    act = RechangeMark(iops=iops, mine=mine)
+    act = RechangeMark(iops=iops, hold=hold)
     assert act.name == 'RechangeMark1'
     assert act.iops == iops
     assert act.nabe == Nabes.remark
-    assert act.mine == mine
-    assert act.dock == None
+    assert act.hold == hold
     assert act.Index == 2
     assert act.Instances[act.name] == act
-    assert keys in act.mine
-    assert not act.mine[keys].value
+    assert keys in act.hold
+    assert not act.hold[keys].value
     assert act() == (None, )
-    assert act.mine[keys].value == (None, )
+    assert act.hold[keys].value == (None, )
 
     RechangeMark._clearall()  # clear instances for debugging
     tymist = Tymist(tock=1.0)
-    mine = Mine()
-    boxer = Boxer(tymth=tymist.tymen(), mine=mine)
+    hold = Hold()
+    boxer = Boxer(tymth=tymist.tymen(), hold=hold)
     assert boxer.tyme == tymist.tyme == 0.0
-    box = Box(mine=Mine)
+    box = Box(hold=hold)
     key = "test"
-    mine[key] = Bag()
+    hold[key] = Bag()
     iops = dict(_boxer=boxer.name, _box=box.name, _key=key)
 
-    act = RechangeMark(iops=iops, mine=mine)
+    act = RechangeMark(iops=iops, hold=hold)
     assert act.name == 'RechangeMark0'
     assert act.iops == iops
     assert act.nabe == Nabes.remark
-    assert act.mine == mine
-    assert act.dock == None
+    assert act.hold == hold
     assert act.Index == 1
     assert act.Instances[act.name] == act
 
-    assert keys in act.mine
-    assert act.mine[keys].value is None
-    assert act.mine[keys]._tyme is None
-    assert act.mine[keys]._now is None
+    assert keys in act.hold
+    assert act.hold[keys].value is None
+    assert act.hold[keys]._tyme is None
+    assert act.hold[keys]._now is None
     boxer.rewind()
-    assert act.mine[keys].value is None
-    assert act.mine[keys]._tyme is None
-    assert act.mine[keys]._now == 0.0
+    assert act.hold[keys].value is None
+    assert act.hold[keys]._tyme is None
+    assert act.hold[keys]._now == 0.0
     assert act() == (None,)
 
     tymist.tick()
-    assert act.mine[keys].value == (None,)
-    assert act.mine[keys]._tyme == 0.0
-    assert act.mine[keys]._now == 1.0
+    assert act.hold[keys].value == (None,)
+    assert act.hold[keys]._tyme == 0.0
+    assert act.hold[keys]._now == 1.0
     assert act() == (None,)
 
-    mine[key].value = True
-    assert act.mine[keys].value == (None,)
-    assert act.mine[keys]._tyme == 1.0
-    assert act.mine[keys]._now == 1.0
+    hold[key].value = True
+    assert act.hold[keys].value == (None,)
+    assert act.hold[keys]._tyme == 1.0
+    assert act.hold[keys]._now == 1.0
     assert act() == (True, )
-    assert act.mine[keys].value == (True, )
+    assert act.hold[keys].value == (True, )
 
     """Done Test"""
 
@@ -962,6 +1061,8 @@ def test_rechange_mark_basic():
 
 
 if __name__ == "__main__":
+    test_actbase()
+    test_actify()
     test_act_basic()
     test_need_act()
     test_goact_basic()

@@ -13,7 +13,7 @@ from types import CodeType
 
 from ... import hioing
 from ...hioing import Mixin, HierError
-from ...help import Mine
+from .holding import Hold
 
 
 class Need(Mixin):
@@ -22,8 +22,7 @@ class Need(Mixin):
     condition of a Gact.
 
     Attributes:
-        mine (Mine): ephemeral bags in mine (in memory) shared by boxwork
-        dock (Dock): durable bags in dock (on disc) shared by boxwork
+        hold (Hold): data shared by boxwork
 
     Properties:
         expr (str): evalable boolean expression.
@@ -62,45 +61,36 @@ class Need(Mixin):
         __repr__ and __str__ for need objects.
 
     Expr syntax notes:
-        M (Mine) memory (non-durable) and D (Dock) durable support attribute syntax
-        with locally scope variables M ref for mine and D ref for dock.
-
+        H (Hold) shared data syntax  with locally scope variables H ref for .hold
 
         so need syntax does not heed to "quote" paths keys into the bags
-        containers Mine dict subclasses with attribute support.
+        containers Hold dict subclass with attribute and durable support.
 
-        M.root_dog.value  is equivalent to self.mine["root_dog"].value or
-                                           self.mine[("root", "dog")].value
+        H.root_dog.value  is equivalent to self.hold["root_dog"].value or
+                                           self.hold[("root", "dog")].value
 
-        So need term  "M.root_dog.value > 5" should compile directly and eval
-        as long as M is in the locals() and M is a Mine instance.
-
-        Likewise for
-        D.root_dog.value where D is a Dock and root_dog is a key in the Dock.
+        So need term  "H.root_dog.value > 5" should compile directly and eval
+        as long as H is in the locals() and H is a Hold instance.
 
         So no need to do substitutions or shorthand
-        The hierarchy in the .mine and .dock is indicated by '_' separated keys
+        The hierarchy in the .hold is indicated by '_' separated keys
         The Box Boxer Actor names are forbidden from having '_" as an element
         with Renam regex test.
 
     """
 
 
-    def __init__(self,  *, expr='True', mine=None, dock=None, **kwa):
+    def __init__(self,  *, expr='True', hold=None, **kwa):
         """Initialization method for instance.
 
         Parameters:
             expr (str): evalable boolean expression.
                         if empty or None then use default = 'True'
-            mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
-            dock (None|Dock): durable bags in dock (on disc) shared by boxwork
-
-
+            hold (None|Hold): data shared by boxwork
         """
         super(Need, self).__init__(**kwa)
         self.expr = expr
-        self.mine = mine if mine is not None else Mine()
-        self.dock = dock   # stub fix later when have Dock class
+        self.hold = hold if hold is not None else Hold()
         self.compile()  # compile at init time so now it will compile
 
 
@@ -114,8 +104,7 @@ class Need(Mixin):
         """
         if not self.compiled:  # not yet compiled so lazy
             self.compile()  # first time only recompile
-        M = self.mine  # ensure M is in locals() for eval
-        D = self.dock  # ensure D is in locals() for eval
+        H = self.hold  # ensure H is in locals() for eval
         return eval(self._code)
 
 

@@ -7,23 +7,23 @@ from __future__ import annotations  # so type hints of classes get resolved late
 
 import pytest
 
-from hio.base.hier import Need, Bag
-from hio.help import Mine
+from hio.base.hier import Need, Bag, Hold
+
 
 
 def test_need_basic():
     """Test Need class"""
 
     need = Need()
-    assert need.mine == Mine()
+    assert need.hold == Hold()
     assert need.expr == 'True'
     assert need.compiled == True
 
     assert need() == True  # lazy eval
 
-    mine = Mine()
-    need = Need(mine=mine)
-    assert need.mine == mine
+    mine = Hold()
+    need = Need(hold=mine)
+    assert need.hold == mine
     assert need.expr == 'True'
     assert need.compiled == True
 
@@ -32,7 +32,7 @@ def test_need_basic():
 
     mine.cycle = Bag(value=5)
     mine.turn = Bag(value=2)
-    need.expr = "M.cycle.value > 3 and M.turn.value <= 2"
+    need.expr = "H.cycle.value > 3 and H.turn.value <= 2"
     assert not need.compiled  # lazy compile
     assert need()
     assert need.compiled
