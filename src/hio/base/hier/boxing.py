@@ -23,7 +23,7 @@ from .acting import (ActBase, Act, Goact, Beact, LapseMark, RelapseMark,
                      Count, Discount)
 from .bagging import Bag
 from .needing import Need
-from ...help import modify, Renam
+from ...help import modify, Renam, TymeDom
 
 
 # Regular expression to detect special need 'count' condition
@@ -393,9 +393,9 @@ class Boxer(Tymee):
                                     None if not yet injected
         """
         super().wind(tymth=tymth)
-        for bag in self.hold.values():
-            if isinstance(bag, Bag):
-                bag._wind(tymth=self.tymth)
+        for dom in self.hold.values():
+            if isinstance(dom, TymeDom):
+                dom._wind(tymth=self.tymth)
 
 
     def rewind(self, tymth=None):
@@ -409,9 +409,9 @@ class Boxer(Tymee):
         """
         if tymth is not None:
             super().wind(tymth=tymth)
-        for bag in self.hold.values():
-            if isinstance(bag, Bag):
-                bag._wind(tymth=self.tymth)
+        for dom in self.hold.values():
+            if isinstance(dom, TymeDom):
+                dom._wind(tymth=self.tymth)
 
 
     def run(self, tock=0.0):
@@ -510,14 +510,11 @@ class Boxer(Tymee):
 
     def endial(self):
         """Check for desire to end execution and return True otherwise False
-        End condition if bag alue at mine._boxer_name_end.value == True
+        End condition if bag value at .hold['_boxer_boxername_end'].value == True
 
         Returns:
             end (bool): True means end condition satisfied
                         False otherwise
-
-        if keys not in self.mine:
-            self.mine[keys] = Bag()  # create bag at end default value = None
         """
         keys = ("", "boxer", self.name, "end")  # _boxer_boxername_end
         if keys in self.hold and self.hold[keys].value:
@@ -643,6 +640,14 @@ class Boxer(Tymee):
             fun (Callable|None):  employs be, go, do, on, at, be, verb functions with
                 injected mods of boxwork state vars
                 When None use self.fun
+                Signature:
+                    fun(H: (Hold),
+                        bx: (Callable),
+                        go: (Callable),
+                        do: (Callable),
+                        on: (Callable),
+                        at: (Callable),
+                        be: (Callable))
 
         Injects mods as WorkDom dataclass instance whose attributes are used to
         construct boxwork.
@@ -660,7 +665,7 @@ class Boxer(Tymee):
         be = modify(mods=works)(self.be)
 
         # calling fun will build boxer.boxes
-        fun(bx=bx, go=go, do=do, on=on, at=at, be=be)
+        fun(H=self.hold, bx=bx, go=go, do=do, on=on, at=at, be=be)
         self.resolve()
         return works  # for debugging analysis
 

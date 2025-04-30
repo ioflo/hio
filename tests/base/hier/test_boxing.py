@@ -375,7 +375,7 @@ def test_boxer_basic():
 
 def test_boxer_make():
     """Test make method of Boxer and modify wrapper"""
-    def fun(bx, go, do, on, at, be, *pa):
+    def fun(H, bx, go, do, on, at, be, *pa):
         bx(name='top')
         bx(over='top')
         bx()
@@ -417,7 +417,7 @@ def test_boxer_make():
 def test_boxer_make_go():
     """Test make method of Boxer and modify wrapper with bx and go verbs
     """
-    def fun(bx, go, do, on, at, be, *pa):
+    def fun(H, bx, go, do, on, at, be, *pa):
         bx(name='top')
         bx(over='top')
         go("next")
@@ -462,7 +462,8 @@ def test_boxer_run():
         return H.count.value
 
 
-    def fun(bx, go, do, on, at, be, *pa):
+    def fun(H, bx, go, do, on, at, be, *pa):
+        H.count = Bag()
         bx(name='top')
         bx(name='mid', over='top')
         go('done', "H.count.value==2")
@@ -484,7 +485,7 @@ def test_boxer_run():
     assert tymist.tyme == 0.0
 
     hold = Hold()
-    hold['count'] = Bag()
+    #hold['count'] = Bag()
 
     boxer = Boxer(hold=hold)
     assert boxer.boxes == {}
@@ -540,7 +541,8 @@ def test_boxer_run_on_update():
         return H.count.value
 
 
-    def fun(bx, go, do, on, at, be, *pa):
+    def fun(H, bx, go, do, on, at, be, *pa):
+        H.count = Bag()
         bx(name='top')
         bx(name='mid', over='top')
         go('done', on("update", "count"))
@@ -561,7 +563,7 @@ def test_boxer_run_on_update():
     assert tymist.tyme == 0.0
 
     hold = Hold()
-    hold['count'] = Bag()
+    #hold['count'] = Bag()
 
     boxer = Boxer(hold=hold)
     assert boxer.boxes == {}
@@ -626,7 +628,8 @@ def test_boxer_run_on_change():
         return H.count.value
 
 
-    def fun(bx, go, do, on, at, be, *pa):
+    def fun(H, bx, go, do, on, at, be, *pa):
+        H.count = Bag()
         bx(name='top')
         bx(name='mid', over='top')
         go('done', on("change", "count"))
@@ -646,7 +649,7 @@ def test_boxer_run_on_change():
     assert tymist.tyme == 0.0
 
     hold = Hold()
-    hold['count'] = Bag()
+    #hold['count'] = Bag()
 
     boxer = Boxer(hold=hold)
     assert boxer.boxes == {}
@@ -702,7 +705,7 @@ def test_boxer_run_on_count():
     """
     tymist = Tymist()
 
-    def fun(bx, go, do, on, at, be, *pa):
+    def fun(H, bx, go, do, on, at, be, *pa):
         bx(name='top')
         bx('mid', 'top')
         do("count", "redo")
@@ -776,7 +779,9 @@ def test_boxer_run_verbs():
     def dumb(**iops):
         return True
 
-    def fun(bx, go, do, on, at, be, *pa):
+    def fun(H, bx, go, do, on, at, be, *pa):
+        H.stuff = Bag(value=0)
+        H.crud = Bag()
         bx(name='top')
         bx('mid', 'top')
         at('redo')
@@ -804,9 +809,9 @@ def test_boxer_run_verbs():
 
     hold = Hold()
     # init hold Bags
-    hold.stuff = Bag()
-    hold.stuff.value = 0
-    hold.crud = Bag()
+    #hold.stuff = Bag()
+    #hold.stuff.value = 0
+    #hold.crud = Bag()
 
     boxer = Boxer(hold=hold)
     assert boxer.boxes == {}
@@ -879,7 +884,9 @@ def test_boxer_run_lapse():
     """Test make method of Boxer with lapse condition
 
     """
-    def fun(bx, go, do, on, at, be, *pa):
+    def fun(H, bx, go, do, on, at, be, *pa):
+        H.stuff = Bag(value=0)
+        H.crud = Bag()
         bx(name='top')
         bx('mid', 'top')
         at('redo')
@@ -904,9 +911,9 @@ def test_boxer_run_lapse():
 
     hold = Hold()
     # init hold Bags
-    hold.stuff = Bag()
-    hold.stuff.value = 0
-    hold.crud = Bag()
+    #hold.stuff = Bag()
+    #hold.stuff.value = 0
+    #hold.crud = Bag()
 
     boxer = Boxer(tymth=tymist.tymen(), hold=hold)
     assert boxer.boxes == {}
@@ -1009,7 +1016,9 @@ def test_boxer_run_relapse():
     """Test make method of Boxer with relapse condition
 
     """
-    def fun(bx, go, do, on, at, be, *pa):
+    def fun(H, bx, go, do, on, at, be, *pa):
+        H.stuff = Bag(value=0)
+        H.crud = Bag()
         bx(name='top')
         bx('mid', 'top')
         at('redo')
@@ -1034,9 +1043,9 @@ def test_boxer_run_relapse():
     assert tymist.tyme == 0.0
     hold = Hold()
     # init hold Bags
-    hold.stuff = Bag()
-    hold.stuff.value = 0
-    hold.crud = Bag()
+    #hold.stuff = Bag()
+    #hold.stuff.value = 0
+    #hold.crud = Bag()
 
     boxer = Boxer(tymth=tymist.tymen(), hold=hold)
     assert boxer.boxes == {}
@@ -1111,7 +1120,7 @@ def test_boxer_run_relapse():
 def test_boxer_doer():
     """Test BoxerDoer"""
 
-    def fun(bx, go, do, on, at, be, *pa):
+    def fun(H, bx, go, do, on, at, be, *pa):
         bx(name='top')
         bx('mid', 'top')
         at('redo')
