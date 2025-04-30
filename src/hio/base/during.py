@@ -959,7 +959,7 @@ class SuberBase():
         if topive and keys[-1]:  # topive and keys is not already partial
             keys = tuple(keys) + ('',)  # cat empty str so join adds trailing sep
         return (self.sep.join(key.decode() if hasattr(key, "decode") else key
-                              for key in keys).encode("utf-8"))
+                              for key in keys).encode())
 
 
     def _tokeys(self, key: str | bytes | memoryview):
@@ -976,7 +976,7 @@ class SuberBase():
         if isinstance(key, memoryview):  # memoryview of bytes
             key = bytes(key)
         if hasattr(key, "decode"):  # bytes
-            key = key.decode("utf-8")  # convert to str
+            key = key.decode()  # convert to str
         return tuple(key.split(self.sep))
 
 
@@ -988,7 +988,7 @@ class SuberBase():
         """
         if isinstance(val, memoryview):  # memoryview is always bytes
             val = bytes(val)  # return bytes
-        return (val.encode("utf-8") if hasattr(val, "encode") else val)
+        return (val.encode() if hasattr(val, "encode") else val)
 
 
     def _des(self, val: bytes|memoryview):
@@ -998,7 +998,7 @@ class SuberBase():
         """
         if isinstance(val, memoryview):  # memoryview is always bytes
             val = bytes(val)  # convert to bytes
-        return (val.decode("utf-8") if hasattr(val, "decode") else val)
+        return (val.decode() if hasattr(val, "decode") else val)
 
 
     def trim(self, keys: str|bytes|memoryview|Iterable=b"", *, topive=False):
@@ -1166,7 +1166,7 @@ class Suber(SuberBase):
         Parameters:
             keys (str|bytes|memoryview|Iterable[str|bytes|memoryview]): of key
                                       strs to be combined in order to form key
-            val (bytes|str|memoryview): value
+            val (bytes|str|memoryview): value from ._ser
 
         Returns:
             result (bool): True If successful, False otherwise, such as key
@@ -1185,7 +1185,7 @@ class Suber(SuberBase):
         Parameters:
             keys (str|bytes|memoryview|Iterable[str|bytes|memoryview]): of key
                                       strs to be combined in order to form key
-            val (bytes|str|memoryview): value
+            val (bytes|str|memoryview): value from ._ser
 
         Returns:
             result (bool): True If successful. False otherwise.
@@ -1204,7 +1204,7 @@ class Suber(SuberBase):
                                        strs to be combined in order to form key
 
         Returns:
-            data (str):  decoded as utf-8
+            data (str): decoded as utf-8 or whatever ._des provides
             None if no entry at keys
 
         Usage:

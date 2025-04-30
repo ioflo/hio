@@ -91,10 +91,10 @@ class TymeDom(RawDom):
     def _update(self, *pa, **kwa):
         """Use item update syntax
         """
-        if len(pa) > 1:
-            raise TypeError(f"Expected 1 positional argument got {len(pa)}.")
-
         if pa:
+            if len(pa) > 1:
+                raise TypeError(f"Expected 1 positional argument got {len(pa)}.")
+
             di = pa[0]
             if isinstance(di, Mapping):
                 for k, v in di.items():

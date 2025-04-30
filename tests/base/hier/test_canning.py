@@ -10,7 +10,7 @@ from hio.base import Tymist
 from hio.base.hier import CanDom, Can
 
 
-def test_canbase():
+def test_candom():
     """Test CanDom class"""
     tymist = Tymist()
 
@@ -31,6 +31,8 @@ def test_canbase():
     assert c._tyme == None
     assert c._sdb == None
     assert c._key == None
+    assert c._stale == True
+    assert c._fresh == False
 
     c = CanDom(_tymth=tymist.tymen())
     assert c._names == ()
@@ -39,13 +41,25 @@ def test_canbase():
     assert c._tyme == None
     assert c._sdb == None
     assert c._key == None
+    assert c._stale == True
+    assert c._fresh == False
 
     tymist.tick()
     assert c._now == tymist.tock
     tymist.tick()
     assert c._now == 2 * tymist.tock
 
+    c = CanDom(_key="hello", _stale=False, _fresh=True)
+    assert c._names == ()
+    assert c._tymth == None
+    assert c._now == None
+    assert c._tyme == None
+    assert c._sdb == None
+    assert c._key == "hello"
+    assert c._stale == False
+    assert c._fresh == True
     """Done Test"""
+
 
 def test_can():
     """Test Can class"""
@@ -68,6 +82,8 @@ def test_can():
     assert c._tyme == None
     assert c._sdb == None
     assert c._key == None
+    assert c._stale == True
+    assert c._fresh == False
 
     c = Can(value=10)
     assert c._names == ("value", )
@@ -87,6 +103,8 @@ def test_can():
     assert c._tyme == None
     assert c._sdb == None
     assert c._key == None
+    assert c._stale == True
+    assert c._fresh == False
     assert c.value == None
 
     c.value = 2
@@ -113,6 +131,8 @@ def test_can():
     assert c._tyme == None   # tymth not assigned until __post_init__
     assert c._sdb == None
     assert c._key == None
+    assert c._stale == True
+    assert c._fresh == False
     assert c.value == 3
 
     c.value = 2
@@ -142,11 +162,10 @@ def test_can():
     t = c._astuple()
     assert t == (7, )
 
-
     """Done Test"""
 
 
 
 if __name__ == "__main__":
-    test_canbase()
+    test_candom()
     test_can()

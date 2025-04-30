@@ -67,6 +67,8 @@ class Hold(Mine):
         """
         self._hold_subery = None
         super(Hold, self).__init__(*pa, **kwa)
+        if not self.subery:
+            self._hold_subery = Subery(reopen=True)  # default subery
 
 
     def __setitem__(self, k, v):  # __setattr__ calls __setitem__
@@ -133,6 +135,7 @@ class Hold(Mine):
         if isinstance(val, canning.CanDom):
             val._key = key
             val._sdb = self.subery.cans if self.subery else None
+            val._read()  # attempt to sync with sdb at key if any
 
     @property
     def subery(self):
