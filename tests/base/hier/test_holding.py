@@ -57,19 +57,28 @@ def test_hold_basic():
         assert can._sdb == None
         assert can._stale == True
         assert can._fresh == False
+        assert can._bulk == False
 
-        hold.blue = can  # now inject by adding to hold
-        assert can._key == "blue"
-        assert can._sdb == subery.cans
+        can._update(value=9)
         assert can._stale == True
         assert can._fresh == False
+        assert can._bulk == False
+        assert can.value == 9
+
+        hold.blue = can  # now inject by adding to hold and syncing with durable
+        assert can._key == "blue"
+        assert can._sdb == subery.cans
+        assert can._stale == False
+        assert can._fresh == False
+        assert can._bulk == False
 
         can.value = 15  # now update gets written to disk
         assert can._stale == False
         assert can._fresh == False
+        assert can._bulk == False
         assert can._sdb.get(can._key) == can
         assert can.value == 15
-        assert can._read(force=True)
+        assert can._sync(force=True)
         assert can._write()
 
         can = Can(value="hello")
@@ -77,18 +86,26 @@ def test_hold_basic():
         assert can._sdb == None
         assert can._stale == True
         assert can._fresh == False
+        assert can._bulk == False
 
         hold["red"] = can  # now inject by adding to hold
         assert can._key == "red"
         assert can._sdb == subery.cans
-        assert can._stale == True
+        assert can._stale == False
         assert can._fresh == False
+        assert can._bulk == False
 
         can["value"] = "goodbye"  # test update gets written to disk
         assert can._stale == False
         assert can._fresh == False
         assert can._sdb.get(can._key) == can
         assert can.value == "goodbye"
+
+        can._update(value="see ya")
+        assert can._stale == False
+        assert can._fresh == False
+        assert can._sdb.get(can._key) == can
+        assert can.value == "see ya"
 
         can0 = Can(value=0)
         can1 = Can(value=1)
@@ -105,8 +122,9 @@ def test_hold_basic():
         for k, v in d.items():
             assert v._key == k
             assert v._sdb == subery.cans
-            assert v._stale == True
+            assert v._stale == False
             assert v._fresh == False
+            assert v._bulk == False
             assert v._write()
             assert v._stale == False
 
@@ -121,12 +139,17 @@ def test_hold_basic():
         can = Can()  # new can with defaults
         assert can.value is None
         hold[key] = can  # assign to key
-        assert hold[key].value == True  # picks up saved value
-        assert hold[key]._stale == True
+        assert hold[key]._stale == False
         assert hold[key]._fresh == False
+        assert hold[key].value == True  # picks up saved value
+
         hold[key].value = False
         assert hold[key]._stale == False
         assert hold[key]._fresh == False
+        assert hold[key].value == False
+
+        # ToDo when get another subclass of CanDom besides Can then do test that
+        # raises exception when saved instance is different class than assigned.
 
 
     assert not os.path.exists(subery.path)

@@ -133,7 +133,7 @@ class Hold(Mine):
         if isinstance(val, canning.CanDom):
             val._key = key
             val._sdb = self.subery.cans if self.subery else None
-            val._read()  # attempt to sync with sdb at key if any
+            val._sync()  # attempt to sync with sdb at key if any
 
     @property
     def subery(self):

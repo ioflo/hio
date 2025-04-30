@@ -33,6 +33,7 @@ def test_candom():
     assert c._key == None
     assert c._stale == True
     assert c._fresh == False
+    assert c._bulk == False
 
     c = CanDom(_tymth=tymist.tymen())
     assert c._names == ()
@@ -43,13 +44,14 @@ def test_candom():
     assert c._key == None
     assert c._stale == True
     assert c._fresh == False
+    assert c._bulk == False
 
     tymist.tick()
     assert c._now == tymist.tock
     tymist.tick()
     assert c._now == 2 * tymist.tock
 
-    c = CanDom(_key="hello", _stale=False, _fresh=True)
+    c = CanDom(_key="hello", _stale=False, _fresh=True, _bulk=True)
     assert c._names == ()
     assert c._tymth == None
     assert c._now == None
@@ -58,6 +60,7 @@ def test_candom():
     assert c._key == "hello"
     assert c._stale == False
     assert c._fresh == True
+    assert c._bulk == True
     """Done Test"""
 
 
@@ -84,6 +87,7 @@ def test_can():
     assert c._key == None
     assert c._stale == True
     assert c._fresh == False
+    assert c._bulk == False
 
     c = Can(value=10)
     assert c._names == ("value", )
@@ -105,6 +109,7 @@ def test_can():
     assert c._key == None
     assert c._stale == True
     assert c._fresh == False
+    assert c._bulk == False
     assert c.value == None
 
     c.value = 2
@@ -133,6 +138,7 @@ def test_can():
     assert c._key == None
     assert c._stale == True
     assert c._fresh == False
+    assert c._bulk == False
     assert c.value == 3
 
     c.value = 2

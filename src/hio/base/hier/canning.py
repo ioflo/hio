@@ -21,7 +21,10 @@ from ..hier import holding
 @dataclass
 class CanDom(TymeDom):
     """CanDom is base class that adds support for durable storage via its
-    ._sdb and ._key non-field attributes
+    ._sdb and ._key non-field attributes. Essentially acts as write through
+    cache to durable copy in ._sdb at ._key when provided. Otherwise in memory
+    only. Assignment to Hold instance at key, injects ._sdb and ._key. This
+    makes the in-memory key in Hold and the durable key the same.
 
     Inherited Non-Field Class Attributes:
         _registry (ClassVar[dict]): dict of subclasses keyed by class.__name__
@@ -45,36 +48,72 @@ class CanDom(TymeDom):
     Non-Field Attributes:
         _sdb (DomSuber|None): SuberBase subclass instance of durable subdb of Duror
         _key (str|None): database key used to store serialized field in ._cans
-        _stale (bool): True means fields not yet been synced by write to durable
-                       False means fields have been synced by write to durable
-        _fresh (bool): True means fields have been synced by read from durable
-                       False means fields have not yet been synced by read from durable
-
-    ToDo:
-       add ._bulk bool so when call ._update it sets ._bulk. Then change
-       __setattr__ so it does not write when ._bulk which means that it does not
-       rewrite for each field in ._update and lets ._update write once at its end
+        _stale (bool): True means fields not yet been synced by write/read with durable
+                       False means fields have been synced by write/read with durable
+        _fresh (bool): True means fields being synced by read from durable
+                       False means fields not being synced by read from durable
+        _bulk (bool): True means do not write individual fields wait for bulk update
+                      False means write individual fields as updated
 
     """
     _sdb: InitVar[None|holding.DomSuber] = None  # durable storage of serialized fields
     _key: InitVar[None|str] = None  # durable storage of serialized fields
     _stale: InitVar[bool] = True  # fields synced by write to durable or not
     _fresh: InitVar[bool] = False  # fields synced by read from durable or not
+    _bulk: InitVar[bool] = False  # bulk update or not
 
 
-    def __post_init__(self, _tymth, _tyme, _sdb, _key, _stale, _fresh):
+    def __post_init__(self, _tymth, _tyme, _sdb, _key, _stale, _fresh, _bulk):
         super(CanDom, self).__post_init__(_tymth, _tyme)
         self._sdb = _sdb
         self._key = _key
         self._stale = _stale
         self._fresh = _fresh
+        self._bulk = _bulk
 
 
     def __setattr__(self, name, value):  # called by __setitem__
         super().__setattr__(name, value)
         if name in self._names:
             super().__setattr__("_tyme", self._now)
-            self._write()
+            if not self._bulk:
+                self._write()
+
+
+    def _update(self, *pa, **kwa):
+        """Use item update syntax
+        """
+        write = False
+        try:
+            self._bulk = True
+            if pa:
+                if len(pa) > 1:
+                    raise TypeError(f"Expected 1 positional argument got {len(pa)}.")
+
+                di = pa[0]
+                if isinstance(di, Mapping):
+                    for k, v in di.items():
+                        self[k] = v
+                        if k in self._names:
+                            write = True
+                elif isinstance(di, NonStringIterable):
+                    for k, v in di:
+                        self[k] = v
+                        if k in self._names:
+                            write = True
+                else:
+                    raise TypeError(f"Expected Mapping or NonStringIterable got"
+                                    f" {type(di)}.")
+
+            for k, v in kwa.items():
+                self[k] = v
+                if k in self._names:
+                    write = True
+
+            if write:
+                self._write()
+        finally:
+            self._bulk = False
 
 
     def _write(self):
@@ -88,10 +127,12 @@ class CanDom(TymeDom):
         return False
 
 
-    def _read(self, force=False):
-        """Reads own fields from ._sdb at ._key if any when ._stale.
-        Toggles ._fresh so can update own fields from read without triggering
-        a write.
+    def _sync(self, force=False):
+        """Syncs by checking exists durable copy in ._sdb at ._key. If so
+        and ._stale or force then reads own fields from ._sdb at ._key if any.
+        If not attempts to write to ._sdb at ._key
+        Toggles ._fresh during read so can update own fields from read without
+        triggering a write.
 
         Parameters:
             force (bool): True means force read even if not ._stale
@@ -99,13 +140,18 @@ class CanDom(TymeDom):
         """
         if self._sdb and self._key and (self._stale or force):
             if can := self._sdb.get(self._key):  # get seb._des of own fields at key
+                if can.__class__.__name__ != self.__class__.__name__:
+                    raise HierError(f"Expected instance of "
+                                    f"{self.__class__.__name__} on read, got "
+                                    f"{can.__class__.__name__}")
                 self._fresh = True  # so update does not write
                 self._update(can._asdict())
                 self._fresh = False
+                self._stale = False  # now synced
                 return True
+            else:
+                return self._write()
         return False
-
-
 
 
 @namify
