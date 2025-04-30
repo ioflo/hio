@@ -20,9 +20,8 @@ from dataclasses import dataclass, astuple, asdict, field
 
 
 from hio import hioing
-from hio.help import helping, modify, Mine, Renam
 from hio.base import Tymist, Doist
-from hio.base.hier import (Nabes, Rexcnt, Rexlps, Rexrlp, Bag,
+from hio.base.hier import (Hold, Nabes, Rexcnt, Rexlps, Rexrlp, Bag,
                            Box, Boxer, BoxerDoer, Boxery,
                            ActBase, Act, EndAct, )
 
@@ -176,7 +175,7 @@ def test_box_basic():
     assert box.tyme == None
     assert box.tymth == None
     assert box.name == 'box'
-    assert isinstance(box.mine, Mine)
+    assert isinstance(box.hold, Hold)
     assert box.over == None
     assert box.unders == []
 
@@ -320,7 +319,7 @@ def test_boxer_basic():
     assert boxer.tyme == None
     assert boxer.tymth == None
     assert boxer.name == 'boxer'
-    assert boxer.mine == Mine()
+    assert boxer.hold == Hold()
     assert boxer.fun == None
 
     assert boxer.boxes == {}
@@ -339,37 +338,37 @@ def test_boxer_basic():
     assert boxer.tymth
     assert boxer.tyme == tymist.tyme == 0.0
 
-    boxer.mine["test"] = Bag()
-    assert boxer.mine.test.value == None
-    assert boxer.mine.test._tymth == None
-    assert boxer.mine.test._now == None
-    assert boxer.mine.test._tyme == None
+    boxer.hold["test"] = Bag()
+    assert boxer.hold.test.value == None
+    assert boxer.hold.test._tymth == None
+    assert boxer.hold.test._now == None
+    assert boxer.hold.test._tyme == None
     boxer.rewind()
-    assert boxer.mine.test._tymth
-    assert boxer.mine.test._now == boxer.tyme
-    assert boxer.mine.test._tyme == None
+    assert boxer.hold.test._tymth
+    assert boxer.hold.test._now == boxer.tyme
+    assert boxer.hold.test._tyme == None
 
     boxer.wind(tymist.tymen())
-    assert boxer.mine.test.value == None
-    assert boxer.mine.test._tymth
-    assert boxer.mine.test._now == 0.0 == tymist.tyme
-    assert boxer.mine.test._tyme == None
+    assert boxer.hold.test.value == None
+    assert boxer.hold.test._tymth
+    assert boxer.hold.test._now == 0.0 == tymist.tyme
+    assert boxer.hold.test._tyme == None
 
-    boxer.mine.test.value = 1
-    assert boxer.mine.test.value == 1
-    assert boxer.mine.test._tymth
-    assert boxer.mine.test._now == 0.0 == tymist.tyme
-    assert boxer.mine.test._tyme == 0.0
+    boxer.hold.test.value = 1
+    assert boxer.hold.test.value == 1
+    assert boxer.hold.test._tymth
+    assert boxer.hold.test._now == 0.0 == tymist.tyme
+    assert boxer.hold.test._tyme == 0.0
 
-    boxer.mine["best"] = Bag(_tymth=tymist.tymen())
-    assert boxer.mine.best.value == None
-    assert boxer.mine.best._tymth
-    assert boxer.mine.best._now == 0.0
-    assert boxer.mine.best._tyme == None
+    boxer.hold["best"] = Bag(_tymth=tymist.tymen())
+    assert boxer.hold.best.value == None
+    assert boxer.hold.best._tymth
+    assert boxer.hold.best._now == 0.0
+    assert boxer.hold.best._tyme == None
 
-    boxer.mine.best.value = 1
-    assert boxer.mine.best.value == 1
-    assert boxer.mine.best._tyme == 0.0
+    boxer.hold.best.value = 1
+    assert boxer.hold.best.value == 1
+    assert boxer.hold.best._tyme == 0.0
 
     """Done Test"""
 
@@ -455,18 +454,18 @@ def test_boxer_run():
     """Test make method of Boxer and modify wrapper with bx and go verbs
     """
     def count(**iops):
-        M = iops['M']
-        if M.count.value is None:
-            M.count.value = 0
+        H = iops['H']
+        if H.count.value is None:
+            H.count.value = 0
         else:
-            M.count.value += 1
-        return M.count.value
+            H.count.value += 1
+        return H.count.value
 
 
     def fun(bx, go, do, on, at, be, *pa):
         bx(name='top')
         bx(name='mid', over='top')
-        go('done', "M.count.value==2")
+        go('done', "H.count.value==2")
         bx(name='bot0', over='mid')
         do(count)
         go("next")
@@ -484,10 +483,10 @@ def test_boxer_run():
     assert tymist.tock == tock
     assert tymist.tyme == 0.0
 
-    mine = Mine()
+    mine = Hold()
     mine['count'] = Bag()
 
-    boxer = Boxer(mine=mine)
+    boxer = Boxer(hold=mine)
     assert boxer.boxes == {}
     mods = boxer.make(fun)
     assert len(boxer.boxes) == 6
@@ -533,12 +532,12 @@ def test_boxer_run_on_update():
     """Test make method of Boxer with on verb special need update
     """
     def count(**iops):
-        M = iops['M']
-        if M.count.value is None:
-            M.count.value = 0
+        H = iops['H']
+        if H.count.value is None:
+            H.count.value = 0
         else:
-            M.count.value += 1
-        return M.count.value
+            H.count.value += 1
+        return H.count.value
 
 
     def fun(bx, go, do, on, at, be, *pa):
@@ -561,10 +560,10 @@ def test_boxer_run_on_update():
     assert tymist.tock == tock
     assert tymist.tyme == 0.0
 
-    mine = Mine()
+    mine = Hold()
     mine['count'] = Bag()
 
-    boxer = Boxer(mine=mine)
+    boxer = Boxer(hold=mine)
     assert boxer.boxes == {}
     mods = boxer.make(fun)
     assert len(boxer.boxes) == 6
@@ -619,12 +618,12 @@ def test_boxer_run_on_change():
     tymist = Tymist()
 
     def count(**iops):
-        M = iops['M']
-        if M.count.value is None:
-            M.count.value = 0
+        H = iops['H']
+        if H.count.value is None:
+            H.count.value = 0
         else:
-            M.count.value += 1
-        return M.count.value
+            H.count.value += 1
+        return H.count.value
 
 
     def fun(bx, go, do, on, at, be, *pa):
@@ -646,10 +645,10 @@ def test_boxer_run_on_change():
     assert tymist.tock == tock
     assert tymist.tyme == 0.0
 
-    mine = Mine()
+    mine = Hold()
     mine['count'] = Bag()
 
-    boxer = Boxer(mine=mine)
+    boxer = Boxer(hold=mine)
     assert boxer.boxes == {}
     mods = boxer.make(fun)
     assert len(boxer.boxes) == 6
@@ -724,9 +723,9 @@ def test_boxer_run_on_count():
     assert tymist.tock == tock
     assert tymist.tyme == 0.0
 
-    mine = Mine()
+    mine = Hold()
 
-    boxer = Boxer(mine=mine)
+    boxer = Boxer(hold=mine)
     assert boxer.boxes == {}
     mods = boxer.make(fun)
     assert len(boxer.boxes) == 6
@@ -786,10 +785,10 @@ def test_boxer_run_verbs():
         do("discount")
         go('done', on("count >= 2"))
         bx('bot0', 'mid', first=True)
-        do('M.stuff.value += 1')
+        do('H.stuff.value += 1')
         go("next")
         bx('bot1')  # over defaults to same as prev box
-        do('M.stuff.value += 1')
+        do('H.stuff.value += 1')
         be("crud.value", "2**4")
         go("next")
         bx('bot2')  # over defaults to same as prev box
@@ -803,13 +802,13 @@ def test_boxer_run_verbs():
     assert tymist.tock == tock
     assert tymist.tyme == 0.0
 
-    mine = Mine()
+    mine = Hold()
     # init mine Bags
     mine.stuff = Bag()
     mine.stuff.value = 0
     mine.crud = Bag()
 
-    boxer = Boxer(mine=mine)
+    boxer = Boxer(hold=mine)
     assert boxer.boxes == {}
     mods = boxer.make(fun)
     assert len(boxer.boxes) == 6
@@ -903,13 +902,13 @@ def test_boxer_run_lapse():
     assert tymist.tock == tock
     assert tymist.tyme == 0.0
 
-    mine = Mine()
+    mine = Hold()
     # init mine Bags
     mine.stuff = Bag()
     mine.stuff.value = 0
     mine.crud = Bag()
 
-    boxer = Boxer(tymth=tymist.tymen(), mine=mine)
+    boxer = Boxer(tymth=tymist.tymen(), hold=mine)
     assert boxer.boxes == {}
     mods = boxer.make(fun)
     assert len(boxer.boxes) == 6
@@ -928,9 +927,9 @@ def test_boxer_run_lapse():
     rung = boxer.run(tock=tock)  # make generator
     assert tymist.tyme == 0.0
     tock = next(rung)  # advance to first yield
-    assert boxer.mine[akeys].value == "bot0"
+    assert boxer.hold[akeys].value == "bot0"
     tock = rung.send(tymist.tyme) # advance to end of first pass
-    assert boxer.mine[akeys].value == "bot0"
+    assert boxer.hold[akeys].value == "bot0"
     assert boxer.box.name == "bot0"   # since set as first
     assert mine._boxer_boxer_box_mid_count.value == 0
     assert mine._boxer_boxer_box_bot0_lapse.value == 0.0
@@ -938,7 +937,7 @@ def test_boxer_run_lapse():
     tymist.tick()
     assert tymist.tyme == 1.0
     tock = rung.send(tymist.tyme)
-    assert boxer.mine[akeys].value == "bot0"
+    assert boxer.hold[akeys].value == "bot0"
     assert boxer.box.name == "bot0"
     assert mine._boxer_boxer_box_mid_count.value == 1
     assert mine._boxer_boxer_box_bot0_lapse.value == 0.0
@@ -946,7 +945,7 @@ def test_boxer_run_lapse():
     tymist.tick()
     assert tymist.tyme == 2.0
     tock = rung.send(tymist.tyme)
-    assert boxer.mine[akeys].value == "bot1"
+    assert boxer.hold[akeys].value == "bot1"
     assert boxer.box.name == "bot1"
     assert mine._boxer_boxer_box_mid_count.value == 2
     assert mine._boxer_boxer_box_bot0_lapse.value == 0.0
@@ -956,7 +955,7 @@ def test_boxer_run_lapse():
     tymist.tick()
     assert tymist.tyme == 3.0
     tock = rung.send(tymist.tyme)
-    assert boxer.mine[akeys].value == "bot1"
+    assert boxer.hold[akeys].value == "bot1"
     assert boxer.box.name == "bot1"
     assert mine._boxer_boxer_box_mid_count.value == 3
     assert mine._boxer_boxer_box_bot0_lapse.value == 0.0
@@ -966,7 +965,7 @@ def test_boxer_run_lapse():
     tymist.tick()
     assert tymist.tyme == 4.0
     tock = rung.send(tymist.tyme)
-    assert boxer.mine[akeys].value == "bot2"
+    assert boxer.hold[akeys].value == "bot2"
     assert boxer.box.name == "bot2"
     assert mine._boxer_boxer_box_mid_count.value == 4
     assert mine._boxer_boxer_box_bot0_lapse.value == 0.0
@@ -976,7 +975,7 @@ def test_boxer_run_lapse():
     tymist.tick()
     assert tymist.tyme == 5.0
     tock = rung.send(tymist.tyme)
-    assert boxer.mine[akeys].value == "bot0"
+    assert boxer.hold[akeys].value == "bot0"
     assert boxer.box.name == "bot0"
     assert mine._boxer_boxer_box_mid_count.value == 5
     assert mine._boxer_boxer_box_bot0_lapse.value == 5.0
@@ -986,7 +985,7 @@ def test_boxer_run_lapse():
     tymist.tick()
     assert tymist.tyme == 6.0
     tock = rung.send(tymist.tyme)
-    assert boxer.mine[akeys].value == "done"
+    assert boxer.hold[akeys].value == "done"
     assert boxer.box.name == "done"
     assert mine._boxer_boxer_box_mid_count.value is None
     tymist.tick()
@@ -995,7 +994,7 @@ def test_boxer_run_lapse():
         tock = rung.send(tymist.tyme)
     except StopIteration as ex:
         assert ex.args[0] == True
-    assert boxer.mine[akeys].value == None  # no active box name
+    assert boxer.hold[akeys].value == None  # no active box name
     assert boxer.box is None
     assert boxer.endial()
 
@@ -1033,13 +1032,13 @@ def test_boxer_run_relapse():
     tymist = Tymist(tock=tock)
     assert tymist.tock == tock
     assert tymist.tyme == 0.0
-    mine = Mine()
+    mine = Hold()
     # init mine Bags
     mine.stuff = Bag()
     mine.stuff.value = 0
     mine.crud = Bag()
 
-    boxer = Boxer(tymth=tymist.tymen(), mine=mine)
+    boxer = Boxer(tymth=tymist.tymen(), hold=mine)
     assert boxer.boxes == {}
     mods = boxer.make(fun)
     assert len(boxer.boxes) == 6
@@ -1137,8 +1136,8 @@ def test_boxer_doer():
     assert doist.limit == None
     assert doist.doers == []
 
-    mine = Mine()
-    boxer = Boxer(mine=mine, fun=fun)
+    mine = Hold()
+    boxer = Boxer(hold=mine, fun=fun)
     assert boxer.fun == fun
     assert boxer.boxes == {}
 
@@ -1173,7 +1172,7 @@ def test_boxery_basic():
     """Basic test Boxery class"""
     maker = Boxery()  # defaults
     assert maker.name == 'maker'
-    assert maker.mine == Mine()
+    assert maker.hold == Hold()
     assert maker.boxer == None
     assert maker.box == None
 
@@ -1191,7 +1190,7 @@ def test_concept_bx_nonlocal():
     """
     #global B, _bags, _boxer, _boxes, _box, _over, _proem, _index
 
-    B = _bags = Mine()
+    B = _bags = Hold()
     _boxer = None
     _boxes = {}  # default boxes dict now a global
     _box = None
@@ -1253,7 +1252,7 @@ def test_concept_bx_nonlocal():
             elif over.name not in _boxes:  # stray over box
                 _boxes[over.name] = over  # add to boxes
 
-        box = Box(name=name, over=over, mine=_bags, boxer=_boxer)
+        box = Box(name=name, over=over, hold=_bags, boxer=_boxer)
         if box.over is not None:  # not at top level
             box.over.unders.append(box)  # add to over.unders list
 
@@ -1340,7 +1339,7 @@ def test_concept_bx_global():
     """
     global B, _bags, _boxer, _boxes, _box, _over, _proem, _index
 
-    B = _bags = Mine()
+    B = _bags = Hold()
     _boxer = None
     _boxes = {}  # default boxes dict now a global
     _box = None
@@ -1401,7 +1400,7 @@ def test_concept_bx_global():
             elif over.name not in _boxes:  # stray over box
                 _boxes[over.name] = over  # add to boxes
 
-        box = Box(name=name, over=over, mine=_bags, boxer=_boxer)
+        box = Box(name=name, over=over, hold=_bags, boxer=_boxer)
         if box.over is not None:  # not at top level
             box.over.unders.append(box)  # add to over.unders list
 

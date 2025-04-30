@@ -7,23 +7,9 @@ from __future__ import annotations  # so type hints of classes get resolved late
 
 import pytest
 
-import os
-import sys
-import time
-import inspect
-import types
-import logging
-import json
 import inspect
 
-from collections.abc import Callable
-from dataclasses import dataclass, astuple, asdict, field
-
-
-from hio import hioing
-from hio.help import helping, Mine, Renam
-from hio.base import tyming
-from hio.base.hier import WorkDom, Nabes, ActBase, actify, Box, Boxer, Boxery
+from hio.base.hier import WorkDom, Nabes
 
 
 def test_nabe():
@@ -54,131 +40,6 @@ def test_workdom():
     assert w.bxidx == 0
     assert w.acts == {}
     assert w.nabe == Nabes.native
-
-
-
-def test_actbase():
-    """Test ActBase Class"""
-
-    # clear registries for debugging
-    ActBase._clearall()
-
-    assert ActBase.__name__ == 'ActBase'
-    assert ActBase.__name__ in ActBase.Registry
-    assert ActBase.Registry[ActBase.__name__] == ActBase
-    assert ActBase.Instances == {}
-    assert ActBase.Index == 0
-    assert ActBase.Names == ()
-
-    act = ActBase()
-    assert ActBase.Names == ()
-    assert isinstance(act, Callable)
-    assert act.name == 'ActBase0'
-    assert act.iops == {}
-    assert act.nabe == Nabes.endo
-    assert act.mine == Mine()
-    assert act.dock == None
-    assert hasattr(act, 'name')   # hasattr works for properties and attributes
-    assert act.name in ActBase.Instances
-    assert ActBase.Instances[act.name] == act
-    assert ActBase.Index == 1
-    assert act() == {}
-
-
-    act = ActBase()
-    assert ActBase.Names == ()
-    assert isinstance(act, Callable)
-    assert act.name == 'ActBase1'
-    assert act.iops == {}
-    assert act.nabe == Nabes.endo
-    assert act.mine == Mine()
-    assert act.dock == None
-    assert hasattr(act, 'name')   # hasattr works for properties and attributes
-    assert act.name in ActBase.Instances
-    assert ActBase.Instances[act.name] == act
-    assert ActBase.Index == 2
-    assert act() == {}
-
-
-    """Done Test"""
-
-
-def test_actify():
-    """Test Actor registry base stuff class and subclasses"""
-
-    @actify(name="Tact")
-    def test(self, **kwa):  # signature for .act with **iops as **kwa
-        assert kwa == self.iops
-        return self.iops
-
-    t = test(iops=dict(what=1), hello="hello", nabe=Nabes.redo)  # signature for Act.__init__
-    assert t.name == "Tact0"
-    assert t.iops == dict(what=1)
-    assert t.nabe == Nabes.redo
-    assert t.__class__.__name__ == "Tact"
-    assert t.__class__.__name__ in t.Registry
-    assert t.Registry[t.__class__.__name__] == t.__class__
-    assert t.name in t.Instances
-    assert t.Instances[t.name] == t
-    assert isinstance(t, ActBase)
-    assert t() == t.iops
-    assert t.Names == ()
-
-    x = test(bye="bye")  # signature for Act.__init__
-    assert x.name == "Tact1"
-    assert x.iops == {}
-    assert x.nabe == Nabes.endo
-    assert x.__class__.__name__ == "Tact"
-    assert x.__class__.__name__ in t.Registry
-    assert x.Registry[t.__class__.__name__] == t.__class__
-    assert x.name in t.Instances
-    assert x.Instances[t.name] == t
-    assert isinstance(t, ActBase)
-    assert x() == x.iops
-    assert t.Names == ()
-
-    assert x.__class__ == t.__class__
-    klas = ActBase.Registry["Tact"]
-    assert isinstance(t, klas)
-    assert isinstance(x, klas)
-
-    @actify(name="Pact")
-    def pest(self, **kwa):  # signature for .act
-        assert kwa == self.iops
-        assert "why" in kwa
-        assert kwa["why"] == 1
-        return self.iops
-
-    p = pest(name="spot", iops=dict(why=1))  # same signature as Act.__init__
-    assert p.name == 'spot'
-    assert p.iops == dict(why=1)
-    assert p.nabe == Nabes.endo
-    assert "Pact" in p.Registry
-    klas = p.Registry["Pact"]
-    assert isinstance(p, klas)
-    assert p.Instances[p.name] == p
-    assert p() == dict(why=1)
-    assert t.Names == ()
-
-    @actify(name="Bact")
-    def best(self, *, how=None):  # signature for .act
-        assert how == 5
-        assert self.iops["how"] == how
-        return self.iops
-
-    b = best(iops=dict(how=5))  # signature for Act.__init__
-    assert b.name == 'Bact0'
-    assert b.iops == dict(how=5)
-    assert b.nabe == Nabes.endo
-    assert "Bact" in b.Registry
-    klas = b.Registry["Bact"]
-    assert isinstance(b, klas)
-    assert b.Instances[b.name] == b
-    assert b() == dict(how=5)
-    assert t.Names == ()
-
-
-    """Done Test"""
 
 
 
@@ -310,6 +171,4 @@ def test_inspect_stuff():
 if __name__ == "__main__":
     test_nabe()
     test_workdom()
-    test_actbase()
-    test_actify()
     test_inspect_stuff()

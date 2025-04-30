@@ -15,14 +15,15 @@ from typing import Type
 from ..tyming import Tymee
 from ..doing import Doer
 from ...hioing import Mixin, HierError
-from .hiering import Nabes, WorkDom, ActBase
-from .acting import (Act, Goact, Beact, LapseMark, RelapseMark,
+from .hiering import Nabes, WorkDom
+from .holding import Hold
+from .acting import (ActBase, Act, Goact, Beact, LapseMark, RelapseMark,
                      UpdateMark, ReupdateMark,
                      ChangeMark, RechangeMark,
                      Count, Discount)
 from .bagging import Bag
 from .needing import Need
-from ...help import modify, Mine, Renam
+from ...help import modify, Renam
 
 
 # Regular expression to detect special need 'count' condition
@@ -84,8 +85,7 @@ class Box(Tymee):
         see Tymee
 
     Attributes:
-        mine (Mine): ephemeral bags in mine (in memory) shared by boxwork
-        dock (Dock): durable bags in dock (on disc) shared by boxwork
+        hold (Hold): data shared by boxwork
         over (Box | None): this box's over box instance or None
         unders (list[Box]): this box's under box instances or empty
                             zeroth entry is primary under
@@ -126,19 +126,17 @@ class Box(Tymee):
 
 
     """
-    def __init__(self, *, name='box', mine=None, dock=None, over=None, **kwa):
+    def __init__(self, *, name='box', hold=None, over=None, **kwa):
         """Initialize instance.
 
         Parameters:
             name (str): unique identifier of box
-            mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
-            dock (None|Dock): durable bags in dock (on disc) shared by boxwork
+            hold (None|Hold): data shared by boxwork
             over (Box | None): this box's over box instance or None
         """
         super(Box, self).__init__(**kwa)
         self.name = name
-        self.mine = mine if mine is not None else Mine()
-        self.dock = dock   # stub for now until create Dock class
+        self.hold = hold if hold is not None else Hold()  # do we need this anywhere
         self._pile = None  # force .trace on first access of .pile property
         self._spot = None  # zero based offset into .pile of this box
         self._trail = None  # delimited string representation of box names in .pile
@@ -329,8 +327,7 @@ class Boxer(Tymee):
             None means not assigned yet.
 
     Attributes:
-        mine (Mine): ephemeral bags in mine (in memory) shared by boxwork
-        dock (Dock): durable bags in dock (on disc) shared by boxwork
+        hold (Hold): data shared by boxwork
         fun (Callable): function to make boxwork
         boxes (dict): all boxes mapping of (box name, box) pairs
         first (Box | None):  beginning box
@@ -346,20 +343,18 @@ class Boxer(Tymee):
 
 
     """
-    def __init__(self, *, name='boxer', mine=None, dock=None, fun=None, **kwa):
+    def __init__(self, *, name='boxer', hold=None, fun=None, **kwa):
         """Initialize instance.
 
         Parameters:
             name (str): unique identifier of box
-            mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
-            dock (None|Dock): durable bags in dock (on disc) shared by boxwork
+            hold (None|Hold): data shared by boxwork
             fun (None|Callable): function to make boxwork
 
         """
         super(Boxer, self).__init__(**kwa)
         self.name = name
-        self.mine = mine if mine is not None else Mine()
-        self.dock = dock  # stub until create Dock class
+        self.hold = hold if hold is not None else Hold()
         self.fun = fun
         self.boxes = {}
         self.first = None  # box to start in
@@ -398,7 +393,7 @@ class Boxer(Tymee):
                                     None if not yet injected
         """
         super().wind(tymth=tymth)
-        for bag in self.mine.values():
+        for bag in self.hold.values():
             if isinstance(bag, Bag):
                 bag._wind(tymth=self.tymth)
 
@@ -414,7 +409,7 @@ class Boxer(Tymee):
         """
         if tymth is not None:
             super().wind(tymth=tymth)
-        for bag in self.mine.values():
+        for bag in self.hold.values():
             if isinstance(bag, Bag):
                 bag._wind(tymth=self.tymth)
 
@@ -453,14 +448,14 @@ class Boxer(Tymee):
             return False  # signal failure due to end in enter before first pass
 
         akeys = ("", "boxer", self.name, "active")
-        if akeys not in self.mine:
-            self.mine[akeys] = Bag()
-        self.mine[akeys].value = self.box.name  # assign active box name
+        if akeys not in self.hold:
+            self.hold[akeys] = Bag()
+        self.hold[akeys].value = self.box.name  # assign active box name
 
-        tkey = self.mine.tokey(("", "boxer", self.name, "tock"))
-        if tkey not in self.mine:
-            self.mine[tkey] = Bag()
-        self.mine[tkey].value = tock  # assign tock
+        tkey = self.hold.tokey(("", "boxer", self.name, "tock"))
+        if tkey not in self.hold:
+            self.hold[tkey] = Bag()
+        self.hold[tkey].value = tock  # assign tock
 
         # finished of enter next() delegation 'yield from' delegation
         tyme = yield(tock)  # pause end of next, resume start of send
@@ -471,7 +466,7 @@ class Boxer(Tymee):
         self.redo()  # redo nabe all boxes in pile top down
 
         while True:  # run forever
-            tock = self.mine[tkey].value  # get tock in case it changed
+            tock = self.hold[tkey].value  # get tock in case it changed
             tyme = yield(tock)  # resume on send after tyme tick
             rendos = []  # make empty for new pass, reset on transit
             endos = []  # make empty for new pass, reset on transit
@@ -479,7 +474,7 @@ class Boxer(Tymee):
             if self.endial():  # previous pass actioned desire to end
                 self.end()  # exdos all active boxes in self.box.pile
                 self.box = None  # no active box
-                self.mine[akeys].value = None  # assign active box name to None
+                self.hold[akeys].value = None  # assign active box name to None
                 return True  # signal successful end after last pass
 
             transit = False
@@ -494,7 +489,7 @@ class Boxer(Tymee):
                         self.exdo(exdos)  # exdo bottom up
                         self.rexdo(rexdos)  # rexdo bottom up  (boxes retained)
                         self.box = dest  # set new active box
-                        self.mine[akeys].value = self.box.name  # active box name
+                        self.hold[akeys].value = self.box.name  # active box name
                         transit = True
                         break
 
@@ -525,7 +520,7 @@ class Boxer(Tymee):
             self.mine[keys] = Bag()  # create bag at end default value = None
         """
         keys = ("", "boxer", self.name, "end")  # _boxer_boxername_end
-        if keys in self.mine and self.mine[keys].value:
+        if keys in self.hold and self.hold[keys].value:
             return True
 
         return False
@@ -734,7 +729,7 @@ class Boxer(Tymee):
             elif over.name not in self.boxes:  # stray over box
                 self.boxes[over.name] = over  # add to boxes
 
-        box = Box(name=name, over=over, mine=self.mine, tymth=self.tymth)
+        box = Box(name=name, over=over, hold=self.hold, tymth=self.tymth)
         self.boxes[box.name] = box  # update box work
         if box.over is not None:  # not at top level
             box.over.unders.append(box)  # add to over.unders list
@@ -803,7 +798,7 @@ class Boxer(Tymee):
         if isinstance(expr, Need):
             need = expr
         else:   # assumes evalable expr str
-            need = Need(expr=expr, mine=self.mine, dock=self.dock)
+            need = Need(expr=expr, hold=self.hold)
 
         goact = Goact(dest=dest, need=need)
         m.box.goacts.append(goact)
@@ -834,7 +829,7 @@ class Boxer(Tymee):
         """
         m = mods  # alias more compact
 
-        parms = dict(name=name, mine=self.mine, dock=self.dock)
+        parms = dict(name=name, hold=self.hold)
         if nabe is None:
             nabe = m.nabe
         if nabe != Nabes.native:
@@ -928,7 +923,7 @@ class Boxer(Tymee):
                     raise HierError(f"Missing bag key for special need '{cond=}'")
                 iops.update(_key=key)
                 mks =  ("", "boxer", self.name, "box", m.box.name, "update", key)
-                mk = self.mine.tokey(mks)  # mark bag key
+                mk = self.hold.tokey(mks)  # mark bag key
                 name = UpdateMark.__name__ + key
                 found = False
                 for mark in m.box.enmarks:  # check if already has mark for key
@@ -936,18 +931,18 @@ class Boxer(Tymee):
                         found = True
                         break
                 if not found:  # no preexisting UpdateMark for this key
-                    mark = UpdateMark(name=name, iops=iops, mine=self.mine, dock=self.dock)
+                    mark = UpdateMark(name=name, iops=iops, hold=self.hold)
                     m.box.enmarks.append(mark)  # update is always enmark
 
-                _expr = (f"(M.{mk}.value is None and M.{key}._tyme is not None) or "
-                         f"(M.{mk}.value is not None and M.{key}._tyme > M.{mk}.value)")
+                _expr = (f"(H.{mk}.value is None and H.{key}._tyme is not None) or "
+                         f"(H.{mk}.value is not None and H.{key}._tyme > H.{mk}.value)")
 
             elif cond == "reupdate":
                 if not key:
                     raise HierError(f"Missing bag key for special need '{cond=}'")
                 iops.update(_key=key)
                 mks =  ("", "boxer", self.name, "box", m.box.name, "reupdate", key)
-                mk = self.mine.tokey(mks)  # mark bag key
+                mk = self.hold.tokey(mks)  # mark bag key
                 name = ReupdateMark.__name__ + key
                 found = False
                 for mark in m.box.remarks:  # check if already has mark for key
@@ -955,18 +950,18 @@ class Boxer(Tymee):
                         found = True
                         break
                 if not found:  # no preexisting UpdateMark for this key
-                    mark = ReupdateMark(name=name, iops=iops, mine=self.mine, dock=self.dock)
+                    mark = ReupdateMark(name=name, iops=iops, hold=self.hold)
                     m.box.remarks.append(mark)  # update is always enmark
 
-                _expr = (f"(M.{mk}.value is None and M.{key}._tyme is not None) or "
-                         f"(M.{mk}.value is not None and M.{key}._tyme > M.{mk}.value)")
+                _expr = (f"(H.{mk}.value is None and H.{key}._tyme is not None) or "
+                         f"(H.{mk}.value is not None and H.{key}._tyme > H.{mk}.value)")
 
             elif cond == "change":
                 if not key:
                     raise HierError(f"Missing bag key for special need '{cond=}'")
                 iops.update(_key=key)
                 mks =  ("", "boxer", self.name, "box", m.box.name, "change", key)
-                mk = self.mine.tokey(mks)  # mark bag key
+                mk = self.hold.tokey(mks)  # mark bag key
                 name = ChangeMark.__name__ + key
                 found = False
                 for mark in m.box.enmarks:  # check if already has mark for key
@@ -974,17 +969,17 @@ class Boxer(Tymee):
                         found = True
                         break
                 if not found:  # no preexisting ChangeMark for this key
-                    mark = ChangeMark(name=name, iops=iops, mine=self.mine, dock=self.dock)
+                    mark = ChangeMark(name=name, iops=iops, hold=self.hold)
                     m.box.enmarks.append(mark)  # update is always enmark
 
-                _expr = (f"M.{mk}.value != M.{key}._astuple()")
+                _expr = (f"H.{mk}.value != H.{key}._astuple()")
 
             elif cond == "rechange":
                 if not key:
                     raise HierError(f"Missing bag key for special need '{cond=}'")
                 iops.update(_key=key)
                 mks =  ("", "boxer", self.name, "box", m.box.name, "rechange", key)
-                mk = self.mine.tokey(mks)  # mark bag key
+                mk = self.hold.tokey(mks)  # mark bag key
                 name = RechangeMark.__name__ + key
                 found = False
                 for mark in m.box.remarks:  # check if already has mark for key
@@ -992,14 +987,14 @@ class Boxer(Tymee):
                         found = True
                         break
                 if not found:  # no preexisting ChangeMark for this key
-                    mark = RechangeMark(name=name, iops=iops, mine=self.mine, dock=self.dock)
+                    mark = RechangeMark(name=name, iops=iops, hold=self.hold)
                     m.box.remarks.append(mark)  # update is always enmark
 
-                _expr = (f"M.{mk}.value != M.{key}._astuple()")
+                _expr = (f"H.{mk}.value != H.{key}._astuple()")
 
             elif match := Rexlps.match(cond):  # lapse special need
                 mks =  ("", "boxer", self.name, "box", m.box.name, "lapse")
-                mk = self.mine.tokey(mks)  # mark bag key
+                mk = self.hold.tokey(mks)  # mark bag key
                 name = LapseMark.__name__
                 found = False
                 for mark in m.box.enmarks:  # check if already has mark for key
@@ -1007,17 +1002,17 @@ class Boxer(Tymee):
                         found = True
                         break
                 if not found:  # no preexisting ElapseMark for this box
-                    mark = LapseMark(name=name, iops=iops, mine=self.mine, dock=self.dock)
+                    mark = LapseMark(name=name, iops=iops, hold=self.hold)
                     m.box.enmarks.append(mark)  # lapse is always enmark
 
                 _, cmp = match.group("lps", "cmp")
 
-                _expr = (f"((M.{mk}.value is not None) and (M.{mk}._now is not None)"
-                         f" and (M.{mk}._now - M.{mk}.value)" + cmp + ")")
+                _expr = (f"((H.{mk}.value is not None) and (H.{mk}._now is not None)"
+                         f" and (H.{mk}._now - H.{mk}.value)" + cmp + ")")
 
             elif match := Rexrlp.match(cond):  # relapse special need
                 mks =  ("", "boxer", self.name, "box", m.box.name, "relapse")
-                mk = self.mine.tokey(mks)  # mark bag key
+                mk = self.hold.tokey(mks)  # mark bag key
                 name = RelapseMark.__name__
                 found = False
                 for mark in m.box.remarks:  # check if already has mark for key
@@ -1025,22 +1020,22 @@ class Boxer(Tymee):
                         found = True
                         break
                 if not found:  # no preexisting ElapseMark for this box
-                    mark = RelapseMark(name=name, iops=iops, mine=self.mine, dock=self.dock)
+                    mark = RelapseMark(name=name, iops=iops, hold=self.hold)
                     m.box.remarks.append(mark)  # relapse is always remark
 
                 _, cmp = match.group("rlp", "cmp")
 
-                _expr = (f"((M.{mk}.value is not None) and (M.{mk}._now is not None)"
-                         f" and (M.{mk}._now - M.{mk}.value)" + cmp + ")")
+                _expr = (f"((H.{mk}.value is not None) and (H.{mk}._now is not None)"
+                         f" and (H.{mk}._now - H.{mk}.value)" + cmp + ")")
 
             elif match := Rexcnt.match(cond):  # count special need
                 mks =  ("", "boxer", self.name, "box", m.box.name, "count")
-                mk = self.mine.tokey(mks)  # count mark bag key
-                if mk not in self.mine:
-                    self.mine[mk] = Bag()  # create bag default value = None
+                mk = self.hold.tokey(mks)  # count mark bag key
+                if mk not in self.hold:
+                    self.hold[mk] = Bag()  # create bag default value = None
 
                 _, cmp = match.group("cnt", "cmp")
-                _expr = (f"M.{mk}.value" + cmp)
+                _expr = (f"H.{mk}.value" + cmp)
 
 
             else:
@@ -1050,7 +1045,7 @@ class Boxer(Tymee):
         if expr:  # both resolved cond as _expr and expr so AND together
             _expr = "(" + _expr + ") and (" + expr + ")"
 
-        need = Need(expr=_expr, mine=self.mine, dock=self.dock)
+        need = Need(expr=_expr, hold=self.hold)
         return need
 
 
@@ -1079,9 +1074,9 @@ class Boxer(Tymee):
         lhs is of form "key.field"
         rhs may be either a Callable or an evalable expression or None.
         Resulting act performs on of:
-        M.key.field = None   when rhs is None
-        M.key.field = eval(rhs)  when rhs is evalable str
-        M.key.field = rhs(**parms)  when rhs is callable
+        H.key.field = None   when rhs is None
+        H.key.field = eval(rhs)  when rhs is evalable str
+        H.key.field = rhs(**parms)  when rhs is callable
 
         Usage:
             be(lhs, rhs)
@@ -1105,7 +1100,7 @@ class Boxer(Tymee):
         """
         m = mods  # alias more compact
 
-        parms = dict(name=name, mine=self.mine, dock=self.dock)
+        parms = dict(name=name, hold=self.hold)
         if nabe is None:
             nabe = m.nabe
         if nabe != Nabes.native:
@@ -1213,8 +1208,7 @@ class Boxery(Mixin):
     single fun or in multiple iterations making.****
 
     Attributes:
-        mine (Mine): ephemeral bags in mine (in memory) shared by boxwork
-        dock (Dock): durable bags in dock (on disc) shared by boxwork
+        hold (Hold): data shared by boxwork
         boxer (Boxer | None): current boxer
         box (Box | None): cureent box
 
@@ -1225,20 +1219,16 @@ class Boxery(Mixin):
         _name (str): unique identifier of instance
 
     """
-    def __init__(self, *, name='maker', mine=None, dock=None, **kwa):
+    def __init__(self, *, name='maker', hold=None, **kwa):
         """Initialize instance.
 
         Parameters:
             name (str): unique identifier of instance
-            mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
-            dock (None|Dock): durable bags in dock (on disc) shared by boxwork
-
-
+            hold (None|Hold): data shared by boxwork
         """
         super(Boxery, self).__init__(**kwa)
         self.name = name
-        self.mine = mine if mine is not None else Mine()
-        self.dock = dock  # stub until create Dock class
+        self.hold = hold if hold is not None else Hold()
         self.boxer = None
         self.box = None
 
@@ -1264,26 +1254,23 @@ class Boxery(Mixin):
 
         self._name = name
 
-    def make(self, fun, mine=None, boxes=None):
+    def make(self, fun, hold=None, boxes=None):
         """Make box work from function fun
         Parameters:
             fun (function):  employs be, do, on, go maker functions with
                               globals
-            bags (None|Mine):  shared data Mine for all made Boxers
+            hold (None|Hold):  data shared by boxwork
             boxes (None|dict): shared boxes map
 
-
-
+        bags, boxes, and boxers can be referenced by fun in its nonlocal
+        enclosing scope. collections references so do not need to be global
         """
-
-        # bags, boxes, and boxers can be referenced by fun in its nonlocal
-        # enclosing scope. collections references so do not need to be global
-        mine = mine if mine is not None else Mine()  # create new if not provided
+        hold = hold if hold is not None else Hold()  # create new if not provided
         boxes = boxes if boxes is not None else {}  # create new if not provided
         boxers = []  # list of made boxers
 
         # create a default boxer
-        boxer = Boxer(name='boxer', mine=mine, boxes=boxes)
+        boxer = Boxer(name='boxer', hold=hold, boxes=boxes)
         boxers.append(boxer)
 
         fun()
