@@ -336,29 +336,43 @@ on() defines a special condition action as a arg to a go or a do
 at() sets the default nabe for the current box
 be() defines a special assignment action at a given nabe
 
-### Data Mine
+### Data Hold
 
-Each boxwork has an in memory database called a data mine or mine for short.
-The mine is a in-memory key-value store with special properties. Item values
-in the mine may be instances of a Bag. A Bag is a special dataclass instance
-with special properties. One of a Bag's special properties is that any update to
-dataclass field in that bag is time stamped with the ._tyme attribute.  Python
-dataclasses have two types of attributes, field attributes and normal attributes.
-The ._tyme normal attribute is used to track the cycle tyme whenever on of its
+Each boxwork has data hold or hold for short (class Hold) that acts as a
+key-value store. The Hold is a subclass of Python dict but with special behavior.
+The items in the hold  are stored in insertion order as a hash map.
+
+Each entry may be either in memory only or durable on disk.
+Each durable item is a write through cache to an LMDB sub database.
+The key in the  LMDB database for the written entry is the same as the key
+in the in-memory cache.
+
+Durability support for the Hold is configuable. When the Hold is confurgured to
+be durable, the class of item value determines whether of not that item is durable.
+When the Hold is not configured to be durable then even for durable instances
+there is no durability.
+
+Durable item values are subclasses of CanDom which is a special dataclass.
+CanDom instances will synchronize with the LMDB sub database when the item is
+assigned to the Hold. Updates to CanDom fields will automatically write through
+to the database. Reads are all in-memory access. CanDom is also a subclass
+of TymeDom which has the special property of tyme stamping updates of field
+values given it is assigned a tymth() closure to some Tymist.
+
+While any Python object can be a Hold item value, typically using a subclass of
+TymeDom enables the ability to check for updates by tyme.
+
+Python dataclasses have two types of attributes, field attributes and non-field
+attributes. TymeDom and CanDom use non-field attributes to imbue them with
+special behaviors.
+
+The ._tyme non-field attribute is used to track the cycle tyme whenever on of its
 field attributes is updated.
 
-The actions in each box use the shared mine to communicate and manage data in
+The actions in each box use the shared Hold to communicate and manage data in
 a flow based programming sense. The buffers between behaviors (actions) are
-stored in the mine. Defining the box work also means defining the items in
-the mine.
-
-### Data Dock
-
-In the future the boxwork will also support on on-disk durable key-value store
-that may be used to manage durable data in a flow based programming sense.
-The is called the data dock.  This is not exclusive as individual items in
-the data mine could be special dataclasses that have a read/write through cache
-to durable storage.
+stored in the Hold. Defining the box work also means defining the items in
+the Hold.
 
 
 
