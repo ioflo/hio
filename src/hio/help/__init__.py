@@ -20,7 +20,8 @@ from .decking import Deck
 from .hicting import Hict, Mict
 from .timing import Timer, MonoTimer, TimerError, RetroTimerError
 from .naming import Namer
-from .doming import RawDom, MapDom, IceMapDom, modify, modize
+from .doming import (MapDom, IceMapDom, modify, modize, RawDom,
+                     registerify, RegDom, namify, TymeDom)
 from .mining import Renam, Mine
 
 

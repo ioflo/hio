@@ -13,7 +13,9 @@ import json
 import msgpack
 import cbor2 as cbor
 
-from hio.help import RawDom, MapDom, IceMapDom, modify, modize
+from hio.base import Tymist
+from hio.help import (MapDom, IceMapDom, modify, modize,  RawDom,
+                      registerify, RegDom, namify, TymeDom)
 from hio.help.doming import dictify, datify
 
 
@@ -172,96 +174,6 @@ def test_mapdom():
     assert 'name' in td
     assert 'value' in td
 
-
-
-    """Done Test"""
-
-
-
-def test_rawdom():
-    """Test RawDom dataclass """
-
-    @dataclass
-    class TestDom(RawDom):
-        name:  str = 'test'
-        value:  int = 5
-
-    td = TestDom()
-    assert isinstance(td, TestDom)
-    assert isinstance(td, RawDom)
-    assert td.name == 'test'
-    assert td.value == 5
-
-    assert td["name"] == 'test'
-    assert td["value"] == 5
-
-    td["name"] = 'best'
-    assert td.name == 'best'
-
-    td._update(name='test')
-    assert td.name == 'test'
-
-    assert 'name' in td
-    assert 'value' in td
-
-    td = TestDom()
-    assert isinstance(td, TestDom)
-    assert isinstance(td, RawDom)
-    assert td.name == 'test'
-    assert td.value == 5
-
-    d = td._asdict()
-    assert isinstance(d, dict)
-    assert d == {'name': 'test', 'value': 5}
-
-    assert td._astuple() == ("test", 5)
-
-    rtd = TestDom._fromdict(d)
-    assert isinstance(rtd, RawDom)
-    assert isinstance(rtd, TestDom)
-    assert rtd == td
-
-    bad = dict(name='test', val=0)  # field label "val" instead of "value"
-    with pytest.raises(ValueError):
-        TestDom._fromdict(bad)
-
-    with pytest.raises(ValueError):
-        RawDom._fromdict(d)  # since fields of d don't match RawDom which does not have fields
-
-    s = td._asjson()
-    assert isinstance(s, bytes)
-    assert s == b'{"name":"test","value":5}'
-    jtd = TestDom._fromjson(s)
-    assert jtd == td
-    s = s.decode()
-    jtd = TestDom._fromjson(s)
-    assert jtd == td
-
-    bad = b'{"name":"test","val":5}'  # field label "val" instead of "value"
-    with pytest.raises(ValueError):
-        TestDom._fromjson(bad)
-
-    s = td._ascbor()
-    assert s == b'\xa2dnamedtestevalue\x05'
-    assert isinstance(s, bytes)
-    ctd = TestDom._fromcbor(s)
-    assert ctd == td
-
-    bad = cbor.dumps(dict(name='test', val=0)) # field label "val" instead of "value"
-    assert bad == b'\xa2dnamedtestcval\x00'
-    with pytest.raises(ValueError):
-        TestDom._fromcbor(bad)
-
-    s = td._asmgpk()
-    assert s == b'\x82\xa4name\xa4test\xa5value\x05'
-    assert isinstance(s, bytes)
-    mtd = TestDom._frommgpk(s)
-    assert mtd == td
-
-    bad = msgpack.dumps(dict(name='test', val=0)) # field label "val" instead of "value"
-    assert bad == b'\x82\xa4name\xa4test\xa3val\x00'
-    with pytest.raises(ValueError):
-        TestDom._frommgpk(bad)
     """Done Test"""
 
 
@@ -403,8 +315,6 @@ def test_modify():
     """Done Test"""
 
 
-
-
 def test_modize():
     """Test modize wrapper. Test different use cases
     as inline wrapper with call time injected works (standard)
@@ -540,12 +450,270 @@ def test_modize():
     """Done Test"""
 
 
+def test_rawdom():
+    """Test RawDom dataclass """
+
+    @dataclass
+    class TestDom(RawDom):
+        name:  str = 'test'
+        value:  int = 5
+
+    td = TestDom()
+    assert isinstance(td, TestDom)
+    assert isinstance(td, RawDom)
+    assert td.name == 'test'
+    assert td.value == 5
+
+    assert td["name"] == 'test'
+    assert td["value"] == 5
+
+    td["name"] = 'best'
+    assert td.name == 'best'
+
+    td._update(name='test')
+    assert td.name == 'test'
+
+    assert 'name' in td
+    assert 'value' in td
+
+    td = TestDom()
+    assert isinstance(td, TestDom)
+    assert isinstance(td, RawDom)
+    assert td.name == 'test'
+    assert td.value == 5
+
+    d = td._asdict()
+    assert isinstance(d, dict)
+    assert d == {'name': 'test', 'value': 5}
+
+    assert td._astuple() == ("test", 5)
+
+    rtd = TestDom._fromdict(d)
+    assert isinstance(rtd, RawDom)
+    assert isinstance(rtd, TestDom)
+    assert rtd == td
+
+    bad = dict(name='test', val=0)  # field label "val" instead of "value"
+    with pytest.raises(ValueError):
+        TestDom._fromdict(bad)
+
+    with pytest.raises(ValueError):
+        RawDom._fromdict(d)  # since fields of d don't match RawDom which does not have fields
+
+    s = td._asjson()
+    assert isinstance(s, bytes)
+    assert s == b'{"name":"test","value":5}'
+    jtd = TestDom._fromjson(s)
+    assert jtd == td
+    s = s.decode()
+    jtd = TestDom._fromjson(s)
+    assert jtd == td
+
+    bad = b'{"name":"test","val":5}'  # field label "val" instead of "value"
+    with pytest.raises(ValueError):
+        TestDom._fromjson(bad)
+
+    s = td._ascbor()
+    assert s == b'\xa2dnamedtestevalue\x05'
+    assert isinstance(s, bytes)
+    ctd = TestDom._fromcbor(s)
+    assert ctd == td
+
+    bad = cbor.dumps(dict(name='test', val=0)) # field label "val" instead of "value"
+    assert bad == b'\xa2dnamedtestcval\x00'
+    with pytest.raises(ValueError):
+        TestDom._fromcbor(bad)
+
+    s = td._asmgpk()
+    assert s == b'\x82\xa4name\xa4test\xa5value\x05'
+    assert isinstance(s, bytes)
+    mtd = TestDom._frommgpk(s)
+    assert mtd == td
+
+    bad = msgpack.dumps(dict(name='test', val=0)) # field label "val" instead of "value"
+    assert bad == b'\x82\xa4name\xa4test\xa3val\x00'
+    with pytest.raises(ValueError):
+        TestDom._frommgpk(bad)
+    """Done Test"""
+
+
+def test_regdom():
+    """Test RegDom class"""
+
+
+    assert RegDom._registry
+    assert RegDom.__name__ in RegDom._registry
+    assert RegDom._registry[RegDom.__name__] == RegDom
+
+
+    rd = RegDom()  # defaults
+    assert isinstance(rd, RegDom)
+    assert rd._registry[rd.__class__.__name__] == RegDom
+
+    # test _asdict
+    assert rd._asdict() == {}  # no fields so empty
+
+    # test _astuple
+    assert rd._astuple() == ()  # no fields so empty
+
+    @registerify
+    @dataclass
+    class TestRegDom(RegDom):
+        """TestRegDom dataclass
+
+        Field Attributes:
+            value (Any):  generic value field
+        """
+        value: Any = None  # generic value
+
+
+    trd = TestRegDom()
+    assert isinstance(trd, RegDom)
+    assert isinstance(trd, TestRegDom)
+    assert trd._registry[trd.__class__.__name__] == TestRegDom
+
+    # test _asdict
+    assert trd._asdict() == {'value': None}
+
+    # test _astuple
+    assert trd._astuple() == (None,)
+
+    """Done Test"""
+
+
+def test_tymedom():
+    """Test TymeDom class"""
+    tymist = Tymist()
+
+    assert TymeDom._registry
+    assert TymeDom.__name__ in TymeDom._registry
+    assert TymeDom._registry[TymeDom.__name__] == TymeDom
+
+    assert TymeDom._names == ()
+    # no fields just InitVar and ClassVar attributes
+    flds = fields(TymeDom)
+    assert len(flds) == 0
+
+    td = TymeDom()  # defaults
+    assert isinstance(td, TymeDom)
+    assert td._names == ()
+    assert td._tymth == None
+    assert td._now == None
+    assert td._tyme == None
+
+    td = TymeDom(_tymth=tymist.tymen())
+    assert td._names == ()
+    assert td._tymth
+    assert td._now == 0.0 == tymist.tyme
+    assert td._tyme == None
+
+    tymist.tick()
+    assert td._now == tymist.tock
+    tymist.tick()
+    assert td._now == 2 * tymist.tock
+
+    # adding attribute does not make it a dataclass field
+    td.value = 1
+    assert td._tyme == None
+    assert td.value == 1
+    assert td["value"] == 1
+
+    # test __setitem__
+    td["value"] = 2
+    assert td._tyme == None
+    assert td["value"] == 2
+
+    td["stuff"] = 3
+    assert td._tyme == None
+    assert td["stuff"] == 3
+    assert td.stuff == 3
+
+    flds = fields(td)  # or equiv dataclasses.fields(TymeDom)
+    assert len(flds) == 0
+
+    td = TymeDom(_tyme=1.0)
+    assert td._names == ()
+    assert not td._tymth
+    assert td._now == None
+    assert td._tyme == 1.0
+
+
+    td = TymeDom(_tyme=1.0, _tymth=tymist.tymen())
+    assert td._names == ()
+    assert td._tymth
+    assert td._now == 2 * tymist.tock
+    assert td._tyme == 1.0
+
+    # test ._update
+    tymist = Tymist()
+    td = TymeDom(_tymth=tymist.tymen())
+    assert td._names == ()
+    assert td._tymth
+    assert td._now == 0.0 == tymist.tyme
+    assert td._tyme == None
+
+    td._update(value=1)
+    assert td._tyme == None
+    assert td.value == 1
+    assert td["value"] == 1
+
+    # test _asdict
+    assert td._asdict() == {}  # no fields so empty
+
+    # test _astuple
+    assert td._astuple() == ()  # no fields so empty
+
+    @namify
+    @registerify
+    @dataclass
+    class TestTymeDom(TymeDom):
+        """TestTymeDom dataclass
+
+        Field Attributes:
+            value (Any):  generic value field
+        """
+        value: Any = None  # generic value
+
+    assert TestTymeDom._names == ('value', )
+
+    ttd = TestTymeDom(_tymth=tymist.tymen())
+    assert isinstance(ttd, TymeDom)
+    assert isinstance(ttd, TestTymeDom)
+    assert ttd._registry[ttd.__class__.__name__] == TestTymeDom
+    assert ttd._names == ('value', )
+    assert ttd._tymth
+    assert ttd._now == 0.0 == tymist.tyme
+    assert ttd._tyme == None
+
+    # test _asdict
+    assert ttd._asdict() == {'value': None}
+
+    # test _astuple
+    assert ttd._astuple() == (None,)
+
+    ttd.value = "hello"
+    assert ttd._tyme == 0.0 == ttd._now == tymist._tyme
+    # test _asdict
+    assert ttd._asdict() == {'value': "hello"}
+
+    # test _astuple
+    assert ttd._astuple() == ("hello",)
+
+
+
+    """Done Test"""
+
+
+
 
 if __name__ == "__main__":
     test_datify()
     test_dictify()
     test_icemapdom()
     test_mapdom()
-    test_rawdom()
     test_modify()
     test_modize()
+    test_rawdom()
+    test_regdom()
+    test_tymedom()
+

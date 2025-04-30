@@ -10,10 +10,9 @@ from collections.abc import Mapping
 from typing import Any, Type, ClassVar
 from dataclasses import dataclass, astuple, asdict, field, fields, InitVar
 
-from ...help import NonStringIterable
+from ...help import NonStringIterable, namify, registerify, TymeDom
 from ...hioing import HierError
-from .bagging import namify, registerify, TymeDom
-from ..hier import holding
+from ..during import DomSuber
 
 
 @namify
@@ -56,7 +55,7 @@ class CanDom(TymeDom):
                       False means write individual fields as updated
 
     """
-    _sdb: InitVar[None|holding.DomSuber] = None  # durable storage of serialized fields
+    _sdb: InitVar[None|DomSuber] = None  # durable storage of serialized fields
     _key: InitVar[None|str] = None  # durable storage of serialized fields
     _stale: InitVar[bool] = True  # fields synced by write to durable or not
     _fresh: InitVar[bool] = False  # fields synced by read from durable or not

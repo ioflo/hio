@@ -10,9 +10,11 @@ import tempfile
 import lmdb
 
 from hio import HierError
-from hio.base import Duror, openDuror, Suber, IoSetSuber
-from hio.base.hier import Hold, DomSuberBase, DomSuber, Subery
-from hio.base.hier import TymeDom, Bag, CanDom, Can
+from hio.base import (Duror, openDuror, Suber, IoSetSuber,
+                      DomSuberBase, DomSuber, Subery)
+from hio.base.hier import Hold
+from hio.base.hier import Bag, CanDom, Can
+from hio.help import RawDom, RegDom
 
 
 
@@ -180,19 +182,19 @@ def test_domsuberbase():
         assert key == b'key_top'
         assert suber._tokeys(key) == keys
 
-        dom = TymeDom()
+        dom = RegDom()
 
         ser = suber._ser(dom)
-        assert ser == b'TymeDom\n{}'  # empty fields
+        assert ser == b'RegDom\n{}'  # empty fields
 
         proem, serj = ser.split(suber.prosep.encode(), maxsplit=1)
-        assert proem == b'TymeDom'
+        assert proem == b'RegDom'
         assert serj == b'{}'
         proem = proem.decode()
-        assert proem in TymeDom._registry
+        assert proem in RegDom._registry
 
         dom = suber._des(ser)
-        assert isinstance(dom, TymeDom)
+        assert isinstance(dom, RegDom)
 
         bag = Bag()
 
@@ -266,26 +268,23 @@ def test_domsuber():
         assert key == b'key_top'
         assert suber._tokeys(key) == keys
 
-
-        dom = TymeDom()
+        # test attempt to _ser _des with non RegDom subclass
+        dom = RawDom()
         with pytest.raises(HierError):
             ser = suber._ser(dom)
 
-        ser = b'TymeDom\n{}'  # empty fields
+        ser = b'RawDom\n{}'  # empty fields
         with pytest.raises(HierError):
             dom = suber._des(ser)
 
-
+        # test with RegDom subclasses
         bag = Bag()
-        with pytest.raises(HierError):
-            ser = suber._ser(bag)
-
-        ser = b'Bag\n{"value":null}'  # value field
-        with pytest.raises(HierError):
-            bag = suber._des(ser)
+        ser = suber._ser(bag)
+        assert ser == b'Bag\n{"value":null}'
+        bag = suber._des(ser)
+        assert bag.value == None
 
         can = CanDom()
-
         ser = suber._ser(can)
         assert ser == b'CanDom\n{}'  # empty fields
 

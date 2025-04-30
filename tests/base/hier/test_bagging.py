@@ -5,99 +5,10 @@
 from __future__ import annotations  # so type hints of classes get resolved later
 
 import pytest
-import dataclasses
+from dataclasses import dataclass, astuple, asdict, fields, field
 from hio.base import Tymist
-from hio.base.hier import TymeDom, Bag
+from hio.base.hier import Bag
 
-
-
-def test_tymedom():
-    """Test TymeDom class"""
-    tymist = Tymist()
-
-    assert TymeDom._registry
-    assert TymeDom.__name__ in TymeDom._registry
-    assert TymeDom._registry[TymeDom.__name__] == TymeDom
-
-    assert TymeDom._names == ()
-    # no fields just InitVar and ClassVar attributes
-    fields = dataclasses.fields(TymeDom)
-    assert len(fields) == 0
-
-    b = TymeDom()  # defaults
-    assert isinstance(b, TymeDom)
-    assert b._names == ()
-    assert b._tymth == None
-    assert b._now == None
-    assert b._tyme == None
-
-    b = TymeDom(_tymth=tymist.tymen())
-    assert b._names == ()
-    assert b._tymth
-    assert b._now == 0.0 == tymist.tyme
-    assert b._tyme == None
-
-    tymist.tick()
-    assert b._now == tymist.tock
-    tymist.tick()
-    assert b._now == 2 * tymist.tock
-
-
-    # adding attribute does not make it a dataclass field
-    b.value = 1
-    assert b._tyme == None
-    assert b.value == 1
-    assert b["value"] == 1
-
-    # test __setitem__
-    b["value"] = 2
-    assert b._tyme == None
-    assert b["value"] == 2
-
-    b["stuff"] = 3
-    assert b._tyme == None
-    assert b["stuff"] == 3
-    assert b.stuff == 3
-
-    fields = dataclasses.fields(b)  # or equiv dataclasses.fields(TymeDom)
-    assert len(fields) == 0
-
-    b = TymeDom(_tyme=1.0)
-    assert b._names == ()
-    assert not b._tymth
-    assert b._now == None
-    assert b._tyme == 1.0
-
-
-    b = TymeDom(_tyme=1.0, _tymth=tymist.tymen())
-    assert b._names == ()
-    assert b._tymth
-    assert b._now == 2 * tymist.tock
-    assert b._tyme == 1.0
-
-    # test ._update
-    tymist = Tymist()
-    b = TymeDom(_tymth=tymist.tymen())
-    assert b._names == ()
-    assert b._tymth
-    assert b._now == 0.0 == tymist.tyme
-    assert b._tyme == None
-
-    b._update(value=1)
-    assert b._tyme == None
-    assert b.value == 1
-    assert b["value"] == 1
-
-
-    # test _asdict
-    d = b._asdict()
-    assert d == {}  # no fields so empty
-
-    # test _astuple
-    t = b._astuple()
-    assert t == ()  # no fields so empty
-
-    """Done Test"""
 
 
 def test_bag():
@@ -109,9 +20,9 @@ def test_bag():
     assert Bag._registry[Bag.__name__] == Bag
 
     assert Bag._names == ("value", )
-    fields = dataclasses.fields(Bag)
-    assert len(fields) == 1
-    assert fields[0].name == 'value'
+    flds = fields(Bag)
+    assert len(flds) == 1
+    assert flds[0].name == 'value'
 
     b = Bag()
     assert b._names == ("value", )
@@ -190,6 +101,5 @@ def test_bag():
 
 
 if __name__ == "__main__":
-    test_tymedom()
     test_bag()
 
