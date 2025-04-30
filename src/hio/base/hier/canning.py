@@ -139,10 +139,10 @@ class CanDom(TymeDom):
         """
         if self._sdb and self._key and (self._stale or force):
             if can := self._sdb.get(self._key):  # get seb._des of own fields at key
-                if can.__class__.__name__ != self.__class__.__name__:
+                if can.__class__ != self.__class__:
                     raise HierError(f"Expected instance of "
-                                    f"{self.__class__.__name__} on read, got "
-                                    f"{can.__class__.__name__}")
+                                    f"{self.__class__} on read, got "
+                                    f"{can.__class__}")
                 self._fresh = True  # so update does not write
                 self._update(can._asdict())
                 self._fresh = False

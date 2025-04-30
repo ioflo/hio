@@ -14,6 +14,7 @@ from typing import Type
 
 from ..tyming import Tymee
 from ..doing import Doer
+from ..during import Subery
 from ...hioing import Mixin, HierError
 from .hiering import Nabes, WorkDom
 from .holding import Hold
@@ -23,7 +24,8 @@ from .acting import (ActBase, Act, Goact, Beact, LapseMark, RelapseMark,
                      Count, Discount)
 from .bagging import Bag
 from .needing import Need
-from ...help import modify, Renam
+from ...help import modify, Renam, TymeDom
+
 
 
 # Regular expression to detect special need 'count' condition
@@ -332,6 +334,7 @@ class Boxer(Tymee):
         boxes (dict): all boxes mapping of (box name, box) pairs
         first (Box | None):  beginning box
         box (Box | None):  active box
+        durable (bool): default value for durable arg to .make
 
     Properties:
         name (str): unique identifier of instance
@@ -343,13 +346,17 @@ class Boxer(Tymee):
 
 
     """
-    def __init__(self, *, name='boxer', hold=None, fun=None, **kwa):
+    def __init__(self, *, name='boxer', hold=None, fun=None, durable=False, **kwa):
         """Initialize instance.
 
         Parameters:
             name (str): unique identifier of box
             hold (None|Hold): data shared by boxwork
             fun (None|Callable): function to make boxwork
+            durable (bool): True means .make ensures durable hold when durable
+                               arg is None
+                            False means .make does not ensure  durable hold
+                               unless arg is True
 
         """
         super(Boxer, self).__init__(**kwa)
@@ -359,6 +366,7 @@ class Boxer(Tymee):
         self.boxes = {}
         self.first = None  # box to start in
         self.box = None  # current active box  whose pile is active pile
+        self.durable = True if durable else False
 
 
     @property
@@ -393,9 +401,9 @@ class Boxer(Tymee):
                                     None if not yet injected
         """
         super().wind(tymth=tymth)
-        for bag in self.hold.values():
-            if isinstance(bag, Bag):
-                bag._wind(tymth=self.tymth)
+        for dom in self.hold.values():
+            if isinstance(dom, TymeDom):
+                dom._wind(tymth=self.tymth)
 
 
     def rewind(self, tymth=None):
@@ -409,9 +417,9 @@ class Boxer(Tymee):
         """
         if tymth is not None:
             super().wind(tymth=tymth)
-        for bag in self.hold.values():
-            if isinstance(bag, Bag):
-                bag._wind(tymth=self.tymth)
+        for dom in self.hold.values():
+            if isinstance(dom, TymeDom):
+                dom._wind(tymth=self.tymth)
 
 
     def run(self, tock=0.0):
@@ -510,14 +518,11 @@ class Boxer(Tymee):
 
     def endial(self):
         """Check for desire to end execution and return True otherwise False
-        End condition if bag alue at mine._boxer_name_end.value == True
+        End condition if bag value at .hold['_boxer_boxername_end'].value == True
 
         Returns:
             end (bool): True means end condition satisfied
                         False otherwise
-
-        if keys not in self.mine:
-            self.mine[keys] = Bag()  # create bag at end default value = None
         """
         keys = ("", "boxer", self.name, "end")  # _boxer_boxername_end
         if keys in self.hold and self.hold[keys].value:
@@ -637,18 +642,39 @@ class Boxer(Tymee):
                                        f"boxer {self.name}.") from ex
 
 
-    def make(self, fun=None):
+    def make(self, fun=None, *, durable=None, temp=False):
         """Make box work for this boxer from function fun
         Parameters:
             fun (Callable|None):  employs be, go, do, on, at, be, verb functions with
                 injected mods of boxwork state vars
                 When None use self.fun
+                Signature:
+                    fun(H: (Hold),
+                        bx: (Callable),
+                        go: (Callable),
+                        do: (Callable),
+                        on: (Callable),
+                        at: (Callable),
+                        be: (Callable))
+            durable (None|bool):  True means ensure .hold has opened subery
+                                  False do nothing
+                                  None means use .durable
+            temp (bool): when reopen .hold.subery open with temp.
+                         True means use temp directory False use default
 
         Injects mods as WorkDom dataclass instance whose attributes are used to
         construct boxwork.
 
         """
         fun = fun if fun is not None else self.fun
+        durable = durable if durable is not None else self.durable
+        if durable:
+            if self.hold.subery and not self.hold.subery.opened:
+                self.hold.subery.reopen(temp=temp)
+            else:
+                subery = Subery(name=self.name, reopen=True, temp=temp)
+                self.hold['_hold_subery'] = subery
+
 
         works = WorkDom()  # standard defaults
         works.acts = ActBase.Registry
@@ -660,7 +686,7 @@ class Boxer(Tymee):
         be = modify(mods=works)(self.be)
 
         # calling fun will build boxer.boxes
-        fun(bx=bx, go=go, do=do, on=on, at=at, be=be)
+        fun(H=self.hold, bx=bx, go=go, do=do, on=on, at=at, be=be)
         self.resolve()
         return works  # for debugging analysis
 
@@ -1355,7 +1381,7 @@ class BoxerDoer(Doer):
 
         Inject temp or self.temp into file resources here if any
         """
-        mods = self.boxer.make()
+        mods = self.boxer.make(temp=temp)
         if not self.tymth:
             raise HierError(f"Unable to wind boxer with doer's tymth")
         self.boxer.wind(self.tymth)  # ensures are bags in boxer.mine are wound
@@ -1389,3 +1415,9 @@ class BoxerDoer(Doer):
         tock = tock if tock is not None else self.tock
         done = yield from self.boxer.run(tock=tock)
         return done
+
+
+    def exit(self):
+        """"""
+        if self.boxer.hold.subery:
+            self.boxer.hold.subery.close(clear=self.boxer.hold.subery.temp)

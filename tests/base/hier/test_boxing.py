@@ -8,20 +8,12 @@ from __future__ import annotations  # so type hints of classes get resolved late
 import pytest
 
 import os
-import sys
-import time
-import inspect
-import types
-import logging
-import json
-import inspect
-from inspect import isgeneratorfunction
-from dataclasses import dataclass, astuple, asdict, field
 
+from inspect import isgeneratorfunction
 
 from hio import hioing
 from hio.base import Tymist, Doist
-from hio.base.hier import (Hold, Nabes, Rexcnt, Rexlps, Rexrlp, Bag,
+from hio.base.hier import (Hold, Nabes, Rexcnt, Rexlps, Rexrlp, Bag, Can,
                            Box, Boxer, BoxerDoer, Boxery,
                            ActBase, Act, EndAct, )
 
@@ -320,6 +312,7 @@ def test_boxer_basic():
     assert boxer.tymth == None
     assert boxer.name == 'boxer'
     assert boxer.hold == Hold()
+    assert boxer.hold.subery == None
     assert boxer.fun == None
 
     assert boxer.boxes == {}
@@ -375,7 +368,7 @@ def test_boxer_basic():
 
 def test_boxer_make():
     """Test make method of Boxer and modify wrapper"""
-    def fun(bx, go, do, on, at, be, *pa):
+    def fun(H, bx, go, do, on, at, be, *pa):
         bx(name='top')
         bx(over='top')
         bx()
@@ -384,11 +377,10 @@ def test_boxer_make():
         bx(over=b)
         do(deed="end")
 
-
-
     assert "end" in ActBase.Registry
 
     boxer = Boxer()
+    assert boxer.hold.subery == None
     assert boxer.boxes == {}
     boxer.first = 'top'
     mods = boxer.make(fun)
@@ -410,14 +402,60 @@ def test_boxer_make():
         assert isinstance(box.over, Box) or box.over is None
         for goact in box.goacts:
             assert isinstance(goact.dest, Box)
+    """Done Test"""
 
+
+def test_boxer_make_durable():
+    """Test make method of Boxer with durable hold"""
+
+    def fun(H, bx, go, do, on, at, be, *pa):
+        H.test = Can(value=True)
+        bx(name='top')
+        bx(over='top')
+        bx()
+        b = bx()
+        do()
+        bx(over=b)
+        do(deed="end")
+
+    assert "end" in ActBase.Registry
+
+    boxer = Boxer()
+    assert boxer.hold.subery == None
+    assert boxer.boxes == {}
+    boxer.first = 'top'
+    mods = boxer.make(fun, durable=True, temp=True)
+    assert isinstance(boxer.first, Box)
+    assert boxer.hold.test.value == True
+    assert boxer.first == boxer.boxes['top']
+    assert boxer.boxes
+    assert len(boxer.boxes) == 5
+    assert list(boxer.boxes) == ['top', 'box0', 'box1', 'box2', 'box3']
+    assert str(boxer.boxes['top']) == 'Box(<top>box0)'
+    assert str(boxer.boxes['box3']) == 'Box(top<box2<box3>)'
+    assert mods["bxpre"] == 'box'
+    assert mods["bxidx"] == 4
+    assert mods["over"].name == 'box2'
+    assert mods['box'].name == 'box3'
+    assert isinstance(boxer.boxes['box2'].enacts[0], Act)
+    assert isinstance(boxer.boxes['box3'].enacts[0], EndAct)
+
+    for name, box in boxer.boxes.items():  # test resolve
+        assert isinstance(box.over, Box) or box.over is None
+        for goact in box.goacts:
+            assert isinstance(goact.dest, Box)
+
+    boxer.hold.subery.close(clear=True)
+    assert not os.path.exists(boxer.hold.subery.path)
+    assert not boxer.hold.subery.opened
 
     """Done Test"""
+
 
 def test_boxer_make_go():
     """Test make method of Boxer and modify wrapper with bx and go verbs
     """
-    def fun(bx, go, do, on, at, be, *pa):
+    def fun(H, bx, go, do, on, at, be, *pa):
         bx(name='top')
         bx(over='top')
         go("next")
@@ -462,7 +500,8 @@ def test_boxer_run():
         return H.count.value
 
 
-    def fun(bx, go, do, on, at, be, *pa):
+    def fun(H, bx, go, do, on, at, be, *pa):
+        H.count = Bag()
         bx(name='top')
         bx(name='mid', over='top')
         go('done', "H.count.value==2")
@@ -484,7 +523,7 @@ def test_boxer_run():
     assert tymist.tyme == 0.0
 
     hold = Hold()
-    hold['count'] = Bag()
+    #hold['count'] = Bag()
 
     boxer = Boxer(hold=hold)
     assert boxer.boxes == {}
@@ -540,7 +579,8 @@ def test_boxer_run_on_update():
         return H.count.value
 
 
-    def fun(bx, go, do, on, at, be, *pa):
+    def fun(H, bx, go, do, on, at, be, *pa):
+        H.count = Bag()
         bx(name='top')
         bx(name='mid', over='top')
         go('done', on("update", "count"))
@@ -561,7 +601,7 @@ def test_boxer_run_on_update():
     assert tymist.tyme == 0.0
 
     hold = Hold()
-    hold['count'] = Bag()
+    #hold['count'] = Bag()
 
     boxer = Boxer(hold=hold)
     assert boxer.boxes == {}
@@ -626,7 +666,8 @@ def test_boxer_run_on_change():
         return H.count.value
 
 
-    def fun(bx, go, do, on, at, be, *pa):
+    def fun(H, bx, go, do, on, at, be, *pa):
+        H.count = Bag()
         bx(name='top')
         bx(name='mid', over='top')
         go('done', on("change", "count"))
@@ -646,7 +687,7 @@ def test_boxer_run_on_change():
     assert tymist.tyme == 0.0
 
     hold = Hold()
-    hold['count'] = Bag()
+    #hold['count'] = Bag()
 
     boxer = Boxer(hold=hold)
     assert boxer.boxes == {}
@@ -702,7 +743,7 @@ def test_boxer_run_on_count():
     """
     tymist = Tymist()
 
-    def fun(bx, go, do, on, at, be, *pa):
+    def fun(H, bx, go, do, on, at, be, *pa):
         bx(name='top')
         bx('mid', 'top')
         do("count", "redo")
@@ -776,7 +817,9 @@ def test_boxer_run_verbs():
     def dumb(**iops):
         return True
 
-    def fun(bx, go, do, on, at, be, *pa):
+    def fun(H, bx, go, do, on, at, be, *pa):
+        H.stuff = Bag(value=0)
+        H.crud = Bag()
         bx(name='top')
         bx('mid', 'top')
         at('redo')
@@ -804,9 +847,9 @@ def test_boxer_run_verbs():
 
     hold = Hold()
     # init hold Bags
-    hold.stuff = Bag()
-    hold.stuff.value = 0
-    hold.crud = Bag()
+    #hold.stuff = Bag()
+    #hold.stuff.value = 0
+    #hold.crud = Bag()
 
     boxer = Boxer(hold=hold)
     assert boxer.boxes == {}
@@ -879,7 +922,9 @@ def test_boxer_run_lapse():
     """Test make method of Boxer with lapse condition
 
     """
-    def fun(bx, go, do, on, at, be, *pa):
+    def fun(H, bx, go, do, on, at, be, *pa):
+        H.stuff = Bag(value=0)
+        H.crud = Bag()
         bx(name='top')
         bx('mid', 'top')
         at('redo')
@@ -904,9 +949,9 @@ def test_boxer_run_lapse():
 
     hold = Hold()
     # init hold Bags
-    hold.stuff = Bag()
-    hold.stuff.value = 0
-    hold.crud = Bag()
+    #hold.stuff = Bag()
+    #hold.stuff.value = 0
+    #hold.crud = Bag()
 
     boxer = Boxer(tymth=tymist.tymen(), hold=hold)
     assert boxer.boxes == {}
@@ -1009,7 +1054,9 @@ def test_boxer_run_relapse():
     """Test make method of Boxer with relapse condition
 
     """
-    def fun(bx, go, do, on, at, be, *pa):
+    def fun(H, bx, go, do, on, at, be, *pa):
+        H.stuff = Bag(value=0)
+        H.crud = Bag()
         bx(name='top')
         bx('mid', 'top')
         at('redo')
@@ -1034,9 +1081,9 @@ def test_boxer_run_relapse():
     assert tymist.tyme == 0.0
     hold = Hold()
     # init hold Bags
-    hold.stuff = Bag()
-    hold.stuff.value = 0
-    hold.crud = Bag()
+    #hold.stuff = Bag()
+    #hold.stuff.value = 0
+    #hold.crud = Bag()
 
     boxer = Boxer(tymth=tymist.tymen(), hold=hold)
     assert boxer.boxes == {}
@@ -1111,7 +1158,8 @@ def test_boxer_run_relapse():
 def test_boxer_doer():
     """Test BoxerDoer"""
 
-    def fun(bx, go, do, on, at, be, *pa):
+    def fun(H, bx, go, do, on, at, be, *pa):
+        H.test = Can(value=True)
         bx(name='top')
         bx('mid', 'top')
         at('redo')
@@ -1129,7 +1177,7 @@ def test_boxer_doer():
         do('end')
 
     tock = 1.0
-    doist = Doist(tock=tock)
+    doist = Doist(tock=tock, temp=True)
     assert doist.tyme == 0.0  # on next cycle
     assert doist.tock == tock == 1.0
     assert doist.real == False
@@ -1137,7 +1185,7 @@ def test_boxer_doer():
     assert doist.doers == []
 
     hold = Hold()
-    boxer = Boxer(hold=hold, fun=fun)
+    boxer = Boxer(hold=hold, fun=fun, durable=True)
     assert boxer.fun == fun
     assert boxer.boxes == {}
 
@@ -1153,6 +1201,10 @@ def test_boxer_doer():
     doist.do(doers=doers, limit=limit)  # doist.do sets all doer.tymth to its tymth
     assert doist.tyme == 8.0  # redoer exits before limit
 
+    assert boxer.hold.test.value == True
+    assert not os.path.exists(boxer.hold.subery.path)
+    assert not boxer.hold.subery.opened
+
     assert hold._boxer_boxer_active.value == None
     assert hold._boxer_boxer_tock.value == 1.0
     assert hold._boxer_boxer_end.value == True
@@ -1163,6 +1215,7 @@ def test_boxer_doer():
     assert hold._boxer_boxer_box_bot1_lapse.value == 2.0
     assert hold._boxer_boxer_box_bot1_lapse._tyme == 2.0
     assert hold._boxer_boxer_box_bot1_lapse._now == 8.0
+
 
     """Done Test"""
 
@@ -1489,6 +1542,7 @@ if __name__ == "__main__":
     test_boxer_exen()
     test_boxer_basic()
     test_boxer_make()
+    test_boxer_make_durable()
     test_boxer_make_go()
     test_boxer_run()
     test_boxer_run_on_update()
