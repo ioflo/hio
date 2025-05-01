@@ -293,7 +293,7 @@ class Duror(Filer):
                                " or wrong DUPFIXED size.") from ex
 
 
-    def setVal(self, sdb, key, val):
+    def pinVal(self, sdb, key, val):
         """Write serialized bytes val to location key in db
         Overwrites existing val if any
         Returns:
@@ -333,8 +333,8 @@ class Duror(Filer):
                                " or wrong DUPFIXED size.") from ex
 
 
-    def delVal(self, sdb, key):
-        """Deletes value at key in db.
+    def remVal(self, sdb, key):
+        """Removes value at key in db.
 
         Returns:
             result (bool): True If key exists in database
@@ -398,8 +398,8 @@ class Duror(Filer):
             return  # done raises StopIteration
 
 
-    def delTopVals(self, sdb, top=b''):
-        """Deletes all values in branch of db given top key.
+    def remTopVals(self, sdb, top=b''):
+        """Removes all values in branch of db given top key.
 
         Returns:
             result (bool): True if values were deleted at key.
@@ -430,7 +430,7 @@ class Duror(Filer):
             return result
 
 
-    # insertion ordered FIFO collection set
+    # insertion ordered key suffix and unsuffix
     @staticmethod
     def suffix(key: bytes|str|memoryview, ion: int, *, sep: bytes|str=b'.'):
         """
@@ -476,166 +476,12 @@ class Duror(Filer):
         ion = int(ion, 16)
         return (key, ion)
 
-
-    def putIoSetVals(self, sdb, key, vals, *, sep=b'.'):
-        """Adds each val in vals to insertion ordered set of values all with the
-        same apparent effective key for each val that is not already in set of
-        vals at key.
-        Uses hidden ordinal key suffix for insertion ordering.
-        The suffix is appended and stripped transparently.
-
-        Returns:
-           result (bool): True if added to set. False if already in set.
-
-        Parameters:
-            db (lmdb._Database): instance of named sub db with dupsort==False
-            key (bytes): Apparent effective key
-            vals (Iterable): serialized values to add to set of vals at key
-
-        """
-        result = False
-        vals = oset(vals)  # make set
-        with self.env.begin(db=sdb, write=True, buffers=True) as txn:
-            ion = 0
-            iokey = self.suffix(key, ion, sep=sep)  # start zeroth entry if any
-            cursor = txn.cursor()
-            if cursor.set_range(iokey):  # move to val at key >= iokey if any
-                pvals = oset()  # pre-existing vals at key
-                for iokey, val in cursor.iternext():  # get iokey, val at cursor
-                    ckey, cion = self.unsuffix(iokey, sep=sep)
-                    if ckey == key:
-                        pvals.add(val)  # another entry at key
-                        ion = cion + 1  # ion to add at is increment of cion
-                    else:  # prev entry if any was the last entry for key
-                        break  # done
-                vals -= pvals  # remove vals already in pvals
-
-            for i, val in enumerate(vals):
-                iokey = self.suffix(key, ion+i, sep=sep)  # ion is at add on amount
-                result = cursor.put(iokey,
-                                    val,
-                                    dupdata=False,
-                                    overwrite=False) or result  # not short circuit
-            return result
-
-
-    def addIoSetVal(self, sdb, key, val, *, sep=b'.'):
-        """Add val idempotently to insertion ordered set of values all with the
-        same apparent effective key if val not already in set of vals at key. A
-        Uses hidden ordinal key suffix for insertion ordering.
-        The suffix is appended and stripped transparently.
-
-        Returns:
-           result (bool): True is added to set. False if already in set.
-
-        Parameters:
-            db (lmdb._Database): instance of named sub db with dupsort==False
-            key (bytes): Apparent effective key
-            val (bytes): serialized value to add
-
-        """
-        with self.env.begin(db=sdb, write=True, buffers=True) as txn:
-            vals = oset()
-            ion = 0
-            iokey = self.suffix(key, ion, sep=sep)  # start zeroth entry if any
-            cursor = txn.cursor()
-            if cursor.set_range(iokey):  # move to val at key >= iokey if any
-                for iokey, cval in cursor.iternext():  # get iokey, val at cursor
-                    ckey, cion = self.unsuffix(iokey, sep=sep)
-                    if ckey == key:
-                        vals.add(cval)  # another entry at key
-                        ion = cion + 1 # ion to add at is increment of cion
-                    else:  # prev entry if any was the last entry for key
-                        break  # done
-
-            if val in vals:  # already in set
-                return False
-
-            iokey = self.suffix(key, ion, sep=sep)  # ion is at add on amount
-            return cursor.put(iokey, val, dupdata=False, overwrite=False)
-
-
-    def setIoSetVals(self, sdb, key, vals, *, sep=b'.'):
-        """Erase all vals at key and then add unique vals as insertion ordered set of
-        values all with the same apparent effective key.
-        Uses hidden ordinal key suffix for insertion ordering.
-        The suffix is appended and stripped transparently.
-
-        Returns:
-           result (bool): True is added to set.
-
-        Parameters:
-            db (lmdb._Database): instance of named sub db with dupsort==False
-            key (bytes): Apparent effective key
-            vals (abc.Iterable): serialized values to add to set of vals at key
-        """
-        self.delIoSetVals(sdb=sdb, key=key, sep=sep)
-        result = False
-        vals = oset(vals)  # make set
-        with self.env.begin(db=sdb, write=True, buffers=True) as txn:
-            for i, val in enumerate(vals):
-                iokey = self.suffix(key, i, sep=sep)  # ion is at add on amount
-                result = txn.put(iokey, val, dupdata=False, overwrite=True) or result
-            return result
-
-
-    def getIoSetVals(self, sdb, key, *, ion=0, sep=b'.'):
-        """Gets list of all the insertion ordered set of values at key
-
-        Returns:
-            vals (list[bytes]): the insertion ordered set of values at same apparent
-                           effective key.
-                          Uses hidden ordinal key suffix for insertion ordering.
-                          The suffix is appended and stripped transparently.
-
-        Parameters:
-            db (lmdb._Database): instance of named sub db with dupsort==False
-            key (bytes): Apparent effective key
-            ion (int): starting ordinal value, default 0
-
-        """
-        with self.env.begin(db=sdb, write=False, buffers=True) as txn:
-            vals = []
-            iokey = self.suffix(key, ion, sep=sep)  # start ion th value for key zeroth default
-            cursor = txn.cursor()
-            if cursor.set_range(iokey):  # move to val at key >= iokey if any
-                for iokey, val in cursor.iternext():  # get iokey, val at cursor
-                    ckey, cion = self.unsuffix(iokey, sep=sep)
-                    if ckey != key:  # prev entry if any was the last entry for key
-                        break  # done
-                    vals.append(bytes(val))  # another entry at key
-            return vals
-
-
-    def getIoSetValsIter(self, sdb, key, *, ion=0, sep=b'.'):
-        """Gets Iterator of all the insertion ordered set of values at key
-
-        Returns:
-            ioset (Iterator): iterator over insertion ordered set of values
-                              at same apparent effective key.
-                              Uses hidden ordinal key suffix for insertion ordering.
-                              The suffix is appended and stripped transparently.
-
-        Raises StopIteration Error when empty.
-
-        Parameters:
-            db (lmdb._Database): instance of named sub db with dupsort==False
-            key (bytes): Apparent effective key
-            ion (int): starting ordinal value, default 0
-        """
-        with self.env.begin(db=sdb, write=False, buffers=True) as txn:
-            iokey = self.suffix(key, ion, sep=sep)  # start ion th value for key zeroth default
-            cursor = txn.cursor()
-            if cursor.set_range(iokey):  # move to val at key >= iokey if any
-                for iokey, val in cursor.iternext():  # get key, val at cursor
-                    ckey, cion = self.unsuffix(iokey, sep=sep)
-                    if ckey != key: #  prev entry if any was the last entry for key
-                        break  # done
-                    yield (val)  # another entry at key
-            return  # done raises StopIteration
-
-
-    def getIoSetValFirst(self, sdb, key, *, ion=0, sep=b'.'):
+    #Io and IoSet get methods work the same since IoSet operations do not dedup
+    # on get, cnt, or del all only on add, put, set or del given val.
+    # So common get, cnt, del all operations here and the add, put, set, del one
+    # are provided below for IoSet after Io
+    # Common methods to Io and IoSet
+    def getIoValFirst(self, sdb, key, *, ion=0, sep=b'.'):
         """Gets first of the insertion ordered set of values at key,
         None if no entry.
 
@@ -656,44 +502,14 @@ class Duror(Filer):
             iokey = self.suffix(key, ion, sep=sep)  # start ion_th value for key zeroth default
             cursor = txn.cursor()
             if cursor.set_range(iokey):  # move to val at key >= iokey if any
-                iokey, val = cursor.item()  # get iokey, cval at cursor
+                iokey, cval = cursor.item()  # get iokey, cval at cursor
                 ckey, cion = self.unsuffix(iokey, sep=sep)
                 if ckey == key:  # first entry for key >= iokey at ion
-                    return bytes(val)
+                    return bytes(cval)
             return None  # no item at key
 
 
-    def popIoSetVal(self, sdb, key, *, ion=0, sep=b'.'):
-        """Pops first of the insertion ordered set of values at key.
-        None if no entry. Pop deletes the returned entry.
-
-        Returns:
-            val (bytes|None): first val at same apparent effective key
-                        whose iokey >= iokey from ion
-                        Uses hidden ordinal key suffix for insertion ordering.
-                        The suffix is appended and stripped transparently.
-                        None if no entry.
-
-        Parameters:
-            db (lmdb._Database): instance of named sub db with dupsort==False
-            key (bytes): Apparent effective key
-            ion (int): starting ordinal value, default 0
-
-        """
-        with self.env.begin(db=sdb, write=True, buffers=True) as txn:
-            iokey = self.suffix(key, ion, sep=sep)  # start ion_th value for key zeroth default
-            cursor = txn.cursor()
-            if cursor.set_range(iokey):  # move to val at key >= iokey if any
-                iokey, val = cursor.item()  # get iokey, cval at cursor
-                ckey, cion = self.unsuffix(iokey, sep=sep)
-                if ckey == key:  # first entry for key >= iokey at ion
-                    val = bytes(val) # make copy so not deleted
-                    cursor.delete()
-                    return val
-            return None  # no item at key
-
-
-    def getIoSetValLast(self, sdb, key, *, sep=b'.'):
+    def getIoValLast(self, sdb, key, *, sep=b'.'):
         """Gets last value (last in) of insertion ordered set values at key
 
         Returns:
@@ -745,22 +561,93 @@ class Duror(Filer):
             return val
 
 
-    def cntIoSetVals(self, sdb, key, *, sep=b'.'):
-        """Count all values with the same apparent effective key.
-        Uses hidden ordinal key suffix for insertion ordering.
-        The suffix is appended and stripped transparently.
+    def getIoVals(self, sdb, key, *, ion=0, sep=b'.'):
+        """Gets list of all the insertion ordered set of values at key
 
         Returns:
-            count (int): count values in set at apparent effective key
+            vals (list[bytes]): the insertion ordered set of values at same apparent
+                           effective key.
+                          Uses hidden ordinal key suffix for insertion ordering.
+                          The suffix is appended and stripped transparently.
 
         Parameters:
             db (lmdb._Database): instance of named sub db with dupsort==False
             key (bytes): Apparent effective key
+            ion (int): starting ordinal value, default 0
+
         """
-        return len(self.getIoSetVals(sdb=sdb, key=key, sep=sep))
+        with self.env.begin(db=sdb, write=False, buffers=True) as txn:
+            vals = []
+            iokey = self.suffix(key, ion, sep=sep)  # start ion th value for key zeroth default
+            cursor = txn.cursor()
+            if cursor.set_range(iokey):  # move to val at key >= iokey if any
+                for iokey, cval in cursor.iternext():  # get iokey, val at cursor
+                    ckey, cion = self.unsuffix(iokey, sep=sep)
+                    if ckey != key:  # prev entry if any was the last entry for key
+                        break  # done
+                    vals.append(bytes(cval))  # another entry at key
+            return vals
 
 
-    def delIoSetVals(self, sdb, key, *, sep=b'.'):
+    def getIoValsIter(self, sdb, key, *, ion=0, sep=b'.'):
+        """Gets Iterator of all the insertion ordered set of values at key
+
+        Returns:
+            ioset (Iterator): iterator over insertion ordered set of values
+                              at same apparent effective key.
+                              Uses hidden ordinal key suffix for insertion ordering.
+                              The suffix is appended and stripped transparently.
+
+        Raises StopIteration Error when empty.
+
+        Parameters:
+            db (lmdb._Database): instance of named sub db with dupsort==False
+            key (bytes): Apparent effective key
+            ion (int): starting ordinal value, default 0
+        """
+        with self.env.begin(db=sdb, write=False, buffers=True) as txn:
+            iokey = self.suffix(key, ion, sep=sep)  # start ion th value for key zeroth default
+            cursor = txn.cursor()
+            if cursor.set_range(iokey):  # move to val at key >= iokey if any
+                for iokey, cval in cursor.iternext():  # get key, val at cursor
+                    ckey, cion = self.unsuffix(iokey, sep=sep)
+                    if ckey != key: #  prev entry if any was the last entry for key
+                        break  # done
+                    yield (cval)  # another entry at key
+            return  # done raises StopIteration
+
+
+    def popIoVal(self, sdb, key, *, ion=0, sep=b'.'):
+        """Pops first of the insertion ordered set of values at key.
+        None if no entry. Pop deletes the returned entry.
+
+        Returns:
+            val (bytes|None): first val at same apparent effective key
+                        whose iokey >= iokey from ion
+                        Uses hidden ordinal key suffix for insertion ordering.
+                        The suffix is appended and stripped transparently.
+                        None if no entry.
+
+        Parameters:
+            db (lmdb._Database): instance of named sub db with dupsort==False
+            key (bytes): Apparent effective key
+            ion (int): starting ordinal value, default 0
+
+        """
+        with self.env.begin(db=sdb, write=True, buffers=True) as txn:
+            iokey = self.suffix(key, ion, sep=sep)  # start ion_th value for key zeroth default
+            cursor = txn.cursor()
+            if cursor.set_range(iokey):  # move to val at key >= iokey if any
+                iokey, cval = cursor.item()  # get iokey, cval at cursor
+                ckey, cion = self.unsuffix(iokey, sep=sep)
+                if ckey == key:  # first entry for key >= iokey at ion
+                    val = bytes(cval) # make copy so not deleted
+                    cursor.delete()
+                    return val
+            return None  # no item at key
+
+
+    def remIoVals(self, sdb, key, *, sep=b'.'):
         """Deletes all values at apparent effective key.
         Uses hidden ordinal key suffix for insertion ordering.
         The suffix is appended and stripped transparently.
@@ -778,18 +665,256 @@ class Duror(Filer):
             iokey = self.suffix(key, 0, sep=sep)  # start at zeroth value for key
             cursor = txn.cursor()
             if cursor.set_range(iokey):  # move to val at key >= iokey if any
-                iokey, cval = cursor.item()
+                iokey = cursor.key()
                 while iokey:  # end of database iokey == b'' cant internext.
                     ckey, cion = self.unsuffix(iokey, sep=sep)
                     if ckey != key:  # past key
                         break
                     result = cursor.delete() or result  # delete moves cursor to next item
-                    iokey, cval = cursor.item()  # cursor now at next item after deleted
+                    iokey = cursor.key()  # cursor now at next item after deleted
             return result
 
 
-    def delIoSetVal(self, sdb, key, val, *, sep=b'.'):
-        """Deletes matching val at apparent effective key if exists.
+    def cntIoVals(self, sdb, key, *, sep=b'.'):
+        """Count all values with the same apparent effective key.
+        Uses hidden ordinal key suffix for insertion ordering.
+        The suffix is appended and stripped transparently.
+
+        Returns:
+            count (int): count values in set at apparent effective key
+
+        Parameters:
+            db (lmdb._Database): instance of named sub db with dupsort==False
+            key (bytes): Apparent effective key
+        """
+        return len(self.getIoVals(sdb=sdb, key=key, sep=sep))
+
+
+    def getTopIoItemIter(self, sdb, top=b'', *, sep=b'.'):
+        """Gets Iterator of all values in branch rooted at top key
+        The suffix is appended and stripped transparently.
+
+        Returns:
+            items (Iterator[(key,val)]): iterator of tuples (key, val) where
+                key is apparent key with hidden insertion ordering suffixe removed
+                from effective key. Iterates over top branch of insertion
+                ordered set values where each effective key has trailing hidden
+                suffix of serialization of insertion ordering ordinal.
+
+            Uses hidden ordinal key suffix for insertion ordering.
+
+        Raises StopIteration Error when empty.
+
+        Parameters:
+            db (lmdb._Database): instance of named sub db with dupsort==False
+            top (bytes): top key in db. When top is empty then every item in db.
+            sep (bytes): sep character for attached io suffix
+        """
+        for iokey, val in self.getTopItemIter(sdb=sdb, top=top):
+            key, ion = self.unsuffix(iokey, sep=sep)
+            yield (key, val)
+
+
+    # insertion ordered queue pure FIFO not set. No dedup.
+    def addIoVal(self, sdb, key, val, *, sep=b'.'):
+        """Add val at end (append) of insertion ordered set of values all with the
+        same apparent effective key. Does not dedup val.
+        Uses hidden ordinal key suffix for insertion ordering.
+        The suffix is appended and stripped transparently.
+
+        Returns:
+           result (bool): True is added to set. False if already in set.
+
+        Parameters:
+            db (lmdb._Database): instance of named sub db with dupsort==False
+            key (bytes): Apparent effective key
+            val (bytes): serialized value to add
+
+        """
+        with self.env.begin(db=sdb, write=True, buffers=True) as txn:
+            ion = 0
+            iokey = self.suffix(key, ion, sep=sep)  # start zeroth entry if any
+            cursor = txn.cursor()
+            if cursor.set_range(iokey):  # move to val at key >= iokey if any
+                for iokey in cursor.iternext(values=False):  # get iokey at cursor
+                    ckey, cion = self.unsuffix(iokey, sep=sep)
+                    if ckey == key:  # found one
+                        ion = cion + 1  # next ion is increment of found cion
+                    else:  # prev entry if any was the last entry for key
+                        break  # done
+
+            iokey = self.suffix(key, ion, sep=sep)  # ion is 1 after last
+            return cursor.put(iokey, val, dupdata=False, overwrite=True)
+
+
+    def putIoVals(self, sdb, key, vals, *, sep=b'.'):
+        """Adds at end (append) each val in vals to insertion ordered list of
+        values all with the same apparent effective key for each val.
+        Does not dedup added vals.
+        Uses hidden ordinal key suffix for insertion ordering.
+        The suffix is appended and stripped transparently.
+
+        Returns:
+           result (bool): True if added to set. False if already in set.
+
+        Parameters:
+            db (lmdb._Database): instance of named sub db with dupsort==False
+            key (bytes): Apparent effective key
+            vals (Iterable): serialized values to add to set of vals at key
+
+        """
+        result = False
+        with self.env.begin(db=sdb, write=True, buffers=True) as txn:
+            ion = 0  # start at zeroth one
+            iokey = self.suffix(key, ion, sep=sep)  # start zeroth entry if any
+            cursor = txn.cursor()
+            if cursor.set_range(iokey):  # move to val at key >= iokey if any
+                for iokey in cursor.iternext(values=False):  # get iokey at cursor
+                    ckey, cion = self.unsuffix(iokey, sep=sep)
+                    if ckey == key:  # found one
+                        ion = cion + 1  # next ion is increment of found cion
+                    else:
+                        break  # prev entry if any was the last entry for key
+
+
+            for i, val in enumerate(vals):  # i is zero based
+                iokey = self.suffix(key, ion+i, sep=sep)  # ion is 1 after last
+                result = cursor.put(iokey,
+                                    val,
+                                    dupdata=False,
+                                    overwrite=True)
+            return result
+
+
+    def pinIoVals(self, sdb, key, vals, *, sep=b'.'):
+        """Erase all vals at key and then add vals as insertion ordered set of
+        values all with the same apparent effective key. Does not dedup vals.
+        Uses hidden ordinal key suffix for insertion ordering.
+        The suffix is appended and stripped transparently.
+
+        Returns:
+           result (bool): True is added to set.
+
+        Parameters:
+            db (lmdb._Database): instance of named sub db with dupsort==False
+            key (bytes): Apparent effective key
+            vals (abc.Iterable): serialized values to add to set of vals at key
+        """
+        self.remIoVals(sdb=sdb, key=key, sep=sep)
+        result = False
+        with self.env.begin(db=sdb, write=True, buffers=True) as txn:
+            for i, val in enumerate(vals):  # starts at zero
+                iokey = self.suffix(key, i, sep=sep)  # ion is at add on amount
+                result = txn.put(iokey, val, dupdata=False, overwrite=True)
+            return result
+
+
+    # IoSet insertion ordered set with FIFO access queue. Set dedups entries
+    def addIoSetVal(self, sdb, key, val, *, sep=b'.'):
+        """Add val idempotently to insertion ordered set of values all with the
+        same apparent effective key if val not already in set of vals at key.
+        Dedups the added val.
+        Uses hidden ordinal key suffix for insertion ordering.
+        The suffix is appended and stripped transparently.
+
+        Returns:
+           result (bool): True is added to set. False if already in set.
+
+        Parameters:
+            db (lmdb._Database): instance of named sub db with dupsort==False
+            key (bytes): Apparent effective key
+            val (bytes): serialized value to add
+
+        """
+        with self.env.begin(db=sdb, write=True, buffers=True) as txn:
+            vals = oset()
+            ion = 0
+            iokey = self.suffix(key, ion, sep=sep)  # start zeroth entry if any
+            cursor = txn.cursor()
+            if cursor.set_range(iokey):  # move to val at key >= iokey if any
+                for iokey, cval in cursor.iternext():  # get iokey, val at cursor
+                    ckey, cion = self.unsuffix(iokey, sep=sep)
+                    if ckey == key:
+                        vals.add(cval)  # another entry at key
+                        ion = cion + 1 # ion to add at is increment of cion
+                    else:  # prev entry if any was the last entry for key
+                        break  # done
+
+            if val in vals:  # already in set
+                return False
+
+            iokey = self.suffix(key, ion, sep=sep)  # ion is at add on amount
+            return cursor.put(iokey, val, dupdata=False, overwrite=False)
+
+
+    def putIoSetVals(self, sdb, key, vals, *, sep=b'.'):
+        """Adds idempotently each val in vals to insertion ordered set of values
+        all with the same apparent effective key for each val that is not already
+        in set of vals at key. Dedups the put vals.
+        Uses hidden ordinal key suffix for insertion ordering.
+        The suffix is appended and stripped transparently.
+
+        Returns:
+           result (bool): True if added to set. False if already in set.
+
+        Parameters:
+            db (lmdb._Database): instance of named sub db with dupsort==False
+            key (bytes): Apparent effective key
+            vals (Iterable): serialized values to add to set of vals at key
+
+        """
+        result = False
+        vals = oset(vals)  # make set
+        with self.env.begin(db=sdb, write=True, buffers=True) as txn:
+            ion = 0
+            iokey = self.suffix(key, ion, sep=sep)  # start zeroth entry if any
+            cursor = txn.cursor()
+            if cursor.set_range(iokey):  # move to val at key >= iokey if any
+                pvals = oset()  # pre-existing vals at key
+                for iokey, cval in cursor.iternext():  # get iokey, val at cursor
+                    ckey, cion = self.unsuffix(iokey, sep=sep)
+                    if ckey == key:
+                        pvals.add(cval)  # set add idempotently another entry at key
+                        ion = cion + 1  # ion to add at is increment of cion
+                    else:  # prev entry if any was the last entry for key
+                        break  # done
+                vals -= pvals  # set math remove vals already in pvals
+
+            for i, val in enumerate(vals):
+                iokey = self.suffix(key, ion+i, sep=sep)  # ion is at add on amount
+                result = cursor.put(iokey,
+                                    val,
+                                    dupdata=False,
+                                    overwrite=False) or result  # not short circuit
+            return result
+
+
+    def pinIoSetVals(self, sdb, key, vals, *, sep=b'.'):
+        """Erase all vals at key and then add unique vals as insertion ordered set of
+        values all with the same apparent effective key. Dedups the set vals.
+        Uses hidden ordinal key suffix for insertion ordering.
+        The suffix is appended and stripped transparently.
+
+        Returns:
+           result (bool): True is added to set.
+
+        Parameters:
+            db (lmdb._Database): instance of named sub db with dupsort==False
+            key (bytes): Apparent effective key
+            vals (abc.Iterable): serialized values to add to set of vals at key
+        """
+        self.remIoVals(sdb=sdb, key=key, sep=sep)
+        result = False
+        vals = oset(vals)  # make set
+        with self.env.begin(db=sdb, write=True, buffers=True) as txn:
+            for i, val in enumerate(vals):
+                iokey = self.suffix(key, i, sep=sep)  # ion is at add on amount
+                result = txn.put(iokey, val, dupdata=False, overwrite=True) or result
+            return result
+
+
+    def remIoSetVal(self, sdb, key, val, *, sep=b'.'):
+        """Removes (delete) matching val at apparent effective key if exists.
         Uses hidden ordinal key suffix for insertion ordering.
         The suffix is appended and stripped transparently.
 
@@ -827,31 +952,6 @@ class Duror(Filer):
                     if val == cval:
                         return cursor.delete()  # delete also moves to next so doubly moved
             return False
-
-
-    def getTopIoSetItemIter(self, sdb, top=b'', *, sep=b'.'):
-        """Gets Iterator of all values in branch rooted at top key
-        The suffix is appended and stripped transparently.
-
-        Returns:
-            items (Iterator[(key,val)]): iterator of tuples (key, val) where
-                key is apparent key with hidden insertion ordering suffixe removed
-                from effective key. Iterates over top branch of insertion
-                ordered set values where each effective key has trailing hidden
-                suffix of serialization of insertion ordering ordinal.
-
-            Uses hidden ordinal key suffix for insertion ordering.
-
-        Raises StopIteration Error when empty.
-
-        Parameters:
-            db (lmdb._Database): instance of named sub db with dupsort==False
-            top (bytes): top key in db. When top is empty then every item in db.
-            sep (bytes): sep character for attached io suffix
-        """
-        for iokey, val in self.getTopItemIter(sdb=sdb, top=top):
-            key, ion = self.unsuffix(iokey, sep=sep)
-            yield (key, val)
 
 
 @contextmanager
@@ -1087,7 +1187,7 @@ class SuberBase():
         Returns:
            result (bool): True if val at key exists so delete successful. False otherwise
         """
-        return(self.db.delTopVals(sdb=self.sdb, top=self._tokey(keys, topive=topive)))
+        return(self.db.remTopVals(sdb=self.sdb, top=self._tokey(keys, topive=topive)))
 
 
     def getFullItemIter(self, keys: str|bytes|memoryview|Iterable[str|bytes]="",
@@ -1250,7 +1350,7 @@ class Suber(SuberBase):
         Returns:
             result (bool): True If successful. False otherwise.
         """
-        return (self.db.setVal(sdb=self.sdb,
+        return (self.db.pinVal(sdb=self.sdb,
                                key=self._tokey(keys),
                                val=self._ser(val)))
 
@@ -1289,10 +1389,295 @@ class Suber(SuberBase):
         Returns:
            result (bool): True if key exists so delete successful. False otherwise
         """
-        return(self.db.delVal(sdb=self.sdb, key=self._tokey(keys)))
+        return(self.db.remVal(sdb=self.sdb, key=self._tokey(keys)))
 
 
 
+class IoSuber(SuberBase):
+    """Insertion Ordered Suber class that supports a durable queue (list) of
+    entries at a given effective database key but with dupsort==False. Does not
+    dedup entries. For dedup see IoSetSuber.
+
+    Effective data model is that there are multiple values a list of values
+    where every entry has the same key (duplicate key).
+    The list is ordered using insertion order. Any given value may appear
+    multiple times in the list.
+
+    Here the key is augmented with a hidden numbered suffix that provides a
+    an ordinal that makes each key unique per entry.  The effective key includes
+    the ordinal suffix. The suffix is appended and stripped transparently. The
+    list of multiple items can be retrieved in insertion order when iterating
+    or as a list of elements or as FIFO queue.
+
+    Inherited Class Attribues:
+        Sep (str): default separator to convert keys iterator to key bytes for db key
+
+    ClassAttributes:
+        IonSep (str): default separator to suffix insertion order ordinal number
+
+    Inherited Attributes:
+        db (dbing.LMDBer): base LMDB db
+        sdb (lmdb._Database): instance of lmdb named sub db for this Suber
+        sep (str): separator for combining keys tuple of strs into key bytes
+        verify (bool): True means reverify when ._des from db when applicable
+                       False means do not reverify. Default False
+
+    Attributes
+        ionsep (str): separator to suffix insertion order ordinal number
+                       default is self.IonSep == '.'
+    """
+    IonSep = '.'  # separator for suffixing insertion order ordinal number
+
+    def __init__(self, db: dbing.LMDBer, *,
+                       subkey: str='docs.',
+                       dupsort: bool=False,
+                       ionsep: str=None, **kwa):
+        """
+        Inherited Parameters:
+            db (dbing.LMDBer): base db
+            subkey (str):  LMDB sub database key
+            dupsort (bool): True means enable duplicates at each key
+                               False (default) means do not enable duplicates at
+                               each key
+            sep (str): separator to convert keys iterator to key bytes for db key
+                       default is self.Sep == '.'
+            verify (bool): True means reverify when ._des from db when applicable
+                           False means do not reverify. Default False
+
+        Parameters:
+            ionsep (str|None): separator to suffix insertion order ordinal number
+                       default is self.IonSep == '.'
+        """
+        super(IoSuber, self).__init__(db=db, subkey=subkey, dupsort=False, **kwa)
+        self.ionsep = ionsep if ionsep is not None else self.IonSep
+
+
+    def getFirst(self, keys: str | bytes | memoryview | Iterable):
+        """
+        Gets first val inserted at effecive key made from keys and hidden ordinal
+        suffix.
+
+        Parameters:
+            keys (Iterable): of key strs to be combined in order to form key
+
+        Returns:
+            val (str|None):  value str, None if no entry at keys
+
+        """
+        val = self.db.getIoValFirst(sdb=self.sdb, key=self._tokey(keys))
+        return (self._des(val) if val is not None else val)
+
+
+    def getLast(self, keys: str | bytes | memoryview | Iterable):
+        """
+        Gets last val inserted at effecive key made from keys and hidden ordinal
+        suffix.
+
+        Parameters:
+            keys (Iterable): of key strs to be combined in order to form key
+
+        Returns:
+            val (str|None):  value str, None if no entry at keys
+
+        """
+        val = self.db.getIoValLast(sdb=self.sdb, key=self._tokey(keys))
+        return (self._des(val) if val is not None else val)
+
+
+    def get(self, keys: str | bytes | memoryview | Iterable):
+        """
+        Gets vals set list at key made from effective keys
+
+        Parameters:
+            keys (Iterable): of key strs to be combined in order to form key
+
+        Returns:
+            vals (Iterable):  each item in list is str
+                          empty list if no entry at keys
+
+        """
+        return ([self._des(val) for val in
+                    self.db.getIoValsIter(sdb=self.sdb,
+                                             key=self._tokey(keys),
+                                             sep=self.ionsep)])
+
+
+    def getIter(self, keys: str | bytes | memoryview | Iterable):
+        """
+        Gets vals iterator at effecive key made from keys and hidden ordinal suffix.
+        All vals in set of vals that share same effecive key are retrieved in
+        insertion order.
+
+        Parameters:
+            keys (Iterable): of key strs to be combined in order to form key
+
+        Returns:
+            vals (Iterator):  str values. Raises StopIteration when done
+
+        """
+        for val in self.db.getIoValsIter(sdb=self.sdb,
+                                            key=self._tokey(keys),
+                                            sep=self.ionsep):
+            yield self._des(val)
+
+
+    def pop(self, keys: str | bytes | memoryview | Iterable):
+        """
+        Pops first val if any inserted at effecive key made from keys and
+        hidden ordinal suffix. Pop returns and deletes value if any.
+
+        Parameters:
+            keys (Iterable): of key strs to be combined in order to form key
+
+        Returns:
+            val (str|None):  value str, None if no entry at keys
+
+        """
+        val = self.db.popIoVal(sdb=self.sdb, key=self._tokey(keys))
+        return (self._des(val) if val is not None else val)
+
+
+    def add(self, keys: str | bytes | memoryview | Iterable,
+            val: str | bytes | memoryview):
+        """
+        Add val idempotently to vals at effective key made from keys and hidden
+        ordinal suffix. Idempotent means that added value is not already in set
+        of vals at key. Does not overwrite or add same value at same key more
+        than once.
+
+        Parameters:
+            keys (str | bytes | memoryview | Iterable): of key parts to be
+                    combined in order to form key
+            val (str | bytes | memoryview): serialization
+
+        Returns:
+            result (bool): True means unique value added among duplications,
+                            False means duplicate of same value already exists.
+
+        """
+        return (self.db.addIoVal(sdb=self.sdb,
+                                    key=self._tokey(keys),
+                                    val=self._ser(val),
+                                    sep=self.ionsep))
+
+
+    def put(self, keys: str | bytes | memoryview | Iterable,
+                  vals: str | bytes | memoryview | Iterable):
+        """
+        Puts all vals each with an effective key made from keys and hidden
+        ordinal suffix that are not already in set of vals at key.
+        Does not overwrite existing vals. Does not add val if already same val
+        in set.
+
+        Parameters:
+            keys (str | bytes | memoryview | Iterable): of key parts to be
+                    combined in order to form key
+            vals (str | bytes | memoryview | Iterable): of str serializations
+
+        Returns:
+            result (bool): True If successful, False otherwise.
+
+        """
+        if not isNonStringIterable(vals):  # not iterable
+            vals = (vals, )  # make iterable
+        return (self.db.putIoVals(sdb=self.sdb,
+                                     key=self._tokey(keys),
+                                     vals=[self._ser(val) for val in vals],
+                                     sep=self.ionsep))
+
+
+    def pin(self, keys: str | bytes | memoryview | Iterable,
+                  vals: str | bytes | memoryview | Iterable):
+        """
+        Pins (sets) vals at effective key made from keys and hidden ordinal suffix.
+        Overwrites. Removes all pre-existing vals that share same effective keys
+        and replaces them with vals
+
+        Parameters:
+            keys (Iterable): of key strs to be combined in order to form key
+            vals (Iterable): str serializations
+
+        Returns:
+            result (bool): True If successful, False otherwise.
+
+        """
+        if not isNonStringIterable(vals):  # not iterable
+            vals = (vals, )  # make iterable
+        return (self.db.pinIoVals(sdb=self.sdb,
+                                     key=self._tokey(keys),
+                                     vals=[self._ser(val) for val in vals],
+                                     sep=self.ionsep))
+
+
+    def rem(self, keys: str | bytes | memoryview | Iterable):
+        """
+        Removes entry at effective key made from keys and hidden ordinal suffix
+        that matches val if any. Otherwise deletes all values at effective key.
+
+        Parameters:
+            keys (Iterable): of key strs to be combined in order to form key
+            val (str):  value at key to delete. Subclass ._ser method may
+                        accept different value types
+                        if val is empty then remove all values at key
+
+        Returns:
+           result (bool): True if effective key with val exists so rem successful.
+                           False otherwise
+
+        """
+        return self.db.remIoVals(sdb=self.sdb,
+                                 key=self._tokey(keys),
+                                 sep=self.ionsep)
+
+
+    def cnt(self, keys: str | bytes | memoryview | Iterable):
+        """
+        Return count of  values at effective key made from keys and hidden ordinal
+        suffix. Zero otherwise
+
+        Parameters:
+            keys (Iterable): of key strs to be combined in order to form key
+        """
+        return (self.db.cntIoVals(sdb=self.sdb,
+                                     key=self._tokey(keys),
+                                     sep=self.ionsep))
+
+
+    def getItemIter(self, keys: str | bytes | memoryview | Iterable = "",
+                    *, topive=False):
+        """
+        Return iterator over all the items in top branch defined by keys where
+        keys may be truncation of full branch.
+
+        Returns:
+            items (Iterator): of (key, val) tuples over the all the items in
+            subdb whose effective key startswith key made from keys.
+            Keys may be keyspace prefix in order to return branches of key space.
+            When keys is empty then returns all items in subdb.
+            Returned key in each item has ordinal suffix removed.
+
+        Parameters:
+            keys (Iterable): tuple of bytes or strs that may be a truncation of
+                a full keys tuple in  in order to address all the items from
+                multiple branches of the key space. If keys is empty then gets
+                all items in database.
+                Either append "" to end of keys Iterable to ensure get properly
+                separated top branch key or use top=True.
+                In Python str.startswith('') always returns True so if branch
+                key is empty string it matches all keys in db with startswith.
+
+            topive (bool): True means treat as partial key tuple from top branch of
+                key space given by partial keys. Resultant key ends in .sep
+                character.
+                False means treat as full branch in key space. Resultant key
+                does not end in .sep character.
+                When last item in keys is empty str then will treat as
+                partial ending in sep regardless of top value
+
+        """
+        for key, val in self.db.getTopIoItemIter(sdb=self.sdb,
+                top=self._tokey(keys, topive=topive), sep=self.ionsep):
+            yield (self._tokeys(key), self._des(val))
 
 
 
@@ -1356,29 +1741,89 @@ class IoSetSuber(SuberBase):
         self.ionsep = ionsep if ionsep is not None else self.IonSep
 
 
-    def put(self, keys: str | bytes | memoryview | Iterable,
-                  vals: str | bytes | memoryview | Iterable):
+    def getFirst(self, keys: str | bytes | memoryview | Iterable):
         """
-        Puts all vals each with an effective key made from keys and hidden
-        ordinal suffix that are not already in set of vals at key.
-        Does not overwrite existing vals. Does not add val if already same val
-        in set.
+        Gets first val inserted at effecive key made from keys and hidden ordinal
+        suffix.
 
         Parameters:
-            keys (str | bytes | memoryview | Iterable): of key parts to be
-                    combined in order to form key
-            vals (str | bytes | memoryview | Iterable): of str serializations
+            keys (Iterable): of key strs to be combined in order to form key
 
         Returns:
-            result (bool): True If successful, False otherwise.
+            val (str|None):  value str, None if no entry at keys
 
         """
-        if not isNonStringIterable(vals):  # not iterable
-            vals = (vals, )  # make iterable
-        return (self.db.putIoSetVals(sdb=self.sdb,
-                                     key=self._tokey(keys),
-                                     vals=[self._ser(val) for val in vals],
-                                     sep=self.ionsep))
+        val = self.db.getIoValFirst(sdb=self.sdb, key=self._tokey(keys))
+        return (self._des(val) if val is not None else val)
+
+
+    def getLast(self, keys: str | bytes | memoryview | Iterable):
+        """
+        Gets last val inserted at effecive key made from keys and hidden ordinal
+        suffix.
+
+        Parameters:
+            keys (Iterable): of key strs to be combined in order to form key
+
+        Returns:
+            val (str|None):  value str, None if no entry at keys
+
+        """
+        val = self.db.getIoValLast(sdb=self.sdb, key=self._tokey(keys))
+        return (self._des(val) if val is not None else val)
+
+
+    def get(self, keys: str | bytes | memoryview | Iterable):
+        """
+        Gets vals set list at key made from effective keys
+
+        Parameters:
+            keys (Iterable): of key strs to be combined in order to form key
+
+        Returns:
+            vals (Iterable):  each item in list is str
+                          empty list if no entry at keys
+
+        """
+        return ([self._des(val) for val in
+                    self.db.getIoValsIter(sdb=self.sdb,
+                                             key=self._tokey(keys),
+                                             sep=self.ionsep)])
+
+
+    def getIter(self, keys: str | bytes | memoryview | Iterable):
+        """
+        Gets vals iterator at effecive key made from keys and hidden ordinal suffix.
+        All vals in set of vals that share same effecive key are retrieved in
+        insertion order.
+
+        Parameters:
+            keys (Iterable): of key strs to be combined in order to form key
+
+        Returns:
+            vals (Iterator):  str values. Raises StopIteration when done
+
+        """
+        for val in self.db.getIoValsIter(sdb=self.sdb,
+                                            key=self._tokey(keys),
+                                            sep=self.ionsep):
+            yield self._des(val)
+
+
+    def pop(self, keys: str | bytes | memoryview | Iterable):
+        """
+        Pops first val if any inserted at effecive key made from keys and
+        hidden ordinal suffix. Pop returns and deletes value if any.
+
+        Parameters:
+            keys (Iterable): of key strs to be combined in order to form key
+
+        Returns:
+            val (str|None):  value str, None if no entry at keys
+
+        """
+        val = self.db.popIoVal(sdb=self.sdb, key=self._tokey(keys))
+        return (self._des(val) if val is not None else val)
 
 
     def add(self, keys: str | bytes | memoryview | Iterable,
@@ -1405,6 +1850,31 @@ class IoSetSuber(SuberBase):
                                     sep=self.ionsep))
 
 
+    def put(self, keys: str | bytes | memoryview | Iterable,
+                  vals: str | bytes | memoryview | Iterable):
+        """
+        Puts all vals each with an effective key made from keys and hidden
+        ordinal suffix that are not already in set of vals at key.
+        Does not overwrite existing vals. Does not add val if already same val
+        in set.
+
+        Parameters:
+            keys (str | bytes | memoryview | Iterable): of key parts to be
+                    combined in order to form key
+            vals (str | bytes | memoryview | Iterable): of str serializations
+
+        Returns:
+            result (bool): True If successful, False otherwise.
+
+        """
+        if not isNonStringIterable(vals):  # not iterable
+            vals = (vals, )  # make iterable
+        return (self.db.putIoSetVals(sdb=self.sdb,
+                                     key=self._tokey(keys),
+                                     vals=[self._ser(val) for val in vals],
+                                     sep=self.ionsep))
+
+
     def pin(self, keys: str | bytes | memoryview | Iterable,
                   vals: str | bytes | memoryview | Iterable):
         """
@@ -1422,96 +1892,10 @@ class IoSetSuber(SuberBase):
         """
         if not isNonStringIterable(vals):  # not iterable
             vals = (vals, )  # make iterable
-        return (self.db.setIoSetVals(sdb=self.sdb,
+        return (self.db.pinIoSetVals(sdb=self.sdb,
                                      key=self._tokey(keys),
                                      vals=[self._ser(val) for val in vals],
                                      sep=self.ionsep))
-
-
-    def get(self, keys: str | bytes | memoryview | Iterable):
-        """
-        Gets vals set list at key made from effective keys
-
-        Parameters:
-            keys (Iterable): of key strs to be combined in order to form key
-
-        Returns:
-            vals (Iterable):  each item in list is str
-                          empty list if no entry at keys
-
-        """
-        return ([self._des(val) for val in
-                    self.db.getIoSetValsIter(sdb=self.sdb,
-                                             key=self._tokey(keys),
-                                             sep=self.ionsep)])
-
-
-    def getIter(self, keys: str | bytes | memoryview | Iterable):
-        """
-        Gets vals iterator at effecive key made from keys and hidden ordinal suffix.
-        All vals in set of vals that share same effecive key are retrieved in
-        insertion order.
-
-        Parameters:
-            keys (Iterable): of key strs to be combined in order to form key
-
-        Returns:
-            vals (Iterator):  str values. Raises StopIteration when done
-
-        """
-        for val in self.db.getIoSetValsIter(sdb=self.sdb,
-                                            key=self._tokey(keys),
-                                            sep=self.ionsep):
-            yield self._des(val)
-
-
-    def getFirst(self, keys: str | bytes | memoryview | Iterable):
-        """
-        Gets first val inserted at effecive key made from keys and hidden ordinal
-        suffix.
-
-        Parameters:
-            keys (Iterable): of key strs to be combined in order to form key
-
-        Returns:
-            val (str|None):  value str, None if no entry at keys
-
-        """
-        val = self.db.getIoSetValFirst(sdb=self.sdb, key=self._tokey(keys))
-        return (self._des(val) if val is not None else val)
-
-
-    def pop(self, keys: str | bytes | memoryview | Iterable):
-        """
-        Pops first val if any inserted at effecive key made from keys and
-        hidden ordinal suffix. Pop returns and deletes value if any.
-
-        Parameters:
-            keys (Iterable): of key strs to be combined in order to form key
-
-        Returns:
-            val (str|None):  value str, None if no entry at keys
-
-        """
-        val = self.db.popIoSetVal(sdb=self.sdb, key=self._tokey(keys))
-        return (self._des(val) if val is not None else val)
-
-
-    def getLast(self, keys: str | bytes | memoryview | Iterable):
-        """
-        Gets last val inserted at effecive key made from keys and hidden ordinal
-        suffix.
-
-        Parameters:
-            keys (Iterable): of key strs to be combined in order to form key
-
-        Returns:
-            val (str|None):  value str, None if no entry at keys
-
-        """
-        val = self.db.getIoSetValLast(sdb=self.sdb, key=self._tokey(keys))
-        return (self._des(val) if val is not None else val)
-
 
 
     def rem(self, keys: str | bytes | memoryview | Iterable,
@@ -1532,12 +1916,12 @@ class IoSetSuber(SuberBase):
 
         """
         if val:
-            return self.db.delIoSetVal(sdb=self.sdb,
+            return self.db.remIoSetVal(sdb=self.sdb,
                                        key=self._tokey(keys),
                                        val=self._ser(val),
                                        sep=self.ionsep)
         else:
-            return self.db.delIoSetVals(sdb=self.sdb,
+            return self.db.remIoVals(sdb=self.sdb,
                                        key=self._tokey(keys),
                                        sep=self.ionsep)
 
@@ -1550,7 +1934,7 @@ class IoSetSuber(SuberBase):
         Parameters:
             keys (Iterable): of key strs to be combined in order to form key
         """
-        return (self.db.cntIoSetVals(sdb=self.sdb,
+        return (self.db.cntIoVals(sdb=self.sdb,
                                      key=self._tokey(keys),
                                      sep=self.ionsep))
 
@@ -1587,10 +1971,9 @@ class IoSetSuber(SuberBase):
                 partial ending in sep regardless of top value
 
         """
-        for key, val in self.db.getTopIoSetItemIter(sdb=self.sdb,
+        for key, val in self.db.getTopIoItemIter(sdb=self.sdb,
                 top=self._tokey(keys, topive=topive), sep=self.ionsep):
             yield (self._tokeys(key), self._des(val))
-
 
 
 class DomSuberBase(SuberBase):
@@ -1730,15 +2113,71 @@ class DomSuber(DomSuberBase, Suber):
             prosep (str|None): separator class name proem to serialized CanDom instance
                                default is self.ProSep == '\n'
 
-
         """
         super(DomSuber, self).__init__(db=db, subkey=subkey,
                                        sep=sep, prosep=prosep, **kwa)
 
 
+class DomIoSuber(DomSuberBase, IoSuber):
+    """Subclass of (DomSuberBase, IoSuber) with values that are serialized
+    RegDom subclasses.  Insertion ordered list. No dedup.
+
+    forces .ser to '_'
+    forces .ionsep to '.'
+    forces .prosep to '\n'
+
+    Prepends and strips RegDom subclass name as proem to value when serializing
+    which is then stripped off when deserializing. Uses proem to lookup in
+    RegDom._registry the class object to use to reinstantiate when deserializing.
+
+    Inherited Class Attribues:
+        Sep (str): default separator to convert keys iterator to key bytes for db key
+        ProSep (str): separator class name proem to serialized RegDom instance
+        IonSep (str): default separator to suffix insertion order ordinal number
+
+    Inherited Attributes:
+        db (dbing.LMDBer): base LMDB db
+        sdb (lmdb._Database): instance of lmdb named sub db for this Suber
+        sep (str): separator for combining keys tuple of strs into key bytes
+        verify (bool): True means reverify when ._des from db when applicable
+                       False means do not reverify. Default False
+        prosep (str): separator class name proem to serialized RegDom instance
+                      default is self.ProSep == '\n'
+        ionsep (str): separator to suffix insertion order ordinal number
+                       default is self.IonSep == '.'
+
+    """
+
+    def __init__(self, db: Duror, *, subkey: str = 'dsqs.', sep='_',
+                 prosep='\n', ionsep='.', **kwa):
+        """
+        Inherited Parameters:
+            db (Duror): base db
+            subkey (str):  LMDB sub database key
+            dupsort (bool): True means enable duplicates at each key
+                               False (default) means do not enable duplicates at
+                               each key. Set to False
+            sep (str): separator to convert keys iterator to key bytes for db key
+                       default is self.Sep == '.'
+            verify (bool): True means reverify when ._des from db when applicable
+                           False means do not reverify. Default False
+            prosep (str|None): separator class name proem to serialized CanDom instance
+                               default is self.ProSep == '\n'
+            ionsep (str|None): separator to suffix insertion order ordinal number
+                       default is self.IonSep == '.'
+
+
+        """
+        super(DomIoSuber, self).__init__(db=db, subkey=subkey, sep=sep,
+                                            prosep=prosep, ionsep=ionsep, **kwa)
+
+
+
+
+
 class DomIoSetSuber(DomSuberBase, IoSetSuber):
     """Subclass of (DomSuberBase, IoSetSuber) with values that are serialized
-    RegDom subclasses.
+    RegDom subclasses.  Insertion ordered set with dedup.
 
     forces .ser to '_'
     forces .ionsep to '.'
@@ -1791,21 +2230,15 @@ class DomIoSetSuber(DomSuberBase, IoSetSuber):
 
 
 
-
 class Subery(Duror):
     """Subery subclass of Duror for managing subdbs of Duror for durable storage
     of action data
-
-    ToDo:  change DomIoSetSuber
-
     """
     def __init__(self, **kwa):
         """
         Setup named sub databases.
 
         Inherited Parameters:  (see Duror)
-
-
         """
         super(Subery, self).__init__(**kwa)
 
@@ -1816,14 +2249,17 @@ class Subery(Duror):
         Attributes:
             cans (Suber): subdb whose values are serialized Can instances
                 Can is a durable Bag
-            dsqs (IoSetSub): subdb whose values are serialized Durq instances
-                Durq is a durable Deck (deque)
+            drqs (IoSetSub): subdb whose values are serialized RegDom instances
+                Interfaced via a Durq which is a durable queue (FIFO)
+            dsqs (IoSetSub): subdb whose values are serialized RegDom instances
+                Interfaced via a Dusq which is  durable set queue (FIFO deduped)
 
         """
         super(Subery, self).reopen(**kwa)
 
         self.cans = DomSuber(db=self, subkey='cans.')
-        self.dsqs = IoSetSuber(db=self, subkey="dsqs.")
+        self.drqs = DomIoSuber(db=self, subkey="drqs.")  # durable queue
+        self.dsqs = DomIoSetSuber(db=self, subkey="dsqs.")  # durable set queue
 
         return self.env
 

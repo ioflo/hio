@@ -11,8 +11,8 @@ import lmdb
 from ordered_set import OrderedSet as oset
 
 from hio import HierError
-from hio.base import (Duror, openDuror, SuberBase, Suber, IoSetSuber,
-                      DomSuberBase, DomSuber, DomIoSetSuber, Subery)
+from hio.base import (Duror, openDuror, SuberBase, Suber, IoSuber, IoSetSuber,
+                      DomSuberBase, DomSuber, DomIoSuber, DomIoSetSuber, Subery)
 from hio.base.hier import Bag, CanDom, Can
 from hio.help import RawDom, RegDom
 
@@ -189,13 +189,13 @@ def test_duror():
         sdb = duror.env.open_db(key=b'beep.')
 
         assert duror.getVal(sdb, key) == None
-        assert duror.delVal(sdb, key) == False
+        assert duror.remVal(sdb, key) == False
         assert duror.putVal(sdb, key, val) == True
         assert duror.putVal(sdb, key, val) == False
-        assert duror.setVal(sdb, key, val) == True
+        assert duror.pinVal(sdb, key, val) == True
         assert duror.getVal(sdb, key) == val
         assert duror.cntVals(sdb) == 1
-        assert duror.delVal(sdb, key) == True
+        assert duror.remVal(sdb, key) == True
         assert duror.getVal(sdb, key) == None
         assert duror.cntVals(sdb) == 0
 
@@ -214,32 +214,24 @@ def test_duror():
                                                         (b'a.2', b'wee'),
                                                         (b'b.1', b'woo')]
         # Test delTopVals
-        assert duror.delTopVals(sdb, top=b"a.")
+        assert duror.remTopVals(sdb, top=b"a.")
         items = [ (key, bytes(val)) for key, val in duror.getTopItemIter(sdb=sdb )]
         assert items == [(b'b.1', b'woo')]
 
-        assert duror.delTopVals(sdb)
+        assert duror.remTopVals(sdb)
         assert duror.cntVals(sdb) == 0
 
 
-        # Test ioset methods
+        # Test io and ioset methods
         """
-        putIoSetVals
-        addIoSetVal
-        setIoSetVals
+        getIoValFirst, getIoValLast, getIoVals, getIoValsIter
+        popIoVal
+        remIoVals, cntIoVals
+        getTopIoItemsIter
 
-        getIoSetVals
-        getIoSetValsIter
-        getIoSetValFirst
-        popIoSetVal
-        getIoSetValLast
+        addIoVal, putIoVals, pinIoVals
 
-        cntIoSetVals
-
-        delIoSetVals
-        delIoSetVal
-
-        getTopIoSetItemsIter
+        addIoSetVal, putIoSetVals, pinIoSetVals, remIoSetVal
         """
 
         key0 = b'ABC_ZYX'
@@ -256,85 +248,83 @@ def test_duror():
         vals4 = [b'p', b'm']
         vals5 = [b't', b'a']
 
-        sdb = duror.env.open_db(key=b'ioset.', dupsort=False)
+        # Io
+        sdb = duror.env.open_db(key=b'io.', dupsort=False)
 
-        assert duror.getIoSetVals(sdb, key0) == oset()
-        assert duror.getIoSetValFirst(sdb, key0) == None
-        assert duror.getIoSetValLast(sdb, key0) == None
-        assert duror.cntIoSetVals(sdb, key0) == 0
-        assert duror.delIoSetVals(sdb, key0) == False
+        assert duror.getIoVals(sdb, key0) == oset()
+        assert duror.getIoValFirst(sdb, key0) == None
+        assert duror.getIoValLast(sdb, key0) == None
+        assert duror.cntIoVals(sdb, key0) == 0
+        assert duror.remIoVals(sdb, key0) == False
 
-        assert duror.putIoSetVals(sdb, key0, vals0) == True
-        assert duror.getIoSetVals(sdb, key0) == vals0  # preserved insertion order
-        assert duror.cntIoSetVals(sdb, key0) == len(vals0) == 4
-        assert duror.getIoSetValFirst(sdb, key0) == vals0[0]
-        assert duror.getIoSetValLast(sdb, key0) == vals0[-1] == vals0[-1]
+        assert duror.putIoVals(sdb, key0, vals0) == True
+        assert duror.getIoVals(sdb, key0) == vals0  # preserved insertion order
+        assert duror.cntIoVals(sdb, key0) == len(vals0) == 4
+        assert duror.getIoValFirst(sdb, key0) == vals0[0]
+        assert duror.getIoValLast(sdb, key0) == vals0[-1] == vals0[-1]
 
-        assert duror.putIoSetVals(sdb, key5, vals0)
-        assert duror.popIoSetVal(sdb, key5) == vals0[0]
-        assert duror.popIoSetVal(sdb, key5) == vals0[1]
-        assert duror.popIoSetVal(sdb, key5) == vals0[2]
-        assert duror.popIoSetVal(sdb, key5) == vals0[3]
-        assert duror.popIoSetVal(sdb, key5) == None
-        assert duror.cntIoSetVals(sdb, key5) == 0
+        assert duror.putIoVals(sdb, key5, vals0)
+        assert duror.popIoVal(sdb, key5) == vals0[0]
+        assert duror.popIoVal(sdb, key5) == vals0[1]
+        assert duror.popIoVal(sdb, key5) == vals0[2]
+        assert duror.popIoVal(sdb, key5) == vals0[3]
+        assert duror.popIoVal(sdb, key5) == None
+        assert duror.cntIoVals(sdb, key5) == 0
 
-        assert duror.putIoSetVals(sdb, key0, vals=[b'a']) == False   # duplicate
-        assert duror.getIoSetVals(sdb, key0) == vals0  #  no change
-        assert duror.putIoSetVals(sdb, key0, vals=[b'f']) == True
-        assert duror.getIoSetVals(sdb, key0) == [b"z", b"m", b"x", b"a", b"f"]
-        assert duror.addIoSetVal(sdb, key0, val=b'b') == True
-        assert duror.addIoSetVal(sdb, key0, val=b'a') == False
-        assert duror.getIoSetVals(sdb, key0) == [b"z", b"m", b"x", b"a", b"f", b"b"]
+        # test no dedup
+        assert duror.putIoVals(sdb, key0, vals=[b'a']) == True   # allows duplicate
+        assert duror.getIoVals(sdb, key0) == vals0 + [b'a']  #  doubled b'a'
+        assert duror.putIoVals(sdb, key0, vals=[b'f']) == True
+        assert duror.getIoVals(sdb, key0) == [b'z', b'm', b'x', b'a', b'a', b'f']
+        assert duror.addIoVal(sdb, key0, val=b'b') == True
+        assert duror.addIoVal(sdb, key0, val=b'a') == True  # allows duplicate
+        assert duror.getIoVals(sdb, key0) == [b'z', b'm', b'x', b'a', b'a', b'f', b'b', b'a']
 
-        assert [val for val in duror.getIoSetValsIter(sdb, key0)] == [b"z", b"m", b"x", b"a", b"f", b"b"]
-        assert duror.delIoSetVals(sdb, key0) == True
-        assert duror.getIoSetVals(sdb, key0) == []
+        assert [val for val in duror.getIoValsIter(sdb, key0)] == [b'z', b'm', b'x', b'a', b'a', b'f', b'b', b'a']
+        assert duror.remIoVals(sdb, key0) == True
+        assert duror.getIoVals(sdb, key0) == []
 
-        assert duror.putIoSetVals(sdb, key0, vals0) == True
-        for val in vals0:
-            assert duror.delIoSetVal(sdb, key0, val)
-        assert duror.getIoSetVals(sdb, key0) == oset()
-        assert duror.putIoSetVals(sdb, key0, vals0) == True
-        for val in sorted(vals0):  # test deletion out of order
-            assert duror.delIoSetVal(sdb, key0, val)
-        assert duror.getIoSetVals(sdb, key0) == []
+        assert duror.putIoVals(sdb, key0, vals0) == True
+        assert duror.getIoVals(sdb, key0) == [b'z', b'm', b'x', b'a']
+        assert duror.putIoVals(sdb, key0, vals0) == True
+        assert duror.remIoVals(sdb, key0) == True
+        assert duror.getIoVals(sdb, key0) == []
 
-        #delete and add in odd order
-        assert duror.putIoSetVals(sdb, key0, vals0) == True
-        assert duror.delIoSetVal(sdb, key0, vals0[2])
-        assert duror.addIoSetVal(sdb, key0, b'w')
-        assert duror.delIoSetVal(sdb, key0, vals0[0])
-        assert duror.addIoSetVal(sdb, key0, b'e')
-        assert duror.getIoSetVals(sdb, key0) == [b'm', b'a', b'w', b'e']
+        #change order
+        assert duror.putIoVals(sdb, key0, vals0) == True
+        assert duror.addIoVal(sdb, key0, b'w')
+        assert duror.addIoVal(sdb, key0, b'e')
+        assert duror.getIoVals(sdb, key0) == [b'z', b'm', b'x', b'a', b'w', b'e']
 
-        assert duror.delIoSetVals(sdb, key0) == True
-        assert duror.getIoSetVals(sdb, key0) == oset()
+        assert duror.remIoVals(sdb, key0) == True
+        assert duror.getIoVals(sdb, key0) == []
 
-        assert duror.putIoSetVals(sdb, key0, vals0) == True
-        assert duror.putIoSetVals(sdb, key1, vals1) == True
-        assert duror.putIoSetVals(sdb, key2, vals2) == True
-        assert duror.getIoSetVals(sdb, key0) == vals0
-        assert duror.getIoSetVals(sdb, key1) == vals1
-        assert duror.getIoSetVals(sdb, key2) == vals2
+        assert duror.putIoVals(sdb, key0, vals0) == True
+        assert duror.putIoVals(sdb, key1, vals1) == True
+        assert duror.putIoVals(sdb, key2, vals2) == True
+        assert duror.getIoVals(sdb, key0) == vals0
+        assert duror.getIoVals(sdb, key1) == vals1
+        assert duror.getIoVals(sdb, key2) == vals2
 
-        assert duror.setIoSetVals(sdb, key2, vals3)
-        assert duror.getIoSetVals(sdb, key2) == vals3
-        assert duror.cntVals(sdb) == 10
+        assert duror.pinIoVals(sdb, key2, vals3)
+        assert duror.getIoVals(sdb, key2) == vals3
+        assert duror.cntVals(sdb) == 10  # whole database
 
-        assert duror.delTopVals(sdb)
-        assert duror.cntVals(sdb) == 0
+        assert duror.remTopVals(sdb)  # whole database
+        assert duror.cntVals(sdb) == 0  # whole databse
 
-        # Test setTopIoSetItemIter(self, sdb, pre)
-        assert duror.putIoSetVals(sdb, key0, vals0) == True
-        assert duror.putIoSetVals(sdb, key1, vals1) == True
-        assert duror.putIoSetVals(sdb, key2, vals2) == True
-        assert duror.putIoSetVals(sdb, key3, vals3) == True
-        assert duror.putIoSetVals(sdb, key4, vals4) == True
-        assert duror.putIoSetVals(sdb, key5, vals5) == True
+        # Test getTopIoItemIter
+        # setup database
+        assert duror.putIoVals(sdb, key0, vals0) == True
+        assert duror.putIoVals(sdb, key1, vals1) == True
+        assert duror.putIoVals(sdb, key2, vals2) == True
+        assert duror.putIoVals(sdb, key3, vals3) == True
+        assert duror.putIoVals(sdb, key4, vals4) == True
+        assert duror.putIoVals(sdb, key5, vals5) == True
         assert duror.cntVals(sdb) == 18
 
         items = []
-        for key, val in duror.getTopIoSetItemIter(sdb):
+        for key, val in duror.getTopIoItemIter(sdb):
             items.append((key, bytes(val)))
 
         assert items == [(b'ABC_EFG', b'p'),
@@ -358,7 +348,7 @@ def test_duror():
 
 
         items = []
-        for key, val in duror.getTopIoSetItemIter(sdb, top=b'ABC_'):
+        for key, val in duror.getTopIoItemIter(sdb, top=b'ABC_'):
             items.append((key, bytes(val)))
 
         assert items == [(b'ABC_EFG', b'p'),
@@ -371,7 +361,138 @@ def test_duror():
                         (b'ABC_ZYX', b'a')]
 
         items = []
-        for key, val in duror.getTopIoSetItemIter(sdb, top=b'AB'):
+        for key, val in duror.getTopIoItemIter(sdb, top=b'AB'):
+            items.append((key, bytes(val)))
+
+        assert items == [(b'ABC_EFG', b'p'),
+                        (b'ABC_EFG', b'm'),
+                        (b'ABC_HIJ', b't'),
+                        (b'ABC_HIJ', b'a'),
+                        (b'ABC_ZYX', b'z'),
+                        (b'ABC_ZYX', b'm'),
+                        (b'ABC_ZYX', b'x'),
+                        (b'ABC_ZYX', b'a'),
+                        (b'AB_CDE', b'q'),
+                        (b'AB_CDE', b'e')]
+
+        # IoSet
+        sdb = duror.env.open_db(key=b'ioset.', dupsort=False)
+
+        assert duror.getIoVals(sdb, key0) == oset()
+        assert duror.getIoValFirst(sdb, key0) == None
+        assert duror.getIoValLast(sdb, key0) == None
+        assert duror.cntIoVals(sdb, key0) == 0
+        assert duror.remIoVals(sdb, key0) == False
+
+        assert duror.putIoSetVals(sdb, key0, vals0) == True
+        assert duror.getIoVals(sdb, key0) == vals0  # preserved insertion order
+        assert duror.cntIoVals(sdb, key0) == len(vals0) == 4
+        assert duror.getIoValFirst(sdb, key0) == vals0[0]
+        assert duror.getIoValLast(sdb, key0) == vals0[-1] == vals0[-1]
+
+        assert duror.putIoSetVals(sdb, key5, vals0)
+        assert duror.popIoVal(sdb, key5) == vals0[0]
+        assert duror.popIoVal(sdb, key5) == vals0[1]
+        assert duror.popIoVal(sdb, key5) == vals0[2]
+        assert duror.popIoVal(sdb, key5) == vals0[3]
+        assert duror.popIoVal(sdb, key5) == None
+        assert duror.cntIoVals(sdb, key5) == 0
+
+        # Test dedup
+        assert duror.putIoSetVals(sdb, key0, vals=[b'a']) == False  # disallows duplicate
+        assert duror.getIoVals(sdb, key0) == vals0  #  no change
+        assert duror.putIoSetVals(sdb, key0, vals=[b'f']) == True
+        assert duror.getIoVals(sdb, key0) == [b"z", b"m", b"x", b"a", b"f"]
+        assert duror.addIoSetVal(sdb, key0, val=b'b') == True
+        assert duror.addIoSetVal(sdb, key0, val=b'a') == False  # disallows duplicate
+        assert duror.getIoVals(sdb, key0) == [b"z", b"m", b"x", b"a", b"f", b"b"]
+
+        assert [val for val in duror.getIoValsIter(sdb, key0)] == [b"z", b"m", b"x", b"a", b"f", b"b"]
+        assert duror.remIoVals(sdb, key0) == True
+        assert duror.getIoVals(sdb, key0) == []
+
+        assert duror.putIoSetVals(sdb, key0, vals0) == True
+        for val in vals0:
+            assert duror.remIoSetVal(sdb, key0, val)
+        assert duror.getIoVals(sdb, key0) == oset()
+        assert duror.putIoSetVals(sdb, key0, vals0) == True
+        for val in sorted(vals0):  # test deletion out of order
+            assert duror.remIoSetVal(sdb, key0, val)
+        assert duror.getIoVals(sdb, key0) == []
+
+        #delete and add in odd order
+        assert duror.putIoSetVals(sdb, key0, vals0) == True
+        assert duror.remIoSetVal(sdb, key0, vals0[2])
+        assert duror.addIoSetVal(sdb, key0, b'w')
+        assert duror.remIoSetVal(sdb, key0, vals0[0])
+        assert duror.addIoSetVal(sdb, key0, b'e')
+        assert duror.getIoVals(sdb, key0) == [b'm', b'a', b'w', b'e']
+
+        assert duror.remIoVals(sdb, key0) == True
+        assert duror.getIoVals(sdb, key0) == oset()
+
+        assert duror.putIoSetVals(sdb, key0, vals0) == True
+        assert duror.putIoSetVals(sdb, key1, vals1) == True
+        assert duror.putIoSetVals(sdb, key2, vals2) == True
+        assert duror.getIoVals(sdb, key0) == vals0
+        assert duror.getIoVals(sdb, key1) == vals1
+        assert duror.getIoVals(sdb, key2) == vals2
+
+        assert duror.pinIoSetVals(sdb, key2, vals3)
+        assert duror.getIoVals(sdb, key2) == vals3
+        assert duror.cntVals(sdb) == 10
+
+        assert duror.remTopVals(sdb)
+        assert duror.cntVals(sdb) == 0
+
+        # Test setTopIoSetItemIter(self, sdb, pre)
+        assert duror.putIoSetVals(sdb, key0, vals0) == True
+        assert duror.putIoSetVals(sdb, key1, vals1) == True
+        assert duror.putIoSetVals(sdb, key2, vals2) == True
+        assert duror.putIoSetVals(sdb, key3, vals3) == True
+        assert duror.putIoSetVals(sdb, key4, vals4) == True
+        assert duror.putIoSetVals(sdb, key5, vals5) == True
+        assert duror.cntVals(sdb) == 18
+
+        items = []
+        for key, val in duror.getTopIoItemIter(sdb):
+            items.append((key, bytes(val)))
+
+        assert items == [(b'ABC_EFG', b'p'),
+                        (b'ABC_EFG', b'm'),
+                        (b'ABC_HIJ', b't'),
+                        (b'ABC_HIJ', b'a'),
+                        (b'ABC_ZYX', b'z'),
+                        (b'ABC_ZYX', b'm'),
+                        (b'ABC_ZYX', b'x'),
+                        (b'ABC_ZYX', b'a'),
+                        (b'AB_CDE', b'q'),
+                        (b'AB_CDE', b'e'),
+                        (b'DEF_WVU', b'w'),
+                        (b'DEF_WVU', b'n'),
+                        (b'DEF_WVU', b'y'),
+                        (b'DEF_WVU', b'd'),
+                        (b'GHI_TSR', b'p'),
+                        (b'GHI_TSR', b'o'),
+                        (b'GHI_TSR', b'h'),
+                        (b'GHI_TSR', b'f')]
+
+
+        items = []
+        for key, val in duror.getTopIoItemIter(sdb, top=b'ABC_'):
+            items.append((key, bytes(val)))
+
+        assert items == [(b'ABC_EFG', b'p'),
+                        (b'ABC_EFG', b'm'),
+                        (b'ABC_HIJ', b't'),
+                        (b'ABC_HIJ', b'a'),
+                        (b'ABC_ZYX', b'z'),
+                        (b'ABC_ZYX', b'm'),
+                        (b'ABC_ZYX', b'x'),
+                        (b'ABC_ZYX', b'a')]
+
+        items = []
+        for key, val in duror.getTopIoItemIter(sdb, top=b'AB'):
             items.append((key, bytes(val)))
 
         assert items == [(b'ABC_EFG', b'p'),
@@ -631,22 +752,22 @@ def test_suber():
 
 
 
-def test_ioset_suber():
-    """Test IoSetSuber LMDBer sub database class"""
+def test_io_suber():
+    """Test IoSuber Duror sub database class"""
 
     with openDuror() as duror:
         assert isinstance(duror, Duror)
         assert duror.name == "test"
         assert duror.opened
 
-        assert IoSetSuber.Sep == '_'
-        assert IoSetSuber.IonSep == '.'
+        assert IoSuber.Sep == '_'
+        assert IoSuber.IonSep == '.'
 
-        iosuber = IoSetSuber(db=duror, subkey='bags.')
-        assert isinstance(iosuber, IoSetSuber)
-        assert not iosuber.sdb.flags()["dupsort"]
-        assert iosuber.sep == '_'
-        assert iosuber.ionsep == '.'
+        suber = IoSuber(db=duror, subkey='bags.')
+        assert isinstance(suber, IoSuber)
+        assert not suber.sdb.flags()["dupsort"]
+        assert suber.sep == '_'
+        assert suber.ionsep == '.'
 
         sue = "Hello sailer!"
         sal = "Not my type."
@@ -654,57 +775,57 @@ def test_ioset_suber():
         keys0 = ("testkey", "0001")
         keys1 = ("testkey", "0002")
 
-        assert iosuber.put(keys=keys0, vals=[sal, sue])
-        assert iosuber.get(keys=keys0) == [sal, sue]  # insertion order not lexicographic
-        assert iosuber.cnt(keys0) == 2
-        assert iosuber.getFirst(keys=keys0) == sal
-        assert iosuber.getLast(keys=keys0) == sue
-        assert iosuber.pop(keys=keys0) == sal
-        assert iosuber.pop(keys=keys0) == sue
-        assert iosuber.pop(keys=keys0) == None
-        assert iosuber.cnt(keys0) == 0
+        assert suber.put(keys=keys0, vals=[sal, sue])
+        assert suber.get(keys=keys0) == [sal, sue]  # insertion order not lexicographic
+        assert suber.cnt(keys0) == 2
+        assert suber.getFirst(keys=keys0) == sal
+        assert suber.getLast(keys=keys0) == sue
+        assert suber.pop(keys=keys0) == sal
+        assert suber.pop(keys=keys0) == sue
+        assert suber.pop(keys=keys0) == None
+        assert suber.cnt(keys0) == 0
 
-        assert iosuber.put(keys=keys0, vals=[sal, sue])
-        assert iosuber.get(keys=keys0) == [sal, sue]  # insertion order not lexicographic
-        assert iosuber.rem(keys0)
-        assert iosuber.get(keys=keys0) == []
-        assert iosuber.cnt(keys0) == 0
+        assert suber.put(keys=keys0, vals=[sal, sue])
+        assert suber.get(keys=keys0) == [sal, sue]  # insertion order not lexicographic
+        assert suber.rem(keys0)
+        assert suber.get(keys=keys0) == []
+        assert suber.cnt(keys0) == 0
 
-        assert iosuber.put(keys=keys0, vals=[sue, sal])
-        actuals = iosuber.get(keys=keys0)
+        assert suber.put(keys=keys0, vals=[sue, sal])
+        actuals = suber.get(keys=keys0)
         assert actuals == [sue, sal]  # insertion order
-        actual = iosuber.getLast(keys=keys0)
+        actual = suber.getLast(keys=keys0)
         assert actual == sal
 
         sam = "A real charmer!"
-        result = iosuber.add(keys=keys0, val=sam)
+        result = suber.add(keys=keys0, val=sam)
         assert result
-        actuals = iosuber.get(keys=keys0)
+        actuals = suber.get(keys=keys0)
         assert actuals == [sue, sal, sam]   # insertion order
 
         zoe = "See ya later."
         zia = "Hey gorgeous!"
 
-        result = iosuber.pin(keys=keys0, vals=[zoe, zia])
+        result = suber.pin(keys=keys0, vals=[zoe, zia])
         assert result
-        actuals = iosuber.get(keys=keys0)
+        actuals = suber.get(keys=keys0)
         assert actuals == [zoe, zia]  # insertion order
 
-        assert iosuber.put(keys=keys1, vals=[sal, sue, sam])
-        actuals = iosuber.get(keys=keys1)
+        assert suber.put(keys=keys1, vals=[sal, sue, sam])
+        actuals = suber.get(keys=keys1)
         assert actuals == [sal, sue, sam]
 
-        for i, val in enumerate(iosuber.getIter(keys=keys1)):
+        for i, val in enumerate(suber.getIter(keys=keys1)):
             assert val == actuals[i]
 
-        items = [(keys, val) for keys, val in iosuber.getItemIter()]
+        items = [(keys, val) for keys, val in suber.getItemIter()]
         assert items == [(('testkey', '0001'), 'See ya later.'),
                         (('testkey', '0001'), 'Hey gorgeous!'),
                         (('testkey', '0002'), 'Not my type.'),
                         (('testkey', '0002'), 'Hello sailer!'),
                         (('testkey', '0002'), 'A real charmer!')]
 
-        items = list(iosuber.getFullItemIter())
+        items = list(suber.getFullItemIter())
         assert items ==  [(('testkey', '0001.00000000000000000000000000000000'), 'See ya later.'),
                         (('testkey', '0001.00000000000000000000000000000001'), 'Hey gorgeous!'),
                         (('testkey', '0002.00000000000000000000000000000000'), 'Not my type.'),
@@ -713,40 +834,212 @@ def test_ioset_suber():
 
 
 
-        items = [(keys, val) for keys,  val in  iosuber.getItemIter(keys=keys0)]
+        items = [(keys, val) for keys,  val in  suber.getItemIter(keys=keys0)]
         assert items == [(('testkey', '0001'), 'See ya later.'),
                          (('testkey', '0001'), 'Hey gorgeous!')]
 
-        items = [(keys, val) for keys,  val in iosuber.getItemIter(keys=keys1)]
+        items = [(keys, val) for keys,  val in suber.getItemIter(keys=keys1)]
         assert items == [(('testkey', '0002'), 'Not my type.'),
                         (('testkey', '0002'), 'Hello sailer!'),
                         (('testkey', '0002'), 'A real charmer!')]
 
 
         # Test with top keys
-        assert iosuber.put(keys=("test", "pop"), vals=[sal, sue, sam])
+        assert suber.put(keys=("test", "pop"), vals=[sal, sue, sam])
         topkeys = ("test", "")
-        items = [(keys, val) for keys, val in iosuber.getItemIter(keys=topkeys)]
+        items = [(keys, val) for keys, val in suber.getItemIter(keys=topkeys)]
         assert items == [(('test', 'pop'), 'Not my type.'),
                          (('test', 'pop'), 'Hello sailer!'),
                          (('test', 'pop'), 'A real charmer!')]
 
         # test with top parameter
         keys = ("test", )
-        items = [(keys, val) for keys, val in iosuber.getItemIter(keys=keys, topive=True)]
+        items = [(keys, val) for keys, val in suber.getItemIter(keys=keys, topive=True)]
         assert items == [(('test', 'pop'), 'Not my type.'),
                          (('test', 'pop'), 'Hello sailer!'),
                          (('test', 'pop'), 'A real charmer!')]
 
         # IoItems
-        items = list(iosuber.getFullItemIter(keys=topkeys))
+        items = list(suber.getFullItemIter(keys=topkeys))
+        assert items == [(('test', 'pop.00000000000000000000000000000000'), 'Not my type.'),
+                    (('test', 'pop.00000000000000000000000000000001'), 'Hello sailer!'),
+                    (('test', 'pop.00000000000000000000000000000002'), 'A real charmer!')]
+
+
+        assert suber.trim(keys=("test", ""))
+        items = [(keys, val) for keys, val in suber.getItemIter()]
+        assert items == [(('testkey', '0001'), 'See ya later.'),
+                        (('testkey', '0001'), 'Hey gorgeous!'),
+                        (('testkey', '0002'), 'Not my type.'),
+                        (('testkey', '0002'), 'Hello sailer!'),
+                        (('testkey', '0002'), 'A real charmer!')]
+
+        # test with keys as string not tuple
+        keys2 = "keystr"
+        bob = "Shove off!"
+        assert suber.put(keys=keys2, vals=[bob])
+        actuals = suber.get(keys=keys2)
+        assert actuals == [bob]
+        assert suber.cnt(keys2) == 1
+        assert suber.rem(keys2)
+        actuals = suber.get(keys=keys2)
+        assert actuals == []
+        assert suber.cnt(keys2) == 0
+
+        assert suber.put(keys=keys2, vals=[bob])
+        actuals = suber.get(keys=keys2)
+        assert actuals == [bob]
+
+        bil = "Go away."
+        assert suber.pin(keys=keys2, vals=[bil])
+        actuals = suber.get(keys=keys2)
+        assert actuals == [bil]
+
+        assert suber.add(keys=keys2, val=bob)
+        actuals = suber.get(keys=keys2)
+        assert actuals == [bil, bob]
+
+        # Test trim and append
+        assert suber.trim()  # default trims whole database
+        assert suber.put(keys=keys1, vals=[bob, bil])
+        assert suber.get(keys=keys1) == [bob, bil]
+
+    assert not os.path.exists(duror.path)
+    assert not duror.opened
+    """Done Test"""
+
+
+
+def test_ioset_suber():
+    """Test IoSetSuber Duror sub database class
+
+
+    """
+    with openDuror() as duror:
+        assert isinstance(duror, Duror)
+        assert duror.name == "test"
+        assert duror.opened
+
+        assert IoSetSuber.Sep == '_'
+        assert IoSetSuber.IonSep == '.'
+
+        suber = IoSetSuber(db=duror, subkey='bags.')
+        assert isinstance(suber, IoSetSuber)
+        assert not suber.sdb.flags()["dupsort"]
+        assert suber.sep == '_'
+        assert suber.ionsep == '.'
+
+        sue = "Hello sailer!"
+        sal = "Not my type."
+        sam = "A real charmer!"
+        zoe = "See ya later."
+        zia = "Hey gorgeous!"
+
+        keys0 = ("testkey", "0001")
+        keys1 = ("testkey", "0002")
+
+        assert suber.put(keys=keys0, vals=[sal, sue])
+        assert suber.get(keys=keys0) == [sal, sue]  # insertion order not lexicographic
+        assert suber.cnt(keys0) == 2
+        assert suber.getFirst(keys=keys0) == sal
+        assert suber.getLast(keys=keys0) == sue
+        assert suber.pop(keys=keys0) == sal
+        assert suber.pop(keys=keys0) == sue
+        assert suber.pop(keys=keys0) == None
+        assert suber.cnt(keys0) == 0
+
+        assert suber.put(keys=keys0, vals=[sal, sue])
+        assert suber.get(keys=keys0) == [sal, sue]  # insertion order not lexicographic
+        assert suber.rem(keys0)
+        assert suber.get(keys=keys0) == []
+        assert suber.cnt(keys0) == 0
+
+        # Test Dedup
+        assert suber.put(keys=keys0, vals=[sal, sue, sam])
+        assert suber.get(keys=keys0) == [sal, sue, sam]  # insertion order not lexicographic
+        assert not suber.add(keys=keys0, val=sue)  # dup disallowed
+        assert suber.get(keys=keys0) == [sal, sue, sam]
+        assert not suber.put(keys=keys0, vals=[sal, sam])  # dup disallowed
+        assert suber.get(keys=keys0) == [sal, sue, sam]
+        assert suber.put(keys=keys0, vals=[zoe, zia, sal, sam])  # at least one not dup
+        assert suber.get(keys=keys0) == [sal, sue, sam, zoe, zia]
+        assert suber.rem(keys0)
+        assert suber.get(keys=keys0) == []
+        assert suber.cnt(keys0) == 0
+
+        assert suber.put(keys=keys0, vals=[sue, sal])
+        actuals = suber.get(keys=keys0)
+        assert actuals == [sue, sal]  # insertion order
+        actual = suber.getLast(keys=keys0)
+        assert actual == sal
+
+        result = suber.add(keys=keys0, val=sam)
+        assert result
+        actuals = suber.get(keys=keys0)
+        assert actuals == [sue, sal, sam]   # insertion order
+
+        result = suber.pin(keys=keys0, vals=[zoe, zia])
+        assert result
+        actuals = suber.get(keys=keys0)
+        assert actuals == [zoe, zia]  # insertion order
+
+        assert suber.put(keys=keys1, vals=[sal, sue, sam])
+        actuals = suber.get(keys=keys1)
+        assert actuals == [sal, sue, sam]
+
+        for i, val in enumerate(suber.getIter(keys=keys1)):
+            assert val == actuals[i]
+
+        items = [(keys, val) for keys, val in suber.getItemIter()]
+        assert items == [(('testkey', '0001'), 'See ya later.'),
+                        (('testkey', '0001'), 'Hey gorgeous!'),
+                        (('testkey', '0002'), 'Not my type.'),
+                        (('testkey', '0002'), 'Hello sailer!'),
+                        (('testkey', '0002'), 'A real charmer!')]
+
+        items = list(suber.getFullItemIter())
+        assert items ==  [(('testkey', '0001.00000000000000000000000000000000'), 'See ya later.'),
+                        (('testkey', '0001.00000000000000000000000000000001'), 'Hey gorgeous!'),
+                        (('testkey', '0002.00000000000000000000000000000000'), 'Not my type.'),
+                        (('testkey', '0002.00000000000000000000000000000001'), 'Hello sailer!'),
+                        (('testkey', '0002.00000000000000000000000000000002'), 'A real charmer!')]
+
+
+
+        items = [(keys, val) for keys,  val in  suber.getItemIter(keys=keys0)]
+        assert items == [(('testkey', '0001'), 'See ya later.'),
+                         (('testkey', '0001'), 'Hey gorgeous!')]
+
+        items = [(keys, val) for keys,  val in suber.getItemIter(keys=keys1)]
+        assert items == [(('testkey', '0002'), 'Not my type.'),
+                        (('testkey', '0002'), 'Hello sailer!'),
+                        (('testkey', '0002'), 'A real charmer!')]
+
+
+        # Test with top keys
+        assert suber.put(keys=("test", "pop"), vals=[sal, sue, sam])
+        topkeys = ("test", "")
+        items = [(keys, val) for keys, val in suber.getItemIter(keys=topkeys)]
+        assert items == [(('test', 'pop'), 'Not my type.'),
+                         (('test', 'pop'), 'Hello sailer!'),
+                         (('test', 'pop'), 'A real charmer!')]
+
+        # test with top parameter
+        keys = ("test", )
+        items = [(keys, val) for keys, val in suber.getItemIter(keys=keys, topive=True)]
+        assert items == [(('test', 'pop'), 'Not my type.'),
+                         (('test', 'pop'), 'Hello sailer!'),
+                         (('test', 'pop'), 'A real charmer!')]
+
+        # IoItems
+        items = list(suber.getFullItemIter(keys=topkeys))
         assert items == [(('test', 'pop.00000000000000000000000000000000'), 'Not my type.'),
                     (('test', 'pop.00000000000000000000000000000001'), 'Hello sailer!'),
                     (('test', 'pop.00000000000000000000000000000002'), 'A real charmer!')]
 
         # test remove with a specific val
-        assert iosuber.rem(keys=("testkey", "0002"), val=sue)
-        items = [(keys, val) for keys, val in iosuber.getItemIter()]
+        assert suber.rem(keys=("testkey", "0002"), val=sue)
+        items = [(keys, val) for keys, val in suber.getItemIter()]
         assert items == [(('test', 'pop'), 'Not my type.'),
                         (('test', 'pop'), 'Hello sailer!'),
                         (('test', 'pop'), 'A real charmer!'),
@@ -755,8 +1048,8 @@ def test_ioset_suber():
                         (('testkey', '0002'), 'Not my type.'),
                         (('testkey', '0002'), 'A real charmer!')]
 
-        assert iosuber.trim(keys=("test", ""))
-        items = [(keys, val) for keys, val in iosuber.getItemIter()]
+        assert suber.trim(keys=("test", ""))
+        items = [(keys, val) for keys, val in suber.getItemIter()]
         assert items == [(('testkey', '0001'), 'See ya later.'),
                         (('testkey', '0001'), 'Hey gorgeous!'),
                         (('testkey', '0002'), 'Not my type.'),
@@ -767,32 +1060,32 @@ def test_ioset_suber():
         # test with keys as string not tuple
         keys2 = "keystr"
         bob = "Shove off!"
-        assert iosuber.put(keys=keys2, vals=[bob])
-        actuals = iosuber.get(keys=keys2)
+        assert suber.put(keys=keys2, vals=[bob])
+        actuals = suber.get(keys=keys2)
         assert actuals == [bob]
-        assert iosuber.cnt(keys2) == 1
-        assert iosuber.rem(keys2)
-        actuals = iosuber.get(keys=keys2)
+        assert suber.cnt(keys2) == 1
+        assert suber.rem(keys2)
+        actuals = suber.get(keys=keys2)
         assert actuals == []
-        assert iosuber.cnt(keys2) == 0
+        assert suber.cnt(keys2) == 0
 
-        assert iosuber.put(keys=keys2, vals=[bob])
-        actuals = iosuber.get(keys=keys2)
+        assert suber.put(keys=keys2, vals=[bob])
+        actuals = suber.get(keys=keys2)
         assert actuals == [bob]
 
         bil = "Go away."
-        assert iosuber.pin(keys=keys2, vals=[bil])
-        actuals = iosuber.get(keys=keys2)
+        assert suber.pin(keys=keys2, vals=[bil])
+        actuals = suber.get(keys=keys2)
         assert actuals == [bil]
 
-        assert iosuber.add(keys=keys2, val=bob)
-        actuals = iosuber.get(keys=keys2)
+        assert suber.add(keys=keys2, val=bob)
+        actuals = suber.get(keys=keys2)
         assert actuals == [bil, bob]
 
         # Test trim and append
-        assert iosuber.trim()  # default trims whole database
-        assert iosuber.put(keys=keys1, vals=[bob, bil])
-        assert iosuber.get(keys=keys1) == [bob, bil]
+        assert suber.trim()  # default trims whole database
+        assert suber.put(keys=keys1, vals=[bob, bil])
+        assert suber.get(keys=keys1) == [bob, bil]
 
     assert not os.path.exists(duror.path)
     assert not duror.opened
@@ -1087,6 +1380,234 @@ def test_dom_suber():
     """Done Test"""
 
 
+def test_dom_io_suber():
+    """Test DomIoSuber class"""
+
+    with openDuror() as duror:
+        assert isinstance(duror, Duror)
+        assert duror.name == "test"
+        assert duror.opened
+
+        assert DomIoSuber.Sep == '_'
+        assert DomIoSuber.ProSep == '\n'
+        assert DomIoSuber.IonSep == '.'
+
+        suber = DomIoSuber(db=duror)
+        assert isinstance(suber, DomIoSuber)
+        assert not suber.sdb.flags()["dupsort"]
+        assert suber.sep == "_"
+        assert suber.prosep == '\n'
+        assert suber.ionsep == '.'
+
+        keys = ('key', 'top')
+        key = suber._tokey(keys)
+        assert key == b'key_top'
+        assert suber._tokeys(key) == keys
+
+        # test attempt to _ser _des with non RegDom subclass
+        dom = RawDom()
+        with pytest.raises(HierError):
+            ser = suber._ser(dom)
+
+        ser = b'RawDom\n{}'  # empty fields
+        with pytest.raises(HierError):
+            dom = suber._des(ser)
+
+        # test with RegDom subclasses
+        bag = Bag()
+        ser = suber._ser(bag)
+        assert ser == b'Bag\n{"value":null}'
+        bag = suber._des(ser)
+        assert bag.value == None
+
+        can = CanDom()
+        ser = suber._ser(can)
+        assert ser == b'CanDom\n{}'  # empty fields
+
+        proem, serj = ser.split(suber.prosep.encode(), maxsplit=1)
+        assert proem == b'CanDom'
+        assert serj == b'{}'
+        proem = proem.decode()
+        assert proem in CanDom._registry
+
+        can = suber._des(ser)
+        assert isinstance(can, CanDom)
+
+        can = Can()
+        assert can.value == None
+
+        ser = suber._ser(can)
+        assert ser == b'Can\n{"value":null}'  # value field
+
+        proem, serj = ser.split(suber.prosep.encode(), maxsplit=1)
+        assert proem == b'Can'
+        assert serj == b'{"value":null}'
+        proem = proem.decode()
+        assert proem in Can._registry
+
+        can = suber._des(ser)
+        assert isinstance(can, CanDom)
+        assert can.value == None
+
+        # Test Io methods
+
+        # Test methods to save to lmdb
+        val0 = Bag(value=0)
+        val1 = Bag(value=1)
+        val2 = Bag(value=2)
+        val3 = Bag(value=3)
+        val4 = Bag(value=4)
+        val5 = Bag(value=5)
+
+        keys0 = ("testkey", "00")
+        keys1 = ("testkey", "01")
+        keys2 = ("testkey", "02")
+        keys3 = ("testkey", "03")
+
+        assert suber.put(keys=keys0, vals=[val0, val1])
+        assert suber.get(keys=keys0) == [val0, val1]  # insertion order not lexicographic
+        assert suber.cnt(keys0) == 2
+        assert suber.getFirst(keys=keys0) == val0  # test getFirst
+        assert suber.getLast(keys=keys0) == val1  # test getFirst
+        assert suber.pop(keys=keys0) == val0  # test pop
+        assert suber.pop(keys=keys0) == val1  # test pop
+        assert suber.pop(keys=keys0) == None  # test pop
+        assert suber.cnt(keys0) == 0
+
+        assert suber.put(keys=keys0, vals=[val0, val1])
+        assert suber.get(keys=keys0) == [val0, val1]  # insertion order not lexicographic
+        assert suber.rem(keys0)
+        assert suber.get(keys=keys0) == []
+        assert suber.cnt(keys0) == 0
+
+        # Test Dedup
+        assert suber.put(keys=keys0, vals=[val0, val1, val2])
+        assert suber.get(keys=keys0) == [val0, val1, val2]  # insertion order not lexicographic
+        assert suber.add(keys=keys0, val=val1)  # dup allowed
+        assert suber.get(keys=keys0) == [val0, val1, val2, val1]
+        assert suber.put(keys=keys0, vals=[val0, val2])  # dup allowed
+        assert suber.get(keys=keys0) == [val0, val1, val2, val1, val0, val2]
+        assert suber.put(keys=keys0, vals=[val3, val4, val0, val2])
+        assert suber.get(keys=keys0) == [val0, val1, val2, val1, val0, val2, val3, val4, val0, val2]
+        assert suber.rem(keys0)
+        assert suber.get(keys=keys0) == []
+        assert suber.cnt(keys0) == 0
+
+        assert suber.put(keys=keys0, vals=[val1, val0])  # change order
+        actuals = suber.get(keys=keys0)
+        assert actuals == [val1, val0]  # insertion order
+        actual = suber.getLast(keys=keys0)  # test getLast
+        assert actual == val0
+
+        result = suber.add(keys=keys0, val=val2)
+        assert result
+        actuals = suber.get(keys=keys0)
+        assert actuals == [val1, val0, val2]   # insertion order
+
+        # test pin
+        result = suber.pin(keys=keys0, vals=[val3, val4])
+        assert result
+        actuals = suber.get(keys=keys0)
+        assert actuals == [val3, val4]  # insertion order
+
+        assert suber.put(keys=keys1, vals=[val0, val1, val2])
+        actuals = suber.get(keys=keys1)
+        assert actuals == [val0, val1, val2]
+
+        for i, val in enumerate(suber.getIter(keys=keys1)):
+            assert val == actuals[i]
+
+        items = [(keys, val) for keys, val in suber.getItemIter()]
+        assert items == [(('testkey', '00'), val3),
+                        (('testkey', '00'), val4),
+                        (('testkey', '01'), val0),
+                        (('testkey', '01'), val1),
+                        (('testkey', '01'), val2)]
+
+        items = list(suber.getFullItemIter())
+        assert items ==  [(('testkey', '00.00000000000000000000000000000000'), val3),
+                        (('testkey', '00.00000000000000000000000000000001'), val4),
+                        (('testkey', '01.00000000000000000000000000000000'), val0),
+                        (('testkey', '01.00000000000000000000000000000001'), val1),
+                        (('testkey', '01.00000000000000000000000000000002'), val2)]
+
+        items = [(keys, val) for keys,  val in  suber.getItemIter(keys=keys0)]
+        assert items == [(('testkey', '00'), val3),
+                         (('testkey', '00'), val4)]
+
+        items = [(keys, val) for keys,  val in suber.getItemIter(keys=keys1)]
+        assert items == [(('testkey', '01'), val0),
+                         (('testkey', '01'), val1),
+                         (('testkey', '01'), val2)]
+
+
+        # Test with top keys
+        assert suber.put(keys=("test", "pop"), vals=[val0, val1, val2])
+        topkeys = ("test", "")
+        items = [(keys, val) for keys, val in suber.getItemIter(keys=topkeys)]
+        assert items == [(('test', 'pop'), val0),
+                        (('test', 'pop'), val1),
+                        (('test', 'pop'), val2)]
+
+        # test with topive parameter
+        keys = ("test", )
+        items = [(keys, val) for keys, val in suber.getItemIter(keys=keys, topive=True)]
+        assert items == [(('test', 'pop'), val0),
+                        (('test', 'pop'), val1),
+                        (('test', 'pop'), val2)]
+
+        # IoItems
+        items = list(suber.getFullItemIter(keys=topkeys))
+        assert items == [(('test', 'pop.00000000000000000000000000000000'), val0),
+                        (('test', 'pop.00000000000000000000000000000001'), val1),
+                        (('test', 'pop.00000000000000000000000000000002'), val2)]
+
+
+        assert suber.trim(keys=("test", ""))
+        items = [(keys, val) for keys, val in suber.getItemIter()]
+        assert items == [(('testkey', '00'), val3),
+                        (('testkey', '00'), val4),
+                        (('testkey', '01'), val0),
+                        (('testkey', '01'), val1),
+                        (('testkey', '01'), val2)]
+
+        # test with keys as string not tuple
+        keys4 = "keystr"
+
+        assert suber.put(keys=keys4, vals=[val4])
+        actuals = suber.get(keys=keys4)
+        assert actuals == [val4]
+        assert suber.cnt(keys4) == 1
+        assert suber.rem(keys4)
+        actuals = suber.get(keys=keys4)
+        assert actuals == []
+        assert suber.cnt(keys4) == 0
+
+        assert suber.put(keys=keys4, vals=[val4])
+        actuals = suber.get(keys=keys4)
+        assert actuals == [val4]
+
+        assert suber.pin(keys=keys4, vals=[val5])
+        actuals = suber.get(keys=keys4)
+        assert actuals == [val5]
+
+        assert suber.add(keys=keys4, val=val4)
+        actuals = suber.get(keys=keys4)
+        assert actuals == [val5, val4]
+
+        # Test trim and append
+        assert suber.trim()  # default trims whole database
+        assert suber.put(keys=keys1, vals=[val4, val5])
+        assert suber.get(keys=keys1) == [val4, val5]
+
+
+
+    assert not os.path.exists(duror.path)
+    assert not duror.opened
+
+    """Done Test"""
+
+
 def test_dom_ioset_suber():
     """Test DomIoSetSuber class"""
     with openDuror() as duror:
@@ -1182,6 +1703,19 @@ def test_dom_ioset_suber():
 
         assert suber.put(keys=keys0, vals=[val0, val1])
         assert suber.get(keys=keys0) == [val0, val1]  # insertion order not lexicographic
+        assert suber.rem(keys0)
+        assert suber.get(keys=keys0) == []
+        assert suber.cnt(keys0) == 0
+
+        # Test Dedup
+        assert suber.put(keys=keys0, vals=[val0, val1, val2])
+        assert suber.get(keys=keys0) == [val0, val1, val2]  # insertion order not lexicographic
+        assert not suber.add(keys=keys0, val=val1)  # dup disallowed
+        assert suber.get(keys=keys0) == [val0, val1, val2]
+        assert not suber.put(keys=keys0, vals=[val0, val2])  # dup disallowed
+        assert suber.get(keys=keys0) == [val0, val1, val2]
+        assert suber.put(keys=keys0, vals=[val3, val4, val0, val2])  # at least one not dup
+        assert suber.get(keys=keys0) == [val0, val1, val2, val3, val4]
         assert suber.rem(keys0)
         assert suber.get(keys=keys0) == []
         assert suber.cnt(keys0) == 0
@@ -1325,7 +1859,10 @@ def test_subery_basic():
     assert isinstance(subery.cans, DomSuber)
     assert isinstance(subery.cans.sdb, lmdb._Database)
 
-    assert isinstance(subery.dsqs, IoSetSuber)
+    assert isinstance(subery.drqs, DomIoSuber)
+    assert isinstance(subery.drqs.sdb, lmdb._Database)
+
+    assert isinstance(subery.dsqs, DomIoSetSuber)
     assert isinstance(subery.dsqs.sdb, lmdb._Database)
 
     subery.close(clear=True)
@@ -1351,7 +1888,10 @@ def test_subery_basic():
     assert isinstance(subery.cans, DomSuber)
     assert isinstance(subery.cans.sdb, lmdb._Database)
 
-    assert isinstance(subery.dsqs, IoSetSuber)
+    assert isinstance(subery.drqs, DomIoSuber)
+    assert isinstance(subery.drqs.sdb, lmdb._Database)
+
+    assert isinstance(subery.dsqs, DomIoSetSuber)
     assert isinstance(subery.dsqs.sdb, lmdb._Database)
 
     subery.close(clear=True)
@@ -1377,6 +1917,9 @@ def test_subery_basic():
         assert isinstance(subery.cans, DomSuber)
         assert isinstance(subery.cans.sdb, lmdb._Database)
 
+        assert isinstance(subery.drqs, DomIoSuber)
+        assert isinstance(subery.drqs.sdb, lmdb._Database)
+
         assert isinstance(subery.dsqs, IoSetSuber)
         assert isinstance(subery.dsqs.sdb, lmdb._Database)
 
@@ -1393,9 +1936,11 @@ if __name__ == "__main__":
     test_duror()
     test_suberbase()
     test_suber()
+    test_io_suber()
     test_ioset_suber()
     test_dom_suber_base()
     test_dom_suber()
+    test_dom_io_suber()
     test_dom_ioset_suber()
     test_subery_basic()
 
