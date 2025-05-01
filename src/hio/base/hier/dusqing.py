@@ -9,8 +9,8 @@ from __future__ import annotations  # so type hints of classes get resolved late
 
 class Dusq():
     """Dusq (durable set queue) class when injected with
-    .sdb and .key will store its ordered set durably and allow access as a FIFO
-    queue
+    .sdb and .key will store its ordered set durably and allow access as a
+    deduped FIFO queue. A set is deduped.
 
 
     """
