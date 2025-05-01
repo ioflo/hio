@@ -1359,8 +1359,10 @@ class IoSetSuber(SuberBase):
     def put(self, keys: str | bytes | memoryview | Iterable,
                   vals: str | bytes | memoryview | Iterable):
         """
-        Puts all vals at effective key made from keys and hidden ordinal suffix.
-        that are not already in set of vals at key. Does not overwrite.
+        Puts all vals each with an effective key made from keys and hidden
+        ordinal suffix that are not already in set of vals at key.
+        Does not overwrite existing vals. Does not add val if already same val
+        in set.
 
         Parameters:
             keys (str | bytes | memoryview | Iterable): of key parts to be

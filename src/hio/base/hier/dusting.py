@@ -7,9 +7,9 @@ Provides durable double ended queue for hold hierarchical actions
 from __future__ import annotations  # so type hints of classes get resolved later
 
 
-class Durq():
-    """Durq (durable deque) class when injected with .sdb and .key will store
-    its deque durably.
+class Dust():
+    """Dust (durable ordered set) class when injected with .sdb and .key will store
+    its ordered set durably.
 
 
     """
