@@ -36,7 +36,7 @@ class Hold(Mine):
 
     Subery attributes are the subdbs:
     .cans
-    .drqs
+    .dsts
 
     Hold injects reference to one of these based on the type of value and the Hold
     key  into ._sdb and ._key.  When not a durable value then no injection.
