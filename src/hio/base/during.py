@@ -317,7 +317,7 @@ class Duror(Filer):
         """Get val at key in db
 
         Returns:
-            val (bytes|memoryview):  None if no entry at key
+            val (bytes):  None if no entry at key
 
         Parameters:
             db (lmdb._Database): opened named subdb with dupsort=False
@@ -326,7 +326,8 @@ class Duror(Filer):
         """
         with self.env.begin(db=sdb, write=False, buffers=True) as txn:
             try:
-                return(txn.get(key))
+                val = txn.get(key)
+                return (bytes(val) if val is not None else None)
             except lmdb.BadValsizeError as ex:
                 raise KeyError(f"Key: `{key}` is either empty, too big (for lmdb),"
                                " or wrong DUPFIXED size.") from ex
@@ -578,12 +579,11 @@ class Duror(Filer):
             return result
 
 
-
     def getIoSetVals(self, sdb, key, *, ion=0, sep=b'.'):
-        """Gets list of all the insertion orderd set of values at key
+        """Gets list of all the insertion ordered set of values at key
 
         Returns:
-            ioset (oset): the insertion ordered set of values at same apparent
+            vals (list[bytes]): the insertion ordered set of values at same apparent
                            effective key.
                           Uses hidden ordinal key suffix for insertion ordering.
                           The suffix is appended and stripped transparently.
@@ -603,7 +603,7 @@ class Duror(Filer):
                     ckey, cion = self.unsuffix(iokey, sep=sep)
                     if ckey != key:  # prev entry if any was the last entry for key
                         break  # done
-                    vals.append(val)  # another entry at key
+                    vals.append(bytes(val))  # another entry at key
             return vals
 
 
@@ -635,11 +635,70 @@ class Duror(Filer):
             return  # done raises StopIteration
 
 
+    def getIoSetValFirst(self, sdb, key, *, ion=0, sep=b'.'):
+        """Gets first of the insertion ordered set of values at key,
+        None if no entry.
+
+        Returns:
+            val (bytes|None): first val at same apparent effective key
+                        whose iokey >= iokey from ion
+                        Uses hidden ordinal key suffix for insertion ordering.
+                        The suffix is appended and stripped transparently.
+                        None if no entry at key
+
+        Parameters:
+            db (lmdb._Database): instance of named sub db with dupsort==False
+            key (bytes): Apparent effective key
+            ion (int): starting ordinal value, default 0
+
+        """
+        with self.env.begin(db=sdb, write=False, buffers=True) as txn:
+            iokey = self.suffix(key, ion, sep=sep)  # start ion_th value for key zeroth default
+            cursor = txn.cursor()
+            if cursor.set_range(iokey):  # move to val at key >= iokey if any
+                iokey, val = cursor.item()  # get iokey, cval at cursor
+                ckey, cion = self.unsuffix(iokey, sep=sep)
+                if ckey == key:  # first entry for key >= iokey at ion
+                    return bytes(val)
+            return None  # no item at key
+
+
+    def popIoSetVal(self, sdb, key, *, ion=0, sep=b'.'):
+        """Pops first of the insertion ordered set of values at key.
+        None if no entry. Pop deletes the returned entry.
+
+        Returns:
+            val (bytes|None): first val at same apparent effective key
+                        whose iokey >= iokey from ion
+                        Uses hidden ordinal key suffix for insertion ordering.
+                        The suffix is appended and stripped transparently.
+                        None if no entry.
+
+        Parameters:
+            db (lmdb._Database): instance of named sub db with dupsort==False
+            key (bytes): Apparent effective key
+            ion (int): starting ordinal value, default 0
+
+        """
+        with self.env.begin(db=sdb, write=True, buffers=True) as txn:
+            iokey = self.suffix(key, ion, sep=sep)  # start ion_th value for key zeroth default
+            cursor = txn.cursor()
+            if cursor.set_range(iokey):  # move to val at key >= iokey if any
+                iokey, val = cursor.item()  # get iokey, cval at cursor
+                ckey, cion = self.unsuffix(iokey, sep=sep)
+                if ckey == key:  # first entry for key >= iokey at ion
+                    val = bytes(val) # make copy so not deleted
+                    cursor.delete()
+                    return val
+            return None  # no item at key
+
+
     def getIoSetValLast(self, sdb, key, *, sep=b'.'):
         """Gets last value (last in) of insertion ordered set values at key
+
         Returns:
-            val (bytes): last added empty at apparent effective key if any,
-                         otherwise None if no entry
+            val (bytes|None): last added empty at apparent effective
+                    key if any, otherwise None if no entry
 
         Uses hidden ordinal key suffix for insertion ordering.
             The suffix is appended and stripped transparently.
@@ -681,7 +740,7 @@ class Duror(Filer):
 
             if ion is not None:
                 iokey = self.suffix(key, ion=ion, sep=sep)
-                val = cursor.get(iokey)
+                val = bytes(cursor.get(iokey))
 
             return val
 
@@ -1404,6 +1463,38 @@ class IoSetSuber(SuberBase):
             yield self._des(val)
 
 
+    def getFirst(self, keys: str | bytes | memoryview | Iterable):
+        """
+        Gets first val inserted at effecive key made from keys and hidden ordinal
+        suffix.
+
+        Parameters:
+            keys (Iterable): of key strs to be combined in order to form key
+
+        Returns:
+            val (str|None):  value str, None if no entry at keys
+
+        """
+        val = self.db.getIoSetValFirst(sdb=self.sdb, key=self._tokey(keys))
+        return (self._des(val) if val is not None else val)
+
+
+    def pop(self, keys: str | bytes | memoryview | Iterable):
+        """
+        Pops first val if any inserted at effecive key made from keys and
+        hidden ordinal suffix. Pop returns and deletes value if any.
+
+        Parameters:
+            keys (Iterable): of key strs to be combined in order to form key
+
+        Returns:
+            val (str|None):  value str, None if no entry at keys
+
+        """
+        val = self.db.popIoSetVal(sdb=self.sdb, key=self._tokey(keys))
+        return (self._des(val) if val is not None else val)
+
+
     def getLast(self, keys: str | bytes | memoryview | Iterable):
         """
         Gets last val inserted at effecive key made from keys and hidden ordinal
@@ -1413,7 +1504,7 @@ class IoSetSuber(SuberBase):
             keys (Iterable): of key strs to be combined in order to form key
 
         Returns:
-            val (str):  value str, None if no entry at keys
+            val (str|None):  value str, None if no entry at keys
 
         """
         val = self.db.getIoSetValLast(sdb=self.sdb, key=self._tokey(keys))
@@ -1507,9 +1598,9 @@ class DomSuberBase(SuberBase):
     changes ._ser and ._des methods to serialize RegDom subclasses for db
     with default prosep for class name proem from json body is `\n`
 
-    Adds type of Dom as proem to value which is stripped off when deserializing
-    type of Dom need to get it from value as class name
-    need Can class registry so can look up class by name
+    Prepends and strips RegDom subclass name as proem to value when serializing
+    which is then stripped off when deserializing. Uses proem to lookup in
+    RegDom._registry the class object to use to reinstantiate when deserializing.
 
     Inherited Class Attribues:
         Sep (str): default separator to convert keys iterator to key bytes for db key
@@ -1602,9 +1693,22 @@ class DomSuber(DomSuberBase, Suber):
     forces .sep to '_'
     forces .prosep to '\n'
 
-    Adds type of Dom as proem to value which is stripped off when deserializing
-    type of Dom need to get it from value as class name
-    need Can class registry so can look up class by name
+    Prepends and strips RegDom subclass name as proem to value when serializing
+    which is then stripped off when deserializing. Uses proem to lookup in
+    RegDom._registry the class object to use to reinstantiate when deserializing.
+
+    Inherited Class Attribues:
+        Sep (str): default separator to convert keys iterator to key bytes for db key
+        ProSep (str): separator class name proem to serialized RegDom instance
+
+    Inherited Attributes:
+        db (dbing.LMDBer): base LMDB db
+        sdb (lmdb._Database): instance of lmdb named sub db for this Suber
+        sep (str): separator for combining keys tuple of strs into key bytes
+        verify (bool): True means reverify when ._des from db when applicable
+                       False means do not reverify. Default False
+        prosep (str): separator class name proem to serialized RegDom instance
+                      default is self.ProSep == '\n'
 
     """
 
@@ -1630,51 +1734,38 @@ class DomSuber(DomSuberBase, Suber):
                                        sep=sep, prosep=prosep, **kwa)
 
 
-    #def _ser(self, val: RegDom):
-        #"""Serialize value to json bytes to store in db with proem that is
-        #class name. Must be in registry. Uses b'\n' as separator between
-        #proem class name and json serialization of val
-
-        #Parameters:
-            #val (RegDom): encodable as bytes json
-        #"""
-        #if not isinstance(val, RegDom):
-            #raise HierError(f"Expected instance of RegDom got {val}")
-
-        #return super(DomSuber, self)._ser(val=val)
-
-
-
-    #def _des(self, val: bytes|memoryview):
-        #"""Deserialize val to RegDom subclass instance as given by proem
-        #prepended to json serialization of CanDom subclass instance
-        #Uses b'\n' as separator between proem class name and json serialization
-        #of val
-
-        #Parameters:
-            #val (bytes|memoryview): proem\njson
-
-        #Returns:
-            #dom (RegDom): instance as registered under proem
-
-        #"""
-        #return (super(DomSuber, self)._des(val=val))
-
-
 class DomIoSetSuber(DomSuberBase, IoSetSuber):
     """Subclass of (DomSuberBase, IoSetSuber) with values that are serialized
-    TymeDom subclasses.
+    RegDom subclasses.
 
     forces .ser to '_'
-    changes ._ser and ._des methods to serialize RegDom subclasses for db
+    forces .ionsep to '.'
+    forces .prosep to '\n'
 
-    Adds type of Dom as proem to value which is stripped off when deserializing
-    type of Dom need to get it from value as class name
-    need Bag class registry so can look up Klas by name
+    Prepends and strips RegDom subclass name as proem to value when serializing
+    which is then stripped off when deserializing. Uses proem to lookup in
+    RegDom._registry the class object to use to reinstantiate when deserializing.
+
+    Inherited Class Attribues:
+        Sep (str): default separator to convert keys iterator to key bytes for db key
+        ProSep (str): separator class name proem to serialized RegDom instance
+        IonSep (str): default separator to suffix insertion order ordinal number
+
+    Inherited Attributes:
+        db (dbing.LMDBer): base LMDB db
+        sdb (lmdb._Database): instance of lmdb named sub db for this Suber
+        sep (str): separator for combining keys tuple of strs into key bytes
+        verify (bool): True means reverify when ._des from db when applicable
+                       False means do not reverify. Default False
+        prosep (str): separator class name proem to serialized RegDom instance
+                      default is self.ProSep == '\n'
+        ionsep (str): separator to suffix insertion order ordinal number
+                       default is self.IonSep == '.'
 
     """
 
-    def __init__(self, db: Duror, *, subkey: str = 'cans.', sep='_', **kwa):
+    def __init__(self, db: Duror, *, subkey: str = 'drqs.', sep='_',
+                 prosep='\n', ionsep='.', **kwa):
         """
         Inherited Parameters:
             db (Duror): base db
@@ -1686,32 +1777,16 @@ class DomIoSetSuber(DomSuberBase, IoSetSuber):
                        default is self.Sep == '.'
             verify (bool): True means reverify when ._des from db when applicable
                            False means do not reverify. Default False
+            prosep (str|None): separator class name proem to serialized CanDom instance
+                               default is self.ProSep == '\n'
+            ionsep (str|None): separator to suffix insertion order ordinal number
+                       default is self.IonSep == '.'
 
 
         """
-        super(DomIoSetSuber, self).__init__(db=db, subkey=subkey, sep=sep, **kwa)
+        super(DomIoSetSuber, self).__init__(db=db, subkey=subkey, sep=sep,
+                                            prosep=prosep, ionsep=ionsep, **kwa)
 
-
-    def _ser(self, val: str|bytes|memoryview):
-        """
-        Serialize value to bytes to store in db
-        Parameters:
-            val (str | bytes | memoryview): encodable as bytes
-        """
-        if isinstance(val, memoryview):  # memoryview is always bytes
-            val = bytes(val)  # return bytes
-
-        return (val.encode() if hasattr(val, "encode") else val)
-
-
-    def _des(self, val: bytes|memoryview):
-        """Deserialize val to str
-        Parameters:
-            val (bytes | memoryview): decodable as str
-        """
-        if isinstance(val, memoryview):  # memoryview is always bytes
-            val = bytes(val)  # convert to bytes
-        return (val.decode("utf-8") if hasattr(val, "decode") else val)
 
 
 
