@@ -1325,8 +1325,8 @@ def test_subery_basic():
     assert isinstance(subery.cans, DomSuber)
     assert isinstance(subery.cans.sdb, lmdb._Database)
 
-    assert isinstance(subery.drqs, IoSetSuber)
-    assert isinstance(subery.drqs.sdb, lmdb._Database)
+    assert isinstance(subery.dsts, IoSetSuber)
+    assert isinstance(subery.dsts.sdb, lmdb._Database)
 
     subery.close(clear=True)
     assert not os.path.exists(subery.path)
@@ -1351,8 +1351,8 @@ def test_subery_basic():
     assert isinstance(subery.cans, DomSuber)
     assert isinstance(subery.cans.sdb, lmdb._Database)
 
-    assert isinstance(subery.drqs, IoSetSuber)
-    assert isinstance(subery.drqs.sdb, lmdb._Database)
+    assert isinstance(subery.dsts, IoSetSuber)
+    assert isinstance(subery.dsts.sdb, lmdb._Database)
 
     subery.close(clear=True)
     assert not os.path.exists(subery.path)
@@ -1377,8 +1377,8 @@ def test_subery_basic():
         assert isinstance(subery.cans, DomSuber)
         assert isinstance(subery.cans.sdb, lmdb._Database)
 
-        assert isinstance(subery.drqs, IoSetSuber)
-        assert isinstance(subery.drqs.sdb, lmdb._Database)
+        assert isinstance(subery.dsts, IoSetSuber)
+        assert isinstance(subery.dsts.sdb, lmdb._Database)
 
 
     assert not os.path.exists(subery.path)
