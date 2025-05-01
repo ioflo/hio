@@ -106,11 +106,10 @@ class Durq():
                 raise
             return None
 
-        # value to return
         if self.sdb and self.key and self.pop() is None:
             raise HierError(f"Mismatch between cache and durable at "
                             f"key={self.key}")
-        return val
+        return val  # value to return
 
 
     def clear(self):
