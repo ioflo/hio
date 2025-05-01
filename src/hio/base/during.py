@@ -1766,7 +1766,7 @@ class DomIoSetSuber(DomSuberBase, IoSetSuber):
 
     """
 
-    def __init__(self, db: Duror, *, subkey: str = 'dsts.', sep='_',
+    def __init__(self, db: Duror, *, subkey: str = 'dsqs.', sep='_',
                  prosep='\n', ionsep='.', **kwa):
         """
         Inherited Parameters:
@@ -1816,14 +1816,14 @@ class Subery(Duror):
         Attributes:
             cans (Suber): subdb whose values are serialized Can instances
                 Can is a durable Bag
-            dsts (IoSetSub): subdb whose values are serialized Durq instances
+            dsqs (IoSetSub): subdb whose values are serialized Durq instances
                 Durq is a durable Deck (deque)
 
         """
         super(Subery, self).reopen(**kwa)
 
         self.cans = DomSuber(db=self, subkey='cans.')
-        self.dsts = IoSetSuber(db=self, subkey="dsts.")
+        self.dsqs = IoSetSuber(db=self, subkey="dsqs.")
 
         return self.env
 
