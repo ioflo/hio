@@ -138,7 +138,7 @@ class CanDom(TymeDom):
                           Flase means do not force read
         """
         if self._sdb and self._key and (self._stale or force):
-            if can := self._sdb.get(self._key):  # get seb._des of own fields at key
+            if can := self._sdb.get(self._key):  # not empty
                 if can.__class__ != self.__class__:
                     raise HierError(f"Expected instance of "
                                     f"{self.__class__} on read, got "
@@ -148,7 +148,7 @@ class CanDom(TymeDom):
                 self._fresh = False
                 self._stale = False  # now synced
                 return True
-            else:
+            else:  # empty
                 return self._write()
         return False
 

@@ -1551,8 +1551,8 @@ class IoSuber(SuberBase):
             val (str | bytes | memoryview): serialization
 
         Returns:
-            result (bool): True means unique value added among duplications,
-                            False means duplicate of same value already exists.
+            result (bool): True means value added ,
+                            False otherwise.
 
         """
         return (self.db.addIoVal(sdb=self.sdb,
@@ -2170,8 +2170,6 @@ class DomIoSuber(DomSuberBase, IoSuber):
         """
         super(DomIoSuber, self).__init__(db=db, subkey=subkey, sep=sep,
                                             prosep=prosep, ionsep=ionsep, **kwa)
-
-
 
 
 

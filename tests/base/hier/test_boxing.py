@@ -15,7 +15,8 @@ from hio import hioing
 from hio.base import Tymist, Doist
 from hio.base.hier import (Hold, Nabes, Rexcnt, Rexlps, Rexrlp, Bag, Can,
                            Box, Boxer, BoxerDoer, Boxery,
-                           ActBase, Act, EndAct, )
+                           ActBase, Act, EndAct,
+                           Durq, )
 
 
 def test_rexlps():
@@ -1160,6 +1161,8 @@ def test_boxer_doer():
 
     def fun(H, bx, go, do, on, at, be, *pa):
         H.test = Can(value=True)
+        H.buf = Durq()
+        H.buf.push(Bag(value=True))
         bx(name='top')
         bx('mid', 'top')
         at('redo')
@@ -1201,9 +1204,15 @@ def test_boxer_doer():
     doist.do(doers=doers, limit=limit)  # doist.do sets all doer.tymth to its tymth
     assert doist.tyme == 8.0  # redoer exits before limit
 
+    # sdb does not exist anymore since temp clears at close of doer
     assert boxer.hold.test.value == True
     assert not os.path.exists(boxer.hold.subery.path)
     assert not boxer.hold.subery.opened
+
+    assert len(boxer.hold.buf) == 1
+    boxer.hold.buf.sdb = None  # so does not check sdb
+    boxer.hold.buf.key = None
+    assert boxer.hold.buf.pull() == Bag(value=True)
 
     assert hold._boxer_boxer_active.value == None
     assert hold._boxer_boxer_tock.value == 1.0

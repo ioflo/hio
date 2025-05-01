@@ -11,8 +11,7 @@ import lmdb
 
 from hio import HierError
 from hio.base import Duror, openDuror, Subery
-from hio.base.hier import Hold
-from hio.base.hier import Can
+from hio.base.hier import Hold, Can, Durq, Bag
 
 
 def test_hold_basic():
@@ -50,7 +49,6 @@ def test_hold_basic():
                                         ('c', 3)]
 
         # test durable can with subery
-
         can = Can(value=10)
         assert can._key == None
         assert can._sdb == None
@@ -147,8 +145,27 @@ def test_hold_basic():
         assert hold[key]._fresh == False
         assert hold[key].value == False
 
-        # ToDo when get another subclass of CanDom besides Can then do test that
+        # ToDo create custom test subclass of CanDom besides Can  to test that
         # raises exception when saved instance is different class than assigned.
+
+        #Test Durq with hold subery and assign and sync by hold
+        b0 = Bag(value=0)
+        b1 = Bag(value=1)
+
+        dkey = 'durqness'
+        durq = Durq()
+        assert durq.stale
+        assert durq.sdb is None
+        assert durq.key is None
+        durq.push(b0)
+        durq.push(b1)
+        assert durq.stale
+
+        hold[dkey] = durq
+        assert not durq.stale
+        assert durq.sdb == subery.drqs
+        assert durq.key == dkey
+        assert durq.sdb.get(durq.key) == [b0, b1]
 
 
     assert not os.path.exists(subery.path)
