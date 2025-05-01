@@ -13,3 +13,6 @@ from .needing import Need
 from .bagging import Bag
 from .canning import CanDom, Can
 from .holding import Hold
+from .durqing import Durq
+from .dusqing import Dusq
+
