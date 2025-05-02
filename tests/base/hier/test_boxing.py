@@ -1210,8 +1210,6 @@ def test_boxer_doer():
     assert not boxer.hold.subery.opened
 
     assert len(boxer.hold.buf) == 1
-    boxer.hold.buf._sdb = None  # so does not check sdb
-    boxer.hold.buf._key = None
     assert boxer.hold.buf.pull() == Bag(value=True)
 
     assert hold._boxer_boxer_active.value == None

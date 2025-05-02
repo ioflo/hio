@@ -40,9 +40,12 @@ def test_durq_basic():
 
     assert durq.pull() is None
 
-    durq.push(b0)
+    assert durq.push(b0)
     durq.push(b1)
     durq.push(b2)
+
+    assert durq  # not empty
+    assert durq.push(None) is False  # can't push None
 
     assert repr(durq) == 'Durq([Bag(value=0), Bag(value=1), Bag(value=2)])'
 
@@ -54,7 +57,6 @@ def test_durq_basic():
     bvals = [b0, b1, b2, b3, b4, b5, b6, b7, b3]
     durq.extend(bvals)
     assert len(durq) == 9
-    assert durq.count() == 9
     assert durq.count(b3) == 2
 
     # test iter
@@ -96,10 +98,10 @@ def test_durq_basic():
         assert durq.durable
 
         assert not durq  # empty
-        durq.push(None)  # can't push None
+        assert durq.push(None) is False  # can't push None
         assert not durq
 
-        durq.push(b5)
+        assert durq.push(b5) == True
         assert not durq.stale
         assert durq._sdb.getFirst(key) == b5
         assert durq._sdb.get(key) == [b5]
@@ -117,7 +119,6 @@ def test_durq_basic():
         durq.extend(bvals)
         assert durq._sdb.get(key) == bvals
         assert len(durq) == 9
-        assert durq.count() == 9
         assert durq.count(b3) == 2
 
         # test iter

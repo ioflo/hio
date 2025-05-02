@@ -83,6 +83,8 @@ class Deck(deque):
         """
         if elem is not None:
             self.append(elem)
+            return True # pushed ok
+        return False  # not pushed None
 
 
     def pull(self, emptive=True):

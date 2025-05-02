@@ -120,13 +120,15 @@ class CanDom(TymeDom):
 
     @property
     def _durable(self):
-        """Property _durable True when ._sdb and ._key are not None.
+        """Property durable True when durable subdb injected and opened.
 
         Returns:
-            _durable (bool): True means ._sdb and ._key are not None
+            durable (bool): True means ._sdb and ._key and ._sdb.db and
+                                .sdb.db.opened are not None
                             False otherwise
         """
-        return (self._sdb is not None and self._key is not None)
+        return (self._sdb is not None and self._key is not None and self._sdb.db
+                and self._sdb.db.opened)
 
 
     def _pin(self):

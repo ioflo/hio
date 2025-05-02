@@ -19,14 +19,14 @@ def test_deck():
 
     assert deck.pull() is None
 
-    deck.push("A")
+    assert deck.push("A")
     assert deck.pull() == "A"
     deck.push("B")
     assert deck.pull() == "B"
     assert not deck
     assert deck.pull() is None
 
-    deck.push(None)
+    assert not deck.push(None)  # None is not pushed but ignored
     assert not deck
 
     deck = Deck(["A", "B", "C"])

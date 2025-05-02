@@ -84,13 +84,15 @@ class Durq():
 
     @property
     def durable(self):
-        """Property durable True when ._sdb and ._key are not None.
+        """Property durable True when durable subdb injected and opened.
 
         Returns:
-            durable (bool): True means ._sdb and ._key are not None
+            durable (bool): True means ._sdb and ._key and ._sdb.db and
+                                .sdb.db.opened are not None
                             False otherwise
         """
-        return (self._sdb is not None and self._key is not None)
+        return (self._sdb is not None and self._key is not None and self._sdb.db
+                and self._sdb.db.opened)
 
 
     def push(self, val: RegDom):
@@ -104,9 +106,13 @@ class Durq():
             if not isinstance(val, RegDom):
                 raise HierError(f"Expected RegDom instance got {val}")
             self._deq.append(val)
-            if self.add(val) == False:  # durable but not added
+            result = self.add(val)
+            if result == False:  # durable but not added
                 raise HierError(f"Mismatch between cache and durable at "
                                 f"key={self._key}")
+            return True
+        return False
+
 
     def pull(self, emptive=True):
         """Remove and return val from left side of ._deq,
@@ -144,21 +150,9 @@ class Durq():
         self.rem()
 
 
-    def count(self, value=None):
-        """Returns count of entries in ._deq equal to value unless value
-        is None then count all the values.
-
-        Peforms equivalent operation on durable .sdb at .key if any
+    def count(self, value):
+        """Returns count of entries in ._deq equal to value
         """
-        if value is None:
-            cnt = len(self)
-            #dcnt = self.cnt()
-            #if dcnt is not None and cnt != dcnt:
-                #raise HierError(f"Mismatch between cache and durable at "
-                                #f"key={self._key}")
-            return cnt
-
-        # need to create a IoSuber.cntVal() so can compare
         return(self._deq.count(value))  # counts matching values
 
 
