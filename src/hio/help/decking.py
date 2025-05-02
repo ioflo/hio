@@ -85,7 +85,7 @@ class Deck(deque):
             self.append(elem)
 
 
-    def pull(self, emptive=False):
+    def pull(self, emptive=True):
         """
         Remove and return elem from left side of deque,
         If empty and emptive return None else raise IndexError

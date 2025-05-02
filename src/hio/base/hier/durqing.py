@@ -11,7 +11,7 @@ from collections import deque
 from typing import Any
 
 from hio import HierError
-from ...help import RegDom
+from ...help import RegDom, NonStringIterable
 
 class Durq():
     """Durq (durable queue) class when injected with
@@ -25,6 +25,8 @@ class Durq():
     Properties
         stale (bool): True means in-memory and durable on disk not synced
                      False means in-memory and durable on disk synced
+        durable (bool): True means ._sdb and ._key are not None
+                            False otherwise
 
 
     Hidden:
@@ -34,15 +36,27 @@ class Durq():
                        False means in-memory and durable on disk synced
 
     """
-    def __init__(self, sdb=None, key=None, **kwa):
+    def __init__(self, *pa):
         """Initialize instance
 
         """
         self._deq = deque()
         self._stale = True
 
-        self.sdb = sdb
-        self.key = key
+        self._sdb = None
+        self._key = None
+
+        if len(pa) > 1:
+            raise TypeError(f"Expected 1 positional argument got {len(pa)}.")
+
+        if pa:
+            di = pa[0]
+            if isinstance(di, NonStringIterable):
+                self.extend(di)
+
+            else:
+                raise TypeError(f"Expected NonStringIterable got "
+                                f"{type(di)}.")
 
 
     def __repr__(self):
@@ -69,6 +83,16 @@ class Durq():
         """
         return self._stale
 
+    @property
+    def durable(self):
+        """Property durable True when ._sdb and ._key are not None.
+
+        Returns:
+            durable (bool): True means ._sdb and ._key are not None
+                            False otherwise
+        """
+        return (self._sdb is not None and self._key is not None)
+
 
     def push(self, val: RegDom):
         """If not None, add val to right side of ._deq, Otherwise ignore
@@ -81,9 +105,9 @@ class Durq():
             if not isinstance(val, RegDom):
                 raise HierError(f"Expected RegDom instance got {val}")
             self._deq.append(val)
-            if self.add(val) == False:  # durable
+            if self.add(val) == False:  # durable but not added
                 raise HierError(f"Mismatch between cache and durable at "
-                                f"key={self.key}")
+                                f"key={self._key}")
 
     def pull(self, emptive=True):
         """Remove and return val from left side of ._deq,
@@ -99,16 +123,16 @@ class Durq():
         try:
             val = self._deq.popleft()
         except IndexError:  # empty
-            if self.sdb and self.key and self.pop() is not None:
+            if self.durable and self.pop() is not None:
                 raise HierError(f"Mismatch between cache and durable at "
-                                f"key={self.key}")
+                                f"key={self._key}")
             if not emptive:
                 raise
             return None
 
-        if self.sdb and self.key and self.pop() is None:
+        if self.durable and self.pop() is None:
             raise HierError(f"Mismatch between cache and durable at "
-                            f"key={self.key}")
+                            f"key={self._key}")
         return val  # value to return
 
 
@@ -129,10 +153,10 @@ class Durq():
         """
         if value is None:
             cnt = len(self)
-            dcnt = self.cnt()
-            if dcnt is not None and cnt != dcnt:
-                raise HierError(f"Mismatch between cache and durable at "
-                                f"key={self.key}")
+            #dcnt = self.cnt()
+            #if dcnt is not None and cnt != dcnt:
+                #raise HierError(f"Mismatch between cache and durable at "
+                                #f"key={self._key}")
             return cnt
 
         # need to create a IoSuber.cntVal() so can compare
@@ -148,43 +172,45 @@ class Durq():
             if not isinstance(val, RegDom):
                 raise HierError(f"Expected RegDom instance got {val}")
         self._deq.extend(vals)
-        self.put(vals)
+        if self.put(vals) is False:  # durable but put failed
+            raise HierError(f"Mismatch between cache and durable at "
+                            f"key={self._key}")
 
 
     def add(self, val):
         """Add value to .sdb at .key if any"""
-        if self.sdb and self.key:
+        if self.durable:
             self._stale = False
-            return self.sdb.add(keys=self.key, val=val)
+            return self._sdb.add(keys=self._key, val=val)
         return None
 
 
     def pop(self):
         """Pop value from .sdb at .key if any"""
-        if self.sdb and self.key:
-            return self.sdb.pop(keys=self.key)
+        if self.durable:
+            return self._sdb.pop(keys=self._key)
         return None
 
 
     def rem(self):
         """Remove all values from .sdb at .key if any"""
-        if self.sdb and self.key:
-            return self.sdb.rem(keys=self.key)
+        if self.durable:
+            return self._sdb.rem(keys=self._key)
         return None
 
 
     def cnt(self):
         """Count all values in .sdb at .key if any"""
-        if self.sdb and self.key:
-            return self.sdb.cnt(keys=self.key)
+        if self.durable:
+            return self._sdb.cnt(keys=self._key)
         return None
 
 
     def put(self, vals: Iterable[RegDom]):
         """Put (append) vals to .sdb at .key if any"""
-        if self.sdb and self.key:
+        if self.durable:
             self._stale = False
-            return self.sdb.put(keys=self.key, vals=vals)
+            return self._sdb.put(keys=self._key, vals=vals)
         return None
 
 
@@ -192,9 +218,9 @@ class Durq():
         """Pins all of ._deq to ._sdb at ._key if any.
         Sets ._stale to False on success
         """
-        if self.sdb and self.key:
+        if self.durable:
             vals = [val for val in self._deq]
-            self.sdb.pin(self.key, vals)  # pin sdb._ser to ._deq vals
+            self._sdb.pin(self._key, vals)  # pin sdb._ser to ._deq vals
             self._stale = False
             return True
         return None
@@ -209,10 +235,10 @@ class Durq():
             force (bool): True means force read even if not ._stale
                           Flase means do not force read
         """
-        if self.sdb and self.key and (self.stale or force):
-            if self.sdb.cnt(self.key):  # not empty
+        if self.durable and (self.stale or force):
+            if self._sdb.cnt(self._key):  # not empty
                 self._deq.clear()
-                self._deq.extend(self.sdb.getIter(self.key))
+                self._deq.extend(self._sdb.getIter(self._key))
                 self._stale = False
                 return True
 

@@ -18,10 +18,12 @@ from hio.base.hier import Durq, Bag
 def test_durq_basic():
     """Test Durq class basic"""
     durq = Durq()  # test defaults
+    assert not durq  # empty
     assert isinstance(durq._deq, deque)
     assert durq.stale
-    assert durq.sdb is None
-    assert durq.key is None
+    assert not durq.durable
+    assert durq._sdb is None
+    assert durq._key is None
     assert repr(durq) == 'Durq([])'
 
     b0 = Bag(value=0)
@@ -62,6 +64,18 @@ def test_durq_basic():
     durq.clear()
     assert len(durq) == 0
 
+    durq = Durq(bvals)
+    assert len(durq) == 9
+    assert durq.stale
+    assert durq  # not empty
+
+    while durq:
+        assert durq.pull() is not None
+
+    assert not durq  # empty
+
+
+
     with openDuror(cls=Subery) as subery:  # opens with temp=True by default
         assert isinstance(subery, Subery)
         assert subery.name == "test"
@@ -71,29 +85,37 @@ def test_durq_basic():
 
         key = "mydurq"
 
-        durq = Durq(sdb=subery.drqs, key=key)
+        durq = Durq()
         assert isinstance(durq._deq, deque)
         assert durq.stale
-        assert durq.sdb == subery.drqs
-        assert durq.key == key
+        assert not durq.durable
+        durq._sdb = subery.drqs
+        durq._key = key
+        assert durq._sdb == subery.drqs
+        assert durq._key == key
+        assert durq.durable
+
+        assert not durq  # empty
+        durq.push(None)  # can't push None
+        assert not durq
 
         durq.push(b5)
         assert not durq.stale
-        assert durq.sdb.getFirst(key) == b5
-        assert durq.sdb.get(key) == [b5]
+        assert durq._sdb.getFirst(key) == b5
+        assert durq._sdb.get(key) == [b5]
 
         durq.push(b6)
         assert not durq.stale
-        assert durq.sdb.getLast(key) == b6
-        assert durq.sdb.get(key) == [b5, b6]
+        assert durq._sdb.getLast(key) == b6
+        assert durq._sdb.get(key) == [b5, b6]
 
         assert durq.pull() == b5
         assert durq.pull() == b6
         assert durq.pull() == None
-        assert durq.sdb.cnt(key) == 0
+        assert durq._sdb.cnt(key) == 0
 
         durq.extend(bvals)
-        assert durq.sdb.get(key) == bvals
+        assert durq._sdb.get(key) == bvals
         assert len(durq) == 9
         assert durq.count() == 9
         assert durq.count(b3) == 2
@@ -104,19 +126,24 @@ def test_durq_basic():
 
         durq.clear()
         assert len(durq) == 0
-        assert durq.sdb.cnt(key) == 0
+        assert durq._sdb.cnt(key) == 0
 
 
         # test sync with pre-existing database
         durq.extend(bvals)  # setup sdb  with some values
         # create vacuous new durq to sync with pre-existing sdb
-        durq = Durq(sdb=subery.drqs, key=key)
+        durq = Durq()
         assert isinstance(durq._deq, deque)
         assert durq.stale
-        assert durq.sdb == subery.drqs
-        assert durq.key == key
+        assert not durq.durable
+        durq._sdb = subery.drqs
+        durq._key = key
+        assert durq._sdb == subery.drqs
+        assert durq._key == key
+        assert durq.durable
         assert not len(durq)
-        assert durq.sdb.get(key) == bvals
+        assert not durq  # empty
+        assert durq._sdb.get(key) == bvals
         assert durq.sync()
         assert not durq.stale
         assert len(durq) == 9
@@ -124,20 +151,19 @@ def test_durq_basic():
         # test sync of pre-existing durq with empty sdb
         key = 'thatdurq'
         assert subery.drqs.get(key) == []  # nothing there
-        durq = Durq()  # durq not linked to sdb
-        assert durq.stale
-        assert durq.sdb is None
-        assert durq.key is None
-        durq.extend(bvals)
+        durq = Durq(bvals)  # durq not linked to sdb
         assert len(durq) == 9
         assert durq.stale
-        durq.sdb = subery.drqs
-        durq.key = key
+        assert durq._sdb is None
+        assert durq._key is None
+        assert not durq.durable
+        durq._sdb = subery.drqs
+        durq._key = key
+        assert durq.durable
         assert durq.sync()
         assert not durq.stale
-        durq.sdb.get(durq.key) == bvals
         assert len(durq) == 9
-
+        durq._sdb.get(durq._key) == bvals
 
     assert not os.path.exists(subery.path)
     assert not subery.opened

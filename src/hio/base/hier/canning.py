@@ -44,6 +44,10 @@ class CanDom(TymeDom):
     Inherited Properties:
         _now (None|float): current tyme given by ._tymth if not None.
 
+    Properties:
+        _durable (bool):  True means ._sdb and ._key are not None
+                          False otherwise
+
     Non-Field Attributes:
         _sdb (DomSuber|None): SuberBase subclass instance of durable subdb of Duror
         _key (str|None): database key used to store serialized field in ._cans
@@ -76,7 +80,7 @@ class CanDom(TymeDom):
         if name in self._names:
             super().__setattr__("_tyme", self._now)
             if not self._bulk:
-                self._write()
+                self._pin()
 
 
     def _update(self, *pa, **kwa):
@@ -110,16 +114,26 @@ class CanDom(TymeDom):
                     write = True
 
             if write:
-                self._write()
+                self._pin()
         finally:
             self._bulk = False
 
+    @property
+    def _durable(self):
+        """Property _durable True when ._sdb and ._key are not None.
 
-    def _write(self):
+        Returns:
+            _durable (bool): True means ._sdb and ._key are not None
+                            False otherwise
+        """
+        return (self._sdb is not None and self._key is not None)
+
+
+    def _pin(self):
         """Writes own fields to ._sdb at ._key if any when not ._fresh.
         Sets ._stale to False on success
         """
-        if self._sdb and self._key and not self._fresh:
+        if self._durable and not self._fresh:
             self._sdb.pin(self._key, self)  # pin sdb._ser of own fields at key
             self._stale = False
             return True
@@ -137,7 +151,7 @@ class CanDom(TymeDom):
             force (bool): True means force read even if not ._stale
                           Flase means do not force read
         """
-        if self._sdb and self._key and (self._stale or force):
+        if self._durable and (self._stale or force):
             if can := self._sdb.get(self._key):  # not empty
                 if can.__class__ != self.__class__:
                     raise HierError(f"Expected instance of "
@@ -149,7 +163,7 @@ class CanDom(TymeDom):
                 self._stale = False  # now synced
                 return True
             else:  # empty
-                return self._write()
+                return self._pin()
         return False
 
 
@@ -180,6 +194,8 @@ class Can(CanDom):
 
     Inherited Properties:
         _now (None|float): current tyme given by ._tymth if not None.
+        _durable (bool):  True means ._sdb and ._key are not None
+                          False otherwise
 
     Field Attributes:
         value (Any):  generic value field
