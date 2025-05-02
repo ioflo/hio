@@ -134,8 +134,8 @@ class Hold(Mine):
             val._sdb = self.subery.cans if self.subery else None
             val._sync()  # attempt to sync with sdb at key if any
         elif isinstance(val, Durq):
-            val.key = key
-            val.sdb = self.subery.drqs if self.subery else None
+            val._key = key
+            val._sdb = self.subery.drqs if self.subery else None
             val.sync()  # attempt to sync with sdb at key if any
 
 

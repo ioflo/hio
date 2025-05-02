@@ -31,6 +31,7 @@ def test_candom():
     assert cd._tymth == None
     assert cd._now == None
     assert cd._tyme == None
+    assert not cd._durable
     assert cd._sdb == None
     assert cd._key == None
     assert cd._stale == True
@@ -42,6 +43,7 @@ def test_candom():
     assert cd._tymth
     assert cd._now == 0.0 == tymist.tyme
     assert cd._tyme == None
+    assert not cd._durable
     assert cd._sdb == None
     assert cd._key == None
     assert cd._stale == True
@@ -58,6 +60,7 @@ def test_candom():
     assert cd._tymth == None
     assert cd._now == None
     assert cd._tyme == None
+    assert not cd._durable
     assert cd._sdb == None
     assert cd._key == "hello"
     assert cd._stale == False
@@ -87,6 +90,7 @@ def test_candom():
     assert tcd._tymth
     assert tcd._now == 0.0 == tymist.tyme
     assert tcd._tyme == None
+    assert not cd._durable
     assert tcd._sdb == None
     assert tcd._key == None
     assert tcd._stale == True
@@ -129,6 +133,7 @@ def test_can():
     assert c._tymth == None
     assert c._now == None
     assert c._tyme == None
+    assert not c._durable
     assert c._sdb == None
     assert c._key == None
     assert c._stale == True
@@ -151,6 +156,7 @@ def test_can():
     assert c._tymth
     assert c._now == 0.0 == tymist.tyme
     assert c._tyme == None
+    assert not c._durable
     assert c._sdb == None
     assert c._key == None
     assert c._stale == True
@@ -180,6 +186,7 @@ def test_can():
     assert c._tymth
     assert c._now == 0.0
     assert c._tyme == None   # tymth not assigned until __post_init__
+    assert not c._durable
     assert c._sdb == None
     assert c._key == None
     assert c._stale == True

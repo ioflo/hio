@@ -15,15 +15,16 @@ def test_deck():
     assert not deck  # empty
 
     with pytest.raises(IndexError):
-        deck.pull()
+        deck.pull(emptive=False)
 
-    assert deck.pull(emptive=True) is None
+    assert deck.pull() is None
 
     deck.push("A")
     assert deck.pull() == "A"
     deck.push("B")
-    assert deck.pull(emptive=True) == "B"
+    assert deck.pull() == "B"
     assert not deck
+    assert deck.pull() is None
 
     deck.push(None)
     assert not deck
@@ -59,14 +60,14 @@ def test_deck():
     assert stuff == ["A", "B", "C"]
 
     stuff = []
-    while x := deck.pull(emptive=True):
+    while x := deck.pull():
         stuff.append(x)
     assert stuff == ["A", "B", "C"]
     assert not deck
 
     deck.extend(stuff)
     stuff = []
-    while (x := deck.pull(emptive=True)) is not None:
+    while (x := deck.pull()) is not None:
         stuff.append(x)
     assert stuff == ["A", "B", "C"]
     assert not deck

@@ -52,11 +52,13 @@ def test_hold_basic():
         can = Can(value=10)
         assert can._key == None
         assert can._sdb == None
+        assert not can._durable
         assert can._stale == True
         assert can._fresh == False
         assert can._bulk == False
 
         can._update(value=9)
+        assert not can._durable
         assert can._stale == True
         assert can._fresh == False
         assert can._bulk == False
@@ -65,6 +67,7 @@ def test_hold_basic():
         hold.blue = can  # now inject by adding to hold and syncing with durable
         assert can._key == "blue"
         assert can._sdb == subery.cans
+        assert can._durable
         assert can._stale == False
         assert can._fresh == False
         assert can._bulk == False
@@ -76,11 +79,12 @@ def test_hold_basic():
         assert can._sdb.get(can._key) == can
         assert can.value == 15
         assert can._sync(force=True)
-        assert can._write()
+        assert can._pin()
 
         can = Can(value="hello")
         assert can._key == None
         assert can._sdb == None
+        assert not can._durable
         assert can._stale == True
         assert can._fresh == False
         assert can._bulk == False
@@ -88,6 +92,7 @@ def test_hold_basic():
         hold["red"] = can  # now inject by adding to hold
         assert can._key == "red"
         assert can._sdb == subery.cans
+        assert can._durable
         assert can._stale == False
         assert can._fresh == False
         assert can._bulk == False
@@ -119,14 +124,16 @@ def test_hold_basic():
         for k, v in d.items():
             assert v._key == k
             assert v._sdb == subery.cans
+            assert v._durable
             assert v._stale == False
             assert v._fresh == False
             assert v._bulk == False
-            assert v._write()
+            assert v._pin()
             assert v._stale == False
 
         # test read of prestored can at key when new can assigned to key
         can = Can(value=True)
+        assert not can._durable
         key = "test"
         assert subery.cans.put(key, can)
         pan = subery.cans.get(key)
@@ -135,7 +142,9 @@ def test_hold_basic():
 
         can = Can()  # new can with defaults
         assert can.value is None
+        assert not can._durable
         hold[key] = can  # assign to key
+        assert can._durable
         assert hold[key]._stale == False
         assert hold[key]._fresh == False
         assert hold[key].value == True  # picks up saved value
@@ -155,17 +164,19 @@ def test_hold_basic():
         dkey = 'durqness'
         durq = Durq()
         assert durq.stale
-        assert durq.sdb is None
-        assert durq.key is None
+        assert durq._sdb is None
+        assert durq._key is None
+        assert not durq.durable
         durq.push(b0)
         durq.push(b1)
         assert durq.stale
 
         hold[dkey] = durq
         assert not durq.stale
-        assert durq.sdb == subery.drqs
-        assert durq.key == dkey
-        assert durq.sdb.get(durq.key) == [b0, b1]
+        assert durq.durable
+        assert durq._sdb == subery.drqs
+        assert durq._key == dkey
+        assert durq._sdb.get(durq._key) == [b0, b1]
 
 
     assert not os.path.exists(subery.path)
