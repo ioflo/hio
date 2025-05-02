@@ -6,7 +6,6 @@ Provides durable  queue for hold hierarchical actions
 """
 from __future__ import annotations  # so type hints of classes get resolved later
 
-from collections.abc import Iterable
 from collections import deque
 from typing import Any
 
@@ -163,7 +162,7 @@ class Durq():
         return(self._deq.count(value))  # counts matching values
 
 
-    def extend(self, vals: Iterable[RegDom]):
+    def extend(self, vals: NonStringIterable[RegDom]):
         """Extend ._deq with vals
         Peforms equivalent operation on durable .sdb at .key if any
 
@@ -206,7 +205,7 @@ class Durq():
         return None
 
 
-    def put(self, vals: Iterable[RegDom]):
+    def put(self, vals: NonStringIterable[RegDom]):
         """Put (append) vals to .sdb at .key if any"""
         if self.durable:
             self._stale = False

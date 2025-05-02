@@ -6,6 +6,10 @@ Provides durable set queue for hold hierarchical actions
 """
 from __future__ import annotations  # so type hints of classes get resolved later
 
+from ordered_set import OrderedSet as oset
+
+from hio import HierError
+from ...help import RegDom, NonStringIterable
 
 class Dusq():
     """Dusq (durable set queue) class when injected with
