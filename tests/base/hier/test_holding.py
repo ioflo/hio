@@ -11,7 +11,7 @@ import lmdb
 
 from hio import HierError
 from hio.base import Duror, openDuror, Subery
-from hio.base.hier import Hold, Can, Durq, Bag
+from hio.base.hier import Hold, Can, Durq, Dusq, Bag
 
 
 def test_hold_basic():
@@ -177,6 +177,27 @@ def test_hold_basic():
         assert durq._sdb == subery.drqs
         assert durq._key == dkey
         assert durq._sdb.get(durq._key) == [b0, b1]
+
+        #Test Dusq with hold subery and assign and sync by hold
+        b0 = Bag(value=0)
+        b1 = Bag(value=1)
+
+        fkey = 'dusqness'
+        dusq = Dusq()
+        assert dusq.stale
+        assert dusq._sdb is None
+        assert dusq._key is None
+        assert not dusq.durable
+        dusq.push(b0)
+        dusq.push(b1)
+        assert dusq.stale
+
+        hold[fkey] = dusq
+        assert not dusq.stale
+        assert dusq.durable
+        assert dusq._sdb == subery.dsqs
+        assert dusq._key == fkey
+        assert dusq._sdb.get(dusq._key) == [b0, b1]
 
 
     assert not os.path.exists(subery.path)

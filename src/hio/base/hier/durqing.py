@@ -17,19 +17,18 @@ class Durq():
     .sdb and .key will store its ordered list durably and allow access as a FIFO
     queue
 
-    Attributes:
-        sdb (DomIoSuber): instance of durable store
-        key (str): into .sdb
-
     Properties
         stale (bool): True means in-memory and durable on disk not synced
                      False means in-memory and durable on disk synced
-        durable (bool): True means ._sdb and ._key are not None
-                            False otherwise
+        durable (bool): True means ._sdb and ._key and ._sdb.db and
+                                .sdb.db.opened are not None
+                        False otherwise
 
 
     Hidden:
-       _deq (deque):  in-memory cache
+       _deq (deque):  in-memory cache as deque
+       _sdb (DomIoSuber): instance of durable store
+       _key (str): into .sdb
        _stale (bool): for .stale property:
                        True means in-memory and durable on disk not synced
                        False means in-memory and durable on disk synced
@@ -37,6 +36,9 @@ class Durq():
     """
     def __init__(self, *pa):
         """Initialize instance
+
+        Parameters:
+           pa[0] (NonStringeIteralble[RegDom]): instances to preload self._deq
 
         """
         self._deq = deque()
@@ -95,8 +97,27 @@ class Durq():
                 and self._sdb.db.opened)
 
 
+    def extend(self, vals: NonStringIterable[RegDom]):
+        """Extend ._deq with vals
+        Peforms equivalent operation on durable .sdb at .key if any
+
+        """
+        if not vals:
+            return False
+
+        for val in vals:
+            if not isinstance(val, RegDom):
+                raise HierError(f"Expected RegDom instance got {val}")
+
+        self._deq.extend(vals)
+        if self.put(vals) is False:  # durable but put failed
+            raise HierError(f"Mismatch between cache and durable at "
+                            f"key={self._key}")
+        return True
+
+
     def push(self, val: RegDom):
-        """If not None, add val to right side of ._deq, Otherwise ignore
+        """If not None, add val to last in. Otherwise ignore
         Peforms equivalent operation on durable .sdb at .key if any
 
         Parameters:
@@ -115,7 +136,7 @@ class Durq():
 
 
     def pull(self, emptive=True):
-        """Remove and return val from left side of ._deq,
+        """Remove and return first in value
         If empty and emptive return None else raise IndexError
 
         Peforms equivalent operation on durable .sdb at .key if any
@@ -134,10 +155,11 @@ class Durq():
             if not emptive:
                 raise
             return None
+        else:  # successfully popped so pop from ._sdb
+            if self.durable and self.pop() is None:  # not popped from ._sdb
+                raise HierError(f"Mismatch between cache and durable at "
+                                f"key={self._key}")
 
-        if self.durable and self.pop() is None:
-            raise HierError(f"Mismatch between cache and durable at "
-                            f"key={self._key}")
         return val  # value to return
 
 
@@ -146,8 +168,16 @@ class Durq():
         Peforms equivalent operation on durable .sdb at .key if any
 
         """
+        prior = len(self._deq)
         self._deq.clear()
-        self.rem()
+        unique = prior > 0
+        if not unique:
+            return False
+
+        if self.rem() == False:
+            raise HierError(f"Mismatch between cache and durable at "
+                            f"key={self._key}")
+        return True
 
 
     def count(self, value):
@@ -156,18 +186,13 @@ class Durq():
         return(self._deq.count(value))  # counts matching values
 
 
-    def extend(self, vals: NonStringIterable[RegDom]):
-        """Extend ._deq with vals
-        Peforms equivalent operation on durable .sdb at .key if any
 
-        """
-        for val in vals:
-            if not isinstance(val, RegDom):
-                raise HierError(f"Expected RegDom instance got {val}")
-        self._deq.extend(vals)
-        if self.put(vals) is False:  # durable but put failed
-            raise HierError(f"Mismatch between cache and durable at "
-                            f"key={self._key}")
+    def put(self, vals: NonStringIterable[RegDom]):
+        """Put (append) vals to .sdb at .key if any"""
+        if self.durable:
+            self._stale = False
+            return self._sdb.put(keys=self._key, vals=vals)
+        return None
 
 
     def add(self, val):
@@ -196,14 +221,6 @@ class Durq():
         """Count all values in .sdb at .key if any"""
         if self.durable:
             return self._sdb.cnt(keys=self._key)
-        return None
-
-
-    def put(self, vals: NonStringIterable[RegDom]):
-        """Put (append) vals to .sdb at .key if any"""
-        if self.durable:
-            self._stale = False
-            return self._sdb.put(keys=self._key, vals=vals)
         return None
 
 

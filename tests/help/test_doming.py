@@ -556,6 +556,9 @@ def test_regdom():
     # test _astuple
     assert rd._astuple() == ()  # no fields so empty
 
+    # test hash
+    assert hash(rd) == hash(rd)
+
     @registerify
     @dataclass
     class TestRegDom(RegDom):
@@ -565,6 +568,13 @@ def test_regdom():
             value (Any):  generic value field
         """
         value: Any = None  # generic value
+
+        def __hash__(self):
+            """Define hash so can work with ordered_set
+            __hash__ is not inheritable in dataclasses so must be explicitly defined
+            in every subclass
+            """
+            return hash((self.__class__.__name__,) + self._astuple())  # almost same as __eq__
 
 
     trd = TestRegDom()
@@ -577,6 +587,9 @@ def test_regdom():
 
     # test _astuple
     assert trd._astuple() == (None,)
+
+    # test hash
+    assert hash(trd) == hash(trd)
 
     """Done Test"""
 
@@ -663,6 +676,9 @@ def test_tymedom():
     # test _astuple
     assert td._astuple() == ()  # no fields so empty
 
+    # test hash
+    assert hash(td) == hash(td)
+
     @namify
     @registerify
     @dataclass
@@ -673,6 +689,15 @@ def test_tymedom():
             value (Any):  generic value field
         """
         value: Any = None  # generic value
+
+        def __hash__(self):
+            """Define hash so can work with ordered_set
+            __hash__ is not inheritable in dataclasses so must be explicitly defined
+            in every subclass
+            """
+            return hash((self.__class__.__name__,) + self._astuple())  # almost same as __eq__
+
+
 
     assert TestTymeDom._names == ('value', )
 
@@ -699,7 +724,8 @@ def test_tymedom():
     # test _astuple
     assert ttd._astuple() == ("hello",)
 
-
+    # test hash
+    assert hash(ttd) == hash(ttd)
 
     """Done Test"""
 

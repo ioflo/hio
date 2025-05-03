@@ -45,8 +45,9 @@ class CanDom(TymeDom):
         _now (None|float): current tyme given by ._tymth if not None.
 
     Properties:
-        _durable (bool):  True means ._sdb and ._key are not None
-                          False otherwise
+        _durable (bool): True means ._sdb and ._key and ._sdb.db and
+                                .sdb.db.opened are not None
+                         False otherwise
 
     Non-Field Attributes:
         _sdb (DomSuber|None): SuberBase subclass instance of durable subdb of Duror
@@ -73,6 +74,14 @@ class CanDom(TymeDom):
         self._stale = _stale
         self._fresh = _fresh
         self._bulk = _bulk
+
+
+    def __hash__(self):
+        """Define hash so can work with ordered_set
+        __hash__ is not inheritable in dataclasses so must be explicitly defined
+        in every subclass
+        """
+        return hash((self.__class__.__name__,) + self._astuple())  # almost same as __eq__
 
 
     def __setattr__(self, name, value):  # called by __setitem__
@@ -205,5 +214,10 @@ class Can(CanDom):
     value: Any = None  # generic value
 
 
-
+    def __hash__(self):
+        """Define hash so can work with ordered_set
+        __hash__ is not inheritable in dataclasses so must be explicitly defined
+        in every subclass
+        """
+        return hash((self.__class__.__name__,) + self._astuple())  # almost same as __eq__
 

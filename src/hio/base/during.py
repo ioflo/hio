@@ -653,8 +653,8 @@ class Duror(Filer):
         The suffix is appended and stripped transparently.
 
         Returns:
-            result (bool): True if values were deleted at key. False otherwise
-                if no values at key
+            result (bool): True if at least one value was deleted at key.
+                           False otherwise, if no values at key
 
         Parameters:
             db (lmdb._Database): instance of named sub db with dupsort==False
@@ -1432,7 +1432,8 @@ class IoSuber(SuberBase):
                        subkey: str='docs.',
                        dupsort: bool=False,
                        ionsep: str=None, **kwa):
-        """
+        """Initialize instance
+
         Inherited Parameters:
             db (dbing.LMDBer): base db
             subkey (str):  LMDB sub database key
@@ -1453,8 +1454,7 @@ class IoSuber(SuberBase):
 
 
     def getFirst(self, keys: str | bytes | memoryview | Iterable):
-        """
-        Gets first val inserted at effecive key made from keys and hidden ordinal
+        """Gets first val inserted at effecive key made from keys and hidden ordinal
         suffix.
 
         Parameters:
@@ -1469,8 +1469,7 @@ class IoSuber(SuberBase):
 
 
     def getLast(self, keys: str | bytes | memoryview | Iterable):
-        """
-        Gets last val inserted at effecive key made from keys and hidden ordinal
+        """Gets last val inserted at effecive key made from keys and hidden ordinal
         suffix.
 
         Parameters:
@@ -1485,8 +1484,7 @@ class IoSuber(SuberBase):
 
 
     def get(self, keys: str | bytes | memoryview | Iterable):
-        """
-        Gets vals set list at key made from effective keys
+        """Gets vals set list at key made from effective keys
 
         Parameters:
             keys (Iterable): of key strs to be combined in order to form key
@@ -1503,8 +1501,7 @@ class IoSuber(SuberBase):
 
 
     def getIter(self, keys: str | bytes | memoryview | Iterable):
-        """
-        Gets vals iterator at effecive key made from keys and hidden ordinal suffix.
+        """Gets vals iterator at effecive key made from keys and hidden ordinal suffix.
         All vals in set of vals that share same effecive key are retrieved in
         insertion order.
 
@@ -1522,8 +1519,7 @@ class IoSuber(SuberBase):
 
 
     def pop(self, keys: str | bytes | memoryview | Iterable):
-        """
-        Pops first val if any inserted at effecive key made from keys and
+        """Pops first val if any inserted at effecive key made from keys and
         hidden ordinal suffix. Pop returns and deletes value if any.
 
         Parameters:
@@ -1539,8 +1535,7 @@ class IoSuber(SuberBase):
 
     def add(self, keys: str | bytes | memoryview | Iterable,
             val: str | bytes | memoryview):
-        """
-        Add val idempotently to vals at effective key made from keys and hidden
+        """Add val idempotently to vals at effective key made from keys and hidden
         ordinal suffix. Idempotent means that added value is not already in set
         of vals at key. Does not overwrite or add same value at same key more
         than once.
@@ -1563,8 +1558,7 @@ class IoSuber(SuberBase):
 
     def put(self, keys: str | bytes | memoryview | Iterable,
                   vals: str | bytes | memoryview | Iterable):
-        """
-        Puts all vals each with an effective key made from keys and hidden
+        """Puts all vals each with an effective key made from keys and hidden
         ordinal suffix that are not already in set of vals at key.
         Does not overwrite existing vals. Does not add val if already same val
         in set.
@@ -1588,8 +1582,7 @@ class IoSuber(SuberBase):
 
     def pin(self, keys: str | bytes | memoryview | Iterable,
                   vals: str | bytes | memoryview | Iterable):
-        """
-        Pins (sets) vals at effective key made from keys and hidden ordinal suffix.
+        """Pins (sets) vals at effective key made from keys and hidden ordinal suffix.
         Overwrites. Removes all pre-existing vals that share same effective keys
         and replaces them with vals
 
@@ -1610,8 +1603,7 @@ class IoSuber(SuberBase):
 
 
     def rem(self, keys: str | bytes | memoryview | Iterable):
-        """
-        Removes entry at effective key made from keys and hidden ordinal suffix
+        """Removes entry at effective key made from keys and hidden ordinal suffix
         that matches val if any. Otherwise deletes all values at effective key.
 
         Parameters:
@@ -1631,8 +1623,7 @@ class IoSuber(SuberBase):
 
 
     def cnt(self, keys: str | bytes | memoryview | Iterable):
-        """
-        Return count of  values at effective key made from keys and hidden ordinal
+        """Return count of  values at effective key made from keys and hidden ordinal
         suffix. Zero otherwise
 
         Parameters:
@@ -1645,8 +1636,7 @@ class IoSuber(SuberBase):
 
     def getItemIter(self, keys: str | bytes | memoryview | Iterable = "",
                     *, topive=False):
-        """
-        Return iterator over all the items in top branch defined by keys where
+        """Return iterator over all the items in top branch defined by keys where
         keys may be truncation of full branch.
 
         Returns:
@@ -1721,7 +1711,8 @@ class IoSetSuber(SuberBase):
                        subkey: str='docs.',
                        dupsort: bool=False,
                        ionsep: str=None, **kwa):
-        """
+        """Initialize instance
+
         Inherited Parameters:
             db (dbing.LMDBer): base db
             subkey (str):  LMDB sub database key
@@ -1742,8 +1733,7 @@ class IoSetSuber(SuberBase):
 
 
     def getFirst(self, keys: str | bytes | memoryview | Iterable):
-        """
-        Gets first val inserted at effecive key made from keys and hidden ordinal
+        """Gets first val inserted at effecive key made from keys and hidden ordinal
         suffix.
 
         Parameters:
@@ -1758,8 +1748,7 @@ class IoSetSuber(SuberBase):
 
 
     def getLast(self, keys: str | bytes | memoryview | Iterable):
-        """
-        Gets last val inserted at effecive key made from keys and hidden ordinal
+        """Gets last val inserted at effecive key made from keys and hidden ordinal
         suffix.
 
         Parameters:
@@ -1774,8 +1763,7 @@ class IoSetSuber(SuberBase):
 
 
     def get(self, keys: str | bytes | memoryview | Iterable):
-        """
-        Gets vals set list at key made from effective keys
+        """Gets vals set list at key made from effective keys
 
         Parameters:
             keys (Iterable): of key strs to be combined in order to form key
@@ -1792,8 +1780,7 @@ class IoSetSuber(SuberBase):
 
 
     def getIter(self, keys: str | bytes | memoryview | Iterable):
-        """
-        Gets vals iterator at effecive key made from keys and hidden ordinal suffix.
+        """Gets vals iterator at effecive key made from keys and hidden ordinal suffix.
         All vals in set of vals that share same effecive key are retrieved in
         insertion order.
 
@@ -1811,8 +1798,7 @@ class IoSetSuber(SuberBase):
 
 
     def pop(self, keys: str | bytes | memoryview | Iterable):
-        """
-        Pops first val if any inserted at effecive key made from keys and
+        """Pops first val if any inserted at effecive key made from keys and
         hidden ordinal suffix. Pop returns and deletes value if any.
 
         Parameters:
@@ -1828,8 +1814,7 @@ class IoSetSuber(SuberBase):
 
     def add(self, keys: str | bytes | memoryview | Iterable,
             val: str | bytes | memoryview):
-        """
-        Add val idempotently to vals at effective key made from keys and hidden
+        """Add val idempotently to vals at effective key made from keys and hidden
         ordinal suffix. Idempotent means that added value is not already in set
         of vals at key. Does not overwrite or add same value at same key more
         than once.
@@ -1852,8 +1837,7 @@ class IoSetSuber(SuberBase):
 
     def put(self, keys: str | bytes | memoryview | Iterable,
                   vals: str | bytes | memoryview | Iterable):
-        """
-        Puts all vals each with an effective key made from keys and hidden
+        """Puts all vals each with an effective key made from keys and hidden
         ordinal suffix that are not already in set of vals at key.
         Does not overwrite existing vals. Does not add val if already same val
         in set.
@@ -1877,8 +1861,7 @@ class IoSetSuber(SuberBase):
 
     def pin(self, keys: str | bytes | memoryview | Iterable,
                   vals: str | bytes | memoryview | Iterable):
-        """
-        Pins (sets) vals at effective key made from keys and hidden ordinal suffix.
+        """Pins (sets) vals at effective key made from keys and hidden ordinal suffix.
         Overwrites. Removes all pre-existing vals that share same effective keys
         and replaces them with vals
 
@@ -1900,8 +1883,7 @@ class IoSetSuber(SuberBase):
 
     def rem(self, keys: str | bytes | memoryview | Iterable,
                    val: str | bytes | memoryview = b''):
-        """
-        Removes entry at effective key made from keys and hidden ordinal suffix
+        """Removes entry at effective key made from keys and hidden ordinal suffix
         that matches val if any. Otherwise deletes all values at effective key.
 
         Parameters:
@@ -1911,7 +1893,11 @@ class IoSetSuber(SuberBase):
                         if val is empty then remove all values at key
 
         Returns:
-           result (bool): True if effective key with val exists so rem successful.
+            When val:
+                result (bool): True if effective key with val exists so rem successful.
+                           False otherwise
+            Otherwise:
+                result (bool): True if effective key with val exists so rem successful.
                            False otherwise
 
         """
@@ -1927,8 +1913,7 @@ class IoSetSuber(SuberBase):
 
 
     def cnt(self, keys: str | bytes | memoryview | Iterable):
-        """
-        Return count of  values at effective key made from keys and hidden ordinal
+        """Return count of  values at effective key made from keys and hidden ordinal
         suffix. Zero otherwise
 
         Parameters:
@@ -1941,8 +1926,7 @@ class IoSetSuber(SuberBase):
 
     def getItemIter(self, keys: str | bytes | memoryview | Iterable = "",
                     *, topive=False):
-        """
-        Return iterator over all the items in top branch defined by keys where
+        """Return iterator over all the items in top branch defined by keys where
         keys may be truncation of full branch.
 
         Returns:
