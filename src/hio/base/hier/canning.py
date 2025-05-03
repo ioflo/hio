@@ -45,8 +45,9 @@ class CanDom(TymeDom):
         _now (None|float): current tyme given by ._tymth if not None.
 
     Properties:
-        _durable (bool):  True means ._sdb and ._key are not None
-                          False otherwise
+        _durable (bool): True means ._sdb and ._key and ._sdb.db and
+                                .sdb.db.opened are not None
+                         False otherwise
 
     Non-Field Attributes:
         _sdb (DomSuber|None): SuberBase subclass instance of durable subdb of Duror
@@ -73,6 +74,14 @@ class CanDom(TymeDom):
         self._stale = _stale
         self._fresh = _fresh
         self._bulk = _bulk
+
+
+    def __hash__(self):
+        """Define hash so can work with ordered_set
+        __hash__ is not inheritable in dataclasses so must be explicitly defined
+        in every subclass
+        """
+        return hash((self.__class__.__name__,) + self._astuple())  # almost same as __eq__
 
 
     def __setattr__(self, name, value):  # called by __setitem__
@@ -120,13 +129,15 @@ class CanDom(TymeDom):
 
     @property
     def _durable(self):
-        """Property _durable True when ._sdb and ._key are not None.
+        """Property durable True when durable subdb injected and opened.
 
         Returns:
-            _durable (bool): True means ._sdb and ._key are not None
+            durable (bool): True means ._sdb and ._key and ._sdb.db and
+                                .sdb.db.opened are not None
                             False otherwise
         """
-        return (self._sdb is not None and self._key is not None)
+        return (self._sdb is not None and self._key is not None and self._sdb.db
+                and self._sdb.db.opened)
 
 
     def _pin(self):
@@ -203,5 +214,10 @@ class Can(CanDom):
     value: Any = None  # generic value
 
 
-
+    def __hash__(self):
+        """Define hash so can work with ordered_set
+        __hash__ is not inheritable in dataclasses so must be explicitly defined
+        in every subclass
+        """
+        return hash((self.__class__.__name__,) + self._astuple())  # almost same as __eq__
 

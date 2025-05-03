@@ -16,7 +16,7 @@ from hio.base import Tymist, Doist
 from hio.base.hier import (Hold, Nabes, Rexcnt, Rexlps, Rexrlp, Bag, Can,
                            Box, Boxer, BoxerDoer, Boxery,
                            ActBase, Act, EndAct,
-                           Durq, )
+                           Durq, Dusq)
 
 
 def test_rexlps():
@@ -1163,6 +1163,8 @@ def test_boxer_doer():
         H.test = Can(value=True)
         H.buf = Durq()
         H.buf.push(Bag(value=True))
+        H.puf = Dusq()
+        H.puf.push(Bag(value=False))
         bx(name='top')
         bx('mid', 'top')
         at('redo')
@@ -1210,9 +1212,10 @@ def test_boxer_doer():
     assert not boxer.hold.subery.opened
 
     assert len(boxer.hold.buf) == 1
-    boxer.hold.buf._sdb = None  # so does not check sdb
-    boxer.hold.buf._key = None
     assert boxer.hold.buf.pull() == Bag(value=True)
+
+    assert len(boxer.hold.puf) == 1
+    assert boxer.hold.puf.pull() == Bag(value=False)
 
     assert hold._boxer_boxer_active.value == None
     assert hold._boxer_boxer_tock.value == 1.0

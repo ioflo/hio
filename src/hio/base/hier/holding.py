@@ -23,6 +23,7 @@ from ...help import NonStringIterable, Mine
 from ..doing import Doer
 from .canning import CanDom
 from .durqing import Durq
+from .dusqing import Dusq
 
 
 
@@ -136,6 +137,10 @@ class Hold(Mine):
         elif isinstance(val, Durq):
             val._key = key
             val._sdb = self.subery.drqs if self.subery else None
+            val.sync()  # attempt to sync with sdb at key if any
+        elif isinstance(val, Dusq):
+            val._key = key
+            val._sdb = self.subery.dsqs if self.subery else None
             val.sync()  # attempt to sync with sdb at key if any
 
 

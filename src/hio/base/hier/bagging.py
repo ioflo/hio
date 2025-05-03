@@ -47,3 +47,11 @@ class Bag(TymeDom):
     value: Any = None  # generic value
 
 
+    def __hash__(self):
+        """Define hash so can work with ordered_set
+        __hash__ is not inheritable in dataclasses so must be explicitly defined
+        in every subclass
+        """
+        return hash((self.__class__.__name__,) + self._astuple())  # almost same as __eq__
+
+

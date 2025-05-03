@@ -40,9 +40,12 @@ def test_durq_basic():
 
     assert durq.pull() is None
 
-    durq.push(b0)
+    assert durq.push(b0)
     durq.push(b1)
     durq.push(b2)
+
+    assert durq  # not empty
+    assert durq.push(None) is False  # can't push None
 
     assert repr(durq) == 'Durq([Bag(value=0), Bag(value=1), Bag(value=2)])'
 
@@ -54,14 +57,13 @@ def test_durq_basic():
     bvals = [b0, b1, b2, b3, b4, b5, b6, b7, b3]
     durq.extend(bvals)
     assert len(durq) == 9
-    assert durq.count() == 9
     assert durq.count(b3) == 2
 
     # test iter
     vals = [val for val in durq]
     assert vals == bvals
 
-    durq.clear()
+    assert durq.clear()
     assert len(durq) == 0
 
     durq = Durq(bvals)
@@ -96,15 +98,15 @@ def test_durq_basic():
         assert durq.durable
 
         assert not durq  # empty
-        durq.push(None)  # can't push None
+        assert durq.push(None) is False  # can't push None
         assert not durq
 
-        durq.push(b5)
+        assert durq.push(b5)
         assert not durq.stale
         assert durq._sdb.getFirst(key) == b5
         assert durq._sdb.get(key) == [b5]
 
-        durq.push(b6)
+        assert durq.push(b6)
         assert not durq.stale
         assert durq._sdb.getLast(key) == b6
         assert durq._sdb.get(key) == [b5, b6]
@@ -114,20 +116,18 @@ def test_durq_basic():
         assert durq.pull() == None
         assert durq._sdb.cnt(key) == 0
 
-        durq.extend(bvals)
+        assert durq.extend(bvals)
         assert durq._sdb.get(key) == bvals
         assert len(durq) == 9
-        assert durq.count() == 9
         assert durq.count(b3) == 2
 
         # test iter
         vals = [val for val in durq]
         assert vals == bvals
 
-        durq.clear()
+        assert durq.clear()
         assert len(durq) == 0
         assert durq._sdb.cnt(key) == 0
-
 
         # test sync with pre-existing database
         durq.extend(bvals)  # setup sdb  with some values
@@ -167,9 +167,8 @@ def test_durq_basic():
 
     assert not os.path.exists(subery.path)
     assert not subery.opened
-
-
     """Done Test"""
+
 
 if __name__ == "__main__":
     test_durq_basic()

@@ -7,6 +7,7 @@ Support for Dataclass Object Mapper Dom classes
 from __future__ import annotations  # so type hints of classes get resolved later
 
 import functools
+from hashlib import blake2b
 import json
 import msgpack
 import cbor2 as cbor
@@ -149,7 +150,7 @@ class MapDom:
 
 
     def _astuple(self):
-        """Returns dict version of record"""
+        """Returns tuple version of record"""
         return tuple(self._asdict().values())
 
 
@@ -438,7 +439,7 @@ class RawDom(MapDom):
 
 
     def _astuple(self):
-        """Returns dict version of record"""
+        """Returns tuple version of record"""
         return tuple(self._asdict().values())
 
 
@@ -489,6 +490,14 @@ class RegDom(RawDom):
     _registry:  ClassVar[dict] = {}  # subclass registry
 
 
+    def __hash__(self):
+        """Define hash so can work with ordered_set
+        __hash__ is not inheritable in dataclasses so must be explicitly defined
+        in every subclass
+        """
+        return hash((self.__class__.__name__,) + self._astuple())  # almost same as __eq__
+
+
 def namify(cls):
     """Class decorator for dataclass to populate ClassVar ._names with names
     of all fields in dataclass
@@ -535,6 +544,14 @@ class TymeDom(RegDom):
     def __post_init__(self, _tymth, _tyme):
         self._tymth = _tymth
         self._tyme = _tyme
+
+
+    def __hash__(self):
+        """Define hash so can work with ordered_set
+        __hash__ is not inheritable in dataclasses so must be explicitly defined
+        in every subclass
+        """
+        return hash(self._astuple())  # same as default dataclass __eq__()
 
 
     def __setattr__(self, name, value):
