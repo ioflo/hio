@@ -11,7 +11,7 @@ import lmdb
 
 from hio import HierError
 from hio.base import Duror, openDuror, Subery
-from hio.base.hier import Hold, Can, Durq, Dusq, Bag
+from hio.base.hier import Hold, Can, Durq, Dusq, Bag, IceBag
 
 
 def test_hold_basic():
@@ -160,6 +160,7 @@ def test_hold_basic():
         #Test Durq with hold subery and assign and sync by hold
         b0 = Bag(value=0)
         b1 = Bag(value=1)
+        b2 = IceBag(value=2)
 
         dkey = 'durqness'
         durq = Durq()
@@ -169,6 +170,7 @@ def test_hold_basic():
         assert not durq.durable
         durq.push(b0)
         durq.push(b1)
+        durq.push(b2)
         assert durq.stale
 
         hold[dkey] = durq
@@ -176,11 +178,12 @@ def test_hold_basic():
         assert durq.durable
         assert durq._sdb == subery.drqs
         assert durq._key == dkey
-        assert durq._sdb.get(durq._key) == [b0, b1]
+        assert durq._sdb.get(durq._key) == [b0, b1, b2]
 
         #Test Dusq with hold subery and assign and sync by hold
         b0 = Bag(value=0)
         b1 = Bag(value=1)
+        b2 = IceBag(value=2)
 
         fkey = 'dusqness'
         dusq = Dusq()
@@ -190,6 +193,7 @@ def test_hold_basic():
         assert not dusq.durable
         dusq.push(b0)
         dusq.push(b1)
+        dusq.push(b2)
         assert dusq.stale
 
         hold[fkey] = dusq
@@ -197,7 +201,7 @@ def test_hold_basic():
         assert dusq.durable
         assert dusq._sdb == subery.dsqs
         assert dusq._key == fkey
-        assert dusq._sdb.get(dusq._key) == [b0, b1]
+        assert dusq._sdb.get(dusq._key) == [b0, b1, b2]
 
 
     assert not os.path.exists(subery.path)

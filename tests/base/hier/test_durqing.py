@@ -10,9 +10,9 @@ from collections import deque
 
 
 from hio import HierError
-from hio.help import RegDom
+from hio.help import RegDom, IceRegDom
 from hio.base import Duror, openDuror, Subery, DomIoSuber
-from hio.base.hier import Durq, Bag
+from hio.base.hier import Durq, Bag, IceBag
 
 
 def test_durq_basic():
@@ -27,9 +27,9 @@ def test_durq_basic():
     assert repr(durq) == 'Durq([])'
 
     b0 = Bag(value=0)
-    b1 = Bag(value=1)
-    b2 = Bag(value=2)
-    b3 = Bag(value=3)
+    b1 = IceBag(value=1)
+    b2 = IceBag(value=2)
+    b3 = IceBag(value=3)
     b4 = Bag(value=4)
     b5 = Bag(value=5)
     b6 = Bag(value=6)
@@ -47,7 +47,7 @@ def test_durq_basic():
     assert durq  # not empty
     assert durq.push(None) is False  # can't push None
 
-    assert repr(durq) == 'Durq([Bag(value=0), Bag(value=1), Bag(value=2)])'
+    assert repr(durq) == 'Durq([Bag(value=0), IceBag(value=1), IceBag(value=2)])'
 
     assert durq.pull() == b0
     assert durq.pull() == b1

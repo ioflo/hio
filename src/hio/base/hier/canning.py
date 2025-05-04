@@ -76,12 +76,12 @@ class CanDom(TymeDom):
         self._bulk = _bulk
 
 
-    def __hash__(self):
-        """Define hash so can work with ordered_set
-        __hash__ is not inheritable in dataclasses so must be explicitly defined
-        in every subclass
-        """
-        return hash((self.__class__.__name__,) + self._astuple())  # almost same as __eq__
+    #def __hash__(self):
+        #"""Define hash so can work with ordered_set
+        #__hash__ is not inheritable in dataclasses so must be explicitly defined
+        #in every subclass
+        #"""
+        #return hash((self.__class__.__name__,) + self._astuple())  # almost same as __eq__
 
 
     def __setattr__(self, name, value):  # called by __setitem__

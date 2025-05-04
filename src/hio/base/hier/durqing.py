@@ -10,7 +10,7 @@ from collections import deque
 from typing import Any
 
 from hio import HierError
-from ...help import RegDom, NonStringIterable
+from ...help import RegDom, IceRegDom, NonStringIterable
 
 class Durq():
     """Durq (durable queue) class when injected with
@@ -97,7 +97,7 @@ class Durq():
                 and self._sdb.db.opened)
 
 
-    def extend(self, vals: NonStringIterable[RegDom]):
+    def extend(self, vals: NonStringIterable[RegDom|IceRegDom]):
         """Extend ._deq with vals
         Peforms equivalent operation on durable .sdb at .key if any
 
@@ -106,7 +106,7 @@ class Durq():
             return False
 
         for val in vals:
-            if not isinstance(val, RegDom):
+            if not isinstance(val, (RegDom, IceRegDom)):
                 raise HierError(f"Expected RegDom instance got {val}")
 
         self._deq.extend(vals)
@@ -116,7 +116,7 @@ class Durq():
         return True
 
 
-    def push(self, val: RegDom):
+    def push(self, val: RegDom|IceRegDom):
         """If not None, add val to last in. Otherwise ignore
         Peforms equivalent operation on durable .sdb at .key if any
 
@@ -124,7 +124,7 @@ class Durq():
             val (RegDom): element to be appended to deck (deque)
         """
         if val is not None:
-            if not isinstance(val, RegDom):
+            if not isinstance(val, (RegDom, IceRegDom)):
                 raise HierError(f"Expected RegDom instance got {val}")
             self._deq.append(val)
             result = self.add(val)
@@ -187,7 +187,7 @@ class Durq():
 
 
 
-    def put(self, vals: NonStringIterable[RegDom]):
+    def put(self, vals: NonStringIterable[RegDom|IceRegDom]):
         """Put (append) vals to .sdb at .key if any"""
         if self.durable:
             self._stale = False

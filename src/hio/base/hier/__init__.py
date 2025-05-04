@@ -10,7 +10,7 @@ from .acting import (actify, register, ActBase,
                      BagMark, UpdateMark, ReupdateMark,
                      ChangeMark, RechangeMark)
 from .needing import Need
-from .bagging import Bag
+from .bagging import Bag, IceBag
 from .canning import CanDom, Can
 from .holding import Hold
 from .durqing import Durq

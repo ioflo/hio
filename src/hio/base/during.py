@@ -20,7 +20,7 @@ import hio
 from hio import HierError
 from .doing import Doer
 from .filing import Filer
-from ..help import isNonStringIterable, RegDom
+from ..help import isNonStringIterable, RegDom, IceRegDom
 
 
 
@@ -2047,10 +2047,12 @@ class DomSuberBase(SuberBase):
 
         proem, ser = val.split(sep=self.prosep.encode(), maxsplit=1)
         proem = proem.decode()
-        try:
+        if proem in RegDom._registry:
             klas = RegDom._registry[proem]
-        except KeyError as ex:
-            raise HierError(f"Unregistered serialized subclass={proem}") from ex
+        elif proem in IceRegDom._registry:
+            klas = IceRegDom._registry[proem]
+        else:
+            raise HierError(f"Unregistered serialized subclass={proem}")
 
         return (klas._fromjson(ser))
 

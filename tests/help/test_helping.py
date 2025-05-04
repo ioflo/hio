@@ -116,7 +116,7 @@ def test_repack():
 
 def test_non_string_iterable():
     """
-    Test the metaclass nonStringIterable
+    Test the metaclass NonStringIterable
     """
     a = bytearray(b'abc')
     w = dict(a=1, b=2, c=3)
@@ -133,7 +133,7 @@ def test_non_string_iterable():
 
 def test_non_string_sequence():
     """
-    Test the metaclass nonStringSequence
+    Test the metaclass NonStringSequence
     """
     a = bytearray(b'abc')
     w = dict(a=1, b=2, c=3)

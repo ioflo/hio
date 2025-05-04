@@ -13,8 +13,8 @@ from ordered_set import OrderedSet as oset
 from hio import HierError
 from hio.base import (Duror, openDuror, SuberBase, Suber, IoSuber, IoSetSuber,
                       DomSuberBase, DomSuber, DomIoSuber, DomIoSetSuber, Subery)
-from hio.base.hier import Bag, CanDom, Can
-from hio.help import RawDom, RegDom
+from hio.base.hier import Bag, IceBag, CanDom, Can
+from hio.help import RawDom, RegDom, IceRegDom
 
 
 
@@ -1115,8 +1115,8 @@ def test_dom_suber_base():
         assert key == b'key_top'
         assert suber._tokeys(key) == keys
 
+        # Test RegDom
         dom = RegDom()
-
         ser = suber._ser(dom)
         assert ser == b'RegDom\n{}'  # empty fields
 
@@ -1129,8 +1129,22 @@ def test_dom_suber_base():
         dom = suber._des(ser)
         assert isinstance(dom, RegDom)
 
-        bag = Bag()
+        # Test IceRegDom
+        dom = IceRegDom()
+        ser = suber._ser(dom)
+        assert ser == b'IceRegDom\n{}'  # empty fields
 
+        proem, serj = ser.split(suber.prosep.encode(), maxsplit=1)
+        assert proem == b'IceRegDom'
+        assert serj == b'{}'
+        proem = proem.decode()
+        assert proem in IceRegDom._registry
+
+        dom = suber._des(ser)
+        assert isinstance(dom, IceRegDom)
+
+        # Test Bag
+        bag = Bag()
         ser = suber._ser(bag)
         assert ser == b'Bag\n{"value":null}'  # value field
 
@@ -1143,8 +1157,22 @@ def test_dom_suber_base():
         bag = suber._des(ser)
         assert isinstance(bag, Bag)
 
-        can = CanDom()
+        # Test IceBag
+        bag = IceBag()
+        ser = suber._ser(bag)
+        assert ser == b'IceBag\n{"value":null}'  # value field
 
+        proem, serj = ser.split(suber.prosep.encode(), maxsplit=1)
+        assert proem == b'IceBag'
+        assert serj == b'{"value":null}'
+        proem = proem.decode()
+        assert proem in IceBag._registry
+
+        bag = suber._des(ser)
+        assert isinstance(bag, IceBag)
+
+        # Test CanDom
+        can = CanDom()
         ser = suber._ser(can)
         assert ser == b'CanDom\n{}'  # empty fields
 
@@ -1157,6 +1185,7 @@ def test_dom_suber_base():
         can = suber._des(ser)
         assert isinstance(can, CanDom)
 
+        # Test Can
         can = Can()
         assert can.value == None
 
