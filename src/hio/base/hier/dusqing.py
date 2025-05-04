@@ -10,7 +10,7 @@ from ordered_set import OrderedSet as oset
 from copy import deepcopy
 
 from hio import HierError
-from ...help import RegDom, NonStringIterable
+from ...help import RegDom, IceRegDom, NonStringIterable
 
 class Dusq():
     """Dusq (durable set queue) class when injected with
@@ -68,7 +68,8 @@ class Dusq():
 
     def __iter__(self):
         """Makes iterator out of self by returning iterable ._deq"""
-        return iter(tuple(deepcopy(val) for val in self._oset))  # ensure not mutable outside
+        return iter(tuple(val if val.__dataclass_params__.frozen else deepcopy(val)
+                          for val in self._oset))  # ensure not mutable outside
         #return iter(self._oset)
 
     def __len__(self):
@@ -99,7 +100,7 @@ class Dusq():
                 and self._sdb.db.opened)
 
 
-    def update(self, vals: NonStringIterable[RegDom], *, deep=True):
+    def update(self, vals: NonStringIterable[RegDom|IceRegDom], *, deep=True):
         """Update ._deq with vals
         Peforms equivalent operation on durable .sdb at .key if any
 
@@ -110,9 +111,10 @@ class Dusq():
 
         """
         for val in vals:
-            if not isinstance(val, RegDom):
+            if not isinstance(val, (RegDom, IceRegDom)):
                 raise HierError(f"Expected RegDom instance got {val}")
-        vals = tuple(deepcopy(val) for val in vals)  # so can't mutate
+        vals = tuple(val if val.__dataclass_params__.frozen else deepcopy(val)
+                     for val in vals)  # so can't mutate
         prior = len(self)
         self._oset.update(vals)
         unique = len(self._oset) > prior  # uniquely added some val from vals to set
@@ -124,7 +126,7 @@ class Dusq():
         return False
 
 
-    def push(self, val: RegDom):
+    def push(self, val: RegDom|IceRegDom):
         """If not None, add val add val to last in if unique. Otherwise ignore
         Peforms equivalent operation on durable .sdb at .key if any
 
@@ -132,9 +134,10 @@ class Dusq():
             val (RegDom): element to be appended to deck (deque)
         """
         if val is not None:
-            if not isinstance(val, RegDom):
+            if not isinstance(val, (RegDom, IceRegDom)):
                 raise HierError(f"Expected RegDom instance got {val}")
-            val = deepcopy(val)  # so can't mutate
+            # so can't mutate
+            val = val if val.__dataclass_params__.frozen else deepcopy(val)
             prior = len(self._oset)
             self._oset.add(val)
             unique = len(self._oset) > prior  # uniquely added val to set
@@ -171,8 +174,8 @@ class Dusq():
             if self.durable and self.pop() is None:  # not popped from ._sdb
                 raise HierError(f"Mismatch between cache and durable at "
                                 f"key={self._key}")
-
-        return deepcopy(val)  # value to return ensure not mutable outside
+        # value to return ensure not mutable outside
+        return val if val.__dataclass_params__.frozen else deepcopy(val)
 
 
     def clear(self):
@@ -191,7 +194,7 @@ class Dusq():
         return True
 
 
-    def remove(self, value):
+    def remove(self, value: RegDom|IceRegDom):
         """Remove value if contained
 
         Returns:
@@ -200,9 +203,10 @@ class Dusq():
 
         Peforms equivalent operation on durable .sdb at .key if any
         """
-        if not isinstance(val, RegDom):
+        if not isinstance(val, (RegDom, IceRegDom)):
             raise HierError(f"Expected RegDom instance got {val}")
-        val = deepcopy(val)  # so can't mutate
+         # so can't mutate
+        val = val if val.__dataclass_params__.frozen else deepcopy(val)
         try:
             self._oset.remove(value)
         except KeyError as ex:
@@ -214,7 +218,7 @@ class Dusq():
         return True
 
 
-    def put(self, vals: NonStringIterable[RegDom]):
+    def put(self, vals: NonStringIterable[RegDom|IceRegDom]):
         """Put (append) vals to .sdb at .key if any and unique to set"""
         if self.durable:
             self._stale = False

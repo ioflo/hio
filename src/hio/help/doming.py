@@ -3,7 +3,6 @@
 
 Support for Dataclass Object Mapper Dom classes
 """
-
 from __future__ import annotations  # so type hints of classes get resolved later
 
 import functools
@@ -15,6 +14,8 @@ import cbor2 as cbor
 from typing import Any, Type, ClassVar
 from collections.abc import Callable
 from dataclasses import dataclass, astuple, asdict, fields, field, InitVar
+
+from .helping import NonStringIterable
 
 # DOM Utilities dataclass utility classes
 
@@ -54,29 +55,72 @@ def datify(cls, d):
         return d  # not a dataclass so end recursion and next level up will process
 
 
+def registerify(cls):
+    """Class Decorator to add cls as cls._registry entry for itself keyed by its
+    own .__name__. Need class decorator so that class object is already created
+    by registration time when decorator is applied
+    """
+    name = cls.__name__
+    if name in cls._registry:
+        raise HierError(f"RegDom subclass {name=} already registered.")
+    cls._registry[name] = cls
+    return cls
+
+
+def namify(cls):
+    """Class decorator for dataclass to populate ClassVar ._names with names
+    of all fields in dataclass
+    """
+    cls._names = tuple(field.name for field in fields(cls))
+    return cls
+
+
 
 @dataclass(frozen=True)
-class IceMapDom:
-    """Base class for frozen dataclasses (codexes) that support map syntax
+class IceMapDom():
+    """Base class for dataclasses (codexes) that support map syntax
     Adds support for dunder methods for map syntax dc[name].
     Converts exceptions from attribute syntax to raise map syntax when using
     map syntax.
 
-    Note: iter astuple
+    Enables dataclass instances to use Mapping item syntax except for __delattr__
+    because dataclasses to not allow __delattr__ to be overridden
 
-    Enables dataclass instances to use Mapping item syntax
+    A non-frozen dataclass may not be a subclass of a frozen dataclass neither
+    may a frozen dataclass be a subclass of a frozen dataclass.
+
+    Frozen dataclass do not allow change or upate of either field or non-field
+    attributes after __init__ this includes in the  __post_init__ method.
+
+    Class Methods:
+        _fromdict(cls, d: dict): return dataclass converted from dict d
+
+    Methods:
+        __iter__():  asdict(self)
+        __getitem__(self, name)  map like interface
+        _asdict(): return self converted to dict
+        _astuple(): return self converted to tuple
+
     """
+
+    @classmethod
+    def _fromdict(cls, d: dict):
+        """returns instance of cls initialized from dict d """
+        dom = datify(cls, d)
+        if not isinstance(dom, cls):
+            raise ValueError("Invalid dict={d} to datify as dataclass={cls}.")
+        return dom
+
+
+    def __iter__(self):
+        return iter(self._asdict())
+
+
     def __getitem__(self, name):
         try:
             return getattr(self, name)
         except AttributeError as ex:
             raise IndexError(ex.args) from ex
-
-    def __iter__(self):
-        return iter(self._asdict())
-
-    #def __iter__(self):
-        #return iter(astuple(self))
 
 
     def _asdict(self):
@@ -89,26 +133,236 @@ class IceMapDom:
         return tuple(self._asdict().values())
 
 
-class MapDom:
-    """MapDom is a base class for dataclasses that support map syntax
+@dataclass(frozen=True)
+class IceRawDom(IceMapDom):
+    """IceRawDom is frozen version of RawDom which is a subclass of IceMapDom
+    that adds methods for converting to/from raw format serializations in JSON,
+    CBOR, and MGPK. IceRawDom is a base class for such frozen dataclasses.
+    The serialization process is to transform dataclass into
+    dict and then serialize into raw. The deserialization process is to
+    deserialize into dict and then convert to dataclass. This allows dataclass
+    to stored in databases or to be sent over the wire in messages in raw format.
+
+    Enables dataclass instances to use Mapping item syntax except for __delattr__
+    because dataclasses to not allow __delattr__ to be overridden
+
+    A non-frozen dataclass may not be a subclass of a frozen dataclass neither
+    may a frozen dataclass be a subclass of a frozen dataclass.
+
+    Frozen dataclass do not allow change or upate of either field or non-field
+    attributes after __init__ this includes in the  __post_init__ method.
+
+
+    Inherited Class Methods:
+        _fromdict(cls, d: dict): return dataclass converted from dict d
+
+    Class Methods:
+        _fromjson(cls, s: str|bytes): return dataclass converted from json s
+        _fromcbor(cls, s: bytes): return dataclass converted from cbor s
+        _frommgpk(cls, s: bytes): return dataclass converted from mgpk s
+
+    Inherited Methods:
+        __iter__(self): asdict(self)
+        __getitem__(self, name)  map like interface
+        _asdict(self): return self converted to dict
+        _astuple(): return self converted to tuple
+
+    Methods:
+        _asjson(self): return bytes self converted to json
+        _ascbor(self): return bytes self converted to cbor
+        _asmgpk(self): return bytes self converted to mgpk
+    """
+
+    @classmethod
+    def _fromjson(cls, s: str | bytes):
+        """returns instance of clas initialized from json str or bytes s """
+        if hasattr(s, "decode"):  # bytes
+            s = s.decode() # convert to str
+        d = json.loads(s)  # convert to dict
+        dom = datify(cls, d)
+        if not isinstance(dom, cls):
+            raise ValueError("Invalid dict={d} to datify as dataclass={cls}.")
+        return dom
+
+
+    @classmethod
+    def _fromcbor(cls, s: bytes):
+        """returns instance of clas initialized from cbor bytes or str s """
+        d = cbor.loads(s)  # convert to dict
+        dom = datify(cls, d)
+        if not isinstance(dom, cls):
+            raise ValueError("Invalid dict={d} to datify as dataclass={cls}.")
+        return dom
+
+
+    @classmethod
+    def _frommgpk(cls, s: bytes):
+        """returns instance of clas initialized from mgpk bytes or str s """
+        d = msgpack.loads(s)  # convert to dict
+        dom = datify(cls, d)
+        if not isinstance(dom, cls):
+            raise ValueError("Invalid dict={d} to datify as dataclass={cls}.")
+        return dom
+
+
+    def _asjson(self):
+        """Returns json bytes version of record"""
+        return json.dumps(self._asdict(),
+                          separators=(",", ":"),
+                          ensure_ascii=False).encode()  # ensure bytes
+
+
+    def _ascbor(self):
+        """Returns cbor bytes version of record"""
+        return cbor.dumps(self._asdict())
+
+
+    def _asmgpk(self):
+        """Returns mgpk bytes version of record"""
+        return msgpack.dumps(self._asdict())
+
+
+@registerify
+@dataclass(frozen=True)
+class IceRegDom(IceRawDom):
+    """IceRegDom is frozen version of RegDom which is a  base class for frozen Dom
+    subclasses that have class registry as as non field ClassVar that holds
+    mapping between class name and class object.
+    Use the registerify decorator to populate the registry with a given dataclass.
+
+    This allows registry based creation of instances from the class name.
+
+    Enables dataclass instances to use Mapping item syntax except for __delattr__
+    because dataclasses to not allow __delattr__ to be overridden
+
+    A non-frozen dataclass may not be a subclass of a frozen dataclass neither
+    may a frozen dataclass be a subclass of a frozen dataclass.
+
+    Frozen dataclass do not allow change or upate of either field or non-field
+    attributes after __init__ this includes in the  __post_init__ method.
+
+    Non-Field Class Attributes:
+        _registry (ClassVar[dict]): dict of subclasses keyed by class.__name__
+            Assigned by @registerify decorator
+
+    """
+    _registry:  ClassVar[dict] = {}  # subclass registry
+
+
+@namify
+@registerify
+@dataclass(frozen=True)
+class IceTymeDom(IceRegDom):
+    """IceTymeDom is frozen version of TymeDom which is a base class for frozen
+    Dom dataclasses that are registered and support the cycle tyme stamping of
+    named fields using non-field attributes. Note the only tyme stamp that can
+    happen is at init since the dataclass is frozen.
+
+    Use decorator registerify to populate ._registry
+    Use deocrator namify to populate ._names which holds names of field attributes
+
+    Enables dataclass instances to use Mapping item syntax except for __delattr__
+    because dataclasses to not allow __delattr__ to be overridden
+
+    A non-frozen dataclass may not be a subclass of a frozen dataclass neither
+    may a frozen dataclass be a subclass of a frozen dataclass.
+
+    Frozen dataclass do not allow change or upate of either field or non-field
+    attributes after __init__ this includes in the  __post_init__ method.
+
+
+    Inherited Non-Field Class Attributes:
+        _registry (ClassVar[dict]): dict of subclasses keyed by class.__name__
+            Assigned by @registerify decorator
+
+    Non-Field Class Attributes:
+        _names (ClassVar[tuple[str]|None]): tuple of field names for class
+            Assigned by @namify decorator
+
+    Properties:
+        _tymth (None|Callable):  Emulates interface for non-frozen TymeDom
+                                 Returns None
+        _tyme (None|Float): Emulates interface for non-frozen TymeDom
+                            Returns None
+        _now (None|float): Emulates interface for non-frozen TymeDom
+                           Returns None
+
+    """
+    _names: ClassVar[tuple[str]|None] = None  # Assigned in  __post_init__
+    _tymth: InitVar[None|Callable] = None  # tymth closure not a field
+    _tyme: InitVar[None|float] = None  # tyme of last update
+
+    def __post_init__(self, _tymth, _tyme):
+        """Emulates non-frozen TymeDom"""
+        #self._tymth = _tymth
+        #self._tyme = _tyme if _tyme is not None else self._now
+        pass
+
+    # cannot overwrite this method in frozen dataclass. so we use poperties
+    # to emulate interface of TymeDom but always None
+    #def __setattr__(self, name, value):
+        #super().__setattr__(name, value)
+        #if name in self._names:
+            #super().__setattr__("_tyme", self._now)
+
+
+    @property
+    def _tymth(self):
+        """Emulates interface for non-frozen TymeDom
+        Returns:
+            None
+        """
+        return None
+
+
+    @property
+    def _tyme(self):
+        """Emulates interface for non-frozen TymeDom
+        Returns:
+            None
+        """
+        return None
+
+
+    @property
+    def _now(self):
+        """Emulates interface for non-frozen TymeDom
+        Returns:
+            None
+        """
+        return None
+
+
+    def _wind(self, tymth):
+        """Emulates interface for non-frozen TymeDom
+        """
+        pass
+
+
+@dataclass()
+class MapDom():
+    """MapDom is a subclass of IceMapDom and is a base class for dataclasses
+    that support map syntax
     Adds support for dunder methods for map syntax dc[name].
     Converts exceptions from attribute syntax to raise map syntax when using
     map syntax.
 
-    Note: iter asdict
+    Enables dataclass instances to use Mapping item syntax except for __delattr__
+    because dataclasses to not allow __delattr__ to be overridden
 
-    Enables dataclass instances to use Mapping item syntax
+    A non-frozen dataclass may not be a subclass of a frozen dataclass neither
+    may a frozen dataclass be a subclass of a frozen dataclass.
 
     Class Methods:
         _fromdict(cls, d: dict): return dataclass converted from dict d
 
     Methods:
+        __iter__():  asdict(self)
         __getitem__(self, name)  map like interface
         __setitem__(self, name, value)  map like interface
-        __iter__():  asdict(self)
+        _update(*pa,**kwa): update attributes using dict like update syntax
         _asdict(): return self converted to dict
         _astuple(): return self converted to tuple
-        _update(*pa,**kwa): update attributes using dict like update syntax
     """
 
     @classmethod
@@ -118,6 +372,10 @@ class MapDom:
         if not isinstance(dom, cls):
             raise ValueError("Invalid dict={d} to datify as dataclass={cls}.")
         return dom
+
+
+    def __iter__(self):
+        return iter(self._asdict())
 
 
     def __getitem__(self, name):
@@ -133,25 +391,6 @@ class MapDom:
         except AttributeError as ex:
             raise IndexError(ex.args) from ex
 
-    # dataclasses to not allow delattr
-    #def __delitem__(self, name):
-        #try:
-            #return delattr(self, name)
-        #except AttributeError as ex:
-            #raise IndexError(ex.args) from ex
-
-    def __iter__(self):
-        return iter(self._asdict())
-
-
-    def _asdict(self):
-        """Returns dict version of record"""
-        return dictify(self)
-
-
-    def _astuple(self):
-        """Returns tuple version of record"""
-        return tuple(self._asdict().values())
 
 
     def _update(self, *pa, **kwa):
@@ -165,15 +404,25 @@ class MapDom:
             if isinstance(di, Mapping):
                 for k, v in di.items():
                     self[k] = v
-            elif isinstance(di, Iterable):
+            elif isinstance(di, NonStringIterable):
                 for k, v in di:
                     self[k] = v
             else:
-                raise TypeError(f"Expected Mapping or Iterable got {type(di)}.")
+                raise TypeError(f"Expected Mapping or NonStringIterable got "
+                                f"{type(di)}.")
 
         for k, v in kwa.items():
             self[k] = v
 
+
+    def _asdict(self):
+        """Returns dict version of record"""
+        return dictify(self)
+
+
+    def _astuple(self):
+        """Returns tuple version of record"""
+        return tuple(self._asdict().values())
 
 
 def modify(mods: MapDom|None=None, klas: Type[MapDom]=MapDom)->Callable[..., Any]:
@@ -323,15 +572,20 @@ def modize(mods: dict|None=None) -> Callable[..., Any]:
     return decorator
 
 
-
 @dataclass
 class RawDom(MapDom):
     """RawDom is subclass of MapDom that adds methods for converting to/from
     raw format serializations in JSON, CBOR, and MGPK. RawDom is a base class
     for such dataclasses. The serialization process is to transform dataclass into
-    dict and then serialize into raw. The deserialization process is and to
+    dict and then serialize into raw. The deserialization process is to
     deserialize into dict and then convert to dataclass. This allows dataclass
     to stored in databases or to be sent over the wire in messages in raw format.
+
+    Enables dataclass instances to use Mapping item syntax except for __delattr__
+    because dataclasses to not allow __delattr__ to be overridden
+
+    A non-frozen dataclass may not be a subclass of a frozen dataclass neither
+    may a frozen dataclass be a subclass of a frozen dataclass.
 
 
     Inherited Class Methods:
@@ -388,61 +642,6 @@ class RawDom(MapDom):
         return dom
 
 
-    def __getitem__(self, name):
-        try:
-            return getattr(self, name)
-        except AttributeError as ex:
-            raise IndexError(ex.args) from ex
-
-
-    def __setitem__(self, name, value):
-        try:
-            return setattr(self, name, value)
-        except AttributeError as ex:
-            raise IndexError(ex.args) from ex
-
-    # dataclasses don't allow deletion of attributes
-    #def __delitem__(self, name):
-        #try:
-            #return delattr(self, name)
-        #except AttributeError as ex:
-            #raise IndexError(ex.args) from ex
-
-    def _update(self, *pa, **kwa):
-        """Use item update syntax
-        """
-        if len(pa) > 1:
-            raise TypeError(f"Expected 1 positional argument got {len(pa)}.")
-
-        if pa:
-            di = pa[0]
-            if isinstance(di, Mapping):
-                for k, v in di.items():
-                    self[k] = v
-            elif isinstance(di, Iterable):
-                for k, v in di:
-                    self[k] = v
-            else:
-                raise TypeError(f"Expected Mapping or Iterable got {type(di)}.")
-
-        for k, v in kwa.items():
-            self[k] = v
-
-
-    def __iter__(self):
-        return iter(self._asdict())
-
-
-    def _asdict(self):
-        """Returns dict version of record"""
-        return dictify(self)
-
-
-    def _astuple(self):
-        """Returns tuple version of record"""
-        return tuple(self._asdict().values())
-
-
     def _asjson(self):
         """Returns json bytes version of record"""
         return json.dumps(self._asdict(),
@@ -461,18 +660,6 @@ class RawDom(MapDom):
 
 
 
-def registerify(cls):
-    """Class Decorator to add cls as cls._registry entry for itself keyed by its
-    own .__name__. Need class decorator so that class object is already created
-    by registration time when decorator is applied
-    """
-    name = cls.__name__
-    if name in cls._registry:
-        raise HierError(f"RegDom subclass {name=} already registered.")
-    cls._registry[name] = cls
-    return cls
-
-
 @registerify
 @dataclass
 class RegDom(RawDom):
@@ -481,6 +668,12 @@ class RegDom(RawDom):
     Use the registerify decorator to populate the registry with a given dataclass.
 
     This allows registry based creation of instances from the class name.
+
+    Enables dataclass instances to use Mapping item syntax except for __delattr__
+    because dataclasses to not allow __delattr__ to be overridden
+
+    A non-frozen dataclass may not be a subclass of a frozen dataclass neither
+    may a frozen dataclass be a subclass of a frozen dataclass.
 
     Non-Field Class Attributes:
         _registry (ClassVar[dict]): dict of subclasses keyed by class.__name__
@@ -498,14 +691,6 @@ class RegDom(RawDom):
         return hash((self.__class__.__name__,) + self._astuple())  # almost same as __eq__
 
 
-def namify(cls):
-    """Class decorator for dataclass to populate ClassVar ._names with names
-    of all fields in dataclass
-    """
-    cls._names = tuple(field.name for field in fields(cls))
-    return cls
-
-
 @namify
 @registerify
 @dataclass
@@ -514,6 +699,16 @@ class TymeDom(RegDom):
     the cycle tyme stamping of updates to named fields using non-field attributes.
     Use decorator registerify to populate ._registry
     Use deocrator namify to populate ._names which holds names of field attributes
+
+    Supports the cycle tyme stamping of updates to named fields using non-field attributes.
+
+    This allows registry based creation of instances from the class name.
+
+    Enables dataclass instances to use Mapping item syntax except for __delattr__
+    because dataclasses to not allow __delattr__ to be overridden
+
+    A non-frozen dataclass may not be a subclass of a frozen dataclass neither
+    may a frozen dataclass be a subclass of a frozen dataclass.
 
     Inherited Non-Field Class Attributes:
         _registry (ClassVar[dict]): dict of subclasses keyed by class.__name__
@@ -541,7 +736,7 @@ class TymeDom(RegDom):
     _tymth: InitVar[None|Callable] = None  # tymth closure not a field
     _tyme: InitVar[None|float] = None  # tyme of last update
 
-    def __post_init__(self, _tymth, _tyme):
+    def __post_init__(self, _tymth, _tyme):  # after init so fields already setup
         self._tymth = _tymth
         self._tyme = _tyme
 
@@ -558,35 +753,6 @@ class TymeDom(RegDom):
         super().__setattr__(name, value)
         if name in self._names:
             super().__setattr__("_tyme", self._now)
-
-
-    def __setitem__(self, k, v):
-        try:
-            return setattr(self, k, v)
-        except AttributeError as ex:
-            raise IndexError(ex.args) from ex
-
-
-    def _update(self, *pa, **kwa):
-        """Use item update syntax
-        """
-        if pa:
-            if len(pa) > 1:
-                raise TypeError(f"Expected 1 positional argument got {len(pa)}.")
-
-            di = pa[0]
-            if isinstance(di, Mapping):
-                for k, v in di.items():
-                    self[k] = v
-            elif isinstance(di, NonStringIterable):
-                for k, v in di:
-                    self[k] = v
-            else:
-                raise TypeError(f"Expected Mapping or NonStringIterable got"
-                                f" {type(di)}.")
-
-        for k, v in kwa.items():
-            self[k] = v
 
 
     @property
@@ -606,3 +772,4 @@ class TymeDom(RegDom):
         tymist.tymth base
         """
         self._tymth = tymth
+
