@@ -27,10 +27,10 @@ from ...base import doing, filing
 logger = help.ogler.getLogger()
 
 class Peer(filing.Filer):
-    """Class to manage non-blocking io on WMS (Win Mail Slot) datagram transport.
-    Use instance method .close() to close mail slot.
+    """Class to manage reliable datagram transport on Windows using Mailslots
+    instead of unix domain sockets. WinMailSlot (wms)
 
-    Because WinMailsSlots are reliable no need for retry tymer.
+    Because win mail slots (wms) are reliable no need for retry tymer.
 
 
     Inherited Class Attributes:
@@ -66,7 +66,6 @@ class Peer(filing.Filer):
 
     Class Attributes:
         Umask (int): octal default umask permissions such as 0o022
-        MaxUxdPathSize (int:) max characters in uxd file path
         MaxGramSize (int): max bytes in in datagram for this transport
         BufSize (int): used to set buffer size for transport datagram buffers
 
@@ -82,20 +81,20 @@ class Peer(filing.Filer):
         ls (socket.socket): local slot of this Peer
 
     """
-    HeadDirPath = "/usr/local/var"  # default in /usr/local/var
-    TailDirPath = "hio/uxd"
-    CleanTailDirPath = "hio/clean/uxd"
-    AltHeadDirPath = "~"  # put in ~ as fallback when desired not permitted
-    AltTailDirPath = ".hio/uxd"
-    AltCleanTailDirPath = ".hio/clean/uxd"
-    TempHeadDir = os.path.join(os.path.sep, "tmp") if platform.system() == "Darwin" else tempfile.gettempdir()
-    TempPrefix = "hio_uxd_"
+    HeadDirPath = os.path.join(os.path.sep, 'usr', 'local', 'var')  # default in /usr/local/var
+    TailDirPath = os.path.join("hio", "wms")
+    CleanTailDirPath = os.path.join("hio", "clean", "wms")
+    AltHeadDirPath = os.path.expanduser("~")  # put in ~ as fallback when desired not permitted
+    AltTailDirPath = os.path.join(".hio", "wms")
+    AltCleanTailDirPath = os.path.join(".hio","clean", "wms")
+    TempHeadDir = (os.path.join(os.path.sep, "tmp")
+                   if platform.system() == "Darwin" else tempfile.gettempdir())
+    TempPrefix = "hio_wms_"
     TempSuffix = "_test"
     Perm = stat.S_ISVTX | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR  # 0o1700==960
     Mode = "r+"
-    Fext = "uxd"
+    Fext = "wms"
     Umask = 0o022  # default
-    MaxUxdPathSize = 108
     MaxGramSize = 65535  # 2 ** 16 - 1  default gram size override in subclass
     BufSize = 65535  # 2 ** 16 - 1  default buffersize
 
@@ -145,49 +144,22 @@ class Peer(filing.Filer):
                                    **kwa)
 
 
-
-
-class WinMailslotNb(object):
-    """
-    Class to manage non-blocking io on a Windows Mailslot
-
-    Opens a non-blocking mailslot
-    Use instance method to close socket
-
-    Needs Windows Python Extensions
-    """
-
-    def __init__(self, ha=None, bufsize=1024, wlog=None):
-        """
-        Init method for instance
-        ha = basename for mailslot path.
-        bufsize = default mailslot buffer size
-        wlog = over the wire log
-
-        """
-        self.ha = ha
-        self.bs = bufsize
-        self.wlog = wlog
-
-        self.ls = None   # local Mailslot needs to be opened
-        self.opened = False
-
     def open(self):
-        """
-        Opens mailslot in nonblocking mode
+        """Opens mailslot in nonblocking mode
         """
         try:
-            self.ls = win32file.CreateMailslot(self.ha, 0, 0, None)
+            self.ls = win32file.CreateMailslot(self.path, 0, 0, None)
             # ha = path to mailslot
             # 0 = MaxMessageSize, 0 for unlimited
             # 0 = ReadTimeout, 0 to not block
             # None = SecurityAttributes, none for nothing special
         except win32file.error as ex:
-            console.terse('mailslot.error = {0}'.format(ex))
+            #console.terse('mailslot.error = {0}'.format(ex))
             return False
 
         self.opened = True
         return True
+
 
     def reopen(self):
         """
@@ -223,55 +195,59 @@ class WinMailslotNb(object):
             # We can assign this in a higher level of the stack if needed
             sa = None
 
-            if console._verbosity >= console.Wordage.profuse:  # faster to check
-                cmsg = ("Server at {0} received from {1}\n"
-                           "{2}\n".format(self.ha, sa, data.decode("UTF-8")))
-                console.profuse(cmsg)
+            #if console._verbosity >= console.Wordage.profuse:  # faster to check
+                #cmsg = ("Server at {0} received from {1}\n"
+                           #"{2}\n".format(self.path, sa, data.decode("UTF-8")))
+                #console.profuse(cmsg)
 
-            if self.wlog:
-                self.wlog.writeRx(sa, data)
+            if self.wl:
+                self.wl.writeRx(sa, data)
 
             return (data, sa)
 
         except win32file.error:
             return (b'', None)
 
-    def send(self, data, destmailslot):
+    def send(self, data, dest):
         """
         Perform a non-blocking write on the mailslot
         data is string in python2 and bytes in python3
         da is destination mailslot path
+
+        Parameters:
+            data (bytes): to send
+            dest (Mailslot):  destination mailslot
         """
 
         try:
-            f = win32file.CreateFile(destmailslot,
+            f = win32file.CreateFile(dest,
                                      win32file.GENERIC_WRITE | win32file.GENERIC_READ,
                                      win32file.FILE_SHARE_READ,
                                      None, win32file.OPEN_ALWAYS, 0, None)
         except win32file.error as ex:
             emsg = 'mailslot.error = {0}: opening mailslot from {1} to {2}\n'.format(
-                ex, self.ha, destmailslot)
-            console.terse(emsg)
+                ex, self.path, dest)
+            #console.terse(emsg)
             result = 0
             raise
 
         try:  # WriteFile returns a tuple, we only care about the number of bytes
             errcode, result = win32file.WriteFile(f, data)
         except win32file.error as ex:
-            emsg = 'mailslot.error = {0}: sending from {1} to {2}\n'.format(ex, self.ha, destmailslot)
-            console.terse(emsg)
+            emsg = 'mailslot.error = {0}: sending from {1} to {2}\n'.format(ex, self.path, dest)
+            #console.terse(emsg)
             result = 0
             raise
 
         finally:
             win32file.CloseHandle(f)
 
-        if console._verbosity >=  console.Wordage.profuse:
-            cmsg = ("Server at {0} sent to {1}, {2} bytes\n"
-                    "{3}\n".format(self.ha, destmailslot, result, data[:result].decode('UTF-8')))
-            console.profuse(cmsg)
+        #if console._verbosity >=  console.Wordage.profuse:
+            #cmsg = ("Server at {0} sent to {1}, {2} bytes\n"
+                    #"{3}\n".format(self.path, dest, result, data[:result].decode('UTF-8')))
+            #console.profuse(cmsg)
 
-        if self.wlog:
-            self.wlog.writeTx(da, data)
+        if self.wl:
+            self.wl.writeTx(da, data)
 
         return result
