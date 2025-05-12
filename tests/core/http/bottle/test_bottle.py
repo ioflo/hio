@@ -110,9 +110,9 @@ def test_server_with_bottle():
             response = beta.responses.popleft()
             assert response['status'] == 200
             assert response['reason'] == 'OK'
-            assert response['body'] == (b'{"verb": "GET", "url": "http://localhost:6101/echo?name=fame", "'
-                                        b'action": null, "query": {"name": "fame"}, "form": {}, "content":'
-                                        b' null}')
+            assert response['body'] == (b'{"verb":"GET","url":"http:\\/\\/localhost:6101\\/echo?name=fame","a'
+                                        b'ction":null,"query":{"name":"fame"},"form":{},"content":null}')
+
 
             assert response['data'] == {'action': None,
                                         'content': None,
@@ -232,12 +232,8 @@ def test_server_with_bottle_tls():
             response = beta.responses.popleft()
             assert response['status'] == 200
             assert response['reason'] == 'OK'
-            assert response['body'] == (b'{"verb": "GET", '
-                                        b'"url": "https://localhost:6101/echo?name=fame", '
-                                        b'"action": null, '
-                                        b'"query": {"name": "fame"}, '
-                                        b'"form": {}, '
-                                        b'"content": null}')
+            assert response['body'] == (b'{"verb":"GET","url":"https:\\/\\/localhost:6101\\/echo?name=fame","'
+                                        b'action":null,"query":{"name":"fame"},"form":{},"content":null}')
             assert response['data'] == {'action': None,
                                         'content': None,
                                         'form': {},
@@ -336,9 +332,8 @@ def test_request_with_no_content_length():
             response = beta.responses.popleft()
             assert response['status'] == 200
             assert response['reason'] == 'OK'
-            assert response['body'] == (b'{"verb": "GET", "url": "http://localhost:6101/echo?name=fame", "'
-                                        b'action": null, "query": {"name": "fame"}, "form": {}, "content":'
-                                        b' null}')
+            assert response['body'] == (b'{"verb":"GET","url":"http:\\/\\/localhost:6101\\/echo?name=fame","a'
+                                        b'ction":null,"query":{"name":"fame"},"form":{},"content":null}')
 
             assert response['data'] == {'action': None,
                                         'content': None,
@@ -439,9 +434,8 @@ def test_connection_non_persistent():
             response = beta.responses.popleft()
             assert response['status'] == 200
             assert response['reason'] == 'OK'
-            assert response['body'] == (b'{"verb": "GET", "url": "http://localhost:6101/echo?name=fame", "'
-                                        b'action": null, "query": {"name": "fame"}, "form": {}, "content":'
-                                        b' null}')
+            assert response['body'] == (b'{"verb":"GET","url":"http:\\/\\/localhost:6101\\/echo?name=fame","a'
+                                        b'ction":null,"query":{"name":"fame"},"form":{},"content":null}')
 
             assert response['data'] == {'action': None,
                                         'content': None,
@@ -724,4 +718,9 @@ def test_sse_stream_tls():
 
 
 if __name__ == '__main__':
+    test_server_with_bottle()
+    test_server_with_bottle_tls()
+    test_request_with_no_content_length()
+    test_connection_non_persistent()
     test_sse_stream()
+    test_sse_stream_tls()

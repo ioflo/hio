@@ -91,10 +91,9 @@ setup(
         'lmdb>=1.6.2',
         'msgpack>=1.1.0',
         'cbor2>=5.6.5',
-        'multidict>=6.1.0',
+        'multidict>=6.4.3',
         'falcon>=4.0.2',
         'ordered-set>=4.1.0',
-
     ],
     extras_require={
         # eg:
@@ -102,7 +101,7 @@ setup(
         #   ':python_version=="2.6"': ['argparse'],
     },
     tests_require=[
-                    'coverage>=7.6.12',
+                    'coverage>=7.8.0',
                     'pytest>=8.3.5',
                   ],
     setup_requires=[
