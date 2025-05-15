@@ -30,7 +30,11 @@ class Peer(filing.Filer):
     """Class to manage reliable datagram transport on Windows using Mailslots
     instead of unix domain sockets. WinMailSlot (wms)
 
-    Because win mail slots (wms) are reliable no need for retry tymer.
+    Because win-mail-slots (wms) are reliable no need for retry tymer.
+    Because win-mail-slots do not attach the source address we have to
+    embed the source address in the memogram header. So we need a new memogram
+    header code for wms as reliable transport replacement for uxd on Windows.
+
 
 
     Inherited Class Attributes:
