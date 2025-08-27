@@ -40,9 +40,7 @@ class Filer(hioing.Mixin):
         Mode (str): open mode such as "r+"
         Fext (str): default file extension such as "text" for "fname.text"
 
-
     Attributes:
-        name (str): unique path component used in directory or file path name
         base (str): another unique path component inserted before name
         temp (bool): True means use TempHeadDir in /tmp directory
         headDirPath (str): head directory path
@@ -58,6 +56,12 @@ class Filer(hioing.Mixin):
         file (File | None): File instance when filed and created.
         opened (bool): True means directory created and if filed then file
                 is opened. False otherwise
+
+    Properties:
+        name (str): unique path component used in directory or file path name
+
+    Hidden:
+        _name (str): unique name for .name property
 
 
     File/Directory Creation Mode Notes:
@@ -126,7 +130,8 @@ class Filer(hioing.Mixin):
             fext (str): File extension when filed or extensioned
 
         """
-        super(Filer, self).__init__(**kwa)  # Mixin for Mult-inheritance MRO
+        self.name = name # set name property and ensure superclass uses same name
+        super(Filer, self).__init__(name=self.name, **kwa)  # Mixin for Mult-inheritance MRO
 
         # ensure relative path parts are relative because of odd path.join behavior
         if os.path.isabs(name):
@@ -134,7 +139,6 @@ class Filer(hioing.Mixin):
         if os.path.isabs(base):
             raise hioing.FilerError(f"Not relative {base=} path.")
 
-        self.name = name
         self.base = base
         self.temp = True if temp else False
         self.headDirPath = headDirPath if headDirPath is not None else self.HeadDirPath
@@ -149,6 +153,29 @@ class Filer(hioing.Mixin):
 
         if reopen:
             self.reopen(clear=clear, reuse=reuse, clean=clean, **kwa)
+
+    @property
+    def name(self):
+        """Property getter for ._name
+
+        Returns:
+            name (str): unique identifier of instance used as unique path
+                        component in directory or file path name
+        """
+        return self._name
+
+
+    @name.setter
+    def name(self, name):
+        """Property setter for ._name
+
+        Parameters:
+            name (str): unique identifier of instance used as unique path
+                        component in directory or file path name
+        """
+        if (not hasattr(self, "_name") or
+                (hasattr(self, "_name") and name != self._name)):
+            self._name = name
 
 
     def reopen(self, temp=None, headDirPath=None, perm=None, clear=False,

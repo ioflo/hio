@@ -55,7 +55,7 @@ These properties are mutually supporting. Together they provide a powerful found
 for solving the hard problem of automation systems, that is, the coordination
 problem. The coordination problem poses the following question; how best to
 coordinate the various components of an automation system especially
-a coordiantion system that is dynamically adaptive (in-stride) to both a
+a coordination system that is dynamically adaptive (in-stride) to both a
 changing environment and changing goals and objectives for mission success?
 
 
@@ -107,6 +107,7 @@ A boxwork consists of a graph of connected boxes. Each box belongs to a pile of
 stacked boxes. A given pile constitues a hierarchical state. State changes by
 transitioning from one pile to a different pile as determined by a transition
 from one box to another box in the boxwork.
+
 ### Box Piles
 
 Each box may have an over box and zero or more under boxes. A box at the top

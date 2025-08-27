@@ -156,8 +156,6 @@ class ActBase(Mixin):
         Index (int): default naming index for subclass instances. Each subclass
                 overrides with a subclass specific Index value to track
                 subclass specific instance default names.
-        Names (tuple[str]): tuple of aliases (names) under which this subclas
-                            appears in .Registry. Created by @register
 
     Attributes:
         hold (Hold): data shared by boxwork
@@ -169,16 +167,14 @@ class ActBase(Mixin):
         nabe (str): action nabe (context) for .act
 
     Hidden
-        ._name (str|None): unique name of instance
-        ._iopts (dict): input-output-paramters for .act
-        ._nabe (str): action nabe (context) for .act
+        _name (str): unique name of instance for .name property
+        _iopts (dict): input-output-paramters for .act for .iops property
+        _nabe (str): action nabe (context) for .act for .nabe property
 
     """
     Registry = {}  # subclass registry
     Instances = {}  # instance name registry
     Index = 0  # naming index for default names of this subclasses instances
-    #Names = ()  # tuple of aliases for this subclass created by @register
-
 
     @classmethod
     def registerbyname(cls, name=None):
@@ -215,24 +211,25 @@ class ActBase(Mixin):
             klas._clear()
 
 
-
     def __init__(self, *, name=None, iops=None, nabe=Nabes.endo, hold=None, **kwa):
         """Initialization method for instance.
 
         Parameters:
             name (str|None): unique name of this instance. When None then
-                generate name from .Index
+                generate name from .Index. Used for .name property which is
+                 used for registering Act instance in Act registry
             iops (dict|None): input-output-parameters for .act. When None then
                 set to empty dict.
             nabe (str): action nabe (context) for act. default is "endo"
             hold (None|Hold): data shared across boxwork
 
         """
-        super(ActBase, self).__init__(**kwa) # in case of MRO
-        self.name = name  # set name property
+        self.name = name  # set name property and register in .Instances
         self._iops = dict(iops) if iops is not None else {}  # make copy
         self._nabe = nabe if nabe is not Nabes.native else Nabes.endo
         self.hold = hold if hold is not None else Hold()
+        # ensure super class uses same name
+        super(ActBase, self).__init__(name=self.name, **kwa) # in case of MRO for .__init__
 
 
     def __call__(self):
