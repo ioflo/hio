@@ -262,16 +262,22 @@ class ActBase(Mixin):
             name (str|None): unique identifier of instance. When None generate
                 unique name using .Index
         """
-        while name is None or name in self.Instances:
-                name = self.__class__.__name__ + str(self.Index)
-                self.__class__.Index += 1   # do not shadow class attribute
+        if not hasattr(self, "_name"):  # ._name not yet assigned
+            while name is None or name in self.Instances:
+                    name = self.__class__.__name__ + str(self.Index)
+                    self.__class__.Index += 1   # do not shadow class attribute
 
-        if not Renam.match(name):
-            raise HierError(f"Invalid {name=}.")
+            if not Renam.match(name):
+                raise HierError(f"Invalid {name=}.")
 
-        self.Instances[name] = self
-        self._name = name
+            self._name = name
 
+        if self.name not in self.Instances:
+            self.Instances[self.name] = self
+
+        if self.Instances[self.name] is not self:
+            raise HierError(f"Another {self.__class__.__name__} instance"
+                            f" named {self.name} already assigned to .Instances")
 
     @property
     def iops(self):

@@ -15,7 +15,7 @@ from ..filing import Filer
 from .acting import Act, register
 
 
-@register()
+@register(names=('log', 'Log'))
 class Hog(Act, Filer):
     """Hog is Act that supports metrical logging of hold items based on logging
     rules such as time period, update, or change.

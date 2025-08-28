@@ -39,6 +39,10 @@ def test_hog_basic():
     assert path.startswith(os.path.join(tempDirPath, "hio_"))
     assert hog.path.endswith(os.path.join('_test', 'hio', 'Hog0.hog'))
 
+    assert Hog.Registry[Hog.__name__] is Hog
+    assert Hog.Registry['log'] is Hog
+    assert Hog.Registry['Log'] is Hog
+
     hog.close(clear=True)
     assert not hog.opened
     assert not hog.file
@@ -70,6 +74,10 @@ def test_open_hog():
         path = os.path.normpath(hog.path)  # '/tmp/hio_u36wdtp5_test/hio/Hog1.hog'
         assert path.startswith(os.path.join(tempDirPath, "hio_"))
         assert hog.path.endswith(os.path.join('_test', 'hio', 'Hog0.hog'))
+
+        assert Hog.Registry[Hog.__name__] is Hog
+        assert Hog.Registry['log'] is Hog
+        assert Hog.Registry['Log'] is Hog
 
     assert not hog.opened
     assert not hog.file
