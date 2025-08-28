@@ -130,12 +130,14 @@ class Filer(hioing.Mixin):
             fext (str): File extension when filed or extensioned
 
         """
-        self.name = name # set name property and ensure superclass uses same name
+        if not hasattr(self, "_name") or name != self.name:  # avoid collision subclass
+            self.name = name
+
         super(Filer, self).__init__(name=self.name, **kwa)  # Mixin for Mult-inheritance MRO
 
         # ensure relative path parts are relative because of odd path.join behavior
-        if os.path.isabs(name):
-            raise hioing.FilerError(f"Not relative {name=} path.")
+        if os.path.isabs(self.name):
+            raise hioing.FilerError(f"Not relative name={self.name} path.")
         if os.path.isabs(base):
             raise hioing.FilerError(f"Not relative {base=} path.")
 
@@ -170,12 +172,12 @@ class Filer(hioing.Mixin):
         """Property setter for ._name
 
         Parameters:
-            name (str): unique identifier of instance used as unique path
-                        component in directory or file path name
+            name (str): unique identifier of instance
         """
-        if (not hasattr(self, "_name") or
-                (hasattr(self, "_name") and name != self._name)):
-            self._name = name
+        #if not Renam.match(name):
+            #raise HierError(f"Invalid {name=}.")
+        self._name = name
+
 
 
     def reopen(self, temp=None, headDirPath=None, perm=None, clear=False,

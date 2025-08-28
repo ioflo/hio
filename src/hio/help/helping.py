@@ -384,15 +384,14 @@ def ocfn(path, mode='r+', perm=(stat.S_IRUSR | stat.S_IWUSR)):
     384 == 0o600
     436 == octal 0664
     """
-    try:
-
+    try:  # create new file
         newfd = os.open(path, os.O_EXCL | os.O_CREAT | os.O_RDWR, perm)
         if "b" in mode:
             file = os.fdopen(newfd,"w+b")  # w+ truncate read and/or write
         else:
             file = os.fdopen(newfd,"w+")  # w+ truncate read and/or write
 
-    except OSError as ex:
+    except OSError as ex:  # open existing file with mode
         if ex.errno == errno.EEXIST:
             file = open(path, mode)  # r+ do not truncate read and/or write
         else:

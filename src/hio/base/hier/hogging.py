@@ -8,9 +8,14 @@ Provides support for hold logging (hogging)
 """
 from __future__ import annotations  # so type hints of classes get resolved later
 
-from ..filing import Filer
-from .acting import Act
+from contextlib import contextmanager
 
+from ..doing import Doer
+from ..filing import Filer
+from .acting import Act, register
+
+
+@register()
 class Hog(Act, Filer):
     """Hog is Act that supports metrical logging of hold items based on logging
     rules such as time period, update, or change.
@@ -79,7 +84,7 @@ class Hog(Act, Filer):
 
     """
 
-    def __init__(self, **kwa):
+    def __init__(self, filed=True, extensioned=True, fext="hog", **kwa):
         """Initialize instance.
 
         Inherited Parameters:
@@ -120,4 +125,100 @@ class Hog(Act, Filer):
             mode (str): File open mode when filed
             fext (str): File extension when filed or extensioned
         """
-        super(Hog, self).__init__(**kwa)
+        super(Hog, self).__init__(filed=filed,
+                                  extensioned=extensioned,
+                                  fext=fext,
+                                  **kwa)
+
+
+
+@contextmanager
+def openHog(cls=None, name=None, temp=True, reopen=True, clear=False, **kwa):
+    """Context manager wrapper Hog instances for managing a filesystem directory
+    and or files in a directory.
+
+    Defaults to using temporary directory path.
+    Context 'with' statements call .close on exit of 'with' block
+
+    Parameters:
+        cls is Class instance of subclass instance
+        name is str name of Filer instance path part so can have multiple Filers
+             at different paths that each use different dirs or files
+        temp is Boolean, True means open in temporary directory, clear on close
+                Otherwise open in persistent directory, do not clear on close
+        reopen (bool): True (re)open with this init
+                           False not (re)open with this init but later (default)
+        clear (bool): True means remove directory upon close when reopening
+                          False means do not remove directory upon close when reopening
+    See hogging.Hog for other keyword parameter passthroughs
+
+    Usage:
+
+    with openHog(name="bob") as hog:
+
+    with openHog(name="eve", cls=HogSubClass) as hog:
+
+    """
+    hog = None
+    if cls is None:
+        cls = Hog
+    try:
+        hog = cls(name=name, temp=temp, reopen=reopen, clear=clear, **kwa)
+        yield hog
+
+    finally:
+        if hog:
+            hog.close(clear=hog.temp or clear)  # clears if hog.temp
+
+
+
+class HogDoer(Doer):
+    """
+    Basic Hog Doer
+
+    Attributes:
+        done (bool): completion state:
+            True means completed
+            Otherwise incomplete. Incompletion maybe due to close or abort.
+        hog (Hog): instance
+
+    Properties:
+        tyme (float): relative cycle time of associated Tymist .tyme obtained
+            via injected .tymth function wrapper closure.
+        tymth (func): closure returned by Tymist .tymeth() method.
+            When .tymth is called it returns associated Tymist .tyme.
+            .tymth provides injected dependency on Tymist tyme base.
+        tock (float)): desired time in seconds between runs or until next run,
+                 non negative, zero means run asap
+
+    """
+
+    def __init__(self, hog, **kwa):
+        """
+        Parameters:
+           tymist (Tymist): instance
+           tock (float): initial value of .tock in seconds
+           hog (Hog): instance
+        """
+        super(HogDoer, self).__init__(**kwa)
+        self.hog = hog
+
+
+    def enter(self, *, temp=None):
+        """Do 'enter' context actions. Override in subclass. Not a generator method.
+        Set up resources. Comparable to context manager enter.
+
+        Parameters:
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value. Use self.temp
+
+        Inject temp or self.temp into file resources here if any
+        """
+        # inject temp into file resources here if any
+        if not self.hog.opened:
+            self.hog.reopen(temp=temp)
+
+
+    def exit(self):
+        """"""
+        self.hog.close(clear=self.hog.temp)

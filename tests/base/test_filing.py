@@ -307,9 +307,9 @@ def test_filing():
 
     #test openfiler with defaults temp == True
     with filing.openFiler() as filer:
-        tempDirPath = os.path.join(os.path.sep, "tmp") if platform.system() == "Darwin" else tempfile.gettempdir()
-        #dirPath = os.path.join(tempDirPath, 'hio_hcbvwdnt_test', 'hio', 'test')
-        #assert dirPath.startswith(os.path.join(tempDirPath, 'hio_'))
+        tempDirPath = (os.path.join(os.path.sep, "tmp")
+                           if platform.system() == "Darwin"
+                           else tempfile.gettempdir())
         tempDirPath = os.path.normpath(tempDirPath)
         path = os.path.normpath(filer.path)
         assert path.startswith(os.path.join(tempDirPath, "hio_"))
