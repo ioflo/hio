@@ -395,12 +395,12 @@ class Act(ActBase):
 
         """
         if callable(self.deed):  # not compilable str
-            return self.deed(**iops)
+            return self.deed(**iops)  # injected H=self.hold into iops
 
-        if not self.compiled:  # not yet compiled so lazy
+        if not self.compiled:  # deed str not yet compiled so lazy compile
             self.compile()  # first time only recompile to ._code
-        H = self.hold  # ensure H is in locals() for exec when deed is str
-        # note iops as this method's parameter already in locals() for exec
+        H = self.hold  # ensure H is in locals() for exec compile deed str
+        # note iops dict value of method parameter also in locals() for exec
         return exec(self._code)
 
 
