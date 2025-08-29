@@ -372,12 +372,14 @@ class Act(ActBase):
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
         Parameters:
-            deed (None|Callable):  callable to be actioned with iops
+            deed (None|str|Callable): compilable exec str or callable to be
+                                      actioned with iops
+                                      None means use default lambda
 
         """
         super(Act, self).__init__(**kwa)
         self._code = None
-        self.iops.update(H=self.hold)  # inject .hold
+        self.iops.update(H=self.hold)  # inject .hold so callable deed sees it
         self.deed = deed if deed is not None else (lambda **iops: iops)
         if not callable(self.deed):  # need to compile
             self.compile()  # compile at init time so know if compilable
@@ -387,16 +389,17 @@ class Act(ActBase):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input output parms for deed when deed is callable.
+            iops (dict): input output parms for deed when deed is callable not
+                         compilable exec string
 
 
         """
-        if callable(self.deed):
+        if callable(self.deed):  # not compilable str
             return self.deed(**iops)
 
         if not self.compiled:  # not yet compiled so lazy
             self.compile()  # first time only recompile to ._code
-        H = self.hold  # ensure H is in locals() for exec
+        H = self.hold  # ensure H is in locals() for exec when deed is str
         # note iops as this method's parameter already in locals() for exec
         return exec(self._code)
 
@@ -406,7 +409,7 @@ class Act(ActBase):
         """Property getter for ._deed
 
         Returns:
-            deed (str): evalable boolean expression or callable.
+            deed (str|Callable): compilable exec statement str or callable.
         """
         return self._deed
 
@@ -416,7 +419,7 @@ class Act(ActBase):
         """Property setter for ._expr
 
         Parameters:
-            expr (str): evalable boolean expression.
+            deed (str|Callable): compilable exec statement str or Callable
         """
         self._deed = deed
         self._code = None  # force lazy recompilation
@@ -440,8 +443,6 @@ class Act(ActBase):
         must happen after any unpickling of any instances if any.
         """
         self._code = compile(self.deed, '<string>', 'exec')
-
-
 
 
 @register()
