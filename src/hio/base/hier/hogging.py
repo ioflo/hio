@@ -132,7 +132,16 @@ class Hog(ActBase, Filer):
                                   fext=fext,
                                   nabe=nabe,
                                   **kwa)
-        #self.iops.update(H=self.hold)  # inject .hold
+
+    def act(self, **iops):
+        """Act called by ActBase.
+
+        Parameters:
+            iops (dict): input output parms
+
+        """
+
+        return iops
 
 
 
