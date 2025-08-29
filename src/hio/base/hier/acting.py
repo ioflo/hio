@@ -422,7 +422,7 @@ class Act(ActBase):
             deed (str|Callable): compilable exec statement str or Callable
         """
         self._deed = deed
-        self._code = None  # force lazy recompilation
+        self._code = None  # force lazy recompilation when compilable (not Callable)
 
 
     @property
@@ -431,7 +431,7 @@ class Act(ActBase):
 
         Returns:
             compiled (bool): True means ._code holds compiled ._expr
-                             False means not yet compiled
+                             False means not yet compiled or Callable
         """
         return True if self._code is not None else False
 
