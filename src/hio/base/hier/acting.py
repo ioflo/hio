@@ -397,7 +397,7 @@ class Act(ActBase):
         if not self.compiled:  # not yet compiled so lazy
             self.compile()  # first time only recompile to ._code
         H = self.hold  # ensure H is in locals() for exec
-        # note iops already in locals() for exec
+        # note iops as this method's parameter already in locals() for exec
         return exec(self._code)
 
 
@@ -513,11 +513,11 @@ class Goact(ActBase):
                 When Need instance then use directly
 
         """
-        kwa.update(nabe=Nabes.godo)  # override must be godo nabe
+        kwa.update(nabe=Nabes.godo)  # override parameter, must be godo nabe
         super(Goact, self).__init__(**kwa)
         self.dest = dest if dest is not None else 'next'  # default is next
         self.need = need if need is not None else Need()  # default need evals to True
-        if self.nabe != Nabes.godo:
+        if self.nabe != Nabes.godo:  # in case super class overrides nabe
             raise HierError(f"Invalid nabe='{self.nabe}' for Goact "
                             f"'{self.name}'")
 

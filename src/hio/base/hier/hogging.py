@@ -12,11 +12,12 @@ from contextlib import contextmanager
 
 from ..doing import Doer
 from ..filing import Filer
-from .acting import Act, register
+from .hiering import Nabes
+from .acting import ActBase, register
 
 
 @register(names=('log', 'Log'))
-class Hog(Act, Filer):
+class Hog(ActBase, Filer):
     """Hog is Act that supports metrical logging of hold items based on logging
     rules such as time period, update, or change.
 
@@ -84,7 +85,8 @@ class Hog(Act, Filer):
 
     """
 
-    def __init__(self, filed=True, extensioned=True, fext="hog", **kwa):
+    def __init__(self, filed=True, extensioned=True, fext="hog",
+                 nabe=Nabes.afdo, **kwa):
         """Initialize instance.
 
         Inherited Parameters:
@@ -128,7 +130,9 @@ class Hog(Act, Filer):
         super(Hog, self).__init__(filed=filed,
                                   extensioned=extensioned,
                                   fext=fext,
+                                  nabe=nabe,
                                   **kwa)
+        #self.iops.update(H=self.hold)  # inject .hold
 
 
 

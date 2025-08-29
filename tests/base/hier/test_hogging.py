@@ -12,7 +12,7 @@ import tempfile
 import pytest
 
 from hio.base import Doist
-from hio.base.hier import Hog, openHog, HogDoer
+from hio.base.hier import Nabes, Hog, openHog, HogDoer
 
 
 
@@ -42,6 +42,9 @@ def test_hog_basic():
     assert Hog.Registry[Hog.__name__] is Hog
     assert Hog.Registry['log'] is Hog
     assert Hog.Registry['Log'] is Hog
+
+    assert hog() == {}  # default returns iops
+    assert hog.nabe == Nabes.afdo
 
     hog.close(clear=True)
     assert not hog.opened
@@ -78,6 +81,9 @@ def test_open_hog():
         assert Hog.Registry[Hog.__name__] is Hog
         assert Hog.Registry['log'] is Hog
         assert Hog.Registry['Log'] is Hog
+
+        assert hog() == {}  # default returns iops
+        assert hog.nabe == Nabes.afdo
 
     assert not hog.opened
     assert not hog.file

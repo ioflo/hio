@@ -876,7 +876,7 @@ class Boxer(Tymee):
         else:  # deed is registered act class name or alias
             act = klas(**parms)  # create act from klas with **parms
 
-        nabe = act.nabe  # act init may override passed in nabe
+        nabe = act.nabe  # act init may ignore nabe parameter passed to init
 
         try:
             getattr(m.box, nabeDispatch[nabe]).append(act)
