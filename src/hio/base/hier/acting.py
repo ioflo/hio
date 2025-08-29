@@ -234,13 +234,21 @@ class ActBase(Mixin):
 
     def __call__(self):
         """Make ActBase instance a callable object.
-        Call its .act method with self.iops as parameters
+        Call its .act method with expanded self.iops as parameters
+
+        This enables compiled exec/eval str to have **iops in local scope
         """
-        return self.act(**self.iops)
+        return self.act(**self.iops)  # put self.iops into local scope of .act
 
 
     def act(self, **iops):
-        """Act called by Actor. Should override in subclass."""
+        """Act called by Actor. Should override in subclass.
+
+        Parameters:
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
+
+        """
         return iops  # for debugging
 
 
@@ -297,9 +305,6 @@ class ActBase(Mixin):
             nabe (str): action nabe (context) for .act
         """
         return self._nabe
-
-
-
 
 
 @register()
@@ -389,13 +394,11 @@ class Act(ActBase):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input output parms for deed when deed is callable not
-                         compilable exec string
-
-
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
         """
         if callable(self.deed):  # not compilable str
-            return self.deed(**iops)  # injected H=self.hold into iops
+            return self.deed(**self.iops)  # injected H=self.hold into iops
 
         if not self.compiled:  # deed str not yet compiled so lazy compile
             self.compile()  # first time only recompile to ._code
@@ -528,7 +531,8 @@ class Goact(ActBase):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input output parms
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
 
         """
         if self.need():
@@ -624,7 +628,8 @@ class EndAct(ActBase):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input output parms
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
 
         """
         boxer = self.iops['_boxer']  # get boxer name
@@ -729,7 +734,8 @@ class Beact(ActBase):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input output parms for deed when deed is callable.
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
         """
         key, field = self.lhs
 
@@ -737,7 +743,7 @@ class Beact(ActBase):
             self.hold[key][field] = self.rhs
 
         elif callable(self.rhs):
-            self.hold[key][field] = self.rhs(**iops)
+            self.hold[key][field] = self.rhs(**self.iops)
 
         else:
             if not self.compiled:  # not yet compiled so lazy
@@ -819,10 +825,6 @@ class Beact(ActBase):
         """
         self._code = compile(self.rhs, '<string>', 'eval')
 
-
-
-
-# Dark  DockMark
 
 @register()
 class Mark(ActBase):
@@ -913,7 +915,8 @@ class Mark(ActBase):
         Override in subclass
 
         Parameters:
-            iops (dict): input output parms
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
 
         """
         boxer = self.iops['_boxer']  # get boxer name
@@ -963,7 +966,8 @@ class LapseMark(Mark):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input output parms
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
 
         """
         boxer = self.iops['_boxer']  # get boxer name
@@ -1016,7 +1020,8 @@ class RelapseMark(Mark):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input output parms
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
 
         """
         boxer = self.iops['_boxer']  # get boxer name
@@ -1068,7 +1073,8 @@ class Count(Mark):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input output parms
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
 
         """
         boxer = self.iops['_boxer']  # get boxer name
@@ -1122,7 +1128,8 @@ class Discount(Mark):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input output parms
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
 
         """
         boxer = self.iops['_boxer']  # get boxer name
@@ -1223,7 +1230,8 @@ class BagMark(Mark):
         Override in subclass
 
         Parameters:
-            iops (dict): input output parms
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
 
         """
         boxer = self.iops['_boxer']  # get boxer name
@@ -1275,7 +1283,8 @@ class UpdateMark(BagMark):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input output parms
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
 
         """
         boxer = self.iops['_boxer']  # get boxer name
@@ -1331,7 +1340,8 @@ class ReupdateMark(BagMark):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input output parms
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
 
         """
         boxer = self.iops['_boxer']  # get boxer name
@@ -1387,7 +1397,8 @@ class ChangeMark(BagMark):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input output parms
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
 
         """
         boxer = self.iops['_boxer']  # get boxer name
@@ -1444,7 +1455,8 @@ class RechangeMark(BagMark):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input output parms
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
 
         """
         boxer = self.iops['_boxer']  # get boxer name

@@ -45,6 +45,9 @@ def test_hog_basic():
 
     assert hog() == {}  # default returns iops
     assert hog.nabe == Nabes.afdo
+    assert hog.hold
+    assert not hog.hold.subery
+    assert hog.logs == {}
 
     hog.close(clear=True)
     assert not hog.opened
@@ -84,6 +87,9 @@ def test_open_hog():
 
         assert hog() == {}  # default returns iops
         assert hog.nabe == Nabes.afdo
+        assert hog.hold
+        assert not hog.hold.subery
+        assert hog.logs == {}
 
     assert not hog.opened
     assert not hog.file

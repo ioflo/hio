@@ -48,6 +48,13 @@ class Hog(ActBase, Filer):
         Mode (str): open mode such as "r+"
         Fext (str): default file extension such as "text" for "fname.text"
 
+    Class Attributes:
+        ReservedTags (dict[str]): of reserved tags to protect from collision with
+                                  defined parameter names that may not be used for
+                                  log tags when using **kwa to provide hold
+                                  log leys. Uses dict since inclusion test is
+                                  faster than with list
+
     Inherited Attributes  see Act, File
         hold (Hold): data shared by boxwork
 
@@ -77,6 +84,35 @@ class Hog(ActBase, Filer):
         nabe (str): action nabe (context) for .act
 
 
+    Attributes:
+        begun (bool): True means logging has begun with header
+                           False means logging has not yet begun needs header
+        began (str|None): realtime datetime stamp of when logging began, may be non 0.0
+                     None means not yet running
+        first (float|None): tyme when began logging, None means not yet running
+        last (float|None): tyme when last logged, None means not yet running
+                      realtime equiv of last = began + (last - first)
+        rule (str): condition for log to fire one of
+                    ('once', 'every', 'spanned', 'updated', 'changed')
+        span (float): tyme span for periodic logging
+        header (str): header for log file(s)
+        flushSpan (float): tyme span between flushes (flush)
+        flushLast (float|None): tyme last flushed, None means not yet running
+        cycleCount (int): number of cycled logs, 0 means do not cycle (count)
+        cyclePaths (list[str]): paths for cycled logs
+        cycleSpan (float): min tyme span for cycling logs (cycle). 0.0 means
+                           cycle based on cycleHigh not tyme span. One of
+                           cycleSpan or cycleHigh must be non zero
+        cycleLast (float|None): tyme last cycled. None means not yet running
+        cycleLow (int): minimum size in bytes required for cycling log based on
+                        cycleSpan. 0 means no minimum
+        cycleHigh (int): maximum size in bytes allowed for each cycled log
+                         0 means no maximum. One of cycleSpan or cycleHigh must
+                         be non zero
+        logs (dict): labeled keys of holds to log. Item labels are log tags
+                      logs item value is key in hold that provides value to log
+                      logs item key is tag in log header
+
     Hidden:
         _name (str): unique name of instance for .name property
         _iopts (dict): input-output-paramters for .act for .iops property
@@ -84,9 +120,15 @@ class Hog(ActBase, Filer):
 
 
     """
+    ReservedTags = dict(name=True, iops=True, nabe=True, hold=True, base=True,
+                 temp=True, headDirPath=True, perm=True, reopen=True,
+                 clear=True, reuse=True, clean=True, filed=True,
+                 extensioned=True, )
 
-    def __init__(self, filed=True, extensioned=True, fext="hog",
-                 nabe=Nabes.afdo, **kwa):
+
+    def __init__(self, nabe=Nabes.afdo, filed=True, extensioned=True, fext="hog",
+                       rule=None, span=0.0, flush=0.0,
+                       count=0, cycle=0.0, low=0, high=0, logs=None, **kwa):
         """Initialize instance.
 
         Inherited Parameters:
@@ -126,6 +168,28 @@ class Hog(ActBase, Filer):
                                 False means do not ensure .path ends with fext
             mode (str): File open mode when filed
             fext (str): File extension when filed or extensioned
+
+        Parameters:
+            rule (str|None): condition for log to fire, default every
+                            (once, every, spanned, updated, changed)
+            span (float): periodic time span when rule is spanned. 0.0 means
+                          every tyme
+            flush (float): flush tyme span, tyme between flushes, 0.0 means
+                          every tyme
+            count (int): number of cycled logs, 0 means do not cycle
+            cycle (float): cycle tyme span, tyme between log cycles
+            low (int): minimum size in bytes required for cycling log
+                       0 means no minimum
+            high (int): maximum size in bytes allowed for each cycled log
+                       0 means no maximum
+            logs (None|dict): labeled keys of holds to log. Item labels are tags
+                    logs item value is key in hold that provides value to log
+                    logs item key is tag in log header
+                    None means use unreserved items in **kwa wrt .ReservedTags
+
+
+        When made (created and inited) by boxer.do then have "_boxer" and
+        "_box" keys in self.iops = dict(_boxer=self.name, _box=m.box.name, **iops)
         """
         super(Hog, self).__init__(filed=filed,
                                   extensioned=extensioned,
@@ -133,12 +197,41 @@ class Hog(ActBase, Filer):
                                   nabe=nabe,
                                   **kwa)
 
+        self.begun = None
+        self.began = None
+        self.first = None
+        self.last = None
+        self.rule = rule if rule is not None else "every"
+        self.span = span
+        self.header = ''  # need to init
+        self.flushSpan = flush
+        self.flushLast = None
+        self.cycleCount = count
+        self.cyclePaths = []  # need to init
+        self.cycleSpan = cycle
+        self.cycleLast = None
+        self.cycleLow = low
+        self.cycleHigh = high
+
+        if logs is None:
+            logs = {}
+            for tag, val in kwa.items():
+                if tag not in self.ReservedTags:
+                    logs[tag] = val  # value is key of hold to log
+
+        self.logs = logs
+
+
+
     def act(self, **iops):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input output parms
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
 
+        When made by boxer.do then have "_boxer" and "_box" keys in self.iops
+           iops = dict(_boxer=self.name, _box=m.box.name, **iops)
         """
 
         return iops
