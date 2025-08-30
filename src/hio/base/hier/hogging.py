@@ -9,6 +9,7 @@ Provides support for hold logging (hogging)
 from __future__ import annotations  # so type hints of classes get resolved later
 
 from contextlib import contextmanager
+import inspect
 
 from ..doing import Doer
 from ..filing import Filer
@@ -112,6 +113,8 @@ class Hog(ActBase, Filer):
         logs (dict): labeled keys of holds to log. Item labels are log tags
                       logs item value is key in hold that provides value to log
                       logs item key is tag in log header
+        marks (dict): tyme or value tuples marks of holds logged with updated or
+                      changed. Label is hold key.
 
     Hidden:
         _name (str): unique name of instance for .name property
@@ -126,9 +129,10 @@ class Hog(ActBase, Filer):
                  extensioned=True, )
 
 
-    def __init__(self, iops=None, nabe=Nabes.afdo, filed=True, extensioned=True, fext="hog",
-                       reuse=True, rule=None, span=0.0, flush=0.0,
-                       count=0, cycle=0.0, low=0, high=0, logs=None, **kwa):
+    def __init__(self, iops=None, nabe=Nabes.afdo, base="", filed=True,
+                       extensioned=True, fext="hog", reuse=True, rule=None,
+                       span=0.0, flush=0.0, count=0, cycle=0.0, low=0, high=0,
+                       logs=None, **kwa):
         """Initialize instance.
 
         Inherited Parameters:
@@ -206,15 +210,17 @@ class Hog(ActBase, Filer):
         characters  This way rotating logs
 
         """
-        if iops and "_boxer" in iops:  # '_boxer' is boxer.name when made by boxer
-            pass # set base to boxer name
+        if not base:
+            if iops and "_boxer" in iops:  # '_boxer' in iops when made by boxer
+                base = iops['_boxer']  # set base to boxer.name
 
-        super(Hog, self).__init__(filed=filed,
+        super(Hog, self).__init__(iops=iops,
+                                  nabe=nabe,
+                                  base=base,
+                                  filed=filed,
                                   extensioned=extensioned,
                                   fext=fext,
                                   reuse=reuse,
-                                  iops=iops,
-                                  nabe=nabe,
                                   **kwa)
 
 
@@ -241,6 +247,7 @@ class Hog(ActBase, Filer):
                     logs[tag] = val  # value is key of hold to log
 
         self.logs = logs
+        self.marks = {}
 
 
 

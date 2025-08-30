@@ -7,7 +7,7 @@ from __future__ import annotations  # so type hints of classes get resolved late
 import os
 import platform
 import tempfile
-
+import inspect
 
 import pytest
 
@@ -19,6 +19,11 @@ from hio.base.hier import Nabes, Hog, openHog, HogDoer
 def test_hog_basic():
     """Test Hog class"""
     Hog._clearall()  # clear Hog.Instances for debugging
+
+    # at some point could create utility function here that walks the .mro
+    # hierachy using inspect to collect all the keyword args  to reserve them
+    # and double check Hog.Reserved is correct
+    # python how to get the keywords for given method signature including superclasses
 
     hog = Hog(temp=True)  # test defaults
     assert hog.temp
@@ -96,6 +101,7 @@ def test_open_hog():
     assert not os.path.exists(hog.path)
 
     """Done Test"""
+
 
 def test_hog_doer():
     """Test HogDoer"""
