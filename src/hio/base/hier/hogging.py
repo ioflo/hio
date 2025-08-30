@@ -199,7 +199,8 @@ class Hog(ActBase, Filer):
         since filed it should reopen without truncating so does not overwrite
         existing log file of same name. Always init by writing header so
         even if change logs the header demarcation allows recovery of logged
-        data that includes different sets of logs. Need to test this
+        data that includes different sets of logs. When reopening need to
+        seek to end of file or else it will overwrite. Need to test reopen logic
         header should include UUID and date time stamp so even when process
         quits and restarts have known uniqueness of data. This includes matching
         up cycle sets of logs where the cycle count changes so there may be
