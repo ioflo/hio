@@ -613,13 +613,13 @@ class EndAct(ActBase):
         super(EndAct, self).__init__(nabe=nabe, **kwa)
 
         try:
-            boxer = self.iops['_boxer']  # get boxer name
+            boxerName = self.iops['_boxer']  # get boxer name
         except KeyError as ex:
             raise HierError(f"Missing iops '_boxer' for '{self.name}' instance "
                             f"of Act self.__class__.__name__") from ex
 
 
-        keys = ("", "boxer", boxer, "end")  # _boxer_boxername_end
+        keys = ("", "boxer", boxerName, "end")  # _boxer_boxername_end
         if keys not in self.hold:
             self.hold[keys] = Bag()  # create bag at end default value = None
 
@@ -632,8 +632,8 @@ class EndAct(ActBase):
                          local scope in case act compliles exec/eval str
 
         """
-        boxer = self.iops['_boxer']  # get boxer name
-        keys = ("", "boxer", boxer, "end")
+        boxerName = self.iops['_boxer']  # get boxer name
+        keys = ("", "boxer", boxerName, "end")
         self.hold[keys].value = True
 
 
@@ -919,8 +919,8 @@ class Mark(ActBase):
                          local scope in case act compliles exec/eval str
 
         """
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']  # get box name
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']  # get box name
 
 
 
@@ -955,9 +955,9 @@ class LapseMark(Mark):
 
         """
         super(LapseMark, self).__init__(nabe=nabe, **kwa)
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']  # get box name
-        keys = ("", "boxer", boxer, "box", box, "lapse")
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']  # get box name
+        keys = ("", "boxer", boxerName, "box", boxName, "lapse")
         if keys not in self.hold:
             self.hold[keys] = Bag()  # create bag default value = None
 
@@ -970,9 +970,9 @@ class LapseMark(Mark):
                          local scope in case act compliles exec/eval str
 
         """
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']  # get box name
-        keys = ("", "boxer", boxer, "box", box, "lapse")
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']  # get box name
+        keys = ("", "boxer", boxerName, "box", boxName, "lapse")
         # mark box tyme via bag._now tyme
         self.hold[keys].value = self.hold[keys]._now  # _now tyme of mark bag
         return self.hold[keys].value
@@ -1009,9 +1009,9 @@ class RelapseMark(Mark):
 
         """
         super(RelapseMark, self).__init__(nabe=nabe, **kwa)
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']  # get box name
-        keys = ("", "boxer", boxer, "box", box, "relapse")
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']  # get box name
+        keys = ("", "boxer", boxerName, "box", boxName, "relapse")
         if keys not in self.hold:
             self.hold[keys] = Bag()  # create bag default value = None
 
@@ -1024,9 +1024,9 @@ class RelapseMark(Mark):
                          local scope in case act compliles exec/eval str
 
         """
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']  # get box name
-        keys = ("", "boxer", boxer, "box", box, "relapse")
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']  # get box name
+        keys = ("", "boxer", boxerName, "box", boxName, "relapse")
         # mark box tyme via bag._now tyme
         self.hold[keys].value = self.hold[keys]._now  # _now tyme of mark bag
         return self.hold[keys].value
@@ -1061,9 +1061,9 @@ class Count(Mark):
 
         """
         super(Count, self).__init__(nabe=nabe, **kwa)
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']   # get box name
-        keys = ("", "boxer", boxer, "box", box, "count")
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']   # get box name
+        keys = ("", "boxer", boxerName, "box", boxName, "count")
         if keys not in self.hold:
             self.hold[keys] = Bag()  # create bag default value = None
 
@@ -1077,9 +1077,9 @@ class Count(Mark):
                          local scope in case act compliles exec/eval str
 
         """
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']  # get box name
-        keys = ("", "boxer", boxer, "box", box, "count")
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']  # get box name
+        keys = ("", "boxer", boxerName, "box", boxName, "count")
         bag = self.hold[keys]  # count bag
         if bag.value is None:
             bag.value = 0  # start counter
@@ -1117,9 +1117,9 @@ class Discount(Mark):
 
         """
         super(Discount, self).__init__(nabe=nabe, **kwa)
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']   # get box name
-        keys = ("", "boxer", boxer, "box", box, "count")
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']   # get box name
+        keys = ("", "boxer", boxerName, "box", boxName, "count")
         if keys not in self.hold:
             self.hold[keys] = Bag()  # create bag default value = None
 
@@ -1132,9 +1132,9 @@ class Discount(Mark):
                          local scope in case act compliles exec/eval str
 
         """
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']  # get box name
-        keys = ("", "boxer", boxer, "box", box, "count")
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']  # get box name
+        keys = ("", "boxer", boxerName, "box", boxName, "count")
         self.hold[keys].value = None  # reset count to None
         return self.hold[keys].value
 
@@ -1234,8 +1234,8 @@ class BagMark(Mark):
                          local scope in case act compliles exec/eval str
 
         """
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']  # get box name
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']  # get box name
         key = self.iops['_key']  # get bag key
 
 
@@ -1270,10 +1270,10 @@ class UpdateMark(BagMark):
 
         """
         super(UpdateMark, self).__init__(nabe=nabe, **kwa)
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']  # get box name
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']  # get box name
         key = self.iops['_key']  # get bag key
-        keys = ("", "boxer", boxer, "box", box, "update", key)
+        keys = ("", "boxer", boxerName, "box", boxName, "update", key)
         if keys not in self.hold:
             self.hold[keys] = Bag()  # create bag default value = None
 
@@ -1287,10 +1287,10 @@ class UpdateMark(BagMark):
                          local scope in case act compliles exec/eval str
 
         """
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']
         key = self.iops['_key']
-        keys = ("", "boxer", boxer, "box", box, "update", key)
+        keys = ("", "boxer", boxerName, "box", boxName, "update", key)
         # mark bag tyme
         self.hold[keys].value = self.hold[key]._tyme
         return self.hold[keys].value
@@ -1326,11 +1326,11 @@ class ReupdateMark(BagMark):
 
         """
         super(ReupdateMark, self).__init__(nabe=nabe, **kwa)
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']  # get box name
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']  # get box name
         key = self.iops['_key']  # get bag key
 
-        keys = ("", "boxer", boxer, "box", box, "reupdate", key)
+        keys = ("", "boxer", boxerName, "box", boxName, "reupdate", key)
         if keys not in self.hold:
             self.hold[keys] = Bag()  # create bag default value = None
 
@@ -1344,10 +1344,10 @@ class ReupdateMark(BagMark):
                          local scope in case act compliles exec/eval str
 
         """
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']
         key = self.iops['_key']
-        keys = ("", "boxer", boxer, "box", box, "reupdate", key)
+        keys = ("", "boxer", boxerName, "box", boxName, "reupdate", key)
         # mark bag tyme
         self.hold[keys].value = self.hold[key]._tyme
         return self.hold[keys].value
@@ -1384,11 +1384,11 @@ class ChangeMark(BagMark):
 
         """
         super(ChangeMark, self).__init__(nabe=nabe, **kwa)
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']  # get box name
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']  # get box name
         key = self.iops['_key']  # get bag key
 
-        keys = ("", "boxer", boxer, "box", box, "change", key)
+        keys = ("", "boxer", boxerName, "box", boxName, "change", key)
         if keys not in self.hold:
             self.hold[keys] = Bag()  # create bag default value = None
 
@@ -1401,11 +1401,11 @@ class ChangeMark(BagMark):
                          local scope in case act compliles exec/eval str
 
         """
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']
         key = self.iops['_key']
         bag = self.hold[key]
-        keys = ("", "boxer", boxer, "box", box, "change", key)
+        keys = ("", "boxer", boxerName, "box", boxName, "change", key)
         self.hold[keys].value = bag._astuple()  # bag field value tuple as mark
         return self.hold[keys].value
 
@@ -1442,11 +1442,11 @@ class RechangeMark(BagMark):
 
         """
         super(RechangeMark, self).__init__(nabe=nabe, **kwa)
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']  # get box name
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']  # get box name
         key = self.iops['_key']  # get bag key
 
-        keys = ("", "boxer", boxer, "box", box, "rechange", key)
+        keys = ("", "boxer", boxerName, "box", boxName, "rechange", key)
         if keys not in self.hold:
             self.hold[keys] = Bag()  # create bag default value = None
 
@@ -1459,11 +1459,11 @@ class RechangeMark(BagMark):
                          local scope in case act compliles exec/eval str
 
         """
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']
         key = self.iops['_key']
         bag = self.hold[key]
-        keys = ("", "boxer", boxer, "box", box, "rechange", key)
+        keys = ("", "boxer", boxerName, "box", boxName, "rechange", key)
         self.hold[keys].value = bag._astuple()  # bag field value tuple as mark
         return self.hold[keys].value
 

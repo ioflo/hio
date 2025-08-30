@@ -226,7 +226,7 @@ class Filer(hioing.Mixin):
                                                mode=self.mode,
                                                fext=self.fext,
                                                **kwa)
-        elif self.filed:  # assumes dir in self.path exists
+        elif self.filed:  # would not be here unless self.path already exists
             self.file = ocfn(self.path, mode=self.mode)
 
         self.opened = True if not self.filed else self.file and not self.file.closed

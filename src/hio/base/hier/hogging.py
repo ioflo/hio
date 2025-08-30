@@ -126,8 +126,8 @@ class Hog(ActBase, Filer):
                  extensioned=True, )
 
 
-    def __init__(self, nabe=Nabes.afdo, filed=True, extensioned=True, fext="hog",
-                       rule=None, span=0.0, flush=0.0,
+    def __init__(self, iops=None, nabe=Nabes.afdo, filed=True, extensioned=True, fext="hog",
+                       reuse=True, rule=None, span=0.0, flush=0.0,
                        count=0, cycle=0.0, low=0, high=0, logs=None, **kwa):
         """Initialize instance.
 
@@ -190,12 +190,33 @@ class Hog(ActBase, Filer):
 
         When made (created and inited) by boxer.do then have "_boxer" and
         "_box" keys in self.iops = dict(_boxer=self.name, _box=m.box.name, **iops)
+
+
+        since filed it should reopen without truncating so does not overwrite
+        existing log file of same name. Always init by writing header so
+        even if change logs the header demarcation allows recovery of logged
+        data that includes different sets of logs. Need to test this
+        header should include UUID and date time stamp so even when process
+        quits and restarts have known uniqueness of data. This includes matching
+        up cycle sets of logs where the cycle count changes so there may be
+        stale cycle logs from old bigger set but same name.
+        Because each log record of data always starts with tyme as float,
+        which starts with numeric characters any consumer of log file can find restart demarcations of restart
+        header interior (not at start) because header starts with non numeric
+        characters  This way rotating logs
+
         """
+        if iops and "_boxer" in iops:  # '_boxer' is boxer.name when made by boxer
+            pass # set base to boxer name
+
         super(Hog, self).__init__(filed=filed,
                                   extensioned=extensioned,
                                   fext=fext,
+                                  reuse=reuse,
+                                  iops=iops,
                                   nabe=nabe,
                                   **kwa)
+
 
         self.begun = None
         self.began = None
