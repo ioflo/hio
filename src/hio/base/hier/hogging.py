@@ -12,13 +12,16 @@ import os
 import uuid
 from contextlib import contextmanager
 import inspect
+from collections import namedtuple
 
 from ..doing import Doer
 from ..filing import Filer
 from .hiering import Nabes
 from .acting import ActBase, register
-from ...help import nowIso8601
+from ...help import timing
 
+Ruleage = namedtuple("Rules", 'once every span update change')
+Rules = Ruleage(once='once', every='every', span='span', update='update', change='change')
 
 @register(names=('log', 'Log'))
 class Hog(ActBase, Filer):
@@ -94,10 +97,11 @@ class Hog(ActBase, Filer):
         first (float|None): tyme when began logging, None means not yet running
         last (float|None): tyme when last logged, None means not yet running
                       realtime equiv of last = began + (last - first)
-        rule (str): condition for log to fire one of
-                    ('once', 'every', 'spanned', 'updated', 'changed')
+        rule (str): condition for log to fire one of Rules
+                    (once, every, span, update, change)
         span (float): tyme span for periodic logging
         header (str): header for log file(s)
+        hid (str):  universally unique hog ID for given run of hog
         flushSpan (float): tyme span between flushes (flush)
         flushLast (float|None): tyme last flushed, None means not yet running
         cycleCount (int): number of cycled logs, 0 means do not cycle (count)
@@ -132,8 +136,8 @@ class Hog(ActBase, Filer):
 
     def __init__(self, iops=None, nabe=Nabes.afdo, base="", filed=True,
                        extensioned=True, mode='a+', fext="hog", reuse=True,
-                       rule=None, span=0.0, flush=0.0, count=0, cycle=0.0,
-                       low=0, high=0, hits=None, **kwa):
+                       hid=None, rule=Rules.every, span=0.0, flush=0.0,
+                       count=0, cycle=0.0, low=0, high=0, hits=None, **kwa):
         """Initialize instance.
 
         Inherited Parameters:
@@ -175,8 +179,10 @@ class Hog(ActBase, Filer):
             fext (str): File extension when filed or extensioned
 
         Parameters:
-            rule (str|None): condition for log to fire, default every
-                            (once, every, spanned, updated, changed)
+            hid (str|None):  universally unique hog ID for given run of hog
+                             None means create one using uuid lib
+            rule (str|None): condition for log to fire, one of Rules default every
+                            (once, every, span, update, change)
             span (float): periodic time span when rule is spanned. 0.0 means
                           every tyme
             flush (float): flush tyme span, tyme between flushes, 0.0 means
@@ -230,8 +236,10 @@ class Hog(ActBase, Filer):
         self.started = False
         self.first = None
         self.last = None
-        self.rule = rule if rule is not None else "every"
+        self.rule = rule
         self.span = span
+        self.hid = hid
+        self.stamp = '' # need to init
         self.header = ''  # need to init
         self.flushSpan = flush
         self.flushLast = None
@@ -265,10 +273,12 @@ class Hog(ActBase, Filer):
         if not self.started:
             # using mode "a+" don't need to seek to end
             # self.file.seek(0, os.SEEK_END)  # seek to end of file
-            hid = 'hog_' + uuid.uuid1().hex  # hog id uuid for this run (not iteration)
-            stamp = nowIso8601()  # current real datetime as ISO8601 string
+            if self.hid is None:
+                self.hid = 'hog_' + uuid.uuid1().hex  # hog id uuid for this run (not iteration)
+            self.stamp = timing.nowIso8601()  # current real datetime as ISO8601 string
 
-            # create header
+            self.header = (f"hid\t{self.hid}\tstamp\t{self.stamp}\trule\t{self.rule}"
+                           f"\tcount\t{self.cycleCount}\n")
 
         return iops
 

@@ -143,7 +143,7 @@ def test_monotimer():
     """End Test """
 
 
-def test_iso8601():  # mocked in pytest
+def test_iso8601():
     """
     Test datetime ISO 8601 helpers
     """
