@@ -86,10 +86,8 @@ class Hog(ActBase, Filer):
 
 
     Attributes:
-        begun (bool): True means logging has begun with header
-                           False means logging has not yet begun needs header
-        began (str|None): realtime datetime stamp of when logging began, may be non 0.0
-                     None means not yet running
+        started (bool): True means logging has begun with header
+                        False means logging has not yet begun needs header
         first (float|None): tyme when began logging, None means not yet running
         last (float|None): tyme when last logged, None means not yet running
                       realtime equiv of last = began + (last - first)
@@ -110,11 +108,11 @@ class Hog(ActBase, Filer):
         cycleHigh (int): maximum size in bytes allowed for each cycled log
                          0 means no maximum. One of cycleSpan or cycleHigh must
                          be non zero
-        logs (dict): labeled keys of holds to log. Item labels are log tags
-                      logs item value is key in hold that provides value to log
-                      logs item key is tag in log header
-        marks (dict): tyme or value tuples marks of holds logged with updated or
-                      changed. Label is hold key.
+        hits (dict): hold items to log. Item label is log header tag
+                      Item value is hold key that provides value to log
+        marks (dict): tyme or value tuples marks of hold items logged with
+                      updated or changed rule. Label is hold key.
+
 
     Hidden:
         _name (str): unique name of instance for .name property
@@ -132,7 +130,7 @@ class Hog(ActBase, Filer):
     def __init__(self, iops=None, nabe=Nabes.afdo, base="", filed=True,
                        extensioned=True, fext="hog", reuse=True, rule=None,
                        span=0.0, flush=0.0, count=0, cycle=0.0, low=0, high=0,
-                       logs=None, **kwa):
+                       hits=None, **kwa):
         """Initialize instance.
 
         Inherited Parameters:
@@ -186,9 +184,8 @@ class Hog(ActBase, Filer):
                        0 means no minimum
             high (int): maximum size in bytes allowed for each cycled log
                        0 means no maximum
-            logs (None|dict): labeled keys of holds to log. Item labels are tags
-                    logs item value is key in hold that provides value to log
-                    logs item key is tag in log header
+            hits (None|dict): hold items to log. Item label is log header tag
+                      Item value is hold key that provides value to log
                     None means use unreserved items in **kwa wrt .ReservedTags
 
 
@@ -225,8 +222,7 @@ class Hog(ActBase, Filer):
                                   **kwa)
 
 
-        self.begun = None
-        self.began = None
+        self.started = False
         self.first = None
         self.last = None
         self.rule = rule if rule is not None else "every"
@@ -241,15 +237,14 @@ class Hog(ActBase, Filer):
         self.cycleLow = low
         self.cycleHigh = high
 
-        if logs is None:
-            logs = {}
+        if hits is None:
+            hits = {}
             for tag, val in kwa.items():
                 if tag not in self.ReservedTags:
-                    logs[tag] = val  # value is key of hold to log
+                    hits[tag] = val  # value is key of hold to log
 
-        self.logs = logs
+        self.hits = hits
         self.marks = {}
-
 
 
     def act(self, **iops):
@@ -262,6 +257,10 @@ class Hog(ActBase, Filer):
         When made by boxer.do then have "_boxer" and "_box" keys in self.iops
            iops = dict(_boxer=self.name, _box=m.box.name, **iops)
         """
+        if not self.started:
+            # seed to end
+            # began datetime
+            pass # create header
 
         return iops
 

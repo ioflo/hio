@@ -565,6 +565,16 @@ def test_boxer_run():
     assert hold.count.value == 2
     assert boxer.endial()
 
+    assert list(boxer.hold.keys()) == \
+    [
+        '_hold_subery',
+        'count',
+        '_boxer_boxer_end',
+        '_boxer_boxer_active',
+        '_boxer_boxer_tock',
+        '_boxer_boxer_tyme'
+    ]
+
     """Done Test"""
 
 
@@ -650,6 +660,16 @@ def test_boxer_run_on_update():
     assert boxer.box is None
     assert boxer.endial()
 
+    assert list(boxer.hold.keys()) == \
+    [
+        '_hold_subery',
+        'count',
+        '_boxer_boxer_box_mid_update_count',
+        '_boxer_boxer_end',
+        '_boxer_boxer_active',
+        '_boxer_boxer_tock',
+        '_boxer_boxer_tyme'
+    ]
     """Done Test"""
 
 
@@ -737,6 +757,16 @@ def test_boxer_run_on_change():
     assert boxer.box is None
     assert boxer.endial()
 
+    assert list(boxer.hold.keys()) == \
+    [
+        '_hold_subery',
+        'count',
+        '_boxer_boxer_box_mid_change_count',
+        '_boxer_boxer_end',
+        '_boxer_boxer_active',
+        '_boxer_boxer_tock',
+        '_boxer_boxer_tyme'
+    ]
     """Done Test"""
 
 def test_boxer_run_on_count():
@@ -807,6 +837,16 @@ def test_boxer_run_on_count():
         assert ex.args[0] == True
     assert boxer.box is None
     assert boxer.endial()
+
+    assert list(boxer.hold.keys()) == \
+    [
+        '_hold_subery',
+        '_boxer_boxer_box_mid_count',
+        '_boxer_boxer_end',
+        '_boxer_boxer_active',
+        '_boxer_boxer_tock',
+        '_boxer_boxer_tyme'
+    ]
 
     """Done Test"""
 
@@ -916,6 +956,18 @@ def test_boxer_run_verbs():
     assert hold._boxer_boxer_active.value == None
     assert hold._boxer_boxer_tock.value == 1.0
     assert hold._boxer_boxer_end.value == True
+
+    assert list(boxer.hold.keys()) == \
+    [
+        '_hold_subery',
+        'stuff',
+        'crud',
+        '_boxer_boxer_box_mid_count',
+        '_boxer_boxer_end',
+        '_boxer_boxer_active',
+        '_boxer_boxer_tock',
+        '_boxer_boxer_tyme'
+    ]
 
     """Done Test"""
 
@@ -1048,6 +1100,19 @@ def test_boxer_run_lapse():
     assert hold._boxer_boxer_tock.value == 1.0
     assert hold._boxer_boxer_end.value == True
 
+    assert list(boxer.hold.keys()) == \
+    [
+        '_hold_subery',
+        'stuff',
+        'crud',
+        '_boxer_boxer_box_mid_count',
+        '_boxer_boxer_box_bot0_lapse',
+        '_boxer_boxer_box_bot1_lapse',
+        '_boxer_boxer_end',
+        '_boxer_boxer_active',
+        '_boxer_boxer_tock',
+        '_boxer_boxer_tyme'
+    ]
     """Done Test"""
 
 
@@ -1153,6 +1218,19 @@ def test_boxer_run_relapse():
     assert hold._boxer_boxer_tock.value == 1.0
     assert hold._boxer_boxer_end.value == True
 
+    assert list(boxer.hold.keys()) == \
+    [
+        '_hold_subery',
+        'stuff',
+        'crud',
+        '_boxer_boxer_box_mid_count',
+        '_boxer_boxer_box_mid_relapse',
+        '_boxer_boxer_box_bot1_lapse',
+        '_boxer_boxer_end',
+        '_boxer_boxer_active',
+        '_boxer_boxer_tock',
+        '_boxer_boxer_tyme'
+    ]
     """Done Test"""
 
 
@@ -1228,7 +1306,20 @@ def test_boxer_doer():
     assert hold._boxer_boxer_box_bot1_lapse._tyme == 2.0
     assert hold._boxer_boxer_box_bot1_lapse._now == 8.0
 
-
+    assert list(boxer.hold.keys()) == \
+    [
+        '_hold_subery',
+        'test',
+        'buf',
+        'puf',
+        '_boxer_boxer_box_mid_count',
+        '_boxer_boxer_box_bot0_lapse',
+        '_boxer_boxer_box_bot1_lapse',
+        '_boxer_boxer_end',
+        '_boxer_boxer_active',
+        '_boxer_boxer_tock',
+        '_boxer_boxer_tyme'
+    ]
     """Done Test"""
 
 

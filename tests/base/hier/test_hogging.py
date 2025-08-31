@@ -52,7 +52,7 @@ def test_hog_basic():
     assert hog.nabe == Nabes.afdo
     assert hog.hold
     assert not hog.hold.subery
-    assert hog.logs == {}
+    assert hog.hits == {}
 
     hog.close(clear=True)
     assert not hog.opened
@@ -94,7 +94,7 @@ def test_open_hog():
         assert hog.nabe == Nabes.afdo
         assert hog.hold
         assert not hog.hold.subery
-        assert hog.logs == {}
+        assert hog.hits == {}
 
     assert not hog.opened
     assert not hog.file

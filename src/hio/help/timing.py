@@ -3,6 +3,7 @@
 
 """
 import time
+import datetime
 
 from .. import hioing
 
@@ -203,4 +204,60 @@ class MonoTimer(Timer):
         self._last += delta
         return self._last
 
+
+# datetime utilities
+def nowUTC():
+    """
+    Returns timezone aware datetime of current UTC time
+    Convenience function that allows monkeypatching in tests to mock time
+    """
+    return (datetime.datetime.now(datetime.timezone.utc))
+
+
+def nowIso8601():
+    """
+    Returns time now in RFC-3339 profile of ISO 8601 format.
+    use now(timezone.utc)
+
+    YYYY-MM-DDTHH:MM:SS.ffffff+HH:MM[:SS[.ffffff]]
+    .strftime('%Y-%m-%dT%H:%M:%S.%f%z')
+    '2020-08-22T17:50:09.988921+00:00'
+    Assumes TZ aware
+    For nanosecond use instead attotime or datatime64 in pandas or numpy
+    """
+    return (nowUTC().isoformat(timespec='microseconds'))
+
+
+def toIso8601(dt=None):
+    """
+    Returns str datetime dt in RFC-3339 profile of ISO 8601 format.
+    Converts datetime object dt to ISO 8601 formt
+    If dt is missing use now(timezone.utc)
+
+    YYYY-MM-DDTHH:MM:SS.ffffff+HH:MM[:SS[.ffffff]]
+    .strftime('%Y-%m-%dT%H:%M:%S.%f%z')
+    '2020-08-22T17:50:09.988921+00:00'
+    Assumes TZ aware
+    For nanosecond use instead attotime or datatime64 in pandas or numpy
+    """
+    if dt is None:
+        dt = nowUTC()  # make it aware
+
+    return (dt.isoformat(timespec='microseconds'))  # force include microseconds
+
+
+def fromIso8601(dts):
+    """
+    Returns datetime object from RFC-3339 profile of ISO 8601 format str or bytes.
+    Converts dts from ISO 8601 format to datetime object
+
+    YYYY-MM-DDTHH:MM:SS.ffffff+HH:MM[:SS[.ffffff]]
+    .strftime('%Y-%m-%dT%H:%M:%S.%f%z')
+    '2020-08-22T17:50:09.988921+00:00'
+    Assumes TZ aware
+    For nanosecond use instead attotime or datatime64 in pandas or numpy
+    """
+    if hasattr(dts, "decode"):
+        dts = dts.decode("utf-8")
+    return (datetime.datetime.fromisoformat(dts))
 

@@ -83,8 +83,15 @@ class Box(Tymee):
     Box instance holds references (links) to its over box and its under boxes.
     Box instance holds the acts to be executed in their nabe.
 
-    Inherited Attributes, Properties
-        see Tymee
+    Inherited Properties
+        .tyme (float | None):  relative cycle time of associated Tymist which is
+            provided by calling .tymth function wrapper closure which is obtained
+            from Tymist.tymen().
+            None means not assigned yet.
+        .tymth (Callable | None): function wrapper closure returned by
+            Tymist.tymen() method. When .tymth is called it returns associated
+            Tymist.tyme. Provides injected dependency on Tymist cycle tyme base.
+            None means not assigned yet.
 
     Attributes:
         hold (Hold): data shared by boxwork
@@ -130,6 +137,11 @@ class Box(Tymee):
     """
     def __init__(self, *, name='box', hold=None, over=None, **kwa):
         """Initialize instance.
+
+        Inherited Parameters:
+            tymth (closure):  injected function wrapper closure returned by
+                              .tymen() of Tymist instance.
+                              Calling tymth() returns associated Tymist .tyme.
 
         Parameters:
             name (str): unique identifier of box
@@ -349,6 +361,11 @@ class Boxer(Tymee):
     def __init__(self, *, name='boxer', hold=None, fun=None, durable=False, **kwa):
         """Initialize instance.
 
+        Inherited Parameters:
+            tymth (closure):  injected function wrapper closure returned by
+                              .tymen() of Tymist instance.
+                              Calling tymth() returns associated Tymist .tyme.
+
         Parameters:
             name (str): unique identifier of box
             hold (None|Hold): data shared by boxwork
@@ -455,18 +472,25 @@ class Boxer(Tymee):
             self.box = None  # no active box anymore
             return False  # signal failure due to end in enter before first pass
 
-        akeys = ("", "boxer", self.name, "active")
-        if akeys not in self.hold:
-            self.hold[akeys] = Bag()
-        self.hold[akeys].value = self.box.name  # assign active box name
+        activeKey = self.hold.tokey(("", "boxer", self.name, "active"))
+        if activeKey not in self.hold:  # setup active box bag
+            self.hold[activeKey] = Bag()
+        self.hold[activeKey].value = self.box.name  # assign active box name
 
-        tkey = self.hold.tokey(("", "boxer", self.name, "tock"))
-        if tkey not in self.hold:
-            self.hold[tkey] = Bag()
-        self.hold[tkey].value = tock  # assign tock
+        tockKey = self.hold.tokey(("", "boxer", self.name, "tock"))
+        if tockKey not in self.hold:  # setup tock bag
+            self.hold[tockKey] = Bag()
+        self.hold[tockKey].value = tock  # assign tock
+
+        tymeKey = self.hold.tokey(("", "boxer", self.name, "tyme"))
+        if tymeKey not in self.hold:  # setup tyme bag
+            self.hold[tymeKey] = Bag()
+
 
         # finished of enter next() delegation 'yield from' delegation
         tyme = yield(tock)  # pause end of next, resume start of send
+
+        self.hold[tymeKey].value = tyme  # assign tyme
 
         # begin first pass after send()
         self.rendo(rendos)  # rendo nabe, action remarks and renacts
@@ -474,15 +498,16 @@ class Boxer(Tymee):
         self.redo()  # redo nabe all boxes in pile top down
 
         while True:  # run forever
-            tock = self.hold[tkey].value  # get tock in case it changed
+            tock = self.hold[tockKey].value  # get tock in case it changed
             tyme = yield(tock)  # resume on send after tyme tick
+            self.hold[tymeKey].value = tyme  # assign tyme
             rendos = []  # make empty for new pass, reset on transit
             endos = []  # make empty for new pass, reset on transit
 
             if self.endial():  # previous pass actioned desire to end
                 self.end()  # exdos all active boxes in self.box.pile
                 self.box = None  # no active box
-                self.hold[akeys].value = None  # assign active box name to None
+                self.hold[activeKey].value = None  # assign active box name to None
                 return True  # signal successful end after last pass
 
             transit = False
@@ -497,7 +522,7 @@ class Boxer(Tymee):
                         self.exdo(exdos)  # exdo bottom up
                         self.rexdo(rexdos)  # rexdo bottom up  (boxes retained)
                         self.box = dest  # set new active box
-                        self.hold[akeys].value = self.box.name  # active box name
+                        self.hold[activeKey].value = self.box.name  # active box name
                         transit = True
                         break
 
