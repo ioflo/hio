@@ -189,9 +189,9 @@ def test_hog_log(mockHelpingNowIso8601):
 
     dts = hio.help.timing.nowIso8601()  # mocked version testing that mocking worked
     assert dts == '2021-06-27T21:26:21.233257+00:00'
-    hid = 'hog_3db602c486bd11f0bdf3f2acaf456f91' # for test
+    rid = 'hog_3db602c486bd11f0bdf3f2acaf456f91' # for test
 
-    hog = Hog(temp=True, hid=hid)  # test defaults
+    hog = Hog(temp=True, rid=rid)  # test defaults
     assert hog.temp
     assert hog.name == "Hog0"
     assert hog.opened
@@ -222,7 +222,7 @@ def test_hog_log(mockHelpingNowIso8601):
     assert hog.header.startswith('hid')
     assert hog.header == ('hid\thog_3db602c486bd11f0bdf3f2acaf456f91\tstamp\t'
                           '2021-06-27T21:26:21.233257+00:00\trule\tevery\tcount\t0\n')
-    assert hog.hid == hid
+    assert hog.hid == rid
     assert hog.stamp == dts
 
     hog.close(clear=True)

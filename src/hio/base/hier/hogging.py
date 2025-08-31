@@ -101,7 +101,7 @@ class Hog(ActBase, Filer):
                     (once, every, span, update, change)
         span (float): tyme span for periodic logging
         header (str): header for log file(s)
-        hid (str):  universally unique hog ID for given run of hog
+        rid (str):  universally unique run ID for given run of hog
         flushSpan (float): tyme span between flushes (flush)
         flushLast (float|None): tyme last flushed, None means not yet running
         cycleCount (int): number of cycled logs, 0 means do not cycle (count)
@@ -136,7 +136,7 @@ class Hog(ActBase, Filer):
 
     def __init__(self, iops=None, nabe=Nabes.afdo, base="", filed=True,
                        extensioned=True, mode='a+', fext="hog", reuse=True,
-                       hid=None, rule=Rules.every, span=0.0, flush=0.0,
+                       rid=None, rule=Rules.every, span=0.0, flush=0.0,
                        count=0, cycle=0.0, low=0, high=0, hits=None, **kwa):
         """Initialize instance.
 
@@ -179,7 +179,7 @@ class Hog(ActBase, Filer):
             fext (str): File extension when filed or extensioned
 
         Parameters:
-            hid (str|None):  universally unique hog ID for given run of hog
+            rid (str|None):  universally unique run ID for given run of hog
                              None means create one using uuid lib
             rule (str|None): condition for log to fire, one of Rules default every
                             (once, every, span, update, change)
@@ -238,7 +238,7 @@ class Hog(ActBase, Filer):
         self.last = None
         self.rule = rule
         self.span = span
-        self.hid = hid
+        self.hid = rid
         self.stamp = '' # need to init
         self.header = ''  # need to init
         self.flushSpan = flush
