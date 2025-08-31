@@ -53,8 +53,7 @@ def test_hog_basic():
     assert hog.hold
     assert not hog.hold.subery
     assert hog.hits == {}
-    assert hog.header.startswith('hid')
-    # 'hid\thog_99ced11e86b111f0ac77f2acaf456f91\tdatetime\t2025-08-31T21:29:39.628696+00:00\trule\tevery\tcount\t0\n'
+    assert hog.header.startswith('rid')
 
     hog.close(clear=True)
     assert not hog.opened
@@ -97,7 +96,7 @@ def test_open_hog():
         assert hog.hold
         assert not hog.hold.subery
         assert hog.hits == {}
-        assert hog.header.startswith('hid')
+        assert hog.header.startswith('rid')
 
     assert not hog.opened
     assert not hog.file
@@ -189,7 +188,7 @@ def test_hog_log(mockHelpingNowIso8601):
 
     dts = hio.help.timing.nowIso8601()  # mocked version testing that mocking worked
     assert dts == '2021-06-27T21:26:21.233257+00:00'
-    rid = 'hog_3db602c486bd11f0bdf3f2acaf456f91' # for test
+    rid = 'Hog0_3db602c486bd11f0bdf3f2acaf456f91' # for test
 
     hog = Hog(temp=True, rid=rid)  # test defaults
     assert hog.temp
@@ -219,10 +218,10 @@ def test_hog_log(mockHelpingNowIso8601):
     assert hog.hold
     assert not hog.hold.subery
     assert hog.hits == {}
-    assert hog.header.startswith('hid')
-    assert hog.header == ('hid\thog_3db602c486bd11f0bdf3f2acaf456f91\tstamp\t'
+    assert hog.header.startswith('rid')
+    assert hog.header == ('rid\tHog0_3db602c486bd11f0bdf3f2acaf456f91\tstamp\t'
                           '2021-06-27T21:26:21.233257+00:00\trule\tevery\tcount\t0\n')
-    assert hog.hid == rid
+    assert hog.rid == rid
     assert hog.stamp == dts
 
     hog.close(clear=True)

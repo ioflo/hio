@@ -238,7 +238,7 @@ class Hog(ActBase, Filer):
         self.last = None
         self.rule = rule
         self.span = span
-        self.hid = rid
+        self.rid = rid
         self.stamp = '' # need to init
         self.header = ''  # need to init
         self.flushSpan = flush
@@ -273,11 +273,11 @@ class Hog(ActBase, Filer):
         if not self.started:
             # using mode "a+" don't need to seek to end
             # self.file.seek(0, os.SEEK_END)  # seek to end of file
-            if self.hid is None:
-                self.hid = 'hog_' + uuid.uuid1().hex  # hog id uuid for this run (not iteration)
+            if self.rid is None:
+                self.rid = self.name + "_" + uuid.uuid1().hex  # hog id uuid for this run (not iteration)
             self.stamp = timing.nowIso8601()  # current real datetime as ISO8601 string
 
-            self.header = (f"hid\t{self.hid}\tstamp\t{self.stamp}\trule\t{self.rule}"
+            self.header = (f"rid\t{self.rid}\tstamp\t{self.stamp}\trule\t{self.rule}"
                            f"\tcount\t{self.cycleCount}\n")
 
         return iops
