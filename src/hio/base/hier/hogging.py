@@ -8,6 +8,8 @@ Provides support for hold logging (hogging)
 """
 from __future__ import annotations  # so type hints of classes get resolved later
 
+import os
+import uuid
 from contextlib import contextmanager
 import inspect
 
@@ -15,6 +17,7 @@ from ..doing import Doer
 from ..filing import Filer
 from .hiering import Nabes
 from .acting import ActBase, register
+from ...help import nowIso8601
 
 
 @register(names=('log', 'Log'))
@@ -128,9 +131,9 @@ class Hog(ActBase, Filer):
 
 
     def __init__(self, iops=None, nabe=Nabes.afdo, base="", filed=True,
-                       extensioned=True, fext="hog", reuse=True, rule=None,
-                       span=0.0, flush=0.0, count=0, cycle=0.0, low=0, high=0,
-                       hits=None, **kwa):
+                       extensioned=True, mode='a+', fext="hog", reuse=True,
+                       rule=None, span=0.0, flush=0.0, count=0, cycle=0.0,
+                       low=0, high=0, hits=None, **kwa):
         """Initialize instance.
 
         Inherited Parameters:
@@ -194,10 +197,12 @@ class Hog(ActBase, Filer):
 
 
         since filed it should reopen without truncating so does not overwrite
-        existing log file of same name. Always init by writing header so
+        existing log file of same name. use mode 'a+'.  Otherwise when reopening
+        would need to seek to end of file as default 'r+' goes to beginning.
+        Need to test reopen logic
+        Always init by writing header so
         even if change logs the header demarcation allows recovery of logged
-        data that includes different sets of logs. When reopening need to
-        seek to end of file or else it will overwrite. Need to test reopen logic
+        data that includes different sets of logs.
         header should include UUID and date time stamp so even when process
         quits and restarts have known uniqueness of data. This includes matching
         up cycle sets of logs where the cycle count changes so there may be
@@ -258,9 +263,12 @@ class Hog(ActBase, Filer):
            iops = dict(_boxer=self.name, _box=m.box.name, **iops)
         """
         if not self.started:
-            # seed to end
-            # began datetime
-            pass # create header
+            # using mode "a+" don't need to seek to end
+            # self.file.seek(0, os.SEEK_END)  # seek to end of file
+            hid = 'hog_' + uuid.uuid1().hex  # hog id uuid for this run (not iteration)
+            stamp = nowIso8601()  # current real datetime as ISO8601 string
+
+            # create header
 
         return iops
 

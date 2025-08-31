@@ -18,7 +18,9 @@ from .helping import isNonStringIterable, isNonStringSequence, isIterator, Reat
 from .helping import NonStringIterable, NonStringSequence
 from .decking import Deck
 from .hicting import Hict, Mict
-from .timing import Timer, MonoTimer, TimerError, RetroTimerError
+from .timing import (Timer, MonoTimer, TimerError, RetroTimerError,
+                     nowIso8601, toIso8601, fromIso8601)
+
 from .naming import Namer
 from .doming import (MapDom, IceMapDom, modify, modize, RawDom, IceRawDom,
                      registerify, RegDom, IceRegDom, namify, TymeDom, IceTymeDom)
