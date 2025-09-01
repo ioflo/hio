@@ -55,6 +55,8 @@ def test_hog_basic():
     assert hog.hits == {}
     assert hog.header.startswith('rid')
 
+    assert list(hog.hold.keys()) == ['_hold_subery']
+
     hog.close(clear=True)
     assert not hog.opened
     assert not hog.file
@@ -97,6 +99,8 @@ def test_open_hog():
         assert not hog.hold.subery
         assert hog.hits == {}
         assert hog.header.startswith('rid')
+
+        assert list(hog.hold.keys()) == ['_hold_subery']
 
     assert not hog.opened
     assert not hog.file
@@ -198,6 +202,10 @@ def test_hog_log(mockHelpingNowIso8601):
 
     hold = Hold()
 
+    tymeKey = hold.tokey(("", "boxer", boxerName, "tyme"))
+    hold[tymeKey] = Bag()
+    hold[tymeKey].value = tymist.tyme
+
     activeKey = hold.tokey(("", "boxer", boxerName, "active"))
     hold[activeKey] = Bag()
     hold[activeKey].value = boxName
@@ -205,10 +213,6 @@ def test_hog_log(mockHelpingNowIso8601):
     tockKey = hold.tokey(("", "boxer", boxerName, "tock"))
     hold[tockKey] = Bag()
     hold[tockKey].value = tymist.tock
-
-    tymeKey = hold.tokey(("", "boxer", boxerName, "tyme"))
-    hold[tymeKey] = Bag()
-    hold[tymeKey].value = tymist.tyme
 
     name = "pig"
 
@@ -261,6 +265,14 @@ def test_hog_log(mockHelpingNowIso8601):
                         '_boxer_BoxerTest_tyme\t_boxer_BoxerTest_active\t_boxer_BoxerTest_tock\n'
                         'tyme.value\tactive.value\ttock.value\n')
 
+
+    assert list(hog.hold.keys()) == \
+    [
+        '_hold_subery',
+        '_boxer_BoxerTest_tyme',
+        '_boxer_BoxerTest_active',
+        '_boxer_BoxerTest_tock',
+    ]
 
     hog.close(clear=True)
     assert not hog.opened
