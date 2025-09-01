@@ -15,5 +15,5 @@ from .canning import CanDom, Can
 from .holding import Hold
 from .durqing import Durq
 from .dusqing import Dusq
-from .hogging import Hog, openHog, HogDoer
+from .hogging import Rules, Hog, openHog, HogDoer
 

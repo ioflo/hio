@@ -12,7 +12,8 @@ import pytest
 
 import hio
 from hio.base import Doist, Tymist
-from hio.base.hier import Nabes, Hog, openHog, HogDoer, Hold, Bag
+from hio.base.hier import Nabes, Rules, Hog, openHog, HogDoer, Hold, Bag
+from hio.help import TymeDom
 from hio.help.timing import nowIso8601  # timing so pytest mock nowIso8601 works
 
 
@@ -218,9 +219,14 @@ def test_hog_log(mockHelpingNowIso8601):
     hold[tockKey] = Bag()
     hold[tockKey].value = tymist.tock
 
+    tymth = tymist.tymen()
+    for dom in hold.values():  # wind hold
+        if isinstance(dom, TymeDom):
+            dom._wind(tymth=tymth)
+
     name = "pig"
 
-    # default when no hits logs box state
+    # Test rule "every" default, when no hits logs box state as default hits
     hog = Hog(name=name, iops=iops, hold=hold, temp=True, rid=rid)  # test defaults
     assert hog.temp
     assert hog.name == name
@@ -249,6 +255,11 @@ def test_hog_log(mockHelpingNowIso8601):
     assert Hog.Registry['log'] is Hog
     assert Hog.Registry['Log'] is Hog
 
+    assert hog.rule == Rules.every
+    assert not hog.started
+    assert not hog.onced
+
+    # run hog once
     assert hog() == iops  # default returns iops
     assert hog.nabe == Nabes.afdo
     assert hog.hold
@@ -259,7 +270,10 @@ def test_hog_log(mockHelpingNowIso8601):
         'active': '_boxer_BoxerTest_active',
         'tock': '_boxer_BoxerTest_tock'
     }
-
+    assert hog.started
+    assert hog.onced
+    assert hog.first == 0.0
+    assert hog.last == 0.0
     assert hog.rid == rid
     assert hog.stamp == dts
     assert hog.header.startswith('rid')
@@ -301,12 +315,99 @@ def test_hog_log(mockHelpingNowIso8601):
         '_boxer_BoxerTest_tock',
     ]
 
+    # run again
+    tymist.tick()
+    hold[tymeKey].value = tymist.tyme
+    assert hog() == iops  # default returns iops
+    assert hog.last != hog.first
+    assert hog.last == tymist.tyme
+    hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
+    lines = hog.file.readlines()
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ', 'BoxerTest','pig','2021-06-27T21:26:21.233257+00:00','every','0'),
+        ('tyme.key', 'active.key', 'tock.key'),
+        ('_boxer_BoxerTest_tyme', '_boxer_BoxerTest_active', '_boxer_BoxerTest_tock'),
+        ('tyme.value', 'active.value', 'tock.value'),
+        ('0.0', 'BoxTop', '0.03125'),
+        ('0.03125', 'BoxTop', '0.03125')
+    ]
+
+
     hog.close(clear=True)
     assert not hog.opened
     assert not hog.file
     assert not os.path.exists(hog.path)
 
+    # Test rule "once"
+    name = "dog"
+    tymist.tyme = 0.0
+    tymth = tymist.tymen()
+    for dom in hold.values():  # wind hold
+        if isinstance(dom, TymeDom):
+            dom._wind(tymth=tymth)
+    hold[tymeKey].value = tymist.tyme
+    hold[activeKey].value = boxName
+    hold[tockKey].value = tymist.tock
 
+    hog = Hog(name=name, iops=iops, hold=hold, temp=True, rid=rid, rule=Rules.once)
+    assert hog.rule == Rules.once
+    assert not hog.started
+    assert not hog.onced
+
+    # run hog once
+    assert hog() == iops  # default returns iops
+    assert hog.hits == \
+    {
+        'tyme': '_boxer_BoxerTest_tyme',
+        'active': '_boxer_BoxerTest_active',
+        'tock': '_boxer_BoxerTest_tock'
+    }
+    assert hog.started
+    assert hog.onced
+    assert hog.first == 0.0
+    assert hog.last == 0.0
+    assert hog.rid == rid
+    assert hog.stamp == dts
+
+    hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
+    lines = hog.file.readlines()
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ', 'BoxerTest','dog','2021-06-27T21:26:21.233257+00:00','once','0'),
+        ('tyme.key', 'active.key', 'tock.key'),
+        ('_boxer_BoxerTest_tyme', '_boxer_BoxerTest_active', '_boxer_BoxerTest_tock'),
+        ('tyme.value', 'active.value', 'tock.value'),
+        ('0.0', 'BoxTop', '0.03125')
+    ]
+
+    # run again
+    tymist.tick()
+    hold[tymeKey].value = tymist.tyme
+    assert hog() == iops  # default returns iops
+    assert hog.last == hog.first  # since once does not log again
+    assert hog.last != tymist.tyme
+    hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
+    lines = hog.file.readlines()
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ', 'BoxerTest','dog','2021-06-27T21:26:21.233257+00:00','once','0'),
+        ('tyme.key', 'active.key', 'tock.key'),
+        ('_boxer_BoxerTest_tyme', '_boxer_BoxerTest_active', '_boxer_BoxerTest_tock'),
+        ('tyme.value', 'active.value', 'tock.value'),
+        ('0.0', 'BoxTop', '0.03125'),
+    ]
+
+    hog.close(clear=True)
+    assert not hog.opened
+    assert not hog.file
+    assert not os.path.exists(hog.path)
     """Done Test"""
 
 

@@ -408,14 +408,13 @@ class Boxer(Tymee):
         self._name = name
 
 
-    def wind(self, tymth=None):
+    def wind(self, tymth):
         """Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
         Override in subclasses to update any dependencies on a change in
         tymist.tymth base
 
         Parameters:
-            tymth (Callable|None):  closure of injected tyme from tymist.tymen()
-                                    None if not yet injected
+            tymth (Callable):  closure of injected tyme from tymist.tymen()
         """
         super().wind(tymth=tymth)
         for dom in self.hold.values():
@@ -1395,7 +1394,7 @@ class BoxerDoer(Doer):
         Updates winds .tymer .tymth
         """
         super(BoxerDoer, self).wind(tymth)
-        self.boxer.wind(tymth)
+        self.boxer.rewind(tymth)
 
 
     def enter(self, *, temp=None):
