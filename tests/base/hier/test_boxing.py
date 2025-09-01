@@ -570,9 +570,9 @@ def test_boxer_run():
         '_hold_subery',
         'count',
         '_boxer_boxer_end',
+        '_boxer_boxer_tyme',
         '_boxer_boxer_active',
-        '_boxer_boxer_tock',
-        '_boxer_boxer_tyme'
+        '_boxer_boxer_tock'
     ]
 
     """Done Test"""
@@ -666,9 +666,9 @@ def test_boxer_run_on_update():
         'count',
         '_boxer_boxer_box_mid_update_count',
         '_boxer_boxer_end',
+        '_boxer_boxer_tyme',
         '_boxer_boxer_active',
         '_boxer_boxer_tock',
-        '_boxer_boxer_tyme'
     ]
     """Done Test"""
 
@@ -763,9 +763,9 @@ def test_boxer_run_on_change():
         'count',
         '_boxer_boxer_box_mid_change_count',
         '_boxer_boxer_end',
+        '_boxer_boxer_tyme',
         '_boxer_boxer_active',
         '_boxer_boxer_tock',
-        '_boxer_boxer_tyme'
     ]
     """Done Test"""
 
@@ -843,9 +843,9 @@ def test_boxer_run_on_count():
         '_hold_subery',
         '_boxer_boxer_box_mid_count',
         '_boxer_boxer_end',
+        '_boxer_boxer_tyme',
         '_boxer_boxer_active',
         '_boxer_boxer_tock',
-        '_boxer_boxer_tyme'
     ]
 
     """Done Test"""
@@ -964,9 +964,9 @@ def test_boxer_run_verbs():
         'crud',
         '_boxer_boxer_box_mid_count',
         '_boxer_boxer_end',
+        '_boxer_boxer_tyme',
         '_boxer_boxer_active',
         '_boxer_boxer_tock',
-        '_boxer_boxer_tyme'
     ]
 
     """Done Test"""
@@ -1109,9 +1109,9 @@ def test_boxer_run_lapse():
         '_boxer_boxer_box_bot0_lapse',
         '_boxer_boxer_box_bot1_lapse',
         '_boxer_boxer_end',
+        '_boxer_boxer_tyme',
         '_boxer_boxer_active',
         '_boxer_boxer_tock',
-        '_boxer_boxer_tyme'
     ]
     """Done Test"""
 
@@ -1227,9 +1227,9 @@ def test_boxer_run_relapse():
         '_boxer_boxer_box_mid_relapse',
         '_boxer_boxer_box_bot1_lapse',
         '_boxer_boxer_end',
+        '_boxer_boxer_tyme',
         '_boxer_boxer_active',
         '_boxer_boxer_tock',
-        '_boxer_boxer_tyme'
     ]
     """Done Test"""
 
@@ -1316,9 +1316,9 @@ def test_boxer_doer():
         '_boxer_boxer_box_bot0_lapse',
         '_boxer_boxer_box_bot1_lapse',
         '_boxer_boxer_end',
+        '_boxer_boxer_tyme',
         '_boxer_boxer_active',
         '_boxer_boxer_tock',
-        '_boxer_boxer_tyme'
     ]
     """Done Test"""
 

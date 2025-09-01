@@ -18,7 +18,7 @@ from ..doing import Doer
 from ..filing import Filer
 from .hiering import Nabes
 from .acting import ActBase, register
-from ...help import timing
+from ...help import timing  # import timing to pytest mock of nowIso8601 works
 
 Ruleage = namedtuple("Rules", 'once every span update change')
 Rules = Ruleage(once='once', every='every', span='span', update='update', change='change')
@@ -119,6 +119,12 @@ class Hog(ActBase, Filer):
                       Item value is hold key that provides value to log
         marks (dict): tyme or value tuples marks of hold items logged with
                       updated or changed rule. Label is hold key.
+        activeKey (str|None): hold key to active box name of boxer given by iops
+                              None otherwise
+        tockKey (str|None): hold key to tock value of boxer given by iops
+                            None otherwise
+        tockKey (str|None): hold key to tyme value of boxer given by iops
+                            None otherwise
 
 
     Hidden:
@@ -250,6 +256,15 @@ class Hog(ActBase, Filer):
         self.cycleLow = low
         self.cycleHigh = high
 
+        self.activeKey = None
+        self.tockKey = None
+        self.tymeKey = None
+        if "_boxer" in self.iops:  # assign keys for boxer box state
+            boxerName = self.iops["_boxer"]
+            self.activeKey = self.hold.tokey(("", "boxer", boxerName, "active"))
+            self.tockKey = self.hold.tokey(("", "boxer", boxerName, "tock"))
+            self.tymeKey = self.hold.tokey(("", "boxer", boxerName, "tyme"))
+
         if hits is None:
             hits = {}
             for tag, val in kwa.items():
@@ -277,10 +292,39 @@ class Hog(ActBase, Filer):
                 self.rid = self.name + "_" + uuid.uuid1().hex  # hog id uuid for this run (not iteration)
             self.stamp = timing.nowIso8601()  # current real datetime as ISO8601 string
 
-            self.header = (f"rid\t{self.rid}\tstamp\t{self.stamp}\trule\t{self.rule}"
+            metaLine = (f"rid\t{self.rid}\tbase\t{self.base}\tname\t{self.name}"
+                           f"\tstamp\t{self.stamp}\trule\t{self.rule}"
                            f"\tcount\t{self.cycleCount}\n")
 
+            if self.tymeKey and self.tymeKey in self.hold:  # need tyme for logging
+                hits = dict(tyme=self.tymeKey)  # logging tyme
+                for tag, key in self.hits.items():  # copy valid .hits
+                    if key in self.hold:  # invalid hold key
+                        hits[tag] = key  # make copy in order
+
+            else: # need tyme in order to log anything with respect to tyme
+                hits = {}  # nothing to log
+
+            self.hits = hits
+
+            if len(self.hits) == 1:  # only tyme so default to boxer state
+                if self.activeKey and self.activeKey in self.hold:
+                    self.hits["active"] = self.activeKey
+                if self.tockKey and self.tockKey in self.hold:
+                    self.hits["tock"] = self.tockKey
+
+            # need to expand tags for hits with vector bags in hold
+            tagLine = '\t'.join(f"{tag}.value" for tag in self.hits.keys()) + "\n"
+
+            self.header = metaLine + tagLine
+
+
         return iops
+
+    def logOne(self):
+        """Log one record of .hits values from .hold"""
+        for key in self.hits.values():  # hit values are hold keys
+            pass
 
 
 

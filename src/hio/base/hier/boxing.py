@@ -472,6 +472,12 @@ class Boxer(Tymee):
             self.box = None  # no active box anymore
             return False  # signal failure due to end in enter before first pass
 
+        # setup boxer state in hold  tyme, active box, and tock
+        tymeKey = self.hold.tokey(("", "boxer", self.name, "tyme"))
+        if tymeKey not in self.hold:  # setup tyme bag
+            self.hold[tymeKey] = Bag()
+        self.hold[tymeKey].value = self.tyme
+
         activeKey = self.hold.tokey(("", "boxer", self.name, "active"))
         if activeKey not in self.hold:  # setup active box bag
             self.hold[activeKey] = Bag()
@@ -482,15 +488,10 @@ class Boxer(Tymee):
             self.hold[tockKey] = Bag()
         self.hold[tockKey].value = tock  # assign tock
 
-        tymeKey = self.hold.tokey(("", "boxer", self.name, "tyme"))
-        if tymeKey not in self.hold:  # setup tyme bag
-            self.hold[tymeKey] = Bag()
-
-
         # finished of enter next() delegation 'yield from' delegation
+        # tyme injected from yield should be self.tyme when recur by Doist or DoDoer
         tyme = yield(tock)  # pause end of next, resume start of send
-
-        self.hold[tymeKey].value = tyme  # assign tyme
+        self.hold[tymeKey].value = tyme  # assign tyme for Hog same as self.tyme
 
         # begin first pass after send()
         self.rendo(rendos)  # rendo nabe, action remarks and renacts
@@ -498,9 +499,10 @@ class Boxer(Tymee):
         self.redo()  # redo nabe all boxes in pile top down
 
         while True:  # run forever
-            tock = self.hold[tockKey].value  # get tock in case it changed
+            tock = self.hold[tockKey].value  # get tock in case Act changed it
+            # tyme injected from yield should be self.tyme when recur by Doist or DoDoer
             tyme = yield(tock)  # resume on send after tyme tick
-            self.hold[tymeKey].value = tyme  # assign tyme
+            self.hold[tymeKey].value = tyme  # assign tyme for Hog same as self.tyme
             rendos = []  # make empty for new pass, reset on transit
             endos = []  # make empty for new pass, reset on transit
 
@@ -1431,7 +1433,8 @@ class BoxerDoer(Doer):
                               False completed unsuccessfully
 
         Note that "tyme" is not a parameter when recur is a generator method
-        since doist tyme is injected by the explicit yield below.
+        since doist tyme is injected into the explicit yield below by the
+        Doist or DoDoer send(tyme) in their recur method for generator Doers.
         The recur method itself returns a generator so parameters
         to this method are to setup the generator not to be used at recur time.
 
