@@ -162,6 +162,20 @@ def test_bag():
     t = b._astuple()
     assert t == (7, )
 
+    # Adding fields?
+    with pytest.raises(TypeError):
+        bag = Bag(value=5, test=6)
+
+    bag = Bag(value=5)
+    assert bag._names == ('value', )
+    flds = fields(bag)
+    assert len(flds) == 1
+    bag.test = 6  # added attribute on the fly
+    assert "test" not in bag._names
+    flds = fields(bag)
+    assert len(flds) == 1
+
+
     """Done Test"""
 
 

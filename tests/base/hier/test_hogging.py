@@ -54,6 +54,7 @@ def test_hog_basic():
     assert not hog.hold.subery
     assert hog.hits == {}
     assert hog.header.startswith('rid')
+    assert hog.rid.startswith(hog.name) # 'Hog0_KQzSlod5EfC1TvKsr0VvkQ'
 
     assert list(hog.hold.keys()) == ['_hold_subery']
 
@@ -194,11 +195,14 @@ def test_hog_log(mockHelpingNowIso8601):
 
     dts = hio.help.timing.nowIso8601()  # mocked version testing that mocking worked
     assert dts == '2021-06-27T21:26:21.233257+00:00'
-    rid = 'Hog0_3db602c486bd11f0bdf3f2acaf456f91' # for test
+
 
     boxerName = "BoxerTest"
     boxName = "BoxTop"
     iops = dict(_boxer=boxerName, _box=boxName)
+
+    uid = 'KQzSlod5EfC1TvKsr0VvkQ'  # for test
+    rid = f"{boxerName}_{uid}"
 
     hold = Hold()
 
@@ -259,12 +263,35 @@ def test_hog_log(mockHelpingNowIso8601):
     assert hog.rid == rid
     assert hog.stamp == dts
     assert hog.header.startswith('rid')
-    assert hog.header == ('rid\tHog0_3db602c486bd11f0bdf3f2acaf456f91\tbase\tBoxerTest\tname\tpig\t'
-                        'stamp\t2021-06-27T21:26:21.233257+00:00\trule\tevery\tcount\t0\n'
-                        'tyme.key\tactive.key\ttock.key\n'
-                        '_boxer_BoxerTest_tyme\t_boxer_BoxerTest_active\t_boxer_BoxerTest_tock\n'
-                        'tyme.value\tactive.value\ttock.value\n')
+    assert hog.header == ('rid\tbase\tname\tstamp\trule\tcount\n'
+                    'BoxerTest_KQzSlod5EfC1TvKsr0VvkQ\tBoxerTest\tpig\t2021-06-27T21:26:21.233257+00:00\tevery\t0\n'
+                    'tyme.key\tactive.key\ttock.key\n'
+                    '_boxer_BoxerTest_tyme\t_boxer_BoxerTest_active\t_boxer_BoxerTest_tock\n'
+                    'tyme.value\tactive.value\ttock.value\n')
 
+    hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
+    lines = hog.file.readlines()
+    assert lines == \
+    [
+        'rid\tbase\tname\tstamp\trule\tcount\n',
+        'BoxerTest_KQzSlod5EfC1TvKsr0VvkQ\tBoxerTest\tpig\t'
+        '2021-06-27T21:26:21.233257+00:00\tevery\t0\n',
+        'tyme.key\tactive.key\ttock.key\n',
+        '_boxer_BoxerTest_tyme\t_boxer_BoxerTest_active\t_boxer_BoxerTest_tock\n',
+        'tyme.value\tactive.value\ttock.value\n',
+        '0.0\tBoxTop\t0.03125\n'
+    ]
+
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','pig','2021-06-27T21:26:21.233257+00:00','every','0'),
+        ('tyme.key', 'active.key', 'tock.key'),
+        ('_boxer_BoxerTest_tyme', '_boxer_BoxerTest_active', '_boxer_BoxerTest_tock'),
+        ('tyme.value', 'active.value', 'tock.value'),
+        ('0.0', 'BoxTop', '0.03125')
+    ]
 
     assert list(hog.hold.keys()) == \
     [

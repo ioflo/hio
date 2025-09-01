@@ -13,6 +13,8 @@ import uuid
 from contextlib import contextmanager
 import inspect
 from collections import namedtuple
+from base64 import urlsafe_b64encode as encodeB64
+from base64 import urlsafe_b64decode as decodeB64
 
 from ..doing import Doer
 from ..filing import Filer
@@ -100,6 +102,8 @@ class Hog(ActBase, Filer):
         rule (str): condition for log to fire one of Rules
                     (once, every, span, update, change)
         span (float): tyme span for periodic logging
+        onced (bool): True means logged at least one (first) record
+                      False means not yet logged one (first) record
         header (str): header for log file(s)
         rid (str):  universally unique run ID for given run of hog
         flushSpan (float): tyme span between flushes (flush)
@@ -211,6 +215,8 @@ class Hog(ActBase, Filer):
         since filed it should reopen without truncating so does not overwrite
         existing log file of same name. use mode 'a+'.  Otherwise when reopening
         would need to seek to end of file as default 'r+' goes to beginning.
+        using mode "a+" don't need to seek to end
+        self.file.seek(0, os.SEEK_END)  # seek to end of file
         Need to test reopen logic
         Always init by writing header so
         even if change logs the header demarcation allows recovery of logged
@@ -244,6 +250,7 @@ class Hog(ActBase, Filer):
         self.last = None
         self.rule = rule
         self.span = span
+        self.onced = False
         self.rid = rid
         self.stamp = '' # need to init
         self.header = ''  # need to init
@@ -286,15 +293,18 @@ class Hog(ActBase, Filer):
            iops = dict(_boxer=self.name, _box=m.box.name, **iops)
         """
         if not self.started:
-            # using mode "a+" don't need to seek to end
-            # self.file.seek(0, os.SEEK_END)  # seek to end of file
+
             if self.rid is None:
-                self.rid = self.name + "_" + uuid.uuid1().hex  # hog id uuid for this run (not iteration)
+                # hog id uuid for this run (not iteration)
+                # create B64 version of uuid with stripped trailing pad bytes
+                uid = encodeB64(bytes.fromhex(uuid.uuid1().hex))[:-2].decode()
+                self.rid = self.name + "_" + uid
             self.stamp = timing.nowIso8601()  # current real datetime as ISO8601 string
 
-            metaLine = (f"rid\t{self.rid}\tbase\t{self.base}\tname\t{self.name}"
-                           f"\tstamp\t{self.stamp}\trule\t{self.rule}"
-                           f"\tcount\t{self.cycleCount}\n")
+            metaLine = (f"rid\tbase\tname\tstamp\trule\tcount\n")
+
+            metaValLine = (f"{self.rid}\t{self.base}\t{self.name}"
+                           f"\t{self.stamp}\t{self.rule}\t{self.cycleCount}\n")
 
             if self.tymeKey and self.tymeKey in self.hold:  # need tyme for logging
                 hits = dict(tyme=self.tymeKey)  # logging tyme
@@ -317,19 +327,39 @@ class Hog(ActBase, Filer):
             keyLine = '\t'.join(key for key in self.hits.values()) + "\n"
 
             # need to expand tags for hits with vector bags in hold
-            tagValLine = '\t'.join(f"{tag}.value" for tag in self.hits.keys()) + "\n"
+            tagValLine = ('\t'.join(f"{tag}.{fld}" for tag, key in self.hits.items()
+                                    for fld in self.hold[key]._names) + "\n")
 
+            self.header = metaLine + metaValLine + tagKeyLine + keyLine + tagValLine
+            self.file.write(self.header)
+            self.first = self.hold[self.hits["tyme"]].value if self.hits else None
+            self.started = True
 
-
-            self.header = metaLine + tagKeyLine + keyLine + tagValLine
-
+        if not self.onced:
+            self.file.write(self.record())
+            self.onced = True
+        else:
+            pass
 
         return iops
 
-    def logOne(self):
-        """Log one record of .hits values from .hold"""
-        for key in self.hits.values():  # hit values are hold keys
-            pass
+    def record(self):
+        """Generate on record line .hits values from .hold
+
+        Returns:
+           record (str): one newline delimited line of tab delimited values
+                         from .hits. Each hit time value is key into hold
+                         vector holds each get entry in record per field
+
+
+        """
+        # hit values are hold keys
+        if self.hits:
+            return ('\t'.join(f"{self.hold[key][fld]}"
+                                for key in self.hits.values()
+                                    for fld in self.hold[key]._names) + "\n")
+        else:
+            return ""
 
 
 
