@@ -313,10 +313,15 @@ class Hog(ActBase, Filer):
                 if self.tockKey and self.tockKey in self.hold:
                     self.hits["tock"] = self.tockKey
 
-            # need to expand tags for hits with vector bags in hold
-            tagLine = '\t'.join(f"{tag}.value" for tag in self.hits.keys()) + "\n"
+            tagKeyLine = '\t'.join(f"{tag}.key" for tag in self.hits.keys()) + "\n"
+            keyLine = '\t'.join(key for key in self.hits.values()) + "\n"
 
-            self.header = metaLine + tagLine
+            # need to expand tags for hits with vector bags in hold
+            tagValLine = '\t'.join(f"{tag}.value" for tag in self.hits.keys()) + "\n"
+
+
+
+            self.header = metaLine + tagKeyLine + keyLine + tagValLine
 
 
         return iops

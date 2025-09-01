@@ -256,8 +256,11 @@ def test_hog_log(mockHelpingNowIso8601):
     assert hog.stamp == dts
     assert hog.header.startswith('rid')
     assert hog.header == ('rid\tHog0_3db602c486bd11f0bdf3f2acaf456f91\tbase\tBoxerTest\tname\tpig\t'
-                          'stamp\t2021-06-27T21:26:21.233257+00:00\trule\tevery\tcount\t0\n'
-                          'tyme.value\tactive.value\ttock.value\n')
+                        'stamp\t2021-06-27T21:26:21.233257+00:00\trule\tevery\tcount\t0\n'
+                        'tyme.key\tactive.key\ttock.key\n'
+                        '_boxer_BoxerTest_tyme\t_boxer_BoxerTest_active\t_boxer_BoxerTest_tock\n'
+                        'tyme.value\tactive.value\ttock.value\n')
+
 
     hog.close(clear=True)
     assert not hog.opened
