@@ -696,7 +696,7 @@ def test_hog_log(mockHelpingNowIso8601):
     hold[awayKey].latN = 42.0
     hold[awayKey].lonE = 8.0
 
-    # vector locations as hits with rule update
+    # vector locations as hits with rule change
     hog = Hog(name=name, iops=iops, hold=hold, temp=True, rid=rid, rule=Rules.change,
               home=homeKey, away=awayKey)
     assert hog.rule == Rules.change
@@ -836,6 +836,160 @@ def test_hog_log(mockHelpingNowIso8601):
         ('0.0', '40.0', '-113.0', '42.0', '8.0'),
         ('0.0625', '45.4545', '-112.1212', '41.0505', '8.0222'),
         ('0.125', '46.0', '-112.1212', '41.0505', '8.0222')
+    ]
+
+    hog.close(clear=True)
+    assert not hog.opened
+    assert not hog.file
+    assert not os.path.exists(hog.path)
+
+    # Test rule span
+    name = "cow"
+    tymist.tyme = 0.0
+    tymth = tymist.tymen()
+    span = tymist.tock * 2  # every other run
+
+    for dom in hold.values():  # wind hold
+        if isinstance(dom, TymeDom):
+            dom._wind(tymth=tymth)
+
+    # reset given rewound tyme
+    hold[tymeKey].value = tymist.tyme
+    hold[activeKey].value = boxName
+    hold[tockKey].value = tymist.tock
+    hold[homeKey].latN = 40.0
+    hold[homeKey].lonE = -113.0
+    hold[awayKey].latN = 42.0
+    hold[awayKey].lonE = 8.0
+
+    # vector locations as hits with rule span
+    hog = Hog(name=name, iops=iops, hold=hold, temp=True, rid=rid,
+              rule=Rules.span, span=span, home=homeKey, away=awayKey)
+    assert hog.rule == Rules.span
+    assert not hog.started
+    assert not hog.onced
+    assert hog.hits == {'home': 'location_home', 'away': 'location_away'}
+
+    # run hog once
+    assert hog() == iops  # default returns iops
+    assert hog.hits == \
+    {
+        'tyme': '_boxer_BoxerTest_tyme',
+        'home': 'location_home',
+        'away': 'location_away'
+    }
+    assert hog.marks == {}
+    assert hog.started
+    assert hog.onced
+    assert hog.first == 0.0
+    assert hog.last == 0.0
+    assert hog.rid == rid
+    assert hog.stamp == dts
+
+    hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
+    lines = hog.file.readlines()
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','cow','2021-06-27T21:26:21.233257+00:00','span','0'),
+        ('tyme.key', 'home.key', 'away.key'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
+        ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
+        ('0.0', '40.0', '-113.0', '42.0', '8.0')
+    ]
+
+    # run again , update and change value but span not enough
+    tymist.tick()
+    hold[tymeKey].value = tymist.tyme
+    hold[homeKey].latN = 45.4545  # update change value
+    hold[homeKey].lonE = -112.1212  # update change value
+    hold[awayKey].latN = 41.0505  # update change value
+    hold[awayKey].lonE = 8.0222   # update change value
+
+    assert hog() == iops  # default returns iops
+    assert hog.last == hog.first  # since once does not log again
+    assert hog.last != tymist.tyme
+    hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
+    lines = hog.file.readlines()
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','cow','2021-06-27T21:26:21.233257+00:00','span','0'),
+        ('tyme.key', 'home.key', 'away.key'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
+        ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
+        ('0.0', '40.0', '-113.0', '42.0', '8.0')
+    ]
+
+    # run again do not update or change but should log due to span
+    tymist.tick()
+    hold[tymeKey].value = tymist.tyme
+
+    assert hog() == iops  # default returns iops
+    assert hog.last == tymist.tyme
+    assert hog.marks == {}
+
+    hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
+    lines = hog.file.readlines()
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','cow','2021-06-27T21:26:21.233257+00:00','span','0'),
+        ('tyme.key', 'home.key', 'away.key'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
+        ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
+        ('0.0', '40.0', '-113.0', '42.0', '8.0'),
+        ('0.0625', '45.4545', '-112.1212', '41.0505', '8.0222')
+    ]
+
+    # run again change but span not enough
+    tymist.tick()
+    hold[tymeKey].value = tymist.tyme
+    assert tymist.tyme == 0.09375
+    hold[homeKey].latN = 47.0  # update change value
+    hold[homeKey].lonE = -114.0  # update change value
+
+    assert hog() == iops  # default returns iops
+    assert hog.last != tymist.tyme
+    hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
+    lines = hog.file.readlines()
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','cow','2021-06-27T21:26:21.233257+00:00','span','0'),
+        ('tyme.key', 'home.key', 'away.key'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
+        ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
+        ('0.0', '40.0', '-113.0', '42.0', '8.0'),
+        ('0.0625', '45.4545', '-112.1212', '41.0505', '8.0222')
+    ]
+
+    # run again change different one span enough
+    tymist.tick()
+    hold[tymeKey].value = tymist.tyme
+    assert tymist.tyme == 0.125
+    hold[awayKey].latN = 39.0  # change value
+
+    assert hog() == iops  # default returns iops
+    assert hog.last == tymist.tyme
+    assert hog.marks =={}
+    hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
+    lines = hog.file.readlines()
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','cow','2021-06-27T21:26:21.233257+00:00','span','0'),
+        ('tyme.key', 'home.key', 'away.key'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
+        ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
+        ('0.0', '40.0', '-113.0', '42.0', '8.0'),
+        ('0.0625', '45.4545', '-112.1212', '41.0505', '8.0222'),
+        ('0.125', '47.0', '-114.0', '39.0', '8.0222')
     ]
 
     hog.close(clear=True)
