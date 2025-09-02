@@ -340,10 +340,11 @@ class Hog(ActBase, Filer):
             self.file.write(self.record())
             if self.hits:
                 for tag, key in self.hits.items():
-                    if self.rule == Rules.update:
-                        self.marks[key].value = self.hold[key]._tyme
-                    elif self.rule == Rules.change:
-                        self.marks[key].value = self.hold[key]._astuple()
+                    if tag != "tyme":  # do not mark tyme hold
+                        if self.rule == Rules.update:
+                            self.marks[key].value = self.hold[key]._tyme
+                        elif self.rule == Rules.change:
+                            self.marks[key].value = self.hold[key]._astuple()
 
             self.first = tyme
             self.last = tyme
