@@ -439,10 +439,10 @@ def test_hog_log(mockHelpingNowIso8601):
     tymth = tymist.tymen()
 
 
-    homeKey = hold.tokey(("home", ))
+    homeKey = hold.tokey(("location", "home", ))
     hold[homeKey] = LocationBag(latN=45.0, lonE=-90.0)
 
-    awayKey = hold.tokey(("away", ))
+    awayKey = hold.tokey(("location", "away", ))
     hold[awayKey] = LocationBag(latN=40.0, lonE=10.0)
 
     for dom in hold.values():  # wind hold
@@ -463,16 +463,17 @@ def test_hog_log(mockHelpingNowIso8601):
     assert hog.rule == Rules.every
     assert not hog.started
     assert not hog.onced
-    assert hog.hits == {'home': 'home', 'away': 'away'}
+    assert hog.hits =={'home': 'location_home', 'away': 'location_away'}
 
     # run hog once
     assert hog() == iops  # default returns iops
     assert hog.hits == \
     {
         'tyme': '_boxer_BoxerTest_tyme',
-        'home': 'home',
-        'away': 'away'
+        'home': 'location_home',
+        'away': 'location_away'
     }
+
     assert hog.started
     assert hog.onced
     assert hog.first == 0.0
@@ -486,14 +487,9 @@ def test_hog_log(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ',
-         'BoxerTest',
-         'cat',
-         '2021-06-27T21:26:21.233257+00:00',
-         'every',
-         '0'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','cat','2021-06-27T21:26:21.233257+00:00','every','0'),
         ('tyme.key', 'home.key', 'away.key'),
-        ('_boxer_BoxerTest_tyme', 'home', 'away'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
         ('0.0', '40.7607', '-111.8939', '39.3999', '8.2245')
     ]
@@ -515,7 +511,7 @@ def test_hog_log(mockHelpingNowIso8601):
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
         ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ', 'BoxerTest', 'cat', '2021-06-27T21:26:21.233257+00:00', 'every', '0'),
         ('tyme.key', 'home.key', 'away.key'),
-        ('_boxer_BoxerTest_tyme', 'home', 'away'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
         ('0.0', '40.7607', '-111.8939', '39.3999', '8.2245'),
         ('0.03125', '40.7607', '-111.8939', '41.502', '9.5123')
@@ -550,17 +546,17 @@ def test_hog_log(mockHelpingNowIso8601):
     assert hog.rule == Rules.update
     assert not hog.started
     assert not hog.onced
-    assert hog.hits == {'home': 'home', 'away': 'away'}
+    assert hog.hits == {'home': 'location_home', 'away': 'location_away'}
 
     # run hog once
     assert hog() == iops  # default returns iops
     assert hog.hits == \
     {
         'tyme': '_boxer_BoxerTest_tyme',
-        'home': 'home',
-        'away': 'away'
+        'home': 'location_home',
+        'away': 'location_away'
     }
-    assert hog.marks == {'home': 0.0, 'away': 0.0}
+    assert hog.marks == {'location_home': 0.0, 'location_away': 0.0}
     assert hog.started
     assert hog.onced
     assert hog.first == 0.0
@@ -576,7 +572,7 @@ def test_hog_log(mockHelpingNowIso8601):
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
         ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','fox','2021-06-27T21:26:21.233257+00:00','update','0'),
         ('tyme.key', 'home.key', 'away.key'),
-        ('_boxer_BoxerTest_tyme', 'home', 'away'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
         ('0.0', '40.7607', '-111.8939', '40.0', '7.0')
     ]
@@ -598,7 +594,7 @@ def test_hog_log(mockHelpingNowIso8601):
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
         ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','fox','2021-06-27T21:26:21.233257+00:00','update','0'),
         ('tyme.key', 'home.key', 'away.key'),
-        ('_boxer_BoxerTest_tyme', 'home', 'away'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
         ('0.0', '40.7607', '-111.8939', '40.0', '7.0'),
         ('0.03125', '40.7607', '-111.8939', '40.0', '7.0')
@@ -623,7 +619,7 @@ def test_hog_log(mockHelpingNowIso8601):
         ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ',
          'BoxerTest','fox','2021-06-27T21:26:21.233257+00:00','update','0'),
         ('tyme.key', 'home.key', 'away.key'),
-        ('_boxer_BoxerTest_tyme', 'home', 'away'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
         ('0.0', '40.7607', '-111.8939', '40.0', '7.0'),
         ('0.03125', '40.7607', '-111.8939', '40.0', '7.0'),
@@ -646,7 +642,7 @@ def test_hog_log(mockHelpingNowIso8601):
         ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ',
          'BoxerTest','fox','2021-06-27T21:26:21.233257+00:00','update','0'),
         ('tyme.key', 'home.key', 'away.key'),
-        ('_boxer_BoxerTest_tyme', 'home', 'away'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
         ('0.0', '40.7607', '-111.8939', '40.0', '7.0'),
         ('0.03125', '40.7607', '-111.8939', '40.0', '7.0'),
@@ -669,12 +665,177 @@ def test_hog_log(mockHelpingNowIso8601):
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
         ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','fox','2021-06-27T21:26:21.233257+00:00','update','0'),
         ('tyme.key', 'home.key', 'away.key'),
-        ('_boxer_BoxerTest_tyme', 'home', 'away'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
         ('0.0', '40.7607', '-111.8939', '40.0', '7.0'),
         ('0.03125', '40.7607', '-111.8939', '40.0', '7.0'),
         ('0.0625', '45.4545', '-112.1212', '41.0505', '8.0222'),
         ('0.125', '45.4545', '-112.1212', '41.0505', '8.0222')
+    ]
+
+    hog.close(clear=True)
+    assert not hog.opened
+    assert not hog.file
+    assert not os.path.exists(hog.path)
+
+    # Test rule change
+    name = "owl"
+    tymist.tyme = 0.0
+    tymth = tymist.tymen()
+
+    for dom in hold.values():  # wind hold
+        if isinstance(dom, TymeDom):
+            dom._wind(tymth=tymth)
+
+    # reset given rewound tyme
+    hold[tymeKey].value = tymist.tyme
+    hold[activeKey].value = boxName
+    hold[tockKey].value = tymist.tock
+    hold[homeKey].latN = 40.0
+    hold[homeKey].lonE = -113.0
+    hold[awayKey].latN = 42.0
+    hold[awayKey].lonE = 8.0
+
+    # vector locations as hits with rule update
+    hog = Hog(name=name, iops=iops, hold=hold, temp=True, rid=rid, rule=Rules.change,
+              home=homeKey, away=awayKey)
+    assert hog.rule == Rules.change
+    assert not hog.started
+    assert not hog.onced
+    assert hog.hits == {'home': 'location_home', 'away': 'location_away'}
+
+    # run hog once
+    assert hog() == iops  # default returns iops
+    assert hog.hits == \
+    {
+        'tyme': '_boxer_BoxerTest_tyme',
+        'home': 'location_home',
+        'away': 'location_away'
+    }
+    assert hog.marks == \
+    {
+        'location_home': (40.0, -113.0),
+        'location_away': (42.0, 8.0)
+    }
+    assert hog.started
+    assert hog.onced
+    assert hog.first == 0.0
+    assert hog.last == 0.0
+    assert hog.rid == rid
+    assert hog.stamp == dts
+
+    hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
+    lines = hog.file.readlines()
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','owl','2021-06-27T21:26:21.233257+00:00','change','0'),
+        ('tyme.key', 'home.key', 'away.key'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
+        ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
+        ('0.0', '40.0', '-113.0', '42.0', '8.0')
+    ]
+
+    # run again , update but not change value
+    tymist.tick()
+    hold[tymeKey].value = tymist.tyme
+    hold[awayKey].latN = 42.0  # update but not change value
+    hold[awayKey].lonE = 8.0  # update but not change value
+
+    assert hog() == iops  # default returns iops
+    assert hog.last == hog.first  # since once does not log again
+    assert hog.last != tymist.tyme
+    hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
+    lines = hog.file.readlines()
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','owl','2021-06-27T21:26:21.233257+00:00','change','0'),
+        ('tyme.key', 'home.key', 'away.key'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
+        ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
+        ('0.0', '40.0', '-113.0', '42.0', '8.0')
+    ]
+
+    # run again change value
+    tymist.tick()
+    hold[tymeKey].value = tymist.tyme
+    hold[homeKey].latN = 45.4545  # update change value
+    hold[homeKey].lonE = -112.1212  # update change value
+    hold[awayKey].latN = 41.0505  # update change value
+    hold[awayKey].lonE = 8.0222   # update change value
+
+    assert hog() == iops  # default returns iops
+    assert hog.last == tymist.tyme
+    assert hog.marks == \
+    {
+        'location_home': (45.4545, -112.1212),
+        'location_away': (41.0505, 8.0222)
+    }
+
+    hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
+    lines = hog.file.readlines()
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+       ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+       ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','owl','2021-06-27T21:26:21.233257+00:00','change','0'),
+       ('tyme.key', 'home.key', 'away.key'),
+       ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
+       ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
+       ('0.0', '40.0', '-113.0', '42.0', '8.0'),
+       ('0.0625', '45.4545', '-112.1212', '41.0505', '8.0222')
+    ]
+
+    # run again no update
+    tymist.tick()
+    hold[tymeKey].value = tymist.tyme
+    assert tymist.tyme == 0.09375
+
+    assert hog() == iops  # default returns iops
+    assert hog.last != tymist.tyme
+    hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
+    lines = hog.file.readlines()
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+       ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+       ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','owl','2021-06-27T21:26:21.233257+00:00','change','0'),
+       ('tyme.key', 'home.key', 'away.key'),
+       ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
+       ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
+       ('0.0', '40.0', '-113.0', '42.0', '8.0'),
+       ('0.0625', '45.4545', '-112.1212', '41.0505', '8.0222')
+    ]
+
+    # run again change only one
+    tymist.tick()
+    hold[tymeKey].value = tymist.tyme
+    assert tymist.tyme == 0.125
+    hold[homeKey].latN = 46.0  # change value
+
+    assert hog() == iops  # default returns iops
+    assert hog.last == tymist.tyme
+    assert hog.marks == \
+    {
+        'location_home': (46.0, -112.1212),
+        'location_away': (41.0505, 8.0222)
+    }
+    hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
+    lines = hog.file.readlines()
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','owl','2021-06-27T21:26:21.233257+00:00','change','0'),
+        ('tyme.key', 'home.key', 'away.key'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
+        ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
+        ('0.0', '40.0', '-113.0', '42.0', '8.0'),
+        ('0.0625', '45.4545', '-112.1212', '41.0505', '8.0222'),
+        ('0.125', '46.0', '-112.1212', '41.0505', '8.0222')
     ]
 
     hog.close(clear=True)
