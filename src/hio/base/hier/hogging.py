@@ -248,7 +248,7 @@ class Hog(ActBase, Filer):
         self.started = False
         self.first = None
         self.last = None
-        self.rule = rule
+        self.rule = rule  # maybe should make property so readonly after init
         self.span = span
         self.onced = False
         self.rid = rid
@@ -360,21 +360,29 @@ class Hog(ActBase, Filer):
 
                 case Rules.update:
                     if tyme is not None:
+                        updated = False
                         for key, mark in self.marks:  # marked tyme
                             holdTyme = self.hold[key]._tyme
                             if holdTyme > mark:  # updated since marked
-                                self.file.write(self.record())
-                                self.last = tyme
-                                self.marks[key].value = holdTyme
+                                updated = True
+                                break
+                        if updated:
+                            self.file.write(self.record())
+                            self.last = tyme
+                            self.marks[key].value = holdTyme
 
                 case Rules.change:
                     if tyme is not None:
+                        changed = False
                         for key, mark in self.marks:  # marked value tuple
                             holdValue = self.hold[key]._astuple()
                             if holdValue != mark:  # changed since marked
-                                self.file.write(self.record())
-                                self.last = tyme
-                                self.marks[key].value = holdValue
+                                changed = True
+                                break
+                        if changed:
+                            self.file.write(self.record())
+                            self.last = tyme
+                            self.marks[key].value = holdValue
 
                 case _:
                     pass
