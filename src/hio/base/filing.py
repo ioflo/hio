@@ -479,6 +479,15 @@ class Filer(hioing.Mixin):
         return os.path.exists(path)
 
 
+    def flush(self):
+        """
+        flush self.file if not closed
+        """
+        if self.file and not self.file.closed:
+            self.file.flush()
+            os.fsync(self.file.fileno())
+
+
     def close(self, clear=False):
         """Close .file if any and if clear rm directory or file at .path
 

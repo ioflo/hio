@@ -101,12 +101,13 @@ class Hog(ActBase, Filer):
                       realtime equiv of last = began + (last - first)
         rule (str): condition for log to fire one of Rules
                     (once, every, span, update, change)
-        span (float): tyme span for periodic logging
+        span (float): tyme span seconds for periodic logging 0.0 means everytyme
         onced (bool): True means logged at least one (first) record
                       False means not yet logged one (first) record
         header (str): header for log file(s)
         rid (str):  universally unique run ID for given run of hog
-        flushSpan (float): tyme span between flushes (flush)
+        flushSpan (float): tyme span seconds between flushes (flush)
+                           0.0 means everytyme
         flushLast (float|None): tyme last flushed, None means not yet running
         cycleCount (int): number of cycled logs, 0 means do not cycle (count)
         cyclePaths (list[str]): paths for cycled logs
@@ -146,7 +147,7 @@ class Hog(ActBase, Filer):
 
     def __init__(self, iops=None, nabe=Nabes.afdo, base="", filed=True,
                        extensioned=True, mode='a+', fext="hog", reuse=True,
-                       rid=None, rule=Rules.every, span=0.0, flush=0.0,
+                       rid=None, rule=Rules.every, span=0.0, flush=60.0,
                        count=0, cycle=0.0, low=0, high=0, hits=None, **kwa):
         """Initialize instance.
 
@@ -193,10 +194,10 @@ class Hog(ActBase, Filer):
                              None means create one using uuid lib
             rule (str|None): condition for log to fire, one of Rules default every
                             (once, every, span, update, change)
-            span (float): periodic time span when rule is spanned. 0.0 means
-                          every tyme
-            flush (float): flush tyme span, tyme between flushes, 0.0 means
-                          every tyme
+            span (float): periodic tyme span seconds when rule is spanned
+                          0.0 means every tyme
+            flush (float): flush tyme span seconds, tyme between flushes
+                          0.0 means every tyme
             count (int): number of cycled logs, 0 means do not cycle
             cycle (float): cycle tyme span, tyme between log cycles
             low (int): minimum size in bytes required for cycling log
@@ -337,7 +338,10 @@ class Hog(ActBase, Filer):
         tyme = self.hold[self.hits["tyme"]].value if self.hits else None
 
         if not self.onced:
-            self.file.write(self.record())
+            #self.file.write(self.record())
+            #self.flush()
+            # always flush on first write to ensure header synced on disk
+            self.log(self.record(), tyme, force=True)
             if self.hits:
                 for tag, key in self.hits.items():
                     if tag != "tyme":  # do not mark tyme hold
@@ -348,16 +352,19 @@ class Hog(ActBase, Filer):
 
             self.first = tyme
             self.last = tyme
+            self.flushLast = tyme
             self.onced = True
         else:
             match self.rule:
                 case Rules.every:
-                    self.file.write(self.record())
-                    self.last = tyme
+                    #self.file.write(self.record())
+                    #self.last = tyme
+                    self.log(self.record(), tyme)
                 case Rules.span:
                     if tyme is not None and tyme - self.last >= self.span:
-                        self.file.write(self.record())
-                        self.last = tyme
+                        #self.file.write(self.record())
+                        #self.last = tyme
+                        self.log(self.record(), tyme)
 
                 case Rules.update:
                     if tyme is not None:
@@ -368,8 +375,9 @@ class Hog(ActBase, Filer):
                                 self.marks[key] = holdTyme
                                 updated = True
                         if updated:
-                            self.file.write(self.record())
-                            self.last = tyme
+                            #self.file.write(self.record())
+                            #self.last = tyme
+                            self.log(self.record(), tyme)
 
                 case Rules.change:
                     if tyme is not None:
@@ -380,14 +388,32 @@ class Hog(ActBase, Filer):
                                 self.marks[key] = holdValue
                                 changed = True
                         if changed:
-                            self.file.write(self.record())
-                            self.last = tyme
+                            #self.file.write(self.record())
+                            #self.last = tyme
+                            self.log(self.record(), tyme)
 
 
                 case _:
                     pass
 
         return iops
+
+
+    def log(self, record, tyme, force=False):
+        """Write one record to file and flush when indicated
+
+        Parameters:
+            record (str):  one line of tab delimited newline ended values
+            tyme (float):  tyme of log record
+            force (bool): True means force flush even when not flushSpan elapsed
+                          False means do not force flush only if flushSpan elapsed
+        """
+        self.file.write(record)
+        self.last = tyme
+        if force or (tyme - self.flushLast) >= self.flushSpan:
+            self.flush()
+            self.flushLast = tyme
+
 
     def record(self):
         """Generate on record line .hits values from .hold
