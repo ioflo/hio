@@ -341,10 +341,10 @@ class Hog(ActBase, Filer):
             if self.hits:
                 for tag, key in self.hits.items():
                     if tag != "tyme":  # do not mark tyme hold
-                        if self.rule == Rules.update:
-                            self.marks[key].value = self.hold[key]._tyme
-                        elif self.rule == Rules.change:
-                            self.marks[key].value = self.hold[key]._astuple()
+                        if self.rule == Rules.update:  # create mark
+                            self.marks[key] = self.hold[key]._tyme
+                        elif self.rule == Rules.change:  # create mark
+                            self.marks[key] = self.hold[key]._astuple()
 
             self.first = tyme
             self.last = tyme
@@ -362,28 +362,27 @@ class Hog(ActBase, Filer):
                 case Rules.update:
                     if tyme is not None:
                         updated = False
-                        for key, mark in self.marks:  # marked tyme
+                        for key, mark in self.marks.items():  # marked tyme
                             holdTyme = self.hold[key]._tyme
                             if holdTyme > mark:  # updated since marked
+                                self.marks[key] = holdTyme
                                 updated = True
-                                break
                         if updated:
                             self.file.write(self.record())
                             self.last = tyme
-                            self.marks[key].value = holdTyme
 
                 case Rules.change:
                     if tyme is not None:
                         changed = False
-                        for key, mark in self.marks:  # marked value tuple
+                        for key, mark in self.marks.items():  # marked value tuple
                             holdValue = self.hold[key]._astuple()
                             if holdValue != mark:  # changed since marked
+                                self.marks[key] = holdValue
                                 changed = True
-                                break
                         if changed:
                             self.file.write(self.record())
                             self.last = tyme
-                            self.marks[key].value = holdValue
+
 
                 case _:
                     pass
