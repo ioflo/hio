@@ -8,7 +8,8 @@ from .acting import (actify, register, ActBase,
                      Act, Goact, EndAct, Beact, Mark, LapseMark, RelapseMark,
                      Count, Discount,
                      BagMark, UpdateMark, ReupdateMark,
-                     ChangeMark, RechangeMark)
+                     ChangeMark, RechangeMark,
+                     CloseAct)
 from .needing import Need
 from .bagging import Bag, IceBag
 from .canning import CanDom, Can

@@ -138,6 +138,25 @@ class Hog(ActBase, Filer):
         _nabe (str): action nabe (context) for .act for .nabe property
 
 
+    As ActBase subclass that is managed inside boxwork, the Hog is created and
+    inited by Boxer.make which is run in the enter context of the BoxerDoer.
+    So opening file during init is compatible as its in the enter context of the
+    its Doer even though its not in the endo context of its box.
+    It still needs to be closed. Unlike the hold subery the Boxer doesn't know
+    about any Hogs runing as acts inside its boxes so can't close in its BoxerDoer
+    exit context. So much be closed inside with a close do act
+
+    Since filed it should reopen without truncating so does not overwrite
+    existing log file of same name so uses mode = 'a+'.
+    Need to test reopen logic
+    Always rewrites header on first log after restart which may have changed
+    log behavior so header demarcation enables recognition of log parameters.
+    Log header includes rid (unique run id) and datatime stamp so can always
+    uniquely match a given run data to header even when reusing same log file.
+    This is most important when rotating logs.
+    Because each individual log record after header always starts with tyme as
+    floating point decimal, processor can find header demarcations interior to
+    log file not merely at start.
     """
     ReservedTags = dict(name=True, iops=True, nabe=True, hold=True, base=True,
                  temp=True, headDirPath=True, perm=True, reopen=True,
@@ -212,25 +231,6 @@ class Hog(ActBase, Filer):
         When made (created and inited) by boxer.do then have "_boxer" and
         "_box" keys in self.iops = dict(_boxer=self.name, _box=m.box.name, **iops)
 
-
-        since filed it should reopen without truncating so does not overwrite
-        existing log file of same name. use mode 'a+'.  Otherwise when reopening
-        would need to seek to end of file as default 'r+' goes to beginning.
-        using mode "a+" don't need to seek to end
-        self.file.seek(0, os.SEEK_END)  # seek to end of file
-        Need to test reopen logic
-        Always init by writing header so
-        even if change logs the header demarcation allows recovery of logged
-        data that includes different sets of logs.
-        header should include UUID and date time stamp so even when process
-        quits and restarts have known uniqueness of data. This includes matching
-        up cycle sets of logs where the cycle count changes so there may be
-        stale cycle logs from old bigger set but same name.
-        Because each log record of data always starts with tyme as float,
-        which starts with numeric characters any consumer of log file can find restart demarcations of restart
-        header interior (not at start) because header starts with non numeric
-        characters  This way rotating logs
-
         """
         if not base:
             if iops and "_boxer" in iops:  # '_boxer' in iops when made by boxer
@@ -241,6 +241,7 @@ class Hog(ActBase, Filer):
                                   base=base,
                                   filed=filed,
                                   extensioned=extensioned,
+                                  mode=mode,
                                   fext=fext,
                                   reuse=reuse,
                                   **kwa)
@@ -257,6 +258,7 @@ class Hog(ActBase, Filer):
         self.header = ''  # need to init
         self.flushSpan = flush
         self.flushLast = None
+
         self.cycleCount = count
         self.cyclePaths = []  # need to init
         self.cycleSpan = cycle

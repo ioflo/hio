@@ -495,6 +495,7 @@ class Filer(hioing.Mixin):
            clear (bool): True means remove dir or file at .path
         """
         if self.file:
+            self.flush() # since file.close does not guarantee file sync
             self.file.close()
         self.opened = False
 

@@ -6,16 +6,19 @@ from __future__ import annotations  # so type hints of classes get resolved late
 
 import pytest
 
+import os
 from collections.abc import Callable
 
 from hio import Mixin, HierError
 from hio.base import Tymist
-from hio.base.hier import Nabes, Need, Box, Boxer, Bag, Hold
+from hio.base.hier import Nabes, Need, Box, Boxer, Bag, Hold, Hog
 from hio.base.hier import (ActBase, actify, Act, Goact, EndAct, Beact,
                           Mark, LapseMark, RelapseMark,
                           BagMark, UpdateMark, ReupdateMark,
                           ChangeMark, RechangeMark,
-                          Count, Discount)
+                          Count, Discount,
+                          CloseAct)
+from hio.help import TymeDom
 
 
 def test_actbase():
@@ -1057,7 +1060,71 @@ def test_rechange_mark_basic():
 
     """Done Test"""
 
+def test_closeact_basic():
+    """Test CloseAct class"""
 
+    CloseAct._clearall()  # clear instances for debugging
+
+    assert "CloseAct" in CloseAct.Registry
+    assert CloseAct.Registry["CloseAct"] == CloseAct
+    assert CloseAct.Names == ("close", "Close")
+    for name in CloseAct.Names:
+        assert name in CloseAct.Registry
+        assert CloseAct.Registry[name] == CloseAct
+
+    with pytest.raises(HierError):
+        cact = CloseAct()  # requires iops with me
+
+    tymist = Tymist()
+
+    boxerName = "BoxerTest"
+    boxName = "BoxTop"
+    iops = dict(_boxer=boxerName, _box=boxName)
+
+    hold = Hold()
+
+    tymeKey = hold.tokey(("", "boxer", boxerName, "tyme"))
+    hold[tymeKey] = Bag()
+    hold[tymeKey].value = tymist.tyme
+
+    activeKey = hold.tokey(("", "boxer", boxerName, "active"))
+    hold[activeKey] = Bag()
+    hold[activeKey].value = boxName
+
+    tockKey = hold.tokey(("", "boxer", boxerName, "tock"))
+    hold[tockKey] = Bag()
+    hold[tockKey].value = tymist.tock
+
+    tymth = tymist.tymen()
+    for dom in hold.values():  # wind hold
+        if isinstance(dom, TymeDom):
+            dom._wind(tymth=tymth)
+
+    name = "elk"
+
+
+    hog = Hog(name=name, iops=iops, hold=hold, temp=True)
+    assert hog.opened
+    assert hog.file
+    assert not hog.file.closed
+
+    ciops = dict(it=hog, clear=True, **iops)
+
+    cact = CloseAct(iops=ciops, hold=hold)
+    assert cact.name == 'CloseAct1'
+    assert cact.iops == ciops
+    assert cact.nabe == Nabes.exdo
+    assert cact.hold == hold
+    assert cact.Index == 2
+    assert cact.Instances[cact.name] == cact
+
+    cact()
+    assert not hog.opened
+    assert not hog.file
+    assert not os.path.exists(hog.path)
+
+
+    """Done Test"""
 
 
 if __name__ == "__main__":
@@ -1078,4 +1145,5 @@ if __name__ == "__main__":
     test_reupdate_mark_basic()
     test_change_mark_basic()
     test_rechange_mark_basic()
+    test_closeact_basic()
 

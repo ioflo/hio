@@ -828,8 +828,8 @@ class Beact(ActBase):
 
 @register()
 class Mark(ActBase):
-    """Mark (Mine Mark) is base classubclass of ActBase whose .act marks a
-    box for a special need condition.
+    """Mark is base class that is subclass of ActBase whose .act marks a box
+    for a special need condition.
 
     Inherited Class Attributes:
         Registry (dict): subclass registry whose items are (name, cls) where:
@@ -897,17 +897,14 @@ class Mark(ActBase):
         """
         super(Mark, self).__init__(nabe=nabe, **kwa)
 
-        try:
-            boxer = self.iops['_boxer']  # get boxer name to ensure existence
-        except KeyError as ex:
+        if '_boxer' not in self.iops:  # ensure existence for subclasses
             raise HierError(f"Missing iops '_boxer' for '{self.name}' instance "
-                            f"of Act self.__class__.__name__") from ex
+                            f"of Act self.__class__.__name__")
 
-        try:
-            box = self.iops['_box']  # get box name to ensure existence
-        except KeyError as ex:
+        if '_box' not in self.iops:  # ensure existence for subclasses
             raise HierError(f"Missing iops '_box' for '{self.name}' instance "
-                            f"of Act self.__class__.__name__") from ex
+                            f"of Act self.__class__.__name__")
+
 
     def act(self, **iops):
         """Act called by ActBase.
@@ -1467,3 +1464,106 @@ class RechangeMark(BagMark):
         self.hold[keys].value = bag._astuple()  # bag field value tuple as mark
         return self.hold[keys].value
 
+
+
+@register(names=('close', 'Close'))
+class CloseAct(ActBase):
+    """CloseAct is subclass of ActBase whose .act calls .close method of target
+    instance provided by iops item "it", if iops item "clear" provided then
+    passes that value as clear parameter to it.close
+
+    Inherited Class Attributes:
+        Registry (dict): subclass registry whose items are (name, cls) where:
+                name is unique name for subclass
+                cls is reference to class object
+        Instances (dict): instance registry whose items are (name, instance) where:
+                name is unique instance name and instance is instance reference
+        Index (int): default naming index for subclass instances. Each subclass
+                overrides with a subclass specific Index value to track
+                subclass specific instance default names.
+        Names (tuple[str]): tuple of aliases (names) under which this subclas
+                            appears in .Registry. Created by @register
+
+    Overridden Class Attributes
+        Index (int): default naming index for subclass instances. Each subclass
+                overrides with a subclass specific Index value to track
+                subclass specific instance default names.
+
+
+    Inherited Properties:
+        name (str): unique name string of instance
+        iops (dict): input-output-parameters for .act
+        nabe (str): action nabe (context) for .act
+
+    Inherited Attributes:
+        hold (Hold): data shared by boxwork
+
+    Attributes:
+        it (Any): instance with Callable attribute .close
+        clear (bool|None): clear parameter for .close method
+
+    Used iops:
+        it (Any):  instance with .close method
+        clear (bool|None):  when not None passes value to .close method
+
+    Hidden
+        _name (str|None): unique name of instance
+        _iops (dict): input-output-parameters for .act
+        _nabe (str): action nabe (context) for .act
+
+    """
+    Index = 0  # naming index for default names of this subclasses instances
+
+    def __init__(self, nabe=Nabes.exdo, **kwa):
+        """Initialization method for instance.
+
+        Inherited Parameters:
+            name (str|None): unique name of this instance. When None then
+                generate name from .Index
+            iops (dict|None): input-output-parameters for .act. When None then
+                set to empty dict.
+            nabe (str): action nabe (context) for .act
+            mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
+            dock (None|Dock): durable bags in dock (on disc) shared by boxwork
+
+        Parameters:
+
+        Used iops:
+            it (Any):  instance with .close method
+            clear (bool|None):  when not None passes value to .close method
+
+
+        """
+        super(CloseAct, self).__init__(nabe=nabe, **kwa)
+
+        try:
+            it = self.iops['it']  # get instance to close
+        except KeyError as ex:
+            raise HierError(f"Missing iops 'it' for '{self.name}' instance "
+                            f"of Act self.__class__.__name__") from ex
+        if not (hasattr(it, 'close') and isinstance(it.close, Callable)):
+            raise HierError(f"No close method of iops {it=} for '{self.name}'"
+                            f" instance of Act self.__class__.__name__")
+
+        clear = self.iops.get("clear", None) # get clear parameter if any
+        if clear not in (None, True, False):
+            raise HierError(f"Invalid value of iops {clear=} for '{self.name}'"
+                            f" instance of Act self.__class__.__name__")
+
+        self.it = it
+        self.clear = clear
+
+
+    def act(self, **iops):
+        """Act called by ActBase.
+
+        Parameters:
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
+
+        """
+        parms = {}
+        if self.clear is not None:
+            parms["clear"] = self.clear
+
+        self.it.close(**parms)

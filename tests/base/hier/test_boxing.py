@@ -1322,6 +1322,96 @@ def test_boxer_doer():
     ]
     """Done Test"""
 
+def test_boxer_doer_hold_log():
+    """Test BoxerDoer with hold log Hog"""
+
+    def fun(H, bx, go, do, on, at, be, *pa):
+        H.test = Can(value=True)
+        H.buf = Durq()
+        H.buf.push(Bag(value=True))
+        H.puf = Dusq()
+        H.puf.push(Bag(value=False))
+        bx(name='top')
+        hog = do("log")  # logs boxer state default afdo
+        do("close", it=hog, clear=True)  # closes and clears log default exdo
+        bx('mid', 'top')
+        at('redo')
+        do("count")
+        at("exdo")
+        do("discount")
+        go('done', on("count >= 5"))
+        bx('bot0', 'mid', first=True)
+        go("next", on("lapse >= 2.0"))
+        bx('bot1')  # over defaults to same as prev box
+        go("next", on("lapse >= 2.0"))
+        bx('bot2')  # over defaults to same as prev box
+        go("bot0")
+        bx(name='done', over=None)
+        do('end')
+
+    tock = 1.0
+    doist = Doist(tock=tock, temp=True)
+    assert doist.tyme == 0.0  # on next cycle
+    assert doist.tock == tock == 1.0
+    assert doist.real == False
+    assert doist.limit == None
+    assert doist.doers == []
+
+    hold = Hold()
+    boxer = Boxer(hold=hold, fun=fun, durable=True)
+    assert boxer.fun == fun
+    assert boxer.boxes == {}
+
+    doer = BoxerDoer(boxer=boxer, tock=tock)
+    assert doer.boxer == boxer
+    assert doer.tock == tock
+
+    doers = [doer]
+
+    ticks = 10
+    limit = tock * ticks
+    assert limit == 10.0
+    doist.do(doers=doers, limit=limit)  # doist.do sets all doer.tymth to its tymth
+    assert doist.tyme == 8.0  # redoer exits before limit
+
+    # sdb does not exist anymore since temp clears at close of doer
+    assert boxer.hold.test.value == True
+    assert not os.path.exists(boxer.hold.subery.path)
+    assert not boxer.hold.subery.opened
+
+    assert len(boxer.hold.buf) == 1
+    assert boxer.hold.buf.pull() == Bag(value=True)
+
+    assert len(boxer.hold.puf) == 1
+    assert boxer.hold.puf.pull() == Bag(value=False)
+
+    assert hold._boxer_boxer_active.value == None
+    assert hold._boxer_boxer_tock.value == 1.0
+    assert hold._boxer_boxer_end.value == True
+    assert hold._boxer_boxer_box_mid_count.value == None
+    assert hold._boxer_boxer_box_bot0_lapse.value == 5.0
+    assert hold._boxer_boxer_box_bot0_lapse._tyme == 5.0
+    assert hold._boxer_boxer_box_bot0_lapse._now == 8.0
+    assert hold._boxer_boxer_box_bot1_lapse.value == 2.0
+    assert hold._boxer_boxer_box_bot1_lapse._tyme == 2.0
+    assert hold._boxer_boxer_box_bot1_lapse._now == 8.0
+
+    assert list(boxer.hold.keys()) == \
+    [
+        '_hold_subery',
+        'test',
+        'buf',
+        'puf',
+        '_boxer_boxer_box_mid_count',
+        '_boxer_boxer_box_bot0_lapse',
+        '_boxer_boxer_box_bot1_lapse',
+        '_boxer_boxer_end',
+        '_boxer_boxer_tyme',
+        '_boxer_boxer_active',
+        '_boxer_boxer_tock',
+    ]
+    """Done Test"""
+
 
 
 def test_boxery_basic():
@@ -1655,6 +1745,7 @@ if __name__ == "__main__":
     test_boxer_run_lapse()
     test_boxer_run_relapse()
     test_boxer_doer()
+    test_boxer_doer_hold_log()
     test_boxery_basic()
     test_concept_bx_nonlocal()
     test_concept_bx_global()

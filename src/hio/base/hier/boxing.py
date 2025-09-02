@@ -916,7 +916,7 @@ class Boxer(Tymee):
                  *, mods: WorkDom|None=None, **iops)->Need:
         """Make a Need with support for special Need conditions and return it.
         Use inside go verb as need argument for special need condition
-        Use inside do verb as deed argument for preact or anact
+        Use inside do verb as deed argument for preact
 
         Returns:
             need (Need):  newly created special need
