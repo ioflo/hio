@@ -15,6 +15,7 @@ from typing import Any, Type, ClassVar
 from collections.abc import Callable
 from dataclasses import dataclass, astuple, asdict, fields, field, InitVar
 
+from ..hioing import HierError
 from .helping import NonStringIterable
 
 # DOM Utilities dataclass utility classes

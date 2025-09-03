@@ -1,7 +1,7 @@
 """
 hio daemon
 
-Background Server Daemon for keri
+Background Server Daemon for hio
 
 
 """

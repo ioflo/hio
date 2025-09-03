@@ -83,8 +83,15 @@ class Box(Tymee):
     Box instance holds references (links) to its over box and its under boxes.
     Box instance holds the acts to be executed in their nabe.
 
-    Inherited Attributes, Properties
-        see Tymee
+    Inherited Properties
+        .tyme (float | None):  relative cycle time of associated Tymist which is
+            provided by calling .tymth function wrapper closure which is obtained
+            from Tymist.tymen().
+            None means not assigned yet.
+        .tymth (Callable | None): function wrapper closure returned by
+            Tymist.tymen() method. When .tymth is called it returns associated
+            Tymist.tyme. Provides injected dependency on Tymist cycle tyme base.
+            None means not assigned yet.
 
     Attributes:
         hold (Hold): data shared by boxwork
@@ -130,6 +137,11 @@ class Box(Tymee):
     """
     def __init__(self, *, name='box', hold=None, over=None, **kwa):
         """Initialize instance.
+
+        Inherited Parameters:
+            tymth (closure):  injected function wrapper closure returned by
+                              .tymen() of Tymist instance.
+                              Calling tymth() returns associated Tymist .tyme.
 
         Parameters:
             name (str): unique identifier of box
@@ -349,6 +361,11 @@ class Boxer(Tymee):
     def __init__(self, *, name='boxer', hold=None, fun=None, durable=False, **kwa):
         """Initialize instance.
 
+        Inherited Parameters:
+            tymth (closure):  injected function wrapper closure returned by
+                              .tymen() of Tymist instance.
+                              Calling tymth() returns associated Tymist .tyme.
+
         Parameters:
             name (str): unique identifier of box
             hold (None|Hold): data shared by boxwork
@@ -391,14 +408,13 @@ class Boxer(Tymee):
         self._name = name
 
 
-    def wind(self, tymth=None):
+    def wind(self, tymth):
         """Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
         Override in subclasses to update any dependencies on a change in
         tymist.tymth base
 
         Parameters:
-            tymth (Callable|None):  closure of injected tyme from tymist.tymen()
-                                    None if not yet injected
+            tymth (Callable):  closure of injected tyme from tymist.tymen()
         """
         super().wind(tymth=tymth)
         for dom in self.hold.values():
@@ -455,18 +471,26 @@ class Boxer(Tymee):
             self.box = None  # no active box anymore
             return False  # signal failure due to end in enter before first pass
 
-        akeys = ("", "boxer", self.name, "active")
-        if akeys not in self.hold:
-            self.hold[akeys] = Bag()
-        self.hold[akeys].value = self.box.name  # assign active box name
+        # setup boxer state in hold  tyme, active box, and tock
+        tymeKey = self.hold.tokey(("", "boxer", self.name, "tyme"))
+        if tymeKey not in self.hold:  # setup tyme bag
+            self.hold[tymeKey] = Bag()
+        self.hold[tymeKey].value = self.tyme
 
-        tkey = self.hold.tokey(("", "boxer", self.name, "tock"))
-        if tkey not in self.hold:
-            self.hold[tkey] = Bag()
-        self.hold[tkey].value = tock  # assign tock
+        activeKey = self.hold.tokey(("", "boxer", self.name, "active"))
+        if activeKey not in self.hold:  # setup active box bag
+            self.hold[activeKey] = Bag()
+        self.hold[activeKey].value = self.box.name  # assign active box name
+
+        tockKey = self.hold.tokey(("", "boxer", self.name, "tock"))
+        if tockKey not in self.hold:  # setup tock bag
+            self.hold[tockKey] = Bag()
+        self.hold[tockKey].value = tock  # assign tock
 
         # finished of enter next() delegation 'yield from' delegation
+        # tyme injected from yield should be self.tyme when recur by Doist or DoDoer
         tyme = yield(tock)  # pause end of next, resume start of send
+        self.hold[tymeKey].value = tyme  # assign tyme for Hog same as self.tyme
 
         # begin first pass after send()
         self.rendo(rendos)  # rendo nabe, action remarks and renacts
@@ -474,15 +498,17 @@ class Boxer(Tymee):
         self.redo()  # redo nabe all boxes in pile top down
 
         while True:  # run forever
-            tock = self.hold[tkey].value  # get tock in case it changed
+            tock = self.hold[tockKey].value  # get tock in case Act changed it
+            # tyme injected from yield should be self.tyme when recur by Doist or DoDoer
             tyme = yield(tock)  # resume on send after tyme tick
+            self.hold[tymeKey].value = tyme  # assign tyme for Hog same as self.tyme
             rendos = []  # make empty for new pass, reset on transit
             endos = []  # make empty for new pass, reset on transit
 
             if self.endial():  # previous pass actioned desire to end
                 self.end()  # exdos all active boxes in self.box.pile
                 self.box = None  # no active box
-                self.hold[akeys].value = None  # assign active box name to None
+                self.hold[activeKey].value = None  # assign active box name to None
                 return True  # signal successful end after last pass
 
             transit = False
@@ -497,7 +523,7 @@ class Boxer(Tymee):
                         self.exdo(exdos)  # exdo bottom up
                         self.rexdo(rexdos)  # rexdo bottom up  (boxes retained)
                         self.box = dest  # set new active box
-                        self.hold[akeys].value = self.box.name  # active box name
+                        self.hold[activeKey].value = self.box.name  # active box name
                         transit = True
                         break
 
@@ -876,7 +902,7 @@ class Boxer(Tymee):
         else:  # deed is registered act class name or alias
             act = klas(**parms)  # create act from klas with **parms
 
-        nabe = act.nabe  # act init may override passed in nabe
+        nabe = act.nabe  # act init may ignore nabe parameter passed to init
 
         try:
             getattr(m.box, nabeDispatch[nabe]).append(act)
@@ -890,7 +916,7 @@ class Boxer(Tymee):
                  *, mods: WorkDom|None=None, **iops)->Need:
         """Make a Need with support for special Need conditions and return it.
         Use inside go verb as need argument for special need condition
-        Use inside do verb as deed argument for preact or anact
+        Use inside do verb as deed argument for preact
 
         Returns:
             need (Need):  newly created special need
@@ -1368,7 +1394,7 @@ class BoxerDoer(Doer):
         Updates winds .tymer .tymth
         """
         super(BoxerDoer, self).wind(tymth)
-        self.boxer.wind(tymth)
+        self.boxer.rewind(tymth)
 
 
     def enter(self, *, temp=None):
@@ -1406,7 +1432,8 @@ class BoxerDoer(Doer):
                               False completed unsuccessfully
 
         Note that "tyme" is not a parameter when recur is a generator method
-        since doist tyme is injected by the explicit yield below.
+        since doist tyme is injected into the explicit yield below by the
+        Doist or DoDoer send(tyme) in their recur method for generator Doers.
         The recur method itself returns a generator so parameters
         to this method are to setup the generator not to be used at recur time.
 

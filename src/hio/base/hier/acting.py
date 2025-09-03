@@ -156,8 +156,6 @@ class ActBase(Mixin):
         Index (int): default naming index for subclass instances. Each subclass
                 overrides with a subclass specific Index value to track
                 subclass specific instance default names.
-        Names (tuple[str]): tuple of aliases (names) under which this subclas
-                            appears in .Registry. Created by @register
 
     Attributes:
         hold (Hold): data shared by boxwork
@@ -169,16 +167,14 @@ class ActBase(Mixin):
         nabe (str): action nabe (context) for .act
 
     Hidden
-        ._name (str|None): unique name of instance
-        ._iopts (dict): input-output-paramters for .act
-        ._nabe (str): action nabe (context) for .act
+        _name (str): unique name of instance for .name property
+        _iopts (dict): input-output-paramters for .act for .iops property
+        _nabe (str): action nabe (context) for .act for .nabe property
 
     """
     Registry = {}  # subclass registry
     Instances = {}  # instance name registry
     Index = 0  # naming index for default names of this subclasses instances
-    #Names = ()  # tuple of aliases for this subclass created by @register
-
 
     @classmethod
     def registerbyname(cls, name=None):
@@ -215,35 +211,44 @@ class ActBase(Mixin):
             klas._clear()
 
 
-
     def __init__(self, *, name=None, iops=None, nabe=Nabes.endo, hold=None, **kwa):
         """Initialization method for instance.
 
         Parameters:
             name (str|None): unique name of this instance. When None then
-                generate name from .Index
+                generate name from .Index. Used for .name property which is
+                 used for registering Act instance in Act registry
             iops (dict|None): input-output-parameters for .act. When None then
                 set to empty dict.
             nabe (str): action nabe (context) for act. default is "endo"
             hold (None|Hold): data shared across boxwork
 
         """
-        super(ActBase, self).__init__(**kwa) # in case of MRO
-        self.name = name  # set name property
+        self.name = name  # set name property and register in .Instances
         self._iops = dict(iops) if iops is not None else {}  # make copy
         self._nabe = nabe if nabe is not Nabes.native else Nabes.endo
         self.hold = hold if hold is not None else Hold()
+        # ensure super class uses same name
+        super(ActBase, self).__init__(name=self.name, **kwa) # in case of MRO for .__init__
 
 
     def __call__(self):
         """Make ActBase instance a callable object.
-        Call its .act method with self.iops as parameters
+        Call its .act method with expanded self.iops as parameters
+
+        This enables compiled exec/eval str to have **iops in local scope
         """
-        return self.act(**self.iops)
+        return self.act(**self.iops)  # put self.iops into local scope of .act
 
 
     def act(self, **iops):
-        """Act called by Actor. Should override in subclass."""
+        """Act called by Actor. Should override in subclass.
+
+        Parameters:
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
+
+        """
         return iops  # for debugging
 
 
@@ -265,16 +270,22 @@ class ActBase(Mixin):
             name (str|None): unique identifier of instance. When None generate
                 unique name using .Index
         """
-        while name is None or name in self.Instances:
-                name = self.__class__.__name__ + str(self.Index)
-                self.__class__.Index += 1   # do not shadow class attribute
+        if not hasattr(self, "_name"):  # ._name not yet assigned
+            while name is None or name in self.Instances:
+                    name = self.__class__.__name__ + str(self.Index)
+                    self.__class__.Index += 1   # do not shadow class attribute
 
-        if not Renam.match(name):
-            raise HierError(f"Invalid {name=}.")
+            if not Renam.match(name):
+                raise HierError(f"Invalid {name=}.")
 
-        self.Instances[name] = self
-        self._name = name
+            self._name = name
 
+        if self.name not in self.Instances:
+            self.Instances[self.name] = self
+
+        if self.Instances[self.name] is not self:
+            raise HierError(f"Another {self.__class__.__name__} instance"
+                            f" named {self.name} already assigned to .Instances")
 
     @property
     def iops(self):
@@ -294,9 +305,6 @@ class ActBase(Mixin):
             nabe (str): action nabe (context) for .act
         """
         return self._nabe
-
-
-
 
 
 @register()
@@ -369,12 +377,14 @@ class Act(ActBase):
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
         Parameters:
-            deed (None|Callable):  callable to be actioned with iops
+            deed (None|str|Callable): compilable exec str or callable to be
+                                      actioned with iops
+                                      None means use default lambda
 
         """
         super(Act, self).__init__(**kwa)
         self._code = None
-        self.iops.update(H=self.hold)  # inject .hold
+        self.iops.update(H=self.hold)  # inject .hold so callable deed sees it
         self.deed = deed if deed is not None else (lambda **iops: iops)
         if not callable(self.deed):  # need to compile
             self.compile()  # compile at init time so know if compilable
@@ -384,17 +394,16 @@ class Act(ActBase):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input output parms for deed when deed is callable.
-
-
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
         """
-        if callable(self.deed):
-            return self.deed(**iops)
+        if callable(self.deed):  # not compilable str
+            return self.deed(**self.iops)  # injected H=self.hold into iops
 
-        if not self.compiled:  # not yet compiled so lazy
+        if not self.compiled:  # deed str not yet compiled so lazy compile
             self.compile()  # first time only recompile to ._code
-        H = self.hold  # ensure H is in locals() for exec
-        # note iops already in locals() for exec
+        H = self.hold  # ensure H is in locals() for exec compile deed str
+        # note iops dict value of method parameter also in locals() for exec
         return exec(self._code)
 
 
@@ -403,7 +412,7 @@ class Act(ActBase):
         """Property getter for ._deed
 
         Returns:
-            deed (str): evalable boolean expression or callable.
+            deed (str|Callable): compilable exec statement str or callable.
         """
         return self._deed
 
@@ -413,10 +422,10 @@ class Act(ActBase):
         """Property setter for ._expr
 
         Parameters:
-            expr (str): evalable boolean expression.
+            deed (str|Callable): compilable exec statement str or Callable
         """
         self._deed = deed
-        self._code = None  # force lazy recompilation
+        self._code = None  # force lazy recompilation when compilable (not Callable)
 
 
     @property
@@ -425,7 +434,7 @@ class Act(ActBase):
 
         Returns:
             compiled (bool): True means ._code holds compiled ._expr
-                             False means not yet compiled
+                             False means not yet compiled or Callable
         """
         return True if self._code is not None else False
 
@@ -437,8 +446,6 @@ class Act(ActBase):
         must happen after any unpickling of any instances if any.
         """
         self._code = compile(self.deed, '<string>', 'exec')
-
-
 
 
 @register()
@@ -510,11 +517,11 @@ class Goact(ActBase):
                 When Need instance then use directly
 
         """
-        kwa.update(nabe=Nabes.godo)  # override must be godo nabe
+        kwa.update(nabe=Nabes.godo)  # override parameter, must be godo nabe
         super(Goact, self).__init__(**kwa)
         self.dest = dest if dest is not None else 'next'  # default is next
         self.need = need if need is not None else Need()  # default need evals to True
-        if self.nabe != Nabes.godo:
+        if self.nabe != Nabes.godo:  # in case super class overrides nabe
             raise HierError(f"Invalid nabe='{self.nabe}' for Goact "
                             f"'{self.name}'")
 
@@ -524,7 +531,8 @@ class Goact(ActBase):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input output parms
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
 
         """
         if self.need():
@@ -605,13 +613,13 @@ class EndAct(ActBase):
         super(EndAct, self).__init__(nabe=nabe, **kwa)
 
         try:
-            boxer = self.iops['_boxer']  # get boxer name
+            boxerName = self.iops['_boxer']  # get boxer name
         except KeyError as ex:
             raise HierError(f"Missing iops '_boxer' for '{self.name}' instance "
                             f"of Act self.__class__.__name__") from ex
 
 
-        keys = ("", "boxer", boxer, "end")  # _boxer_boxername_end
+        keys = ("", "boxer", boxerName, "end")  # _boxer_boxername_end
         if keys not in self.hold:
             self.hold[keys] = Bag()  # create bag at end default value = None
 
@@ -620,11 +628,12 @@ class EndAct(ActBase):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input output parms
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
 
         """
-        boxer = self.iops['_boxer']  # get boxer name
-        keys = ("", "boxer", boxer, "end")
+        boxerName = self.iops['_boxer']  # get boxer name
+        keys = ("", "boxer", boxerName, "end")
         self.hold[keys].value = True
 
 
@@ -725,7 +734,8 @@ class Beact(ActBase):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input output parms for deed when deed is callable.
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
         """
         key, field = self.lhs
 
@@ -733,7 +743,7 @@ class Beact(ActBase):
             self.hold[key][field] = self.rhs
 
         elif callable(self.rhs):
-            self.hold[key][field] = self.rhs(**iops)
+            self.hold[key][field] = self.rhs(**self.iops)
 
         else:
             if not self.compiled:  # not yet compiled so lazy
@@ -816,14 +826,10 @@ class Beact(ActBase):
         self._code = compile(self.rhs, '<string>', 'eval')
 
 
-
-
-# Dark  DockMark
-
 @register()
 class Mark(ActBase):
-    """Mark (Mine Mark) is base classubclass of ActBase whose .act marks a
-    box for a special need condition.
+    """Mark is base class that is subclass of ActBase whose .act marks a box
+    for a special need condition.
 
     Inherited Class Attributes:
         Registry (dict): subclass registry whose items are (name, cls) where:
@@ -891,17 +897,14 @@ class Mark(ActBase):
         """
         super(Mark, self).__init__(nabe=nabe, **kwa)
 
-        try:
-            boxer = self.iops['_boxer']  # get boxer name to ensure existence
-        except KeyError as ex:
+        if '_boxer' not in self.iops:  # ensure existence for subclasses
             raise HierError(f"Missing iops '_boxer' for '{self.name}' instance "
-                            f"of Act self.__class__.__name__") from ex
+                            f"of Act self.__class__.__name__")
 
-        try:
-            box = self.iops['_box']  # get box name to ensure existence
-        except KeyError as ex:
+        if '_box' not in self.iops:  # ensure existence for subclasses
             raise HierError(f"Missing iops '_box' for '{self.name}' instance "
-                            f"of Act self.__class__.__name__") from ex
+                            f"of Act self.__class__.__name__")
+
 
     def act(self, **iops):
         """Act called by ActBase.
@@ -909,11 +912,12 @@ class Mark(ActBase):
         Override in subclass
 
         Parameters:
-            iops (dict): input output parms
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
 
         """
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']  # get box name
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']  # get box name
 
 
 
@@ -948,9 +952,9 @@ class LapseMark(Mark):
 
         """
         super(LapseMark, self).__init__(nabe=nabe, **kwa)
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']  # get box name
-        keys = ("", "boxer", boxer, "box", box, "lapse")
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']  # get box name
+        keys = ("", "boxer", boxerName, "box", boxName, "lapse")
         if keys not in self.hold:
             self.hold[keys] = Bag()  # create bag default value = None
 
@@ -959,12 +963,13 @@ class LapseMark(Mark):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input output parms
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
 
         """
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']  # get box name
-        keys = ("", "boxer", boxer, "box", box, "lapse")
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']  # get box name
+        keys = ("", "boxer", boxerName, "box", boxName, "lapse")
         # mark box tyme via bag._now tyme
         self.hold[keys].value = self.hold[keys]._now  # _now tyme of mark bag
         return self.hold[keys].value
@@ -1001,9 +1006,9 @@ class RelapseMark(Mark):
 
         """
         super(RelapseMark, self).__init__(nabe=nabe, **kwa)
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']  # get box name
-        keys = ("", "boxer", boxer, "box", box, "relapse")
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']  # get box name
+        keys = ("", "boxer", boxerName, "box", boxName, "relapse")
         if keys not in self.hold:
             self.hold[keys] = Bag()  # create bag default value = None
 
@@ -1012,12 +1017,13 @@ class RelapseMark(Mark):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input output parms
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
 
         """
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']  # get box name
-        keys = ("", "boxer", boxer, "box", box, "relapse")
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']  # get box name
+        keys = ("", "boxer", boxerName, "box", boxName, "relapse")
         # mark box tyme via bag._now tyme
         self.hold[keys].value = self.hold[keys]._now  # _now tyme of mark bag
         return self.hold[keys].value
@@ -1052,9 +1058,9 @@ class Count(Mark):
 
         """
         super(Count, self).__init__(nabe=nabe, **kwa)
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']   # get box name
-        keys = ("", "boxer", boxer, "box", box, "count")
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']   # get box name
+        keys = ("", "boxer", boxerName, "box", boxName, "count")
         if keys not in self.hold:
             self.hold[keys] = Bag()  # create bag default value = None
 
@@ -1064,12 +1070,13 @@ class Count(Mark):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input output parms
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
 
         """
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']  # get box name
-        keys = ("", "boxer", boxer, "box", box, "count")
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']  # get box name
+        keys = ("", "boxer", boxerName, "box", boxName, "count")
         bag = self.hold[keys]  # count bag
         if bag.value is None:
             bag.value = 0  # start counter
@@ -1107,9 +1114,9 @@ class Discount(Mark):
 
         """
         super(Discount, self).__init__(nabe=nabe, **kwa)
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']   # get box name
-        keys = ("", "boxer", boxer, "box", box, "count")
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']   # get box name
+        keys = ("", "boxer", boxerName, "box", boxName, "count")
         if keys not in self.hold:
             self.hold[keys] = Bag()  # create bag default value = None
 
@@ -1118,12 +1125,13 @@ class Discount(Mark):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input output parms
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
 
         """
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']  # get box name
-        keys = ("", "boxer", boxer, "box", box, "count")
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']  # get box name
+        keys = ("", "boxer", boxerName, "box", boxName, "count")
         self.hold[keys].value = None  # reset count to None
         return self.hold[keys].value
 
@@ -1219,11 +1227,12 @@ class BagMark(Mark):
         Override in subclass
 
         Parameters:
-            iops (dict): input output parms
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
 
         """
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']  # get box name
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']  # get box name
         key = self.iops['_key']  # get bag key
 
 
@@ -1258,10 +1267,10 @@ class UpdateMark(BagMark):
 
         """
         super(UpdateMark, self).__init__(nabe=nabe, **kwa)
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']  # get box name
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']  # get box name
         key = self.iops['_key']  # get bag key
-        keys = ("", "boxer", boxer, "box", box, "update", key)
+        keys = ("", "boxer", boxerName, "box", boxName, "update", key)
         if keys not in self.hold:
             self.hold[keys] = Bag()  # create bag default value = None
 
@@ -1271,13 +1280,14 @@ class UpdateMark(BagMark):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input output parms
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
 
         """
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']
         key = self.iops['_key']
-        keys = ("", "boxer", boxer, "box", box, "update", key)
+        keys = ("", "boxer", boxerName, "box", boxName, "update", key)
         # mark bag tyme
         self.hold[keys].value = self.hold[key]._tyme
         return self.hold[keys].value
@@ -1313,11 +1323,11 @@ class ReupdateMark(BagMark):
 
         """
         super(ReupdateMark, self).__init__(nabe=nabe, **kwa)
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']  # get box name
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']  # get box name
         key = self.iops['_key']  # get bag key
 
-        keys = ("", "boxer", boxer, "box", box, "reupdate", key)
+        keys = ("", "boxer", boxerName, "box", boxName, "reupdate", key)
         if keys not in self.hold:
             self.hold[keys] = Bag()  # create bag default value = None
 
@@ -1327,13 +1337,14 @@ class ReupdateMark(BagMark):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input output parms
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
 
         """
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']
         key = self.iops['_key']
-        keys = ("", "boxer", boxer, "box", box, "reupdate", key)
+        keys = ("", "boxer", boxerName, "box", boxName, "reupdate", key)
         # mark bag tyme
         self.hold[keys].value = self.hold[key]._tyme
         return self.hold[keys].value
@@ -1370,11 +1381,11 @@ class ChangeMark(BagMark):
 
         """
         super(ChangeMark, self).__init__(nabe=nabe, **kwa)
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']  # get box name
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']  # get box name
         key = self.iops['_key']  # get bag key
 
-        keys = ("", "boxer", boxer, "box", box, "change", key)
+        keys = ("", "boxer", boxerName, "box", boxName, "change", key)
         if keys not in self.hold:
             self.hold[keys] = Bag()  # create bag default value = None
 
@@ -1383,14 +1394,15 @@ class ChangeMark(BagMark):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input output parms
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
 
         """
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']
         key = self.iops['_key']
         bag = self.hold[key]
-        keys = ("", "boxer", boxer, "box", box, "change", key)
+        keys = ("", "boxer", boxerName, "box", boxName, "change", key)
         self.hold[keys].value = bag._astuple()  # bag field value tuple as mark
         return self.hold[keys].value
 
@@ -1427,11 +1439,11 @@ class RechangeMark(BagMark):
 
         """
         super(RechangeMark, self).__init__(nabe=nabe, **kwa)
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']  # get box name
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']  # get box name
         key = self.iops['_key']  # get bag key
 
-        keys = ("", "boxer", boxer, "box", box, "rechange", key)
+        keys = ("", "boxer", boxerName, "box", boxName, "rechange", key)
         if keys not in self.hold:
             self.hold[keys] = Bag()  # create bag default value = None
 
@@ -1440,14 +1452,118 @@ class RechangeMark(BagMark):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input output parms
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
 
         """
-        boxer = self.iops['_boxer']  # get boxer name
-        box = self.iops['_box']
+        boxerName = self.iops['_boxer']  # get boxer name
+        boxName = self.iops['_box']
         key = self.iops['_key']
         bag = self.hold[key]
-        keys = ("", "boxer", boxer, "box", box, "rechange", key)
+        keys = ("", "boxer", boxerName, "box", boxName, "rechange", key)
         self.hold[keys].value = bag._astuple()  # bag field value tuple as mark
         return self.hold[keys].value
 
+
+
+@register(names=('close', 'Close'))
+class CloseAct(ActBase):
+    """CloseAct is subclass of ActBase whose .act calls .close method of target
+    instance provided by iops item "it", if iops item "clear" provided then
+    passes that value as clear parameter to it.close
+
+    Inherited Class Attributes:
+        Registry (dict): subclass registry whose items are (name, cls) where:
+                name is unique name for subclass
+                cls is reference to class object
+        Instances (dict): instance registry whose items are (name, instance) where:
+                name is unique instance name and instance is instance reference
+        Index (int): default naming index for subclass instances. Each subclass
+                overrides with a subclass specific Index value to track
+                subclass specific instance default names.
+        Names (tuple[str]): tuple of aliases (names) under which this subclas
+                            appears in .Registry. Created by @register
+
+    Overridden Class Attributes
+        Index (int): default naming index for subclass instances. Each subclass
+                overrides with a subclass specific Index value to track
+                subclass specific instance default names.
+
+
+    Inherited Properties:
+        name (str): unique name string of instance
+        iops (dict): input-output-parameters for .act
+        nabe (str): action nabe (context) for .act
+
+    Inherited Attributes:
+        hold (Hold): data shared by boxwork
+
+    Attributes:
+        it (Any): instance with Callable attribute .close
+        clear (bool|None): clear parameter for .close method
+
+    Used iops:
+        it (Any):  instance with .close method
+        clear (bool|None):  when not None passes value to .close method
+
+    Hidden
+        _name (str|None): unique name of instance
+        _iops (dict): input-output-parameters for .act
+        _nabe (str): action nabe (context) for .act
+
+    """
+    Index = 0  # naming index for default names of this subclasses instances
+
+    def __init__(self, nabe=Nabes.exdo, **kwa):
+        """Initialization method for instance.
+
+        Inherited Parameters:
+            name (str|None): unique name of this instance. When None then
+                generate name from .Index
+            iops (dict|None): input-output-parameters for .act. When None then
+                set to empty dict.
+            nabe (str): action nabe (context) for .act
+            mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
+            dock (None|Dock): durable bags in dock (on disc) shared by boxwork
+
+        Parameters:
+
+        Used iops:
+            it (Any):  instance with .close method
+            clear (bool|None):  when not None passes value to .close method
+
+
+        """
+        super(CloseAct, self).__init__(nabe=nabe, **kwa)
+
+        try:
+            it = self.iops['it']  # get instance to close
+        except KeyError as ex:
+            raise HierError(f"Missing iops 'it' for '{self.name}' instance "
+                            f"of Act self.__class__.__name__") from ex
+        if not (hasattr(it, 'close') and isinstance(it.close, Callable)):
+            raise HierError(f"No close method of iops {it=} for '{self.name}'"
+                            f" instance of Act self.__class__.__name__")
+
+        clear = self.iops.get("clear", None) # get clear parameter if any
+        if clear not in (None, True, False):
+            raise HierError(f"Invalid value of iops {clear=} for '{self.name}'"
+                            f" instance of Act self.__class__.__name__")
+
+        self.it = it
+        self.clear = clear
+
+
+    def act(self, **iops):
+        """Act called by ActBase.
+
+        Parameters:
+            iops (dict): input/output parms, same as self.iops. Puts **iops in
+                         local scope in case act compliles exec/eval str
+
+        """
+        parms = {}
+        if self.clear is not None:
+            parms["clear"] = self.clear
+
+        self.it.close(**parms)
