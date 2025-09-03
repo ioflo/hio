@@ -1001,7 +1001,7 @@ def test_hog_log(mockHelpingNowIso8601):
 
 def test_hog_cycle_size(mockHelpingNowIso8601):
     """Test Hog class with cycle size (rotated logs) logging"""
-    if platform.system() != 'Windows':
+    if platform.system() == 'Windows':
         return
 
     Hog._clearall()  # clear Hog.Instances for debugging
@@ -1257,7 +1257,7 @@ def test_hog_cycle_size(mockHelpingNowIso8601):
 
 def test_hog_cycle_span(mockHelpingNowIso8601):
     """Test Hog class with cycle span (rotated logs) logging"""
-    if platform.system() != 'Windows':
+    if platform.system() == 'Windows':
         return
 
     Hog._clearall()  # clear Hog.Instances for debugging
