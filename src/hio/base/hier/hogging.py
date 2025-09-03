@@ -12,15 +12,18 @@ import os
 import uuid
 from contextlib import contextmanager
 import inspect
-from collections import namedtuple
+from collections import namedtuple, deque
 from base64 import urlsafe_b64encode as encodeB64
 from base64 import urlsafe_b64decode as decodeB64
 
+from ...hioing import HierError
+from ...help import timing  # import timing to pytest mock of nowIso8601 works
+from ...help.helping import ocfn
 from ..doing import Doer
 from ..filing import Filer
 from .hiering import Nabes
 from .acting import ActBase, register
-from ...help import timing  # import timing to pytest mock of nowIso8601 works
+
 
 Ruleage = namedtuple("Rules", 'once every span update change')
 Rules = Ruleage(once='once', every='every', span='span', update='update', change='change')
@@ -110,16 +113,14 @@ class Hog(ActBase, Filer):
                            0.0 means everytyme
         flushLast (float|None): tyme last flushed, None means not yet running
         cycleCount (int): number of cycled logs, 0 means do not cycle (count)
-        cyclePaths (list[str]): paths for cycled logs
-        cycleSpan (float): min tyme span for cycling logs (cycle). 0.0 means
+        cyclePeriod (float): min tyme span for cycling logs (cycle). 0.0 means
                            cycle based on cycleHigh not tyme span. One of
                            cycleSpan or cycleHigh must be non zero
-        cycleLast (float|None): tyme last cycled. None means not yet running
-        cycleLow (int): minimum size in bytes required for cycling log based on
-                        cycleSpan. 0 means no minimum
-        cycleHigh (int): maximum size in bytes allowed for each cycled log
+        cycleSize (int): maximum size in bytes allowed for each cycled log
                          0 means no maximum. One of cycleSpan or cycleHigh must
                          be non zero
+        cyclePaths (list[str]): paths for cycled logs
+        cycleLast (float|None): tyme last cycled. None means not yet running
         hits (dict): hold items to log. Item label is log header tag
                       Item value is hold key that provides value to log
         marks (dict): tyme or value tuples marks of hold items logged with
@@ -167,7 +168,7 @@ class Hog(ActBase, Filer):
     def __init__(self, iops=None, nabe=Nabes.afdo, base="", filed=True,
                        extensioned=True, mode='a+', fext="hog", reuse=True,
                        rid=None, rule=Rules.every, span=0.0, flush=60.0,
-                       count=0, cycle=0.0, low=0, high=0, hits=None, **kwa):
+                       count=0, period=0.0, size=0, hits=None, **kwa):
         """Initialize instance.
 
         Inherited Parameters:
@@ -218,10 +219,8 @@ class Hog(ActBase, Filer):
             flush (float): flush tyme span seconds, tyme between flushes
                           0.0 means every tyme
             count (int): number of cycled logs, 0 means do not cycle
-            cycle (float): cycle tyme span, tyme between log cycles
-            low (int): minimum size in bytes required for cycling log
-                       0 means no minimum
-            high (int): maximum size in bytes allowed for each cycled log
+            period (float): cycle tyme period, tyme between log cycles
+            size (int): maximum size in bytes allowed for each cycled log
                        0 means no maximum
             hits (None|dict): hold items to log. Item label is log header tag
                       Item value is hold key that provides value to log
@@ -259,12 +258,15 @@ class Hog(ActBase, Filer):
         self.flushSpan = flush
         self.flushLast = None
 
-        self.cycleCount = count
+        if count and period == 0.0 and size == 0:
+            raise HierError(f"For non-zero count one of {period=} or {size=} "
+                            f"must be non-zero")
+
+        self.cycleCount = max(min(count, 99), 0)
+        self.cyclePeriod = period
+        self.cycleSize = size
         self.cyclePaths = []  # need to init
-        self.cycleSpan = cycle
         self.cycleLast = None
-        self.cycleLow = low
-        self.cycleHigh = high
 
         self.activeKey = None
         self.tockKey = None
@@ -283,6 +285,20 @@ class Hog(ActBase, Filer):
 
         self.hits = hits
         self.marks = {}
+
+        if self.cycleCount > 0:
+            self.cyclePaths = []
+            for k in range(1, self.cycleCount + 1):
+                root, fext = os.path.splitext(self.path)
+                path = f"{root}_{k:02}.{fext}"
+                self.cyclePaths.append(path)
+                # trial open to ensure can make
+                try:
+                    file = ocfn(path, 'r')  # do not truncate in case reusing
+                except OSError as ex:
+                    raise HierError("Failed making cycle paths") from ex
+
+                file.close()
 
 
     def act(self, **iops):
@@ -340,8 +356,8 @@ class Hog(ActBase, Filer):
         tyme = self.hold[self.hits["tyme"]].value if self.hits else None
 
         if not self.onced:
-            #self.file.write(self.record())
-            #self.flush()
+            self.first = tyme
+            self.cycleLast = tyme
             # always flush on first write to ensure header synced on disk
             self.log(self.record(), tyme, force=True)
             if self.hits:
@@ -352,20 +368,15 @@ class Hog(ActBase, Filer):
                         elif self.rule == Rules.change:  # create mark
                             self.marks[key] = self.hold[key]._astuple()
 
-            self.first = tyme
-            self.last = tyme
-            self.flushLast = tyme
+
+
             self.onced = True
         else:
             match self.rule:
                 case Rules.every:
-                    #self.file.write(self.record())
-                    #self.last = tyme
                     self.log(self.record(), tyme)
                 case Rules.span:
                     if tyme is not None and tyme - self.last >= self.span:
-                        #self.file.write(self.record())
-                        #self.last = tyme
                         self.log(self.record(), tyme)
 
                 case Rules.update:
@@ -377,8 +388,6 @@ class Hog(ActBase, Filer):
                                 self.marks[key] = holdTyme
                                 updated = True
                         if updated:
-                            #self.file.write(self.record())
-                            #self.last = tyme
                             self.log(self.record(), tyme)
 
                 case Rules.change:
@@ -390,10 +399,7 @@ class Hog(ActBase, Filer):
                                 self.marks[key] = holdValue
                                 changed = True
                         if changed:
-                            #self.file.write(self.record())
-                            #self.last = tyme
                             self.log(self.record(), tyme)
-
 
                 case _:
                     pass
@@ -412,9 +418,26 @@ class Hog(ActBase, Filer):
         """
         self.file.write(record)
         self.last = tyme
+
         if force or (tyme - self.flushLast) >= self.flushSpan:
             self.flush()
             self.flushLast = tyme
+
+        if self.cycleCount:
+            cycled = False
+            if self.cyclePeriod:
+                if (tyme - self.cycleLast) >= self.cyclePeriod:
+                    self.cycle(tyme=tyme)
+                    cycled = True
+
+            if self.cycleSize and not cycled:
+                try:
+                    size = os.path.getsize(self.path)
+                except OSError as ex:
+                    pass
+                else:
+                    if size >= self.cycleSize:
+                        self.cycle(tyme=tyme)
 
 
     def record(self):
@@ -435,6 +458,38 @@ class Hog(ActBase, Filer):
         else:
             return ""
 
+
+    def cycle(self, tyme):
+        """Cycle log files
+
+        Parameters:
+            tyme (float): current tyme of cycle
+        """
+        self.flush
+        cycles = deque([self.path])
+        cycles.extend(self.cyclePaths)
+
+        cycled = False  # if cycling is successful
+        new = cycles.pop()
+        while cycles:
+            old = cycles.pop()
+            try:
+                os.replace(old, new)  # rename old to new thereby clobbering old
+                cycled = True
+            except OSError as ex:
+                cycled = False  # failed to cycle so do not clobber self.file
+                break
+            new = old  # old path is now free to use
+
+        if not cycled:  # reopen cleanly just in case
+            self.reopen(reuse=True)  # reopen reuse, .mode is "a+" so saves
+        else:  # all cycled so recreate self.file
+            self.reopen() # not reuse so recreates empty
+
+        self.file.write(self.header)  # rewrite header
+        self.flush()
+        self.flushLast = tyme
+        self.cycleLast = tyme
 
 
 @contextmanager
