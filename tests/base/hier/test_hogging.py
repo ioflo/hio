@@ -190,7 +190,6 @@ def test_hog_log(mockHelpingNowIso8601):
     Hog._clearall()  # clear Hog.Instances for debugging
 
     @namify
-    @registerify
     @dataclass
     class LocationBag(TymeDom):
         """Vector Bag dataclass

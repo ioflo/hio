@@ -269,7 +269,7 @@ class Hog(ActBase, Filer):
             raise HierError(f"For non-zero count one of {cycleSpan=} or "
                             f"{cycleSize=} must be non-zero")
 
-        self.cycleCount = max(min(cycleCount, 99), 0)
+        self.cycleCount = max(min(cycleCount, 999), 0)
         self.cycleSpan = cycleSpan
         self.cycleSize = cycleSize
         self.cyclePaths = []  # need to init
@@ -297,7 +297,7 @@ class Hog(ActBase, Filer):
             self.cyclePaths = []
             for k in range(1, self.cycleCount + 1):
                 root, ext = os.path.splitext(self.path)
-                path = f"{root}_{k:02}{ext}"  # ext includes leading dot
+                path = f"{root}_{k:03}{ext}"  # ext includes leading dot
                 self.cyclePaths.append(path)
                 # trial open to ensure can make
                 try:
