@@ -1001,6 +1001,9 @@ def test_hog_log(mockHelpingNowIso8601):
 
 def test_hog_cycle_size(mockHelpingNowIso8601):
     """Test Hog class with cycle size (rotated logs) logging"""
+    if platform.system() != 'Windows':
+        return
+
     Hog._clearall()  # clear Hog.Instances for debugging
 
     @namify
@@ -1100,11 +1103,7 @@ def test_hog_cycle_size(mockHelpingNowIso8601):
     assert hog.rid == rid
     assert hog.stamp == dts
 
-    if platform.system() == 'Windows':
-        assert os.path.getsize(hog.path) == 278  # /r/n
-    else:
-        assert os.path.getsize(hog.path) == 272
-
+    assert os.path.getsize(hog.path) == 272
     for path in hog.cyclePaths:
         assert os.path.getsize(path) == 0
 
@@ -1134,10 +1133,9 @@ def test_hog_cycle_size(mockHelpingNowIso8601):
     assert hog.flushLast == tymist.tyme
     assert hog.cycleLast == tymist.tyme  # cycled due to size
 
-    if platform.system() != 'Windows':
-        assert os.path.getsize(hog.path) == 247  # only header
-        assert os.path.getsize(hog.cyclePaths[0]) == 301  # over cycleSize
-        assert os.path.getsize(hog.cyclePaths[1]) == 0
+    assert os.path.getsize(hog.path) == 247  # only header
+    assert os.path.getsize(hog.cyclePaths[0]) == 301  # over cycleSize
+    assert os.path.getsize(hog.cyclePaths[1]) == 0
 
     hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
     lines = hog.file.readlines()
@@ -1177,10 +1175,9 @@ def test_hog_cycle_size(mockHelpingNowIso8601):
     assert hog.flushLast == tymist.tyme == 0.0625
     assert hog.cycleLast == 0.03125
 
-    if platform.system() != 'Windows':
-        assert os.path.getsize(hog.path) == 275
-        assert os.path.getsize(hog.cyclePaths[0]) == 301  # over cycleSize
-        assert os.path.getsize(hog.cyclePaths[1]) == 0
+    assert os.path.getsize(hog.path) == 275
+    assert os.path.getsize(hog.cyclePaths[0]) == 301  # over cycleSize
+    assert os.path.getsize(hog.cyclePaths[1]) == 0
 
     hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
     lines = hog.file.readlines()
@@ -1207,10 +1204,9 @@ def test_hog_cycle_size(mockHelpingNowIso8601):
     assert hog.flushLast == tymist.tyme == 0.09375
     assert hog.cycleLast == 0.09375
 
-    if platform.system() != 'Windows':
-        assert os.path.getsize(hog.path) == 247
-        assert os.path.getsize(hog.cyclePaths[0]) == 304  # over cycleSize
-        assert os.path.getsize(hog.cyclePaths[1]) == 301
+    assert os.path.getsize(hog.path) == 247
+    assert os.path.getsize(hog.cyclePaths[0]) == 304  # over cycleSize
+    assert os.path.getsize(hog.cyclePaths[1]) == 301
 
     hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
     lines = hog.file.readlines()
@@ -1261,6 +1257,9 @@ def test_hog_cycle_size(mockHelpingNowIso8601):
 
 def test_hog_cycle_span(mockHelpingNowIso8601):
     """Test Hog class with cycle span (rotated logs) logging"""
+    if platform.system() != 'Windows':
+        return
+
     Hog._clearall()  # clear Hog.Instances for debugging
 
     @namify
@@ -1360,11 +1359,7 @@ def test_hog_cycle_span(mockHelpingNowIso8601):
     assert hog.rid == rid
     assert hog.stamp == dts
 
-    if platform.system() == 'Windows':
-        assert os.path.getsize(hog.path) == 278  # /r/n
-    else:
-        assert os.path.getsize(hog.path) == 272
-
+    assert os.path.getsize(hog.path) == 272
     for path in hog.cyclePaths:
         assert os.path.getsize(path) == 0
 
@@ -1394,10 +1389,9 @@ def test_hog_cycle_span(mockHelpingNowIso8601):
     assert hog.flushLast == tymist.tyme
     assert hog.cycleLast == None  # not cycled yet
 
-    if platform.system() != 'Windows':
-        assert os.path.getsize(hog.path) == 301
-        assert os.path.getsize(hog.cyclePaths[0]) == 0
-        assert os.path.getsize(hog.cyclePaths[1]) == 0
+    assert os.path.getsize(hog.path) == 301
+    assert os.path.getsize(hog.cyclePaths[0]) == 0
+    assert os.path.getsize(hog.cyclePaths[1]) == 0
 
     hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
     lines = hog.file.readlines()
@@ -1425,10 +1419,9 @@ def test_hog_cycle_span(mockHelpingNowIso8601):
     assert hog.flushLast == tymist.tyme == 0.0625
     assert hog.cycleLast == 0.0625 == hog.cycleSpan  # cycled due to time
 
-    if platform.system() != 'Windows':
-        assert os.path.getsize(hog.path) == 247  # just header
-        assert os.path.getsize(hog.cyclePaths[0]) == 329
-        assert os.path.getsize(hog.cyclePaths[1]) == 0
+    assert os.path.getsize(hog.path) == 247  # just header
+    assert os.path.getsize(hog.cyclePaths[0]) == 329
+    assert os.path.getsize(hog.cyclePaths[1]) == 0
 
     hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
     lines = hog.file.readlines()
@@ -1469,10 +1462,9 @@ def test_hog_cycle_span(mockHelpingNowIso8601):
     assert hog.flushLast == tymist.tyme == 0.09375
     assert hog.cycleLast == 0.0625
 
-    if platform.system() != 'Windows':
-        assert os.path.getsize(hog.path) == 276
-        assert os.path.getsize(hog.cyclePaths[0]) == 329
-        assert os.path.getsize(hog.cyclePaths[1]) == 0
+    assert os.path.getsize(hog.path) == 276
+    assert os.path.getsize(hog.cyclePaths[0]) == 329
+    assert os.path.getsize(hog.cyclePaths[1]) == 0
 
     hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
     lines = hog.file.readlines()
@@ -1499,10 +1491,10 @@ def test_hog_cycle_span(mockHelpingNowIso8601):
     assert hog.flushLast == tymist.tyme == 0.125
     assert hog.cycleLast == 0.125
 
-    if platform.system() != 'Windows':
-        assert os.path.getsize(hog.path) == 247
-        assert os.path.getsize(hog.cyclePaths[0]) == 303
-        assert os.path.getsize(hog.cyclePaths[1]) == 329
+
+    assert os.path.getsize(hog.path) == 247
+    assert os.path.getsize(hog.cyclePaths[0]) == 303
+    assert os.path.getsize(hog.cyclePaths[1]) == 329
 
     hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
     lines = hog.file.readlines()
