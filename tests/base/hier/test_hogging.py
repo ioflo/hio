@@ -1004,7 +1004,6 @@ def test_hog_cycle_size(mockHelpingNowIso8601):
     Hog._clearall()  # clear Hog.Instances for debugging
 
     @namify
-    @registerify
     @dataclass
     class LocationBag(TymeDom):
         """Vector Bag dataclass
@@ -1062,7 +1061,7 @@ def test_hog_cycle_size(mockHelpingNowIso8601):
             dom._wind(tymth=tymth)
 
     # Test vector hold bag with rule "every"
-    name = "bat"
+    name = "rat"
     count = 2
     period = tymist.tock * 2
     size = 300
@@ -1112,7 +1111,7 @@ def test_hog_cycle_size(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','rat','2021-06-27T21:26:21.233257+00:00','every','2'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -1141,7 +1140,7 @@ def test_hog_cycle_size(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','rat','2021-06-27T21:26:21.233257+00:00','every','2'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE')
@@ -1153,7 +1152,7 @@ def test_hog_cycle_size(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','rat','2021-06-27T21:26:21.233257+00:00','every','2'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -1183,7 +1182,7 @@ def test_hog_cycle_size(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','rat','2021-06-27T21:26:21.233257+00:00','every','2'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -1212,7 +1211,7 @@ def test_hog_cycle_size(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','rat','2021-06-27T21:26:21.233257+00:00','every','2'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE')
@@ -1224,7 +1223,7 @@ def test_hog_cycle_size(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','rat','2021-06-27T21:26:21.233257+00:00','every','2'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -1239,7 +1238,7 @@ def test_hog_cycle_size(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','rat','2021-06-27T21:26:21.233257+00:00','every','2'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -1258,7 +1257,6 @@ def test_hog_cycle_span(mockHelpingNowIso8601):
     Hog._clearall()  # clear Hog.Instances for debugging
 
     @namify
-    @registerify
     @dataclass
     class LocationBag(TymeDom):
         """Vector Bag dataclass
