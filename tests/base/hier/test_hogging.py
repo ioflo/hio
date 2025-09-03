@@ -186,7 +186,7 @@ def test_hog_doer():
 
 
 def test_hog_log(mockHelpingNowIso8601):
-    """Test Hog clas with logging"""
+    """Test Hog class with logging rules"""
     Hog._clearall()  # clear Hog.Instances for debugging
 
     @namify
@@ -990,6 +990,547 @@ def test_hog_log(mockHelpingNowIso8601):
         ('0.0', '40.0', '-113.0', '42.0', '8.0'),
         ('0.0625', '45.4545', '-112.1212', '41.0505', '8.0222'),
         ('0.125', '47.0', '-114.0', '39.0', '8.0222')
+    ]
+
+    hog.close(clear=True)
+    assert not hog.opened
+    assert not hog.file
+    assert not os.path.exists(hog.path)
+    """Done Test"""
+
+
+def test_hog_cycle_size(mockHelpingNowIso8601):
+    """Test Hog class with cycle size (rotated logs) logging"""
+    Hog._clearall()  # clear Hog.Instances for debugging
+
+    @namify
+    @registerify
+    @dataclass
+    class LocationBag(TymeDom):
+        """Vector Bag dataclass
+
+        Field Attributes:
+            latN (Any):  latitude North fractional minutes
+            lonE (Any):  longitude East fractional minutes
+        """
+        latN: Any = None
+        lonE: Any = None
+
+        def __hash__(self):
+            """Define hash so can work with ordered_set
+            __hash__ is not inheritable in dataclasses so must be explicitly defined
+            in every subclass
+            """
+            return hash((self.__class__.__name__,) + self._astuple())  # almost same as __eq__
+
+
+    tymist = Tymist()
+
+    dts = hio.help.timing.nowIso8601()  # mocked version testing that mocking worked
+    assert dts == '2021-06-27T21:26:21.233257+00:00'
+
+    boxerName = "BoxerTest"
+    boxName = "BoxTop"
+    iops = dict(_boxer=boxerName, _box=boxName)
+
+    uid = 'KQzSlod5EfC1TvKsr0VvkQ'  # for test
+    rid = f"{boxerName}_{uid}"
+
+    hold = Hold()
+
+    tymeKey = hold.tokey(("", "boxer", boxerName, "tyme"))
+    hold[tymeKey] = Bag()
+    hold[tymeKey].value = tymist.tyme
+
+    activeKey = hold.tokey(("", "boxer", boxerName, "active"))
+    hold[activeKey] = Bag()
+    hold[activeKey].value = boxName
+
+    tockKey = hold.tokey(("", "boxer", boxerName, "tock"))
+    hold[tockKey] = Bag()
+    hold[tockKey].value = tymist.tock
+
+    homeKey = hold.tokey(("location", "home", ))
+    hold[homeKey] = LocationBag(latN=45.0, lonE=-90.0)
+
+    awayKey = hold.tokey(("location", "away", ))
+    hold[awayKey] = LocationBag(latN=40.0, lonE=10.0)
+
+    tymth = tymist.tymen()
+    for dom in hold.values():  # wind hold
+        if isinstance(dom, TymeDom):
+            dom._wind(tymth=tymth)
+
+    # Test vector hold bag with rule "every"
+    name = "bat"
+    count = 2
+    period = tymist.tock * 2
+    size = 300
+
+    # vector locations as hits with default rule every
+    hog = Hog(name=name, iops=iops, hold=hold, temp=True, rid=rid, flushForce=True,
+              cycleCount=count, cycleSpan=period, cycleSize=size,
+              home=homeKey, away=awayKey)
+    assert hog.rule == Rules.every
+    assert not hog.started
+    assert not hog.onced
+    assert hog.flushForce == True
+    assert hog.cycleCount == count
+    assert hog.cycleSpan == period == 0.0625
+    assert hog.cycleSize == size
+
+    assert hog.hits == {'home': 'location_home', 'away': 'location_away'}
+    assert len(hog.cyclePaths) == count
+
+    # run hog once
+    assert hog() == iops  # default returns iops
+    assert hog.hits == \
+    {
+        'tyme': '_boxer_BoxerTest_tyme',
+        'home': 'location_home',
+        'away': 'location_away'
+    }
+    assert hog.marks == {}
+
+    assert hog.started
+    assert hog.onced
+    assert hog.first == 0.0
+    assert hog.last == 0.0
+    assert hog.flushLast == 0.0
+    assert hog.cycleLast == None
+    assert hog.rid == rid
+    assert hog.stamp == dts
+
+    assert os.path.getsize(hog.path) == 272
+    for path in hog.cyclePaths:
+        assert os.path.getsize(path) == 0
+
+    hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
+    lines = hog.file.readlines()
+    assert len(lines[-1]) == 25
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('tyme.key', 'home.key', 'away.key'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
+        ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
+        ('0.0', '45.0', '-90.0', '40.0', '10.0')
+    ]
+
+    # run again
+    tymist.tick()
+    hold[tymeKey].value = tymist.tyme
+    hold[awayKey].latN = 41.0
+    hold[awayKey].lonE = 11.0
+
+    assert hog() == iops  # default returns iops
+    assert hog.last != hog.first  # since once does not log again
+    assert hog.last == tymist.tyme
+    assert hog.flushLast == tymist.tyme
+    assert hog.cycleLast == tymist.tyme  # cycled due to size
+
+    assert os.path.getsize(hog.path) == 247  # only header
+    assert os.path.getsize(hog.cyclePaths[0]) == 301  # over cycleSize
+    assert os.path.getsize(hog.cyclePaths[1]) == 0
+
+    hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
+    lines = hog.file.readlines()
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('tyme.key', 'home.key', 'away.key'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
+        ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE')
+    ]
+
+    cycle1 = open(hog.cyclePaths[0], "r")
+    lines = cycle1.readlines()
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('tyme.key', 'home.key', 'away.key'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
+        ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
+        ('0.0', '45.0', '-90.0', '40.0', '10.0'),
+        ('0.03125', '45.0', '-90.0', '41.0', '11.0')
+    ]
+
+    # run again
+    tymist.tick()
+    hold[tymeKey].value = tymist.tyme
+    hold[awayKey].latN = 42.0
+    hold[awayKey].lonE = 12.0
+
+    assert hog() == iops  # default returns iops
+    assert hog.last != hog.first  # since once does not log again
+    assert hog.last == tymist.tyme
+    assert hog.flushLast == tymist.tyme == 0.0625
+    assert hog.cycleLast == 0.03125
+
+    assert os.path.getsize(hog.path) == 275
+    assert os.path.getsize(hog.cyclePaths[0]) == 301  # over cycleSize
+    assert os.path.getsize(hog.cyclePaths[1]) == 0
+
+    hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
+    lines = hog.file.readlines()
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('tyme.key', 'home.key', 'away.key'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
+        ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
+        ('0.0625', '45.0', '-90.0', '42.0', '12.0')
+    ]
+
+    # run again
+    tymist.tick()
+    hold[tymeKey].value = tymist.tyme
+    hold[awayKey].latN = 43.0
+    hold[awayKey].lonE = 13.0
+
+    assert hog() == iops  # default returns iops
+    assert hog.last != hog.first  # since once does not log again
+    assert hog.last == tymist.tyme
+    assert hog.flushLast == tymist.tyme == 0.09375
+    assert hog.cycleLast == 0.09375
+
+    assert os.path.getsize(hog.path) == 247
+    assert os.path.getsize(hog.cyclePaths[0]) == 304  # over cycleSize
+    assert os.path.getsize(hog.cyclePaths[1]) == 301
+
+    hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
+    lines = hog.file.readlines()
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('tyme.key', 'home.key', 'away.key'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
+        ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE')
+    ]
+
+    cycle1 = open(hog.cyclePaths[0], "r")
+    lines = cycle1.readlines()
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('tyme.key', 'home.key', 'away.key'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
+        ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
+        ('0.0625', '45.0', '-90.0', '42.0', '12.0'),
+        ('0.09375', '45.0', '-90.0', '43.0', '13.0')
+    ]
+
+
+    cycle2 = open(hog.cyclePaths[1], "r")
+    lines = cycle2.readlines()
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('tyme.key', 'home.key', 'away.key'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
+        ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
+        ('0.0', '45.0', '-90.0', '40.0', '10.0'),
+        ('0.03125', '45.0', '-90.0', '41.0', '11.0')
+    ]
+
+    hog.close(clear=True)
+    assert not hog.opened
+    assert not hog.file
+    assert not os.path.exists(hog.path)
+    """Done Test"""
+
+def test_hog_cycle_span(mockHelpingNowIso8601):
+    """Test Hog class with cycle span (rotated logs) logging"""
+    Hog._clearall()  # clear Hog.Instances for debugging
+
+    @namify
+    @registerify
+    @dataclass
+    class LocationBag(TymeDom):
+        """Vector Bag dataclass
+
+        Field Attributes:
+            latN (Any):  latitude North fractional minutes
+            lonE (Any):  longitude East fractional minutes
+        """
+        latN: Any = None
+        lonE: Any = None
+
+        def __hash__(self):
+            """Define hash so can work with ordered_set
+            __hash__ is not inheritable in dataclasses so must be explicitly defined
+            in every subclass
+            """
+            return hash((self.__class__.__name__,) + self._astuple())  # almost same as __eq__
+
+
+    tymist = Tymist()
+
+    dts = hio.help.timing.nowIso8601()  # mocked version testing that mocking worked
+    assert dts == '2021-06-27T21:26:21.233257+00:00'
+
+    boxerName = "BoxerTest"
+    boxName = "BoxTop"
+    iops = dict(_boxer=boxerName, _box=boxName)
+
+    uid = 'KQzSlod5EfC1TvKsr0VvkQ'  # for test
+    rid = f"{boxerName}_{uid}"
+
+    hold = Hold()
+
+    tymeKey = hold.tokey(("", "boxer", boxerName, "tyme"))
+    hold[tymeKey] = Bag()
+    hold[tymeKey].value = tymist.tyme
+
+    activeKey = hold.tokey(("", "boxer", boxerName, "active"))
+    hold[activeKey] = Bag()
+    hold[activeKey].value = boxName
+
+    tockKey = hold.tokey(("", "boxer", boxerName, "tock"))
+    hold[tockKey] = Bag()
+    hold[tockKey].value = tymist.tock
+
+    homeKey = hold.tokey(("location", "home", ))
+    hold[homeKey] = LocationBag(latN=45.0, lonE=-90.0)
+
+    awayKey = hold.tokey(("location", "away", ))
+    hold[awayKey] = LocationBag(latN=40.0, lonE=10.0)
+
+    tymth = tymist.tymen()
+    for dom in hold.values():  # wind hold
+        if isinstance(dom, TymeDom):
+            dom._wind(tymth=tymth)
+
+    # Test vector hold bag with rule "every"
+    name = "bat"
+    count = 2
+    period = tymist.tock * 2
+    size = 2048
+
+    # vector locations as hits with default rule every
+    hog = Hog(name=name, iops=iops, hold=hold, temp=True, rid=rid, flushForce=True,
+              cycleCount=count, cycleSpan=period, cycleSize=size,
+              home=homeKey, away=awayKey)
+    assert hog.rule == Rules.every
+    assert not hog.started
+    assert not hog.onced
+    assert hog.flushForce == True
+    assert hog.cycleCount == count
+    assert hog.cycleSpan == period == 0.0625
+    assert hog.cycleSize == size
+
+    assert hog.hits == {'home': 'location_home', 'away': 'location_away'}
+    assert len(hog.cyclePaths) == count
+
+    # run hog once
+    assert hog() == iops  # default returns iops
+    assert hog.hits == \
+    {
+        'tyme': '_boxer_BoxerTest_tyme',
+        'home': 'location_home',
+        'away': 'location_away'
+    }
+    assert hog.marks == {}
+
+    assert hog.started
+    assert hog.onced
+    assert hog.first == 0.0
+    assert hog.last == 0.0
+    assert hog.flushLast == 0.0
+    assert hog.cycleLast == None
+    assert hog.rid == rid
+    assert hog.stamp == dts
+
+    assert os.path.getsize(hog.path) == 272
+    for path in hog.cyclePaths:
+        assert os.path.getsize(path) == 0
+
+    hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
+    lines = hog.file.readlines()
+    assert len(lines[-1]) == 25
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('tyme.key', 'home.key', 'away.key'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
+        ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
+        ('0.0', '45.0', '-90.0', '40.0', '10.0')
+    ]
+
+    # run again
+    tymist.tick()
+    hold[tymeKey].value = tymist.tyme
+    hold[awayKey].latN = 41.0
+    hold[awayKey].lonE = 11.0
+
+    assert hog() == iops  # default returns iops
+    assert hog.last != hog.first  # since once does not log again
+    assert hog.last == tymist.tyme
+    assert hog.flushLast == tymist.tyme
+    assert hog.cycleLast == None  # not cycled yet
+
+    assert os.path.getsize(hog.path) == 301
+    assert os.path.getsize(hog.cyclePaths[0]) == 0
+    assert os.path.getsize(hog.cyclePaths[1]) == 0
+
+    hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
+    lines = hog.file.readlines()
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('tyme.key', 'home.key', 'away.key'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
+        ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
+        ('0.0', '45.0', '-90.0', '40.0', '10.0'),
+        ('0.03125', '45.0', '-90.0', '41.0', '11.0')
+    ]
+
+    # run again
+    tymist.tick()
+    hold[tymeKey].value = tymist.tyme
+    hold[awayKey].latN = 42.0
+    hold[awayKey].lonE = 12.0
+
+    assert hog() == iops  # default returns iops
+    assert hog.last != hog.first  # since once does not log again
+    assert hog.last == tymist.tyme
+    assert hog.flushLast == tymist.tyme == 0.0625
+    assert hog.cycleLast == 0.0625 == hog.cycleSpan  # cycled due to time
+
+    assert os.path.getsize(hog.path) == 247  # just header
+    assert os.path.getsize(hog.cyclePaths[0]) == 329
+    assert os.path.getsize(hog.cyclePaths[1]) == 0
+
+    hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
+    lines = hog.file.readlines()
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('tyme.key', 'home.key', 'away.key'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
+        ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE')
+    ]
+
+    cycle1 = open(hog.cyclePaths[0], "r")
+    lines = cycle1.readlines()
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('tyme.key', 'home.key', 'away.key'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
+        ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
+        ('0.0', '45.0', '-90.0', '40.0', '10.0'),
+        ('0.03125', '45.0', '-90.0', '41.0', '11.0'),
+        ('0.0625', '45.0', '-90.0', '42.0', '12.0')
+    ]
+
+    # run again
+    tymist.tick()
+    hold[tymeKey].value = tymist.tyme
+    hold[awayKey].latN = 43.0
+    hold[awayKey].lonE = 13.0
+
+    assert hog() == iops  # default returns iops
+    assert hog.last != hog.first  # since once does not log again
+    assert hog.last == tymist.tyme
+    assert hog.flushLast == tymist.tyme == 0.09375
+    assert hog.cycleLast == 0.0625
+
+    assert os.path.getsize(hog.path) == 276
+    assert os.path.getsize(hog.cyclePaths[0]) == 329
+    assert os.path.getsize(hog.cyclePaths[1]) == 0
+
+    hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
+    lines = hog.file.readlines()
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('tyme.key', 'home.key', 'away.key'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
+        ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
+        ('0.09375', '45.0', '-90.0', '43.0', '13.0')
+    ]
+
+    # run again
+    tymist.tick()
+    hold[tymeKey].value = tymist.tyme
+    hold[awayKey].latN = 44.0
+    hold[awayKey].lonE = 14.0
+
+    assert hog() == iops  # default returns iops
+    assert hog.last != hog.first  # since once does not log again
+    assert hog.last == tymist.tyme
+    assert hog.flushLast == tymist.tyme == 0.125
+    assert hog.cycleLast == 0.125
+
+    assert os.path.getsize(hog.path) == 247
+    assert os.path.getsize(hog.cyclePaths[0]) == 303
+    assert os.path.getsize(hog.cyclePaths[1]) == 329
+
+    hog.file.seek(0, os.SEEK_SET)  # seek to beginning of file
+    lines = hog.file.readlines()
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('tyme.key', 'home.key', 'away.key'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
+        ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE')
+    ]
+
+    cycle1 = open(hog.cyclePaths[0], "r")
+    lines = cycle1.readlines()
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('tyme.key', 'home.key', 'away.key'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
+        ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
+        ('0.09375', '45.0', '-90.0', '43.0', '13.0'),
+        ('0.125', '45.0', '-90.0', '44.0', '14.0')
+    ]
+
+
+    cycle2 = open(hog.cyclePaths[1], "r")
+    lines = cycle2.readlines()
+    lines = [tuple(line.rstrip('\n').split('\t')) for line in lines]
+    assert lines == \
+    [
+        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
+        ('BoxerTest_KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('tyme.key', 'home.key', 'away.key'),
+        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
+        ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
+        ('0.0', '45.0', '-90.0', '40.0', '10.0'),
+        ('0.03125', '45.0', '-90.0', '41.0', '11.0'),
+        ('0.0625', '45.0', '-90.0', '42.0', '12.0')
     ]
 
     hog.close(clear=True)

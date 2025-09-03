@@ -111,6 +111,8 @@ class Hog(ActBase, Filer):
         rid (str):  universally unique run ID for given run of hog
         flushSpan (float): tyme span seconds between flushes (flush)
                            0.0 means everytyme
+        flushForce (bool): True means force flush on every log
+                               False means only flush at appropriate times
         flushLast (float|None): tyme last flushed, None means not yet running
         cycleCount (int): number of cycled logs, 0 means do not cycle (count)
         cyclePeriod (float): min tyme span for cycling logs (cycle). 0.0 means
@@ -167,8 +169,10 @@ class Hog(ActBase, Filer):
 
     def __init__(self, iops=None, nabe=Nabes.afdo, base="", filed=True,
                        extensioned=True, mode='a+', fext="hog", reuse=True,
-                       rid=None, rule=Rules.every, span=0.0, flush=60.0,
-                       count=0, period=0.0, size=0, hits=None, **kwa):
+                       rid=None, rule=Rules.every, span=0.0,
+                       flushSpan=60.0, flushForce=False,
+                       cycleCount=0, cycleSpan=0.0, cycleSize=0,
+                       hits=None, **kwa):
         """Initialize instance.
 
         Inherited Parameters:
@@ -216,11 +220,13 @@ class Hog(ActBase, Filer):
                             (once, every, span, update, change)
             span (float): periodic tyme span seconds when rule is spanned
                           0.0 means every tyme
-            flush (float): flush tyme span seconds, tyme between flushes
+            flushSpan (float): flush tyme span seconds, tyme between flushes
                           0.0 means every tyme
-            count (int): number of cycled logs, 0 means do not cycle
-            period (float): cycle tyme period, tyme between log cycles
-            size (int): maximum size in bytes allowed for each cycled log
+            flushForce (bool): True means force flush on every log
+                               False means only flush at appropriate times
+            cycleCount (int): number of cycled logs, 0 means do not cycle
+            cycleSapn (float): cycle tyme span, tyme between log cycles
+            cycleSize (int): maximum size in bytes allowed for each cycled log
                        0 means no maximum
             hits (None|dict): hold items to log. Item label is log header tag
                       Item value is hold key that provides value to log
@@ -255,16 +261,17 @@ class Hog(ActBase, Filer):
         self.rid = rid
         self.stamp = '' # need to init
         self.header = ''  # need to init
-        self.flushSpan = flush
+        self.flushSpan = flushSpan
+        self.flushForce = flushForce
         self.flushLast = None
 
-        if count and period == 0.0 and size == 0:
-            raise HierError(f"For non-zero count one of {period=} or {size=} "
-                            f"must be non-zero")
+        if cycleCount and cycleSpan == 0.0 and cycleSize == 0:
+            raise HierError(f"For non-zero count one of {cycleSpan=} or "
+                            f"{cycleSize=} must be non-zero")
 
-        self.cycleCount = max(min(count, 99), 0)
-        self.cyclePeriod = period
-        self.cycleSize = size
+        self.cycleCount = max(min(cycleCount, 99), 0)
+        self.cycleSpan = cycleSpan
+        self.cycleSize = cycleSize
         self.cyclePaths = []  # need to init
         self.cycleLast = None
 
@@ -289,8 +296,8 @@ class Hog(ActBase, Filer):
         if self.cycleCount > 0:
             self.cyclePaths = []
             for k in range(1, self.cycleCount + 1):
-                root, fext = os.path.splitext(self.path)
-                path = f"{root}_{k:02}.{fext}"
+                root, ext = os.path.splitext(self.path)
+                path = f"{root}_{k:02}{ext}"  # ext includes leading dot
                 self.cyclePaths.append(path)
                 # trial open to ensure can make
                 try:
@@ -357,7 +364,6 @@ class Hog(ActBase, Filer):
 
         if not self.onced:
             self.first = tyme
-            self.cycleLast = tyme
             # always flush on first write to ensure header synced on disk
             self.log(self.record(), tyme, force=True)
             if self.hits:
@@ -367,8 +373,6 @@ class Hog(ActBase, Filer):
                             self.marks[key] = self.hold[key]._tyme
                         elif self.rule == Rules.change:  # create mark
                             self.marks[key] = self.hold[key]._astuple()
-
-
 
             self.onced = True
         else:
@@ -419,14 +423,19 @@ class Hog(ActBase, Filer):
         self.file.write(record)
         self.last = tyme
 
-        if force or (tyme - self.flushLast) >= self.flushSpan:
+        if force or self.flushForce or (tyme - self.flushLast) >= self.flushSpan:
             self.flush()
             self.flushLast = tyme
 
         if self.cycleCount:
             cycled = False
-            if self.cyclePeriod:
-                if (tyme - self.cycleLast) >= self.cyclePeriod:
+            if self.cycleSpan:
+                if self.cycleLast is None:
+                    delta = tyme - self.first
+                else:
+                    delta = tyme - self.cycleLast
+
+                if delta >= self.cycleSpan:
                     self.cycle(tyme=tyme)
                     cycled = True
 
@@ -474,6 +483,8 @@ class Hog(ActBase, Filer):
         while cycles:
             old = cycles.pop()
             try:
+                if old == self.path:
+                    self.close()
                 os.replace(old, new)  # rename old to new thereby clobbering old
                 cycled = True
             except OSError as ex:
