@@ -88,7 +88,7 @@ setup(
     ],
     python_requires='>=3.13.2',
     install_requires=[
-        'lmdb>=1.6.2',
+        'lmdb>=1.7.3',
         'msgpack>=1.1.0',
         'cbor2>=5.6.5',
         'multidict>=6.4.3',
