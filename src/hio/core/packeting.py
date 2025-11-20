@@ -18,7 +18,7 @@ from .. import hioing
 
 
 
-class Part(hioing.MixIn):
+class Part(hioing.Mixin):
     """
     Base class for packet part classes with .packed .size and len
     """
