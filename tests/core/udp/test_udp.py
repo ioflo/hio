@@ -25,7 +25,8 @@ def test_udp_basic():
         #  for python, but does not trigger automatically and no way to force trigger
         # unless create application bundle etc.
 
-        host = socket.gethostbyname(socket.gethostname())  # get host interface
+        #host = socket.gethostbyname(socket.gethostname())  # get host interface
+        host = '127.0.0.1'
         alphaPort = 6101
         betaPort = 6102
         alphaHa = (host, alphaPort)
@@ -85,18 +86,18 @@ def test_udp_basic():
         def addrBytes(ha):
             return f"('{ha[0]}', {ha[1]})".encode("ascii")
 
-        assert wl.readRx() == (b"\nTx ('10.0.2.144', 6102):\nalpha sends to beta\n\nRx ('10.0.2.144', 610"
-                                b"1):\nalpha sends to beta\n\nTx ('10.0.2.144', 6101):\nalpha sends to alp"
-                                b"ha\n\nRx ('10.0.2.144', 6101):\nalpha sends to alpha\n\nTx ('10.0.2.144',"
-                                b" 6101):\nbeta sends to alpha\n\nRx ('10.0.2.144', 6102):\nbeta sends to alph"
-                                b"a\n\nTx ('10.0.2.144', 6102):\nbeta sends to beta\n\nRx ('10.0.2.144', 61"
-                                b'02):\nbeta sends to beta\n')
-        assert wl.readTx() == (b"\nTx ('10.0.2.144', 6102):\nalpha sends to beta\n\nRx ('10.0.2.144', 610"
-                                b"1):\nalpha sends to beta\n\nTx ('10.0.2.144', 6101):\nalpha sends to alp"
-                                b"ha\n\nRx ('10.0.2.144', 6101):\nalpha sends to alpha\n\nTx ('10.0.2.144',"
-                                b" 6101):\nbeta sends to alpha\n\nRx ('10.0.2.144', 6102):\nbeta sends to alph"
-                                b"a\n\nTx ('10.0.2.144', 6102):\nbeta sends to beta\n\nRx ('10.0.2.144', 61"
-                                b'02):\nbeta sends to beta\n')
+        assert wl.readRx() == (b"\nTx ('127.0.0.1', 6102):\nalpha sends to beta\n\nRx ('127.0.0.1', 6101)"
+                                b":\nalpha sends to beta\n\nTx ('127.0.0.1', 6101):\nalpha sends to alpha\n"
+                                b"\nRx ('127.0.0.1', 6101):\nalpha sends to alpha\n\nTx ('127.0.0.1', 6101"
+                                b"):\nbeta sends to alpha\n\nRx ('127.0.0.1', 6102):\nbeta sends to alpha\n"
+                                b"\nTx ('127.0.0.1', 6102):\nbeta sends to beta\n\nRx ('127.0.0.1', 6102):"
+                                b'\nbeta sends to beta\n')
+        assert wl.readTx() == (b"\nTx ('127.0.0.1', 6102):\nalpha sends to beta\n\nRx ('127.0.0.1', 6101)"
+                                b":\nalpha sends to beta\n\nTx ('127.0.0.1', 6101):\nalpha sends to alpha\n"
+                                b"\nRx ('127.0.0.1', 6101):\nalpha sends to alpha\n\nTx ('127.0.0.1', 6101"
+                                b"):\nbeta sends to alpha\n\nRx ('127.0.0.1', 6102):\nbeta sends to alpha\n"
+                                b"\nTx ('127.0.0.1', 6102):\nbeta sends to beta\n\nRx ('127.0.0.1', 6102):"
+                                b'\nbeta sends to beta\n')
 
 
         assert wl.readTx() == wl.readRx()
@@ -114,7 +115,8 @@ def test_open_peer():
     #  for python, but does not trigger automatically and no way to force trigger
     # unless create application bundle etc.
 
-    host = socket.gethostbyname(socket.gethostname())  # get host interface
+    #host = socket.gethostbyname(socket.gethostname())  # get host interface
+    host = '127.0.0.1'
     alphaPort = 6101
     betaPort = 6102
     alphaHa = (host, alphaPort)
@@ -165,19 +167,19 @@ def test_open_peer():
         def addrBytes(ha):
             return f"('{ha[0]}', {ha[1]})".encode("ascii")
 
-        assert wl.readRx() == (b"\nTx ('10.0.2.144', 6102):\nalpha sends to beta\n\nRx ('10.0.2.144', 610"
-                                b"1):\nalpha sends to beta\n\nTx ('10.0.2.144', 6101):\nalpha sends to alp"
-                                b"ha\n\nRx ('10.0.2.144', 6101):\nalpha sends to alpha\n\nTx ('10.0.2.144',"
-                                b" 6101):\nbeta sends to alpha\n\nRx ('10.0.2.144', 6102):\nbeta sends to alph"
-                                b"a\n\nTx ('10.0.2.144', 6102):\nbeta sends to beta\n\nRx ('10.0.2.144', 61"
-                                b'02):\nbeta sends to beta\n')
+        assert wl.readRx() == (b"\nTx ('127.0.0.1', 6102):\nalpha sends to beta\n\nRx ('127.0.0.1', 6101)"
+                                b":\nalpha sends to beta\n\nTx ('127.0.0.1', 6101):\nalpha sends to alpha\n"
+                                b"\nRx ('127.0.0.1', 6101):\nalpha sends to alpha\n\nTx ('127.0.0.1', 6101"
+                                b"):\nbeta sends to alpha\n\nRx ('127.0.0.1', 6102):\nbeta sends to alpha\n"
+                                b"\nTx ('127.0.0.1', 6102):\nbeta sends to beta\n\nRx ('127.0.0.1', 6102):"
+                                b'\nbeta sends to beta\n')
 
-        assert wl.readTx() == (b"\nTx ('10.0.2.144', 6102):\nalpha sends to beta\n\nRx ('10.0.2.144', 610"
-                                b"1):\nalpha sends to beta\n\nTx ('10.0.2.144', 6101):\nalpha sends to alp"
-                                b"ha\n\nRx ('10.0.2.144', 6101):\nalpha sends to alpha\n\nTx ('10.0.2.144',"
-                                b" 6101):\nbeta sends to alpha\n\nRx ('10.0.2.144', 6102):\nbeta sends to alph"
-                                b"a\n\nTx ('10.0.2.144', 6102):\nbeta sends to beta\n\nRx ('10.0.2.144', 61"
-                                b'02):\nbeta sends to beta\n')
+        assert wl.readTx() == (b"\nTx ('127.0.0.1', 6102):\nalpha sends to beta\n\nRx ('127.0.0.1', 6101)"
+                                b":\nalpha sends to beta\n\nTx ('127.0.0.1', 6101):\nalpha sends to alpha\n"
+                                b"\nRx ('127.0.0.1', 6101):\nalpha sends to alpha\n\nTx ('127.0.0.1', 6101"
+                                b"):\nbeta sends to alpha\n\nRx ('127.0.0.1', 6102):\nbeta sends to alpha\n"
+                                b"\nTx ('127.0.0.1', 6102):\nbeta sends to beta\n\nRx ('127.0.0.1', 6102):"
+                                b'\nbeta sends to beta\n')
 
         assert wl.readTx() == wl.readRx()
 
