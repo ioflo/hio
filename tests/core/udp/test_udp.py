@@ -21,30 +21,29 @@ def test_udp_basic():
     tymist = tyming.Tymist()
     with (wiring.openWL(samed=True, filed=True) as wl):
 
-        alpha = udping.Peer(port = 6101, wl=wl)  # any interface on port 6101
-        if platform.system() == 'Windows':
-            alpha = udping.Peer(ha=('127.0.0.1', 6101), wl=wl)
+        # can't use '0.0.0.0' on macos without getting local network access permissions
+        #  for python, but does not trigger automatically and no way to force trigger
+        # unless create application bundle etc.
+
+        host = socket.gethostbyname(socket.gethostname())  # get host interface
+        alphaPort = 6101
+        betaPort = 6102
+        alphaHa = (host, alphaPort)
+        betaHa = (host, betaPort)
+
+        alpha = udping.Peer(host=host, port = alphaPort, wl=wl)  # host on port 6101
         assert not alpha.opened
         assert alpha.name == 'main'  # default
         assert alpha.reopen()
         assert alpha.opened
-        if platform.system() == 'Windows':
-            assert alpha.ha == ('127.0.0.1', 6101)
-        else:
-            assert alpha.ha == ('0.0.0.0', 6101)
+        assert alpha.ha == alphaHa
 
-        beta = udping.Peer(name='beta',port = 6102, wl=wl)  # any interface on port 6102
-        if platform.system() == 'Windows':
-            beta = udping.Peer(name='beta', ha=('127.0.0.1', 6102), wl=wl)
-
+        beta = udping.Peer(name='beta',host=host, port = betaPort, wl=wl)  # host on port 6102
         assert not beta.opened
         assert beta.name == 'beta'
         assert beta.reopen()
         assert beta.opened
-        if platform.system() == 'Windows':
-            assert beta.ha == ('127.0.0.1', 6102)
-        else:
-            assert beta.ha == ('0.0.0.0', 6102)
+        assert beta.ha == betaHa
 
         msgOut = b"alpha sends to beta"
         alpha.send(msgOut, beta.ha)
@@ -86,18 +85,19 @@ def test_udp_basic():
         def addrBytes(ha):
             return f"('{ha[0]}', {ha[1]})".encode("ascii")
 
-        assert wl.readRx() == (b"\nTx "+addrBytes(beta.ha)+b":\nalpha sends to beta\n\nRx ('127.0.0.1', 6101):\n"
-                            b"alpha sends to beta\n\nTx "+addrBytes(alpha.ha)+b":\nalpha sends to alpha\n\nRx "
-                            b"('127.0.0.1', 6101):\nalpha sends to alpha\n\nTx "+addrBytes(alpha.ha)+b":\nbeta se"
-                            b"nds to alpha\n\nRx ('127.0.0.1', 6102):\nbeta sends to alpha\n\nTx "+addrBytes(beta.ha)+
-                            b":\nbeta sends to beta\n\nRx ('127.0.0.1', 6102):\nbeta sends to b"
-                            b'eta\n')
-        assert wl.readTx() == (b"\nTx "+addrBytes(beta.ha)+b":\nalpha sends to beta\n\nRx ('127.0.0.1', 6101):\n"
-                            b"alpha sends to beta\n\nTx "+addrBytes(alpha.ha)+b":\nalpha sends to alpha\n\nRx "
-                            b"('127.0.0.1', 6101):\nalpha sends to alpha\n\nTx "+addrBytes(alpha.ha)+b":\nbeta se"
-                            b"nds to alpha\n\nRx ('127.0.0.1', 6102):\nbeta sends to alpha\n\nTx "+addrBytes(beta.ha)+
-                            b":\nbeta sends to beta\n\nRx ('127.0.0.1', 6102):\nbeta sends to b"
-                            b'eta\n')
+        assert wl.readRx() == (b"\nTx ('10.0.2.144', 6102):\nalpha sends to beta\n\nRx ('10.0.2.144', 610"
+                                b"1):\nalpha sends to beta\n\nTx ('10.0.2.144', 6101):\nalpha sends to alp"
+                                b"ha\n\nRx ('10.0.2.144', 6101):\nalpha sends to alpha\n\nTx ('10.0.2.144',"
+                                b" 6101):\nbeta sends to alpha\n\nRx ('10.0.2.144', 6102):\nbeta sends to alph"
+                                b"a\n\nTx ('10.0.2.144', 6102):\nbeta sends to beta\n\nRx ('10.0.2.144', 61"
+                                b'02):\nbeta sends to beta\n')
+        assert wl.readTx() == (b"\nTx ('10.0.2.144', 6102):\nalpha sends to beta\n\nRx ('10.0.2.144', 610"
+                                b"1):\nalpha sends to beta\n\nTx ('10.0.2.144', 6101):\nalpha sends to alp"
+                                b"ha\n\nRx ('10.0.2.144', 6101):\nalpha sends to alpha\n\nTx ('10.0.2.144',"
+                                b" 6101):\nbeta sends to alpha\n\nRx ('10.0.2.144', 6102):\nbeta sends to alph"
+                                b"a\n\nTx ('10.0.2.144', 6102):\nbeta sends to beta\n\nRx ('10.0.2.144', 61"
+                                b'02):\nbeta sends to beta\n')
+
 
         assert wl.readTx() == wl.readRx()
 
@@ -110,25 +110,25 @@ def test_open_peer():
     """
     tymist = tyming.Tymist()
 
-    alphaHa = ('127.0.0.1', 6101) if platform.system() == 'Windows' else ('0.0.0.0', 6101)
-    betaHa = ('127.0.0.1', 6102) if platform.system() == 'Windows' else ('0.0.0.0', 6102)
+    # can't use '0.0.0.0' on macos without getting local network access permissions
+    #  for python, but does not trigger automatically and no way to force trigger
+    # unless create application bundle etc.
+
+    host = socket.gethostbyname(socket.gethostname())  # get host interface
+    alphaPort = 6101
+    betaPort = 6102
+    alphaHa = (host, alphaPort)
+    betaHa = (host, betaPort)
 
     with (wiring.openWL(samed=True, filed=True) as wl,
-
-          udping.openPeer(ha=alphaHa, wl=wl) as alpha, # any interface on port 6101
-          udping.openPeer(ha=betaHa, wl=wl) as beta):  # any interface on port 6102
+            udping.openPeer(ha=alphaHa, wl=wl) as alpha, # host on port 6101
+            udping.openPeer(ha=betaHa, wl=wl) as beta):  # host on port 6102
 
         assert alpha.opened
-        if platform.system() == 'Windows':
-            assert alpha.ha == ('127.0.0.1', 6101)
-        else:
-            assert alpha.ha == ('0.0.0.0', 6101)
+        assert alpha.ha == (host, alphaPort)
 
         assert beta.opened
-        if platform.system() == 'Windows':
-            assert beta.ha == ('127.0.0.1', 6102)
-        else:
-            assert beta.ha == ('0.0.0.0', 6102)
+        assert beta.ha == (host, betaPort)
 
         msgOut = b"alpha sends to beta"
         alpha.send(msgOut, beta.ha)
@@ -159,27 +159,25 @@ def test_open_peer():
         assert src[1] == beta.port  # ports equal
 
 
-
-
-
         wl.flush()  #  just to test
         assert wl.samed  # rx and tx same buffer
 
         def addrBytes(ha):
             return f"('{ha[0]}', {ha[1]})".encode("ascii")
 
-        assert wl.readRx() == (b"\nTx "+addrBytes(beta.ha)+b":\nalpha sends to beta\n\nRx ('127.0.0.1', 6101):\n"
-                            b"alpha sends to beta\n\nTx "+addrBytes(alpha.ha)+b":\nalpha sends to alpha\n\nRx "
-                            b"('127.0.0.1', 6101):\nalpha sends to alpha\n\nTx "+addrBytes(alpha.ha)+b":\nbeta se"
-                            b"nds to alpha\n\nRx ('127.0.0.1', 6102):\nbeta sends to alpha\n\nTx "+addrBytes(beta.ha)+
-                            b":\nbeta sends to beta\n\nRx ('127.0.0.1', 6102):\nbeta sends to b"
-                            b'eta\n')
-        assert wl.readTx() == (b"\nTx "+addrBytes(beta.ha)+b":\nalpha sends to beta\n\nRx ('127.0.0.1', 6101):\n"
-                            b"alpha sends to beta\n\nTx "+addrBytes(alpha.ha)+b":\nalpha sends to alpha\n\nRx "
-                            b"('127.0.0.1', 6101):\nalpha sends to alpha\n\nTx "+addrBytes(alpha.ha)+b":\nbeta se"
-                            b"nds to alpha\n\nRx ('127.0.0.1', 6102):\nbeta sends to alpha\n\nTx "+addrBytes(beta.ha)+
-                            b":\nbeta sends to beta\n\nRx ('127.0.0.1', 6102):\nbeta sends to b"
-                            b'eta\n')
+        assert wl.readRx() == (b"\nTx ('10.0.2.144', 6102):\nalpha sends to beta\n\nRx ('10.0.2.144', 610"
+                                b"1):\nalpha sends to beta\n\nTx ('10.0.2.144', 6101):\nalpha sends to alp"
+                                b"ha\n\nRx ('10.0.2.144', 6101):\nalpha sends to alpha\n\nTx ('10.0.2.144',"
+                                b" 6101):\nbeta sends to alpha\n\nRx ('10.0.2.144', 6102):\nbeta sends to alph"
+                                b"a\n\nTx ('10.0.2.144', 6102):\nbeta sends to beta\n\nRx ('10.0.2.144', 61"
+                                b'02):\nbeta sends to beta\n')
+
+        assert wl.readTx() == (b"\nTx ('10.0.2.144', 6102):\nalpha sends to beta\n\nRx ('10.0.2.144', 610"
+                                b"1):\nalpha sends to beta\n\nTx ('10.0.2.144', 6101):\nalpha sends to alp"
+                                b"ha\n\nRx ('10.0.2.144', 6101):\nalpha sends to alpha\n\nTx ('10.0.2.144',"
+                                b" 6101):\nbeta sends to alpha\n\nRx ('10.0.2.144', 6102):\nbeta sends to alph"
+                                b"a\n\nTx ('10.0.2.144', 6102):\nbeta sends to beta\n\nRx ('10.0.2.144', 61"
+                                b'02):\nbeta sends to beta\n')
 
         assert wl.readTx() == wl.readRx()
 
@@ -238,11 +236,11 @@ def test_peer_doer():
     #with (wiring.openWL(samed=True, filed=True) as wl):
 
         #unicast = socket.gethostbyname(socket.gethostname())
-        #assert unicast == "127.0.0.1"
+        ##assert unicast == "127.0.0.1"
         #parts = unicast.split('.')
         #parts[3] = '255'
         #broadcast = ".".join(parts)  # make broadcast send address
-        #assert broadcast == "127.0.0.255"
+        ##assert broadcast == "127.0.0.255"
         #bha = (broadcast, 6104)
 
         #alpha = udping.Peer(host=unicast,
@@ -260,7 +258,7 @@ def test_peer_doer():
         #assert beta.reopen()
         #assert not beta.bcast
         ##assert beta.ha == ("0.0.0.0", 6104)
-        #assert beta.ha == ("127.0.0.1", 6104)
+        ##assert beta.ha == ("127.0.0.1", 6104)
         #assert beta.ha[1] == bha[1]  # same port
 
         #msgOut = b"alpha broadcasts to beta"
@@ -309,7 +307,95 @@ def test_peer_doer():
 
     #"""Done Test"""
 
+#def test_udp_basic_old():
+    #""" Test the udp connection between two peers
 
+    #"""
+    #tymist = tyming.Tymist()
+    #with (wiring.openWL(samed=True, filed=True) as wl):
+
+        #alpha = udping.Peer(port = 6101, wl=wl)  # any interface on port 6101
+        #if platform.system() == 'Windows':
+            #alpha = udping.Peer(ha=('127.0.0.1', 6101), wl=wl)
+        #assert not alpha.opened
+        #assert alpha.name == 'main'  # default
+        #assert alpha.reopen()
+        #assert alpha.opened
+        #if platform.system() == 'Windows':
+            #assert alpha.ha == ('127.0.0.1', 6101)
+        #else:
+            #assert alpha.ha == ('0.0.0.0', 6101)
+
+        #beta = udping.Peer(name='beta',port = 6102, wl=wl)  # any interface on port 6102
+        #if platform.system() == 'Windows':
+            #beta = udping.Peer(name='beta', ha=('127.0.0.1', 6102), wl=wl)
+
+        #assert not beta.opened
+        #assert beta.name == 'beta'
+        #assert beta.reopen()
+        #assert beta.opened
+        #if platform.system() == 'Windows':
+            #assert beta.ha == ('127.0.0.1', 6102)
+        #else:
+            #assert beta.ha == ('0.0.0.0', 6102)
+
+        #msgOut = b"alpha sends to beta"
+        #alpha.send(msgOut, beta.ha)
+        #time.sleep(0.05)
+        #msgIn, src = beta.receive()
+        #assert msgOut == msgIn
+        #assert src[1] == alpha.port  # ports equal
+
+        #msgOut = b"alpha sends to alpha"
+        #alpha.send(msgOut, alpha.ha)
+        #time.sleep(0.05)
+        #msgIn, src = alpha.receive()
+        #assert msgOut == msgIn
+        #assert src[1] == alpha.port  # ports equal
+
+        #msgOut = b"beta sends to alpha"
+        #beta.send(msgOut, alpha.ha)
+        #time.sleep(0.05)
+        #msgIn, src = alpha.receive()
+        #assert msgOut == msgIn
+        #assert src[1] == beta.port  # ports equal
+
+        #msgOut = b"beta sends to beta"
+        #beta.send(msgOut, beta.ha)
+        #time.sleep(0.05)
+        #msgIn, src = beta.receive()
+        #assert msgOut == msgIn
+        #assert src[1] == beta.port  # ports equal
+
+        #alpha.close()
+        #beta.close()
+
+        #assert not alpha.opened
+        #assert not beta.opened
+
+        #wl.flush()  #  just to test
+        #assert wl.samed  # rx and tx same buffer
+
+        #def addrBytes(ha):
+            #return f"('{ha[0]}', {ha[1]})".encode("ascii")
+
+        #assert wl.readRx() == (b"\nTx "+addrBytes(beta.ha)+b":\nalpha sends to beta\n\nRx ('127.0.0.1', 6101):\n"
+                            #b"alpha sends to beta\n\nTx "+addrBytes(alpha.ha)+b":\nalpha sends to alpha\n\nRx "
+                            #b"('127.0.0.1', 6101):\nalpha sends to alpha\n\nTx "+addrBytes(alpha.ha)+b":\nbeta se"
+                            #b"nds to alpha\n\nRx ('127.0.0.1', 6102):\nbeta sends to alpha\n\nTx "+addrBytes(beta.ha)+
+                            #b":\nbeta sends to beta\n\nRx ('127.0.0.1', 6102):\nbeta sends to b"
+                            #b'eta\n')
+        #assert wl.readTx() == (b"\nTx "+addrBytes(beta.ha)+b":\nalpha sends to beta\n\nRx ('127.0.0.1', 6101):\n"
+                            #b"alpha sends to beta\n\nTx "+addrBytes(alpha.ha)+b":\nalpha sends to alpha\n\nRx "
+                            #b"('127.0.0.1', 6101):\nalpha sends to alpha\n\nTx "+addrBytes(alpha.ha)+b":\nbeta se"
+                            #b"nds to alpha\n\nRx ('127.0.0.1', 6102):\nbeta sends to alpha\n\nTx "+addrBytes(beta.ha)+
+                            #b":\nbeta sends to beta\n\nRx ('127.0.0.1', 6102):\nbeta sends to b"
+                            #b'eta\n')
+
+        #assert wl.readTx() == wl.readRx()
+
+    #assert not wl.opened
+    #"""Done Test"""
 
 
 if __name__ == "__main__":

@@ -324,7 +324,8 @@ class Hog(ActBase, Filer):
                 # hog id uuid for this run (not iteration)
                 # create B64 version of uuid with stripped trailing pad bytes
                 uid = encodeB64(bytes.fromhex(uuid.uuid1().hex))[:-2].decode()
-                self.rid = self.name + "_" + uid
+                #self.rid = self.name + "_" + uid
+                self.rid = "0A" + uid  # same as CESR salt
             self.stamp = timing.nowIso8601()  # current real datetime as ISO8601 string
 
             metaLine = (f"rid\tbase\tname\tstamp\trule\tcount\n")
