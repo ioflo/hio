@@ -166,6 +166,8 @@ class Hog(ActBase, Filer):
                  clear=True, reuse=True, clean=True, filed=True,
                  extensioned=True, )
 
+    Proem = "__"  # prepended to rid (run ID) in header to ensure 24 bit boundary alignment
+
 
     def __init__(self, iops=None, nabe=Nabes.afdo, base="", filed=True,
                        extensioned=True, mode='a+', fext="hog", reuse=True,
@@ -325,7 +327,7 @@ class Hog(ActBase, Filer):
                 # create B64 version of uuid with stripped trailing pad bytes
                 uid = encodeB64(bytes.fromhex(uuid.uuid1().hex))[:-2].decode()
                 #self.rid = self.name + "_" + uid
-                self.rid = "0A" + uid  # same as CESR salt
+                self.rid = self.Proem + uid  # same as CESR salt
             self.stamp = timing.nowIso8601()  # current real datetime as ISO8601 string
 
             metaLine = (f"rid\tbase\tname\tstamp\trule\tcount\n")
