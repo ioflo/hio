@@ -29,6 +29,11 @@ def test_hog_basic():
     # python how to get the keywords for given method signature including superclasses
 
     assert Hog.Proem == "__"
+    assert len(Hog.Proem) >= 2  # ensures genRid works
+
+    rid = Hog._genRid()  # '__DqITqY1HgR8JA98qyvRW-S'
+    assert rid[:2] == Hog.Proem[:2]
+    assert len(rid) == 24
 
     hog = Hog(temp=True)  # test defaults
     assert hog.temp
@@ -41,6 +46,7 @@ def test_hog_basic():
     assert not hog.file.closed
     assert os.path.exists(hog.path)
     assert hog.Proem == "__"
+    assert hog.rid is None
 
     tempDirPath = (os.path.join(os.path.sep, "tmp")
                        if platform.system() == "Darwin"
@@ -60,7 +66,7 @@ def test_hog_basic():
     assert not hog.hold.subery
     assert hog.hits == {}
     assert hog.header.startswith('rid')
-    assert hog.rid.startswith(Hog.Proem) # '__KQzSlod5EfC1TvKsr0VvkQ'
+    assert hog.rid.startswith(Hog.Proem) # '__DqITqY1HgR8JA98qyvRW-S'
     assert len(hog.rid) == 24
 
     assert list(hog.hold.keys()) == ['_hold_subery']
@@ -107,6 +113,8 @@ def test_open_hog():
         assert not hog.hold.subery
         assert hog.hits == {}
         assert hog.header.startswith('rid')
+        assert hog.rid.startswith(Hog.Proem) # '__DqITqY1HgR8JA98qyvRW-S'
+        assert len(hog.rid) == 24
 
         assert list(hog.hold.keys()) == ['_hold_subery']
 
@@ -229,9 +237,9 @@ def test_hog_log(mockHelpingNowIso8601):
     boxName = "BoxTop"
     iops = dict(_boxer=boxerName, _box=boxName)
 
-    uid = 'KQzSlod5EfC1TvKsr0VvkQ'  # for test
-    rid = f"{Hog.Proem}{uid}"
-    assert rid == '__KQzSlod5EfC1TvKsr0VvkQ'
+
+    rid = '__DqITqY1HgR8JA98qyvRW-S'
+    assert rid == '__DqITqY1HgR8JA98qyvRW-S'
 
     hold = Hold()
 
@@ -261,6 +269,7 @@ def test_hog_log(mockHelpingNowIso8601):
     assert hog.iops == iops
     assert hog.nabe == Nabes.afdo
     assert hog.hold == hold
+    assert hog.rid == rid
 
     assert hog.base == boxerName
     assert hog.opened
@@ -306,7 +315,7 @@ def test_hog_log(mockHelpingNowIso8601):
     assert hog.stamp == dts
     assert hog.header.startswith('rid')
     assert hog.header == ('rid\tbase\tname\tstamp\trule\tcount\n'
-                    '__KQzSlod5EfC1TvKsr0VvkQ\tBoxerTest\tpig\t2021-06-27T21:26:21.233257+00:00\tevery\t0\n'
+                    '__DqITqY1HgR8JA98qyvRW-S\tBoxerTest\tpig\t2021-06-27T21:26:21.233257+00:00\tevery\t0\n'
                     'tyme.key\tactive.key\ttock.key\n'
                     '_boxer_BoxerTest_tyme\t_boxer_BoxerTest_active\t_boxer_BoxerTest_tock\n'
                     'tyme.value\tactive.value\ttock.value\n')
@@ -316,7 +325,7 @@ def test_hog_log(mockHelpingNowIso8601):
     assert lines == \
     [
         'rid\tbase\tname\tstamp\trule\tcount\n',
-        '__KQzSlod5EfC1TvKsr0VvkQ\tBoxerTest\tpig\t'
+        '__DqITqY1HgR8JA98qyvRW-S\tBoxerTest\tpig\t'
         '2021-06-27T21:26:21.233257+00:00\tevery\t0\n',
         'tyme.key\tactive.key\ttock.key\n',
         '_boxer_BoxerTest_tyme\t_boxer_BoxerTest_active\t_boxer_BoxerTest_tock\n',
@@ -328,7 +337,7 @@ def test_hog_log(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','pig','2021-06-27T21:26:21.233257+00:00','every','0'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','pig','2021-06-27T21:26:21.233257+00:00','every','0'),
         ('tyme.key', 'active.key', 'tock.key'),
         ('_boxer_BoxerTest_tyme', '_boxer_BoxerTest_active', '_boxer_BoxerTest_tock'),
         ('tyme.value', 'active.value', 'tock.value'),
@@ -355,7 +364,7 @@ def test_hog_log(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ', 'BoxerTest','pig','2021-06-27T21:26:21.233257+00:00','every','0'),
+        ('__DqITqY1HgR8JA98qyvRW-S', 'BoxerTest','pig','2021-06-27T21:26:21.233257+00:00','every','0'),
         ('tyme.key', 'active.key', 'tock.key'),
         ('_boxer_BoxerTest_tyme', '_boxer_BoxerTest_active', '_boxer_BoxerTest_tock'),
         ('tyme.value', 'active.value', 'tock.value'),
@@ -406,7 +415,7 @@ def test_hog_log(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ', 'BoxerTest','dog','2021-06-27T21:26:21.233257+00:00','once','0'),
+        ('__DqITqY1HgR8JA98qyvRW-S', 'BoxerTest','dog','2021-06-27T21:26:21.233257+00:00','once','0'),
         ('tyme.key', 'active.key', 'tock.key'),
         ('_boxer_BoxerTest_tyme', '_boxer_BoxerTest_active', '_boxer_BoxerTest_tock'),
         ('tyme.value', 'active.value', 'tock.value'),
@@ -425,7 +434,7 @@ def test_hog_log(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ', 'BoxerTest','dog','2021-06-27T21:26:21.233257+00:00','once','0'),
+        ('__DqITqY1HgR8JA98qyvRW-S', 'BoxerTest','dog','2021-06-27T21:26:21.233257+00:00','once','0'),
         ('tyme.key', 'active.key', 'tock.key'),
         ('_boxer_BoxerTest_tyme', '_boxer_BoxerTest_active', '_boxer_BoxerTest_tock'),
         ('tyme.value', 'active.value', 'tock.value'),
@@ -491,7 +500,7 @@ def test_hog_log(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','cat','2021-06-27T21:26:21.233257+00:00','every','0'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','cat','2021-06-27T21:26:21.233257+00:00','every','0'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -513,7 +522,7 @@ def test_hog_log(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ', 'BoxerTest', 'cat', '2021-06-27T21:26:21.233257+00:00', 'every', '0'),
+        ('__DqITqY1HgR8JA98qyvRW-S', 'BoxerTest', 'cat', '2021-06-27T21:26:21.233257+00:00', 'every', '0'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -574,7 +583,7 @@ def test_hog_log(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','fox','2021-06-27T21:26:21.233257+00:00','update','0'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','fox','2021-06-27T21:26:21.233257+00:00','update','0'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -596,7 +605,7 @@ def test_hog_log(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','fox','2021-06-27T21:26:21.233257+00:00','update','0'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','fox','2021-06-27T21:26:21.233257+00:00','update','0'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -620,7 +629,7 @@ def test_hog_log(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ',
+        ('__DqITqY1HgR8JA98qyvRW-S',
          'BoxerTest','fox','2021-06-27T21:26:21.233257+00:00','update','0'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
@@ -643,7 +652,7 @@ def test_hog_log(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ',
+        ('__DqITqY1HgR8JA98qyvRW-S',
          'BoxerTest','fox','2021-06-27T21:26:21.233257+00:00','update','0'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
@@ -667,7 +676,7 @@ def test_hog_log(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','fox','2021-06-27T21:26:21.233257+00:00','update','0'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','fox','2021-06-27T21:26:21.233257+00:00','update','0'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -734,7 +743,7 @@ def test_hog_log(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','owl','2021-06-27T21:26:21.233257+00:00','change','0'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','owl','2021-06-27T21:26:21.233257+00:00','change','0'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -756,7 +765,7 @@ def test_hog_log(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','owl','2021-06-27T21:26:21.233257+00:00','change','0'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','owl','2021-06-27T21:26:21.233257+00:00','change','0'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -785,7 +794,7 @@ def test_hog_log(mockHelpingNowIso8601):
     assert lines == \
     [
        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-       ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','owl','2021-06-27T21:26:21.233257+00:00','change','0'),
+       ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','owl','2021-06-27T21:26:21.233257+00:00','change','0'),
        ('tyme.key', 'home.key', 'away.key'),
        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
        ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -806,7 +815,7 @@ def test_hog_log(mockHelpingNowIso8601):
     assert lines == \
     [
        ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-       ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','owl','2021-06-27T21:26:21.233257+00:00','change','0'),
+       ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','owl','2021-06-27T21:26:21.233257+00:00','change','0'),
        ('tyme.key', 'home.key', 'away.key'),
        ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
        ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -833,7 +842,7 @@ def test_hog_log(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','owl','2021-06-27T21:26:21.233257+00:00','change','0'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','owl','2021-06-27T21:26:21.233257+00:00','change','0'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -896,7 +905,7 @@ def test_hog_log(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','cow','2021-06-27T21:26:21.233257+00:00','span','0'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','cow','2021-06-27T21:26:21.233257+00:00','span','0'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -920,7 +929,7 @@ def test_hog_log(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','cow','2021-06-27T21:26:21.233257+00:00','span','0'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','cow','2021-06-27T21:26:21.233257+00:00','span','0'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -941,7 +950,7 @@ def test_hog_log(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','cow','2021-06-27T21:26:21.233257+00:00','span','0'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','cow','2021-06-27T21:26:21.233257+00:00','span','0'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -964,7 +973,7 @@ def test_hog_log(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','cow','2021-06-27T21:26:21.233257+00:00','span','0'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','cow','2021-06-27T21:26:21.233257+00:00','span','0'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -987,7 +996,7 @@ def test_hog_log(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','cow','2021-06-27T21:26:21.233257+00:00','span','0'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','cow','2021-06-27T21:26:21.233257+00:00','span','0'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -1039,8 +1048,7 @@ def test_hog_cycle_size(mockHelpingNowIso8601):
     boxName = "BoxTop"
     iops = dict(_boxer=boxerName, _box=boxName)
 
-    uid = 'KQzSlod5EfC1TvKsr0VvkQ'  # for test
-    rid = f"{Hog.Proem}{uid}"
+    rid = '__DqITqY1HgR8JA98qyvRW-S'
 
     hold = Hold()
 
@@ -1084,6 +1092,7 @@ def test_hog_cycle_size(mockHelpingNowIso8601):
     assert hog.cycleCount == count
     assert hog.cycleSpan == period == 0.0625
     assert hog.cycleSize == size
+    assert hog.rid == rid
 
     assert hog.hits == {'home': 'location_home', 'away': 'location_away'}
     assert len(hog.cyclePaths) == count
@@ -1118,7 +1127,7 @@ def test_hog_cycle_size(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','rat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','rat','2021-06-27T21:26:21.233257+00:00','every','2'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -1147,7 +1156,7 @@ def test_hog_cycle_size(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','rat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','rat','2021-06-27T21:26:21.233257+00:00','every','2'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE')
@@ -1159,7 +1168,7 @@ def test_hog_cycle_size(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','rat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','rat','2021-06-27T21:26:21.233257+00:00','every','2'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -1189,7 +1198,7 @@ def test_hog_cycle_size(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','rat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','rat','2021-06-27T21:26:21.233257+00:00','every','2'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -1218,7 +1227,7 @@ def test_hog_cycle_size(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','rat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','rat','2021-06-27T21:26:21.233257+00:00','every','2'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE')
@@ -1230,7 +1239,7 @@ def test_hog_cycle_size(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','rat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','rat','2021-06-27T21:26:21.233257+00:00','every','2'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -1245,7 +1254,7 @@ def test_hog_cycle_size(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','rat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','rat','2021-06-27T21:26:21.233257+00:00','every','2'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -1295,8 +1304,7 @@ def test_hog_cycle_span(mockHelpingNowIso8601):
     boxName = "BoxTop"
     iops = dict(_boxer=boxerName, _box=boxName)
 
-    uid = 'KQzSlod5EfC1TvKsr0VvkQ'  # for test
-    rid = f"{Hog.Proem}{uid}"
+    rid = '__DqITqY1HgR8JA98qyvRW-S'
 
     hold = Hold()
 
@@ -1374,7 +1382,7 @@ def test_hog_cycle_span(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -1403,7 +1411,7 @@ def test_hog_cycle_span(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -1433,7 +1441,7 @@ def test_hog_cycle_span(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE')
@@ -1445,7 +1453,7 @@ def test_hog_cycle_span(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -1476,7 +1484,7 @@ def test_hog_cycle_span(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -1506,7 +1514,7 @@ def test_hog_cycle_span(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE')
@@ -1518,7 +1526,7 @@ def test_hog_cycle_span(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),
@@ -1533,7 +1541,7 @@ def test_hog_cycle_span(mockHelpingNowIso8601):
     assert lines == \
     [
         ('rid', 'base', 'name', 'stamp', 'rule', 'count'),
-        ('__KQzSlod5EfC1TvKsr0VvkQ','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
+        ('__DqITqY1HgR8JA98qyvRW-S','BoxerTest','bat','2021-06-27T21:26:21.233257+00:00','every','2'),
         ('tyme.key', 'home.key', 'away.key'),
         ('_boxer_BoxerTest_tyme', 'location_home', 'location_away'),
         ('tyme.value', 'home.latN', 'home.lonE', 'away.latN', 'away.lonE'),

@@ -169,6 +169,19 @@ class Hog(ActBase, Filer):
     Proem = "__"  # prepended to rid (run ID) in header to ensure 24 bit boundary alignment
 
 
+    @classmethod
+    def _genRid(cls):
+        """Generates random universally unique hog run ID rid, not iteration
+
+        Returns:
+            rid (str): run id in 24 bit aligned Base64
+        """
+        ps = 2  # pad size, use unit test to ensure .Proem is at least length 2
+        rid = encodeB64(bytes([0] * ps) + uuid.uuid1().bytes)[ps:] # prepad, convert, and strip
+        rid = cls.Proem[:ps] + rid.decode()  # fully qualified rid with Proem
+        return rid # hog run id uuid for this run (not iteration), same size as CESR salt
+
+
     def __init__(self, iops=None, nabe=Nabes.afdo, base="", filed=True,
                        extensioned=True, mode='a+', fext="hog", reuse=True,
                        rid=None, rule=Rules.every, span=0.0,
@@ -323,11 +336,14 @@ class Hog(ActBase, Filer):
         if not self.started:
 
             if self.rid is None:
-                # hog id uuid for this run (not iteration)
-                # create B64 version of uuid with stripped trailing pad bytes
-                uid = encodeB64(bytes.fromhex(uuid.uuid1().hex))[:-2].decode()
-                #self.rid = self.name + "_" + uid
-                self.rid = self.Proem + uid  # same as CESR salt
+                self.rid = self._genRid()
+                ##mid = encodeB64(bytes([0] * ps) + uuid.uuid4().bytes)[ps:] # prepad, convert, and strip
+                ##mid = self.code.encode() + mid  # fully qualified mid with prefix code
+                ## hog id uuid for this run (not iteration)
+                ## create B64 version of uuid with stripped trailing pad bytes
+                #uid = encodeB64(bytes.fromhex(uuid.uuid1().hex))[:-2].decode()
+                ##self.rid = self.name + "_" + uid
+                #self.rid = self.Proem + uid  # same as CESR salt
             self.stamp = timing.nowIso8601()  # current real datetime as ISO8601 string
 
             metaLine = (f"rid\tbase\tname\tstamp\trule\tcount\n")
