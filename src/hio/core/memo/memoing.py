@@ -3,9 +3,10 @@
 hio.core.memoing Module
 
 Mixin Base Classes that add support for  memograms over datagram based transports.
-In this context, a memogram is a larger memogram that is partitioned into
-smaller parts as transport specific datagrams. This allows larger messages to
-be transported over datagram transports than the underlying transport can support.
+In this context, a memo made is a larger message that is partitioned into
+smaller memograms parts that fit into transport specific datagrams.
+This allows larger messages (memos) to be transported over datagram transports
+which messages are larger than  a single datagram in the underlying transport.
 """
 
 import socket
@@ -31,17 +32,21 @@ Versionage = namedtuple("Versionage", "major minor")
 
 
 """Sizage: namedtuple for gram header part size entries in Memoer code tables
-cs is the code part size int number of chars in code part
+cs is the code part size int number of chars in code part (serialization code)
 ms is the mid part size int number of chars in the mid part (memoID)
 vs is the vid  part size int number of chars in the vid part (verification ID)
 ns is the neck part size int number of chars for the gram number in all grams
-      and the additional neck that also appears in first gram for gram count
+      it is also the size of the gram count that only appears in the zeroth gram
+      The zeroth gram has a long neck, two ns sized fields all other grams have a
+      short neck (1 ns sized field)
 ss is the signature part size int number of chars in the signature part.
       the signature part is discontinuously attached after the body part but
-      its size is included in over head computation for the body size
-hs is the head size int number of chars for other grams no-neck.
-      hs = cs + ms + vs + ns + ss. The size for the first gram with neck is
-      hs + ns
+      its size is included in the overhead size computation for the body size
+hs is the head size int number of chars
+      short next
+        hs = cs + ms + vs + ns + ss
+      zeroth long neck
+        hs = cs + ms + vs + ns + ns + ss
 """
 Sizage = namedtuple("Sizage", "cs ms vs ss ns hs")
 
@@ -78,36 +83,38 @@ SGDex = SignGramCodex()  # Make instance
 
 
 class Memoer(hioing.Mixin):
-    """
-    Memoer mixin base class to adds memogram support to a transport class.
-    Memoer supports asynchronous memograms. Provides common methods for subclasses.
+    """Memoer mixin base class to adds memogram support to a transport class.
+    Memoer supports memos composed of asynchronous memograms.
+    Provides common methods for subclasses.
 
-    A memogram is a higher level construct that sits on top of a datagram.
+    A memogram is a higher level construct that sits on top of a datagram transport.
     A memogram supports the segmentation and desegmentation of memos to
     respect the underlying datagram size, buffer, and fragmentation behavior.
 
-    Layering a reliable transaction protocol on top of a memogram enables reliable
-    asynchronous messaging over unreliable datagram transport protocols.
+    Layering a reliable transaction protocol for memos on top of a memogram
+    transport enables reliable asynchronous messaging over unreliable datagram
+    transport protocols.
 
-    When the datagram protocol is already reliable, then a memogram enables
+    When the datagram protocol is already reliable, then a memogram transport enables
     larger memos (messages) than that natively supported by the datagram.
 
     Usage:
         Do not instantiate directly but use as a mixin with a transport class
         in order to create a new subclass that adds memogram support to the
-        transport class. For example MemoerUdp or MemoerUxd
+        datagram transport class. For example MemoerUdp or MemoerUxd
 
     Each direction of dataflow uses a tiered set of buffers that respect
     the constraints of non-blocking asynchronous IO with datagram transports.
 
-    On the receive side each complete datagram (gram) is put in a gram receive
-    deque as a segment of a memo. These deques are indexed by the sender's
-    source addr. The grams in the gram recieve deque are then desegmented into a memo
+    On the receive side each complete memogram (gram) is put in a gram receive
+    deque as a memogram (datagram sized) segment of a memo.
+    These deques are indexed by the sender's source addr.
+    The grams in the gram recieve deque are then desegmented into a memo
     and placed in the memo deque for consumption by the application or some other
     higher level protocol.
 
     On the transmit side memos are placed in a deque (double ended queue). Each
-    memo is then segmented into grams (datagrams) that respect the size constraints
+    memo is then segmented into grams (memograms) that respect the size constraints
     of the underlying datagram transport. These grams are placed in the outgoing
     gram deque. Each entry in this deque is a duple of form:
     (gram: bytes, dst: str). Each  duple is pulled off the deque and its
@@ -144,7 +151,8 @@ class Memoer(hioing.Mixin):
 
 
     Inherited Attributes:
-        name (str):  unique name for Memoer transport. Used to manage.
+        name (str):  unique name for Memoer transport.
+                     Used to manage multiple instances.
         opened (bool):  True means transport open for use
                         False otherwise
         bc (int | None): count of transport buffers of MaxGramSize
@@ -152,13 +160,10 @@ class Memoer(hioing.Mixin):
     Attributes:
         version (Versionage): version for this memoir instance consisting of
                 namedtuple of form (major: int, minor: int)
-        rxgs (dict): holding rx (receive) (data) gram deques of grams.
-            Each item in dict has key=src and val=deque of grames received
-        rxgs (dict): keyed by mid (memoID) with value of dict where each deque
-            holds incomplete memo grams for that mid.
-            The mid appears in every gram from the same memo.
-            The value dict is keyed by the gram number with value
-            that is the gram bytes.
+        rxgs (dict): keyed by mid (memoID) with value of dict where each
+                value dict holds grams from memo keyed by gram number.
+                Grams have been stripped of their headers.
+                The mid appears in every gram from the same memo.
         sources (dict): keyed by mid (memoID) that holds the src for the memo.
             This enables reattaching src to fused memo in rxms deque tuple.
         counts (dict): keyed by mid (memoID) that holds the gram count from
@@ -188,15 +193,6 @@ class Memoer(hioing.Mixin):
         echos (deque): holding echo receive duples for testing. Each duple of
                        form: (gram: bytes, dst: str).
 
-
-    Hidden:
-        _code (bytes | None): see size property
-        _curt (bool): see curt property
-        _size (int): see size property
-        _verific (bool): see verific property
-
-
-
     Properties:
         code (bytes | None): gram code for gram header when rending for tx
         curt (bool): True means when rending for tx encode header in base2
@@ -211,6 +207,11 @@ class Memoer(hioing.Mixin):
                         False otherwise
 
 
+    Hidden:
+        _code (bytes | None): see size property
+        _curt (bool): see curt property
+        _size (int): see size property
+        _verific (bool): see verific property
     """
     Version = Versionage(major=0, minor=0)  # default version
     Codex = GramDex
@@ -457,7 +458,6 @@ class Memoer(hioing.Mixin):
         """Determines encoding of gram bytes header when parsing grams.
         The encoding maybe either base2 or base64.
 
-
         Returns:
             curt (bool):    True means base2 encoding
                             False means base64 encoding
@@ -489,7 +489,7 @@ class Memoer(hioing.Mixin):
         the count from 0 to 63. There is one collision, however, between Base2 and
         Base 64 for invalid gram headers. This is because 0o27 is the
         base2 code for ascii 'V'. This means that Base2 encodings
-        that begin 0o27 witch is the Base2 encoding of the ascii 'V, would be
+        that begin with 0o27 wich is the Base2 encoding of the ascii 'V, would be
         incorrectly detected as text not binary.
         """
 
@@ -571,11 +571,10 @@ class Memoer(hioing.Mixin):
                 raise hioing.MemoerError(f"Not enough rx bytes for b2 gram"
                                          f" < {hs + 1}.")
 
-            #mid = encodeB64(bytes([0] * ps) + gram[cs:cms])[ps:].decode()  # prepad, convert, strip
             mid = encodeB64(gram[:cms]).decode()  # fully qualified with prefix code
             vid = encodeB64(gram[cms:cms+vs]).decode()  # must be on 24 bit boundary
             gn = int.from_bytes(gram[cms+vs:cms+vs+ns])
-            if gn == 0:  # first (zeroth) gram so get neck
+            if gn == 0:  # first (zeroth) gram so long neck
                 if len(gram) < hs + ns + 1:
                     raise hioing.MemoerError(f"Not enough rx bytes for b2 "
                                              f"gram < {hs + ns + 1}.")
@@ -585,7 +584,7 @@ class Memoer(hioing.Mixin):
                 del gram[-ss if ss else len(gram):]  # strip sig
                 signed = bytes(gram[:])  # copy signed portion of gram
                 del gram[:hs-ss+ns]  # strip of fore head leaving body in gram
-            else:  # non-first gram no neck
+            else:  # non-zeroth gram so short neck
                 gc = None
                 sig = encodeB64(gram[-ss if ss else len(gram):])
                 del gram[-ss if ss else len(gram):]  # strip sig
@@ -609,7 +608,7 @@ class Memoer(hioing.Mixin):
             mid = bytes(gram[:cs+ms]).decode()  # fully qualified with prefix code
             vid = bytes(gram[cs+ms:cs+ms+vs]).decode() # must be on 24 bit boundary
             gn = helping.b64ToInt(gram[cs+ms+vs:cs+ms+vs+ns])
-            if gn == 0:  # first (zeroth) gram so get neck
+            if gn == 0:  # first (zeroth) gram so long neck
                 if len(gram) < hs + ns + 1:
                     raise hioing.MemoerError(f"Not enough rx bytes for b64 "
                                              f"gram < {hs + ns + 1}.")
@@ -619,7 +618,7 @@ class Memoer(hioing.Mixin):
                 del gram[-ss if ss else len(gram):]  # strip sig
                 signed = bytes(gram[:])  # copy signed portion of gram
                 del gram[:hs-ss+ns]  # strip of fore head leaving body in gram
-            else:  # non-first gram no neck
+            else:  # non-zeroth gram short neck
                 gc = None
                 sig = bytes(gram[-ss if ss else len(gram):])
                 del gram[-ss if ss else len(gram):]  # strip sig
@@ -635,7 +634,7 @@ class Memoer(hioing.Mixin):
 
 
     def receive(self, *, echoic=False):
-        """Attemps to send bytes in txbs to remote destination dst.
+        """Attemps to receive bytes from remote source.
         Must be overridden in subclass.
         This is a stub to define mixin interface.
 
@@ -646,7 +645,7 @@ class Memoer(hioing.Mixin):
                             indicates nothing to receive of form (b'', None)
 
         Returns:
-            duple (tuple): of form (data: bytes, src: str) where data is the
+            duple (tuple): of form (data: bytes, src: str|None) where data is the
                 bytes of received data and src is the source address.
                 When no data the duple is (b'', None) unless echoic is True
                 then pop off echo from .echos
@@ -702,7 +701,7 @@ class Memoer(hioing.Mixin):
         if not gram:  # no received data
             return False  # so try again later
 
-        gram = bytearray(gram)# make copy bytearray so can strip off header
+        gram = bytearray(gram)  # make copy bytearray so can strip off header
 
         try:
             mid, vid, gn, gc = self.pick(gram)  # parse and strip off head leaving body
