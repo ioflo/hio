@@ -943,7 +943,7 @@ class Memoer(hioing.Mixin):
         vid = b"" if vid is None else vid[:vs].encode()
 
         # memo ID is 16 byte random UUID converted to 22 char Base64 right aligned
-        mid = encodeB64(bytes([0] * ps) + uuid.uuid4().bytes)[ps:] # prepad, convert, and strip
+        mid = encodeB64(bytes([0] * ps) + uuid.uuid1().bytes)[ps:] # prepad, convert, and strip
         mid = self.code.encode() + mid  # fully qualified mid with prefix code
         ml = len(memo)
 
