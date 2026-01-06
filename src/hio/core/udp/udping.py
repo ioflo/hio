@@ -208,6 +208,7 @@ class Peer(hioing.Mixin):
 
         return (data, sa)
 
+
     def send(self, data, dst, **kwa):
         """Perform non blocking send on  socket.
 
@@ -215,7 +216,7 @@ class Peer(hioing.Mixin):
             cnt (int): count of bytes actually sent, may be less than len(data).
 
         Parameters:
-            data (bytes):  payload to send
+            data (bytes | bytearray):  payload to send (txbs)
             dst (str): udp destination addr duple of form (host: str, port: int)
         """
         try:

@@ -106,6 +106,16 @@ class Memoer(hioing.Mixin):
     Each direction of dataflow uses a tiered set of buffers that respect
     the constraints of non-blocking asynchronous IO with datagram transports.
 
+    On the transmit side memos are placed in a memo deque (double ended queue).
+    Each memo is then segmented into grams (memograms) that respect the size constraints
+    of the underlying datagram transport. These grams are placed in the outgoing
+    gram deque. Each entry in this deque is a duple of form:
+    (gram: bytes, dst: str). Each  duple is pulled off the deque and its
+    gram is put in bytearray for transport.
+
+    memo -> .txms deque -> rend -> grams -> .txgs deque -> send -> .txbs
+
+
     On the receive side each complete memogram (gram) is put in a gram receive
     deque as a memogram (datagram sized) segment of a memo.
     These deques are indexed by the sender's source addr.
@@ -113,12 +123,9 @@ class Memoer(hioing.Mixin):
     and placed in the memo deque for consumption by the application or some other
     higher level protocol.
 
-    On the transmit side memos are placed in a deque (double ended queue). Each
-    memo is then segmented into grams (memograms) that respect the size constraints
-    of the underlying datagram transport. These grams are placed in the outgoing
-    gram deque. Each entry in this deque is a duple of form:
-    (gram: bytes, dst: str). Each  duple is pulled off the deque and its
-    gram is put in bytearray for transport.
+    receive -> (gram, src) -> grams parsed to .rxgs  .counts .vids .sources ->
+           fuse -> memo .rxms deque
+
 
     When using non-blocking IO, asynchronous datagram transport
     protocols may have hidden buffering constraints that result in fragmentation
@@ -867,26 +874,6 @@ class Memoer(hioing.Mixin):
         self.serviceRxMemos()
 
 
-    def send(self, txbs, dst, *, echoic=False):
-        """Attemps to send bytes in txbs to remote destination dst.
-        Must be overridden in subclass.
-        This is a stub to define mixin interface.
-
-        Returns:
-            count (int): bytes actually sent
-
-        Parameters:
-            txbs (bytes | bytearray): of bytes to send
-            dst (str): remote destination address
-            echoic (bool): True means echo sends into receives via. echos
-                           False measn do not echo
-        """
-        if echoic:
-            self.echos.append((bytes(txbs), dst))  # make copy
-        return len(txbs)  # all sent
-
-
-
     def memoit(self, memo, dst, vid=None):
         """Append (memo, dst, vid) tuple to .txms deque
 
@@ -1003,6 +990,29 @@ class Memoer(hioing.Mixin):
         return grams
 
 
+    def send(self, gram, dst, *, echoic=False):
+        """Attemps to send bytes in txbs to remote destination dst.
+        Must be overridden in subclass.
+        This is a stub to define mixin interface.
+
+        Returns:
+            count (int): bytes actually sent
+
+        Parameters:
+            gram (bytearray): of bytes to send
+            dst (str): remote destination address
+            echoic (bool): True means echo sends into receives via. echos
+                           False measn do not echo
+        """
+        if echoic:
+            self.echos.append((bytes(gram), dst))  # make copy
+
+        # for example: cnt = self.ls.sendto(gram, dst)
+        # cnt == int number of bytes sent
+        cnt = len(gram)  # all sent
+        return cnt # bytes sent
+
+
     def _serviceOneTxMemo(self):
         """Service one (memo, dst, vid) tuple from .txms deque where tuple is
         of form: (memo: str, dst: str, vid: str) where:
@@ -1040,7 +1050,7 @@ class Memoer(hioing.Mixin):
 
 
     def gramit(self, gram, dst):
-        """Append (gram, dst) duple to .txgs deque
+        """Append (gram, dst) duple to .txgs deque. Utility method for testing.
 
         Parameters:
             gram (bytes): gram to be sent
@@ -1057,12 +1067,13 @@ class Memoer(hioing.Mixin):
            echoic (bool): True means echo sends into receives via. echos
                            False measn do not echo
 
-        Each entry in.txgs is duple of form: (gram: bytes, dst: str)
+        Each entry in .txgs is duple of form: (gram: bytes, dst: str)
         where:
             gram (bytes): is outgoing gram segment from associated memo
             dst (str): is far peer destination address
 
-        .txbs is duple of form: (gram: bytearray, dst: str)
+        The latest gram from .txgs is put in .txbs whose value is duple of form:
+          (gram: bytearray, dst: str)  bytearray so can partial send
         where:
             gram (bytearray): holds incompletly sent gram portion if any
             dst (str | None): destination or None if last completely sent
@@ -1084,17 +1095,17 @@ class Memoer(hioing.Mixin):
         send remainder of a datagram when using nonblocking sends.
 
         When the far side peer is unavailable the gram is dropped. This means
-        that unreliable transports need to have a timeour retry mechanism.
+        that unreliable transports need to have a timeout retry mechanism.
 
         Internally, a dst of None in the .txbs duple indicates its ok to take
         another gram from the .txgs deque if any and start sending it.
 
         """
-        gram, dst = self.txbs
-        if dst == None:
+        gram, dst = self.txbs  # split out saved partial send if any
+        if dst == None:  # no partial send remaining so get new gram
             try:
-                gram, dst = self.txgs.popleft()
-                gram = bytearray(gram)
+                gram, dst = self.txgs.popleft()  # next gram
+                gram = bytearray(gram)  # ensure bytearray
             except IndexError:
                 return False  # nothing more to send, return False to try later
 
@@ -1126,8 +1137,8 @@ class Memoer(hioing.Mixin):
         if cnt:
             del gram[:cnt]  # remove from buffer those bytes sent
             if not gram:  # all sent
-                dst = None  # indicate by setting dst to None
-            self.txbs = (gram, dst)  # update txbs to indicate if completely sent
+                dst = None  # done indicated by setting dst to None
+            self.txbs = (gram, dst)  # update .txbs to indicate if completely sent
 
         return (False if dst else True)  # incomplete return False, else True
 
@@ -1157,6 +1168,7 @@ class Memoer(hioing.Mixin):
         while self.opened and self.txgs:  # pending gram(s)
             if not self._serviceOnceTxGrams(echoic=echoic):  # send incomplete
                 break  # try again later
+
 
 
     def serviceAllTxOnce(self):
