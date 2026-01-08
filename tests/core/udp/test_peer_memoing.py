@@ -5,41 +5,60 @@ tests.core.test_peer_memoer module
 """
 import os
 import platform
+import time
 
 import pytest
 
 from hio.help import helping
 from hio.base import doing, tyming
 from hio.core.memo import GramDex
-from hio.core.uxd import uxding, peermemoing
+from hio.core.udp import udping, peermemoing
 
 
 def test_memoer_peer_basic():
     """Test MemoerPeer class"""
-    if platform.system() == "Windows":
-        return
-    alpha = peermemoing.PeerMemoer(name="alpha", temp=True, size=38)
+
+    alphaPort = 6103
+    betaPort = 6104
+
+    alpha = peermemoing.PeerMemoer(name="alpha", temp=True)
     assert alpha.name == "alpha"
     assert alpha.code == GramDex.Basic
     assert not alpha.curt
     # (code, mid, vid, sig, neck, head) part sizes
     assert alpha.Sizes[alpha.code] == (2, 22, 0, 0, 4, 28)  # cs ms vs ss ns hs
-    assert alpha.size == 38
+    assert alpha.size == 1240  # default MaxGramSize for udp
+    assert alpha.bc == 1024
+    assert not alpha.opened
+    assert alpha.ha == ('127.0.0.1', 55000)
+    assert alpha.path == alpha.ha
 
+
+    size = 38  # force gram size to be smaller than default so forces segmentation
+    alpha = peermemoing.PeerMemoer(name="alpha", temp=True, size=size, port=alphaPort)
+    assert alpha.name == "alpha"
+    assert alpha.code == GramDex.Basic
+    assert not alpha.curt
+    # (code, mid, vid, sig, neck, head) part sizes
+    assert alpha.Sizes[alpha.code] == (2, 22, 0, 0, 4, 28)  # cs ms vs ss ns hs
+    assert alpha.size == size
     assert alpha.bc == 1024
     assert not alpha.opened
     assert alpha.reopen()
     assert alpha.opened
-    assert alpha.path.endswith("alpha.uxd")
-    #assert alpha.actualBufSizes() == (4194240, 4194240) == (alpha.bc * alpha.MaxGramSize,
-    #                                                        alpha.bc * alpha.MaxGramSize)
+    assert alpha.ha == ('127.0.0.1', alphaPort)
+    assert alpha.path == alpha.ha
+    #assert alpha.actualBufSizes() == (1269760, 1269760) == (alpha.bc * alpha.MaxGramSize, alpha.bc * alpha.MaxGramSize)
 
-    beta = peermemoing.PeerMemoer(name="beta", temp=True, size=38)
+    beta = peermemoing.PeerMemoer(name="beta", temp=True, size=size, port=betaPort)
     assert beta.reopen()
-    assert beta.path.endswith("beta.uxd")
+    assert beta.opened
+    assert beta.ha == ('127.0.0.1', betaPort)
+    assert beta.path == beta.ha
+    #assert beta.actualBufSizes() == (1269760, 1269760) == (beta.bc * beta.MaxGramSize, beta.bc * beta.MaxGramSize)
 
     # alpha sends
-    alpha.memoit("Hello there.", beta.path)
+    alpha.memoit("Hello there.", beta.ha)
     alpha.memoit("How ya doing?", beta.path)
     assert len(alpha.txms) == 2
     alpha.serviceTxMemos()
@@ -58,6 +77,7 @@ def test_memoer_peer_basic():
 
     # beta receives
     beta.serviceReceives()
+    time.sleep(0.05)
     assert not beta.echos
     assert len(beta.rxgs) == 2
     assert len(beta.counts) == 2
@@ -103,6 +123,7 @@ def test_memoer_peer_basic():
 
     # alpha receives
     alpha.serviceReceives()
+    time.sleep(0.05)
     assert not alpha.echos
     assert len(alpha.rxgs) == 2
     assert len(alpha.counts) == 2
@@ -128,41 +149,41 @@ def test_memoer_peer_basic():
     alpha.serviceRxMemos()
     assert not alpha.rxms
 
-
     assert beta.close()
     assert not beta.opened
-    assert not os.path.exists(beta.path)
 
     assert alpha.close()
     assert not alpha.opened
-    assert not os.path.exists(alpha.path)
-
 
     """Done Test"""
 
 
 def test_memoer_peer_open():
     """Test MemoerPeer class with context manager openPM"""
-    if platform.system() == "Windows":
-        return
+
+    host = '127.0.0.1'  # default
+    alphaPort = 6103
+    betaPort = 6104
+    size = 38
+
+    with (peermemoing.openPM(name='alpha', size=size, port=alphaPort) as alpha,
+          peermemoing.openPM(name='beta', size=size, port=betaPort) as beta):
 
 
-    with (peermemoing.openPM(name='alpha', size=38) as alpha,
-          peermemoing.openPM(name='beta', size=38) as beta):
         assert alpha.name == "alpha"
         assert alpha.code == GramDex.Basic
         assert not alpha.curt
         # (code, mid, vid, sig, neck, head) part sizes
         assert alpha.Sizes[alpha.code] == (2, 22, 0, 0, 4, 28)  # cs ms vs ss ns hs
-        assert alpha.size == 38
+        assert alpha.size == size
         assert alpha.bc == 1024
 
         assert alpha.opened
-        assert alpha.path.endswith("alpha.uxd")
+        assert alpha.ha == alpha.path == (host, alphaPort)
 
         assert beta.bc == 1024
         assert beta.opened
-        assert beta.path.endswith("beta.uxd")
+        assert beta.ha == beta.path == (host, betaPort)
 
         # alpha sends
         alpha.memoit("Hello there.", beta.path)
@@ -184,6 +205,8 @@ def test_memoer_peer_open():
 
         # beta receives
         beta.serviceReceives()
+        time.sleep(0.05)
+        time.sleep(0.05)
         assert not beta.echos
         assert len(beta.rxgs) == 2
         assert len(beta.counts) == 2
@@ -229,6 +252,7 @@ def test_memoer_peer_open():
 
         # alpha receives
         alpha.serviceReceives()
+        time.sleep(0.05)
         assert not alpha.echos
         assert len(alpha.rxgs) == 2
         assert len(alpha.counts) == 2
@@ -254,13 +278,8 @@ def test_memoer_peer_open():
         alpha.serviceRxMemos()
         assert not alpha.rxms
 
-
     assert not beta.opened
-    assert not os.path.exists(beta.path)
-
     assert not alpha.opened
-    assert not os.path.exists(alpha.path)
-
 
     """Done Test"""
 
@@ -269,8 +288,7 @@ def test_memoer_peer_open():
 def test_peermemoer_doer():
     """Test PeerMemoerDoer class
     """
-    if platform.system() == "Windows":
-        return
+
     tock = 0.03125
     ticks = 4
     limit = ticks *  tock
@@ -283,9 +301,7 @@ def test_peermemoer_doer():
 
     peer = peermemoing.PeerMemoer(name="test", temp=True, reopen=False)
     assert peer.opened == False
-    assert peer.path == None
-    assert peer.filed == False
-    assert peer.extensioned == True
+    assert peer.ha == peer.path == ('127.0.0.1', 55000)
 
     doer = peermemoing.PeerMemoerDoer(peer=peer)
     assert doer.peer == peer
@@ -296,7 +312,6 @@ def test_peermemoer_doer():
     doist.do(doers=doers)
     assert doist.tyme == limit
     assert peer.opened == False
-    assert not os.path.exists(peer.path)
     """Done Test"""
 
 
@@ -304,4 +319,5 @@ if __name__ == "__main__":
     test_memoer_peer_basic()
     test_memoer_peer_open()
     test_peermemoer_doer()
+
 

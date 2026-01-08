@@ -38,6 +38,7 @@ def test_udp_basic():
         assert alpha.reopen()
         assert alpha.opened
         assert alpha.ha == alphaHa
+        assert alpha.path == alpha.ha
 
         beta = udping.Peer(name='beta',host=host, port = betaPort, wl=wl)  # host on port 6102
         assert not beta.opened
@@ -45,6 +46,7 @@ def test_udp_basic():
         assert beta.reopen()
         assert beta.opened
         assert beta.ha == betaHa
+        assert beta.path == beta.ha
 
         msgOut = b"alpha sends to beta"
         alpha.send(msgOut, beta.ha)

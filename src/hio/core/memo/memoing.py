@@ -341,7 +341,7 @@ class Memoer(hioing.Mixin):
             self.opened = False  # mixed with subclass should provide this.
 
         if not hasattr(self, "bc"):  # stub so mixin works in isolation.
-            self.bc = bc if bc is not None else 4  # mixed with subclass should provide this.
+            self.bc = bc if bc is not None else 1024  # mixed with subclass should provide this.
 
 
     @property

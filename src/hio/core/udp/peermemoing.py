@@ -1,13 +1,13 @@
 # -*- encoding: utf-8 -*-
 """
-hio.core.uxd.peermemoing Module
+hio.core.udp.peermemoing Module
 """
 from contextlib import contextmanager
 
 from ... import help
 
 from ...base import doing
-from ..uxd import Peer
+from ..udp import Peer
 from ..memo import Memoer
 
 logger = help.ogler.getLogger()
@@ -50,8 +50,7 @@ class PeerMemoer(Peer, Memoer):
 
 
 @contextmanager
-def openPM(cls=None, name="test", temp=True, reopen=True, clear=True,
-             filed=False, extensioned=True, **kwa):
+def openPM(cls=None, name="test", temp=True, reopen=True, **kwa):
     """
     Wrapper to create and open UXD PeerMemoer instances
     When used in with statement block, calls .close() on exit of with block
@@ -66,15 +65,8 @@ def openPM(cls=None, name="test", temp=True, reopen=True, clear=True,
                      Otherwise open in persistent directory, do not clear on close
         reopen (bool): True (re)open with this init (default)
                        False not (re)open with this init but later
-        clear (bool): True means remove directory upon close when reopening
-                      False means do not remove directory upon close when reopening
-        filed (bool): True means .path is file path not directory path
-                      False means .path is directiory path not file path
-        extensioned (bool): When not filed:
-                            True means ensure .path ends with fext
-                            False means do not ensure .path ends with fext
 
-    See filing.Filer and uxding.Peer for other keyword parameter passthroughs
+    See udping.Peer for other keyword parameter passthroughs
 
     Usage:
         with openPM() as peer:
@@ -88,14 +80,13 @@ def openPM(cls=None, name="test", temp=True, reopen=True, clear=True,
     if cls is None:
         cls = PeerMemoer
     try:
-        peer = cls(name=name, temp=temp, reopen=reopen, clear=clear,
-                   filed=filed, extensioned=extensioned, **kwa)
+        peer = cls(name=name, temp=temp, reopen=reopen, **kwa)
 
         yield peer
 
     finally:
         if peer:
-            peer.close(clear=peer.temp or clear)
+            peer.close()
 
 
 
@@ -144,5 +135,5 @@ class PeerMemoerDoer(doing.Doer):
 
     def exit(self):
         """"""
-        self.peer.close(clear=True)
+        self.peer.close()
 

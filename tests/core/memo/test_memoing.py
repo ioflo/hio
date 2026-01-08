@@ -68,7 +68,7 @@ def test_memoer_basic():
     peer = memoing.Memoer()
     assert peer.name == "main"
     assert peer.opened == False
-    assert peer.bc == 4
+    assert peer.bc == 1024
     assert peer.code == memoing.GramDex.Basic == '__'
     assert not peer.curt
     # (code, mid, vid, sig, neck, head) part sizes
@@ -204,7 +204,7 @@ def test_memoer_small_gram_size():
     peer = memoing.Memoer(size=6)
     assert peer.name == "main"
     assert peer.opened == False
-    assert peer.bc == 4
+    assert peer.bc == 1024
     assert peer.code == memoing.GramDex.Basic == '__'
     assert not peer.curt
     # (code, mid, vid, sig, neck, head) part sizes
@@ -368,7 +368,7 @@ def test_memoer_multiple():
     assert peer.size == 38
     assert peer.name == "main"
     assert peer.opened == False
-    assert peer.bc == 4
+    assert peer.bc == 1024
     assert peer.code == memoing.GramDex.Basic == '__'
     assert not peer.curt
     assert not peer.verific
@@ -436,7 +436,7 @@ def test_memoer_basic_signed():
     peer = memoing.Memoer(code=GramDex.Signed)
     assert peer.name == "main"
     assert peer.opened == False
-    assert peer.bc == 4
+    assert peer.bc == 1024
     assert peer.code == memoing.GramDex.Signed == '_-'
     assert not peer.curt
     # (code, mid, vid, sig, neck, head) part sizes
@@ -586,7 +586,7 @@ def test_memoer_multiple_signed():
     assert peer.size == 170
     assert peer.name == "main"
     assert peer.opened == False
-    assert peer.bc == 4
+    assert peer.bc == 1024
     assert peer.code == memoing.GramDex.Signed == '_-'
     assert not peer.curt
     assert not peer.verific
@@ -712,7 +712,7 @@ def test_memoer_verific():
     peer = memoing.Memoer(verific=True)
     assert peer.name == "main"
     assert peer.opened == False
-    assert peer.bc == 4
+    assert peer.bc == 1024
     assert peer.code == memoing.GramDex.Basic == '__'
     assert not peer.curt
     # (code, mid, vid, sig, neck, head) part sizes

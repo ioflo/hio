@@ -54,6 +54,7 @@ class Peer(hioing.Mixin):
     Properties:
         host (str): element of .ha duple
         port (int): element of .ha duple
+        path (tuple): .ha (host, port)  alias to match .uxd
 
 
     """
@@ -63,12 +64,13 @@ class Peer(hioing.Mixin):
     def __init__(self, *,
                  name='main',
                  ha=None,
-                 host='',
+                 host='127.0.0.1',
                  port=55000,
                  bc=None,
                  bs=None,
                  wl=None,
                  bcast=False,
+                 reopen=False,
                  **kwa):
         """
         Initialization method for instance.
@@ -85,6 +87,8 @@ class Peer(hioing.Mixin):
             wl (WireLog): instance ref for debug logging of over the wire tx and rx
             bcast (bool): True enables sending to broadcast addresses from local socket
                           False otherwise
+            reopen (bool): True (re)open with this init
+                           False not (re)open with this init but later (default)
         """
 
         self.name = name
@@ -106,7 +110,16 @@ class Peer(hioing.Mixin):
         self.opened = False
 
         super(Peer, self).__init__(**kwa)
+        if reopen:
+            self.reopen()
 
+    @property
+    def path(self):
+        """
+        Property that returns .ha duple
+        stub to match uxd interface
+        """
+        return self.ha
 
     @property
     def host(self):
@@ -114,7 +127,6 @@ class Peer(hioing.Mixin):
         Property that returns host in .ha duple
         """
         return self.ha[0]
-
 
     @host.setter
     def host(self, value):
