@@ -143,7 +143,8 @@ class Memoer(hioing.Mixin):
     Memo segmentation/desegmentation information is embedded in the grams.
 
     Inherited Class Attributes:
-        MaxGramSize (int): absolute max gram size on tx with overhead
+        MaxGramSize (int): absolute max gram size on tx with overhead, override
+                           in subclass
 
     Class Attributes:
         Version (Versionage): default version consisting of namedtuple of form
@@ -233,7 +234,8 @@ class Memoer(hioing.Mixin):
     #Bodes = ({helping.codeB64ToB2(c): c for n, c in Codes.items()})
     MaxMemoSize = 4294967295 # (2**32-1) absolute max memo payload size
     MaxGramCount = 16777215 # (2**24-1) absolute max gram count
-    MaxGramSize = 65535  # (2**16-1)  Overridden in subclass
+    MaxGramSize = 65535  # (2**16-1) absolute max gram size overridden in subclass
+
 
 
     def __init__(self, *,

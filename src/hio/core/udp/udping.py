@@ -17,26 +17,39 @@ from ... import help
 logger = help.ogler.getLogger()
 
 
+
+UDP_IPV4_MAX_SAFE_PAYLOAD = 548  # IPV4 MTU 576 - 28 headers
+UDP_IPv6_MAX_SAFE_PAYLOAD =  1240  # IPV6 MTU 1280 - 40 headers
 UDP_MAX_DATAGRAM_SIZE = (2 ** 16) - 1  # 65535
-UDP_MAX_SAFE_PAYLOAD = 548  # IPV4 MTU 576 - udp headers 28
-# IPV6 MTU is 1280 but headers are bigger
 UDP_MAX_PACKET_SIZE = min(1024, UDP_MAX_DATAGRAM_SIZE)  # assumes IPV6 capable equipment
 
-
+# the only way to fragment ipv6 packet is for source to do it. Never done by
+# routers en-route.  IPV6 has many extension headers that are only used if set
+# up at the source. The fragment header is an 8 byte extension header.
+# https://www.geeksforgeeks.org/computer-networks/ipv6-fragmentation-header/
 
 class Peer(hioing.Mixin):
     """Class to manage non blocking I/O on UDP socket.
+
+    Class Attributes:
+    BufSize (int): used to set default buffer size for transport datagram buffers
+        MaxGramSize (int): max bytes in in datagram for this transport
+
 
     Attributes:
         name (str): unique identifier of peer for managment purposes
         ha (tuple): host address of form (host,port) of type (str, int) of this
                 peer's socket address.
+
+        bc (int | None): count of transport buffers of MaxGramSize
         bs (int): buffer size
         wl (WireLog): instance ref for debug logging of over the wire tx and rx
-        bcast (bool): True enables sending to broadcast addresses from local socket
-                      False otherwise
+
         ls (socket.socket): local socket of this Peer
         opened (bool): True local socket is created and opened. False otherwise
+
+        bcast (bool): True enables sending to broadcast addresses from local socket
+                      False otherwise
 
     Properties:
         host (str): element of .ha duple
@@ -44,6 +57,8 @@ class Peer(hioing.Mixin):
 
 
     """
+    BufSize = 65535  # 2 ** 16 - 1  default buffersize
+    MaxGramSize = 65535  # 2 ** 16 - 1  default gram size override in subclass
 
     def __init__(self, *,
                  name='main',

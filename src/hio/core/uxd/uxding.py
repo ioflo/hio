@@ -62,8 +62,9 @@ class Peer(filing.Filer):
     Class Attributes:
         Umask (int): octal default umask permissions such as 0o022
         MaxUxdPathSize (int:) max characters in uxd file path
+        BufSize (int): used to set default buffer size for transport datagram buffers
         MaxGramSize (int): max bytes in in datagram for this transport
-        BufSize (int): used to set buffer size for transport datagram buffers
+
 
 
     Attributes:
@@ -91,8 +92,9 @@ class Peer(filing.Filer):
     Fext = "uxd"
     Umask = 0o022  # default
     MaxUxdPathSize = 108
-    MaxGramSize = 65535  # 2 ** 16 - 1  default gram size override in subclass
     BufSize = 65535  # 2 ** 16 - 1  default buffersize
+    MaxGramSize = 65535  # 2 ** 16 - 1  default gram size override in subclass
+
 
 
     def __init__(self, *, umask=None, bc=None, bs=None, wl=None,
