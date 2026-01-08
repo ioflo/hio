@@ -14,8 +14,6 @@ from hio.core.memo import GramDex
 from hio.core.uxd import uxding, peermemoing
 
 
-
-
 def test_memoer_peer_basic():
     """Test MemoerPeer class"""
     if platform.system() == "Windows":

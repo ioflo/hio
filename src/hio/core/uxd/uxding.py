@@ -97,9 +97,16 @@ class Peer(filing.Filer):
 
 
 
-    def __init__(self, *, umask=None, bc=None, bs=None, wl=None,
-                 reopen=False, clear=True,
-                 filed=False, extensioned=True, **kwa):
+    def __init__(self, *,
+                 umask=None,
+                 bc=None,
+                 bs=None,
+                 wl=None,
+                 reopen=False,
+                 clear=True,
+                 filed=False,
+                 extensioned=True,
+                 **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:
@@ -125,12 +132,12 @@ class Peer(filing.Filer):
             wl (WireLog): instance ref for debug logging of over the wire tx and rx
         """
         self.umask = umask  # only change umask if umask is not None below
-        self.bc = bc
+
+        self.bc = int(bc) if bc is not None and bc > 0 else None
         if self.bc:
             self.bs = self.MaxGramSize * self.bc
         else:
             self.bs = bs if bs is not None else self.BufSize
-
 
         self.wl = wl
         self.ls = None  # local socket of this Peer, needs to be opened/bound

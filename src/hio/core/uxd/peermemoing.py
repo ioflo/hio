@@ -29,12 +29,8 @@ class PeerMemoer(Peer, Memoer):
 
     Class Attributes:
 
-
     Attributes:
-
-
     """
-
 
     def __init__(self, *, bc=4, **kwa):
         """Initialization method for instance.

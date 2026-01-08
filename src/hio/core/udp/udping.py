@@ -32,7 +32,7 @@ class Peer(hioing.Mixin):
     """Class to manage non blocking I/O on UDP socket.
 
     Class Attributes:
-    BufSize (int): used to set default buffer size for transport datagram buffers
+        BufSize (int): used to set default buffer size for transport datagram buffers
         MaxGramSize (int): max bytes in in datagram for this transport
 
 
@@ -58,14 +58,15 @@ class Peer(hioing.Mixin):
 
     """
     BufSize = 65535  # 2 ** 16 - 1  default buffersize
-    MaxGramSize = 65535  # 2 ** 16 - 1  default gram size override in subclass
+    MaxGramSize = UDP_IPv6_MAX_SAFE_PAYLOAD  # 1240
 
     def __init__(self, *,
                  name='main',
                  ha=None,
                  host='',
                  port=55000,
-                 bufsize=1024,
+                 bc=None,
+                 bs=None,
                  wl=None,
                  bcast=False,
                  **kwa):
@@ -76,24 +77,35 @@ class Peer(hioing.Mixin):
             ha (tuple): local socket (host, port) address duple of type (str, int)
             host (str): address where '' means any interface on host
             port (int): socket port
-            bs (int):  buffer size
-            wl (WireLog): instance to log over the wire tx and rx
+            bc (int | None): count of transport buffers of MaxGramSize
+            bs (int | None): buffer size of transport buffers. When .bc is provided
+                then .bs is calculated by multiplying, .bs = .bc * .MaxGramSize.
+                When .bc is not provided, then if .bs is provided use provided
+                value else use default .BufSize
+            wl (WireLog): instance ref for debug logging of over the wire tx and rx
             bcast (bool): True enables sending to broadcast addresses from local socket
                           False otherwise
         """
-        super(Peer, self).__init__(**kwa)
+
         self.name = name
         self.ha = ha or (host, port)  # ha = host address duple (host, port)
         host, port = self.ha
         host = coring.normalizeHost(host)  # ip host address
         self.ha = (host, port)
 
-        self.bs = bufsize
+        self.bc = int(bc) if bc is not None and bc > 0 else None
+        if self.bc:
+            self.bs = self.MaxGramSize * self.bc
+        else:
+            self.bs = bs if bs is not None else self.BufSize
+
         self.wl = wl
         self.bcast = bcast
 
-        self.ls = None  # local socket for this Peer
+        self.ls = None  # local socket for this Peer needs to be opened/bound
         self.opened = False
+
+        super(Peer, self).__init__(**kwa)
 
 
     @property
