@@ -7,29 +7,115 @@ from contextlib import contextmanager
 from ... import help
 
 from ...base import doing
+from ...base.tyming import Tymer
 from ..udp import Peer
-from ..memo import Memoer
+from ..memo import Memoer, TymeeMemoer
 
 logger = help.ogler.getLogger()
 
 
-class PeerMemoer(Peer, Memoer):
+class PeerMemoer(Peer, TymeeMemoer):
     """Class for sending memograms over UXD transport
     Mixin base classes Peer and Memoer to attain memogram over uxd transport.
 
 
     Inherited Class Attributes:
-        MaxGramSize (int): absolute max gram size on tx with overhead
-        See memoing.Memoer Class
-        See Peer Class
+        (Peer)
+        BufSize (int): used to set default buffer size for transport datagram buffers
+        MaxGramSize (int): max gram bytes for this transport
+
+        (Memoer)
+        Version (Versionage): default version consisting of namedtuple of form
+            (major: int, minor: int)
+        Codex (GramDex): dataclass ref to gram codex
+        Codes (dict): maps codex names to codex values
+        Names (dict): maps codex values to codex names
+        Sodex (SGDex): dataclass ref to signed gram codex
+        Sizes (dict): gram head part sizes Sizage instances keyed by gram codes
+        MaxMemoSize (int): absolute max memo size
+        MaxGramCount (int): absolute max gram count
 
     Inherited Attributes:
-        See memoing.Memoer Class
-        See Peer Class
+        (Peer)
+        name (str): unique identifier of peer for managment purposes
+        ha (tuple): host address of form (host,port) of type (str, int) of this
+                peer's socket address.
 
-    Class Attributes:
+        bc (int | None): count of transport buffers of MaxGramSize
+        bs (int): buffer size
+        wl (WireLog): instance ref for debug logging of over the wire tx and rx
 
-    Attributes:
+        ls (socket.socket): local socket of this Peer
+        opened (bool): True local socket is created and opened. False otherwise
+
+        bcast (bool): True enables sending to broadcast addresses from local socket
+                      False otherwise
+
+        (Memoer)
+        version (Versionage): version for this memoir instance consisting of
+                namedtuple of form (major: int, minor: int)
+        rxgs (dict): keyed by mid (memoID) with value of dict where each
+                value dict holds grams from memo keyed by gram number.
+                Grams have been stripped of their headers.
+                The mid appears in every gram from the same memo.
+        sources (dict): keyed by mid (memoID) that holds the src for the memo.
+            This enables reattaching src to fused memo in rxms deque tuple.
+        counts (dict): keyed by mid (memoID) that holds the gram count from
+            the first gram for the memo. This enables lookup of the gram count when
+            fusing its grams.
+        vids (dict[mid: (vid | None)]): keyed by mid that holds the verification ID str for
+                the memo indexed by its mid (memoID). This enables reattaching
+                the vid to memo when placing fused memo in rxms deque.
+                Vid is only present when signed header otherwise vid is None
+        rxms (deque): holding rx (receive) memo tuples desegmented from rxgs grams
+                each entry in deque is tuple of form:
+                (memo: str, src: str, vid: str) where:
+                memo is fused memo, src is source addr, vid is verification ID
+        txms (deque): holding tx (transmit) memo tuples to be segmented into
+                txgs grams where each entry in deque is tuple of form
+                (memo: str, dst: str, vid: str | None)
+                memo is memo to be partitioned into gram
+                dst is dst addr for grams
+                vid is verification id when gram is to be signed or None otherwise
+        txgs (deque): grams to transmit, each entry is duple of form:
+                (gram: bytes, dst: str).
+        txbs (tuple): current transmisstion duple of form:
+            (gram: bytearray, dst: str). gram bytearray may hold untransmitted
+            portion when Encodesdatagram is not able to be sent all at once so can
+            keep trying. Nothing to send indicated by (bytearray(), None)
+            for (gram, dst)
+        echos (deque): holding echo receive duples for testing. Each duple of
+                       form: (gram: bytes, dst: str).
+
+
+    Inherited Properties:
+        (Peer)
+        host (str): element of .ha duple
+        port (int): element of .ha duple
+        path (tuple): .ha (host, port)  alias to match .uxd
+
+        (Tymee)
+        tyme is float relative cycle time of associated Tymist .tyme obtained
+            via injected .tymth function wrapper closure.
+        tymth is function wrapper closure returned by Tymist .tymeth() method.
+            When .tymth is called it returns associated Tymist .tyme.
+            .tymth provides injected dependency on Tymist tyme base.
+
+        (Memoer)
+        code (bytes | None): gram code for gram header when rending for tx
+        curt (bool): True means when rending for tx encode header in base2
+                     False means when rending for tx encode header in base64
+        size (int): gram size when rending for tx.
+            first gram size = over head size + neck size + body size.
+            other gram size = over head size + body size.
+            Min gram body size is one.
+            Gram size also limited by MaxGramSize and MaxGramCount relative to
+            MaxMemoSize.
+        verific (bool): True means any rx grams must be signed.
+                        False otherwise
+
+
+
     """
 
     def __init__(self, *, bc=1024, **kwa):
@@ -112,6 +198,14 @@ class PeerMemoerDoer(doing.Doer):
         self.peer = peer
 
 
+    def wind(self, tymth):
+        """Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+        Updates winds .tymer .tymth
+        """
+        super(PeerMemoerDoer, self).wind(tymth)
+        self.peer.wind(tymth)
+
+
     def enter(self, *, temp=None):
         """Do 'enter' context actions. Override in subclass. Not a generator method.
         Set up resources. Comparable to context manager enter.
@@ -124,6 +218,8 @@ class PeerMemoerDoer(doing.Doer):
 
         Doist or DoDoer winds its doers on enter
         """
+        if self.tymth:  # Doist or DoDoer already winds its doers on enter
+            self.peer.wind(self.tymth)
         # inject temp into file resources here if any
         self.peer.reopen(temp=temp)
 
@@ -136,4 +232,5 @@ class PeerMemoerDoer(doing.Doer):
     def exit(self):
         """"""
         self.peer.close()
+
 

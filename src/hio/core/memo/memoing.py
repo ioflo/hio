@@ -23,6 +23,7 @@ from dataclasses import dataclass, astuple, asdict
 
 from ... import hioing, help
 from ...base import tyming, doing
+from ...base.tyming import Tymer, Tymee
 from ...help import helping
 
 logger = help.ogler.getLogger()
@@ -158,7 +159,7 @@ class Memoer(hioing.Mixin):
         MaxGramCount (int): absolute max gram count
 
 
-    Inherited Attributes:
+    Stubbed Attributes:
         name (str):  unique name for Memoer transport.
                      Used to manage multiple instances.
         opened (bool):  True means transport open for use
@@ -1289,7 +1290,7 @@ class MemoerDoer(doing.Doer):
 
 
 
-class TymeeMemoer(tyming.Tymee, Memoer):
+class TymeeMemoer(Tymee, Memoer):
     """TymeeMemoer mixin base class to add tymer support for unreliable transports
     that need retry tymers. Subclass of tyming.Tymee
 
@@ -1323,7 +1324,8 @@ class TymeeMemoer(tyming.Tymee, Memoer):
         """
         super(TymeeMemoer, self).__init__(**kwa)
         self.tymeout = tymeout if tymeout is not None else self.Tymeout
-        #self.tymer = tyming.Tymer(tymth=self.tymth, duration=self.tymeout) # retry tymer
+        self.tymers = {}
+        #Tymer(tymth=self.tymth, duration=self.tymeout) # retry tymer
 
 
     def wind(self, tymth):
@@ -1332,7 +1334,8 @@ class TymeeMemoer(tyming.Tymee, Memoer):
         Updates winds .tymer .tymth
         """
         super(TymeeMemoer, self).wind(tymth)
-        #self.tymer.wind(tymth)
+        for tid, tymer in self.tymers.items():
+            tymer.wind(tymth)
 
     def serviceTymers(self):
         """Service all retry tymers
@@ -1428,6 +1431,7 @@ class TymeeMemoerDoer(doing.Doer):
         self.peer.wind(tymth)
 
 
+
     def enter(self, *, temp=None):
         """Do 'enter' context actions. Override in subclass. Not a generator method.
         Set up resources. Comparable to context manager enter.
@@ -1440,10 +1444,10 @@ class TymeeMemoerDoer(doing.Doer):
 
         Doist or DoDoer winds its doers on enter
         """
-        # inject temp into file resources here if any
         if self.tymth:
             self.peer.wind(self.tymth)
-        self.peer.reopen(temp=temp)
+
+        self.peer.reopen(temp=temp)  # inject temp into file resources here if any
 
 
     def recur(self, tyme):

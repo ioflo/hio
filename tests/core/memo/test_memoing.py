@@ -805,6 +805,8 @@ def test_memoer_doer():
 
     """End Test """
 
+
+
 def test_tymee_memoer_basic():
     """Test TymeeMemoer class basic
     """
@@ -1009,6 +1011,9 @@ if __name__ == "__main__":
     test_memoer_verific()
     test_open_memoer()
     test_memoer_doer()
+    test_tymer_memoer_basic()
+    test_open_tmr()
+    test_tymer_memoer_doer()
     test_tymee_memoer_basic()
     test_open_tm()
     test_tymee_memoer_doer()
