@@ -9,12 +9,12 @@ from ... import help
 from ...base import doing
 from ...base.tyming import Tymer
 from ..udp import Peer
-from ..memo import Memoer, TymeeMemoer
+from ..memo import Memoer
 
 logger = help.ogler.getLogger()
 
 
-class PeerMemoer(Peer, TymeeMemoer):
+class PeerMemoer(Peer, Memoer):
     """Class for sending memograms over UXD transport
     Mixin base classes Peer and Memoer to attain memogram over uxd transport.
 
@@ -94,13 +94,6 @@ class PeerMemoer(Peer, TymeeMemoer):
         port (int): element of .ha duple
         path (tuple): .ha (host, port)  alias to match .uxd
 
-        (Tymee)
-        tyme is float relative cycle time of associated Tymist .tyme obtained
-            via injected .tymth function wrapper closure.
-        tymth is function wrapper closure returned by Tymist .tymeth() method.
-            When .tymth is called it returns associated Tymist .tyme.
-            .tymth provides injected dependency on Tymist tyme base.
-
         (Memoer)
         code (bytes | None): gram code for gram header when rending for tx
         curt (bool): True means when rending for tx encode header in base2
@@ -175,9 +168,8 @@ def openPM(cls=None, name="test", temp=True, reopen=True, **kwa):
             peer.close()
 
 
-
 class PeerMemoerDoer(doing.Doer):
-    """PeerMemoerDoer Doer for reliable UXD transport.
+    """PeerMemoerDoer Doer for unreliable UDP transport.
     Does not require retry tymers.
 
     See Doer for inherited attributes, properties, and methods.
@@ -198,11 +190,59 @@ class PeerMemoerDoer(doing.Doer):
         self.peer = peer
 
 
+    def enter(self, *, temp=None):
+        """Do 'enter' context actions. Override in subclass. Not a generator method.
+        Set up resources. Comparable to context manager enter.
+
+        Parameters:
+            temp (bool | None): True means use temporary file resources if any
+                                None means ignore parameter value. Use self.temp
+
+        Inject temp or self.temp into file resources here if any
+
+        Doist or DoDoer winds its doers on enter
+        """
+        # inject temp into file resources here if any
+        self.peer.reopen(temp=temp)
+
+
+    def recur(self, tyme):
+        """"""
+        self.peer.service()
+
+
+    def exit(self):
+        """"""
+        self.peer.close()
+
+
+class SafePeerMemoerDoer(doing.Doer):
+    """PeerMemoerDoer Doer for unreliable UDP transport.
+    Does not require retry tymers.
+
+    See Doer for inherited attributes, properties, and methods.
+    To test in WingIde must configure Debug I/O to use external console
+
+    Attributes:
+       .peer (PeerMemoerDoer): underlying transport instance subclass of Memoer
+
+    """
+
+    def __init__(self, peer, **kwa):
+        """Initialize instance.
+
+        Parameters:
+           peer (Peer): is Memoer Subclass instance
+        """
+        super(SafePeerMemoerDoer, self).__init__(**kwa)
+        self.peer = peer
+
+
     def wind(self, tymth):
         """Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
         Updates winds .tymer .tymth
         """
-        super(PeerMemoerDoer, self).wind(tymth)
+        super(SafePeerMemoerDoer, self).wind(tymth)
         self.peer.wind(tymth)
 
 
@@ -232,5 +272,3 @@ class PeerMemoerDoer(doing.Doer):
     def exit(self):
         """"""
         self.peer.close()
-
-

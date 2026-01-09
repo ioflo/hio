@@ -157,6 +157,7 @@ class Memoer(hioing.Mixin):
         Sizes (dict): gram head part sizes Sizage instances keyed by gram codes
         MaxMemoSize (int): absolute max memo size
         MaxGramCount (int): absolute max gram count
+        BufSize (int): used to set default buffer size for transport datagram buffers
 
 
     Stubbed Attributes:
@@ -164,7 +165,15 @@ class Memoer(hioing.Mixin):
                      Used to manage multiple instances.
         opened (bool):  True means transport open for use
                         False otherwise
-        bc (int | None): count of transport buffers of MaxGramSize
+        bc (int|None): count of transport buffers of MaxGramSize
+        bs (int|None): buffer size of transport buffers. When .bc is provided
+                then .bs is calculated by multiplying, .bs = .bc * .MaxGramSize.
+                When .bc is not provided, then if .bs is provided use provided
+                value else use default .BufSize
+
+    Stubbed Methods:
+        send(gram, dst, *, echoic=False) -> int  # send gram over transport to dst
+        receive(self, *, echoic=False) -> (bytes, str|tuple|None)  # receive gram
 
     Attributes:
         version (Versionage): version for this memoir instance consisting of
@@ -236,12 +245,13 @@ class Memoer(hioing.Mixin):
     MaxMemoSize = 4294967295 # (2**32-1) absolute max memo payload size
     MaxGramCount = 16777215 # (2**24-1) absolute max gram count
     MaxGramSize = 65535  # (2**16-1) absolute max gram size overridden in subclass
-
+    BufSize = 65535  # 2 ** 16 - 1  default buffersize
 
 
     def __init__(self, *,
                  name=None,
                  bc=None,
+                 bs=None,
                  version=None,
                  rxgs=None,
                  sources=None,
@@ -264,6 +274,10 @@ class Memoer(hioing.Mixin):
             opened (bool): True means opened for transport
                            False otherwise
             bc (int | None): count of transport buffers of MaxGramSize
+            bs (int | None): buffer size of transport buffers. When .bc is provided
+                then .bs is calculated by multiplying, .bs = .bc * .MaxGramSize.
+                When .bc is not provided, then if .bs is provided use provided
+                value else use default .BufSize
 
         Parameters:
             version (Versionage): version for this memoir instance consisting of
@@ -333,7 +347,7 @@ class Memoer(hioing.Mixin):
         self.size = size  # property sets size given .code and constraints
         self._verific = True if verific else False
 
-        super(Memoer, self).__init__(name=name, bc=bc, **kwa)
+        super(Memoer, self).__init__(name=name, bc=bc, bs=bs, **kwa)
 
         if not hasattr(self, "name"):  # stub so mixin works in isolation.
             self.name = name if name is not None else "main"  # mixed with subclass should provide this.
@@ -342,7 +356,13 @@ class Memoer(hioing.Mixin):
             self.opened = False  # mixed with subclass should provide this.
 
         if not hasattr(self, "bc"):  # stub so mixin works in isolation.
-            self.bc = bc if bc is not None else 1024  # mixed with subclass should provide this.
+            self.bc = bc # mixin subclass should provide this.
+
+        if not hasattr(self, "bs"):  # stub so mixin works in isolation.
+            self.bs = bs # mixin subclass should provide this.
+
+        if self.bs is None:  # default if not provided by mixin
+            self.bs = self.BufSize
 
 
     @property
@@ -643,7 +663,7 @@ class Memoer(hioing.Mixin):
         return (mid, vid if vid else None, gn, gc)
 
 
-    def receive(self, *, echoic=False):
+    def receive(self, *, echoic=False) -> (bytes, str|tuple|None):
         """Attemps to receive bytes from remote source.
         Must be overridden in subclass.
         This is a stub to define mixin interface.
@@ -655,7 +675,7 @@ class Memoer(hioing.Mixin):
                             indicates nothing to receive of form (b'', None)
 
         Returns:
-            duple (tuple): of form (data: bytes, src: str|None) where data is the
+            duple (tuple): of form (data: bytes, src: str|tuple|None) where data is the
                 bytes of received data and src is the source address.
                 When no data the duple is (b'', None) unless echoic is True
                 then pop off echo from .echos
@@ -993,7 +1013,7 @@ class Memoer(hioing.Mixin):
         return grams
 
 
-    def send(self, gram, dst, *, echoic=False):
+    def send(self, gram, dst, *, echoic=False) -> int:
         """Attemps to send bytes in txbs to remote destination dst.
         Must be overridden in subclass.
         This is a stub to define mixin interface.

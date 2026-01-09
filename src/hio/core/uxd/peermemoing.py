@@ -19,20 +19,18 @@ class PeerMemoer(Peer, Memoer):
 
 
     Inherited Class Attributes:
-        MaxGramSize (int): absolute max gram size on tx with overhead
-        See memoing.Memoer Class
         See Peer Class
+        See memoing.Memoer Class
+
 
     Inherited Attributes:
-        See memoing.Memoer Class
         See Peer Class
+        See Memoer Class
 
-    Class Attributes:
 
-    Attributes:
     """
 
-    def __init__(self, *, bc=1024, **kwa):
+    def __init__(self, *, bc=4, **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:

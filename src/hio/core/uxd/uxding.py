@@ -44,6 +44,12 @@ class Peer(filing.Filer):
         Mode (str): open mode such as "r+"
         Fext (str): default file extension such as "text" for "fname.text"
 
+    Class Attributes:
+        Umask (int): octal default umask permissions such as 0o022
+        MaxUxdPathSize (int:) max characters in uxd file path
+        BufSize (int): used to set default buffer size for transport datagram buffers
+        MaxGramSize (int): max bytes in in datagram for this transport
+
     Inherited Attributes:
         name (str): unique path component used in directory or file path name
         base (str): another unique path component inserted before name
@@ -58,14 +64,6 @@ class Peer(filing.Filer):
         file (File | None): File instance when filed and created.
         opened (bool): True means directory path, uxd file, and socket are
                 created and opened. False otherwise
-
-    Class Attributes:
-        Umask (int): octal default umask permissions such as 0o022
-        MaxUxdPathSize (int:) max characters in uxd file path
-        BufSize (int): used to set default buffer size for transport datagram buffers
-        MaxGramSize (int): max bytes in in datagram for this transport
-
-
 
     Attributes:
         umask (int): unpermission mask for uxd file, usually octal 0o022
@@ -94,7 +92,6 @@ class Peer(filing.Filer):
     MaxUxdPathSize = 108
     BufSize = 65535  # 2 ** 16 - 1  default buffersize
     MaxGramSize = 65535  # 2 ** 16 - 1  default gram size override in subclass
-
 
 
     def __init__(self, *,

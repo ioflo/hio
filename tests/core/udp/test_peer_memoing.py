@@ -205,8 +205,7 @@ def test_memoer_peer_open():
 
         # beta receives
         beta.serviceReceives()
-        time.sleep(0.05)
-        time.sleep(0.05)
+        time.sleep(0.1)
         assert not beta.echos
         assert len(beta.rxgs) == 2
         assert len(beta.counts) == 2

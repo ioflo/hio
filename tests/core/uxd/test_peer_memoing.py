@@ -26,7 +26,7 @@ def test_memoer_peer_basic():
     assert alpha.Sizes[alpha.code] == (2, 22, 0, 0, 4, 28)  # cs ms vs ss ns hs
     assert alpha.size == 38
 
-    assert alpha.bc == 1024
+    assert alpha.bc == 4
     assert not alpha.opened
     assert alpha.reopen()
     assert alpha.opened
@@ -155,12 +155,12 @@ def test_memoer_peer_open():
         # (code, mid, vid, sig, neck, head) part sizes
         assert alpha.Sizes[alpha.code] == (2, 22, 0, 0, 4, 28)  # cs ms vs ss ns hs
         assert alpha.size == 38
-        assert alpha.bc == 1024
+        assert alpha.bc == 4
 
         assert alpha.opened
         assert alpha.path.endswith("alpha.uxd")
 
-        assert beta.bc == 1024
+        assert beta.bc == 4
         assert beta.opened
         assert beta.path.endswith("beta.uxd")
 
