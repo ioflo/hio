@@ -820,6 +820,7 @@ def test_tymee_memoer_basic():
     assert peer.Sizes[peer.code] == (2, 22, 0, 0, 4, 28)  # cs ms vs ss ns hs
     assert peer.size == peer.MaxGramSize
     assert not peer.verific
+    assert peer.tymers == {}
 
     peer.reopen()
     assert peer.opened == True
@@ -957,6 +958,7 @@ def test_open_tm():
         assert zeta.opened
         assert zeta.name == 'zeta'
         assert zeta.tymeout == 0.0
+        assert zeta.tymers == {}
 
 
     assert not zeta.opened
@@ -991,11 +993,11 @@ def test_tymee_memoer_doer():
 
     tymist = tyming.Tymist(tock=1.0)
     tmgdoer.wind(tymth=tymist.tymen())
-    assert tmgdoer.tyme == tymist.tyme == 0.0
-    assert peer.tyme == tymist.tyme == 0.0
+    assert tmgdoer.tymth == tmgdoer.peer.tymth
+    assert tmgdoer.tyme == peer.tyme == tymist.tyme == 0.0
+
     tymist.tick()
-    assert tmgdoer.tyme == tymist.tyme == 1.0
-    assert peer.tyme == tymist.tyme == 1.0
+    assert tmgdoer.tyme == peer.tyme == tymist.tyme == 1.0
 
     """End Test """
 
@@ -1011,9 +1013,6 @@ if __name__ == "__main__":
     test_memoer_verific()
     test_open_memoer()
     test_memoer_doer()
-    test_tymer_memoer_basic()
-    test_open_tmr()
-    test_tymer_memoer_doer()
     test_tymee_memoer_basic()
     test_open_tm()
     test_tymee_memoer_doer()

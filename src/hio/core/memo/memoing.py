@@ -1305,6 +1305,8 @@ class TymeeMemoer(Tymee, Memoer):
         see superclass
 
     Attributes:
+        tymers (dict): keys are tid and values are Tymers for retry tymers for
+                       each inflight tx
         tymeout (float): default timeout for retry tymer(s) if any
 
 
@@ -1333,7 +1335,7 @@ class TymeeMemoer(Tymee, Memoer):
         Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
         Updates winds .tymer .tymth
         """
-        super(TymeeMemoer, self).wind(tymth)
+        super(TymeeMemoer, self).wind(tymth)  # wind Tymee superclass
         for tid, tymer in self.tymers.items():
             tymer.wind(tymth)
 
@@ -1427,8 +1429,8 @@ class TymeeMemoerDoer(doing.Doer):
         """Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
         Updates winds .tymer .tymth
         """
-        super(TymeeMemoerDoer, self).wind(tymth)
-        self.peer.wind(tymth)
+        super(TymeeMemoerDoer, self).wind(tymth)  # wind this doer
+        self.peer.wind(tymth)  # wind its peer
 
 
 
@@ -1445,7 +1447,7 @@ class TymeeMemoerDoer(doing.Doer):
         Doist or DoDoer winds its doers on enter
         """
         if self.tymth:
-            self.peer.wind(self.tymth)
+            self.peer.wind(self.tymth)  # Doist or DoDoer winds its doers on enter
 
         self.peer.reopen(temp=temp)  # inject temp into file resources here if any
 
