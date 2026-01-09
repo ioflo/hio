@@ -813,10 +813,10 @@ def test_memoer_doer():
 
 
 
-def test_tymee_memoer_basic():
+def test_sure_memoer_basic():
     """Test TymeeMemoer class basic
     """
-    peer = memoing.TymeeMemoer()
+    peer = memoing.SureMemoer()
     assert peer.tymeout == 0.0
     assert peer.name == "main"
     assert peer.opened == False
@@ -956,10 +956,10 @@ def test_tymee_memoer_basic():
     """ End Test """
 
 
-def test_open_tm():
+def test_open_sm():
     """Test contextmanager decorator openTM for openTymeeMemoer
     """
-    with (memoing.openTM(name='zeta') as zeta):
+    with (memoing.openSM(name='zeta') as zeta):
 
         assert zeta.opened
         assert zeta.name == 'zeta'
@@ -972,8 +972,8 @@ def test_open_tm():
     """ End Test """
 
 
-def test_tymee_memoer_doer():
-    """Test TymeeMemoerDoer class
+def test_sure_memoer_doer():
+    """Test SureMemoerDoer class
     """
     tock = 0.03125
     ticks = 4
@@ -985,9 +985,9 @@ def test_tymee_memoer_doer():
     assert doist.limit == limit == 0.125
     assert doist.doers == []
 
-    peer = memoing.TymeeMemoer()
+    peer = memoing.SureMemoer()
 
-    tmgdoer = memoing.TymeeMemoerDoer(peer=peer)
+    tmgdoer = memoing.SureMemoerDoer(peer=peer)
     assert tmgdoer.peer == peer
     assert not tmgdoer.peer.opened
     assert tmgdoer.tock == 0.0  # ASAP
@@ -1019,7 +1019,7 @@ if __name__ == "__main__":
     test_memoer_verific()
     test_open_memoer()
     test_memoer_doer()
-    test_tymee_memoer_basic()
-    test_open_tm()
-    test_tymee_memoer_doer()
+    test_sure_memoer_basic()
+    test_open_sm()
+    test_sure_memoer_doer()
 

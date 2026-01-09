@@ -1310,9 +1310,11 @@ class MemoerDoer(doing.Doer):
 
 
 
-class TymeeMemoer(Tymee, Memoer):
-    """TymeeMemoer mixin base class to add tymer support for unreliable transports
-    that need retry tymers. Subclass of tyming.Tymee
+class SureMemoer(Tymee, Memoer):
+    """SureMemoer mixin base class that supports reliable (sure) memo delivery
+    over unreliable datagram transports. These need retry tymers and acknowledged
+    delivery services.
+    Subclass of Tymee and Memoer
 
 
     Inherited Class Attributes:
@@ -1325,9 +1327,9 @@ class TymeeMemoer(Tymee, Memoer):
         see superclass
 
     Attributes:
+        tymeout (float): default timeout for retry tymer(s) if any
         tymers (dict): keys are tid and values are Tymers for retry tymers for
                        each inflight tx
-        tymeout (float): default timeout for retry tymer(s) if any
 
 
 
@@ -1344,7 +1346,7 @@ class TymeeMemoer(Tymee, Memoer):
             tymeout (float): default for retry tymer if any
 
         """
-        super(TymeeMemoer, self).__init__(**kwa)
+        super(SureMemoer, self).__init__(**kwa)
         self.tymeout = tymeout if tymeout is not None else self.Tymeout
         self.tymers = {}
         #Tymer(tymth=self.tymth, duration=self.tymeout) # retry tymer
@@ -1355,7 +1357,7 @@ class TymeeMemoer(Tymee, Memoer):
         Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
         Updates winds .tymer .tymth
         """
-        super(TymeeMemoer, self).wind(tymth)  # wind Tymee superclass
+        super(SureMemoer, self).wind(tymth)  # wind Tymee superclass
         for tid, tymer in self.tymers.items():
             tymer.wind(tymth)
 
@@ -1392,9 +1394,8 @@ class TymeeMemoer(Tymee, Memoer):
 
 
 @contextmanager
-def openTM(cls=None, name="test", **kwa):
-    """
-    Wrapper to create and open TymeeMemoer instances
+def openSM(cls=None, name="test", **kwa):
+    """Wrapper to create and open SureMemoer instances
     When used in with statement block, calls .close() on exit of with block
 
     Parameters:
@@ -1402,17 +1403,17 @@ def openTM(cls=None, name="test", **kwa):
         name (str): unique identifer of Memoer peer.
             Enables management of transport by name.
     Usage:
-        with openTM() as peer:
+        with openSM() as peer:
             peer.receive()
 
-        with openTM(cls=MemoerSub) as peer:
+        with openSM(cls=SureMemoerSub) as peer:
             peer.receive()
 
     """
     peer = None
 
     if cls is None:
-        cls = TymeeMemoer
+        cls = SureMemoer
     try:
         peer = cls(name=name, **kwa)
         peer.reopen()
@@ -1424,13 +1425,14 @@ def openTM(cls=None, name="test", **kwa):
             peer.close()
 
 
-class TymeeMemoerDoer(doing.Doer):
-    """TymeeMemoer Doer for unreliable transports that require retry tymers.
+class SureMemoerDoer(doing.Doer):
+    """SureMemoerDoer Doer to provide reliable delivery over unreliable
+    datagram transports. This requires retry tymers and acknowldged services.
 
     See Doer for inherited attributes, properties, and methods.
 
     Attributes:
-       .peer (TymeeMemoer) is underlying transport instance subclass of TymeeMemoer
+       .peer (SureMemoer) is underlying transport instance subclass of SureMemoer
 
     """
 
@@ -1438,9 +1440,9 @@ class TymeeMemoerDoer(doing.Doer):
         """Initialize instance.
 
         Parameters:
-           peer (TymeeMemoer):  subclass instance
+           peer (SureMemoer):  subclass instance
         """
-        super(TymeeMemoerDoer, self).__init__(**kwa)
+        super(SureMemoerDoer, self).__init__(**kwa)
         self.peer = peer
 
 
@@ -1449,7 +1451,7 @@ class TymeeMemoerDoer(doing.Doer):
         """Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
         Updates winds .tymer .tymth
         """
-        super(TymeeMemoerDoer, self).wind(tymth)  # wind this doer
+        super(SureMemoerDoer, self).wind(tymth)  # wind this doer
         self.peer.wind(tymth)  # wind its peer
 
 
