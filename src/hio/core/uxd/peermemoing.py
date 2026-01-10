@@ -27,7 +27,9 @@ class PeerMemoer(Peer, Memoer):
         See Peer Class
         See Memoer Class
 
-
+    Inherited Properties:
+        See Peer Class
+        See Memoer Class
     """
 
     def __init__(self, *, bc=4, **kwa):

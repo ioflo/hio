@@ -116,7 +116,6 @@ class Memoer(hioing.Mixin):
 
     memo -> .txms deque -> rend -> grams -> .txgs deque -> send -> .txbs
 
-
     On the receive side each complete memogram (gram) is put in a gram receive
     deque as a memogram (datagram sized) segment of a memo.
     These deques are indexed by the sender's source addr.
@@ -126,7 +125,6 @@ class Memoer(hioing.Mixin):
 
     receive -> (gram, src) -> grams parsed to .rxgs  .counts .vids .sources ->
            fuse -> memo .rxms deque
-
 
     When using non-blocking IO, asynchronous datagram transport
     protocols may have hidden buffering constraints that result in fragmentation
@@ -223,13 +221,21 @@ class Memoer(hioing.Mixin):
             MaxMemoSize.
         verific (bool): True means any rx grams must be signed.
                         False otherwise
-
+        echoic (bool): True means use .echos in .send and .receive to mock the
+                            transport layer for testing and debugging.
+                       False means do not use .echos
+                       Each entry in .echos is a duple of form:
+                           (gram: bytes, src: str)
+                       Default echo is duple that
+                           indicates nothing to receive of form (b'', None)
+                       When False may be overridden by a method parameter
 
     Hidden:
         _code (bytes | None): see size property
         _curt (bool): see curt property
         _size (int): see size property
         _verific (bool): see verific property
+        _echoic (bool): see echoic property
     """
     Version = Versionage(major=0, minor=0)  # default version
     Codex = GramDex
@@ -241,6 +247,8 @@ class Memoer(hioing.Mixin):
                 '__': Sizage(cs=2, ms=22, vs=0, ss=0, ns=4, hs=28),
                 '_-': Sizage(cs=2, ms=22, vs=44, ss=88, ns=4, hs=160),
              }
+
+    # Base2 Binary index representation of Text Base64 Char Codes
     #Bodes = ({helping.codeB64ToB2(c): c for n, c in Codes.items()})
     MaxMemoSize = 4294967295 # (2**32-1) absolute max memo payload size
     MaxGramCount = 16777215 # (2**24-1) absolute max gram count
@@ -265,6 +273,7 @@ class Memoer(hioing.Mixin):
                  curt=False,
                  size=None,
                  verific=False,
+                 echoic=False,
                  **kwa
                 ):
         """Setup instance
@@ -326,6 +335,14 @@ class Memoer(hioing.Mixin):
                 MaxMemoSize.
             verific (bool): True means any rx grams must be signed.
                             False otherwise
+            echoic (bool): True means use .echos in .send and .receive to mock the
+                            transport layer for testing and debugging.
+                       False means do not use .echos
+                       Each entry in .echos is a duple of form:
+                           (gram: bytes, src: str)
+                       Default echo is duple that
+                           indicates nothing to receive of form (b'', None)
+                    When False may be overridden by a method parameter
         """
 
         # initialize attributes
@@ -364,6 +381,7 @@ class Memoer(hioing.Mixin):
         if self.bs is None:  # default if not provided by mixin
             self.bs = self.BufSize
 
+        self._echoic = True if echoic else False
 
     @property
     def code(self):
@@ -456,6 +474,21 @@ class Memoer(hioing.Mixin):
                             False otherwise
         """
         return self._verific
+
+    @property
+    def echoic(self):
+        """Property getter for ._echoic
+
+        Returns:
+            echoic (bool): True means use .echos in .send and .receive to mock the
+                            transport layer for testing and debugging.
+                        False means do not use .echos
+                        Each entry in .echos is a duple of form:
+                            (gram: bytes, src: str)
+                        Default echo is duple that
+                            indicates nothing to receive of form (b'', None)
+        """
+        return self._echoic
 
 
     def open(self):
@@ -665,14 +698,25 @@ class Memoer(hioing.Mixin):
 
     def receive(self, *, echoic=False) -> (bytes, str|tuple|None):
         """Attemps to receive bytes from remote source.
+
+        May use echoic=True and .echos to mock a transport layer for testing
+        Puts sent gram into .echos so that .recieve can extract it when using
+        same Memoer to send and recieve to itself via its own .echos
+        When using different Memoers each for send and recieve then must
+        manually copy from sender Memoer .echos to Receiver Memoer .echos
+
         Must be overridden in subclass.
         This is a stub to define mixin interface.
 
         Parameters:
-            echoic (bool): True means use .echos in .receive debugging purposes
-                            where echo is duple of form: (gram: bytes, src: str)
-                           False means do not use .echos default is duple that
+            echoic (bool): True means use .echos in .send and .receive to mock the
+                            transport layer for testing and debugging.
+                        False means do not use .echos
+                        Each entry in .echos is a duple of form:
+                            (gram: bytes, src: str)
+                        Default echo is duple that
                             indicates nothing to receive of form (b'', None)
+
 
         Returns:
             duple (tuple): of form (data: bytes, src: str|tuple|None) where data is the
@@ -680,7 +724,7 @@ class Memoer(hioing.Mixin):
                 When no data the duple is (b'', None) unless echoic is True
                 then pop off echo from .echos
         """
-
+        echoic = echoic or self.echoic  # use parm when True else default .echoic
         if echoic:
             try:
                 result = self.echos.popleft()
@@ -1015,6 +1059,13 @@ class Memoer(hioing.Mixin):
 
     def send(self, gram, dst, *, echoic=False) -> int:
         """Attemps to send bytes in txbs to remote destination dst.
+
+        May use echoic=True and .echos to mock a transport layer for testing
+        Puts sent gram into .echos so that .recieve can extract it when using
+        same Memoer to send and recieve to itself via its own .echos
+        When using different Memoers each for send and recieve then must
+        manually copy from sender Memoer .echos to Receiver Memoer .echos
+
         Must be overridden in subclass.
         This is a stub to define mixin interface.
 
@@ -1024,9 +1075,16 @@ class Memoer(hioing.Mixin):
         Parameters:
             gram (bytearray): of bytes to send
             dst (str): remote destination address
-            echoic (bool): True means echo sends into receives via. echos
-                           False measn do not echo
+            echoic (bool): True means use .echos in .send and .receive to mock the
+                            transport layer for testing and debugging.
+                        False means do not use .echos
+                        Each entry in .echos is a duple of form:
+                            (gram: bytes, src: str)
+                        Default echo is duple that
+                            indicates nothing to receive of form (b'', None)
+
         """
+        echoic = echoic or self.echoic  # use parm when True else default .echoic
         if echoic:
             self.echos.append((bytes(gram), dst))  # make copy
 
@@ -1316,22 +1374,107 @@ class SureMemoer(Tymee, Memoer):
     delivery services.
     Subclass of Tymee and Memoer
 
-
-    Inherited Class Attributes:
-        see superclass
+    Inherited Class Attributes (Memoer):
+        Version (Versionage): default version consisting of namedtuple of form
+            (major: int, minor: int)
+        Codex (GramDex): dataclass ref to gram codex
+        Codes (dict): maps codex names to codex values
+        Names (dict): maps codex values to codex names
+        Sodex (SGDex): dataclass ref to signed gram codex
+        Sizes (dict): gram head part sizes Sizage instances keyed by gram codes
+        MaxMemoSize (int): absolute max memo size
+        MaxGramCount (int): absolute max gram count
+        BufSize (int): used to set default buffer size for transport datagram buffers
 
     Class Attributes:
         Tymeout (float): default timeout for retry tymer(s) if any
 
-    Inherited Attributes:
-        see superclass
+    Inherited Stubbed Attributes (Memoer):
+        name (str):  unique name for Memoer transport.
+                     Used to manage multiple instances.
+        opened (bool):  True means transport open for use
+                        False otherwise
+        bc (int|None): count of transport buffers of MaxGramSize
+        bs (int|None): buffer size of transport buffers. When .bc is provided
+                then .bs is calculated by multiplying, .bs = .bc * .MaxGramSize.
+                When .bc is not provided, then if .bs is provided use provided
+                value else use default .BufSize
+
+    Inherited Stubbed Methods (Memoer):
+        send(gram, dst, *, echoic=False) -> int  # send gram over transport to dst
+        receive(self, *, echoic=False) -> (bytes, str|tuple|None)  # receive gram
+
+    Inherited Attributes (Memoer):
+        version (Versionage): version for this memoir instance consisting of
+                namedtuple of form (major: int, minor: int)
+        rxgs (dict): keyed by mid (memoID) with value of dict where each
+                value dict holds grams from memo keyed by gram number.
+                Grams have been stripped of their headers.
+                The mid appears in every gram from the same memo.
+        sources (dict): keyed by mid (memoID) that holds the src for the memo.
+            This enables reattaching src to fused memo in rxms deque tuple.
+        counts (dict): keyed by mid (memoID) that holds the gram count from
+            the first gram for the memo. This enables lookup of the gram count when
+            fusing its grams.
+        vids (dict[mid: (vid | None)]): keyed by mid that holds the verification ID str for
+                the memo indexed by its mid (memoID). This enables reattaching
+                the vid to memo when placing fused memo in rxms deque.
+                Vid is only present when signed header otherwise vid is None
+        rxms (deque): holding rx (receive) memo tuples desegmented from rxgs grams
+                each entry in deque is tuple of form:
+                (memo: str, src: str, vid: str) where:
+                memo is fused memo, src is source addr, vid is verification ID
+        txms (deque): holding tx (transmit) memo tuples to be segmented into
+                txgs grams where each entry in deque is tuple of form
+                (memo: str, dst: str, vid: str | None)
+                memo is memo to be partitioned into gram
+                dst is dst addr for grams
+                vid is verification id when gram is to be signed or None otherwise
+        txgs (deque): grams to transmit, each entry is duple of form:
+                (gram: bytes, dst: str).
+        txbs (tuple): current transmisstion duple of form:
+            (gram: bytearray, dst: str). gram bytearray may hold untransmitted
+            portion when Encodesdatagram is not able to be sent all at once so can
+            keep trying. Nothing to send indicated by (bytearray(), None)
+            for (gram, dst)
+        echos (deque): holding echo receive duples for testing. Each duple of
+                       form: (gram: bytes, dst: str).
 
     Attributes:
         tymeout (float): default timeout for retry tymer(s) if any
         tymers (dict): keys are tid and values are Tymers for retry tymers for
                        each inflight tx
 
+    Inherited Properties (Tymee):
+        tyme (float | None):  relative cycle time of associated Tymist which is
+            provided by calling .tymth function wrapper closure which is obtained
+            from Tymist.tymen().
+            None means not assigned yet.
+        tymth (Callable | None): function wrapper closure returned by
+            Tymist.tymen() method. When .tymth is called it returns associated
+            Tymist.tyme. Provides injected dependency on Tymist cycle tyme base.
+            None means not assigned yet.
 
+    Inherited Properties (Memoer):
+        code (bytes | None): gram code for gram header when rending for tx
+        curt (bool): True means when rending for tx encode header in base2
+                     False means when rending for tx encode header in base64
+        size (int): gram size when rending for tx.
+            first gram size = over head size + neck size + body size.
+            other gram size = over head size + body size.
+            Min gram body size is one.
+            Gram size also limited by MaxGramSize and MaxGramCount relative to
+            MaxMemoSize.
+        verific (bool): True means any rx grams must be signed.
+                        False otherwise
+        echoic (bool): True means use .echos in .send and .receive to mock the
+                            transport layer for testing and debugging.
+                       False means do not use .echos
+                       Each entry in .echos is a duple of form:
+                           (gram: bytes, src: str)
+                       Default echo is duple that
+                           indicates nothing to receive of form (b'', None)
+                       When False may be overridden by a method parameter
 
     """
     Tymeout = 0.0  # tymeout in seconds, tymeout of 0.0 means ignore tymeout

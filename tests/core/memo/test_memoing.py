@@ -20,15 +20,13 @@ def test_memoer_class():
     assert Memoer.Codex == memoing.GramDex
 
     assert Memoer.Codes == {'Basic': '__', 'Signed': '_-'}
-    assert Memoer.Names == {'__': 'Basic', '_-': 'Signed'}
-
-
     # Codes table with sizes of code (hard) and full primitive material
-    assert Memoer.Sizes == {'__': Sizage(cs=2, ms=22, vs=0, ss=0, ns=4, hs=28),
-                            '_-': Sizage(cs=2, ms=22, vs=44, ss=88, ns=4, hs=160)}
-
-
-    #  verify all Codes
+    assert Memoer.Sizes == \
+    {
+        '__': Sizage(cs=2, ms=22, vs=0, ss=0, ns=4, hs=28),
+        '_-': Sizage(cs=2, ms=22, vs=44, ss=88, ns=4, hs=160),
+    }
+    #  verify Sizes and Codes
     for code, val in Memoer.Sizes.items():
         cs = val.cs
         ms = val.ms
@@ -52,12 +50,16 @@ def test_memoer_class():
         if vs:
             assert ss  # ss must not be empty if vs not empty
 
+    assert Memoer.Names == {'__': 'Basic', '_-': 'Signed'}
     assert Memoer.Sodex == SGDex
+
+    # Base2 Binary index representation of Text Base64 Char Codes
     #assert Memoer.Bodes == {b'\xff\xf0': '__', b'\xff\xe0': '_-'}
 
     assert Memoer.MaxMemoSize == (2**32-1)  # absolute max memo payload size
     assert Memoer.MaxGramSize == (2**16-1)  # absolute max gram size
     assert Memoer.MaxGramCount == (2**24-1)  # absolute max gram count
+    assert Memoer.BufSize == (2**16-1) # default buffersize
 
     """Done Test"""
 
@@ -76,6 +78,7 @@ def test_memoer_basic():
     assert peer.Sizes[peer.code] == (2, 22, 0, 0, 4, 28)  # cs ms vs ss ns hs
     assert peer.size == peer.MaxGramSize
     assert not peer.verific
+    assert not peer.echoic
 
     peer.reopen()
     assert peer.opened == True
@@ -100,6 +103,7 @@ def test_memoer_basic():
     assert not peer.txgs
     assert peer.txbs == (b'', None)
 
+    # inject sent gram into .echos so it can recieve from its own as mock transport
     assert not peer.rxgs
     assert not peer.counts
     assert not peer.sources
@@ -120,7 +124,7 @@ def test_memoer_basic():
     peer.serviceRxMemos()
     assert not peer.rxms
 
-    # send and receive via echo
+    # send and receive via .echos to itself as both sender and receiver
     memo = "See ya later!"
     dst = "beta"
     peer.memoit(memo, dst)
@@ -131,7 +135,7 @@ def test_memoer_basic():
     assert not peer.wiff(m)  # base64
     assert m.endswith(memo.encode())
     assert d == dst == 'beta'
-    peer.serviceTxGrams(echoic=True)
+    peer.serviceTxGrams(echoic=True)  # send to .echos
     assert not peer.txgs
     assert peer.txbs == (b'', None)
     assert peer.echos
@@ -140,7 +144,7 @@ def test_memoer_basic():
     assert not peer.rxms
     assert not peer.counts
     assert not peer.sources
-    peer.serviceReceives(echoic=True)
+    peer.serviceReceives(echoic=True)  # receive own echo
     mid = list(peer.rxgs.keys())[0]
     assert peer.rxgs[mid][0] == b'See ya later!'
     assert peer.counts[mid] == 1
@@ -213,6 +217,7 @@ def test_memoer_small_gram_size():
     assert peer.Sizes[peer.code] == (2, 22, 0, 0, 4, 28)  # cs ms vs ss ns hs
     assert peer.size == 33  # can't be smaller than head + neck + 1
     assert not peer.verific
+    assert not peer.echoic
 
     peer = memoing.Memoer(size=38)
     assert peer.size == 38
@@ -375,6 +380,7 @@ def test_memoer_multiple():
     assert peer.code == memoing.GramDex.Basic == '__'
     assert not peer.curt
     assert not peer.verific
+    assert not peer.echoic
 
     peer.reopen()
     assert peer.opened == True
@@ -447,6 +453,7 @@ def test_memoer_basic_signed():
     assert peer.Sizes[peer.code] == (2, 22, 44, 88, 4, 160)  # cs ms vs ss ns hs
     assert peer.size == peer.MaxGramSize
     assert not peer.verific
+    assert not peer.echoic
 
     peer.reopen()
     assert peer.opened == True
@@ -595,6 +602,7 @@ def test_memoer_multiple_signed():
     assert peer.code == memoing.GramDex.Signed == '_-'
     assert not peer.curt
     assert not peer.verific
+    assert not peer.echoic
 
     peer.reopen()
     assert peer.opened == True
@@ -725,6 +733,7 @@ def test_memoer_verific():
     assert peer.Sizes[peer.code] == (2, 22, 0, 0, 4, 28)  # cs ms vs ss ns hs
     assert peer.size == peer.MaxGramSize
     assert peer.verific
+    assert not peer.echoic
 
     peer.reopen()
     assert peer.opened == True

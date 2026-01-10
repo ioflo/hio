@@ -106,8 +106,14 @@ class PeerMemoer(Peer, Memoer):
             MaxMemoSize.
         verific (bool): True means any rx grams must be signed.
                         False otherwise
-
-
+        echoic (bool): True means use .echos in .send and .receive to mock the
+                            transport layer for testing and debugging.
+                       False means do not use .echos
+                       Each entry in .echos is a duple of form:
+                           (gram: bytes, src: str)
+                       Default echo is duple that
+                           indicates nothing to receive of form (b'', None)
+                       When False may be overridden by a method parameter
 
     """
 
