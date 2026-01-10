@@ -111,7 +111,7 @@ class Memoer(hioing.Mixin):
     Each memo is then segmented into grams (memograms) that respect the size constraints
     of the underlying datagram transport. These grams are placed in the outgoing
     gram deque. Each entry in this deque is a duple of form:
-    (gram: bytes, dst: str). Each  duple is pulled off the deque and its
+    (gram: bytes, dst: str). Each  duple is pulled off the self._serviceOneRxMemo()deque and its
     gram is put in bytearray for transport.
 
     memo -> .txms deque -> rend -> grams -> .txgs deque -> send -> .txbs
@@ -206,8 +206,10 @@ class Memoer(hioing.Mixin):
             portion when Encodesdatagram is not able to be sent all at once so can
             keep trying. Nothing to send indicated by (bytearray(), None)
             for (gram, dst)
-        echos (deque): holding echo receive duples for testing. Each duple of
+        echos (deque): holds echo receive duples for testing. Each duple of
                        form: (gram: bytes, dst: str).
+        inbox (deque): holds final received complete memos for testing when not
+                       overridden in subclass to further process otherwise
 
     Properties:
         code (bytes | None): gram code for gram header when rending for tx
@@ -358,6 +360,7 @@ class Memoer(hioing.Mixin):
         self.txbs = txbs if txbs is not None else (bytearray(), None)
 
         self.echos = deque()  # only used in testing as echoed tx
+        self.inbox = deque()  # holds complete receive memos for testing
 
         self.code = code
         self.curt = curt
@@ -911,7 +914,8 @@ class Memoer(hioing.Mixin):
         Override in subclass to handle result and put it somewhere
         """
         try:
-            memo, src, vid = self._serviceOneRxMemo()
+            #memo, src, vid = self._serviceOneRxMemo()
+            self.inbox.append(self._serviceOneRxMemo())
         except IndexError:
             pass
 
@@ -922,7 +926,8 @@ class Memoer(hioing.Mixin):
         Override in subclass to handle result(s) and put them somewhere
         """
         while self.rxms:
-            memo, src, vid = self._serviceOneRxMemo()
+            #memo, src, vid = self._serviceOneRxMemo()
+            self.inbox.append(self._serviceOneRxMemo())
 
 
     def serviceAllRxOnce(self):

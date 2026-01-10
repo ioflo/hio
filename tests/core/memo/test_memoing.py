@@ -3,6 +3,7 @@
 tests.core.test_memoing module
 
 """
+from collections import deque
 from base64 import urlsafe_b64encode as encodeB64
 from base64 import urlsafe_b64decode as decodeB64
 
@@ -124,6 +125,8 @@ def test_memoer_basic():
     peer.serviceRxMemos()
     assert not peer.rxms
 
+    assert peer.inbox[0] == ('Hello There', 'beta', None)
+
     # send and receive via .echos to itself as both sender and receiver
     memo = "See ya later!"
     dst = "beta"
@@ -158,6 +161,9 @@ def test_memoer_basic():
     assert peer.rxms[0] == ('See ya later!', 'beta', None)
     peer.serviceRxMemos()
     assert not peer.rxms
+
+    assert peer.inbox[0] == ('Hello There', 'beta', None)
+    assert peer.inbox[1] == ('See ya later!', 'beta', None)
 
     # test binary q2 encoding of transmission gram header
     peer.curt = True  # set to binary base2
@@ -197,6 +203,11 @@ def test_memoer_basic():
     assert peer.rxms[0] == ('Hello There', 'beta', None)
     peer.serviceRxMemos()
     assert not peer.rxms
+
+    assert peer.inbox[0] == ('Hello There', 'beta', None)
+    assert peer.inbox[1] == ('See ya later!', 'beta', None)
+    assert peer.inbox[2] == ('Hello There', 'beta', None)
+    peer.inbox = deque()  # clear it
 
     peer.close()
     assert peer.opened == False
@@ -272,6 +283,8 @@ def test_memoer_small_gram_size():
     assert not peer.rxms
     assert not peer.echos
 
+    assert peer.inbox[0] == ('Hello There', 'beta', None)
+
     # send and receive via echo
     memo = "See ya later!"
     dst = "beta"
@@ -309,6 +322,9 @@ def test_memoer_small_gram_size():
     assert peer.rxms[0] == ('See ya later!', 'beta', None)
     peer.serviceRxMemos()
     assert not peer.rxms
+
+    assert peer.inbox[0] == ('Hello There', 'beta', None)
+    assert peer.inbox[1] == ('See ya later!', 'beta', None)
 
     # test binary q2 encoding of transmission gram header
     peer.curt =  True  # set to binary base2
@@ -362,6 +378,11 @@ def test_memoer_small_gram_size():
     assert peer.rxms[0] == ('See ya later alligator!', 'beta', None)
     peer.serviceRxMemos()
     assert not peer.rxms
+
+    assert peer.inbox[0] == ('Hello There', 'beta', None)
+    assert peer.inbox[1] == ('See ya later!', 'beta', None)
+    assert peer.inbox[2] == ('See ya later alligator!', 'beta', None)
+    peer.inbox = deque()  # clear it
 
     peer.close()
     assert peer.opened == False
@@ -434,10 +455,114 @@ def test_memoer_multiple():
     peer.serviceRxMemos()
     assert not peer.rxms
 
+    assert peer.inbox[0] == ('Hello there.', 'alpha', None)
+    assert peer.inbox[1] == ('How ya doing?', 'beta', None)
+
+    peer.inbox = deque()  # clear it
 
     peer.close()
     assert peer.opened == False
     """ End Test """
+
+
+def test_memoer_multiple_echoic_service_tx_rx():
+    """Test Memoer class with small gram size and multiple queued memos
+    Use .echoic property true so can service all
+    """
+    peer = memoing.Memoer(size=38, echoic=True)
+    assert peer.size == 38
+    assert peer.name == "main"
+    assert peer.opened == False
+    assert peer.bc is None
+    assert peer.bs == memoing.Memoer.BufSize == 65535
+    assert peer.code == memoing.GramDex.Basic == '__'
+    assert not peer.curt
+    assert not peer.verific
+    assert peer.echoic
+
+    peer.reopen()
+    assert peer.opened == True
+
+    # send and receive multiple via echo
+    peer.memoit("Hello there.", "alpha")
+    peer.memoit("How ya doing?", "beta")
+    assert len(peer.txms) == 2
+
+    peer.serviceAllTx()
+    assert not peer.txms
+    assert not peer.txgs
+    assert peer.txbs == (b'', None)
+    assert len(peer.echos) == 4
+
+    assert not peer.rxgs
+    assert not peer.rxms
+    assert not peer.counts
+    assert not peer.sources
+
+    peer.serviceAllRx()
+
+    assert not peer.echos
+    assert not peer.rxgs
+    assert not peer.counts
+    assert not peer.sources
+    assert not peer.rxms
+
+    assert peer.inbox[0] == ('Hello there.', 'alpha', None)
+    assert peer.inbox[1] == ('How ya doing?', 'beta', None)
+
+    peer.inbox = deque()  # clear it
+
+    peer.close()
+    assert peer.opened == False
+    """ End Test """
+
+
+def test_memoer_multiple_echoic_service_all():
+    """Test Memoer class with small gram size and multiple queued memos
+    Use .echoic property true so can service all
+    """
+    peer = memoing.Memoer(size=38, echoic=True)
+    assert peer.size == 38
+    assert peer.name == "main"
+    assert peer.opened == False
+    assert peer.bc is None
+    assert peer.bs == memoing.Memoer.BufSize == 65535
+    assert peer.code == memoing.GramDex.Basic == '__'
+    assert not peer.curt
+    assert not peer.verific
+    assert peer.echoic
+
+    peer.reopen()
+    assert peer.opened == True
+
+    # send and receive multiple via echo
+    peer.memoit("Hello there.", "alpha")
+    peer.memoit("How ya doing?", "beta")
+    assert len(peer.txms) == 2
+
+    peer.serviceAll()  # services Rx first then Tx so have to serviceAll twice
+
+    assert not peer.txms
+    assert not peer.txgs
+    assert peer.txbs == (b'', None)
+    assert len(peer.echos) == 4  # Rx not serviced yet after Tx serviced
+
+    peer.serviceAll()  # services Rx first then Tx so have to serviceAll twice
+    assert not peer.echos
+    assert not peer.rxgs
+    assert not peer.counts
+    assert not peer.sources
+    assert not peer.rxms
+
+    assert peer.inbox[0] == ('Hello there.', 'alpha', None)
+    assert peer.inbox[1] == ('How ya doing?', 'beta', None)
+
+    peer.inbox = deque()  # clear it
+
+    peer.close()
+    assert peer.opened == False
+    """ End Test """
+
 
 def test_memoer_basic_signed():
     """Test Memoer class basic signed code
@@ -586,6 +711,12 @@ def test_memoer_basic_signed():
     peer.serviceRxMemos()
     assert not peer.rxms
 
+    assert peer.inbox[0] == ('Hello There', 'beta', vid)
+    assert peer.inbox[1] == ('See ya later!', 'beta', vid)
+    assert peer.inbox[2] == ('Hello There', 'beta', vid)
+
+    peer.inbox = deque()  # clear it
+
     peer.close()
     assert peer.opened == False
     """ End Test """
@@ -713,6 +844,14 @@ def test_memoer_multiple_signed():
     peer.serviceRxMemos()
     assert not peer.rxms
 
+    assert peer.inbox == deque(
+    [
+        ('Hello there.', 'alpha', vid),
+        ('How ya doing?', 'beta', vid),
+        ('Hello there.', 'alpha', vid),
+        ('How ya doing?', 'beta', vid)
+    ])
+
 
     peer.close()
     assert peer.opened == False
@@ -773,6 +912,107 @@ def test_memoer_verific():
     assert peer.rxms[0] == ('Hello There', 'beta', vid)
     peer.serviceRxMemos()
     assert not peer.rxms
+
+    assert peer.inbox == deque(
+    [
+        ('Hello There', 'beta', vid)
+    ])
+
+    peer.close()
+    assert peer.opened == False
+    """ End Test """
+
+
+def test_memoer_multiple_signed_verific_echoic_service_all():
+    """Test Memoer class with small gram size and multiple queued memos signed
+    using echos for transport
+    """
+    # verific forces rx memos to be signed or dropped
+    # to force signed tx then use Signed code
+    peer = memoing.Memoer(code=GramDex.Signed, size=170, verific=True, echoic=True)
+    assert peer.size == 170
+    assert peer.name == "main"
+    assert peer.opened == False
+    assert peer.bc is None
+    assert peer.bs == memoing.Memoer.BufSize == 65535
+    assert peer.code == memoing.GramDex.Signed == '_-'
+    assert not peer.curt
+    assert peer.verific
+    assert peer.echoic
+
+    peer.reopen()
+    assert peer.opened == True
+
+    # send and receive multiple via echo
+    vid = 'BKxy2sgzfplyr-tgwIxS19f2OchFHtLwPWD3v4oYimBx'
+    peer.memoit("Hello there.", "alpha", vid)
+    peer.memoit("How ya doing?", "beta", vid)
+    assert len(peer.txms) == 2
+
+    peer.serviceAll()  # servicAll services Rx first then Tx so have to repeat
+
+    assert not peer.txms
+    assert not peer.txgs
+    assert peer.txbs == (b'', None)
+    assert len(peer.echos) == 4  # rx not serviced yet
+    assert not peer.rxgs
+    assert not peer.rxms
+    assert not peer.counts
+    assert not peer.sources
+
+    peer.serviceAll()  # servicAll services Rx first then Tx so have to repeat
+    assert not peer.echos
+    assert not peer.rxgs
+    assert not peer.counts
+    assert not peer.sources
+    assert not peer.rxms
+
+    assert peer.inbox == deque(
+    [
+        ('Hello there.', 'alpha', vid),
+        ('How ya doing?', 'beta', vid)
+    ])
+
+
+    # test in base2 mode
+    peer.curt = True
+    assert peer.curt
+    peer.size = 129
+    assert peer.size == 129
+
+    # send and receive multiple via echo
+    vid = 'BKxy2sgzfplyr-tgwIxS19f2OchFHtLwPWD3v4oYimBx'
+    peer.memoit("Hello there.", "alpha", vid)
+    peer.memoit("How ya doing?", "beta", vid)
+    assert len(peer.txms) == 2
+
+    peer.serviceAll()  # servicAll services Rx first then Tx so have to repeat
+
+    assert not peer.txms
+    assert not peer.txgs
+    assert peer.txbs == (b'', None)
+    assert len(peer.echos) == 4  # rx not serviced yet
+    assert not peer.rxgs
+    assert not peer.rxms
+    assert not peer.counts
+    assert not peer.sources
+
+    peer.serviceAll()  # servicAll services Rx first then Tx so have to repeat
+    assert not peer.echos
+    assert not peer.rxgs
+    assert not peer.counts
+    assert not peer.sources
+    assert not peer.rxms
+
+    assert peer.inbox == deque(
+    [
+        ('Hello there.', 'alpha', vid),
+        ('How ya doing?', 'beta', vid),
+        ('Hello there.', 'alpha', vid),
+        ('How ya doing?', 'beta', vid),
+    ])
+
+    peer.inbox = deque()  # clear it
 
     peer.close()
     assert peer.opened == False
@@ -1023,9 +1263,12 @@ if __name__ == "__main__":
     test_memoer_basic()
     test_memoer_small_gram_size()
     test_memoer_multiple()
+    test_memoer_multiple_echoic_service_tx_rx()
+    test_memoer_multiple_echoic_service_all()
     test_memoer_basic_signed()
     test_memoer_multiple_signed()
     test_memoer_verific()
+    test_memoer_multiple_signed_verific_echoic_service_all()
     test_open_memoer()
     test_memoer_doer()
     test_sure_memoer_basic()
