@@ -114,6 +114,11 @@ class PeerMemoer(Peer, Memoer):
                        Default echo is duple that
                            indicates nothing to receive of form (b'', None)
                        When False may be overridden by a method parameter
+        keep (dict): labels or vids, values are Keyage instances
+                         named tuple of signature key pair:
+                         sigkey = private signing key
+                         verkey = public verifying key
+                        Keyage = namedtuple("Keyage", "sigkey verkey")
 
     """
 

@@ -31,6 +31,14 @@ logger = help.ogler.getLogger()
 # namedtuple of ints (major: int, minor: int)
 Versionage = namedtuple("Versionage", "major minor")
 
+# signature key pair:
+#    sigkey = private signing key
+#    verkey = public verifying key
+Keyage = namedtuple("Keyage", "sigkey verkey")
+# example usage
+#keyage = Keyage(sigkey="abc", verkey="xyy")
+#keep = dict("ABCXYZ"=keyage)  # vid as label, Keyage instance as value
+
 
 """Sizage: namedtuple for gram header part size entries in Memoer code tables
 cs is the code part size int number of chars in code part (serialization code)
@@ -123,7 +131,7 @@ class Memoer(hioing.Mixin):
     and placed in the memo deque for consumption by the application or some other
     higher level protocol.
 
-    receive -> (gram, src) -> grams parsed to .rxgs  .counts .vids .sources ->
+    receive -> (gram, src) -> grams parsed to .rxgs  .counts .vids .sources -# singing key pair sigkey and verifier key>
            fuse -> memo .rxms deque
 
     When using non-blocking IO, asynchronous datagram transport
@@ -227,10 +235,15 @@ class Memoer(hioing.Mixin):
                             transport layer for testing and debugging.
                        False means do not use .echos
                        Each entry in .echos is a duple of form:
-                           (gram: bytes, src: str)
+                           (gram: bytes, src: str)# singing key pair sigkey and verifier key
                        Default echo is duple that
                            indicates nothing to receive of form (b'', None)
                        When False may be overridden by a method parameter
+        keep (dict): labels or vids, values are Keyage instances
+                         named tuple of signature key pair:
+                         sigkey = private signing key
+                         verkey = public verifying key
+                        Keyage = namedtuple("Keyage", "sigkey verkey")
 
     Hidden:
         _code (bytes | None): see size property
@@ -238,6 +251,7 @@ class Memoer(hioing.Mixin):
         _size (int): see size property
         _verific (bool): see verific property
         _echoic (bool): see echoic property
+        _keep (dict): see keep property
     """
     Version = Versionage(major=0, minor=0)  # default version
     Codex = GramDex
@@ -276,6 +290,7 @@ class Memoer(hioing.Mixin):
                  size=None,
                  verific=False,
                  echoic=False,
+                 keep=None,
                  **kwa
                 ):
         """Setup instance
@@ -345,6 +360,11 @@ class Memoer(hioing.Mixin):
                        Default echo is duple that
                            indicates nothing to receive of form (b'', None)
                     When False may be overridden by a method parameter
+            keep (dict|None): labels are vids and values are Keyage instances
+                              that provide current signature key pair for vid
+                              this is a lightweight mechanism that should be
+                              overridden in subclass for real world key management.
+
         """
 
         # initialize attributes
@@ -385,6 +405,7 @@ class Memoer(hioing.Mixin):
             self.bs = self.BufSize
 
         self._echoic = True if echoic else False
+        self._keep = keep if keep is not None else dict()
 
     @property
     def code(self):
@@ -492,6 +513,19 @@ class Memoer(hioing.Mixin):
                             indicates nothing to receive of form (b'', None)
         """
         return self._echoic
+
+    @property
+    def keep(self):
+        """Property getter for ._keep
+
+        Returns:
+            keep (dict): labels or vids, values are Keyage instances
+                         named tuple of signature key pair:
+                         sigkey = private signing key
+                         verkey = public verifying key
+                        Keyage = namedtuple("Keyage", "sigkey verkey")
+        """
+        return self._keep
 
 
     def open(self):
@@ -1480,11 +1514,16 @@ class SureMemoer(Tymee, Memoer):
                        Default echo is duple that
                            indicates nothing to receive of form (b'', None)
                        When False may be overridden by a method parameter
+        keep (dict): labels or vids, values are Keyage instances
+                         named tuple of signature key pair:
+                         sigkey = private signing key
+                         verkey = public verifying key
+                        Keyage = namedtuple("Keyage", "sigkey verkey")
 
     """
     Tymeout = 0.0  # tymeout in seconds, tymeout of 0.0 means ignore tymeout
 
-    def __init__(self, *, tymeout=None, **kwa):
+    def __init__(self, *, tymeout=None, code=GramDex.Signed, verific=True, **kwa):
         """
         Initialization method for instance.
         Inherited Parameters:
@@ -1494,7 +1533,7 @@ class SureMemoer(Tymee, Memoer):
             tymeout (float): default for retry tymer if any
 
         """
-        super(SureMemoer, self).__init__(**kwa)
+        super(SureMemoer, self).__init__(code=code, verific=verific, **kwa)
         self.tymeout = tymeout if tymeout is not None else self.Tymeout
         self.tymers = {}
         #Tymer(tymth=self.tymth, duration=self.tymeout) # retry tymer
