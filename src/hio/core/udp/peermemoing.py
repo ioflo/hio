@@ -119,6 +119,7 @@ class PeerMemoer(Peer, Memoer):
                          sigkey = private signing key
                          verkey = public verifying key
                         Keyage = namedtuple("Keyage", "sigkey verkey")
+        vid (str|None): own vid defaults used to lookup keys to sign on tx
 
     """
 

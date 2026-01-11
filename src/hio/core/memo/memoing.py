@@ -32,11 +32,11 @@ logger = help.ogler.getLogger()
 Versionage = namedtuple("Versionage", "major minor")
 
 # signature key pair:
-#    sigkey = private signing key
 #    verkey = public verifying key
-Keyage = namedtuple("Keyage", "sigkey verkey")
+#    sigkey = private signing key
+Keyage = namedtuple("Keyage", "verkey sigkey")
 # example usage
-#keyage = Keyage(sigkey="abc", verkey="xyy")
+#keyage = Keyage(verkey="xyy", sigkey="abc", )
 #keep = dict("ABCXYZ"=keyage)  # vid as label, Keyage instance as value
 
 
@@ -244,6 +244,7 @@ class Memoer(hioing.Mixin):
                          sigkey = private signing key
                          verkey = public verifying key
                         Keyage = namedtuple("Keyage", "sigkey verkey")
+        vid (str|None): own vid defaults used to lookup keys to sign on tx
 
     Hidden:
         _code (bytes | None): see size property
@@ -252,6 +253,7 @@ class Memoer(hioing.Mixin):
         _verific (bool): see verific property
         _echoic (bool): see echoic property
         _keep (dict): see keep property
+        _vid (str|None): see vid property
     """
     Version = Versionage(major=0, minor=0)  # default version
     Codex = GramDex
@@ -291,6 +293,7 @@ class Memoer(hioing.Mixin):
                  verific=False,
                  echoic=False,
                  keep=None,
+                 vid=None,
                  **kwa
                 ):
         """Setup instance
@@ -364,6 +367,7 @@ class Memoer(hioing.Mixin):
                               that provide current signature key pair for vid
                               this is a lightweight mechanism that should be
                               overridden in subclass for real world key management.
+            vid (str|None): own vid defaults used to lookup keys to sign on tx
 
         """
 
@@ -406,6 +410,7 @@ class Memoer(hioing.Mixin):
 
         self._echoic = True if echoic else False
         self._keep = keep if keep is not None else dict()
+        self.vid = vid if vid else None
 
     @property
     def code(self):
@@ -526,6 +531,25 @@ class Memoer(hioing.Mixin):
                         Keyage = namedtuple("Keyage", "sigkey verkey")
         """
         return self._keep
+
+    @property
+    def vid(self):
+        """Property getter for ._vid
+
+        Returns:
+            vid (str|None): vid used to sign on tx if any
+        """
+        return self._vid
+
+
+    @vid.setter
+    def vid(self, vid):
+        """Property setter for ._vid
+
+        Parameters:
+            vid (str|None): value to assign to own vid
+        """
+        self._vid = vid
 
 
     def open(self):
@@ -1519,6 +1543,7 @@ class SureMemoer(Tymee, Memoer):
                          sigkey = private signing key
                          verkey = public verifying key
                         Keyage = namedtuple("Keyage", "sigkey verkey")
+        vid (str|None): own vid defaults used to lookup keys to sign on tx
 
     """
     Tymeout = 0.0  # tymeout in seconds, tymeout of 0.0 means ignore tymeout

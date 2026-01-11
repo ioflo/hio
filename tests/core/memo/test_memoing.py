@@ -12,7 +12,11 @@ import pytest
 from hio.help import helping
 from hio.base import doing, tyming
 from hio.core.memo import memoing
-from hio.core.memo import Versionage, Sizage, GramDex, SGDex, Memoer
+from hio.core.memo import Versionage, Sizage, GramDex, SGDex, Memoer, Keyage
+
+keyage = Keyage(verkey="ABCD", sigkey="WXYZ") # for testing
+Keep = dict(abcdwxyz=keyage)  # for testing
+
 
 def test_memoer_class():
     """Test class attributes of Memoer class"""
@@ -81,6 +85,7 @@ def test_memoer_basic():
     assert not peer.verific
     assert not peer.echoic
     assert peer.keep == dict()
+    assert peer.vid is None
 
     peer.reopen()
     assert peer.opened == True
@@ -231,6 +236,7 @@ def test_memoer_small_gram_size():
     assert not peer.verific
     assert not peer.echoic
     assert peer.keep == dict()
+    assert peer.vid is None
 
     peer = memoing.Memoer(size=38)
     assert peer.size == 38
@@ -405,6 +411,7 @@ def test_memoer_multiple():
     assert not peer.verific
     assert not peer.echoic
     assert peer.keep == dict()
+    assert peer.vid is None
 
     peer.reopen()
     assert peer.opened == True
@@ -483,6 +490,7 @@ def test_memoer_multiple_echoic_service_tx_rx():
     assert not peer.verific
     assert peer.echoic
     assert peer.keep == dict()
+    assert peer.vid is None
 
     peer.reopen()
     assert peer.opened == True
@@ -536,6 +544,7 @@ def test_memoer_multiple_echoic_service_all():
     assert not peer.verific
     assert peer.echoic
     assert peer.keep == dict()
+    assert peer.vid is None
 
     peer.reopen()
     assert peer.opened == True
@@ -585,6 +594,7 @@ def test_memoer_basic_signed():
     assert not peer.verific
     assert not peer.echoic
     assert peer.keep == dict()
+    assert peer.vid is None
 
     peer.reopen()
     assert peer.opened == True
@@ -741,6 +751,7 @@ def test_memoer_multiple_signed():
     assert not peer.verific
     assert not peer.echoic
     assert peer.keep == dict()
+    assert peer.vid is None
 
     peer.reopen()
     assert peer.opened == True
@@ -881,6 +892,7 @@ def test_memoer_verific():
     assert peer.verific
     assert not peer.echoic
     assert peer.keep == dict()
+    assert peer.vid is None
 
     peer.reopen()
     assert peer.opened == True
@@ -948,6 +960,7 @@ def test_memoer_multiple_signed_verific_echoic_service_all():
     assert peer.verific
     assert peer.echoic
     assert peer.keep == dict()
+    assert peer.vid is None
 
     peer.reopen()
     assert peer.opened == True
@@ -1085,6 +1098,7 @@ def test_sure_memoer_basic():
     assert peer.verific
     assert peer.echoic
     assert peer.keep == dict()
+    assert peer.vid is None
 
     # (code, mid, vid, neck, head, sig) part sizes
     assert peer.Sizes[peer.code] == Sizage(cs=2, ms=22, vs=44, ss=88, ns=4, hs=160) # cs ms vs ss ns hs
@@ -1242,6 +1256,7 @@ def test_sure_memoer_multiple_echoic_service_all():
         assert peer.verific
         assert peer.echoic
         assert peer.keep == dict()
+        assert peer.vid is None
 
         # send and receive multiple via echo
         vid = 'BKxy2sgzfplyr-tgwIxS19f2OchFHtLwPWD3v4oYimBx'
