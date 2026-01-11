@@ -14,8 +14,22 @@ from hio.base import doing, tyming
 from hio.core.memo import memoing
 from hio.core.memo import Versionage, Sizage, GramDex, SGDex, Memoer, Keyage
 
-keyage = Keyage(verkey="ABCD", sigkey="WXYZ") # for testing
-Keep = dict(abcdwxyz=keyage)  # for testing
+
+
+def _setupKeep():
+    """Setup Keep for signed memos
+
+    Returns:
+        keep (dict): labels are vids, values are keyage instances
+
+    """
+    keep = {}
+
+    vid = 'abcdwxyz'
+    keyage = Keyage(verkey="ABCD", sigkey="WXYZ") # for testing
+    keep[vid] = keyage  # for testing
+
+    return keep
 
 
 def test_memoer_class():
