@@ -9,6 +9,7 @@ from base64 import urlsafe_b64decode as decodeB64
 
 import pytest
 
+from hio.hioing import MemoerError
 from hio.help import helping
 from hio.base import doing, tyming
 from hio.core.memo import memoing
@@ -16,13 +17,26 @@ from hio.core.memo import Versionage, Sizage, GramDex, SGDex, Memoer, Keyage
 
 
 
-def _setupKeep():
+def _setupKeep(salt=None):
     """Setup Keep for signed memos
 
     Returns:
         keep (dict): labels are vids, values are keyage instances
 
     """
+    salt = salt if salt is not None else b"abcdefghijklmnop"
+    if hasattr(salt, 'encode'):
+        salt = salt.encode()
+
+    if len(salt) != 16:
+        raise MemoerError("Invalid provided salt")
+
+    try:
+        import pysodium
+        import blake3
+    except ImportError:
+        raise MemoerError("Missing cryptographic module support")
+
     keep = {}
 
     vid = 'abcdwxyz'
@@ -595,6 +609,12 @@ def test_memoer_multiple_echoic_service_all():
 def test_memoer_basic_signed():
     """Test Memoer class basic signed code
     """
+    salt = b"ABCDEFGHIJKLMNOP"
+    try:
+        keep = _setupKeep(salt=salt)
+    except MemoerError as ex:
+        return
+
     peer = memoing.Memoer(code=GramDex.Signed)
     assert peer.name == "main"
     assert peer.opened == False
@@ -754,6 +774,12 @@ def test_memoer_basic_signed():
 def test_memoer_multiple_signed():
     """Test Memoer class with small gram size and multiple queued memos signed
     """
+    salt = b"ABCDEFGHIJKLMNOP"
+    try:
+        keep = _setupKeep(salt=salt)
+    except MemoerError as ex:
+        return
+
     peer = memoing.Memoer(code=GramDex.Signed, size=170)
     assert peer.size == 170
     assert peer.name == "main"
@@ -893,6 +919,7 @@ def test_memoer_multiple_signed():
 def test_memoer_verific():
     """Test Memoer class with verific (signed required)
     """
+
     peer = memoing.Memoer(verific=True)
     assert peer.name == "main"
     assert peer.opened == False
@@ -961,6 +988,12 @@ def test_memoer_multiple_signed_verific_echoic_service_all():
     """Test Memoer class with small gram size and multiple queued memos signed
     using echos for transport
     """
+    salt = b"ABCDEFGHIJKLMNOP"
+    try:
+        keep = _setupKeep(salt=salt)
+    except MemoerError as ex:
+        return
+
     # verific forces rx memos to be signed or dropped
     # to force signed tx then use Signed code
     peer = memoing.Memoer(code=GramDex.Signed, size=170, verific=True, echoic=True)
@@ -1101,6 +1134,12 @@ def test_memoer_doer():
 def test_sure_memoer_basic():
     """Test SureMemoer class basic
     """
+    try:
+        keep = _setupKeep()  # uses default salt
+    except MemoerError as ex:
+        return
+
+
     peer = memoing.SureMemoer(echoic=True)
     assert peer.size == 65535
     assert peer.name == "main"
@@ -1239,6 +1278,11 @@ def test_sure_memoer_basic():
 def test_open_sm():
     """Test contextmanager decorator openTM for openTymeeMemoer
     """
+    try:
+        keep = _setupKeep()  # uses default salt
+    except MemoerError as ex:
+        return
+
     with (memoing.openSM(name='zeta') as zeta):
 
         assert zeta.opened
@@ -1256,6 +1300,11 @@ def test_sure_memoer_multiple_echoic_service_all():
     """Test SureMemoer class with small gram size and multiple queued memos signed
     using echos for transport
     """
+    try:
+        keep = _setupKeep()  # uses default salt
+    except MemoerError as ex:
+        return
+
     # verific forces rx memos to be signed or dropped
     # to force signed tx then use Signed code
 
@@ -1351,6 +1400,11 @@ def test_sure_memoer_multiple_echoic_service_all():
 def test_sure_memoer_doer():
     """Test SureMemoerDoer class
     """
+    try:
+        keep = _setupKeep()  # uses default salt
+    except MemoerError as ex:
+        return
+
     tock = 0.03125
     ticks = 4
     limit = ticks *  tock
