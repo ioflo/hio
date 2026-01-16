@@ -33,10 +33,10 @@ Versionage = namedtuple("Versionage", "major minor")
 
 # signature key pair:
 #    verkey = public verifying key
-#    sigkey = private signing key
-Keyage = namedtuple("Keyage", "verkey sigkey")
+#    sigseed = private signing key seed (ed25519 sigkey = sigseed + verkey)
+Keyage = namedtuple("Keyage", "verkey sigseed")
 # example usage
-#keyage = Keyage(verkey="xyy", sigkey="abc", )
+#keyage = Keyage(verkey="xyy", sigseed="abc", )
 #keep = dict("ABCXYZ"=keyage)  # vid as label, Keyage instance as value
 
 """Design Discusssion of Memo and Gram Sizing and Encoding:
@@ -429,6 +429,47 @@ class Memoer(hioing.Mixin):
     MaxGramCount = 16777215  # (2**24-1) absolute max gram count
     MaxGramSize = 65535  # (2**16-1) absolute max gram size overridden in subclass
     BufSize = 65535  # (2**16-1)  default buffersize
+
+    @classmethod
+    def _encodeVid(cls, vid, code='B'):
+        """Utility method for use with signed headers that encodes raw vid as
+        CESR compatible fully qualified B64 text domain str using CESR compatible
+        text code
+
+        Parameters:
+            vid (bytes): raw vid to be encoded with code
+            code (str): code for type of vid CESR compatible
+                Ed25519N:   str = 'B'  # Ed25519 verkey non-transferable, basic derivation.
+                Ed25519:    str = 'D'  # Ed25519 verkey basic derivation
+                Blake3_256: str = 'E'  # Blake3 256 bit digest derivation.
+
+        Returns:
+
+           vidqb64 (str): fully qualified base64 vid
+
+        """
+        if code not in ('B', 'D', 'E'):
+            raise hioing.MemoerError("Invalid vid {code=}")
+
+        cs, ms, vs, ss, ns, hs = cls.Sizes[SGDex.Signed]  # cs ms vs ss ns hs
+
+        rvs = len(vid)  # raw vid size
+        if rvs != 32:
+            raise hioing.MemoerError("Invalid raw vid size {rvs=} not 32")
+
+        ps = (3 - ((rvs) % 3)) % 3  # net pad size for raw vid
+        if len(code) != ps != 1:
+            raise hioing.MemoerError("Invalid vid code size={len(code)} not equal"
+                                     f" {ps=} not equal 1")
+
+        vidb64 = encodeB64(bytes([0] * ps) + vid)[ps:] # prepad, convert, and prestrip
+
+        vidqb64 = code + vidb64.decode()  # fully qualified vid with prefix code
+
+        if len(vidqb64) != vs:
+            hioing.MemoerError("Invalid vid qb64 size={len(vidqb64) != {vs}}")
+
+        return vidqb64
 
 
     def __init__(self, *,
@@ -1209,14 +1250,17 @@ class Memoer(hioing.Mixin):
         memo = bytearray(memo.encode()) # convert and copy to bytearray
         # self.size is max gram size
         cs, ms, vs, ss, ns, hs = self.Sizes[self.code]  # cs ms vs ss ns hs
-        ps = (3 - ((ms) % 3)) % 3  # net pad size for mid
+
         if vs and (not vid or len(vid) != vs):
             raise hioing.MemoerError(f"Invalid {vid=} for size={vs}.")
-
         vid = b"" if vid is None else vid[:vs].encode()
 
+        ps = (3 - ((ms) % 3)) % 3  # net pad size for mid
         # memo ID is 16 byte random UUID converted to 22 char Base64 right aligned
-        mid = encodeB64(bytes([0] * ps) + uuid.uuid1().bytes)[ps:] # prepad, convert, and strip
+        mid = encodeB64(bytes([0] * ps) + uuid.uuid1().bytes)[ps:] # prepad, convert, and prestrip
+        if cs != ps or cs != len(self.code):
+            raise hioing.MemoerError(f"Invalid code size {cs=} for {ps=} or "
+                                     f"code={self.code}")
         mid = self.code.encode() + mid  # fully qualified mid with prefix code
         ml = len(memo)
 
