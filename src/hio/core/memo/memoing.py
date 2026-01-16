@@ -39,6 +39,162 @@ Keyage = namedtuple("Keyage", "verkey sigkey")
 #keyage = Keyage(verkey="xyy", sigkey="abc", )
 #keep = dict("ABCXYZ"=keyage)  # vid as label, Keyage instance as value
 
+"""Design Discusssion of Memo and Gram Sizing and Encoding:
+
+Each GramCode (tv) Typing/Version code uses a base64 two char code.
+Codes always start with `_` and second char in code starts at `_`
+and walks backwards through B64 code table for each gram type-version (tv) code.
+
+tv 0 is '__'
+tv 1 is '_-'
+tv 3 is '_9'
+...
+
+Each of total head length including code and total neck length must be a
+multiple of 4 characters (3 bytes) to align on 24 bit boundary for clean Base64
+round tripping.  This ensure each converts to/from B2 without padding.
+Head type-version code governs the neck as well. So whenever  field lengths or
+fields change in any way we need a new gram (tv) code.
+
+To reiterate, if ever need to change anything need a new gram (tv) code. There are
+no versions per type.  This is deemed sufficient because we anticipate a very
+limited set of possible fields ever needed for memogram transport types.
+
+All gram head and neck fields are mid-pad B64 primitives. This makes for stable
+coding at fron and back of head neck parts. This also means that gram parts can
+can be losslessly transformed to/from equivalent CESR primitives merely by
+translating the gram tv code to an equivalent entry in the  two char cesr
+primitive code table. When doing so the neck is always attached and then
+stripped when not needed.
+
+The equivalent CESR codes, albeit different, map one-to-one to the gram tv codes.
+This enables representing headers as CESR primitives for management but not
+over the wire. One can transform Memogram Grams to CESR primitives to tunnel in
+some CESR stream.
+
+Normally CESR streams are tunneled inside Memoer memograms sent over-the-wire.
+In this case, the memogram is the wrapper and each gram uses the gram TV code
+defined herein not the equivalent CESR code.
+Using  so far reserved and unused '_' code which is reserved as the selector
+for the CESR op code table for memogram grams makes it more apparent that a gram
+belongs to a memogram and not a CESR stream.
+Eventually when CESR op codes eventually become defined, it's not likely to be
+confusing since the context of CESR op codes is dramatically different from
+transport wrappers.
+
+Morover when a MemoGram payload is a tunneled CESR Stream, the memogram parser
+will parse and strip the MemoGram gram wrappers to construct the tunneled,
+stream so the wrapper is transarent to the CESR stream and the CESR stream
+payload is opaque to the memogram wrapper, i.e. no ambiguity.
+
+Gram Header Fields:
+    HeadCode hc = b'__'
+    HeadCodeSize hcs = 2
+    MemoIDSize mis = 22
+    GramNumSize gns = 4
+    GramCntSize gcs = 4
+    GramHeadSize ghs  = 28
+    GramHeadNeckSize ghns = 28 + 4 = 32
+
+Sizing:
+
+We have for most datagrams, such as UDP, a max datagram size of 65535 = (2 ** 16 -1)
+Thix may no longer be true on some OSes for UXD datagrams. On some OSes UXD datagrams
+may be bigger. But 65535 seems like a good practical limit for maximum compatibility
+across all datagram types.
+
+Given gram count and gram num fields are 4 Base64 chars (3 bytes) or 24 bits, then:
+MaxGramCount = 2**24-1
+
+If we want a maximally size memo to be big enough to transport 1 CESR Big frame
+with frame counter then the maximum memo size needs to be
+(2**30-1) * 4 + 8 = 4294967292 + 8 = 4294967300
+
+CESR groups code count in quadlets (4 chars).
+The big group count codes have five digits of 6 bits each or 30 bits to count the
+size of the following framed chars.
+The maximum group count is (2**30-1) == 1073741823
+Cesr group codes count the number
+of quadlets (4 chars) in the framed group. The maximum number of bytes in a
+CESR big group frame body is therefore:
+(2**30-1)*4 = 1073741823 * 4 = 4294967292.
+The group code itself is not included in the counted quadlets in the frame body.
+The big group codes are 8 chars long. Thus with its group code the total big
+frame size is:
+(2**30-1)*4 + 8 = 4294967292 + 8 = 4294967300
+
+We set
+MaxMemoSize (mms) = (2**30-1)*4+8 = 4294967300
+
+We can compare UDP and UXD given these constraints.
+Notice that gramsize includes head + body and the first gram size is 4 larger
+to include gram count field.
+
+In general
+MaxMemoSize = GramBodySize * MaxGramCount
+
+Because the gram count field is 24 bits (4 chars or 3 bytes), we have:
+MaxGramCount = 2**24-1 = 16777215
+
+At a MaxGramCount of 16777215 for the MaxMemoSize  we
+GramBodySize = MaxMemoSize / MaxGramCount = 4294967300/16777215 = 256 remainder 260
+256 = 2**8.  So we need GramBodySize to be a little larger than 256 to reach
+MaxMemoSize.  If we round up to 257 we get
+maximum possible memosize = 257 * 16777215 = 4311744255 = ((2**8)+1)*(2**24-1)
+Or alternatively if we set GramBodySize to 257 then the max gram count we get is
+GramCount = ceil(MaxMemoSize / 257) = (ceil(4294967300/257)) = 16711936 < 16777215
+or 4294967300/257 = 16711935 remainder 5
+
+An actual Gram includes a GramHead + GramBody. So as long as the transport MTU
+is at least as big as the GramHeadSize + GramBodySize then we can transport the maximum
+memo size in MaxGramCount grams.
+
+The signed header for a gram is 160 bytes for all grams but the zeroth gram.
+the zeroth gram includes an extra 4 bytes for the gramcount or 164 bytes.
+
+UDP IPV4 MTU = 576  Net safe payload = gram size = 548
+MaxGramCount for UDP GramSize of 548.  Given signed header, GramBodySize is
+548 - 160 = 388 which is larger than 257. So a memo of MaxMemoSize of 4294967300
+can be conveyed in IPV4 datagrams with fewer than MaxGramCount grams.
+This provides headroom for the extra 4 bytes in the zeroth gram.
+
+UXD MTU is typically 65535 depending on the allocated buffer size which is much
+greater than 257.
+
+
+MinGramSize = MaxMemoSize // MaxGramCount = ceil(((2**30-1)*4+8 ) / (2**24-1)) = 257 = (2**8+1)
+This is the min size that could result in maxMemoSize. Smaller gram sizes than 257
+can not reach MaxMemoSize because MaxGramCount not big enough.
+Based on datagram constraints we have
+MaxGramSize = (2**16-1)
+
+
+The variables ghs, and ghns are fixed for given transport service type reliable
+or unreliable with head and neck fields defined appropriately
+The variables gs, gbs,and mms are derived from transport MTU size
+The desired gs for a given transport MTU instance may be smaller than the allowed
+maximum to accomodate buffers etc.
+Given the fixed gram head size for service type, ghs one can calculate the
+maximum memo size mms that includes the header overhead given the contraint of
+no more than 2**24-1 grams in a given memo due to 24 size of gram count gram num.
+
+So for a given transport:
+gs = min(gs, 2**16-1)  (gram size)
+gbs = gs - ghs  (gram body size = gram size - gram head size)
+
+mms = min((2**30-1)*4+8, gbs * (2**24-1))  (max memo size)
+So compare memo size to mms and if greater raise error and drop memo
+otherwise partition (gram) memo into grams with headers and transmit
+
+
+Therefore setting the maxmemosize to be (2**30-1)*4+8 enables the a big group
+frame from CESR to be conveyed by a memo.
+However a maximally sized memo can not be itself conveyed by a big CESR group frame
+because maximally size memo is 8 more than the biggest frame body count.
+So translating memos to CESR must check that the memo  being translated iself
+is limited to a size of (2**30-1)*4 not (2**30-1)*4+8
+
+"""
 
 """Sizage: namedtuple for gram header part size entries in Memoer code tables
 cs is the code part size int number of chars in code part (serialization code)
@@ -268,10 +424,11 @@ class Memoer(hioing.Mixin):
 
     # Base2 Binary index representation of Text Base64 Char Codes
     #Bodes = ({helping.codeB64ToB2(c): c for n, c in Codes.items()})
-    MaxMemoSize = 4294967295 # (2**32-1) absolute max memo payload size
-    MaxGramCount = 16777215 # (2**24-1) absolute max gram count
+    # big enough to hold a CESR big frame with code
+    MaxMemoSize = 4294967300  # (2**30-1)*4+8 absolute max net memo payload size
+    MaxGramCount = 16777215  # (2**24-1) absolute max gram count
     MaxGramSize = 65535  # (2**16-1) absolute max gram size overridden in subclass
-    BufSize = 65535  # 2 ** 16 - 1  default buffersize
+    BufSize = 65535  # (2**16-1)  default buffersize
 
 
     def __init__(self, *,

@@ -24,6 +24,13 @@ def _setupKeep(salt=None):
         keep (dict): labels are vids, values are keyage instances
 
     """
+    try:
+        import pysodium
+        import blake3
+    except ImportError:
+        raise MemoerError("Missing cryptographic module support")
+
+
     salt = salt if salt is not None else b"abcdefghijklmnop"
     if hasattr(salt, 'encode'):
         salt = salt.encode()
@@ -31,17 +38,24 @@ def _setupKeep(salt=None):
     if len(salt) != 16:
         raise MemoerError("Invalid provided salt")
 
-    try:
-        import pysodium
-        import blake3
-    except ImportError:
-        raise MemoerError("Missing cryptographic module support")
-
     keep = {}
 
-    vid = 'abcdwxyz'
-    keyage = Keyage(verkey="ABCD", sigkey="WXYZ") # for testing
-    keep[vid] = keyage  # for testing
+    sigseed0 = pysodium.crypto_pwhash(outlen=32,
+                                    passwd="0",
+                                    salt=salt,
+                                    opslimit=2,  # pysodium.crypto_pwhash_OPSLIMIT_INTERACTIVE,
+                                    memlimit=67108864,  # pysodium.crypto_pwhash_MEMLIMIT_INTERACTIVE,
+                                    alg=pysodium.crypto_pwhash_ALG_ARGON2ID13)
+    # creates signing/verification key pair from seed
+    verkey, sigkey = pysodium.crypto_sign_seed_keypair(sigseed0)  # raw
+
+
+
+    vid = "abcd"
+    keyage = Keyage(verkey=verkey, sigkey=sigkey)  #raw
+    keep[vid] = keyage
+
+
 
     return keep
 
@@ -89,7 +103,7 @@ def test_memoer_class():
     # Base2 Binary index representation of Text Base64 Char Codes
     #assert Memoer.Bodes == {b'\xff\xf0': '__', b'\xff\xe0': '_-'}
 
-    assert Memoer.MaxMemoSize == (2**32-1)  # absolute max memo payload size
+    assert Memoer.MaxMemoSize == ((2**30-1)*4+8)  # absolute max memo payload size
     assert Memoer.MaxGramSize == (2**16-1)  # absolute max gram size
     assert Memoer.MaxGramCount == (2**24-1)  # absolute max gram count
     assert Memoer.BufSize == (2**16-1) # default buffersize
