@@ -25,8 +25,7 @@ def test_memoer_peer_basic():
     assert alpha.name == "alpha"
     assert alpha.code == GramDex.Basic
     assert not alpha.curt
-    # (code, mid, vid, sig, neck, head) part sizes
-    assert alpha.Sizes[alpha.code] == (2, 22, 0, 0, 4, 28)  # cs ms vs ss ns hs
+    assert alpha.Sizes[alpha.code] == (2, 22, 0, 4, 0, 28)  # cz mz oz nz sz hz
     assert alpha.size == 1240  # default MaxGramSize for udp
     assert alpha.bc == 1024
     assert not alpha.opened
@@ -39,8 +38,7 @@ def test_memoer_peer_basic():
     assert alpha.name == "alpha"
     assert alpha.code == GramDex.Basic
     assert not alpha.curt
-    # (code, mid, vid, sig, neck, head) part sizes
-    assert alpha.Sizes[alpha.code] == (2, 22, 0, 0, 4, 28)  # cs ms vs ss ns hs
+    assert alpha.Sizes[alpha.code] == (2, 22, 0, 4, 0, 28)  # cz mz oz nz sz hz
     assert alpha.size == size
     assert alpha.bc == 1024
     assert not alpha.opened
@@ -174,7 +172,7 @@ def test_memoer_peer_open():
         assert alpha.code == GramDex.Basic
         assert not alpha.curt
         # (code, mid, vid, sig, neck, head) part sizes
-        assert alpha.Sizes[alpha.code] == (2, 22, 0, 0, 4, 28)  # cs ms vs ss ns hs
+        assert alpha.Sizes[alpha.code] == (2, 22, 0, 4, 0, 28)  # cz mz oz nz sz hz
         assert alpha.size == size
         assert alpha.bc == 1024
 
