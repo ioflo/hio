@@ -536,6 +536,45 @@ class Memoer(hioing.Mixin):
         return qb64  # qualified base64 sigseed
 
 
+    @classmethod
+    def _decodeQSS(cls, qss, code='A'):
+        """Utility method for use with signed headers that decodes qualified
+        base64 sigseed to raw domain bytes from CESR compatible text code
+
+        Parameters:
+            qss (bytes): qualified base64 sigseed to be deccoded with code
+            code (str): code for type of raw sigseed CESR compatible
+                Ed25519_Seed:str = 'A'  # Ed25519 256 bit random seed for private key
+
+        Returns:
+            sigseed (bytes): raw sigseed suitable for signing
+        """
+        if code not in ('A'):
+            raise hioing.MemoerError(f"Invalid qss {code=}")
+
+        qz = len(qss)  # text size
+        if qz != 44:
+            raise hioing.MemoerError(f"Invalid qss text size {qz=} not 44")
+
+        cz = len(code)
+        pz = cz % 4  # net pad size given cz
+        if cz != pz != 1:  # special case here for now we only accept cz=1
+            raise hioing.MemoerError(f"Invalid {cz=} not equal {pz=} not equal 1")
+
+        base =  pz * b'A' + qss[cz:].encode()  # strip code from b64 and prepad pz 'A's
+        paw = decodeB64(base)  # now should have pz leading sextexts of zeros
+        raw = paw[pz:]  # remove prepad midpad bytes to invert back to raw
+        # ensure midpad bytes are zero
+        pi = int.from_bytes(paw[:pz], "big")
+        if pi != 0:
+            raise hioing.MemoerError(f"Nonzero midpad bytes=0x{pi:0{(ps)*2}x}.")
+
+        if len(raw) != ((qz - cz) * 3 // 4):  # exact lengths
+            raise hioing.MemoerError(f"Improperly qualified material = {qss}")
+
+        return raw  # qualified base64 sigseed
+
+
     def __init__(self, *,
                  name=None,
                  bc=None,
@@ -1292,10 +1331,15 @@ class Memoer(hioing.Mixin):
             oid (bytes): qb64 or qb2 if .curt of oid of signer
                          assumes oid of correct length
 
-        """
+        Ed25519_Seed:str = 'A'  # Ed25519 256 bit random seed for private key
 
+        """
         if oid not in self.keep:
             return b''  # return of empty signature should raise error in caller
+
+        qvk, qss = self.keep[oid]
+
+        sigseed = Memoer._decodeQSS(qss)
 
 
         _, _, oz, nz, sz, hz = self.Sizes[self.code]  # cz mz oz nz sz hz
