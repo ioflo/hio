@@ -32,12 +32,12 @@ logger = help.ogler.getLogger()
 Versionage = namedtuple("Versionage", "major minor")
 
 # signature key pair:
-#    verkey = public verifying key
-#    sigseed = private signing key seed (ed25519 sigkey = sigseed + verkey)
-Keyage = namedtuple("Keyage", "verkey sigseed")
+#    qvk = qualified base64 public verifying key
+#    qss = qualified base64 private signing key seed (ed25519 sigkey = sigseed + verkey)
+Keyage = namedtuple("Keyage", "qvk qss")
 # example usage
-#keyage = Keyage(verkey="xyy", sigseed="abc", )
-#keep = dict("ABCXYZ"=keyage)  # vid as label, Keyage instance as value
+#keyage = Keyage(qvk="xyy", qss="abc", )
+#keep = dict("ABCXYZ"=keyage)  # qualified vid as label, Keyage instance as value
 
 """Design Discusssion of Memo and Gram Sizing and Encoding:
 
@@ -431,45 +431,108 @@ class Memoer(hioing.Mixin):
     BufSize = 65535  # (2**16-1)  default buffersize
 
     @classmethod
-    def _encodeVid(cls, vid, code='B'):
+    def _encodeVID(cls, raw, code='B'):
         """Utility method for use with signed headers that encodes raw vid as
         CESR compatible fully qualified B64 text domain str using CESR compatible
         text code
 
         Parameters:
-            vid (bytes): raw vid to be encoded with code
+            raw (bytes): vid to be encoded with code
             code (str): code for type of vid CESR compatible
                 Ed25519N:   str = 'B'  # Ed25519 verkey non-transferable, basic derivation.
                 Ed25519:    str = 'D'  # Ed25519 verkey basic derivation
                 Blake3_256: str = 'E'  # Blake3 256 bit digest derivation.
 
         Returns:
-
-           vidqb64 (str): fully qualified base64 vid
-
+           qb64 (str): fully qualified base64 vid
         """
         if code not in ('B', 'D', 'E'):
-            raise hioing.MemoerError("Invalid vid {code=}")
+            raise hioing.MemoerError(f"Invalid vid {code=}")
 
-        cs, ms, vs, ss, ns, hs = cls.Sizes[SGDex.Signed]  # cs ms vs ss ns hs
+        rs = len(raw)  # raw vid size
+        if rs != 32:
+            raise hioing.MemoerError(f"Invalid raw size {rs=} not 32")
 
-        rvs = len(vid)  # raw vid size
-        if rvs != 32:
-            raise hioing.MemoerError("Invalid raw vid size {rvs=} not 32")
-
-        ps = (3 - ((rvs) % 3)) % 3  # net pad size for raw vid
+        ps = (3 - ((rs) % 3)) % 3  # net pad size for raw vid
         if len(code) != ps != 1:
-            raise hioing.MemoerError("Invalid vid code size={len(code)} not equal"
+            raise hioing.MemoerError(f"Invalid code size={len(code)} not equal"
                                      f" {ps=} not equal 1")
 
-        vidb64 = encodeB64(bytes([0] * ps) + vid)[ps:] # prepad, convert, and prestrip
+        b64 = encodeB64(bytes([0] * ps) + raw)[ps:] # prepad, convert, and prestrip
 
-        vidqb64 = code + vidb64.decode()  # fully qualified vid with prefix code
+        qb64 = code + b64.decode()  # fully qualified base64 vid with prefix code
 
-        if len(vidqb64) != vs:
-            hioing.MemoerError("Invalid vid qb64 size={len(vidqb64) != {vs}}")
+        cs, ms, vs, ss, ns, hs = cls.Sizes[SGDex.Signed]  # cs ms vs ss ns hs
+        if len(qb64) != vs:
+            hioing.MemoerError(f"Invalid vid qb64 size={len(qb64) != {vs}}")
 
-        return vidqb64
+        return qb64  # fully qualified base64 vid with prefix code
+
+
+    @classmethod
+    def _encodeQVK(cls, raw, code='B'):
+        """Utility method for use with signed headers that encodes raw vid as
+        CESR compatible fully qualified B64 text domain str using CESR compatible
+        text code
+
+        Parameters:
+            raw (bytes): verkey to be encoded with code
+            code (str): code for type of vid CESR compatible
+                Ed25519N:   str = 'B'  # Ed25519 verkey non-transferable, basic derivation.
+
+        Returns:
+            qb64 (str): fully qualified base64 verkey
+        """
+        if code not in ('B'):
+            raise hioing.MemoerError(f"Invalid qvk {code=}")
+
+        rs = len(raw)  # raw size
+        if rs != 32:
+            raise hioing.MemoerError(f"Invalid raw size {rs=} not 32")
+
+        ps = (3 - ((rs) % 3)) % 3  # net pad size for raw verkey
+        if len(code) != ps != 1:
+            raise hioing.MemoerError(f"Invalid code size={len(code)} "
+                                     f"not equal {ps=} not equal 1")
+
+        b64 = encodeB64(bytes([0] * ps) + raw)[ps:] # prepad, convert, and prestrip
+
+        qb64 = code + b64.decode()  # fully qualified verkey with prefix code
+
+        return qb64  # qualified base64 verkey
+
+
+    @classmethod
+    def _encodeQSS(cls, raw, code='A'):
+        """Utility method for use with signed headers that encodes raw vid as
+        CESR compatible fully qualified B64 text domain str using CESR compatible
+        text code
+
+        Parameters:
+            raw (bytes): sigseed to be encoded with code
+            code (str): code for type of vid CESR compatible
+                Ed25519_Seed:str = 'A'  # Ed25519 256 bit random seed for private key
+
+        Returns:
+            qb64 (str): fully qualified base64 sigseed
+        """
+        if code not in ('A'):
+            raise hioing.MemoerError(f"Invalid qss {code=}")
+
+        rs = len(raw)  # raw size
+        if rs != 32:
+            raise hioing.MemoerError(f"Invalid raw size {rs=} not 32")
+
+        ps = (3 - ((rs) % 3)) % 3  # net pad size for raw sigseed
+        if len(code) != ps != 1:
+            raise hioing.MemoerError(f"Invalid code size={len(code)} "
+                                     f"not equal {ps=} not equal 1")
+
+        b64 = encodeB64(bytes([0] * ps) + raw)[ps:] # prepad, convert, and prestrip
+
+        qb64 = code + b64.decode()  # fully qualified  with prefix code
+
+        return qb64  # qualified base64 sigseed
 
 
     def __init__(self, *,

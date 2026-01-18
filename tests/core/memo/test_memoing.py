@@ -53,10 +53,11 @@ def _setupKeep(salt=None):
     # creates signing/verification key pair from seed
     verkey, sigkey = pysodium.crypto_sign_seed_keypair(sigseed)  # raw
 
-    vid = Memoer._encodeVid(vid=verkey, code='B')
-    assert len(vid) == 44
-
-    keyage = Keyage(verkey=verkey, sigseed=sigseed)  # raw
+    # non transferable public key as vid
+    vid = Memoer._encodeVID(raw=verkey, code='B')  # make fully qualified
+    qvk = Memoer._encodeQVK(raw=verkey)  # make fully qualified
+    qss = Memoer._encodeQSS(raw=sigseed)  # make fully qualified
+    keyage = Keyage(qvk=qvk, qss=qss)  # raw
     keep[vid] = keyage
 
     sigseed = pysodium.crypto_pwhash(outlen=32,
@@ -68,10 +69,10 @@ def _setupKeep(salt=None):
     # creates signing/verification key pair from seed
     verkey, sigkey = pysodium.crypto_sign_seed_keypair(sigseed)  # raw
 
-    vid = Memoer._encodeVid(vid=verkey, code='D')
-    assert len(vid) == 44
-
-    keyage = Keyage(verkey=verkey, sigseed=sigseed)  # raw
+    vid = Memoer._encodeVID(raw=verkey, code='D')  # make fully qualified
+    qvk = Memoer._encodeQVK(raw=verkey)  # make fully qualified
+    qss = Memoer._encodeQSS(raw=sigseed)  # make fully qualified
+    keyage = Keyage(qvk=qvk, qss=qss)  # raw
     keep[vid] = keyage
 
     sigseed = pysodium.crypto_pwhash(outlen=32,
@@ -82,13 +83,12 @@ def _setupKeep(salt=None):
                                     alg=pysodium.crypto_pwhash_ALG_ARGON2ID13)
     # creates signing/verification key pair from seed
     verkey, sigkey = pysodium.crypto_sign_seed_keypair(sigseed)  # raw
-
     dig = digest = blake3.blake3(verkey).digest()
 
-    vid = Memoer._encodeVid(vid=dig, code='E')
-    assert len(vid) == 44
-
-    keyage = Keyage(verkey=verkey, sigseed=sigseed)  # raw
+    vid = Memoer._encodeVID(raw=dig, code='E')
+    qvk = Memoer._encodeQVK(raw=verkey)  # make fully qualified
+    qss = Memoer._encodeQSS(raw=sigseed)  # make fully qualified
+    keyage = Keyage(qvk=qvk, qss=qss)  # raw
     keep[vid] = keyage
 
     return keep
@@ -143,7 +143,7 @@ def test_memoer_class():
     assert Memoer.BufSize == (2**16-1) # default buffersize
 
     verkey = (b"o\x91\xf4\xbe$Mu\x0b{}\xd3\xaa'g\xd1\xcf\x96\xfb\x1e\xb1S\x89H\\'ae\x06+\xb2(v")
-    vidqb64 = Memoer._encodeVid(vid=verkey)
+    vidqb64 = Memoer._encodeVID(raw=verkey)
     assert vidqb64 == 'BG-R9L4kTXULe33Tqidn0c-W-x6xU4lIXCdhZQYrsih2'
     cs, ms, vs, ss, ns, hs = Memoer.Sizes[SGDex.Signed]  # cs ms vs ss ns hs
     assert len(vidqb64) == 44 == vs
@@ -160,13 +160,14 @@ def test_setup_keep():
 
     assert keep == \
     {
-        'BG-R9L4kTXULe33Tqidn0c-W-x6xU4lIXCdhZQYrsih2': Keyage(verkey=b"o\x91\xf4\xbe$Mu\x0b{}\xd3\xaa'g\xd1\xcf\x96\xfb\x1e\xb1S\x89H\\'ae\x06+\xb2(v",
-                                                               sigseed=b"\x9bF\n\xf1\xc2L\xeaBC:\xf7\xe9\xd71\xbc\xd2{\x7f\x81\xae5\x9c\xca\xf9\xdb\xac@`'\x0e\xa4\x10"),
-        'DJb1Z0pHx36MCOuIHWR4yPxfIiBxVzg6UCamv8fAN8gH': Keyage(verkey=b'\x96\xf5gJG\xc7~\x8c\x08\xeb\x88\x1ddx\xc8\xfc_" qW8:P&\xa6\xbf\xc7\xc07\xc8\x07',
-                                                               sigseed=b'|\x97\xe1\xffN\x07:\x8d`\xfef\xd5E8\xc2\xba\xad,\x96\x9e\xba\xbe\xdc\xe6IB\x01i\x92\x8c\xd3W'),
-        'EGLDQ97VnSnJS19Dz0j3NcgASGjMgMm4R-DmyrPDRZtN': Keyage(verkey=b'\x0c\x16\x1ev\x1dXY\x1b\x9b\xfa0c\xbc\xab|7\x0eK=\xc2\x8a\x8dO\xb8\xc9=\x0c\r\xe5\xad\xc5Z',
-                                                               sigseed=b'@L\xb3\x87\xff\x9e\xe0J\x14\xc5\xbf8\x8e\x83\x00\xd8\xc4\x0f\xff\xcc&\t\x9e|\x81Y\x06\x82\xd5\x07\xf3\x8c')
+        'BG-R9L4kTXULe33Tqidn0c-W-x6xU4lIXCdhZQYrsih2': Keyage(qvk='BG-R9L4kTXULe33Tqidn0c-W-x6xU4lIXCdhZQYrsih2',
+                                                               qss='AJtGCvHCTOpCQzr36dcxvNJ7f4GuNZzK-dusQGAnDqQQ'),
+        'DJb1Z0pHx36MCOuIHWR4yPxfIiBxVzg6UCamv8fAN8gH': Keyage(qvk='BJb1Z0pHx36MCOuIHWR4yPxfIiBxVzg6UCamv8fAN8gH',
+                                                               qss='AHyX4f9OBzqNYP5m1UU4wrqtLJaeur7c5klCAWmSjNNX'),
+        'EGLDQ97VnSnJS19Dz0j3NcgASGjMgMm4R-DmyrPDRZtN': Keyage(qvk='BAwWHnYdWFkbm_owY7yrfDcOSz3Cio1PuMk9DA3lrcVa',
+                                                               qss='AEBMs4f_nuBKFMW_OI6DANjED__MJgmefIFZBoLVB_OM')
     }
+
 
     salt = b"ABCDEFGHIJKLMNOP"
     try:
@@ -176,14 +177,13 @@ def test_setup_keep():
 
     assert keep == \
     {
-        'BJZTHNWXscuT-SPokPzSeBkShpHj6g8bQrP0Rh7IJNUp': Keyage(verkey=b'\x96S\x1c\xd5\x97\xb1\xcb\x93\xf9#\xe8\x90\xfc\xd2x\x19\x12\x86\x91\xe3\xea\x0f\x1bB\xb3\xf4F\x1e\xc8$\xd5)',
-                                                               sigseed=b'\xc3\xf7y\xe4\\\\VG\xb0\x9b\xcb\xaf\x83=\xcf\x13TD\x12\x85\xe50\xe3T\x94x\xb9\xed4Z\x14\x02'),
-        'DGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni': Keyage(verkey=b"c\x91\x04QI{\x96c\xe1=E@zQ\x15'\xb8\xd6\x14.\xab\xc1\xd4,\x03\x16\xc9\xcfB\xd3\xb9\xe2",
-                                                               sigseed=b'\xec\xf5I\xcf\xa3|H\xe65!\x16\xb7O\xa0\xe3\xe7 \xb2\x17\x1d\x01\xf9/\x11\x19FJK\x9eG\xc7\xa4'),
-        'EJ9RvVS6j6-stXpJEyaTi-MOJ1lZUQYkv9-Dc5GGHCVK': Keyage(verkey=b'L>zx\xc6s\xea;\xfdK7\xe0\x86N\xfaP\xdb\xa8Q\xb58!\x80\x83\xc7\xb5\xfe\x1dk_\xa7&',
-                                                               sigseed=b'\xd9\x8f\xb7\xc9\xcd#\xd6 X\x07+*]\x7f\xa3\x99W\xbfSt-\xee\xea\x8e\xa4q\x9d\xdb\x88\xdf\xef ')
+        'BJZTHNWXscuT-SPokPzSeBkShpHj6g8bQrP0Rh7IJNUp': Keyage(qvk='BJZTHNWXscuT-SPokPzSeBkShpHj6g8bQrP0Rh7IJNUp',
+                                                               qss='AMP3eeRcXFZHsJvLr4M9zxNURBKF5TDjVJR4ue00WhQC'),
+        'DGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni': Keyage(qvk='BGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni',
+                                                               qss='AOz1Sc-jfEjmNSEWt0-g4-cgshcdAfkvERlGSkueR8ek'),
+        'EJ9RvVS6j6-stXpJEyaTi-MOJ1lZUQYkv9-Dc5GGHCVK': Keyage(qvk='BEw-enjGc-o7_Us34IZO-lDbqFG1OCGAg8e1_h1rX6cm',
+                                                               qss='ANmPt8nNI9YgWAcrKl1_o5lXv1N0Le7qjqRxnduI3-8g')
     }
-
     """Done"""
 
 
