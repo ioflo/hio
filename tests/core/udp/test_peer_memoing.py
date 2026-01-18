@@ -171,7 +171,6 @@ def test_memoer_peer_open():
         assert alpha.name == "alpha"
         assert alpha.code == GramDex.Basic
         assert not alpha.curt
-        # (code, mid, vid, sig, neck, head) part sizes
         assert alpha.Sizes[alpha.code] == (2, 22, 0, 4, 0, 28)  # cz mz oz nz sz hz
         assert alpha.size == size
         assert alpha.bc == 1024

@@ -63,20 +63,20 @@ class PeerMemoer(Peer, Memoer):
         counts (dict): keyed by mid (memoID) that holds the gram count from
             the first gram for the memo. This enables lookup of the gram count when
             fusing its grams.
-        vids (dict[mid: (vid | None)]): keyed by mid that holds the verification ID str for
+        oids (dict[mid: (oid | None)]): keyed by mid that holds the origin ID str for
                 the memo indexed by its mid (memoID). This enables reattaching
-                the vid to memo when placing fused memo in rxms deque.
-                Vid is only present when signed header otherwise vid is None
+                the oid to memo when placing fused memo in rxms deque.
+                Vid is only present when signed header otherwise oid is None
         rxms (deque): holding rx (receive) memo tuples desegmented from rxgs grams
                 each entry in deque is tuple of form:
-                (memo: str, src: str, vid: str) where:
-                memo is fused memo, src is source addr, vid is verification ID
+                (memo: str, src: str, oid: str) where:
+                memo is fused memo, src is source addr, oid is origin ID
         txms (deque): holding tx (transmit) memo tuples to be segmented into
                 txgs grams where each entry in deque is tuple of form
-                (memo: str, dst: str, vid: str | None)
+                (memo: str, dst: str, oid: str | None)
                 memo is memo to be partitioned into gram
                 dst is dst addr for grams
-                vid is verification id when gram is to be signed or None otherwise
+                oid is verification id when gram is to be signed or None otherwise
         txgs (deque): grams to transmit, each entry is duple of form:
                 (gram: bytes, dst: str).
         txbs (tuple): current transmisstion duple of form:
@@ -114,12 +114,12 @@ class PeerMemoer(Peer, Memoer):
                        Default echo is duple that
                            indicates nothing to receive of form (b'', None)
                        When False may be overridden by a method parameter
-        keep (dict): labels or vids, values are Keyage instances
+        keep (dict): labels are oids, values are Keyage instances
                          named tuple of signature key pair:
                          sigkey = private signing key
                          verkey = public verifying key
                         Keyage = namedtuple("Keyage", "sigkey verkey")
-        vid (str|None): own vid defaults used to lookup keys to sign on tx
+        oid (str|None): own oid defaults used to lookup keys to sign on tx
 
     """
 

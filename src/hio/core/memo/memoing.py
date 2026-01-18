@@ -37,7 +37,7 @@ Versionage = namedtuple("Versionage", "major minor")
 Keyage = namedtuple("Keyage", "qvk qss")
 # example usage
 #keyage = Keyage(qvk="xyy", qss="abc", )
-#keep = dict("ABCXYZ"=keyage)  # qualified vid as label, Keyage instance as value
+#keep = dict("ABCXYZ"=keyage)  # qualified oid as label, Keyage instance as value
 
 """Design Discusssion of Memo and Gram Sizing and Encoding:
 
@@ -287,7 +287,8 @@ class Memoer(hioing.Mixin):
     and placed in the memo deque for consumption by the application or some other
     higher level protocol.
 
-    receive -> (gram, src) -> grams parsed to .rxgs  .counts .vids .sources -# singing key pair sigkey and verifier key>
+    receive -> (gram, src) -> grams parsed to .rxgs  .counts .oids .sources ->
+    signing key pair sigkey and verifier key ->
            fuse -> memo .rxms deque
 
     When using non-blocking IO, asynchronous datagram transport
@@ -349,20 +350,20 @@ class Memoer(hioing.Mixin):
         counts (dict): keyed by mid (memoID) that holds the gram count from
             the first gram for the memo. This enables lookup of the gram count when
             fusing its grams.
-        vids (dict[mid: (vid | None)]): keyed by mid that holds the verification ID str for
+        oids (dict[mid: (oid | None)]): keyed by mid that holds the origin ID str for
                 the memo indexed by its mid (memoID). This enables reattaching
-                the vid to memo when placing fused memo in rxms deque.
-                Vid is only present when signed header otherwise vid is None
+                the oid to memo when placing fused memo in rxms deque.
+                oid is only present when signed header otherwise oid is None
         rxms (deque): holding rx (receive) memo tuples desegmented from rxgs grams
                 each entry in deque is tuple of form:
-                (memo: str, src: str, vid: str) where:
-                memo is fused memo, src is source addr, vid is verification ID
+                (memo: str, src: str, oid: str) where:
+                memo is fused memo, src is source addr, oid is origin ID
         txms (deque): holding tx (transmit) memo tuples to be segmented into
                 txgs grams where each entry in deque is tuple of form
-                (memo: str, dst: str, vid: str | None)
+                (memo: str, dst: str, oid: str | None)
                 memo is memo to be partitioned into gram
                 dst is dst addr for grams
-                vid is verification id when gram is to be signed or None otherwise
+                oid is origin id when gram is to be signed or None otherwise
         txgs (deque): grams to transmit, each entry is duple of form:
                 (gram: bytes, dst: str).
         txbs (tuple): current transmisstion duple of form:
@@ -395,12 +396,12 @@ class Memoer(hioing.Mixin):
                        Default echo is duple that
                            indicates nothing to receive of form (b'', None)
                        When False may be overridden by a method parameter
-        keep (dict): labels or vids, values are Keyage instances
+        keep (dict): labels are oids, values are Keyage instances
                          named tuple of signature key pair:
                          sigkey = private signing key
                          verkey = public verifying key
                         Keyage = namedtuple("Keyage", "sigkey verkey")
-        vid (str|None): own vid defaults used to lookup keys to sign on tx
+        oid (str|None): own oid defaults used to lookup keys to sign on tx
 
     Hidden:
         _code (bytes | None): see size property
@@ -409,14 +410,14 @@ class Memoer(hioing.Mixin):
         _verific (bool): see verific property
         _echoic (bool): see echoic property
         _keep (dict): see keep property
-        _vid (str|None): see vid property
+        _oid (str|None): see oid property
     """
     Version = Versionage(major=0, minor=0)  # default version
     Codex = GramDex
     Codes = asdict(Codex)  # map code name to code
     Names = {val : key for key, val in Codes.items()} # invert map code to code name
     Sodex = SGDex  # signed gram codex
-    # dict of gram header part sizes keyed by gram codes: cs ms vs ss ns hs
+    # dict of gram header part sizes keyed by gram codes: cz mz oz nz sz hz
     Sizes = {
                 '__': Sizage(cz=2, mz=22, oz=0, nz=4, sz=0, hz=28),
                 '_-': Sizage(cz=2, mz=22, oz=44, nz=4, sz=88, hz=160),
@@ -431,53 +432,53 @@ class Memoer(hioing.Mixin):
     BufSize = 65535  # (2**16-1)  default buffersize
 
     @classmethod
-    def _encodeVID(cls, raw, code='B'):
-        """Utility method for use with signed headers that encodes raw vid as
-        CESR compatible fully qualified B64 text domain str using CESR compatible
-        text code
+    def _encodeOID(cls, raw, code='B'):
+        """Utility method for use with signed headers that encodes raw oid
+        (origin ID) as CESR compatible fully qualified B64 text domain str
+        using CESR compatible text code
 
         Parameters:
-            raw (bytes): vid to be encoded with code
-            code (str): code for type of vid CESR compatible
+            raw (bytes): oid to be encoded with code
+            code (str): code for type of raw oid CESR compatible
                 Ed25519N:   str = 'B'  # Ed25519 verkey non-transferable, basic derivation.
                 Ed25519:    str = 'D'  # Ed25519 verkey basic derivation
                 Blake3_256: str = 'E'  # Blake3 256 bit digest derivation.
 
         Returns:
-           qb64 (str): fully qualified base64 vid
+           qb64 (str): fully qualified base64 oid
         """
         if code not in ('B', 'D', 'E'):
-            raise hioing.MemoerError(f"Invalid vid {code=}")
+            raise hioing.MemoerError(f"Invalid oid {code=}")
 
-        rz = len(raw)  # raw vid size
+        rz = len(raw)  # raw size
         if rz != 32:
             raise hioing.MemoerError(f"Invalid raw size {rz=} not 32")
 
-        pz = (3 - ((rz) % 3)) % 3  # net pad size for raw vid
+        pz = (3 - ((rz) % 3)) % 3  # net pad size for raw oid
         if len(code) != pz != 1:
             raise hioing.MemoerError(f"Invalid code size={len(code)} not equal"
                                      f" {pz=} not equal 1")
 
         b64 = encodeB64(bytes([0] * pz) + raw)[pz:] # prepad, convert, and prestrip
 
-        qb64 = code + b64.decode()  # fully qualified base64 vid with prefix code
+        qb64 = code + b64.decode()  # fully qualified base64 oid with prefix code
 
         _, _, oz, _, _, _ = cls.Sizes[SGDex.Signed]  # cz mz oz nz sz hz
         if len(qb64) != oz:
-            hioing.MemoerError(f"Invalid vid qb64 size={len(qb64) != {oz}}")
+            hioing.MemoerError(f"Invalid oid qb64 size={len(qb64) != {oz}}")
 
-        return qb64  # fully qualified base64 vid with prefix code
+        return qb64  # fully qualified base64 oid with prefix code
 
 
     @classmethod
     def _encodeQVK(cls, raw, code='B'):
-        """Utility method for use with signed headers that encodes raw vid as
+        """Utility method for use with signed headers that encodes raw verkey as
         CESR compatible fully qualified B64 text domain str using CESR compatible
         text code
 
         Parameters:
             raw (bytes): verkey to be encoded with code
-            code (str): code for type of vid CESR compatible
+            code (str): code for type of raw verkey CESR compatible
                 Ed25519N:   str = 'B'  # Ed25519 verkey non-transferable, basic derivation.
 
         Returns:
@@ -486,16 +487,16 @@ class Memoer(hioing.Mixin):
         if code not in ('B'):
             raise hioing.MemoerError(f"Invalid qvk {code=}")
 
-        rs = len(raw)  # raw size
-        if rs != 32:
-            raise hioing.MemoerError(f"Invalid raw size {rs=} not 32")
+        rz = len(raw)  # raw size
+        if rz != 32:
+            raise hioing.MemoerError(f"Invalid raw size {rz=} not 32")
 
-        ps = (3 - ((rs) % 3)) % 3  # net pad size for raw verkey
-        if len(code) != ps != 1:
+        pz = (3 - ((rz) % 3)) % 3  # net pad size for raw verkey
+        if len(code) != pz != 1:
             raise hioing.MemoerError(f"Invalid code size={len(code)} "
-                                     f"not equal {ps=} not equal 1")
+                                     f"not equal {pz=} not equal 1")
 
-        b64 = encodeB64(bytes([0] * ps) + raw)[ps:] # prepad, convert, and prestrip
+        b64 = encodeB64(bytes([0] * pz) + raw)[pz:] # prepad, convert, and prestrip
 
         qb64 = code + b64.decode()  # fully qualified verkey with prefix code
 
@@ -504,13 +505,13 @@ class Memoer(hioing.Mixin):
 
     @classmethod
     def _encodeQSS(cls, raw, code='A'):
-        """Utility method for use with signed headers that encodes raw vid as
+        """Utility method for use with signed headers that encodes raw sigseed as
         CESR compatible fully qualified B64 text domain str using CESR compatible
         text code
 
         Parameters:
             raw (bytes): sigseed to be encoded with code
-            code (str): code for type of vid CESR compatible
+            code (str): code for type of raw sigseed CESR compatible
                 Ed25519_Seed:str = 'A'  # Ed25519 256 bit random seed for private key
 
         Returns:
@@ -519,16 +520,16 @@ class Memoer(hioing.Mixin):
         if code not in ('A'):
             raise hioing.MemoerError(f"Invalid qss {code=}")
 
-        rs = len(raw)  # raw size
-        if rs != 32:
-            raise hioing.MemoerError(f"Invalid raw size {rs=} not 32")
+        rz = len(raw)  # raw size
+        if rz != 32:
+            raise hioing.MemoerError(f"Invalid raw size {rz=} not 32")
 
-        ps = (3 - ((rs) % 3)) % 3  # net pad size for raw sigseed
-        if len(code) != ps != 1:
+        pz = (3 - ((rz) % 3)) % 3  # net pad size for raw sigseed
+        if len(code) != pz != 1:
             raise hioing.MemoerError(f"Invalid code size={len(code)} "
-                                     f"not equal {ps=} not equal 1")
+                                     f"not equal {pz=} not equal 1")
 
-        b64 = encodeB64(bytes([0] * ps) + raw)[ps:] # prepad, convert, and prestrip
+        b64 = encodeB64(bytes([0] * pz) + raw)[pz:] # prepad, convert, and prestrip
 
         qb64 = code + b64.decode()  # fully qualified  with prefix code
 
@@ -543,7 +544,7 @@ class Memoer(hioing.Mixin):
                  rxgs=None,
                  sources=None,
                  counts=None,
-                 vids=None,
+                 oids=None,
                  rxms=None,
                  txms=None,
                  txgs=None,
@@ -554,7 +555,7 @@ class Memoer(hioing.Mixin):
                  verific=False,
                  echoic=False,
                  keep=None,
-                 vid=None,
+                 oid=None,
                  **kwa
                 ):
         """Setup instance
@@ -584,20 +585,21 @@ class Memoer(hioing.Mixin):
                 memo indexed by its mid (memoID). This enables lookup of the
                 gram count for a given memo to know when it has received all its
                 constituent grams in order to fuse back into the memo.
-            vids (dict[mid: (vid | None)]): keyed by mid that holds the verification ID str for
-                the memo indexed by its mid (memoID). This enables reattaching
-                the vid to memo when placing fused memo in rxms deque.
-                Vid is only present when signed header otherwise vid is None
+            oids (dict[mid: (oid | None)]): keyed by mid that holds the origin ID
+                str for the memo indexed by its mid (memoID).
+                This enables reattaching the oid to memo when placing fused memo
+                in rxms deque.
+                oid is only present when signed header otherwise oid is None
             rxms (deque): holding rx (receive) memo tuples desegmented from rxgs grams
                 each entry in deque is tuple of form:
-                (memo: str, src: str, vid: str) where:
-                memo is fused memo, src is source addr, vid is verification ID
+                (memo: str, src: str, oid: str) where:
+                memo is fused memo, src is source addr, oid is origin ID
             txms (deque): holding tx (transmit) memo tuples to be segmented into
                 txgs grams where each entry in deque is tuple of form
-                (memo: str, dst: str, vid: str | None)
+                (memo: str, dst: str, oid: str | None)
                 memo is memo to be partitioned into gram
                 dst is dst addr for grams
-                vid is verification id when gram is to be signed or None otherwise
+                oid is origin id when gram is to be signed or None otherwise
             txgs (deque): grams to transmit, each entry is duple of form:
                 (gram: bytes, dst: str). Grams include gram headers.
             txbs (tuple): current transmisstion duple of form:
@@ -624,11 +626,11 @@ class Memoer(hioing.Mixin):
                        Default echo is duple that
                            indicates nothing to receive of form (b'', None)
                     When False may be overridden by a method parameter
-            keep (dict|None): labels are vids and values are Keyage instances
-                              that provide current signature key pair for vid
+            keep (dict|None): labels are oids and values are Keyage instances
+                              that provide current signature key pair for oid
                               this is a lightweight mechanism that should be
                               overridden in subclass for real world key management.
-            vid (str|None): own vid defaults used to lookup keys to sign on tx
+            oid (str|None): own oid defaults used to lookup keys to sign on tx
 
         """
 
@@ -637,7 +639,7 @@ class Memoer(hioing.Mixin):
         self.rxgs = rxgs if rxgs is not None else dict()
         self.sources = sources if sources is not None else dict()
         self.counts = counts if counts is not None else dict()
-        self.vids = vids if vids is not None else dict()
+        self.oids = oids if oids is not None else dict()
         self.rxms = rxms if rxms is not None else deque()
 
         self.txms = txms if txms is not None else deque()
@@ -671,7 +673,7 @@ class Memoer(hioing.Mixin):
 
         self._echoic = True if echoic else False
         self._keep = keep if keep is not None else dict()
-        self.vid = vid if vid else None
+        self.oid = oid if oid else None
 
     @property
     def code(self):
@@ -785,7 +787,7 @@ class Memoer(hioing.Mixin):
         """Property getter for ._keep
 
         Returns:
-            keep (dict): labels or vids, values are Keyage instances
+            keep (dict): labels are oids, values are Keyage instances
                          named tuple of signature key pair:
                          sigkey = private signing key
                          verkey = public verifying key
@@ -794,23 +796,23 @@ class Memoer(hioing.Mixin):
         return self._keep
 
     @property
-    def vid(self):
-        """Property getter for ._vid
+    def oid(self):
+        """Property getter for ._oid
 
         Returns:
-            vid (str|None): vid used to sign on tx if any
+            oid (str|None): oid used to sign on tx if any
         """
-        return self._vid
+        return self._oid
 
 
-    @vid.setter
-    def vid(self, vid):
-        """Property setter for ._vid
+    @oid.setter
+    def oid(self, oid):
+        """Property setter for ._oid
 
         Parameters:
-            vid (str|None): value to assign to own vid
+            oid (str|None): value to assign to own oid
         """
-        self._vid = vid
+        self._oid = oid
 
 
     def open(self):
@@ -887,8 +889,9 @@ class Memoer(hioing.Mixin):
         raise hioing.MemoerError(f"Unexpected {sextet=} at gram head start.")
 
 
-    def verify(self, sig, ser, vid):
-        """Verify signature sig on signed part of gram, ser, using key from vid.
+    def verify(self, sig, ser, oid):
+        """Verify signature sig on signed part of gram, ser, using current verkey
+        for oid.
         Must be overriden in subclass to perform real signature verification.
         This is a stub.
 
@@ -899,13 +902,13 @@ class Memoer(hioing.Mixin):
         Parameters:
             sig (bytes | str): qualified base64 qb64b
             ser (bytes): signed portion of gram in delivered format
-            vid (bytes | str): qualified base64 qb64b of verifier ID
+            oid (bytes | str): qualified base64 qb64b of origin ID
         """
         if hasattr(sig, 'encode'):
             sig = sig.encode()
 
-        if hasattr(vid, 'encode'):
-            vid = vid.encode()
+        if hasattr(oid, 'encode'):
+            oid = oid.encode()
 
         return True
 
@@ -916,14 +919,14 @@ class Memoer(hioing.Mixin):
 
         Returns:
             result (tuple): tuple of form:
-                (mid: str, vid: str, gn: int, gc: int | None) where:
+                (mid: str, oid: str, gn: int, gc: int | None) where:
                 mid is fully qualified memoID,
-                vid is verID,
+                oid is origin ID used to look up signature verification key,
                 gn is gram number,
                 gc is gram count.
-                When first gram (zeroth) returns (mid, vid, 0, gc).
-                When other gram returns (mid, vid, gn, None)
-                When code has empty vid then vid is None
+                When first gram (zeroth) returns (mid, oid, 0, gc).
+                When other gram returns (mid, oid, gn, None)
+                When code has empty oid then oid is None
                 Otherwise raises MemoerError error.
 
         When valid recognized header, strips header bytes from front of gram
@@ -957,7 +960,7 @@ class Memoer(hioing.Mixin):
                                          f" < {hz + 1}.")
 
             mid = encodeB64(gram[:cms]).decode()  # fully qualified with prefix code
-            vid = encodeB64(gram[cms:cms+oz]).decode()  # must be on 24 bit boundary
+            oid = encodeB64(gram[cms:cms+oz]).decode()  # must be on 24 bit boundary
             gn = int.from_bytes(gram[cms+oz:cms+oz+nz])
             if gn == 0:  # first (zeroth) gram so long neck
                 if len(gram) < hz + nz + 1:
@@ -991,7 +994,7 @@ class Memoer(hioing.Mixin):
                                          f" < {hz + 1}.")
 
             mid = bytes(gram[:cz+mz]).decode()  # fully qualified with prefix code
-            vid = bytes(gram[cz+mz:cz+mz+oz]).decode() # must be on 24 bit boundary
+            oid = bytes(gram[cz+mz:cz+mz+oz]).decode() # must be on 24 bit boundary
             gn = helping.b64ToInt(gram[cz+mz+oz:cz+mz+oz+nz])
             if gn == 0:  # first (zeroth) gram so long neck
                 if len(gram) < hz + nz + 1:
@@ -1010,12 +1013,12 @@ class Memoer(hioing.Mixin):
                 signed = bytes(gram[:])  # copy signed portion of gram
                 del gram[:hz-sz]  # strip of fore head leaving body in gram
 
-        if sig:  # signature not empty
-            if not self.verify(sig, signed, vid):
+        if sig:  # signature not emptyoid
+            if not self.verify(sig, signed, oid):
                 raise hioing.MemoerError(f"Invalid signature on gram from "
-                                         f"verifier {vid=}.")
+                                         f"verifier {oid=}.")
 
-        return (mid, vid if vid else None, gn, gc)
+        return (mid, oid if oid else None, gn, gc)
 
 
     def receive(self, *, echoic=False) -> (bytes, str|tuple|None):
@@ -1100,7 +1103,7 @@ class Memoer(hioing.Mixin):
         gram = bytearray(gram)  # make copy bytearray so can strip off header
 
         try:
-            mid, vid, gn, gc = self.pick(gram)  # parse and strip off head leaving body
+            mid, oid, gn, gc = self.pick(gram)  # parse and strip off head leaving body
         except hioing.MemoerError as ex: # invalid gram so drop
             logger.error("Unrecognized Memoer gram from %s.\n %s.", src, ex)
             return True  # did receive data so can try again now
@@ -1116,8 +1119,8 @@ class Memoer(hioing.Mixin):
             if mid not in self.counts:  # make idempotent first only no replay
                 self.counts[mid] = gc  # save gram count for mid
 
-        if mid not in self.vids:
-            self.vids[mid] = vid
+        if mid not in self.oids:
+            self.oids[mid] = oid
 
         # assumes unique mid across all possible sources. No replay by different
         # source only first source for a given mid is ever recognized
@@ -1192,11 +1195,11 @@ class Memoer(hioing.Mixin):
                 continue
             memo = self.fuse(self.rxgs[mid], self.counts[mid])
             if memo is not None:  # allows for empty "" memo for some src
-                self.rxms.append((memo, self.sources[mid], self.vids[mid]))
+                self.rxms.append((memo, self.sources[mid], self.oids[mid]))
                 del self.rxgs[mid]
                 del self.counts[mid]
                 del self.sources[mid]
-                del self.vids[mid]
+                del self.oids[mid]
 
 
     def serviceRxGramsOnce(self):
@@ -1233,7 +1236,7 @@ class Memoer(hioing.Mixin):
         Override in subclass to handle result and put it somewhere
         """
         try:
-            #memo, src, vid = self._serviceOneRxMemo()
+            #memo, src, oid = self._serviceOneRxMemo()
             self.inbox.append(self._serviceOneRxMemo())
         except IndexError:
             pass
@@ -1245,7 +1248,7 @@ class Memoer(hioing.Mixin):
         Override in subclass to handle result(s) and put them somewhere
         """
         while self.rxms:
-            #memo, src, vid = self._serviceOneRxMemo()
+            #memo, src, oid = self._serviceOneRxMemo()
             self.inbox.append(self._serviceOneRxMemo())
 
 
@@ -1265,20 +1268,20 @@ class Memoer(hioing.Mixin):
         self.serviceRxMemos()
 
 
-    def memoit(self, memo, dst, vid=None):
-        """Append (memo, dst, vid) tuple to .txms deque
+    def memoit(self, memo, dst, oid=None):
+        """Append (memo, dst, oid) tuple to .txms deque
 
         Parameters:
             memo (str): to be segmented and packed into gram(s)
             dst (str): address of remote destination of memo
-            vid (str | None): verifiable ID for signing grams
+            oid (str | None): origin ID for verifying signature on grams
         """
-        self.txms.append((memo, dst, vid))
+        self.txms.append((memo, dst, oid))
 
 
-    def sign(self, ser, vid):
-        """Sign serialization ser using private key for verifier ID vid
-        Must be overriden in subclass to fetch private key for vid and sign.
+    def sign(self, ser, oid):
+        """Sign serialization ser using private sigkey for origin ID oid
+        Must be overriden in subclass to fetch private key for oid and sign.
         This is a stub.
 
         Returns:
@@ -1286,12 +1289,12 @@ class Memoer(hioing.Mixin):
 
         Parameters:
             ser (bytes): signed portion of gram is delivered format
-            vid (bytes): qb64 or qb2 if .curt of vid of signer
-                         assumes vid of correct length
+            oid (bytes): qb64 or qb2 if .curt of oid of signer
+                         assumes oid of correct length
 
         """
 
-        if vid not in self.keep:
+        if oid not in self.keep:
             return b''  # return of empty signature should raise error in caller
 
 
@@ -1309,7 +1312,7 @@ class Memoer(hioing.Mixin):
         return sig
 
 
-    def rend(self, memo, vid=None):
+    def rend(self, memo, oid=None):
         """Partition memo into packed grams with headers.
 
         Returns:
@@ -1317,7 +1320,8 @@ class Memoer(hioing.Mixin):
 
         Parameters:
             memo (str): to be partitioned into grams with headers
-            vid (str | None): verification ID when gram is to be signed.
+            oid (str | None): origin ID when gram is to be signed, used to
+                              lookup sigkey to sign.
                               None means not signable
 
         Note zeroth gram has head + neck overhead, zhz = hz + nz
@@ -1330,10 +1334,10 @@ class Memoer(hioing.Mixin):
         # self.size is max gram size
         cz, mz, oz, nz, sz, hz = self.Sizes[self.code]  # cz mz oz nz sz hz
 
-        vid = vid if vid is not None else self.vid
+        oid = oid if oid is not None else self.oid
 
-        if oz and (not vid or len(vid) != oz):
-            raise hioing.MemoerError(f"Missing or invalid {vid=} for {oz=}")
+        if oz and (not oid or len(oid) != oz):
+            raise hioing.MemoerError(f"Missing or invalid {oid=} for {oz=}")
 
         pz = (3 - ((mz) % 3)) % 3  # net pad size for mid
         # memo ID is 16 byte random UUID converted to 22 char Base64 right aligned
@@ -1378,12 +1382,12 @@ class Memoer(hioing.Mixin):
             else:
                 num = helping.intToB64b(gn, l=nz)  # num size must always be neck size
 
-            if oz:  # need vid part, but can't mod here may need below to sign
+            if oz:  # need oid part, but can't mod here may need below to sign
                 if self.curt:
-                    vidp = decodeB64(vid.encode())  # vid part b2
+                    oidp = decodeB64(oid.encode())  # oid part b2
                 else:
-                    vidp = vid.encode()  # vid part b64 bytes
-                head = mid + vidp + num
+                    oidp = oid.encode()  # oid part b64 bytes
+                head = mid + oidp + num
             else:
                 head = mid + num
 
@@ -1395,7 +1399,7 @@ class Memoer(hioing.Mixin):
                 del memo[:bz]  # del slice past end just deletes to end
 
             if sz:  # signed so sign
-                sig = self.sign(gram, vid)
+                sig = self.sign(gram, oid)
                 if not sig or len(sig) != sz:
                     raise hioing.MemoerError(f"Signed but unable to sign or "
                                              f"invalid signature {sig=}")
@@ -1446,11 +1450,11 @@ class Memoer(hioing.Mixin):
 
 
     def _serviceOneTxMemo(self):
-        """Service one (memo, dst, vid) tuple from .txms deque where tuple is
-        of form: (memo: str, dst: str, vid: str) where:
+        """Service one (memo, dst, oid) tuple from .txms deque where tuple is
+        of form: (memo: str, dst: str, oid: str) where:
                 memo is outgoing memo
                 dst is destination address
-                vid is verification ID
+                oid is origin ID used to lookup sigkey to sign
 
         Calls .rend method to process the partitioning and packing as
         appropriate to convert memo into grams with headers and sign when
@@ -1458,9 +1462,9 @@ class Memoer(hioing.Mixin):
 
         Appends (gram, dst) duple to .txgs deque.
         """
-        memo, dst, vid = self.txms.popleft()  # raises IndexError if empty deque
+        memo, dst, oid = self.txms.popleft()  # raises IndexError if empty deque
 
-        for gram in self.rend(memo, vid):  # partition memo into gram parts with head
+        for gram in self.rend(memo, oid):  # partition memo into gram parts with head
             self.txgs.append((gram, dst))  # append duples (gram: bytes, dst: str)
 
 
@@ -1767,20 +1771,20 @@ class SureMemoer(Tymee, Memoer):
         counts (dict): keyed by mid (memoID) that holds the gram count from
             the first gram for the memo. This enables lookup of the gram count when
             fusing its grams.
-        vids (dict[mid: (vid | None)]): keyed by mid that holds the verification ID str for
+        oids (dict[mid: (oid | None)]): keyed by mid that holds the origin ID str for
                 the memo indexed by its mid (memoID). This enables reattaching
-                the vid to memo when placing fused memo in rxms deque.
-                Vid is only present when signed header otherwise vid is None
+                the oid to memo when placing fused memo in rxms deque.
+                Vid is only present when signed header otherwise oid is None
         rxms (deque): holding rx (receive) memo tuples desegmented from rxgs grams
                 each entry in deque is tuple of form:
-                (memo: str, src: str, vid: str) where:
-                memo is fused memo, src is source addr, vid is verification ID
+                (memo: str, src: str, oid: str) where:
+                memo is fused memo, src is source addr, oid is origin ID
         txms (deque): holding tx (transmit) memo tuples to be segmented into
                 txgs grams where each entry in deque is tuple of form
-                (memo: str, dst: str, vid: str | None)
+                (memo: str, dst: str, oid: str | None)
                 memo is memo to be partitioned into gram
                 dst is dst addr for grams
-                vid is verification id when gram is to be signed or None otherwise
+                oid is origin id when gram is to be signed or None otherwise
         txgs (deque): grams to transmit, each entry is duple of form:
                 (gram: bytes, dst: str).
         txbs (tuple): current transmisstion duple of form:
@@ -1826,12 +1830,12 @@ class SureMemoer(Tymee, Memoer):
                        Default echo is duple that
                            indicates nothing to receive of form (b'', None)
                        When False may be overridden by a method parameter
-        keep (dict): labels or vids, values are Keyage instances
+        keep (dict): labels are oids, values are Keyage instances
                          named tuple of signature key pair:
                          sigkey = private signing key
                          verkey = public verifying key
                         Keyage = namedtuple("Keyage", "sigkey verkey")
-        vid (str|None): own vid defaults used to lookup keys to sign on tx
+        oid (str|None): own oid defaults used to lookup keys to sign on tx
 
     """
     Tymeout = 0.0  # tymeout in seconds, tymeout of 0.0 means ignore tymeout
