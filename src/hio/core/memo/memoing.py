@@ -1223,13 +1223,27 @@ class Memoer(hioing.Mixin):
 
         Parameters:
             ser (bytes): signed portion of gram is delivered format
-            vid (str | bytes): qualified base64 qb64 of verifier ID
+            vid (bytes): qb64 or qb2 if .curt of vid of signer
+                         assumes vid of correct length
 
         """
-        if hasattr(vid, 'encode'):
-            vid = vid.encode()
+
+        if vid not in self.keep:
+            return b''  # return of empty signature should raise error in caller
+
+
         cs, ms, vs, ss, ns, hs = self.Sizes[self.code]  # cs ms vs ss ns hs
-        return b'A' * ss
+
+        sig = b'A' * ss
+
+        if self.curt:
+            hs = 3 * hs // 4  # encoding b2 means head part sizes smaller by 3/4
+            ns = 3 * ns // 4  # encoding b2 means head part sizes smaller by 3/4
+            vs = 3 * vs // 4  # encoding b2 means head part sizes smaller by 3/4
+            ss = 3 * ss // 4  # encoding b2 means head part sizes smaller by 3/4
+            sig = decodeB64(sig)  # make b2
+
+        return sig
 
 
     def rend(self, memo, vid=None):
@@ -1251,9 +1265,10 @@ class Memoer(hioing.Mixin):
         # self.size is max gram size
         cs, ms, vs, ss, ns, hs = self.Sizes[self.code]  # cs ms vs ss ns hs
 
+        vid = vid if vid is not None else self.vid
+
         if vs and (not vid or len(vid) != vs):
-            raise hioing.MemoerError(f"Invalid {vid=} for size={vs}.")
-        vid = b"" if vid is None else vid[:vs].encode()
+            raise hioing.MemoerError(f"Missing or invalid {vid=} for {vs=}")
 
         ps = (3 - ((ms) % 3)) % 3  # net pad size for mid
         # memo ID is 16 byte random UUID converted to 22 char Base64 right aligned
@@ -1270,7 +1285,8 @@ class Memoer(hioing.Mixin):
             vs = 3 * vs // 4  # encoding b2 means head part sizes smaller by 3/4
             ss = 3 * ss // 4  # encoding b2 means head part sizes smaller by 3/4
             mid = decodeB64(mid)
-            vid = decodeB64(vid)
+
+
 
         bs = (self.size - hs)  # max standard gram body size without neck
         # compute gram count based on overhead note added neck overhead in first gram
@@ -1299,7 +1315,14 @@ class Memoer(hioing.Mixin):
             else:
                 num = helping.intToB64b(gn, l=ns)  # num size must always be neck size
 
-            head = mid + vid + num
+            if vs:  # need vid part, but can't mod here may need below to sign
+                if self.curt:
+                    vidp = decodeB64(vid.encode())  # vid part b2
+                else:
+                    vidp = vid.encode()  # vid part b64 bytes
+                head = mid + vidp + num
+            else:
+                head = mid + num
 
             if gn == 0:
                 gram = head + neck + memo[:bs-ns]  # copy slice past end just copies to end
@@ -1308,10 +1331,11 @@ class Memoer(hioing.Mixin):
                 gram = head + memo[:bs]  # copy slice past end just copies to end
                 del memo[:bs]  # del slice past end just deletes to end
 
-            if ss:  # sign
+            if ss:  # signed so sign
                 sig = self.sign(gram, vid)
-                if self.curt:
-                    sig = decodeB64(sig)
+                if not sig or len(sig) != ss:
+                    raise hioing.MemoerError(f"Signed but unable to sign or "
+                                             f"invalid signature {sig=}")
                 gram = gram + sig
 
             grams.append(gram)
