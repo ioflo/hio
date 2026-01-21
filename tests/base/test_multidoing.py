@@ -281,11 +281,11 @@ def test_boss_crew_basic():
     assert not doer.opened
     doers = [doer]
 
-    doist = doing.Doist(tock=0.01, real=True, limit=0.50, doers=doers, temp=True)
+    doist = doing.Doist(tock=0.01, real=True, limit=3.0, doers=doers, temp=True)
     assert doist.tyme == 0.0  # on next cycle
     assert doist.tock == 0.01
     assert doist.real == True
-    assert doist.limit == 0.50
+    assert doist.limit == 3.0
     assert doist.doers == [doer]
 
     doist.do()
@@ -350,11 +350,11 @@ def test_boss_crew_basic_multi():
     assert not doer.opened
     doers = [doer]
 
-    doist = doing.Doist(tock=0.01, real=True, limit=1.0, doers=doers, temp=True)
+    doist = doing.Doist(tock=0.01, real=True, limit=3.0, doers=doers, temp=True)
     assert doist.tyme == 0.0  # on next cycle
     assert doist.tock == 0.01
     assert doist.real == True
-    assert doist.limit == 1.0
+    assert doist.limit == 3.0
     assert doist.doers == [doer]
 
     doist.do()
