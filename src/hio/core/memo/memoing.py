@@ -21,6 +21,8 @@ from base64 import urlsafe_b64encode as encodeB64
 from base64 import urlsafe_b64decode as decodeB64
 from dataclasses import dataclass, astuple, asdict
 
+import pysodium
+
 from ... import hioing, help
 from ...base import tyming, doing
 from ...base.tyming import Tymer, Tymee
@@ -1473,10 +1475,8 @@ class Memoer(hioing.Mixin):
         if code not in ('A'):
             raise hioing.MemoerError(f"Invalid sigseed algorithm type {code=}")
 
-        try:
-            import pysodium
-        except ImportError as ex:
-            raise hioing.MemoerError("Missing pysodium lib for signing") from ex
+
+
 
         verkey, sigkey = pysodium.crypto_sign_seed_keypair(sigseed)
         raw = pysodium.crypto_sign_detached(ser, sigkey)  # raw sig
