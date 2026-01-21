@@ -245,6 +245,10 @@ def test_open_peer():
         alpha.send(msgOut, alpha.ha)
         time.sleep(0.1)
         msgIn, src = alpha.receive()
+        if not msgIn:
+            time.sleep(0.1)
+            msgIn, src = alpha.receive()
+
         assert msgOut == msgIn
         assert src[1] == alpha.port  # ports equal
 
