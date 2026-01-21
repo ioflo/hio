@@ -74,8 +74,10 @@ def test_memoer_peer_basic():
     assert not alpha.sources
 
     # beta receives
-    beta.serviceReceives()
-    time.sleep(0.05)
+    while not beta.rxgs:
+        time.sleep(0.05)
+        beta.serviceReceives()
+
     assert not beta.echos
     assert len(beta.rxgs) == 2
     assert len(beta.counts) == 2
@@ -120,8 +122,10 @@ def test_memoer_peer_basic():
     assert not beta.sources
 
     # alpha receives
-    alpha.serviceReceives()
-    time.sleep(0.05)
+    while not alpha.rxgs:
+        time.sleep(0.05)
+        alpha.serviceReceives()
+
     assert not alpha.echos
     assert len(alpha.rxgs) == 2
     assert len(alpha.counts) == 2
