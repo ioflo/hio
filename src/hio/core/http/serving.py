@@ -353,7 +353,7 @@ class Responder():
             self.headers[u'server'] = "Ioflo WSGI Server"
 
         if u'date' not in self.headers:  # create Date header
-            self.headers[u'date'] = httping.httpDate1123(datetime.datetime.utcnow())
+            self.headers[u'date'] = httping.httpDate1123(datetime.datetime.now(datetime.UTC))
 
         if self.chunkable and ('transfer-encoding' not in self.headers or
                                self.headers['transfer-encoding'] == 'chunked'):
@@ -949,7 +949,7 @@ class CustomResponder():
             self.headers[u'server'] = "Ioflo Server"
 
         if u'date' not in self.headers:  # create Date header
-            self.headers[u'date'] = httping.httpDate1123(datetime.datetime.utcnow())
+            self.headers[u'date'] = httping.httpDate1123(datetime.datetime.now(datetime.UTC))
 
         if self.data is not None:
             body = json.dumps(self.data, separators=(',', ':')).encode("utf-8")

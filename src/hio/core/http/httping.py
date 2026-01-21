@@ -277,7 +277,7 @@ def httpDate1123(dt):
 
     The supplied date must be in UTC.
     import datetime
-    httpDate1123(datetime.datetime.utcnow())
+    httpDate1123(datetime.datetime.now(datetime.UTC))
     'Wed, 30 Sep 2015 14:29:18 GMT'
     """
     weekday = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][dt.weekday()]

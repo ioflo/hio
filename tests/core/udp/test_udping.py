@@ -38,6 +38,7 @@ def test_udp_basic():
         assert alpha.reopen()
         assert alpha.opened
         assert alpha.ha == alphaHa
+        assert alpha.path == alpha.ha
 
         beta = udping.Peer(name='beta',host=host, port = betaPort, wl=wl)  # host on port 6102
         assert not beta.opened
@@ -45,6 +46,7 @@ def test_udp_basic():
         assert beta.reopen()
         assert beta.opened
         assert beta.ha == betaHa
+        assert beta.path == beta.ha
 
         msgOut = b"alpha sends to beta"
         alpha.send(msgOut, beta.ha)
@@ -71,6 +73,121 @@ def test_udp_basic():
         beta.send(msgOut, beta.ha)
         time.sleep(0.05)
         msgIn, src = beta.receive()
+        assert msgOut == msgIn
+        assert src[1] == beta.port  # ports equal
+
+        alpha.close()
+        beta.close()
+
+        assert not alpha.opened
+        assert not beta.opened
+
+        wl.flush()  #  just to test
+        assert wl.samed  # rx and tx same buffer
+
+        def addrBytes(ha):
+            return f"('{ha[0]}', {ha[1]})".encode("ascii")
+
+        assert wl.readRx() == (b"\nTx ('127.0.0.1', 6102):\nalpha sends to beta\n\nRx ('127.0.0.1', 6101)"
+                                b":\nalpha sends to beta\n\nTx ('127.0.0.1', 6101):\nalpha sends to alpha\n"
+                                b"\nRx ('127.0.0.1', 6101):\nalpha sends to alpha\n\nTx ('127.0.0.1', 6101"
+                                b"):\nbeta sends to alpha\n\nRx ('127.0.0.1', 6102):\nbeta sends to alpha\n"
+                                b"\nTx ('127.0.0.1', 6102):\nbeta sends to beta\n\nRx ('127.0.0.1', 6102):"
+                                b'\nbeta sends to beta\n')
+        assert wl.readTx() == (b"\nTx ('127.0.0.1', 6102):\nalpha sends to beta\n\nRx ('127.0.0.1', 6101)"
+                                b":\nalpha sends to beta\n\nTx ('127.0.0.1', 6101):\nalpha sends to alpha\n"
+                                b"\nRx ('127.0.0.1', 6101):\nalpha sends to alpha\n\nTx ('127.0.0.1', 6101"
+                                b"):\nbeta sends to alpha\n\nRx ('127.0.0.1', 6102):\nbeta sends to alpha\n"
+                                b"\nTx ('127.0.0.1', 6102):\nbeta sends to beta\n\nRx ('127.0.0.1', 6102):"
+                                b'\nbeta sends to beta\n')
+
+
+        assert wl.readTx() == wl.readRx()
+
+    assert not wl.opened
+    """Done Test"""
+
+def test_udp():
+    """ Test the udp connection between two peers with bc and bs
+
+    """
+
+    tymist = tyming.Tymist()
+    with (wiring.openWL(samed=True, filed=True) as wl):
+        host = '127.0.0.1'
+        alphaPort = 6101
+        betaPort = 6102
+        alphaHa = (host, alphaPort)
+        betaHa = (host, betaPort)
+        bc = 1024
+
+        alpha = udping.Peer(host=host, port = alphaPort, wl=wl, bc=bc)
+        assert not alpha.opened
+        assert alpha.name == 'main'  # default
+        assert alpha.bc == bc
+        assert alpha.MaxGramSize == 1240  # max safe payload
+        assert alpha.bs == bc * alpha.MaxGramSize == 1269760
+        assert alpha.actualBufSizes() == (0, 0)  # not opened yet
+        assert alpha.reopen()
+        assert alpha.opened
+        assert alpha.ha == alphaHa
+        #assert alpha.actualBufSizes() == (alpha.bs, alpha.bs) == (1269760, 1269760)
+        sizes = alpha.actualBufSizes()
+        assert sizes[0] > 16383
+        assert sizes[1] > 16383
+
+        bs = 2 ** 15 - 1
+        assert bs == 32767
+        beta = udping.Peer(name='beta',host=host, port = betaPort, wl=wl, bs=bs)  # host on port 6102
+        assert not beta.opened
+        assert beta.name == 'beta'
+        assert beta.bc is None
+        assert beta.bs == bs
+        assert beta.actualBufSizes() == (0, 0)  # not opened yet
+        assert beta.reopen()
+        assert beta.opened
+        assert beta.ha == betaHa
+        bses = beta.actualBufSizes()
+        assert bses[0] >= beta.bs
+        assert bses[1] >= beta.bs
+
+        msgOut = b"alpha sends to beta"
+        alpha.send(msgOut, beta.ha)
+        time.sleep(0.05)
+        msgIn = b""
+        while not msgIn:
+            msgIn, src = beta.receive()
+            time.sleep(0.05)
+        assert msgOut == msgIn
+        assert src[1] == alpha.port  # ports equal
+
+        msgOut = b"alpha sends to alpha"
+        alpha.send(msgOut, alpha.ha)
+        time.sleep(0.05)
+        msgIn = b""
+        while not msgIn:
+            msgIn, src = alpha.receive()
+            time.sleep(0.05)
+        assert msgOut == msgIn
+        assert src[1] == alpha.port  # ports equal
+
+        msgOut = b"beta sends to alpha"
+        beta.send(msgOut, alpha.ha)
+        time.sleep(0.05)
+        msgIn = b""
+        while not msgIn:
+            msgIn, src = alpha.receive()
+            time.sleep(0.05)
+        assert msgOut == msgIn
+        assert src[1] == beta.port  # ports equal
+
+        msgOut = b"beta sends to beta"
+        beta.send(msgOut, beta.ha)
+        time.sleep(0.05)
+        msgIn = b""
+        while not msgIn:
+            msgIn, src = beta.receive()
+            time.sleep(0.05)
         assert msgOut == msgIn
         assert src[1] == beta.port  # ports equal
 
@@ -135,28 +252,40 @@ def test_open_peer():
         msgOut = b"alpha sends to beta"
         alpha.send(msgOut, beta.ha)
         time.sleep(0.05)
-        msgIn, src = beta.receive()
+        msgIn = b""
+        while not msgIn:
+            msgIn, src = beta.receive()
+            time.sleep(0.05)
         assert msgOut == msgIn
         assert src[1] == alpha.port  # ports equal
 
         msgOut = b"alpha sends to alpha"
         alpha.send(msgOut, alpha.ha)
         time.sleep(0.05)
-        msgIn, src = alpha.receive()
+        msgIn = b""
+        while not msgIn:
+            msgIn, src = alpha.receive()
+            time.sleep(0.05)
         assert msgOut == msgIn
         assert src[1] == alpha.port  # ports equal
 
         msgOut = b"beta sends to alpha"
         beta.send(msgOut, alpha.ha)
         time.sleep(0.05)
-        msgIn, src = alpha.receive()
+        msgIn = b""
+        while not msgIn:
+            msgIn, src = alpha.receive()
+            time.sleep(0.05)
         assert msgOut == msgIn
         assert src[1] == beta.port  # ports equal
 
         msgOut = b"beta sends to beta"
         beta.send(msgOut, beta.ha)
         time.sleep(0.05)
-        msgIn, src = beta.receive()
+        msgIn = b""
+        while not msgIn:
+            msgIn, src = beta.receive()
+            time.sleep(0.05)
         assert msgOut == msgIn
         assert src[1] == beta.port  # ports equal
 
@@ -402,6 +531,7 @@ def test_peer_doer():
 
 if __name__ == "__main__":
     test_udp_basic()
+    test_udp()
     test_open_peer()
     test_peer_doer()
     #test_udp_broadcast()

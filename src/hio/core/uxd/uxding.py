@@ -44,6 +44,12 @@ class Peer(filing.Filer):
         Mode (str): open mode such as "r+"
         Fext (str): default file extension such as "text" for "fname.text"
 
+    Class Attributes:
+        Umask (int): octal default umask permissions such as 0o022
+        MaxUxdPathSize (int:) max characters in uxd file path
+        BufSize (int): used to set default buffer size for transport datagram buffers
+        MaxGramSize (int): max bytes in in datagram for this transport
+
     Inherited Attributes:
         name (str): unique path component used in directory or file path name
         base (str): another unique path component inserted before name
@@ -58,13 +64,6 @@ class Peer(filing.Filer):
         file (File | None): File instance when filed and created.
         opened (bool): True means directory path, uxd file, and socket are
                 created and opened. False otherwise
-
-    Class Attributes:
-        Umask (int): octal default umask permissions such as 0o022
-        MaxUxdPathSize (int:) max characters in uxd file path
-        MaxGramSize (int): max bytes in in datagram for this transport
-        BufSize (int): used to set buffer size for transport datagram buffers
-
 
     Attributes:
         umask (int): unpermission mask for uxd file, usually octal 0o022
@@ -91,13 +90,20 @@ class Peer(filing.Filer):
     Fext = "uxd"
     Umask = 0o022  # default
     MaxUxdPathSize = 108
-    MaxGramSize = 65535  # 2 ** 16 - 1  default gram size override in subclass
     BufSize = 65535  # 2 ** 16 - 1  default buffersize
+    MaxGramSize = 65535  # 2 ** 16 - 1  default gram size override in subclass
 
 
-    def __init__(self, *, umask=None, bc=None, bs=None, wl=None,
-                 reopen=False, clear=True,
-                 filed=False, extensioned=True, **kwa):
+    def __init__(self, *,
+                 umask=None,
+                 bc=None,
+                 bs=None,
+                 wl=None,
+                 reopen=False,
+                 clear=True,
+                 filed=False,
+                 extensioned=True,
+                 **kwa):
         """Initialization method for instance.
 
         Inherited Parameters:
@@ -123,12 +129,12 @@ class Peer(filing.Filer):
             wl (WireLog): instance ref for debug logging of over the wire tx and rx
         """
         self.umask = umask  # only change umask if umask is not None below
-        self.bc = bc
+
+        self.bc = int(bc) if bc is not None and bc > 0 else None
         if self.bc:
             self.bs = self.MaxGramSize * self.bc
         else:
             self.bs = bs if bs is not None else self.BufSize
-
 
         self.wl = wl
         self.ls = None  # local socket of this Peer, needs to be opened/bound

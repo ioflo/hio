@@ -5,10 +5,10 @@ hio.core.uxd.peermemoing Module
 from contextlib import contextmanager
 
 from ... import help
-from ... import hioing
+
 from ...base import doing
 from ..uxd import Peer
-from ..memo import Memoer, GramDex
+from ..memo import Memoer
 
 logger = help.ogler.getLogger()
 
@@ -19,22 +19,18 @@ class PeerMemoer(Peer, Memoer):
 
 
     Inherited Class Attributes:
-        MaxGramSize (int): absolute max gram size on tx with overhead
-        See memoing.Memoer Class
         See Peer Class
+        See memoing.Memoer Class
+
 
     Inherited Attributes:
-        See memoing.Memoer Class
         See Peer Class
+        See Memoer Class
 
-    Class Attributes:
-
-
-    Attributes:
-
-
+    Inherited Properties:
+        See Peer Class
+        See Memoer Class
     """
-
 
     def __init__(self, *, bc=4, **kwa):
         """Initialization method for instance.
@@ -68,8 +64,8 @@ def openPM(cls=None, name="test", temp=True, reopen=True, clear=True,
                     different paths but in same directory.
         temp (bool): True means open in temporary directory, clear on close
                      Otherwise open in persistent directory, do not clear on close
-        reopen (bool): True (re)open with this init
-                       False not (re)open with this init but later (default)
+        reopen (bool): True (re)open with this init (default)
+                       False not (re)open with this init but later
         clear (bool): True means remove directory upon close when reopening
                       False means do not remove directory upon close when reopening
         filed (bool): True means .path is file path not directory path

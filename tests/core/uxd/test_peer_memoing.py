@@ -14,8 +14,6 @@ from hio.core.memo import GramDex
 from hio.core.uxd import uxding, peermemoing
 
 
-
-
 def test_memoer_peer_basic():
     """Test MemoerPeer class"""
     if platform.system() == "Windows":
@@ -24,8 +22,7 @@ def test_memoer_peer_basic():
     assert alpha.name == "alpha"
     assert alpha.code == GramDex.Basic
     assert not alpha.curt
-    # (code, mid, vid, sig, neck, head) part sizes
-    assert alpha.Sizes[alpha.code] == (2, 22, 0, 0, 4, 28)  # cs ms vs ss ns hs
+    assert alpha.Sizes[alpha.code] == (2, 22, 0, 4, 0, 28)  # cz mz oz nz sz hz
     assert alpha.size == 38
 
     assert alpha.bc == 4
@@ -147,15 +144,14 @@ def test_memoer_peer_open():
     """Test MemoerPeer class with context manager openPM"""
     if platform.system() == "Windows":
         return
+
+
     with (peermemoing.openPM(name='alpha', size=38) as alpha,
           peermemoing.openPM(name='beta', size=38) as beta):
-
-
         assert alpha.name == "alpha"
         assert alpha.code == GramDex.Basic
         assert not alpha.curt
-        # (code, mid, vid, sig, neck, head) part sizes
-        assert alpha.Sizes[alpha.code] == (2, 22, 0, 0, 4, 28)  # cs ms vs ss ns hs
+        assert alpha.Sizes[alpha.code] == (2, 22, 0, 4, 0, 28)  # cz mz oz nz sz hz
         assert alpha.size == 38
         assert alpha.bc == 4
 
@@ -257,11 +253,9 @@ def test_memoer_peer_open():
         assert not alpha.rxms
 
 
-    assert beta.close()
     assert not beta.opened
     assert not os.path.exists(beta.path)
 
-    assert alpha.close()
     assert not alpha.opened
     assert not os.path.exists(alpha.path)
 

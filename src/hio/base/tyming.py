@@ -104,14 +104,16 @@ class Tymee(hioing.Mixin):
     Tymee has .tyme property that returns the artificial or simulated or cycle time
     from its referenced Tymist instance ._tymist.
 
+    Class Attributes:
+
     Attributes:
 
     Properties:
-        .tyme (float | None):  relative cycle time of associated Tymist which is
+        tyme (float | None):  relative cycle time of associated Tymist which is
             provided by calling .tymth function wrapper closure which is obtained
             from Tymist.tymen().
             None means not assigned yet.
-        .tymth (Callable | None): function wrapper closure returned by
+        tymth (Callable | None): function wrapper closure returned by
             Tymist.tymen() method. When .tymth is called it returns associated
             Tymist.tyme. Provides injected dependency on Tymist cycle tyme base.
             None means not assigned yet.
@@ -120,7 +122,7 @@ class Tymee(hioing.Mixin):
         .wind  injects ._tymth dependency from associated Tymist to get its .tyme
 
     Hidden:
-        ._tymth is injected function wrapper closure returned by .tymen() of
+        _tymth is injected function wrapper closure returned by .tymen() of
             associated Tymist instance that returns Tymist .tyme. when called.
 
     """
@@ -184,17 +186,17 @@ class Tymer(Tymee):
     Attributes:
 
     Inherited Properties:
-        .tyme is float relative cycle time of associated Tymist .tyme obtained
+        tyme is float relative cycle time of associated Tymist .tyme obtained
             via injected .tymth function wrapper closure.
-        .tymth is function wrapper closure returned by Tymist .tymeth() method.
+        tymth is function wrapper closure returned by Tymist .tymeth() method.
             When .tymth is called it returns associated Tymist .tyme.
             .tymth provides injected dependency on Tymist tyme base.
 
     Properties:
-        .duration = tyme duration of tymer in seconds from ._start to ._stop
-        .elaspsed = tyme elasped in seconds  since ._start
-        .remaining = tyme remaining in seconds  until ._stop
-        .expired = True if expired, False otherwise, i.e. .tyme >= ._stop
+        duration (float): tyme duration in seconds from ._start to ._stop
+        elaspsed (float): tyme elasped in seconds  since ._start
+        remaining (float): tyme remaining in seconds  until ._stop
+        expired  (bool): True if expired, False otherwise, i.e. .tyme >= ._stop
 
     Inherited Methods:
         .wind is injects ._tymth dependency
@@ -204,10 +206,10 @@ class Tymer(Tymee):
         .restart() = restart tymer at last ._stop so no time lost
 
     Hidden:
-        ._tymth is injected function wrapper closure returned by .tymen() of
+        _tymth (closure): injected function wrapper closure returned by .tymen() of
             associated Tymist instance that returns Tymist .tyme. when called.
-        ._start is start tyme in seconds
-        ._stop  is stop tyme in seconds
+        _start (float):  start tyme in seconds
+        _stop (float):  stop tyme in seconds
 
     """
     Duration = 0.0  # default duration when not provided

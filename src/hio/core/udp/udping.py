@@ -17,42 +17,60 @@ from ... import help
 logger = help.ogler.getLogger()
 
 
+
+UDP_IPV4_MAX_SAFE_PAYLOAD = 548  # IPV4 MTU 576 - 28 headers
+UDP_IPv6_MAX_SAFE_PAYLOAD =  1240  # IPV6 MTU 1280 - 40 headers
 UDP_MAX_DATAGRAM_SIZE = (2 ** 16) - 1  # 65535
-UDP_MAX_SAFE_PAYLOAD = 548  # IPV4 MTU 576 - udp headers 28
-# IPV6 MTU is 1280 but headers are bigger
 UDP_MAX_PACKET_SIZE = min(1024, UDP_MAX_DATAGRAM_SIZE)  # assumes IPV6 capable equipment
 
-
+# the only way to fragment ipv6 packet is for source to do it. Never done by
+# routers en-route.  IPV6 has many extension headers that are only used if set
+# up at the source. The fragment header is an 8 byte extension header.
+# https://www.geeksforgeeks.org/computer-networks/ipv6-fragmentation-header/
 
 class Peer(hioing.Mixin):
     """Class to manage non blocking I/O on UDP socket.
+
+    Class Attributes:
+        BufSize (int): used to set default buffer size for transport datagram buffers
+        MaxGramSize (int): max bytes in in datagram for this transport
+
 
     Attributes:
         name (str): unique identifier of peer for managment purposes
         ha (tuple): host address of form (host,port) of type (str, int) of this
                 peer's socket address.
+
+        bc (int | None): count of transport buffers of MaxGramSize
         bs (int): buffer size
         wl (WireLog): instance ref for debug logging of over the wire tx and rx
-        bcast (bool): True enables sending to broadcast addresses from local socket
-                      False otherwise
+
         ls (socket.socket): local socket of this Peer
         opened (bool): True local socket is created and opened. False otherwise
+
+        bcast (bool): True enables sending to broadcast addresses from local socket
+                      False otherwise
 
     Properties:
         host (str): element of .ha duple
         port (int): element of .ha duple
+        path (tuple): .ha (host, port)  alias to match .uxd
 
 
     """
+    BufSize = 65535  # 2 ** 16 - 1  default buffersize
+    MaxGramSize = UDP_IPv6_MAX_SAFE_PAYLOAD  # 1240
 
     def __init__(self, *,
                  name='main',
                  ha=None,
-                 host='',
+                 host='127.0.0.1',
                  port=55000,
-                 bufsize=1024,
+                 bc=None,
+                 bs=None,
                  wl=None,
                  bcast=False,
+                 reopen=False,
                  **kwa):
         """
         Initialization method for instance.
@@ -61,25 +79,47 @@ class Peer(hioing.Mixin):
             ha (tuple): local socket (host, port) address duple of type (str, int)
             host (str): address where '' means any interface on host
             port (int): socket port
-            bs (int):  buffer size
-            wl (WireLog): instance to log over the wire tx and rx
+            bc (int | None): count of transport buffers of MaxGramSize
+            bs (int | None): buffer size of transport buffers. When .bc is provided
+                then .bs is calculated by multiplying, .bs = .bc * .MaxGramSize.
+                When .bc is not provided, then if .bs is provided use provided
+                value else use default .BufSize
+            wl (WireLog): instance ref for debug logging of over the wire tx and rx
             bcast (bool): True enables sending to broadcast addresses from local socket
                           False otherwise
+            reopen (bool): True (re)open with this init
+                           False not (re)open with this init but later (default)
         """
-        super(Peer, self).__init__(**kwa)
+
         self.name = name
         self.ha = ha or (host, port)  # ha = host address duple (host, port)
         host, port = self.ha
         host = coring.normalizeHost(host)  # ip host address
         self.ha = (host, port)
 
-        self.bs = bufsize
+        self.bc = int(bc) if bc is not None and bc > 0 else None
+        if self.bc:
+            self.bs = self.MaxGramSize * self.bc
+        else:
+            self.bs = bs if bs is not None else self.BufSize
+
         self.wl = wl
         self.bcast = bcast
 
-        self.ls = None  # local socket for this Peer
+        self.ls = None  # local socket for this Peer needs to be opened/bound
         self.opened = False
 
+        super(Peer, self).__init__(**kwa)
+        if reopen:
+            self.reopen()
+
+    @property
+    def path(self):
+        """
+        Property that returns .ha duple
+        stub to match uxd interface
+        """
+        return self.ha
 
     @property
     def host(self):
@@ -87,7 +127,6 @@ class Peer(hioing.Mixin):
         Property that returns host in .ha duple
         """
         return self.ha[0]
-
 
     @host.setter
     def host(self, value):
@@ -208,6 +247,7 @@ class Peer(hioing.Mixin):
 
         return (data, sa)
 
+
     def send(self, data, dst, **kwa):
         """Perform non blocking send on  socket.
 
@@ -215,7 +255,7 @@ class Peer(hioing.Mixin):
             cnt (int): count of bytes actually sent, may be less than len(data).
 
         Parameters:
-            data (bytes):  payload to send
+            data (bytes | bytearray):  payload to send (txbs)
             dst (str): udp destination addr duple of form (host: str, port: int)
         """
         try:
