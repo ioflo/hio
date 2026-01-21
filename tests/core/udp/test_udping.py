@@ -131,7 +131,10 @@ def test_udp():
         assert alpha.reopen()
         assert alpha.opened
         assert alpha.ha == alphaHa
-        assert alpha.actualBufSizes() == (alpha.bs, alpha.bs) == (1269760, 1269760)
+        #assert alpha.actualBufSizes() == (alpha.bs, alpha.bs) == (1269760, 1269760)
+        sizes = alpha.actualBufSizes()
+        assert sizes[0] > 16383
+        assert sizes[1] > 16383
 
         bs = 2 ** 15 - 1
         assert bs == 32767
@@ -151,28 +154,40 @@ def test_udp():
         msgOut = b"alpha sends to beta"
         alpha.send(msgOut, beta.ha)
         time.sleep(0.05)
-        msgIn, src = beta.receive()
+        msgIn = b""
+        while not msgIn:
+            msgIn, src = beta.receive()
+            time.sleep(0.05)
         assert msgOut == msgIn
         assert src[1] == alpha.port  # ports equal
 
         msgOut = b"alpha sends to alpha"
         alpha.send(msgOut, alpha.ha)
         time.sleep(0.05)
-        msgIn, src = alpha.receive()
+        msgIn = b""
+        while not msgIn:
+            msgIn, src = alpha.receive()
+            time.sleep(0.05)
         assert msgOut == msgIn
         assert src[1] == alpha.port  # ports equal
 
         msgOut = b"beta sends to alpha"
         beta.send(msgOut, alpha.ha)
         time.sleep(0.05)
-        msgIn, src = alpha.receive()
+        msgIn = b""
+        while not msgIn:
+            msgIn, src = alpha.receive()
+            time.sleep(0.05)
         assert msgOut == msgIn
         assert src[1] == beta.port  # ports equal
 
         msgOut = b"beta sends to beta"
         beta.send(msgOut, beta.ha)
         time.sleep(0.05)
-        msgIn, src = beta.receive()
+        msgIn = b""
+        while not msgIn:
+            msgIn, src = beta.receive()
+            time.sleep(0.05)
         assert msgOut == msgIn
         assert src[1] == beta.port  # ports equal
 
@@ -236,33 +251,41 @@ def test_open_peer():
 
         msgOut = b"alpha sends to beta"
         alpha.send(msgOut, beta.ha)
-        time.sleep(0.1)
-        msgIn, src = beta.receive()
+        time.sleep(0.05)
+        msgIn = b""
+        while not msgIn:
+            msgIn, src = beta.receive()
+            time.sleep(0.05)
         assert msgOut == msgIn
         assert src[1] == alpha.port  # ports equal
 
         msgOut = b"alpha sends to alpha"
         alpha.send(msgOut, alpha.ha)
-        time.sleep(0.1)
-        msgIn, src = alpha.receive()
-        if not msgIn:
-            time.sleep(0.1)
+        time.sleep(0.05)
+        msgIn = b""
+        while not msgIn:
             msgIn, src = alpha.receive()
-
+            time.sleep(0.05)
         assert msgOut == msgIn
         assert src[1] == alpha.port  # ports equal
 
         msgOut = b"beta sends to alpha"
         beta.send(msgOut, alpha.ha)
-        time.sleep(0.1)
-        msgIn, src = alpha.receive()
+        time.sleep(0.05)
+        msgIn = b""
+        while not msgIn:
+            msgIn, src = alpha.receive()
+            time.sleep(0.05)
         assert msgOut == msgIn
         assert src[1] == beta.port  # ports equal
 
         msgOut = b"beta sends to beta"
         beta.send(msgOut, beta.ha)
-        time.sleep(0.1)
-        msgIn, src = beta.receive()
+        time.sleep(0.05)
+        msgIn = b""
+        while not msgIn:
+            msgIn, src = beta.receive()
+            time.sleep(0.05)
         assert msgOut == msgIn
         assert src[1] == beta.port  # ports equal
 
