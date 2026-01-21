@@ -471,6 +471,51 @@ class Memoer(hioing.Mixin):
 
 
     @classmethod
+    def _decodeOID(cls, qb64):
+        """Utility method for use with signed headers that decodes qualified
+        base64 oid to raw domain bytes from CESR compatible text code
+
+        Parameters:
+            qb64 (str): qualified base64 oid to be decoded with code
+            code (str): code for type of oid CESR compatible
+                Ed25519N:   str = 'B'  # Ed25519 verkey non-transferable, basic derivation.
+                Ed25519:    str = 'D'  # Ed25519 verkey basic derivation
+                Blake3_256: str = 'E'  # Blake3 256 bit digest derivation.
+
+        Returns:
+            tuple(raw, code) where:
+                raw (bytes): oid suitable for crypto operations
+                code (str): CESR compatible code from qb64
+        """
+        cz = 1  # only support qb64 length 44
+        code = qb64[:cz]
+        if code not in ('B', 'D', 'E'):
+            raise hioing.MemoerError(f"Invalid oid {code=}")
+
+        qz = len(qb64)  # text size
+        if qz != 44:
+            raise hioing.MemoerError(f"Invalid oid text size {qz=} not 44")
+
+        cz = len(code)
+        pz = cz % 4  # net pad size given cz
+        if cz != pz != 1:  # special case here for now we only accept cz=1
+            raise hioing.MemoerError(f"Invalid {cz=} not equal {pz=} not equal 1")
+
+        base =  pz * b'A' + qb64[cz:].encode()  # strip code from b64 and prepad pz 'A's
+        paw = decodeB64(base)  # now should have pz leading sextexts of zeros
+        raw = paw[pz:]  # remove prepad midpad bytes to invert back to raw
+        # ensure midpad bytes are zero
+        pi = int.from_bytes(paw[:pz], "big")
+        if pi != 0:
+            raise hioing.MemoerError(f"Nonzero midpad bytes=0x{pi:0{(pz)*2}x}.")
+
+        if len(raw) != ((qz - cz) * 3 // 4):  # exact lengths
+            raise hioing.MemoerError(f"Improperly qualified material = {oid}")
+
+        return raw, code
+
+
+    @classmethod
     def _encodeQVK(cls, raw, code='B'):
         """Utility method for use with signed headers that encodes raw verkey as
         CESR compatible fully qualified B64 text domain str using CESR compatible
@@ -529,7 +574,7 @@ class Memoer(hioing.Mixin):
             raise hioing.MemoerError(f"Invalid code size={len(code)} "
                                      f"not equal {pz=} not equal 1")
 
-        b64 = encodeB64(bytes([0] * pz) + raw)[pz:] # prepad, convert, and prestrip
+        b64 = encodeB64(bytes([0] * pz) + raw)[pz:] # prepad, convert, aqb64prestrip
 
         qb64 = code + b64.decode()  # fully qualified  with prefix code
 
@@ -537,22 +582,26 @@ class Memoer(hioing.Mixin):
 
 
     @classmethod
-    def _decodeQSS(cls, qss, code='A'):
+    def _decodeQSS(cls, qb64):
         """Utility method for use with signed headers that decodes qualified
         base64 sigseed to raw domain bytes from CESR compatible text code
 
         Parameters:
-            qss (bytes): qualified base64 sigseed to be deccoded with code
+            qb64 (str): qualified base64 sigseed to be decoded with code
             code (str): code for type of raw sigseed CESR compatible
                 Ed25519_Seed:str = 'A'  # Ed25519 256 bit random seed for private key
 
         Returns:
-            sigseed (bytes): raw sigseed suitable for signing
+            tuple(raw, code) where:
+                raw (bytes): sigseed suitable for crypto operations
+                code (str): CESR compatible code from qb64
         """
+        cz = 1  # only support qb64 length 44
+        code = qb64[:cz]
         if code not in ('A'):
             raise hioing.MemoerError(f"Invalid qss {code=}")
 
-        qz = len(qss)  # text size
+        qz = len(qb64)  # text size
         if qz != 44:
             raise hioing.MemoerError(f"Invalid qss text size {qz=} not 44")
 
@@ -561,18 +610,97 @@ class Memoer(hioing.Mixin):
         if cz != pz != 1:  # special case here for now we only accept cz=1
             raise hioing.MemoerError(f"Invalid {cz=} not equal {pz=} not equal 1")
 
-        base =  pz * b'A' + qss[cz:].encode()  # strip code from b64 and prepad pz 'A's
+        base =  pz * b'A' + qb64[cz:].encode()  # strip code from b64 and prepad pz 'A's
         paw = decodeB64(base)  # now should have pz leading sextexts of zeros
         raw = paw[pz:]  # remove prepad midpad bytes to invert back to raw
         # ensure midpad bytes are zero
         pi = int.from_bytes(paw[:pz], "big")
         if pi != 0:
-            raise hioing.MemoerError(f"Nonzero midpad bytes=0x{pi:0{(ps)*2}x}.")
+            raise hioing.MemoerError(f"Nonzero midpad bytes=0x{pi:0{(pz)*2}x}.")
 
         if len(raw) != ((qz - cz) * 3 // 4):  # exact lengths
             raise hioing.MemoerError(f"Improperly qualified material = {qss}")
 
-        return raw  # qualified base64 sigseed
+        return raw, code
+
+
+    @classmethod
+    def _encodeSig(cls, raw, code='0B'):
+        """Utility method for use with signed headers that encodes raw signature
+        as CESR compatible fully qualified B64 text domain str using CESR
+        compatible text code
+
+        Parameters:
+            raw (bytes): sig to be encoded with code
+            code (str): code for type of raw sig CESR compatible
+                Ed25519_Sig: str = '0B'  # Ed25519 signature. not indexed
+
+        Returns:
+           qb64 (str): fully qualified base64 sig
+        """
+        if code not in ('0B'):
+            raise hioing.MemoerError(f"Invalid sig {code=}")
+
+        rz = len(raw)  # raw size
+        if rz != 64:
+            raise hioing.MemoerError(f"Invalid raw size {rz=} not 64")
+
+        pz = (3 - ((rz) % 3)) % 3  # net pad size for raw
+        if len(code) != pz != 2:
+            raise hioing.MemoerError(f"Invalid code size={len(code)} not equal"
+                                     f" {pz=} not equal 2")
+
+        b64 = encodeB64(bytes([0] * pz) + raw)[pz:] # prepad, convert, and prestrip
+
+        qb64 = code + b64.decode()  # fully qualified base64 with prefixqb64de
+
+        _, _, _, _, sz, _ = cls.Sizes[SGDex.Signed]  # cz mz oz nz sz hz
+        if len(qb64) != sz:
+            hioing.MemoerError(f"Invalid sig qb64 size={len(qb64) != {sz}}")
+
+        return qb64  # fully qualified base64 oid with prefix code
+
+
+    @classmethod
+    def _decodeSig(cls, qb64):
+        """Utility method for use with signed headers that decodes qualified
+        base64 sig to raw domain bytes from CESR compatible text code
+
+        Parameters:
+            qb64 (str): qualified base64 sig to be decoded with code
+            code (str): code for type of raw sig CESR compatible
+                Ed25519_Sig: str = '0B'  # Ed25519 signature. not indexed
+
+        Returns:
+            tuple(raw, code) where:
+                raw (bytes): signature suitable for crypto operations
+                code (str): CESR compatible code from qb64
+        """
+        cz = 2  # only support qb64 length 88
+        code = qb64[:cz]
+        if code not in ('0B'):
+            raise hioing.MemoerError(f"Invalid sig {code=}")
+
+        qz = len(qb64)  # text size
+        if qz != 88:
+            raise hioing.MemoerError(f"Invalid sig text size {qz=} not 88")
+
+        pz = cz % 4  # net pad size given cz
+        if pz != cz:
+            raise hioing.MemoerError(f"Invalid {pz=} not equal {cz=}")
+
+        base =  pz * b'A' + qb64[cz:].encode()  # strip code from b64 and prepad pz 'A's
+        paw = decodeB64(base)  # now should have pz leading sextexts of zeros
+        raw = paw[pz:]  # remove prepad midpad bytes to invert back to raw
+        # ensure midpad bytes are zero
+        pi = int.from_bytes(paw[:pz], "big")
+        if pi != 0:
+            raise hioing.MemoerError(f"Nonzero midpad bytes=0x{pi:0{(pz)*2}x}.")
+
+        if len(raw) != ((qz - cz) * 3 // 4):  # exact lengths
+            raise hioing.MemoerError(f"Improperly qualified material = {sig}")
+
+        return raw, code  # qualified base64 sigseed
 
 
     def __init__(self, *,
@@ -1324,7 +1452,10 @@ class Memoer(hioing.Mixin):
         This is a stub.
 
         Returns:
-            sig(bytes): qb64b qualified base64 representation of signature
+            sig (bytes): qb64b or qb2 when .curt
+                        if not .curt then qualified base64 of signature
+                        else if .curt then qualified base2 of signature
+                        raises MemoerError if problem signing
 
         Parameters:
             ser (bytes): signed portion of gram is delivered format
@@ -1335,23 +1466,25 @@ class Memoer(hioing.Mixin):
 
         """
         if oid not in self.keep:
-            return b''  # return of empty signature should raise error in caller
+            raise hioing.MemoerError("Invalid {oid=} for signing")
 
         qvk, qss = self.keep[oid]
+        sigseed, code = self._decodeQSS(qss)  # raises MemoerError if problem
+        if code not in ('A'):
+            raise hioing.MemoerError(f"Invalid sigseed algorithm type {code=}")
 
-        sigseed = Memoer._decodeQSS(qss)
+        try:
+            import pysodium
+        except ImportError as ex:
+            raise hioing.MemoerError("Missing pysodium lib for signing") from ex
 
-
-        _, _, oz, nz, sz, hz = self.Sizes[self.code]  # cz mz oz nz sz hz
-
-        sig = b'A' * sz
+        verkey, sigkey = pysodium.crypto_sign_seed_keypair(sigseed)
+        raw = pysodium.crypto_sign_detached(ser, sigkey)  # raw sig
+        sig = self._encodeSig(raw)  # raise MemoerError if problem
+        sig = sig.encode()  # make bytes
 
         if self.curt:
-            hz = 3 * hz // 4  # encoding b2 means head part sizes smaller by 3/4
-            nz = 3 * nz // 4  # encoding b2 means head part sizes smaller by 3/4
-            oz = 3 * oz // 4  # encoding b2 means head part sizes smaller by 3/4
-            sz = 3 * sz // 4  # encoding b2 means head part sizes smaller by 3/4
-            sig = decodeB64(sig)  # make b2
+            sig = decodeB64(sig)  # make qb2
 
         return sig
 
@@ -1442,11 +1575,8 @@ class Memoer(hioing.Mixin):
                 gram = head + memo[:bz]  # copy slice past end just copies to end
                 del memo[:bz]  # del slice past end just deletes to end
 
-            if sz:  # signed so sign
-                sig = self.sign(gram, oid)
-                if not sig or len(sig) != sz:
-                    raise hioing.MemoerError(f"Signed but unable to sign or "
-                                             f"invalid signature {sig=}")
+            if sz:  # signed gram, .sign returns proper sig format when .curt
+                sig = self.sign(gram, oid) # raises MemoerError if invalid
                 gram = gram + sig
 
             grams.append(gram)

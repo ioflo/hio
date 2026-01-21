@@ -31,8 +31,8 @@ def _setupKeep(salt=None):
     try:
         import pysodium
         import blake3
-    except ImportError:
-        raise MemoerError("Missing cryptographic module support")
+    except ImportError as ex:
+        raise MemoerError("Missing cryptographic module support") from ex
 
 
     salt = salt if salt is not None else b"abcdefghijklmnop"
@@ -145,16 +145,32 @@ def test_memoer_class():
     assert Memoer.BufSize == (2**16-1) # default buffersize
 
     verkey = (b"o\x91\xf4\xbe$Mu\x0b{}\xd3\xaa'g\xd1\xcf\x96\xfb\x1e\xb1S\x89H\\'ae\x06+\xb2(v")
-    vidqb64 = Memoer._encodeOID(raw=verkey)
-    assert vidqb64 == 'BG-R9L4kTXULe33Tqidn0c-W-x6xU4lIXCdhZQYrsih2'
+    oid = Memoer._encodeOID(raw=verkey)
+    assert oid == 'BG-R9L4kTXULe33Tqidn0c-W-x6xU4lIXCdhZQYrsih2'
+    raw, code = Memoer._decodeOID(oid)
+    assert raw == verkey
+    assert code == 'B'
     _, _, oz, _, _, _ = Memoer.Sizes[SGDex.Signed]  # cz mz oz nz sz hz
-    assert len(vidqb64) == 44 == oz
+    assert len(oid) == 44 == oz
 
     sigseed = (b"\x9bF\n\xf1\xc2L\xeaBC:\xf7\xe9\xd71\xbc\xd2{\x7f\x81\xae5\x9c\xca\xf9\xdb\xac@`'\x0e\xa4\x10")
     qss = Memoer._encodeQSS(raw=sigseed)
     assert qss == 'AJtGCvHCTOpCQzr36dcxvNJ7f4GuNZzK-dusQGAnDqQQ'
-    raw = Memoer._decodeQSS(qss)
+    raw, code = Memoer._decodeQSS(qss)
     assert raw == sigseed
+    assert code == 'A'
+
+    signature = (b'\xb0\xc0\xd5\t\xa0\xd3Q0\xfa8\x93B\x0c\x83\xb5.\xfbH\xa5\xde\xbf}6{'
+                b'\xcf|\xa3\x0el"\x84f\xd3sbHC\xb9\xb9\x85\xb0\xd2v\xed\x07\xcf|c\xa4\xd6\xdcE'
+                b'\xbe\x8a{w5=\xbf\x84_\x9e\xb3\x04')
+    sig = Memoer._encodeSig(raw=signature)
+    assert sig == '0BCwwNUJoNNRMPo4k0IMg7Uu-0il3r99NnvPfKMObCKEZtNzYkhDubmFsNJ27QfPfGOk1txFvop7dzU9v4RfnrME'
+    raw, code = Memoer._decodeSig(sig)
+    assert raw == signature
+    assert code == '0B'
+    _, _, _, _, sz, _ = Memoer.Sizes[SGDex.Signed]  # cz mz oz nz sz hz
+    assert len(sig) == 88 == sz
+
     """Done Test"""
 
 

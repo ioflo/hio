@@ -83,7 +83,7 @@ def arpCreate(ether, host, interface="en0", temp=True):
     """
     temp = "temp" if temp else ""
     console.terse("{0}: Creating {1} arp entry for {2} at {3} on {4}\n".format(
-                                        datetime.datetime.utcnow().isoformat(),
+                                        datetime.datetime.now(datetime.UTC).isoformat(),
                                         temp,
                                         ether,
                                         host,
@@ -103,7 +103,7 @@ def arpCreate(ether, host, interface="en0", temp=True):
                                  check=True)
     except subprocess.SubprocessError as ex:
         console.terse("{0}: Failed Creation of {1} arp entry for {2} at {3} on {4}\n".format(
-                                                datetime.datetime.utcnow().isoformat(),
+                                                datetime.datetime.now(datetime.UTC).isoformat(),
                                                 temp,
                                                 ether,
                                                 host,
