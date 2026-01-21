@@ -236,28 +236,28 @@ def test_open_peer():
 
         msgOut = b"alpha sends to beta"
         alpha.send(msgOut, beta.ha)
-        time.sleep(0.05)
+        time.sleep(0.1)
         msgIn, src = beta.receive()
         assert msgOut == msgIn
         assert src[1] == alpha.port  # ports equal
 
         msgOut = b"alpha sends to alpha"
         alpha.send(msgOut, alpha.ha)
-        time.sleep(0.05)
+        time.sleep(0.1)
         msgIn, src = alpha.receive()
         assert msgOut == msgIn
         assert src[1] == alpha.port  # ports equal
 
         msgOut = b"beta sends to alpha"
         beta.send(msgOut, alpha.ha)
-        time.sleep(0.05)
+        time.sleep(0.1)
         msgIn, src = alpha.receive()
         assert msgOut == msgIn
         assert src[1] == beta.port  # ports equal
 
         msgOut = b"beta sends to beta"
         beta.send(msgOut, beta.ha)
-        time.sleep(0.05)
+        time.sleep(0.1)
         msgIn, src = beta.receive()
         assert msgOut == msgIn
         assert src[1] == beta.port  # ports equal
