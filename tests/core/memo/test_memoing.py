@@ -28,12 +28,13 @@ def _setupKeep(salt=None):
 
     Ed25519_Seed: str = 'A'  # Ed25519 256 bit random seed for private key
     """
-    try:
-        import pysodium
-        import blake3
-    except ImportError as ex:
-        raise MemoerError("Missing cryptographic module support") from ex
-
+    #try:
+        #import pysodium
+        #import blake3
+    #except ImportError as ex:
+        #raise MemoerError("Missing cryptographic module support") from ex
+    import pysodium
+    import blake3
 
     salt = salt if salt is not None else b"abcdefghijklmnop"
     if hasattr(salt, 'encode'):
