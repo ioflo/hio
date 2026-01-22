@@ -20,11 +20,12 @@ import sphinx_rtd_theme
 # -- Project information -----------------------------------------------------
 
 project = 'hio'
-copyright = '2020-2021, Samuel M. Smith'
+copyright = '2020-2026, Samuel M. Smith'
 author = 'Samuel M. Smith'
 
 # The full version, including alpha/beta/rc tags
-release = '0.3.4'
+import hio
+release = hio.__version__
 version = release
 
 # -- General configuration ---------------------------------------------------
