@@ -14,7 +14,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('./../..'))
 
-import sphinx_rtd_theme
+import hio
 
 
 # -- Project information -----------------------------------------------------
@@ -24,7 +24,6 @@ copyright = '2020-2026, Samuel M. Smith'
 author = 'Samuel M. Smith'
 
 # The full version, including alpha/beta/rc tags
-import hio
 release = hio.__version__
 version = release
 
