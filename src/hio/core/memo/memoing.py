@@ -551,6 +551,49 @@ class Memoer(hioing.Mixin):
 
 
     @classmethod
+    def _decodeQVK(cls, qb64):
+        """Utility method for use with signed headers that decodes qualified
+        base64 verkey to raw domain bytes from CESR compatible text code
+
+        Parameters:
+            qb64 (str): qualified base64 verkey to be decoded with code
+            code (str): code for type of raw verkey CESR compatible
+                Ed25519N:  str = 'B' # Ed25519 verkey non-transferable, basic derivation.
+
+        Returns:
+            tuple(raw, code) where:
+                raw (bytes): verkey suitable for crypto operations
+                code (str): CESR compatible code from qb64
+        """
+        cz = 1  # only support qb64 length 44
+        code = qb64[:cz]
+        if code not in ('B'):
+            raise hioing.MemoerError(f"Invalid qvk {code=}")
+
+        qz = len(qb64)  # text size
+        if qz != 44:
+            raise hioing.MemoerError(f"Invalid qvk text size {qz=} not 44")
+
+        cz = len(code)
+        pz = cz % 4  # net pad size given cz
+        if cz != pz != 1:  # special case here for now we only accept cz=1
+            raise hioing.MemoerError(f"Invalid {cz=} not equal {pz=} not equal 1")
+
+        base =  pz * b'A' + qb64[cz:].encode()  # strip code from b64 and prepad pz 'A's
+        paw = decodeB64(base)  # now should have pz leading sextexts of zeros
+        raw = paw[pz:]  # remove prepad midpad bytes to invert back to raw
+        # ensure midpad bytes are zero
+        pi = int.from_bytes(paw[:pz], "big")
+        if pi != 0:
+            raise hioing.MemoerError(f"Nonzero midpad bytes=0x{pi:0{(pz)*2}x}.")
+
+        if len(raw) != ((qz - cz) * 3 // 4):  # exact lengths
+            raise hioing.MemoerError(f"Improperly qualified material = {qss}")
+
+        return raw, code
+
+
+    @classmethod
     def _encodeQSS(cls, raw, code='A'):
         """Utility method for use with signed headers that encodes raw sigseed as
         CESR compatible fully qualified B64 text domain str using CESR compatible
