@@ -149,6 +149,13 @@ def test_memoer_class():
     _, _, oz, _, _, _ = Memoer.Sizes[SGDex.Signed]  # cz mz oz nz sz hz
     assert len(oid) == 44 == oz
 
+    qvk = Memoer._encodeQVK(raw=verkey)
+    assert qvk == 'BG-R9L4kTXULe33Tqidn0c-W-x6xU4lIXCdhZQYrsih2'
+    raw, code = Memoer._decodeQVK(oid)
+    assert raw == verkey
+    assert code == 'B'
+    assert len(qvk) == 44
+
     sigseed = (b"\x9bF\n\xf1\xc2L\xeaBC:\xf7\xe9\xd71\xbc\xd2{\x7f\x81\xae5\x9c\xca\xf9\xdb\xac@`'\x0e\xa4\x10")
     qss = Memoer._encodeQSS(raw=sigseed)
     assert qss == 'AJtGCvHCTOpCQzr36dcxvNJ7f4GuNZzK-dusQGAnDqQQ'
