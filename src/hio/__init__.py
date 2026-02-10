@@ -6,4 +6,4 @@ hio package
 __version__ = '0.7.19'  # also change in setup.py
 
 from .hioing import (Mixin, HioError, SizeError, ValidationError, VersionError,
-                     HierError)
+                     HierError, MultiError, MemoerError, MemoerVerifyError)

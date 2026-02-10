@@ -12,7 +12,7 @@ import blake3
 
 import pytest
 
-from hio.hioing import MemoerError
+from hio.hioing import MemoerError, MemoerVerifyError
 from hio.help import helping
 from hio.base import doing, tyming
 from hio.core.memo import memoing
@@ -36,7 +36,7 @@ def _setupKeep(salt=None):
         salt = salt.encode()
 
     if len(salt) != 16:
-        raise MemoerError("Invalid provided salt")
+        raise MemoerError(f"Invalid provided {salt=}")
 
     keep = {}
 
@@ -145,7 +145,7 @@ def test_memoer_class():
     assert oid == 'BG-R9L4kTXULe33Tqidn0c-W-x6xU4lIXCdhZQYrsih2'
     raw, code = Memoer._decodeOID(oid)
     assert raw == verkey
-    assert code == 'B'
+    assert code == 'B'  # nontrans AID
     _, _, oz, _, _, _ = Memoer.Sizes[SGDex.Signed]  # cz mz oz nz sz hz
     assert len(oid) == 44 == oz
 
@@ -166,13 +166,13 @@ def test_memoer_class():
     signature = (b'\xb0\xc0\xd5\t\xa0\xd3Q0\xfa8\x93B\x0c\x83\xb5.\xfbH\xa5\xde\xbf}6{'
                 b'\xcf|\xa3\x0el"\x84f\xd3sbHC\xb9\xb9\x85\xb0\xd2v\xed\x07\xcf|c\xa4\xd6\xdcE'
                 b'\xbe\x8a{w5=\xbf\x84_\x9e\xb3\x04')
-    sig = Memoer._encodeSig(raw=signature)
-    assert sig == '0BCwwNUJoNNRMPo4k0IMg7Uu-0il3r99NnvPfKMObCKEZtNzYkhDubmFsNJ27QfPfGOk1txFvop7dzU9v4RfnrME'
-    raw, code = Memoer._decodeSig(sig)
+    sgntr = Memoer._encodeSGN(raw=signature)
+    assert sgntr == '0BCwwNUJoNNRMPo4k0IMg7Uu-0il3r99NnvPfKMObCKEZtNzYkhDubmFsNJ27QfPfGOk1txFvop7dzU9v4RfnrME'
+    raw, code = Memoer._decodeSGN(sgntr)
     assert raw == signature
     assert code == '0B'
     _, _, _, _, sz, _ = Memoer.Sizes[SGDex.Signed]  # cz mz oz nz sz hz
-    assert len(sig) == 88 == sz
+    assert len(sgntr) == 88 == sz
 
     """Done Test"""
 
@@ -213,6 +213,69 @@ def test_setup_keep():
     }
     """Done"""
 
+
+def test_memoer_sign_verify():
+    """Test Memoer class sign and verify methods
+    """
+    salt = b"ABCDEFGHIJKLMNOP"
+    try:
+        keep = _setupKeep(salt=salt)
+    except MemoerError as ex:
+        return
+
+    oid = list(keep.keys())[0]
+    assert oid == 'BJZTHNWXscuT-SPokPzSeBkShpHj6g8bQrP0Rh7IJNUp'
+
+    peer = memoing.Memoer(code=GramDex.Signed, keep=keep, oid=oid)
+    assert peer.name == "main"
+    assert peer.opened == False
+    assert peer.bc is None
+    assert peer.bs == memoing.Memoer.BufSize == 65535
+    assert peer.code == memoing.GramDex.Signed == '_-'
+    assert not peer.curt
+    assert peer.Sizes[peer.code] == (2, 22, 44, 4, 88, 160)  # cz mz oz nz sz hz
+    assert peer.size == peer.MaxGramSize
+    assert not peer.verific
+    assert not peer.echoic
+    assert peer.keep == keep
+    assert peer.oid == oid
+
+    memo = "Hello There"
+
+    oid = 'DGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'   # not default .oid
+    assert oid in peer.keep
+    mid = '_-ALBI68S1ZIxqwFOSWFF1L2'
+    lneck = 'AAAC' # gram count 2
+
+    # create signed portion of gram long neck
+    neck = 'AAAA'  # gram number 0
+    head = mid + oid + neck + lneck
+    sgram = (head + "Hello There").encode()
+    #sign
+    sgntr = peer.sign(oid, sgram)
+    #verify
+    assert peer.verify(oid, sgntr, sgram)
+
+    # test invalid  bad gram
+    bgram = (head + "Hello Where").encode()
+    with pytest.raises(MemoerVerifyError):
+        peer.verify(oid, sgntr, bgram)
+
+    # create signed portion of gram short neck
+    neck = 'AAAB'  # gram number 1
+    head = mid + oid + neck
+    sgram = (head + "Hello There").encode()
+    #sign
+    sgntr = peer.sign(oid, sgram)
+    #verify
+    assert peer.verify(oid, sgntr, sgram)
+
+    # test invalid  bad gram
+    bgram = (head + "Hello Where").encode()
+    with pytest.raises(MemoerVerifyError):
+        peer.verify(oid, sgntr, bgram)
+
+    """Done"""
 
 
 
@@ -780,10 +843,25 @@ def test_memoer_basic_signed():
     assert not peer.counts
     assert not peer.sources
     assert not peer.rxms
-    mid = '_-ALBI68S1ZIxqwFOSWFF1L2'
 
+    # Test with signed header
+    mid = '_-ALBI68S1ZIxqwFOSWFF1L2'  # signed header
+
+    # test with invalid signature
     sig = ('A' * 88)
     gram = (mid + oid + 'AAAA' + 'AAAB' + "Hello There" + sig).encode()
+    echo = (gram, "beta")
+    peer.echos.append(echo)
+    peer.serviceReceives(echoic=True)
+    assert not peer.echos
+    assert not peer.rxgs  # drops message
+
+    # test with valid signature
+    # create signed portion of gram
+    sgram = (mid + oid + 'AAAA' + 'AAAB' + "Hello There").encode()
+    qvk, qss = peer.keep[oid]
+    sig = peer.sign(oid, sgram)
+    gram = sgram + sig
     echo = (gram, "beta")
     peer.echos.append(echo)
     peer.serviceReceives(echoic=True)
@@ -859,12 +937,24 @@ def test_memoer_basic_signed():
     assert not peer.counts
     assert not peer.sources
     assert not peer.rxms
-    mid = '_-ALBI68S1ZIxqwFOSWFF1L2'
+
+    # test with signed header
+    mid = '_-ALBI68S1ZIxqwFOSWFF1L2'  # signed header
+
+    # test with valid signature
     oid = 'DGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'   # not default .oid
-    sig = ('A' * 88)
-    head = decodeB64((mid + oid + 'AAAA' + 'AAAB').encode())
-    tail = decodeB64(sig.encode())
-    gram = head + memo.encode() + tail
+    head = mid + oid + 'AAAA' + 'AAAB'
+    assert len(head) == 76
+    head = decodeB64(head.encode())  # qb2 version of head
+    assert len(head) == 57
+    sgram = head + memo.encode()  # sign the qb2 version
+    assert len(sgram) == 68
+    assert peer.curt
+    qvk, qss = peer.keep[oid]
+    tail = peer.sign(oid, sgram)  # returns sig in qb2 becaue .curt
+    assert len(tail) == 66
+    gram = head + memo.encode() + tail # qb2 version
+
     assert peer.wiff(gram)  # base2
     assert len(gram) == 3 * (160 + 4) // 4 + len(memo)
     echo = (gram, "beta")
@@ -914,7 +1004,7 @@ def test_memoer_multiple_signed():
     assert peer.bs == memoing.Memoer.BufSize == 65535
     assert peer.code == memoing.GramDex.Signed == '_-'
     assert not peer.curt
-    assert not peer.verific
+    assert not peer.verific  # force rx must be signed
     assert not peer.echoic
     assert peer.keep == keep
     assert peer.oid == oid
@@ -922,7 +1012,7 @@ def test_memoer_multiple_signed():
     peer.reopen()
     assert peer.opened == True
 
-    # send and receive multiple via echo
+    # send and receive multiple via echo not signed
     peer.memoit("Hello there.", "alpha")  # use default for vidAlpha
     peer.memoit("How ya doing?", "beta", oidBeta)
     assert len(peer.txms) == 2
@@ -1043,7 +1133,16 @@ def test_memoer_multiple_signed():
 def test_memoer_verific():
     """Test Memoer class with verific (signed required)
     """
-    peer = memoing.Memoer(verific=True)
+    salt = b"ABCDEFGHIJKLMNOP"
+    try:
+        keep = _setupKeep(salt=salt)
+    except MemoerError as ex:
+        return
+
+    oid = list(keep.keys())[0]
+    assert oid == 'BJZTHNWXscuT-SPokPzSeBkShpHj6g8bQrP0Rh7IJNUp'
+
+    peer = memoing.Memoer(verific=True, keep=keep, oid=oid)
     assert peer.name == "main"
     assert peer.opened == False
     assert peer.bc is None
@@ -1054,8 +1153,8 @@ def test_memoer_verific():
     assert peer.size == peer.MaxGramSize
     assert peer.verific
     assert not peer.echoic
-    assert peer.keep == dict()
-    assert peer.oid is None
+    assert peer.keep == keep
+    assert peer.oid is oid
 
     peer.reopen()
     assert peer.opened == True
@@ -1077,10 +1176,13 @@ def test_memoer_verific():
     assert not peer.counts
     assert not peer.sources
     assert not peer.rxms
-    mid = '_-ALBI68S1ZIxqwFOSWFF1L2'
-    oid = 'BKxy2sgzfplyr-tgwIxS19f2OchFHtLwPWD3v4oYimBx'
+    mid = '_-ALBI68S1ZIxqwFOSWFF1L2'  # signed code
+    oid = list(keep.keys())[1]
     sig = ('A' * 88)
-    gram = (mid + oid + 'AAAA' + 'AAAB' + "Hello There" + sig).encode()
+    sgram = (mid + oid + 'AAAA' + 'AAAB' + "Hello There").encode()
+    qvk, qss = peer.keep[oid]
+    sig = peer.sign(oid, sgram)
+    gram = sgram + sig
     echo = (gram, "beta")
     peer.echos.append(echo)
     peer.serviceReceives(echoic=True)
@@ -1576,6 +1678,7 @@ def test_sure_memoer_doer():
 if __name__ == "__main__":
     test_memoer_class()
     test_setup_keep()
+    test_memoer_sign_verify()
     test_memoer_basic()
     test_memoer_small_gram_size()
     test_memoer_multiple()

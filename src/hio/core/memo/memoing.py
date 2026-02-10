@@ -89,14 +89,36 @@ will parse and strip the MemoGram gram wrappers to construct the tunneled,
 stream so the wrapper is transarent to the CESR stream and the CESR stream
 payload is opaque to the memogram wrapper, i.e. no ambiguity.
 
-Gram Header Fields:
+Gram Header Fields unsigned:
     HeadCode hc = b'__'
     HeadCodeSize hcs = 2
     MemoIDSize mis = 22
+    Gram OID oz =0
     GramNumSize gns = 4
     GramCntSize gcs = 4
-    GramHeadSize ghs  = 28
+    GramHeadSize ghs  = 28  short
+    GramHeadSize ghs  = 32  long
+    Gram Sig size sz = 0
+    GramHeadNeckLongSize ghns = 28 + 4 = 32
+
+Gram Header Fields signed:
+    HeadCode hc = b'_-'
+    HeadCodeSize hcs = 2
+    MemoIDSize mis = 22
+    Gram OID oz = 44
+    GramNumSize gns = 4
+    GramCntSize gcs = 4
+    GramHeadSize ghs  = 28 + 44 = 72  short
+    GramHeadSize ghs  = 32+ 44 = 76  long
     GramHeadNeckSize ghns = 28 + 4 = 32
+    GramSigSize sz = 88
+    GramHeadNeckSigSize ghnss = 72 + 88 = 160  short
+    GramHeadNeckSigSize ghnss = 76 + 88 = 164  long
+
+Sizes = {
+                '__': Sizage(cz=2, mz=22, oz=0, nz=4, sz=0, hz=28),
+                '_-': Sizage(cz=2, mz=22, oz=44, nz=4, sz=88, hz=160),
+             }
 
 Sizing:
 
@@ -195,6 +217,17 @@ However a maximally sized memo can not be itself conveyed by a big CESR group fr
 because maximally size memo is 8 more than the biggest frame body count.
 So translating memos to CESR must check that the memo  being translated iself
 is limited to a size of (2**30-1)*4 not (2**30-1)*4+8
+
+Signing policy:  signature is computed on the fore head in the serialized format
+(either qb64b or qb2), therefore verified on the serialized format. This means
+that the sigantures on grams (partitions of memograms) are not text archival
+when using qb2. This is ok since the full unpartitioned memogram is what is
+going to be archived along with its signature. The grams with signatures are
+stripped and thrown away.
+
+Signing and verifying the over the wire serialization format is more efficient s
+ince the signatures in qb2 are computed over fewer bytes and
+there is no conversion needed to verify the signature.
 
 """
 
@@ -306,7 +339,13 @@ class Memoer(hioing.Mixin):
     such as bad addresses or bad routing each destination gets its own buffer
     so that a bad destination does not block other destinations.
 
-    Memo segmentation/desegmentation information is embedded in the grams.
+    Memo partition/departition information is embedded in the grams.
+
+    When grams are signed, the signature is computed on the over the wire
+    serialization of the header (qb2 or qb64). This is more efficient and since
+    gram headers will be stripped and discarded there is no need to archive them.
+    The encapsulated unpartitioned memogram with its signature it what is meant
+    for archivel not the partitioned gram and per gram signature.
 
     Inherited Class Attributes:
         MaxGramSize (int): absolute max gram size on tx with overhead, override
@@ -477,18 +516,26 @@ class Memoer(hioing.Mixin):
         """Utility method for use with signed headers that decodes qualified
         base64 oid to raw domain bytes from CESR compatible text code
 
+        When oid code is 'B' nontransferable then don't look up in keep just get
+        the public key from the oid. This enables use cases for interacting without
+        having to preload keep with all nontrans OIDs.
+
+        Allowed Codes: (CESR compatible)
+            Ed25519N:   str = 'B'  # Ed25519 verkey non-transferable, basic derivation.
+            Ed25519:    str = 'D'  # Ed25519 verkey basic derivation
+            Blake3_256: str = 'E'  # Blake3 256 bit digest derivation.
+
         Parameters:
-            qb64 (str): qualified base64 oid to be decoded with code
-            code (str): code for type of oid CESR compatible
-                Ed25519N:   str = 'B'  # Ed25519 verkey non-transferable, basic derivation.
-                Ed25519:    str = 'D'  # Ed25519 verkey basic derivation
-                Blake3_256: str = 'E'  # Blake3 256 bit digest derivation.
+            qb64 (str|bytes: qualified base64 oid to be decoded with code
 
         Returns:
             tuple(raw, code) where:
                 raw (bytes): oid suitable for crypto operations
                 code (str): CESR compatible code from qb64
         """
+        if hasattr(qb64, "decode"):  # bytes
+            qb64 = qb64.decode()  # convert to str
+
         cz = 1  # only support qb64 length 44
         code = qb64[:cz]
         if code not in ('B', 'D', 'E'):
@@ -555,16 +602,20 @@ class Memoer(hioing.Mixin):
         """Utility method for use with signed headers that decodes qualified
         base64 verkey to raw domain bytes from CESR compatible text code
 
+        Allowed Codes:  (CESR compatible)
+             Ed25519N:  str = 'B' # Ed25519 verkey non-transferable, basic derivation.
+
         Parameters:
-            qb64 (str): qualified base64 verkey to be decoded with code
-            code (str): code for type of raw verkey CESR compatible
-                Ed25519N:  str = 'B' # Ed25519 verkey non-transferable, basic derivation.
+            qb64 (str|bytes): qualified base64 verkey to be decoded with code
 
         Returns:
             tuple(raw, code) where:
                 raw (bytes): verkey suitable for crypto operations
                 code (str): CESR compatible code from qb64
         """
+        if hasattr(qb64, "decode"):  # bytes
+            qb64 = qb64.decode()  # convert to str
+
         cz = 1  # only support qb64 length 44
         code = qb64[:cz]
         if code not in ('B'):
@@ -631,16 +682,20 @@ class Memoer(hioing.Mixin):
         """Utility method for use with signed headers that decodes qualified
         base64 sigseed to raw domain bytes from CESR compatible text code
 
+        Allowed Codes:  (CESR compatible)
+            Ed25519_Seed:str = 'A'  # Ed25519 256 bit random seed for private key
+
         Parameters:
-            qb64 (str): qualified base64 sigseed to be decoded with code
-            code (str): code for type of raw sigseed CESR compatible
-                Ed25519_Seed:str = 'A'  # Ed25519 256 bit random seed for private key
+            qb64 (str|bytes): qualified base64 sigseed to be decoded
 
         Returns:
             tuple(raw, code) where:
                 raw (bytes): sigseed suitable for crypto operations
                 code (str): CESR compatible code from qb64
         """
+        if hasattr(qb64, "decode"):  # bytes
+            qb64 = qb64.decode()  # convert to str
+
         cz = 1  # only support qb64 length 44
         code = qb64[:cz]
         if code not in ('A'):
@@ -670,7 +725,7 @@ class Memoer(hioing.Mixin):
 
 
     @classmethod
-    def _encodeSig(cls, raw, code='0B'):
+    def _encodeSGN(cls, raw, code='0B'):
         """Utility method for use with signed headers that encodes raw signature
         as CESR compatible fully qualified B64 text domain str using CESR
         compatible text code
@@ -681,7 +736,7 @@ class Memoer(hioing.Mixin):
                 Ed25519_Sig: str = '0B'  # Ed25519 signature. not indexed
 
         Returns:
-           qb64 (str): fully qualified base64 sig
+           qb64 (str): fully qualified base64 signature
         """
         if code not in ('0B'):
             raise hioing.MemoerError(f"Invalid sig {code=}")
@@ -707,24 +762,28 @@ class Memoer(hioing.Mixin):
 
 
     @classmethod
-    def _decodeSig(cls, qb64):
+    def _decodeSGN(cls, qb64):
         """Utility method for use with signed headers that decodes qualified
-        base64 sig to raw domain bytes from CESR compatible text code
+        base64 signature to raw domain bytes from CESR compatible text code
+
+        Allowed Codes:  (CESR compatible)
+            Ed25519_Sig: str = '0B'  # Ed25519 signature. not indexed
 
         Parameters:
-            qb64 (str): qualified base64 sig to be decoded with code
-            code (str): code for type of raw sig CESR compatible
-                Ed25519_Sig: str = '0B'  # Ed25519 signature. not indexed
+            qb64 (str|bytes): qualified base64 signature to be decoded with code
 
         Returns:
             tuple(raw, code) where:
                 raw (bytes): signature suitable for crypto operations
                 code (str): CESR compatible code from qb64
         """
+        if hasattr(qb64, "decode"):  # bytes
+            qb64 = qb64.decode()  # convert to str
+
         cz = 2  # only support qb64 length 88
         code = qb64[:cz]
         if code not in ('0B'):
-            raise hioing.MemoerError(f"Invalid sig {code=}")
+            raise hioing.MemoerError(f"Invalid signature {code=}")
 
         qz = len(qb64)  # text size
         if qz != 88:
@@ -1101,33 +1160,66 @@ class Memoer(hioing.Mixin):
         raise hioing.MemoerError(f"Unexpected {sextet=} at gram head start.")
 
 
-    def verify(self, sig, ser, oid):
+    def verify(self, oid, sig, ser):
         """Verify signature sig on signed part of gram, ser, using current verkey
         for oid.
-        Must be overriden in subclass to perform real signature verification.
-        This is a stub.
+
+        Verify the signature on the header as per the serialized header
+        format given by the header code as either qb2 or qb64. Do not convert
+        qb2 to qb64 or vice versa.
+
+        Allowed Codes:  (CESR compatible)
+            Ed25519_Sig: str = '0B'  # Ed25519 signature. not indexed
 
         Returns:
             result (bool): True if signature verifies
-                           False otherwise
+                           Raises MemoerVerifyError otherwise
 
         Parameters:
-            sig (bytes | str): qualified base64 qb64b
-            ser (bytes): signed portion of gram in delivered format
-            oid (bytes | str): qualified base64 qb64b of origin ID
-        """
-        if hasattr(sig, 'encode'):
-            sig = sig.encode()
+            oid (bytes|str): qualified base64 qb64b of origin ID
+            sig (bytes|str): qualified base64 qb64b signature
+            ser (bytes|str): serialization to be signed
 
-        if hasattr(oid, 'encode'):
-            oid = oid.encode()
+        """
+        if hasattr(oid, "decode"):  # bytes
+            oid = oid.decode()  # make str
+
+        verkey, code = Memoer._decodeOID(oid)
+        if code not in ('B', ):  # not non-trans so lookup in keep
+            if not (keyage := self.keep.get(oid)):
+                raise hioing.MemoerVerifyError(f"Missing keyage in keep for {oid=}")
+            verkey, _ = Memoer._decodeQVK(keyage.qvk)  #
+
+        try:  # may be correct size but not validly encoded
+            rawsig, code = Memoer._decodeSGN(sig)
+        except hioing.MemoerError as ex:
+            raise hioing.MemoerVerifyError("Undecodable signature") from ex
+
+        if code not in ('0B', ):
+            raise hioing.MemoerVerifyError("Invalid signsgram {code=}")
+
+        if hasattr(ser, "encode"):  # str
+            ser = ser.encode()  # make bytes
+
+        try:  # _sign_verify_detached returns None if valid else raises ValueError
+            pysodium.crypto_sign_verify_detached(rawsig, ser, verkey)
+        except Exception as ex:
+            raise hioing.MemoerVerifyError(f"Signature verification failed from {oid=}"
+                                     f"for {sig=} on {ser=}") from ex
 
         return True
 
 
     def pick(self, gram):
         """Strips header from gram bytearray leaving only gram body in gram and
-        returns (mid, gn, gc). Raises MemoerError if unrecognized header
+        returns (mid, gn, gc). Raises MemoerError if unrecognized or invalid
+        header this includes signature verification failure when signed.
+
+        When signed the signature is computed on the domain qb64b or qb2 that
+        the packet is transmitted in. Note the packet itself is not concatenation
+        composable as per CESR only the header elements and sig are CESR 24 bit
+        aligned so there is no enmass conversion of concatenated memograms.
+        This is ok for a datagram segmentation that is decidedly not a stream.
 
         Returns:
             result (tuple): tuple of form:
@@ -1171,24 +1263,29 @@ class Memoer(hioing.Mixin):
                 raise hioing.MemoerError(f"Not enough rx bytes for b2 gram"
                                          f" < {hz + 1}.")
 
-            mid = encodeB64(gram[:cms]).decode()  # fully qualified with prefix code
-            oid = encodeB64(gram[cms:cms+oz]).decode()  # must be on 24 bit boundary
-            gn = int.from_bytes(gram[cms+oz:cms+oz+nz])
+            mid = encodeB64(gram[:cms])  # convert to b64b with prefix code
+            oid = encodeB64(gram[cms:cms+oz])  # convert to b64b
+            neck = gram[cms+oz:cms+oz+nz]  # bytearray to bytes short part of neck
+            gn = int.from_bytes(neck)  # gram number convert to int
+            #neck = encodeB64(neck)  # convert to b64b
+            #head = mid + oid + neck   # bytes
             if gn == 0:  # first (zeroth) gram so long neck
                 if len(gram) < hz + nz + 1:
                     raise hioing.MemoerError(f"Not enough rx bytes for b2 "
                                              f"gram < {hz + nz + 1}.")
-                neck = gram[cms+oz+nz:cms+oz+2*nz]  # slice takes a copy
-                gc = int.from_bytes(neck)  # convert to int
+                lneck = bytes(gram[cms+oz+nz:cms+oz+2*nz])  # bytearray to bytes
+                gc = int.from_bytes(lneck)  # gram count convert to int
+                lneck = encodeB64(lneck)  # convert to b64b
                 sig = encodeB64(gram[-sz if sz else len(gram):])   # last ss bytes are signature
-                del gram[-sz if sz else len(gram):]  # strip sig
-                signed = bytes(gram[:])  # copy signed portion of gram
-                del gram[:hz-sz+nz]  # strip of fore head leaving body in gram
+                del gram[-sz if sz else len(gram):]  # strip sig if any
+                sgram = bytes(gram[:])  # signed part make bytes copy to sign
+                del gram[:hz-sz+nz]  # strip off fore head leaving body in gram
+                #head += lneck
             else:  # non-zeroth gram so short neck
                 gc = None
                 sig = encodeB64(gram[-sz if sz else len(gram):])
-                del gram[-sz if sz else len(gram):]  # strip sig
-                signed = bytes(gram[:])  # copy signed portion of gram
+                del gram[-sz if sz else len(gram):]  # strip sig if any
+                sgram = bytes(gram[:])  # signed part make bytes copy to sign
                 del gram[:hz-sz]  # strip of fore head leaving body in gram
 
         else:  # base64 text encoding
@@ -1205,32 +1302,34 @@ class Memoer(hioing.Mixin):
                 raise hioing.MemoerError(f"Not enough rx bytes for b64 gram"
                                          f" < {hz + 1}.")
 
-            mid = bytes(gram[:cz+mz]).decode()  # fully qualified with prefix code
-            oid = bytes(gram[cz+mz:cz+mz+oz]).decode() # must be on 24 bit boundary
-            gn = helping.b64ToInt(gram[cz+mz+oz:cz+mz+oz+nz])
+            mid = bytes(gram[:cz+mz])  # bytearray to bytes qb64b with prefix
+            oid = bytes(gram[cz+mz:cz+mz+oz]) #bytearry to bytes qb64b convert to qb64
+            neck = bytes(gram[cz+mz+oz:cz+mz+oz+nz])  # qb64b short part of neck
+            gn = helping.b64ToInt(neck)
+            #head = mid + oid + neck  # bytes
             if gn == 0:  # first (zeroth) gram so long neck
                 if len(gram) < hz + nz + 1:
                     raise hioing.MemoerError(f"Not enough rx bytes for b64 "
                                              f"gram < {hz + nz + 1}.")
-                neck = gram[cz+mz+oz+nz:cz+mz+oz+2*nz]  # slice takes a copy
-                gc = helping.b64ToInt(neck)  # convert to int
+                lneck = bytes(gram[cz+mz+oz+nz:cz+mz+oz+2*nz])  # bytearray to bytes copy
+                gc = helping.b64ToInt(lneck)  # convert to int
                 sig = bytes(gram[-sz if sz else len(gram):])  # last sz bytes signature
-                del gram[-sz if sz else len(gram):]  # strip sig
-                signed = bytes(gram[:])  # copy signed portion of gram
+                del gram[-sz if sz else len(gram):]  # strip sig if any
+                sgram = bytes(gram[:]) # signed part make bytes copy to sign
                 del gram[:hz-sz+nz]  # strip of fore head leaving body in gram
+                #head += lneck  # bytes
             else:  # non-zeroth gram short neck
                 gc = None
                 sig = bytes(gram[-sz if sz else len(gram):])
-                del gram[-sz if sz else len(gram):]  # strip sig
-                signed = bytes(gram[:])  # copy signed portion of gram
+                del gram[-sz if sz else len(gram):]  # strip sig if any
+                sgram = bytes(gram[:]) # signed part make bytes copy to sign
                 del gram[:hz-sz]  # strip of fore head leaving body in gram
 
-        if sig:  # signature not emptyoid
-            if not self.verify(sig, signed, oid):
-                raise hioing.MemoerError(f"Invalid signature on gram from "
-                                         f"verifier {oid=}.")
+        if sig:  # signature not empty
+            #sgram = head + bytes(gram)  # bytearray to bytes
+            self.verify(oid, sig, sgram)  # raises MemoerVerifyError if invalid
 
-        return (mid, oid if oid else None, gn, gc)
+        return (mid.decode(), oid.decode() if oid else None, gn, gc)
 
 
     def receive(self, *, echoic=False) -> (bytes, str|tuple|None):
@@ -1317,7 +1416,8 @@ class Memoer(hioing.Mixin):
         try:
             mid, oid, gn, gc = self.pick(gram)  # parse and strip off head leaving body
         except hioing.MemoerError as ex: # invalid gram so drop
-            logger.error("Unrecognized Memoer gram from %s.\n %s.", src, ex)
+            # may be bad signature when signed or unrecognized header format
+            logger.error("Invalid Memoer gram from %s.\n %s.", src, ex)
             return True  # did receive data so can try again now
 
         if mid not in self.rxgs:
@@ -1491,10 +1591,15 @@ class Memoer(hioing.Mixin):
         self.txms.append((memo, dst, oid))
 
 
-    def sign(self, ser, oid):
-        """Sign serialization ser using private sigkey for origin ID oid
-        Must be overriden in subclass to fetch private key for oid and sign.
-        This is a stub.
+    def sign(self, oid, ser):
+        """Sign serialization ser using private sigkey for origin ID oid and return
+        signature in serialized format defined by .curt
+
+        Sign the serialized signed part of gram given by ser. Assumes that
+        the header in ser is in qb2 or qb64 as defined by .curt
+
+        Allowed Codes for sigseed:
+            Ed25519_Seed:str = 'A'  # Ed25519 256 bit random seed for private key
 
         Returns:
             sig (bytes): qb64b or qb2 when .curt
@@ -1503,13 +1608,14 @@ class Memoer(hioing.Mixin):
                         raises MemoerError if problem signing
 
         Parameters:
-            ser (bytes): signed portion of gram is delivered format
-            oid (bytes): qb64 or qb2 if .curt of oid of signer
-                         assumes oid of correct length
-
-        Ed25519_Seed:str = 'A'  # Ed25519 256 bit random seed for private key
+            oid (bytes|str): qb64 or qb2 if .curt of oid of signer
+                             assumes oid of correct length
+            ser (bytes|str): serialization to be signed (usually qb64 or qb64b)
 
         """
+        if hasattr(oid, "decode"):  # bytes
+            oid = oid.decode()  # make str
+
         if oid not in self.keep:
             raise hioing.MemoerError("Invalid {oid=} for signing")
 
@@ -1518,13 +1624,12 @@ class Memoer(hioing.Mixin):
         if code not in ('A'):
             raise hioing.MemoerError(f"Invalid sigseed algorithm type {code=}")
 
-
-
+        if hasattr(ser, "encode"):  # str
+            ser = ser.encode()  # make bytes
 
         verkey, sigkey = pysodium.crypto_sign_seed_keypair(sigseed)
         raw = pysodium.crypto_sign_detached(ser, sigkey)  # raw sig
-        sig = self._encodeSig(raw)  # raise MemoerError if problem
-        sig = sig.encode()  # make bytes
+        sig = self._encodeSGN(raw).encode()  # raise MemoerError if problem
 
         if self.curt:
             sig = decodeB64(sig)  # make qb2
@@ -1619,7 +1724,7 @@ class Memoer(hioing.Mixin):
                 del memo[:bz]  # del slice past end just deletes to end
 
             if sz:  # signed gram, .sign returns proper sig format when .curt
-                sig = self.sign(gram, oid) # raises MemoerError if invalid
+                sig = self.sign(oid, gram) # raises MemoerError if invalid
                 gram = gram + sig
 
             grams.append(gram)

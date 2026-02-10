@@ -83,14 +83,6 @@ class NamerError(HioError):
         raise NamerError("error message")
     """
 
-class MemoerError(HioError):
-    """
-    Error using or configuring Memoer
-
-    Usage:
-        raise MemoGramError("error message")
-    """
-
 class MultiError(HioError):
     """
     Error using or configuring multiprocessing support classes
@@ -105,4 +97,20 @@ class HierError(HioError):
 
     Usage:
         raise HierError("error message")
+    """
+
+class MemoerError(HioError):
+    """
+    Error using or configuring Memoer
+
+    Usage:
+        raise MemoGramError("error message")
+    """
+
+class MemoerVerifyError(MemoerError):
+    """
+    Error extracting and verifying memo gram signature
+
+    Usage:
+        raise MemoerSignatureError("error message")
     """
