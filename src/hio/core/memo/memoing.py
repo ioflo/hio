@@ -252,34 +252,58 @@ Sizage = namedtuple("Sizage", "cz mz oz nz sz hz")
 
 @dataclass(frozen=True)
 class GramCodex:
-    """
-    GramCodex is codex of all Gram Codes.
+    """GramCodex is codex of all Gram Codes.
     Only provide defined codes.
     Undefined are left out so that inclusion(exclusion) via 'in' operator works.
     """
-    Basic:     str = '__'  # Basic gram code for basic overhead parts
-    Signed:    str = '_-'  # Basic gram code for signed overhead parts
+    MemoGram:     str = '__'  # memogram code
+    AuthMemoGram:    str = '_-'  # authenticated memogram code (signed)
 
     def __iter__(self):
         return iter(astuple(self))
-
 
 GramDex = GramCodex()  # Make instance
 
 @dataclass(frozen=True)
-class SignGramCodex:
-    """
-    SignGramCodex is codex of all Signed Gram Codes.
+class MemoGramCodex:
+    """MemoGramCodex is codex of all MemoGram Codes.
     Only provide defined codes.
     Undefined are left out so that inclusion(exclusion) via 'in' operator works.
     """
-    Signed:    str = '_-'  # Basic gram code for signed overhead parts
+    MemoGram:     str = '__'  # memogram code
+    AuthMemoGram:    str = '_-'  # authenticated memogram code (signed)
 
     def __iter__(self):
         return iter(astuple(self))
 
+MemoDex = MemoGramCodex()  # Make instance
 
-SGDex = SignGramCodex()  # Make instance
+#@dataclass(frozen=True)
+#class AckGramCodex:
+    #"""AckGramCodex is codex of all AckGram (acknowledge) Codes.
+    #Only provide defined codes.
+    #Undefined are left out so that inclusion(exclusion) via 'in' operator works.
+    #"""
+    #AckGram:     str = '_9'  #  acknowledge gram code
+    #AuthAckGram:    str = '_8'  # authenticated acknowledge gram code (signed)
+
+    #def __iter__(self):
+        #return iter(astuple(self))
+
+#AckDex = AckGramCodex()  # Make instance
+
+@dataclass(frozen=True)
+class AuthGramCodex:
+    """AuthGramCodex is codex of all AuthGram (authenticated signed) Codes.
+    Only provide defined codes.
+    Undefined are left out so that inclusion(exclusion) via 'in' operator works.
+    """
+    AuthMemoGram:    str = '_-'   # authenticated memogram code (signed)
+
+    def __iter__(self):
+        return iter(astuple(self))
+
+AuthDex = AuthGramCodex()  # Make instance
 
 
 class Memoer(hioing.Mixin):
@@ -457,7 +481,7 @@ class Memoer(hioing.Mixin):
     Codex = GramDex
     Codes = asdict(Codex)  # map code name to code
     Names = {val : key for key, val in Codes.items()} # invert map code to code name
-    Sodex = SGDex  # signed gram codex
+    Sodex = AuthDex  # signed gram codex
     # dict of gram header part sizes keyed by gram codes: cz mz oz nz sz hz
     Sizes = {
                 '__': Sizage(cz=2, mz=22, oz=0, nz=4, sz=0, hz=28),
@@ -504,7 +528,7 @@ class Memoer(hioing.Mixin):
 
         qb64 = code + b64.decode()  # fully qualified base64 oid with prefix code
 
-        _, _, oz, _, _, _ = cls.Sizes[SGDex.Signed]  # cz mz oz nz sz hz
+        _, _, oz, _, _, _ = cls.Sizes[AuthDex.AuthMemoGram]  # cz mz oz nz sz hz
         if len(qb64) != oz:
             hioing.MemoerError(f"Invalid oid qb64 size={len(qb64) != {oz}}")
 
@@ -754,7 +778,7 @@ class Memoer(hioing.Mixin):
 
         qb64 = code + b64.decode()  # fully qualified base64 with prefixqb64de
 
-        _, _, _, _, sz, _ = cls.Sizes[SGDex.Signed]  # cz mz oz nz sz hz
+        _, _, _, _, sz, _ = cls.Sizes[AuthDex.AuthMemoGram]  # cz mz oz nz sz hz
         if len(qb64) != sz:
             hioing.MemoerError(f"Invalid sig qb64 size={len(qb64) != {sz}}")
 
@@ -820,7 +844,7 @@ class Memoer(hioing.Mixin):
                  txms=None,
                  txgs=None,
                  txbs=None,
-                 code=GramDex.Basic,
+                 code=GramDex.MemoGram,
                  curt=False,
                  size=None,
                  verific=False,
@@ -2162,7 +2186,7 @@ class SureMemoer(Tymee, Memoer):
     """
     Tymeout = 0.0  # tymeout in seconds, tymeout of 0.0 means ignore tymeout
 
-    def __init__(self, *, tymeout=None, code=GramDex.Signed, verific=True, **kwa):
+    def __init__(self, *, tymeout=None, code=GramDex.AuthMemoGram, verific=True, **kwa):
         """
         Initialization method for instance.
         Inherited Parameters:
