@@ -115,6 +115,13 @@ class Doist(tyming.Tymist):
         self.temp = True if temp else False
 
 
+    def __call__(self, *pa, **kwa):
+        """Make Doist instance callable so can automagically run as asynio
+        aware or not
+        """
+        self.do(*pa, **kwa)
+
+
     def do(self, doers=None, limit=None, tyme=None, *, temp=None):
         """
         Readies deeds deque from .doers or doers if any and then iteratively

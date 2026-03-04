@@ -39,6 +39,8 @@ def test_doist_basic():
 
     doist.do()  # defaults make sure no exceptions
 
+    doist()  # as callable
+
 
     """End Test """
 
@@ -342,6 +344,28 @@ def test_doist_doers():
     ticks = 4
     limit = tock * ticks
     doist.do(doers=doers, limit=limit)
+    assert doist.tyme == limit == 0.125
+    assert doer0.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
+                            State(tyme=0.0, context='recur', feed=0.0, count=1),
+                            State(tyme=0.03125, context='recur', feed=0.03125, count=2),
+                            State(tyme=0.0625, context='recur', feed=0.0625, count=3),
+                            State(tyme=0.09375, context='recur', feed=0.09375, count=4),
+                            State(tyme=0.09375, context='exit', feed=None, count=5)]
+    assert doer0.done == True
+
+    assert doer1.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
+                            State(tyme=0.0, context='recur', feed=0.0, count=1),
+                            State(tyme=0.0625, context='recur', feed=0.0625, count=2),
+                            State(tyme=0.125, context='cease', feed=None, count=3),
+                            State(tyme=0.125, context='exit', feed=None, count=4)]
+    assert doer1.done == False
+
+    # test as callable
+    doist = doing.Doist(tock=tock)
+    for doer in doers:
+        doer.states = []
+        assert doer.states == []
+    doist(doers=doers, limit=limit)
     assert doist.tyme == limit == 0.125
     assert doer0.states == [State(tyme=0.0, context='enter', feed=0.0, count=0),
                             State(tyme=0.0, context='recur', feed=0.0, count=1),
