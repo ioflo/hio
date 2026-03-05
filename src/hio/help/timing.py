@@ -9,23 +9,20 @@ from .. import hioing
 
 
 class TimerError(hioing.HioError):
-    """
-    Generic Timer Errors
+    """Generic Timer Errors
     Usage:
         raise TimerError("error message")
     """
 
 class RetroTimerError(TimerError):
-    """
-    Error due to real time being retrograded before start time of timer
+    """Error due to real time being retrograded before start time of timer
     Usage:
         raise RetroTimerError("error message")
     """
 
 
 class Timer(hioing.Mixin):
-    """
-    Class to manage real elaspsed time using time module.
+    """Class to manage real elaspsed time using time module.
     Attributes:
         ._start is start tyme in seconds
         ._stop  is stop tyme in seconds
@@ -42,8 +39,7 @@ class Timer(hioing.Mixin):
     """
 
     def __init__(self, duration=0.0, start=None, **kwa):
-        """
-        Initialization method for instance.
+        """Initialization method for instance.
         Parameters:
             duration is float duration of timer in seconds (fractional)
             start is float optional start time in seconds allows starting before
@@ -57,8 +53,7 @@ class Timer(hioing.Mixin):
 
     @property
     def duration(self):
-        """
-        duration property getter,  .duration = ._stop - ._start
+        """duration property getter,  .duration = ._stop - ._start
         .duration is float duration tyme
         """
         return (self._stop - self._start)
@@ -66,8 +61,7 @@ class Timer(hioing.Mixin):
 
     @property
     def elapsed(self):
-        """
-        elapsed time property getter,
+        """elapsed time property getter,
         Returns elapsed time in seconds (fractional) since ._start.
         """
         return (time.time() - self._start)
@@ -75,8 +69,7 @@ class Timer(hioing.Mixin):
 
     @property
     def remaining(self):
-        """
-        remaining time property getter,
+        """remaining time property getter,
         Returns remaining time in seconds (fractional) before ._stop.
         """
         return (self._stop - time.time())
@@ -84,7 +77,8 @@ class Timer(hioing.Mixin):
 
     @property
     def expired(self):
-        """
+        """expired property
+
         Returns True if timer has expired, False otherwise.
         time.time() >= ._stop,
         """
@@ -92,8 +86,7 @@ class Timer(hioing.Mixin):
 
 
     def start(self, duration=None, start=None):
-        """
-        Starts Timer of duration secs at start time start secs.
+        """Starts Timer of duration secs at start time start secs.
             If duration not provided then uses current duration
             If start not provided then starts at current time.time()
         """
@@ -105,8 +98,7 @@ class Timer(hioing.Mixin):
 
 
     def restart(self, duration=None):
-        """
-        Lossless restart of Timer at start = ._stop for duration if provided,
+        """Lossless restart of Timer at start = ._stop for duration if provided,
         Otherwise current duration.
         No time lost. Useful to extend Timer so no time lost
         """
@@ -115,8 +107,7 @@ class Timer(hioing.Mixin):
 
 
 class MonoTimer(Timer):
-    """
-    Class to manage real elaspsed time using time module but with monotonically
+    """Class to manage real elaspsed time using time module but with monotonically
     increating time guarantee in spite of system time being retrograded.
 
     If the system clock is retrograded (moved back in time) while the timer is
@@ -144,8 +135,7 @@ class MonoTimer(Timer):
     """
 
     def __init__(self, duration=0.0, start=None, retro=True):
-        """
-        Initialization method for instance.
+        """Initialization method for instance.
         Parameters:
             duration in seconds (fractional)
             start is float optional start time in seconds allows starting before
@@ -162,8 +152,7 @@ class MonoTimer(Timer):
 
     @property
     def elapsed(self):
-        """
-        elapsed time property getter,
+        """elapsed time property getter,
         Returns elapsed time in seconds (fractional) since ._start.
         """
         return (self.latest - self._start)
@@ -171,8 +160,7 @@ class MonoTimer(Timer):
 
     @property
     def remaining(self):
-        """
-        remaining time property getter,
+        """remaining time property getter,
         Returns remaining time in seconds (fractional) before ._stop.
         """
         return (self._stop - self.latest)
@@ -180,16 +168,14 @@ class MonoTimer(Timer):
 
     @property
     def expired(self):
-        """
-        Returns True if timer has expired, False otherwise.
+        """Returns True if timer has expired, False otherwise.
         .latest >= ._stop,
         """
         return (self.latest >= self._stop)
 
     @property
     def latest(self):
-        """
-        latest measured time property getter,
+        """latest measured time property getter,
         Returns latest measured time in seconds adjusted for retrograded system time.
         """
         delta = time.time() - self._last  # current time - last time checked
@@ -207,17 +193,15 @@ class MonoTimer(Timer):
 
 # datetime utilities
 def nowUTC():
-    """
-    Returns timezone aware datetime of current UTC time
+    """Returns timezone aware datetime of current UTC time
     Convenience function that allows monkeypatching in tests to mock time
     """
     return (datetime.datetime.now(datetime.timezone.utc))
 
 
 def nowIso8601():
-    """
-    Returns time now in RFC-3339 profile of ISO 8601 format.
-    use now(timezone.utc)
+    """Returns timezone aware datetime of current UTC time in RFC-3339 profile
+    of ISO 8601 format. Uses now(timezone.utc)
 
     YYYY-MM-DDTHH:MM:SS.ffffff+HH:MM[:SS[.ffffff]]
     .strftime('%Y-%m-%dT%H:%M:%S.%f%z')
@@ -229,8 +213,7 @@ def nowIso8601():
 
 
 def toIso8601(dt=None):
-    """
-    Returns str datetime dt in RFC-3339 profile of ISO 8601 format.
+    """Returns str datetime dt in RFC-3339 profile of ISO 8601 format.
     Converts datetime object dt to ISO 8601 formt
     If dt is missing use now(timezone.utc)
 
@@ -247,8 +230,7 @@ def toIso8601(dt=None):
 
 
 def fromIso8601(dts):
-    """
-    Returns datetime object from RFC-3339 profile of ISO 8601 format str or bytes.
+    """Returns datetime object from RFC-3339 profile of ISO 8601 format str or bytes.
     Converts dts from ISO 8601 format to datetime object
 
     YYYY-MM-DDTHH:MM:SS.ffffff+HH:MM[:SS[.ffffff]]

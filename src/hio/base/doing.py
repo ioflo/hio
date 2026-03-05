@@ -7,6 +7,7 @@ import types
 import inspect
 from inspect import isgeneratorfunction
 from collections import deque, namedtuple
+import asyncio
 
 from .. import hioing
 from .basing import State
@@ -17,26 +18,59 @@ from ..help import timing, helping
 Deed = namedtuple("Deed", "dog retyme doer")
 
 class Doist(tyming.Tymist):
-    """
-    Doist is the root coroutine scheduler
+    """Doist is the root coroutine scheduler
+    (real python generator coroutines not fake asyncio coroutines)
     Provides relative cycle time in seconds with .tyme property to doers it runs
     The relative cycle time is advanced in .tock size increments by the  by  the
     .tick method.
     The doist may treat .tyme as artificial time or synchonize it to real time.
 
-    .enter method prepares deeds deque of triples (dog, retyme, doer) where
+    To run a Doist instance doist = Doist() in normal operation either call
+    doist() or doist.do(). The doist instance is a callable and its .__call__
+    method normally calls .do()
+
+    Using asyncio:
+    To run a Doist instance doist inside an asyncio event loop or runner then
+    call doist.ado() which returns an asyncio coroutine object suitable
+    for running inside an asyncio event loop runner.
+
+    For example  asyncio.run(doist.ado()). The major difference
+    between .do() and .ado() is that .ado is defined with async def so it can
+    use await inside. Notably .do uses time.sleep, while .ado uses await
+    asyncio.sleep().
+
+    A doist instance running in an asyncio event loop does not directly execute
+    async coroutines as Doers. But regular Doers may themselves execute asyncio
+    coroutines defined with async def by emulating an await using the async
+    coroutine objects .send() method. Usually this can be wrapped try: except:
+    that catches the StopIteraction
+
+        async def acorf():
+            return True
+
+        # emulate await when not inside an async def
+        acoro = acorf()  # create coroutine object from async def function
+        try:
+            acoro.send(None)  # iterate acoro using its .send method
+        except StopIteration as ex:
+            result = ex.value  # get final returned value from acoro
+            assert result == True
+
+    Usage:
+
+        .enter method prepares deeds deque of triples (dog, retyme, doer) where
         dog is a doer generator returned by calling doer generator instances,
         functions, or methods.
 
-    .recur method runs its deeds deque of triples (dog, retyme, doer) once per
-        invocation.
+        .recur method runs its deeds deque of triples (dog, retyme, doer) once
+         per invocation.
         This synchronizes their cycle time .tyme to the Doist's tyme.
 
-    .do method repeatedly runs .recur until generators are complete
-       it may either repeat as fast as possbile or repeat at real time increments.
+        .do method repeatedly runs .recur until generators are complete. It may
+        either repeat as fast as possbile or repeat at real time increments.
 
     Inherited Class Attributes:
-        .Tock is default .tock
+        .Tock provides default value for .tock
 
     Inherited Attributes:
 
@@ -71,15 +105,19 @@ class Doist(tyming.Tymist):
     Properties:
 
     Inherited Methods:
-        .tick increments .tyme by one .tock or provided tock
+        .tick() increments .tyme by one .tock or provided tock
 
     Methods:
-        .enter prepare deeds, deque of triples (dog, retyme, doer)
-        .recur  run through all deeds once
         .do repeadedly call .recur until all dogs in deeds are complete or
-            times out do to reaching time limit
-
+            times out do to reaching time limit. Calls .enter., .recur, .exit
+        .ado async def version of .do
+        .enter prepare deeds, deque of triples (dog, retyme, doer)
+        .recur  run through all deeds once each invocaton of .recur
+        .exit  cleanly exit doers upon exception
+        .extend  cleanly add more doers at runtime
+        .remove  cleanly remove some or all doers at runtime
     """
+
     def __init__(self, *, name='doist', real=False, limit=None, doers=None,
                           temp=False, **kwa):
         """
@@ -115,9 +153,16 @@ class Doist(tyming.Tymist):
         self.temp = True if temp else False
 
 
-    def do(self, doers=None, limit=None, tyme=None, *, temp=None):
+    def __call__(self, *pa, **kwa):
+        """Make Doist instance callable so can automagically run as asynio
+        aware or not
         """
-        Readies deeds deque from .doers or doers if any and then iteratively
+        self.do(*pa, **kwa)
+
+
+    def do(self, doers=None, limit=None, tyme=None, *, temp=None):
+        """Main do loop. Not a generator.
+        Readys deeds deque from .doers or doers if any and then iteratively
         runs .recur over deeds deque until completion of all deeds.
         Each entry in deeds is a triple (dog, retyme, doer)  where:
             dog is generator
@@ -199,6 +244,66 @@ class Doist(tyming.Tymist):
             self.exit()  # force close remaining deeds throws GeneratorExit
 
 
+    async def ado(self, doers=None, limit=None, tyme=None, *, temp=None):
+        """Main asyncio coroutine function. Calling returns asyncio coroutine
+        Uses asyncio.sleep() instead of time.sleep as well as replacing real
+        time computation using asyncio.get_event_loop().time()
+
+        See .do method for call signature
+        """
+        temp = temp or (self.temp if self.temp else temp)  # inject if temp or self.temp
+
+        self.done = False
+        if doers is not None:
+            self.doers = list(doers)
+            self.deeds = deque()
+
+        if limit is not None:  # time limt for running if any. useful in test
+            self.limit = abs(float(limit))
+
+        if tyme is not None:  # re-initialize starting tyme
+            self.tyme = tyme
+
+        try:  # always clean up resources upon exception
+            self.enter(temp=temp)  # runs enter context on each doer
+
+            tymer = tyming.Tymer(tymth=self.tymen(), duration=self.limit)
+            #self.timer.start()
+            _start = asyncio.get_event_loop().time()  # timer start
+
+            while True:  # until doers complete or exception or keyboardInterrupt
+                try:
+                    self.recur()  # increments .tyme runs recur context
+
+                    if self.real:  # wait for real time to expire
+                        #while not self.timer.expired:
+                            #time.sleep(max(0.0, self.timer.remaining))
+                        #self.timer.restart()  #  no time lost
+                        _latest = asyncio.get_event_loop().time()
+                        _remain = _start + self.tock - _latest
+                        await asyncio.sleep(max(0.0, _remain))
+                        _start = asyncio.get_event_loop().time()
+
+                    if not self.deeds:  # no deeds
+                        self.done = True
+                        break  # break out of forever loop
+
+                    if self.limit and tymer.expired:  # reached limit before all deeds done
+                        break  # break out of forever loop
+
+                except KeyboardInterrupt:  # Forced shutdown due to SIGINT, use CNTL-C to shutdown from shell
+                    break
+
+                except SystemExit: # Forced shutdown of process via sys.exit()
+                    raise
+
+                except Exception:  # Forced shutdown due to uncaught exception
+                    raise
+
+        finally: # finally clause always runs regardless of exception or not.
+            self.exit()  # force close remaining deeds throws GeneratorExit
+
+
     def enter(self, doers=None, *, temp=None):
         """Enter context
         Returns (deque):  deeds deque of triples (dog, retyme, doer)  where:
@@ -251,7 +356,8 @@ class Doist(tyming.Tymist):
 
             dog = doer(tymth=self.tymen(), tock=doer.tock, temp=temp, **opts)  # calls doer.do
             try:
-                next(dog)  # run enter by advancing to first yield
+                tock = dog.send(None)  # next(dog) run enter by advancing to first yield
+                # tock ignored on enter, so can't change tock until first recur
             except StopIteration as ex:   # return not yield
                 # done in enter so assign done state
                 try:  # assign done state non forced return
@@ -260,7 +366,7 @@ class Doist(tyming.Tymist):
                     # write to doer.__func__.done read from doer.done
                     doer.__func__.done = ex.value if ex.value is not None else doer.done
                 continue  # don't append
-            deeds.append((dog, self.tyme, doer))
+            deeds.append((dog, self.tyme, doer))  # first recur immediately
         return deeds
 
 
@@ -544,7 +650,7 @@ class Doer(tyming.Tymee):
         self.temp = True if temp else False
 
 
-    def __call__(self, **kwa):
+    def __call__(self, *pa, **kwa):
         """
         Returns generator
         Does not advance to first yield.
@@ -552,7 +658,7 @@ class Doer(tyming.Tymee):
         on the generator.
         To enter either call .next or .send(None) on generator
         """
-        return self.do(**kwa)
+        return self.do(*pa, **kwa)
 
 
     @property
@@ -575,8 +681,7 @@ class Doer(tyming.Tymee):
 
 
     def do(self, tymth, *, tock=0.0, temp=None, **opts):
-        """
-        Generator method to run this doer.
+        """Generator method to run this doer.
         Calling this method returns generator.
         Interface matches generator function for compatibility.
         To customize create subclasses and override the lifecycle methods:
@@ -814,10 +919,9 @@ class ReDoer(Doer):
         print(f"ReDoer recur before yield: {tock=}, {tyme=}, {count=} in doist.enter next doer.do enter ")
         while (True):  # recur context
             # yield from advances to first yield as next() same as send(None)
-            # so never see sent tyme ==0.0
-            # when is recieve  tyme it will be following iteration after tick()
-            # where tyme = tock
-            tyme = yield(tock)
+            # first iteration receives initial tyme before first tick() default 0.0
+            # so first recur is same tyme as enter
+            tyme = yield(tock)  # receives tyme
             count += 1
             print(f"ReDoer recur after yield: {tyme=}, {count=} in doist.recur send doer.do recur")
             if count >= 3:
@@ -1455,12 +1559,9 @@ def doizeExDo(tymth, tock=0.0, states=None, *, temp=None, **opts):
     return (True)  # return value of yield from, or yield ex.value of StopIteration
 
 
-
-
 #  for testing purposes
 class TryDoer(Doer):
-    """
-    TryDoer supports testing with methods to record sends and yields
+    """TryDoer supports testing with methods to record sends and yields
 
     Inherited Attributes:
         done (bool | None): completion state:
