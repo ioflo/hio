@@ -690,7 +690,7 @@ def test_asyncio_doist():
                 done = True
 
             while not done:
-                await asyncio.sleep(0.1)
+                #await asyncio.sleep(0.1)
                 count += 1
                 try:
                     result = dog.send(count)
@@ -700,12 +700,14 @@ def test_asyncio_doist():
                     result = ex.value
                     results.append(dict(result=result,
                                         dt=f"ADoist {datetime.now().time().isoformat('milliseconds')}"))
-
                     done = True
+                await asyncio.sleep(0.1)
+
             puff.update(dict(results=results))
             return puff
 
     asyncio.run(ADoist().ado())
+    assert True
     """assert tuff == \
     {
         'gots':

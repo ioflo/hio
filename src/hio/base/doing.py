@@ -29,35 +29,32 @@ class Doist(tyming.Tymist):
     doist() or doist.do(). The doist instance is a callable and its .__call__
     method normally calls .do()
 
+    Using asyncio:
     To run a Doist instance doist inside an asyncio event loop or runner then
-    call doist() doist.ado() which return an asyncio coroutine object suitable
+    call doist.ado() which returns an asyncio coroutine object suitable
     for running inside an asyncio event loop runner.
-    A doist instance .__call__ method detects that an asyncio event loop is
-    active and returns an asyncio coroutine by calling .ado() otherwise it
-    calls .do().
 
-    For example  asyncio.run(Doist()). The major difference
+    For example  asyncio.run(doist.ado()). The major difference
     between .do() and .ado() is that .ado is defined with async def so it can
-    use await inside. While .do uses time.sleep, .ado uses await asyncio.sleep().
+    use await inside. Notably .do uses time.sleep, while .ado uses await
+    asyncio.sleep().
 
-    A doist instance runnin in an asyncio event loop does not directly execute
+    A doist instance running in an asyncio event loop does not directly execute
     async coroutines as Doers. But regular Doers may themselves execute asyncio
     coroutines defined with async def by emulating an await using the async
-    coroutine objects .send() method. Usually this can be wrapped in a while loop
-    that emulates await under the hood.
+    coroutine objects .send() method. Usually this can be wrapped try: except:
+    that catches the StopIteraction
 
         async def acorf():
-            await asyncio.sleep(0.1)
             return True
 
         # emulate await when not inside an async def
         acoro = acorf()  # create coroutine object from async def function
-        while True:
-            try:
-                acoro.send(None)  # iterate acoro using its .send method
-            except StopIteration as ex:
-                result = ex.value  # get final returned value from acoro
-                break
+        try:
+            acoro.send(None)  # iterate acoro using its .send method
+        except StopIteration as ex:
+            result = ex.value  # get final returned value from acoro
+            assert result == True
 
     Usage:
 
@@ -160,12 +157,7 @@ class Doist(tyming.Tymist):
         """Make Doist instance callable so can automagically run as asynio
         aware or not
         """
-        try:
-            asyncio.get_running_loop()
-        except RuntimeError as ex:  # regular non asyncio run
-            self.do(*pa, **kwa)  # run do normally
-        else:  # run inside asyncio runner event loop
-            return self.ado(*pa, **kwa)  # coroutine object for asyncio runner
+        self.do(*pa, **kwa)
 
 
     def do(self, doers=None, limit=None, tyme=None, *, temp=None):
@@ -251,6 +243,7 @@ class Doist(tyming.Tymist):
         finally: # finally clause always runs regardless of exception or not.
             self.exit()  # force close remaining deeds throws GeneratorExit
 
+
     async def ado(self, doers=None, limit=None, tyme=None, *, temp=None):
         """Main asyncio coroutine function. Calling returns asyncio coroutine
         Uses asyncio.sleep() instead of time.sleep. This can be run inside
@@ -293,6 +286,7 @@ class Doist(tyming.Tymist):
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
         For setting attributes on bound methods.
         """
+        await asyncio.sleep(self.tock)
         temp = temp or (self.temp if self.temp else temp)  # inject if temp or self.temp
 
         self.done = False
@@ -956,10 +950,9 @@ class ReDoer(Doer):
         print(f"ReDoer recur before yield: {tock=}, {tyme=}, {count=} in doist.enter next doer.do enter ")
         while (True):  # recur context
             # yield from advances to first yield as next() same as send(None)
-            # so never see sent tyme ==0.0
-            # when is recieve  tyme it will be following iteration after tick()
-            # where tyme = tock
-            tyme = yield(tock)
+            # first iteration receives initial tyme before first tick() default 0.0
+            # so first recur is same tyme as enter
+            tyme = yield(tock)  # receives tyme
             count += 1
             print(f"ReDoer recur after yield: {tyme=}, {count=} in doist.recur send doer.do recur")
             if count >= 3:
@@ -1597,12 +1590,9 @@ def doizeExDo(tymth, tock=0.0, states=None, *, temp=None, **opts):
     return (True)  # return value of yield from, or yield ex.value of StopIteration
 
 
-
-
 #  for testing purposes
 class TryDoer(Doer):
-    """
-    TryDoer supports testing with methods to record sends and yields
+    """TryDoer supports testing with methods to record sends and yields
 
     Inherited Attributes:
         done (bool | None): completion state:
