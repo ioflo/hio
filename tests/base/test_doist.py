@@ -1277,7 +1277,7 @@ def test_doist_asyncio():
 
     rdoer = RDoer(stop=2)
     doers = [rdoer]
-    doist = Doist(tock=0.05, doers=doers, temp=True)
+    doist = Doist(tock=0.05, real=True, doers=doers, temp=True)
 
     asyncio.run(doist.ado(), debug=True)
     assert True
