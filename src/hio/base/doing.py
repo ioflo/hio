@@ -246,45 +246,10 @@ class Doist(tyming.Tymist):
 
     async def ado(self, doers=None, limit=None, tyme=None, *, temp=None):
         """Main asyncio coroutine function. Calling returns asyncio coroutine
-        Uses asyncio.sleep() instead of time.sleep. This can be run inside
-        asyncio event loop by calling Doist(). The .__call__ method of Doist
-        checks for running event loop and if so then returns asyncio coroutine
-        object returned by this function.  For example asyncio.run(Doist())
-        should just work. Otherwise see .do method
+        Uses asyncio.sleep() instead of time.sleep as well as replacing real
+        time computation using asyncio.get_event_loop().time()
 
-        Readys deeds deque from .doers or doers if any and then iteratively
-        runs .recur over deeds deque until completion of all deeds.
-        Each entry in deeds is a triple (dog, retyme, doer)  where:
-            dog is generator
-            retyme is tyme (real or simulated) in seconds when dog should run next
-            doer is from .doers list used to assign its .done state given
-            associated completion state of its dog
-
-        If interrupted by exception call .close on each dog to force exit context.
-
-        Keyboard interrupt (cntl-c) forces exit.
-
-        Once finally clause closes a generator it must be reinited
-        before it can be run again
-
-        Parameters:
-            doers (iterable): generator method or function callables with attributes
-                tock, done, and opts dict(). This may be used to update the .doers
-                attribute which is used throughout the execution lifecycle.
-                If not provided uses .doers.
-                Parameterization here of doers enables some special cases.
-                The normal case is to initialize in .__init__ or here.
-            limit (float): is real time limit on execution. Forces close of all dogs.
-            tyme  (float): is optional starting tyme. Resets .tyme to tyme whe provided.
-               If not provided uses current .tyme
-               temp (bool): True means use temp resources such as file path, inject
-                         into doers when True. Otherwise do not inject.
-
-        Returns:
-            None
-
-        See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
-        For setting attributes on bound methods.
+        See .do method for call signature
         """
         temp = temp or (self.temp if self.temp else temp)  # inject if temp or self.temp
 
