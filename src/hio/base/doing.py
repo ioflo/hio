@@ -283,6 +283,10 @@ class Doist(tyming.Tymist):
                         _remain = _start + self.tock - _latest
                         await asyncio.sleep(max(0.0, _remain))
                         _start = asyncio.get_event_loop().time()
+                    else:
+                        raise timing.TimerError(f"Invalid real={self.real} in .ado"
+                                                f"asyncio must use real=True")
+                        await asyncio.sleep(0.0125)  # allow loop to run
 
                     if not self.deeds:  # no deeds
                         self.done = True

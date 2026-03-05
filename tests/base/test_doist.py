@@ -986,7 +986,7 @@ def test_doist_asyncio():
         return True
 
     async def jed():  # awaits to event loop
-        await asyncio.sleep(0.01)  # returns future
+        await asyncio.sleep(0.05)  # returns future
         return "done jed"
 
     async def bob():  # awaits to event loop
@@ -1052,36 +1052,42 @@ def test_doist_asyncio():
 
             """
             super(ADoer, self).__init__(**kwa)
-            self.states = []
             self.count = None
             self.stop = stop
             self.results = []
+            self._atask = None
 
         def enter(self, *, temp=None):
             """Enter Context"""
 
-            feed = "Default"
             self.count = 0
-            self.states.append(State(tyme=self.tyme,
-                                     context="enter",
-                                     feed=feed,
+            loop = asyncio.get_event_loop()
+            self._atask = loop.create_task(jed(), name="jed")
+            self.results.append(dict(who="jed",
+                                     result=f"started task {self._atask.get_name()}",
+                                     tyme=self.tyme,
                                      count=self.count))
+
 
         def recur(self, tyme):
             """Recur Context"""
+            done = False  # not self.done
             self.count += 1
-            self.states.append(State(tyme=self.tyme, context="recur",
-                                     feed=tyme, count=self.count))
+            self.results.append(dict(who='adoer',
+                                     result=None,
+                                     tyme=self.tyme,
+                                     count=self.count))
+
             #run coros to completion
-            arto = art()  # create coroutine object from async def function
-            while True:
-                try:
-                    result = arto.send(None)  # iterate acoro using its .send method
-                    self.results.append(dict(who="art", result="future pending", tyme=self.tyme))
-                except StopIteration as ex:
-                    result = ex.value  # get final returned value from acoro
-                    self.results.append(dict(who="art", result=result, tyme=self.tyme))
-                    break
+            #arto = art()  # create coroutine object from async def function
+            #while True:
+                #try:
+                    #result = arto.send(None)  # iterate acoro using its .send method
+                    #self.results.append(dict(who="art", result="future pending", tyme=self.tyme))
+                #except StopIteration as ex:
+                    #result = ex.value  # get final returned value from acoro
+                    #self.results.append(dict(who="art", result=result, tyme=self.tyme))
+                    #break
 
             #dog = genor()  # create dog
             #done = False
@@ -1102,21 +1108,33 @@ def test_doist_asyncio():
 
             #assert done
 
-            jedo = jed()  # create coroutine object from async def function
-            while True:
-                try:
-                    result = jedo.send(None)  # iterate acoro using its .send method
-                    self.results.append(dict(who="jed", result="future pending", tyme=self.tyme))
-                except StopIteration as ex:
-                    result = ex.value  # get final returned value from acoro
-                    self.results.append(dict(who="jed", result=result, tyme=self.tyme))
-                    break
-                except RuntimeError as ex:
-                    #"await wasn't used with future"
-                    result = ex.args[0]
-                    self.results.append(dict(who="jed", result=result, tyme=self.tyme))
-                    exmsg = traceback.format_exc()
-                    break
+            if self._atask.done():
+                result = self._atask.result()
+                self.results.append(dict(who="jed result",
+                                         result=result,
+                                         tyme=self.tyme,
+                                         count=self.count))
+                done = True
+
+
+
+            #jedo = jed()  # create coroutine object from async def function
+            #while True:
+                #try:
+                    #result = jedo.send(None)  # iterate acoro using its .send method
+                    #self.results.append(dict(who="jed", result="future pending", tyme=self.tyme))
+                #except StopIteration as ex:
+                    #result = ex.value  # get final returned value from acoro
+                    #self.results.append(dict(who="jed", result=result, tyme=self.tyme))
+                    #done = True
+                    #break
+                #except RuntimeError as ex:
+                    ##"await wasn't used with future"
+                    #result = ex.args[0]
+                    #self.results.append(dict(who="jed", result=result, tyme=self.tyme))
+                    #exmsg = traceback.format_exc()
+                    #done = True
+                    #break
 
             #acoro = bob()  # create coroutine object from async def function
             #while True:
@@ -1131,66 +1149,41 @@ def test_doist_asyncio():
                     ##"await wasn't used with future"
                     #pass  # do not want this
 
-            cobo = cob()  # create coroutine object from async def function
-            while True:
-                try:
-                    result = cobo.send(None)  # iterate acoro using its .send method
-                    self.results.append(dict(who="cob", result="future pending", tyme=self.tyme))
-                except StopIteration as ex:
-                    result = ex.value  # get final returned value from acoro
-                    self.results.append(dict(who="cob", result=result, tyme=self.tyme))
-                    break
-                except RuntimeError as ex:
-                    #"await wasn't used with future"
-                    result = ex.args[0]
-                    self.results.append(dict(who="jed", result=result, tyme=self.tyme))
-                    exmsg = traceback.format_exc()
-                    break
+            #cobo = cob()  # create coroutine object from async def function
+            #while True:
+                #try:
+                    #result = cobo.send(None)  # iterate acoro using its .send method
+                    #self.results.append(dict(who="cob", result="future pending", tyme=self.tyme))
+                #except StopIteration as ex:
+                    #result = ex.value  # get final returned value from acoro
+                    #self.results.append(dict(who="cob", result=result, tyme=self.tyme))
+                    #break
+                #except RuntimeError as ex:
+                    ##"await wasn't used with future"
+                    #result = ex.args[0]
+                    #self.results.append(dict(who="jed", result=result, tyme=self.tyme))
+                    #exmsg = traceback.format_exc()
+                    #break
 
             if self.count >= self.stop:
-                return True  # complete
-            return False  # incomplete
+                done = True
 
-        def exit(self):
-            """Exit Context"""
-            self.count += 1
-            self.states.append(State(tyme=self.tyme, context='exit',
-                                     feed=None, count=self.count))
-
-        def cease(self):
-            """Cease Context"""
-            self.count += 1
-            self.states.append(State(tyme=self.tyme, context='cease',
-                                     feed=None, count=self.count))
-
-        def abort(self, ex):
-            """Abort Context"""
-            self.count += 1
-            self.states.append(State(tyme=self.tyme, context='abort',
-                                     feed=ex.args[0], count=self.count))
+            return done  # False=incomplete True=complete
 
 
-    tdoer = TryDoer()  # regular doer alongside
-    adoer = ADoer(stop=2)
-
-    #doers = [adoer, tdoer]
+    adoer = ADoer(stop=5)
     doers = [adoer]
-    doist = Doist(tock=0.05, doers=doers, temp=True)
+    doist = Doist(tock=0.05, real=True, doers=doers, temp=True)
 
     asyncio.run(doist.ado())
     assert True
     assert adoer.results == \
     [
-        {'who': 'art', 'result': True, 'tyme': 0.0},
-        {'who': 'jed', 'result': 'future pending', 'tyme': 0.0},
-        {'who': 'jed', 'result': "await wasn't used with future", 'tyme': 0.0},
-        {'who': 'cob', 'result': 'future pending', 'tyme': 0.0},
-        {'who': 'jed', 'result': "await wasn't used with future", 'tyme': 0.0},
-        {'who': 'art', 'result': True, 'tyme': 0.05},
-        {'who': 'jed', 'result': 'future pending', 'tyme': 0.05},
-        {'who': 'jed', 'result': "await wasn't used with future", 'tyme': 0.05},
-        {'who': 'cob', 'result': 'future pending', 'tyme': 0.05},
-        {'who': 'jed', 'result': "await wasn't used with future", 'tyme': 0.05}
+        {'who': 'jed', 'result': 'started task jed', 'tyme': 0.0, 'count': 0},
+        {'who': 'adoer', 'result': None, 'tyme': 0.0, 'count': 1},
+        {'who': 'adoer', 'result': None, 'tyme': 0.05, 'count': 2},
+        {'who': 'adoer', 'result': None, 'tyme': 0.1, 'count': 3},
+        {'who': 'jed result', 'result': 'done jed', 'tyme': 0.1, 'count': 3}
     ]
 
 
@@ -1283,10 +1276,8 @@ def test_doist_asyncio():
             return True  # done
 
     rdoer = RDoer(stop=2)
-
-    #doers = [rdoer, tdoer]
     doers = [rdoer]
-    doist = Doist(tock=0.05, doers=doers, temp=True)
+    doist = Doist(tock=0.05, real=True, doers=doers, temp=True)
 
     asyncio.run(doist.ado(), debug=True)
     assert True
