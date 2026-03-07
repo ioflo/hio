@@ -1000,7 +1000,7 @@ def test_doist_asyncio():
         await bob()
         return "done cob"
 
-    async def dug():  # awaits to event loop
+    async def dug():  # awaits to event loop holds onto result
         results = []
 
         result = await asyncio.sleep(0.1)  # returns future
@@ -1326,77 +1326,123 @@ def test_doist_asyncio():
 
 
     # Test with Doer that is geneator recur
-    #class RDoer2(Doer):
-        #"""Uses generator for recur method
-        #"""
+    class RDoer2(Doer):
+        """Uses generator for recur method
+        """
 
-        #def __init__(self, stop=1, **kwa):
-            #"""Initialize instance.
+        def __init__(self, stop=1, **kwa):
+            """Initialize instance.
 
-            #"""
-            #super().__init__(**kwa)
-            #self.count = None
-            #self.stop = stop
-            #self.results = []
+            """
+            super().__init__(**kwa)
+            self.count = None
+            self.stop = stop
+            self.results = []
 
-        #def enter(self, *, temp=None):
-            #"""Enter Context
-            #"""
-            #self.count = 0
-
-
-        #def recur(self, tock=None):
-            #"""Recur Context
-            #"""
-            #tock = tock if tock is not None else self.tock
-            #tyme = None
-            #self.results.append(dict(who='rdoer',
-                                     #result="recur",
-                                     #tyme=self.tyme,
-                                     #count=self.count))
-
-            #dog = genor()  # create dog
-            #result = dog.send(None)
-            #assert result == 0
-
-            #done = False
-            #while (not done):  # recur context
-                ## yield from advances to first yield as next() same as send(None)
-                ## first iteration receives initial tyme before first tick() default 0.0
-                ## so first recur is same tyme as enter
-                #tyme = yield(tock)  # receives tyme
-                #self.count += 1
+        def enter(self, *, temp=None):
+            """Enter Context
+            """
+            self.count = 0
 
 
-                #try:
-                    #result = dog.send(self.count)
-                    #assert result >= 1
-                #except StopIteration as ex:
-                    #result = ex.value
-                    #assert result == 'done genor'
-                    #done = True
-                #except RuntimeError as ex:
-                    #result = ex.args[0]
-                    #done = True
+        def recur(self, tock=None):
+            """Recur Context
+            """
+            tock = tock if tock is not None else self.tock
+            tyme = None
+            count = 0
+            self.results.append(dict(who='rdoer',
+                                     result="recur",
+                                     tyme=round(self.tyme, 5),
+                                     count=count))
+
+            # simulate inline processing in generator with sequential tasks
+            loop = asyncio.get_event_loop()
+
+            # inline jed as task
+            task = loop.create_task(jed(), name="jed")
+            self.results.append(dict(who=task.get_name(),
+                                     result=f"started task {task.get_name()}",
+                                     tyme=round(self.tyme, 5),
+                                     count=count))
+
+            while not task.done():  # iterate jed until done
+                tyme = yield(tock)  # cede control to event loop, receives tyme
+                count += 1
+
+            result = task.result()
+            self.results.append(dict(who=task.get_name(),
+                                     result=result,
+                                     tyme=round(self.tyme, 5),
+                                     count=count))
+
+            # inline bob as task
+            task = loop.create_task(bob(), name="bob")
+            self.results.append(dict(who=task.get_name(),
+                                     result=f"started task {task.get_name()}",
+                                     tyme=round(self.tyme, 5),
+                                     count=count))
+
+            while not task.done():  # iterate jed until done
+                tyme = yield(tock)  # cede control to event loop, receives tyme
+                count += 1
+
+            result = task.result()
+            self.results.append(dict(who=task.get_name(),
+                                     result=result,
+                                     tyme=round(self.tyme, 5),
+                                     count=count))
+
+            # inline cob as task
+            task = loop.create_task(cob(), name="cob")
+            self.results.append(dict(who=task.get_name(),
+                                     result=f"started task {task.get_name()}",
+                                     tyme=round(self.tyme, 5),
+                                     count=count))
+
+            while not task.done():  # iterate jed until done
+                tyme = yield(tock)  # cede control to event loop, receives tyme
+                count += 1
+
+            result = task.result()
+            self.results.append(dict(who=task.get_name(),
+                                     result=result,
+                                     tyme=round(self.tyme, 5),
+                                     count=count))
+
+            return True  # done
 
 
-                #if self.count >= self.stop:
-                    #done = True
+    rdoer = RDoer2(stop=5)
 
-            #return done  # done
-
-
-    #rdoer = RDoer2(stop=5)
-    #doers = [rdoer]
-    #doist = Doist(tock=0.05, real=True, doers=doers, temp=True)
-
-    #asyncio.run(doist.ado(), debug=True)
-    #assert True
+    doers = [rdoer]
+    doist = Doist(tock=0.05, real=True, doers=doers, temp=True)
+    asyncio.run(doist.ado())
+    assert True
+    assert rdoer.results == \
+    [
+        {'who': 'rdoer', 'result': 'recur', 'tyme': 0.0, 'count': 0},
+        {'who': 'jed', 'result': 'started task jed', 'tyme': 0.0, 'count': 0},
+        {'who': 'jed', 'result': 'done jed', 'tyme': 0.1, 'count': 3},
+        {'who': 'bob', 'result': 'started task bob', 'tyme': 0.1, 'count': 3},
+        {'who': 'bob', 'result': 'done bob', 'tyme': 0.3, 'count': 7},
+        {'who': 'cob', 'result': 'started task cob', 'tyme': 0.3, 'count': 7},
+        {'who': 'cob', 'result': 'done cob', 'tyme': 0.5, 'count': 11}
+    ]
 
 
     #async def main():
-        #atask = asyncio.create_task(doist.ado())
-        #await asyncio.sleep(0.1)
+        ##atask = asyncio.create_task()
+        #cnt = 0
+        #dog = rdoer.recur()
+        #tock = dog.send(None)
+        #while True:
+            #tock = dog.send(asyncio.get_event_loop().time())
+            #await asyncio.sleep(0.1)
+            #cnt += 1
+            #if cnt >= 3:
+                #break
+
 
     #asyncio.run(main())
     #assert True

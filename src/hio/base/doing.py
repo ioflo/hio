@@ -918,18 +918,17 @@ class ReDoer(Doer):
         tock = tock if tock is not None else self.tock
         tyme = None
         count = 0
-        print(f"ReDoer recur before yield: {tock=}, {tyme=}, {count=} in doist.enter next doer.do enter ")
-        while (True):  # recur context
+        print(f"ReDoer recur before first yield: {tock=}, {tyme=}, {count=} "
+              f"in doist.enter next doer.do enter ")
+        while count < 3:  # recur context
             # yield from advances to first yield as next() same as send(None)
             # first iteration receives initial tyme before first tick() default 0.0
-            # so first recur is same tyme as enter
-            tyme = yield(tock)  # receives tyme
-            count += 1
-            print(f"ReDoer recur after yield: {tyme=}, {count=} in doist.recur send doer.do recur")
-            if count >= 3:
-                break
+            # so first recur pass happens is same tyme as enter
+            tyme = yield(tock)  # receives new tyme for recur second pass
+            count += 1 # complete second pass
+            print(f"ReDoer recur: {tyme=}, {count=} "
+                  f"in doist.recur send doer.do recur")
 
-        print(f"ReDoer recur after break: {tyme=}, {count=}")
         return True  # done
 
 
