@@ -1309,7 +1309,7 @@ def test_doist_asyncio():
 
             return done  # done
 
-    rdoer = RDoer1(stop=5)
+    rdoer = RDoer1(stop=6)
     doers = [rdoer]
     doist = Doist(tock=0.05, real=True, doers=doers, temp=True)
 
@@ -1321,7 +1321,7 @@ def test_doist_asyncio():
         {'who': 'bob task', 'result': 'started task bob', 'tyme': 0.0, 'count': 0},
         {'who': 'rdoer', 'result': 'recur', 'tyme': 0.0, 'count': 0},
         {'who': 'jed task', 'result': 'done jed', 'tyme': 0.1, 'count': 3},
-        {'who': 'bob task', 'result': 'done bob', 'tyme': 0.2, 'count': 5}
+        {'who': 'bob task', 'result': 'done bob', 'tyme': 0.25, 'count': 6}
     ]
 
 
@@ -1425,9 +1425,9 @@ def test_doist_asyncio():
         {'who': 'jed', 'result': 'started task jed', 'tyme': 0.0, 'count': 0},
         {'who': 'jed', 'result': 'done jed', 'tyme': 0.1, 'count': 3},
         {'who': 'bob', 'result': 'started task bob', 'tyme': 0.1, 'count': 3},
-        {'who': 'bob', 'result': 'done bob', 'tyme': 0.3, 'count': 7},
-        {'who': 'cob', 'result': 'started task cob', 'tyme': 0.3, 'count': 7},
-        {'who': 'cob', 'result': 'done cob', 'tyme': 0.5, 'count': 11}
+        {'who': 'bob', 'result': 'done bob', 'tyme': 0.35, 'count': 8},
+        {'who': 'cob', 'result': 'started task cob', 'tyme': 0.35, 'count': 8},
+        {'who': 'cob', 'result': 'done cob', 'tyme': 0.6, 'count': 13}
     ]
 
 

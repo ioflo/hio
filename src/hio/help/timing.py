@@ -4,6 +4,7 @@
 """
 import time
 import datetime
+import asyncio
 
 from .. import hioing
 
@@ -140,8 +141,9 @@ class MonoTimer(Timer):
             duration in seconds (fractional)
             start is float optional start time in seconds allows starting before
                or after current time
-            retro is boolean IF True automaticall shift timer whenever
-                retrograded clock detected Otherwise ignore
+            retro is boolean, True means automatically shift timer whenever
+                              retrograded clock detected
+                              Otherwise raise RetroTimerError
         """
         self._start = float(start) if start is not None else time.time()
         self._stop = self._start + float(duration)  # need for default duration
@@ -189,6 +191,92 @@ class MonoTimer(Timer):
 
         self._last += delta
         return self._last
+
+
+class AsyncTimer(Timer):
+    """Class to manage real elaspsed time using asyncio event loop time.
+    Namely asyncio.get_event_loop().time()
+
+    Attributes:
+        ._start is start tyme in seconds
+        ._stop  is stop tyme in seconds
+
+    Properties:
+        .duration is float time duration in seconds of timer from ._start to ._stop
+        .elaspsed is float time elasped in seconds since ._start
+        .remaining is float time remaining in seconds until ._stop
+        .expired is boolean, True if expired, False otherwise, i.e. time >= ._stop
+
+    methods:
+        .start()  start timer at current time
+        .restart() = restart timer at last ._stop so no time lost
+    """
+
+    def __init__(self, duration=0.0, start=None, **kwa):
+        """Initialization method for instance.
+        Parameters:
+            duration is float duration of timer in seconds (fractional)
+            start is float optional start time in seconds allows starting before
+               or after current time
+        """
+        super(Timer, self).__init__(**kwa)  # Mixin for Mult-inheritance MRO
+        self._start = float(start) if start is not None else time.time()
+        self._stop = self._start + float(duration)  # need for default duration
+        self.start(duration=duration, start=start)
+
+
+    @property
+    def duration(self):
+        """duration property getter,  .duration = ._stop - ._start
+        .duration is float duration tyme
+        """
+        return (self._stop - self._start)
+
+
+    @property
+    def elapsed(self):
+        """elapsed time property getter,
+        Returns elapsed time in seconds (fractional) since ._start.
+        """
+        return (asyncio.get_event_loop().time() - self._start)
+
+
+    @property
+    def remaining(self):
+        """remaining time property getter,
+        Returns remaining time in seconds (fractional) before ._stop.
+        """
+        return (self._stop - asyncio.get_event_loop().time())
+
+
+    @property
+    def expired(self):
+        """expired property
+
+        Returns True if timer has expired, False otherwise.
+        time.time() >= ._stop,
+        """
+        return (asyncio.get_event_loop().time() >= self._stop)
+
+
+    def start(self, duration=None, start=None):
+        """Starts Timer of duration secs at start time start secs.
+            If duration not provided then uses current duration
+            If start not provided then starts at current time.time()
+        """
+        # remember current duration when duration not provided
+        duration = float(duration) if duration is not None else self.duration
+        self._start = float(start) if start is not None else asyncio.get_event_loop().time()
+        self._stop = self._start + duration
+        return self._start
+
+
+    def restart(self, duration=None):
+        """Lossless restart of Timer at start = ._stop for duration if provided,
+        Otherwise current duration.
+        No time lost. Useful to extend Timer so no time lost
+        """
+        return self.start(duration=duration, start=self._stop)
 
 
 # datetime utilities

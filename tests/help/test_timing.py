@@ -5,11 +5,12 @@ tests.help.test_timing module
 """
 import time
 import datetime
+import asyncio
 
 import pytest
 
 from hio.help.timing import TimerError, RetroTimerError
-from hio.help.timing import Timer, MonoTimer
+from hio.help.timing import Timer, MonoTimer, AsyncTimer
 from hio.help.timing import nowIso8601, fromIso8601, toIso8601
 
 

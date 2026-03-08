@@ -251,6 +251,8 @@ class Doist(tyming.Tymist):
 
         See .do method for call signature
         """
+
+
         temp = temp or (self.temp if self.temp else temp)  # inject if temp or self.temp
 
         self.done = False
@@ -268,21 +270,17 @@ class Doist(tyming.Tymist):
             self.enter(temp=temp)  # runs enter context on each doer
 
             tymer = tyming.Tymer(tymth=self.tymen(), duration=self.limit)
-            #self.timer.start()
-            _start = asyncio.get_event_loop().time()  # timer start
+            atimer = timing.AsyncTimer(duration=self.tock)
+            atimer.start()
 
             while True:  # until doers complete or exception or keyboardInterrupt
                 try:
                     self.recur()  # increments .tyme runs recur context
 
                     if self.real:  # wait for real time to expire
-                        #while not self.timer.expired:
-                            #time.sleep(max(0.0, self.timer.remaining))
-                        #self.timer.restart()  #  no time lost
-                        _latest = asyncio.get_event_loop().time()
-                        _remain = _start + self.tock - _latest
-                        await asyncio.sleep(max(0.0, _remain))
-                        _start = asyncio.get_event_loop().time()
+                        while not atimer.expired:
+                            await asyncio.sleep(max(0.0, atimer.remaining))
+                        atimer.restart()
                     else:
                         await asyncio.sleep(0.0)  # allow loop to run ASAP
 
