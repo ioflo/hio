@@ -251,6 +251,8 @@ class Doist(tyming.Tymist):
 
         See .do method for call signature
         """
+
+
         temp = temp or (self.temp if self.temp else temp)  # inject if temp or self.temp
 
         self.done = False
@@ -268,21 +270,17 @@ class Doist(tyming.Tymist):
             self.enter(temp=temp)  # runs enter context on each doer
 
             tymer = tyming.Tymer(tymth=self.tymen(), duration=self.limit)
-            #self.timer.start()
-            _start = asyncio.get_event_loop().time()  # timer start
+            atimer = timing.AsyncTimer(duration=self.tock)
+            atimer.start()
 
             while True:  # until doers complete or exception or keyboardInterrupt
                 try:
                     self.recur()  # increments .tyme runs recur context
 
                     if self.real:  # wait for real time to expire
-                        #while not self.timer.expired:
-                            #time.sleep(max(0.0, self.timer.remaining))
-                        #self.timer.restart()  #  no time lost
-                        _latest = asyncio.get_event_loop().time()
-                        _remain = _start + self.tock - _latest
-                        await asyncio.sleep(max(0.0, _remain))
-                        _start = asyncio.get_event_loop().time()
+                        while not atimer.expired:
+                            await asyncio.sleep(max(0.0, atimer.remaining))
+                        atimer.restart()
                     else:
                         await asyncio.sleep(0.0)  # allow loop to run ASAP
 
@@ -918,18 +916,17 @@ class ReDoer(Doer):
         tock = tock if tock is not None else self.tock
         tyme = None
         count = 0
-        print(f"ReDoer recur before yield: {tock=}, {tyme=}, {count=} in doist.enter next doer.do enter ")
-        while (True):  # recur context
+        print(f"ReDoer recur before first yield: {tock=}, {tyme=}, {count=} "
+              f"in doist.enter next doer.do enter ")
+        while count < 3:  # recur context
             # yield from advances to first yield as next() same as send(None)
             # first iteration receives initial tyme before first tick() default 0.0
-            # so first recur is same tyme as enter
-            tyme = yield(tock)  # receives tyme
-            count += 1
-            print(f"ReDoer recur after yield: {tyme=}, {count=} in doist.recur send doer.do recur")
-            if count >= 3:
-                break
+            # so first recur pass happens is same tyme as enter
+            tyme = yield(tock)  # receives new tyme for recur second pass
+            count += 1 # complete second pass
+            print(f"ReDoer recur: {tyme=}, {count=} "
+                  f"in doist.recur send doer.do recur")
 
-        print(f"ReDoer recur after break: {tyme=}, {count=}")
         return True  # done
 
 
