@@ -64,7 +64,7 @@ class Filer(hioing.Mixin):
         _name (str): unique name for .name property
 
 
-    File/Directory Creation Mode Notes:
+    File/Directory Creation Mode Notes::
         .Perm provides default restricted access permissions to directory and/or files
         stat.S_ISVTX | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
         0o1700==960
@@ -551,7 +551,7 @@ def openFiler(cls=None, name="test", temp=True, reopen=True, clear=False, **kwa)
                           False means do not remove directory upon close when reopening
     See filing.Filer for other keyword parameter passthroughs
 
-    Usage:
+    Usage::
 
     with openFiler(name="bob") as filer:
 

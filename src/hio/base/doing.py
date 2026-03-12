@@ -45,6 +45,8 @@ class Doist(tyming.Tymist):
     coroutine objects .send() method. Usually this can be wrapped try: except:
     that catches the StopIteraction
 
+    Example::
+
         async def acorf():
             return True
 
@@ -56,7 +58,7 @@ class Doist(tyming.Tymist):
             result = ex.value  # get final returned value from acoro
             assert result == True
 
-    Usage:
+    Usage::
 
         .enter method prepares deeds deque of triples (dog, retyme, doer) where
         dog is a doer generator returned by calling doer generator instances,
@@ -517,7 +519,8 @@ def doify(f, *, name=None, tock=0.0, temp=None, **opts):
     Allows multiple instances of copy, g, of generator function/method, f, each with
     unique attributes.
 
-    Usage:
+    Usage::
+
     def f():
        pass
 
@@ -551,7 +554,8 @@ def doize(*, tock=0.0, temp=None, **opts):
     DoDoer.enter().
     Only one instance of decorated function with shared attributes is allowed.
 
-    Usage:
+    Usage::
+
     @doize
     def f():
        pass
@@ -579,7 +583,8 @@ class Doer(tyming.Tymee):
     attributes that a plain generator function does not
 
     The .do method executes other methods each corresponding to one of the
-    six econtexts:
+    six econtexts::
+
         enter, recur, clean, exit, cease (forced), abort (forced)
 
     Actual context order may be one of:
@@ -852,7 +857,8 @@ class ReDoer(Doer):
             associated Tymist instance that returns Tymist .tyme. when called.
        ._tock is hidden attribute for .tock property
 
-    Test Console:
+    Test Console::
+
     ****** ReDoer Test **********
     ReDoer enter: temp=None in doist.enter next doer.do -> .enter
     ReDoer recur before yield: tock=1.0, tyme=None, count=0 in doist.enter next doer.do enter

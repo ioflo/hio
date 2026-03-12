@@ -70,7 +70,7 @@ class Duror(Filer):
     Properties:
         version
 
-    File/Directory Creation Mode Notes:
+    File/Directory Creation Mode Notes::
         .Perm provides default restricted access permissions to directory and/or files
         stat.S_ISVTX | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
         0o1700==960
@@ -967,7 +967,7 @@ def openDuror(*, cls=None, name="test", temp=True, **kwa):
         temp (bool):  True means open in temporary directory, clear on close
                     Otherwise open in persistent directory, do not clear on close
 
-    Usage:
+    Usage::
 
     with openHolder(name="gen1") as baser1:
         baser1.env  ....
@@ -1367,7 +1367,8 @@ class Suber(SuberBase):
             data (str): decoded as utf-8 or whatever ._des provides
             None if no entry at keys
 
-        Usage:
+        Usage::
+
             Use walrus operator to catch and raise missing entry
             if (data := mydb.get(keys)) is None:
                 raise ExceptionHere
@@ -2246,4 +2247,3 @@ class Subery(Duror):
         self.dsqs = DomIoSetSuber(db=self, subkey="dsqs.")  # durable set queue
 
         return self.env
-
