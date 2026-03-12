@@ -31,7 +31,8 @@ from ...help import modify, Renam, TymeDom
 # Regular expression to detect special need 'count' condition
 LAPSEREX = r'^\s*(?P<lps>lapse)(?P<cmp>(\s|\W|\Z).*)'
 Rexlps = re.compile(LAPSEREX)  # compile is faster
-"""Usage:
+"""Usage::
+
 if m := Rexlps.match("lapse >= 1.0"):
     lps, cmp = m.group("lps","cmp")
 
@@ -42,7 +43,8 @@ if not Rexlps.match("lapse >= 1.0"):
 # Regular expression to detect special need 'count' condition
 RELAPSEREX = r'^\s*(?P<rlp>relapse)(?P<cmp>(\s|\W|\Z).*)'
 Rexrlp = re.compile(RELAPSEREX)  # compile is faster
-"""Usage:
+"""Usage::
+
 if m := Rexrlp.match("relapse >= 1.0"):
     rel, cmp = m.group("rlp","cmp")
 
@@ -54,7 +56,8 @@ if rel Rexrlp.match("relapse >= 1.0"):
 # Regular expression to detect special need 'count' condition
 COUNTREX = r'^\s*(?P<cnt>count)(?P<cmp>(\s|\W|\Z).*)'
 Rexcnt = re.compile(COUNTREX)  # compile is faster
-"""Usage:
+"""Usage::
+
 if m := Rexcnt.match("count >= 1"):
     cnt, cmp = m.group("cnt","cmp")
 
@@ -1128,9 +1131,10 @@ class Boxer(Tymee):
         Resulting act performs on of:
         H.key.field = None   when rhs is None
         H.key.field = eval(rhs)  when rhs is evalable str
-        H.key.field = rhs(**parms)  when rhs is callable
+        H.key.field = rhs(``**parms``)  when rhs is callable
 
-        Usage:
+        Usage::
+
             be(lhs, rhs)
 
         Parameters:
@@ -1256,8 +1260,8 @@ class Boxery(Mixin):
     multi-boxer boxworks
     Holds reference to current Boxer and Box being built
 
-    ****Placeholder for now. Future to be able to make multiple boxers from
-    single fun or in multiple iterations making.****
+    Placeholder for now. Future: enable multiple boxers from a single fun or
+    across multiple iterations.
 
     Attributes:
         hold (Hold): data shared by boxwork

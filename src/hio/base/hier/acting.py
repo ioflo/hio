@@ -40,15 +40,17 @@ def actify(name, *, base=None, attrs=None):
     But when given a function on can decorate it with actify so that a new
     subclass of ActBase is created and registered.
 
-    Usage:
+    Usage::
+
         @actify(name="Tact")
-        def test(self, **kwa):  # signature for .act with **iops as **kwa
+        def test(self, **kwa):  # signature for .act with ``**iops`` as ``**kwa``
             assert kwa == self.iops
             return self.iops
 
         t = test(iops=dict(what=1), hello="hello", nabe=Nabe.redo)
 
-    Notes:
+    Notes::
+
     In Python, when a function is assigned as the value of a class attribute,
     the value of that attribute is automagically converted to a bound method of
     that class with injected self as first argument.
@@ -236,7 +238,7 @@ class ActBase(Mixin):
         """Make ActBase instance a callable object.
         Call its .act method with expanded self.iops as parameters
 
-        This enables compiled exec/eval str to have **iops in local scope
+        This enables compiled exec/eval str to have ``**iops`` in local scope
         """
         return self.act(**self.iops)  # put self.iops into local scope of .act
 
@@ -245,7 +247,7 @@ class ActBase(Mixin):
         """Act called by Actor. Should override in subclass.
 
         Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
@@ -394,7 +396,7 @@ class Act(ActBase):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
         """
         if callable(self.deed):  # not compilable str
@@ -531,7 +533,7 @@ class Goact(ActBase):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
@@ -628,7 +630,7 @@ class EndAct(ActBase):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
@@ -734,7 +736,7 @@ class Beact(ActBase):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
         """
         key, field = self.lhs
@@ -912,7 +914,7 @@ class Mark(ActBase):
         Override in subclass
 
         Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
@@ -963,7 +965,7 @@ class LapseMark(Mark):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
@@ -1017,7 +1019,7 @@ class RelapseMark(Mark):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
@@ -1070,7 +1072,7 @@ class Count(Mark):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
@@ -1125,7 +1127,7 @@ class Discount(Mark):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
@@ -1227,7 +1229,7 @@ class BagMark(Mark):
         Override in subclass
 
         Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
@@ -1280,7 +1282,7 @@ class UpdateMark(BagMark):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
@@ -1337,7 +1339,7 @@ class ReupdateMark(BagMark):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
@@ -1394,7 +1396,7 @@ class ChangeMark(BagMark):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
@@ -1452,7 +1454,7 @@ class RechangeMark(BagMark):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
@@ -1558,7 +1560,7 @@ class CloseAct(ActBase):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
