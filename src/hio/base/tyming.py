@@ -109,11 +109,11 @@ class Tymee(hioing.Mixin):
     Attributes:
 
     Properties:
-        tyme (float | None):  relative cycle time of associated Tymist which is
+        tyme (float or None):  relative cycle time of associated Tymist which is
             provided by calling .tymth function wrapper closure which is obtained
             from Tymist.tymen().
             None means not assigned yet.
-        tymth (Callable | None): function wrapper closure returned by
+        tymth (Callable or None): function wrapper closure returned by
             Tymist.tymen() method. When .tymth is called it returns associated
             Tymist.tyme. Provides injected dependency on Tymist cycle tyme base.
             None means not assigned yet.
@@ -143,7 +143,7 @@ class Tymee(hioing.Mixin):
         tyme property getter, get ._tyme
         .tyme is float cycle time in seconds
         Returns:
-            tyme (float | None): tyme from self.tymth() when wound else None
+            tyme (float or None): tyme from self.tymth() when wound else None
         """
         return self._tymth() if self._tymth else None
 
@@ -179,37 +179,17 @@ class Tymee(hioing.Mixin):
 class Tymer(Tymee):
     """
     Tymer class to measure cycle time given by .tyme property of Tymist instance.
-    tyme is relative cycle time either artificial or real
+    tyme is relative cycle time either artificial or real.
 
-    Inherited Attributes
+    Inherited attributes and properties are documented on Tymee.
 
-    Attributes:
+        Properties:
+        - duration (float): tyme duration in seconds from ._start to ._stop.
+        - elapsed (float): tyme elapsed in seconds since ._start.
+        - remaining (float): tyme remaining in seconds until ._stop.
+        - expired (bool): True if expired (.tyme >= ._stop).
 
-    Inherited Properties:
-        tyme is float relative cycle time of associated Tymist .tyme obtained
-            via injected .tymth function wrapper closure.
-        tymth is function wrapper closure returned by Tymist .tymeth() method.
-            When .tymth is called it returns associated Tymist .tyme.
-            .tymth provides injected dependency on Tymist tyme base.
-
-    Properties:
-        duration (float): tyme duration in seconds from ._start to ._stop
-        elaspsed (float): tyme elasped in seconds  since ._start
-        remaining (float): tyme remaining in seconds  until ._stop
-        expired  (bool): True if expired, False otherwise, i.e. .tyme >= ._stop
-
-    Inherited Methods:
-        .wind is injects ._tymth dependency
-
-    Methods:
-        .start() = start tymer at current .tyme
-        .restart() = restart tymer at last ._stop so no time lost
-
-    Hidden:
-        _tymth (closure): injected function wrapper closure returned by .tymen() of
-            associated Tymist instance that returns Tymist .tyme. when called.
-        _start (float):  start tyme in seconds
-        _stop (float):  stop tyme in seconds
+        Hidden attributes: _tymth, _start, _stop.
 
     """
     Duration = 0.0  # default duration when not provided
@@ -270,8 +250,8 @@ class Tymer(Tymee):
     def wind(self, tymth):
         """
         Inject new ._tymist and any other bundled tymee references
-        Update any dependencies on a change in ._tymist:
-            starts over itself at new ._tymists time
+        Update any dependencies on a change in ._tymist by restarting at the
+        new ._tymist time.
         """
         super(Tymer, self).wind(tymth)
         self.start()
@@ -280,8 +260,8 @@ class Tymer(Tymee):
     def start(self, duration=None, start=None):
         """
         Starts Tymer of duration secs at start time start secs.
-            If duration not provided then uses current duration
-            If start not provided then starts at current .tyme
+        If duration not provided then uses current duration.
+        If start not provided then starts at current .tyme.
         """
         # remember current duration when duration not provided
         duration = float(duration) if duration is not None else self.duration
@@ -297,6 +277,3 @@ class Tymer(Tymee):
         No time lost. Useful to extend Tymer so no time lost
         """
         return self.start(duration=duration, start=self._stop)
-
-
-
