@@ -42,14 +42,11 @@ def isign(i):
 def sceil(r):
     """
     Symmetric ceiling function
-    Returns:
-       sceil (int): value that is symmetric ceiling of r away from zero
+    Returns the symmetric ceiling of r away from zero.
 
-    Because int() provides a symmetric floor towards zero, just inc int(r) by:
-     1 when r - int(r) >  0  (r positive)
-    -1 when r - int(r) <  0  (r negative)
-     0 when r - int(r) == 0  (r integral already)
-    abs(r) > abs(int(r) or 0 when abs(r)
+    Because int() provides a symmetric floor towards zero, increment int(r) by
+    1 when r - int(r) > 0 (r positive), -1 when r - int(r) < 0 (r negative), and
+    0 when r - int(r) == 0 (r integral already).
     """
     return (int(r) + isign(r - int(r)))
 
@@ -59,11 +56,11 @@ def copyfunc(f, name=None):
     Copy a function in detail.
     To change name of func provide name parameter
 
-    functools to update_wrapper assigns and updates following attributes
-    WRAPPER_ASSIGNMENTS = ('__module__', '__name__', '__qualname__', '__doc__',
-                       '__annotations__')
-    WRAPPER_UPDATES = ('__dict__',)
-    Based on
+    functools.update_wrapper assigns and updates attributes in WRAPPER_ASSIGNMENTS
+    (__module__, __name__, __qualname__, __doc__, __annotations__) and
+    WRAPPER_UPDATES (__dict__).
+
+    Based on:
     https://stackoverflow.com/questions/6527633/how-can-i-make-a-deepcopy-of-a-function-in-python
     https://stackoverflow.com/questions/13503079/how-to-create-a-copy-of-a-python-function
     """
@@ -119,63 +116,64 @@ def attributize(genie):
 
     When wrapped the new type is AttributiveGenerator
 
-    Usage:
-    # decorated generator function
-    @attributize
-    def bar(me, req=None, rep=None):
-        me._status = 400  # or copy from rep.status
-        me._headers = odict(example="Hi")  # or copy from rep.headers
-        yield b""
-        yield b""
-        yield b"Hello There"
-        return b"Goodbye"
+    Usage::
 
-    gen = bar()
-    msg = next(gen)  # attributes set after first next
-    gen._status
-    gen._headers
-
-    # decorated generator method
-    class R:
+        # decorated generator function
         @attributize
-        def bar(self, me, req=None, rep=None):
-            self.name = "Peter"
+        def bar(me, req=None, rep=None):
             me._status = 400  # or copy from rep.status
             me._headers = odict(example="Hi")  # or copy from rep.headers
             yield b""
             yield b""
-            yield b"Hello There " + self.name.encode()
+            yield b"Hello There"
             return b"Goodbye"
 
-    r = R()
-    gen = r.bar()
-    msg = next(gen)   # attributes set after first next
-    gen._status
-    gen._headers
+        gen = bar()
+        msg = next(gen)  # attributes set after first next
+        gen._status
+        gen._headers
 
-    # use as function wrapper directly instead of as decorator
-    def gf(me, x):  # convention injected reference to attributed wrapper is 'me'
-        me.x = 5
-        me.y = 'a'
-        cnt = 0
-        while cnt < x:
-            yield cnt
-            cnt += 1
+        # decorated generator method
+        class R:
+            @attributize
+            def bar(self, me, req=None, rep=None):
+                self.name = "Peter"
+                me._status = 400  # or copy from rep.status
+                me._headers = odict(example="Hi")  # or copy from rep.headers
+                yield b""
+                yield b""
+                yield b"Hello There " + self.name.encode()
+                return b"Goodbye"
 
-    agf = attributize(gf)
-    ag = agf(3)
-    # body of gf is not run until first next call
-    assert isIterator(ag)
-    assert not hasattr(ag, 'x')
-    assert not hasattr(ag, 'y')
-    n = next(ag)  # first run here which sets up attributes
-    assert n == 0
-    assert hasattr(ag, 'x')
-    assert hasattr(ag, 'y')
-    assert ag.x == 5
-    assert ag.y =='a'
-    n = next(ag)
-    assert n == 1
+        r = R()
+        gen = r.bar()
+        msg = next(gen)   # attributes set after first next
+        gen._status
+        gen._headers
+
+        # use as function wrapper directly instead of as decorator
+        def gf(me, x):  # convention injected reference to attributed wrapper is 'me'
+            me.x = 5
+            me.y = 'a'
+            cnt = 0
+            while cnt < x:
+                yield cnt
+                cnt += 1
+
+        agf = attributize(gf)
+        ag = agf(3)
+        # body of gf is not run until first next call
+        assert isIterator(ag)
+        assert not hasattr(ag, 'x')
+        assert not hasattr(ag, 'y')
+        n = next(ag)  # first run here which sets up attributes
+        assert n == 0
+        assert hasattr(ag, 'x')
+        assert hasattr(ag, 'y')
+        assert ag.x == 5
+        assert ag.y =='a'
+        n = next(ag)
+        assert n == 1
 
     Adding attributes to this injected reference makes them available
     as attributes of the resultant wrapper.
@@ -194,9 +192,10 @@ def attributize(genie):
     and the generator locals dict at .gi_frame.f_locals dissappears once the
     generator is complete so its inconvenient.
 
-    Fixed attributes of generator objects.
-    ['.__next__', '__iter__', 'close', 'gi_code', 'gi_frame', 'gi_running',
-    'gi_yieldfrom', 'send', 'throw']
+    Fixed attributes of generator objects::
+
+        ['.__next__', '__iter__', 'close', 'gi_code', 'gi_frame', 'gi_running',
+        'gi_yieldfrom', 'send', 'throw']
     """
 
     def wrapper(*args, **kwargs):
@@ -244,27 +243,27 @@ def repack(n, seq, default=None):
         last element of the generator
         default (None) is substituted for missing elements when len(seq) < n
 
-        Example:
+        Example::
 
-        x = (1, 2, 3, 4)
-        tuple(repack(3, x))
-        (1, 2, (3, 4))
+            x = (1, 2, 3, 4)
+            tuple(repack(3, x))
+            (1, 2, (3, 4))
 
-        x = (1, 2, 3)
-        tuple(repack(3, x))
-        (1, 2, (3,))
+            x = (1, 2, 3)
+            tuple(repack(3, x))
+            (1, 2, (3,))
 
-        x = (1, 2)
-        tuple(repack(3, x))
-        (1, 2, ())
+            x = (1, 2)
+            tuple(repack(3, x))
+            (1, 2, ())
 
-        x = (1, )
-        tuple(repack(3, x))
-        (1, None, ())
+            x = (1, )
+            tuple(repack(3, x))
+            (1, None, ())
 
-        x = ()
-        tuple(repack(3, x))
-        (None, None, ())
+            x = ()
+            tuple(repack(3, x))
+            (None, None, ())
 
     """
     it = iter(seq)
@@ -278,23 +277,23 @@ def just(n, seq, default=None):
         default (None) for any missing elements. This guarantees that a generator of exactly
         n elements is returned. This is to enable unpacking into n varaibles
 
-        Example:
+        Example::
 
-        x = (1, 2, 3, 4)
-        tuple(just(3, x))
-        (1, 2, 3)
-        x = (1, 2, 3)
-        tuple(just(3, x))
-        (1, 2, 3)
-        x = (1, 2)
-        tuple(just(3, x))
-        (1, 2, None)
-        x = (1, )
-        tuple(just(3, x))
-        (1, None, None)
-        x = ()
-        tuple(just(3, x))
-        (None, None, None)
+            x = (1, 2, 3, 4)
+            tuple(just(3, x))
+            (1, 2, 3)
+            x = (1, 2, 3)
+            tuple(just(3, x))
+            (1, 2, 3)
+            x = (1, 2)
+            tuple(just(3, x))
+            (1, 2, None)
+            x = (1, )
+            tuple(just(3, x))
+            (1, None, None)
+            x = ()
+            tuple(just(3, x))
+            (None, None, None)
 
     """
     it = iter(seq)
@@ -373,16 +372,9 @@ def ocfn(path, mode='r+', perm=(stat.S_IRUSR | stat.S_IWUSR)):
     """
     Atomically open or create file from filepath.
 
-    If file already exists, Then open file using openMode
-    Else create file using write update mode If not binary Else
-        write update binary mode
-    Returns file object
-
-    If binary Then If new file open with write update binary mode
-
-    x = stat.S_IRUSR | stat.S_IWUSR
-    384 == 0o600
-    436 == octal 0664
+    If file already exists, open with mode. Otherwise create a new file using
+    write/update mode (binary if "b" in mode). Returns file object.
+    perm uses mode bits like stat.S_IRUSR | stat.S_IWUSR (0o600).
     """
     try:  # create new file
         newfd = os.open(path, os.O_EXCL | os.O_CREAT | os.O_RDWR, perm)
@@ -474,14 +466,12 @@ Reb64 = re.compile(B64REX)  # compile is faster
 
 def intToB64(i, l=1):
     """Converts int i to at least l Base64 chars as str.
-    Returns:
-        b64 (str): Base64 converstion of i of length minimum l. If more than
-                    l chars are needed to represent i in Base64 then returned
-                    str is lengthed appropriately. When less then l chars is
-                    needed then returned str is prepadded with 'A' character.
 
-    l is min number of b64 digits left padded with Base64 0 == "A" char
-    The length of return bytes extended to accomodate full Base64 encoding of i
+    Returns Base64 conversion of i of minimum length l. If more than l chars
+    are needed to represent i in Base64 then the string is lengthened
+    appropriately. When fewer than l chars are needed, the string is left
+    padded with "A". l is the minimum number of Base64 digits, where Base64 0
+    is "A".
     """
     d = deque()  # deque of characters base64
 
@@ -588,17 +578,12 @@ def codeB2ToB64(b, l):
 
 
 def nabSextets(b, l):
-    """Nab l sextets from front of b
-    Returns:
-        sextets (bytes): first l sextets from front (left) of b as bytes
-        (byte string). Length of bytes returned is minimum sufficient to hold
-        all l sextets. Last byte returned is right bit padded with zeros which
-        is compatible with mid padded codes on front of primitives
+    """Nab l sextets from front of b.
 
-    Parameters:
-        b (bytes | str): target from which to nab sextets
-        l (int): number of sextets to nab from front of b
-
+    Returns bytes with the first l sextets from the left of b. Length is the
+    minimum needed to hold all l sextets. The last byte is right padded with
+    zeros to be compatible with mid-padded codes on front of primitives.
+    b is bytes or str, and l is the number of sextets to nab.
     """
     if hasattr(b, 'encode'):
         b = b.encode()  # convert to bytes
@@ -619,5 +604,3 @@ def nabSextets(b, l):
 ATREX = r'^[a-zA-Z_][a-zA-Z0-9_]*$'
 # Usage: if Reat.match(name): or if not Reat.match(name):
 Reat = re.compile(ATREX)  # compile is faster
-
-
