@@ -508,29 +508,32 @@ def parseLeader(raw, eols=(CRLF, LF), kind="leader header line", headers=None):
 
 def parseChunk(raw):  # reading transfer encoded raw
     """
-    Generator to parse next chunk from raw bytearray
-    Consumes used portions of raw
-    Yields None If waiting for more bytes
-    Yields tuple (size, parms, trails, chunk) Otherwise
-    Where:
-        size is int size of the chunk
-        parms is dict of chunk extension parameters
-        trails is dict of chunk trailer headers (only on last chunk if any)
-        chunk is chunk if any or empty if not
+    Generator to parse next chunk from raw bytearray.
+    Consumes used portions of raw.
+    Yields None while waiting for more bytes.
+    Yields tuple (size, parms, trails, chunk) otherwise.
 
-    Chunked-Body   = *chunk
-                last-chunk
-                trailer
-                CRLF
-    chunk          = chunk-size [ chunk-extension ] CRLF
-                     chunk-data CRLF
-    chunk-size     = 1*HEX
-    last-chunk     = 1*("0") [ chunk-extension ] CRLF
-    chunk-extension= *( ";" chunk-ext-name [ "=" chunk-ext-val ] )
-    chunk-ext-name = token
-    chunk-ext-val  = token | quoted-string
-    chunk-data     = chunk-size(OCTET)
-    trailer        = *(entity-header CRLF)
+    Tuple values:
+    - `size`: integer size of the chunk.
+    - `parms`: dict of chunk extension parameters.
+    - `trails`: dict of chunk trailer headers (only on last chunk if any).
+    - `chunk`: chunk data or empty if not present.
+
+    ABNF::
+
+        Chunked-Body    = *chunk
+                         last-chunk
+                         trailer
+                         CRLF
+        chunk           = chunk-size [ chunk-extension ] CRLF
+                          chunk-data CRLF
+        chunk-size      = 1*HEX
+        last-chunk      = 1*("0") [ chunk-extension ] CRLF
+        chunk-extension = *( ";" chunk-ext-name [ "=" chunk-ext-val ] )
+        chunk-ext-name  = token
+        chunk-ext-val   = token | quoted-string
+        chunk-data      = chunk-size(OCTET)
+        trailer         = *(entity-header CRLF)
     """
     size = 0
     parms = dict()
@@ -691,31 +694,34 @@ class EventSource(object):
 
     def parseEvents(self):
         """
-        Generator to parse events from .raw bytearray and append to .events
-        Each event is dict with the following items:
-             id: event id utf-8 decoded or empty
-           name: event name utf-8 decoded or empty
-           data: event data utf-8 decoded
-           json: event data deserialized to dict when applicable pr None
+        Generator to parse events from .raw bytearray and append to .events.
 
-        assigns .retry if any
+        Each event is a dict with:
+        - `id`: event id UTF-8 decoded or empty.
+        - `name`: event name UTF-8 decoded or empty.
+        - `data`: event data UTF-8 decoded.
+        - `json`: event data deserialized to dict when applicable or None.
 
-        Yields None If waiting for more bytes
-        Yields True When done
+        Assigns `.retry` if present.
 
+        Yields None while waiting for more bytes.
+        Yields True when done.
 
-        event         = *( comment / field ) end-of-line
-        comment       = colon *any-char end-of-line
-        field         = 1*name-char [ colon [ space ] *any-char ] end-of-line
-        end-of-line   = ( cr lf / cr / lf / eof )
-        eof           = < matches repeatedly at the end of the stream >
-        lf            = \n 0xA
-        cr            = \r 0xD
-        space         = 0x20
-        colon         = 0x3A
-        bom           = \uFEFF when encoded as utf-8 b'\xef\xbb\xbf'
-        name-char     = a Unicode character other than LF, CR, or :
-        any-char      = a Unicode character other than LF or CR
+        ABNF::
+
+            event         = *( comment / field ) end-of-line
+            comment       = colon *any-char end-of-line
+            field         = 1*name-char [ colon [ space ] *any-char ] end-of-line
+            end-of-line   = ( cr lf / cr / lf / eof )
+            eof           = < matches repeatedly at the end of the stream >
+            lf            = %x0A
+            cr            = %x0D
+            space         = %x20
+            colon         = %x3A
+            bom           = U+FEFF (UTF-8 bytes EF BB BF)
+            name-char     = a Unicode character other than LF, CR, or :
+            any-char      = a Unicode character other than LF or CR
+
         Event streams in this format must always be encoded as UTF-8. [RFC3629]
         """
         eid = self.leid
@@ -785,37 +791,38 @@ class EventSource(object):
 
     def parseEventStream(self):
         """
-        Generator to parse event stream from .raw bytearray stream
-        appends each event to .events deque.
-        assigns .bom if any
-        assigns .retry if any
-        Parses until connection closed
+        Generator to parse event stream from .raw bytearray stream.
+        Appends each event to .events deque.
+        Assigns `.bom` and `.retry` if present.
+        Parses until the connection is closed.
 
-        Each event is dict with the following items:
-              id: event id utf-8 decoded or empty
-            name: event name utf-8 decoded or empty
-            data: event data utf-8 decoded
-            json: event data deserialized to dict when applicable pr None
+        Each event is a dict with:
+        - `id`: event id UTF-8 decoded or empty.
+        - `name`: event name UTF-8 decoded or empty.
+        - `data`: event data UTF-8 decoded.
+        - `json`: event data deserialized to dict when applicable or None.
 
-        Yields None If waiting for more bytes
-        Yields True When completed and sets .ended to True
-        If BOM present at beginning of event stream then assigns to .bom and
-        deletes.
-        Consumes bytearray as it parses
+        Yields None while waiting for more bytes.
+        Yields True when completed and sets `.ended` to True.
+        If BOM is present at the beginning, assigns `.bom` and consumes it.
+        Consumes the bytearray as it parses.
 
-        stream        = [ bom ] *event
-        event         = *( comment / field ) end-of-line
-        comment       = colon *any-char end-of-line
-        field         = 1*name-char [ colon [ space ] *any-char ] end-of-line
-        end-of-line   = ( cr lf / cr / lf / eof )
-        eof           = < matches repeatedly at the end of the stream >
-        lf            = \n 0xA
-        cr            = \r 0xD
-        space         = 0x20
-        colon         = 0x3A
-        bom           = \uFEFF when encoded as utf-8 b'\xef\xbb\xbf'
-        name-char     = a Unicode character other than LF, CR, or :
-        any-char      = a Unicode character other than LF or CR
+        ABNF::
+
+            stream        = [ bom ] *event
+            event         = *( comment / field ) end-of-line
+            comment       = colon *any-char end-of-line
+            field         = 1*name-char [ colon [ space ] *any-char ] end-of-line
+            end-of-line   = ( cr lf / cr / lf / eof )
+            eof           = < matches repeatedly at the end of the stream >
+            lf            = %x0A
+            cr            = %x0D
+            space         = %x20
+            colon         = %x3A
+            bom           = U+FEFF (UTF-8 bytes EF BB BF)
+            name-char     = a Unicode character other than LF, CR, or :
+            any-char      = a Unicode character other than LF or CR
+
         Event streams in this format must always be encoded as UTF-8. [RFC3629]
         """
         self.bom = None
@@ -859,11 +866,9 @@ class EventSource(object):
 
     def parse(self):
         """
-        Service the event stream parsing
-        must call .makeParser to setup parser
-        When done parsing,
-           .parser is None
-           .ended is True
+        Service the event stream parsing.
+        Call `.makeParser` to set up the parser.
+        When done parsing, `.parser` is None and `.ended` is True.
         """
         if self.parser:
             result = next(self.parser)
@@ -1027,11 +1032,9 @@ class Parsent(object):
 
     def parse(self):
         """
-        Service the message parsing
-        must call .makeParser to setup parser
-        When done parsing,
-           .parser is None
-           .ended is True
+        Service the message parsing.
+        Call `.makeParser` to set up the parser.
+        When done parsing, `.parser` is None and `.ended` is True.
         """
         if self.parser:
             result = next(self.parser)
@@ -1051,4 +1054,3 @@ class Parsent(object):
                                        object_pairs_hook=dict)
             except ValueError as ex:
                 self.data = None
-
