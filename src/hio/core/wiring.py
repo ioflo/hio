@@ -28,12 +28,12 @@ def openWL(cls=None, name="test", temp=True, **kwa):
         temp is Boolean, True means open in temporary directory, clear on close
                 Otherwise open in persistent directory, do not clear on close
 
-    Usage:
+    Usage::
 
-    with openWL(name="bob") as wl:
-        wl.writeRx  ....
+        with openWL(name="bob") as wl:
+            wl.writeRx  ....
 
-    with openWL(name="eve", cls=SubclassedWireLog)
+        with openWL(name="eve", cls=SubclassedWireLog)
 
     """
     wl = None
@@ -59,7 +59,11 @@ class WireLog():
         .samed is Boolean True means log both rx and tx to same file or buffer
         .filed is Boolean True means log to file False means log to memory buffer
         .fmt is io write bytes printf style format string
-            Default is b'\n%(dx)b %(who)b:\n%(data)b\n' where:
+            Default is::
+
+                b"\\n%(dx)b %(who)b:\\n%(data)b\\n"
+
+            where:
                 who is src or dst for rx tx respectively
                 dx is the io direction and will be set to either b'tx' or b'rx' and
                 data is the actual io data as bytes
@@ -422,35 +426,19 @@ class WireLogDoer(doing.Doer):
     """
     Basic WireLog Doer
 
-    Inherited Attributes:
-        .done is Boolean completion state:
-            True means completed
-            Otherwise incomplete. Incompletion maybe due to close or abort.
+    Inherited attributes: .done is Boolean completion state. True means completed.
+    Otherwise incomplete. Incompletion maybe due to close or abort.
 
-    Attributes:
-        .wl is WireLog subclass
+    Attributes: .wl is WireLog subclass.
 
-    Inherited Properties:
-        .tyme is float ._tymist.tyme, relative cycle or artificial time
-        .tock is float, desired time in seconds between runs or until next run,
-                 non negative, zero means run asap
+    Inherited properties: .tyme is float ._tymist.tyme, relative cycle or artificial time.
+    .tock is float, desired time in seconds between runs or until next run,
+    non negative, zero means run asap.
 
-    Properties:
+    Methods include `.wind`, `.__call__`, `.do`, `.enter`, `.recur`, `.exit`,
+    `.close`, and `.abort`.
 
-    Methods:
-        .wind  injects ._tymist dependency
-        .__call__ makes instance callable
-            Appears as generator function that returns generator
-        .do is generator method that returns generator
-        .enter is enter context action method
-        .recur is recur context action method or generator method
-        .exit is exit context method
-        .close is close context method
-        .abort is abort context method
-
-    Hidden:
-       ._tymist is Tymist instance reference
-       ._tock is hidden attribute for .tock property
+    Hidden attributes: `._tymist` and `._tock`.
     """
 
     def __init__(self, wl, **kwa):

@@ -21,7 +21,8 @@ class LineError(hioing.HioError):
     """
     Serial line error. Too big for buffer.
 
-    Usage:
+    Usage::
+
         raise LineError("error message")
     """
 
@@ -407,35 +408,35 @@ class Device():
         The input mode, canonical or noncanonical, is controlled by the
         ICANON flag see termios module.
 
-        Raw mode
+        Raw mode::
 
-        def setraw(fd, when=TCSAFLUSH):
-            Put terminal into a raw mode.
-            mode = tcgetattr(fd)
-            mode[IFLAG] = mode[IFLAG] & ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON)
-            mode[OFLAG] = mode[OFLAG] & ~(OPOST)
-            mode[CFLAG] = mode[CFLAG] & ~(CSIZE | PARENB)
-            mode[CFLAG] = mode[CFLAG] | CS8
-            mode[LFLAG] = mode[LFLAG] & ~(ECHO | ICANON | IEXTEN | ISIG)
-            mode[CC][VMIN] = 1
-            mode[CC][VTIME] = 0
-            tcsetattr(fd, when, mode)
+            def setraw(fd, when=TCSAFLUSH):
+                Put terminal into a raw mode.
+                mode = tcgetattr(fd)
+                mode[IFLAG] = mode[IFLAG] & ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON)
+                mode[OFLAG] = mode[OFLAG] & ~(OPOST)
+                mode[CFLAG] = mode[CFLAG] & ~(CSIZE | PARENB)
+                mode[CFLAG] = mode[CFLAG] | CS8
+                mode[LFLAG] = mode[LFLAG] & ~(ECHO | ICANON | IEXTEN | ISIG)
+                mode[CC][VMIN] = 1
+                mode[CC][VTIME] = 0
+                tcsetattr(fd, when, mode)
 
 
-        # set up raw mode / no echo / binary
-        cflag |=  (TERMIOS.CLOCAL|TERMIOS.CREAD)
-        lflag &= ~(TERMIOS.ICANON|TERMIOS.ECHO|TERMIOS.ECHOE|TERMIOS.ECHOK|TERMIOS.ECHONL|
-                     TERMIOS.ISIG|TERMIOS.IEXTEN) #|TERMIOS.ECHOPRT
-        for flag in ('ECHOCTL', 'ECHOKE'): # netbsd workaround for Erk
-            if hasattr(TERMIOS, flag):
-                lflag &= ~getattr(TERMIOS, flag)
+            # set up raw mode / no echo / binary
+            cflag |=  (TERMIOS.CLOCAL|TERMIOS.CREAD)
+            lflag &= ~(TERMIOS.ICANON|TERMIOS.ECHO|TERMIOS.ECHOE|TERMIOS.ECHOK|TERMIOS.ECHONL|
+                         TERMIOS.ISIG|TERMIOS.IEXTEN) #|TERMIOS.ECHOPRT
+            for flag in ('ECHOCTL', 'ECHOKE'): # netbsd workaround for Erk
+                if hasattr(TERMIOS, flag):
+                    lflag &= ~getattr(TERMIOS, flag)
 
-        oflag &= ~(TERMIOS.OPOST)
-        iflag &= ~(TERMIOS.INLCR|TERMIOS.IGNCR|TERMIOS.ICRNL|TERMIOS.IGNBRK)
-        if hasattr(TERMIOS, 'IUCLC'):
-            iflag &= ~TERMIOS.IUCLC
-        if hasattr(TERMIOS, 'PARMRK'):
-            iflag &= ~TERMIOS.PARMRK
+            oflag &= ~(TERMIOS.OPOST)
+            iflag &= ~(TERMIOS.INLCR|TERMIOS.IGNCR|TERMIOS.ICRNL|TERMIOS.IGNBRK)
+            if hasattr(TERMIOS, 'IUCLC'):
+                iflag &= ~TERMIOS.IUCLC
+            if hasattr(TERMIOS, 'PARMRK'):
+                iflag &= ~TERMIOS.PARMRK
 
         """
         self.close()
@@ -822,5 +823,3 @@ class Driver():
         """
         self.serviceReceives()
         self.serviceSends()
-
-

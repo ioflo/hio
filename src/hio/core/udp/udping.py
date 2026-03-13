@@ -74,21 +74,15 @@ class Peer(hioing.Mixin):
                  **kwa):
         """
         Initialization method for instance.
-        Parameters:
-            name (str): unique identifier of peer for managment purposes
-            ha (tuple): local socket (host, port) address duple of type (str, int)
-            host (str): address where '' means any interface on host
-            port (int): socket port
-            bc (int | None): count of transport buffers of MaxGramSize
-            bs (int | None): buffer size of transport buffers. When .bc is provided
-                then .bs is calculated by multiplying, .bs = .bc * .MaxGramSize.
-                When .bc is not provided, then if .bs is provided use provided
-                value else use default .BufSize
-            wl (WireLog): instance ref for debug logging of over the wire tx and rx
-            bcast (bool): True enables sending to broadcast addresses from local socket
-                          False otherwise
-            reopen (bool): True (re)open with this init
-                           False not (re)open with this init but later (default)
+        name is a unique identifier of peer for management purposes.
+        ha is a local socket (host, port) address duple of type (str, int).
+        host is address where '' means any interface on host. port is socket port.
+        bc is count of transport buffers of MaxGramSize. bs is buffer size of
+        transport buffers; when bc is provided, bs = bc * MaxGramSize. When bc
+        is not provided, bs uses provided value or defaults to BufSize.
+        wl is a WireLog instance ref for debug logging of over the wire tx/rx.
+        bcast enables sending to broadcast addresses from local socket.
+        reopen True means (re)open with this init; False means open later.
         """
 
         self.name = name
@@ -347,26 +341,22 @@ class PeerDoer(doing.Doer):
         """Do 'enter' context actions. Override in subclass. Not a generator method.
         Set up resources. Comparable to context manager enter.
 
-        Parameters:
-            temp (bool | None): True means use temporary file resources if any
-                                None means ignore parameter value. Use self.temp
+        temp is bool or None. True means use temporary file resources if any.
+        None means ignore parameter value and use self.temp.
 
-        Inject temp or self.temp into file resources here if any
-
-        Doist or DoDoer winds its doers on enter
+        Inject temp or self.temp into file resources here if any.
         """
         # inject temp into file resources here if any
         self.peer.reopen(temp=temp)
 
 
     def recur(self, tyme):
-        """"""
+        """Override to service receives and sends."""
         pass  # Override in subclass to service receives and sends
 
 
 
 
     def exit(self):
-        """"""
+        """Close peer resources."""
         self.peer.close()
-
