@@ -16,54 +16,57 @@ class Deck(deque):
     access. .push does not allow  a value of None to be added to the Deck. This
     enables retrieval  with .pull(emptive=True) which returns None when empty
     instead of raising IndexError. This allows use of the walrus operator on
-    a pull to both assign and check for empty. For example:
+    a pull to both assign and check for empty. For example::
 
-    deck.extend([False, "", []])  # falsy elements but not None
-    stuff = []
-    if x := deck.pull(emptive=True)) is not None:
-        stuff.append(x)  # do something with x
-    assert stuff == [False]
+        deck.extend([False, "", []])  # falsy elements but not None
+        stuff = []
+        if (x := deck.pull(emptive=True)) is not None:
+            stuff.append(x)  # do something with x
+        assert stuff == [False]
 
-
-    deck.extend([False, "", []])  # falsy elements but not None
-    stuff = []
-    while (x := deck.pull(emptive=True)) is not None:
-        stuff.append(x)
-    assert stuff == [False, "", []]
-    assert not deck
-
+        deck.extend([False, "", []])  # falsy elements but not None
+        stuff = []
+        while (x := deck.pull(emptive=True)) is not None:
+            stuff.append(x)
+        assert stuff == [False, "", []]
+        assert not deck
 
 
-    Local methods:
-    .push(x) = add x if x is not None to the right side of deque (like append)
-    .pull(x) = remove and return element from left side of deque (like popleft)
+
+    Local methods::
+
+        .push(x) = add x if x is not None to the right side of deque (like append)
+        .pull(x) = remove and return element from left side of deque (like popleft)
 
 
-    Inherited methods from deque:
-    .append(x)             = add x to right side of deque
-    .appendleft(x)         = add x to left side of deque
-    .clear()               = clear all items from deque leaving it a length 0
-    .count(x)              = count the number of deque elements equal to x.
-    .extend(iterable)      = append elements of iterable to right side
-    .extendleft(iterable)  = append elemets of iterable to left side
-                             (this reverses iterable)
-    .pop()                 = remove and return element from right side
-                              if empty then raise IndexError
-    .popleft()             = remove and return element from left side
-                              if empty then raise IndexError
-    .remove(x)             = remove first occurence of x left to right
-                              if not found raise ValueError
-    .rotate(n)             = rotate n steps to right if neg rotate to left
+    Inherited methods from deque::
 
-    Built in methods supported:
-    len(d)
-    reversed(d)
-    copy.copy(d)
-    copy.deepcopy(d)
-    subscripts d[0] d[-1]
+        .append(x)             = add x to right side of deque
+        .appendleft(x)         = add x to left side of deque
+        .clear()               = clear all items from deque leaving it a length 0
+        .count(x)              = count the number of deque elements equal to x.
+        .extend(iterable)      = append elements of iterable to right side
+        .extendleft(iterable)  = append elemets of iterable to left side
+                                 (this reverses iterable)
+        .pop()                 = remove and return element from right side
+                                  if empty then raise IndexError
+        .popleft()             = remove and return element from left side
+                                  if empty then raise IndexError
+        .remove(x)             = remove first occurence of x left to right
+                                  if not found raise ValueError
+        .rotate(n)             = rotate n steps to right if neg rotate to left
 
-    Attributes:
-    .maxlen  = maximum size of Deck or None if unbounded
+    Built in methods supported::
+
+        len(d)
+        reversed(d)
+        copy.copy(d)
+        copy.deepcopy(d)
+        subscripts d[0] d[-1]
+
+    Attributes::
+
+        .maxlen  = maximum size of Deck or None if unbounded
 
     """
     def __repr__(self):

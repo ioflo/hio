@@ -17,23 +17,14 @@ from ..hioing import OglerError
 
 def initOgler(level=logging.CRITICAL, **kwa):
     """
-    Initialize the ogler global instance once
-    Usage:
-       # At top level of module in project
-       # assign ogler as module global instance availabe at modulename.ogler
-       ogler = hio.help.ogling.initOgler()
+    Initialize the ogler global instance once.
 
-       # module is mypackage.help  then ogler at mypackage.help.ogler
-
-    Critical is most severe to restrict logging by default
-
-    Parameters:
-        force is Boolean True is to force reinit even if global ogler is not None
-        level is default logging level
-
-    This should be called in package .__init__ to insure that global ogler is
-    defined by default. Users may then reset level and reopen log file if need be
-    before calling ogler.getLoggers()
+    Usage: assign ogler = hio.help.ogling.initOgler() at module top level.
+    Critical is most severe to restrict logging by default.
+    force is Boolean True to reinit even if global ogler is not None; level is
+    default logging level.
+    Call in package .__init__ to ensure that global ogler is defined by default.
+    Users may reset level and reopen log file before calling ogler.getLoggers().
     """
     return Ogler(level=level, **kwa)
 
@@ -77,7 +68,7 @@ class Ogler():
     Only need one Ogler per application
     Uses python stdlib logging module, logging.getLogger(name).
     Multiple calls to .getLogger() with the same name will always return a
-       reference to the same Logger object.
+    reference to the same Logger object.
 
     Attributes:
         name (str): usage specific component used in file name
@@ -357,4 +348,3 @@ class Ogler():
         if self.filed and self.opened:
             logger.addHandler(self.baseFileHandler)
         return logger
-
