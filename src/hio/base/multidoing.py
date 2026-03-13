@@ -35,29 +35,27 @@ ogler = ogling.initOgler(prefix='hio_mp', name="Boss", level=logging.ERROR)
 
 
 
-"""Bossage (namedtuple):
-Bosser info to be injected in Crewer as Bosser enter time
-Fields:
-   name (str | None): name of Boss for resource management
-   path (str | None): UXD cmd memo path used by crew to talk to their boss
-"""
+# Bossage (namedtuple):
+# Bosser info to be injected in Crewer as Bosser enter time.
+# Fields:
+#   name (str or None): name of Boss for resource management
+#   path (str or None): UXD cmd memo path used by crew to talk to their boss
 Bossage = namedtuple("Bossage", "name path")
 
-"""Loadage (namedtuple):
-Bosser info to be injected into Crewer .start() containing both crew doist
-parms for Process target kwargs and and Crewer parms
-
-Fields:
-   name (str): child doist identifier for resources.
-   tyme (float): child doist start tyme
-   tock (float | None): child doist tock, tyme lag between runs
-   real (bool): child doist True means run in real time, tyme is real time
-   limit (float | None): child doist tyme limit. None means run forever
-   doers (list[Doers]): child doist List of Doers
-   temp (bool | None): True means use temporary file resources
-   boss (Bossage | None): Bosser  info for Crewer. May be filled at enter time
-                      Crewer uses to contact Bosser.
-"""
+# Loadage (namedtuple):
+# Bosser info to be injected into Crewer .start() containing both crew doist
+# parms for Process target kwargs and and Crewer parms.
+#
+# Fields:
+#   name (str): child doist identifier for resources
+#   tyme (float): child doist start tyme
+#   tock (float or None): child doist tock, tyme lag between runs
+#   real (bool): child doist True means run in real time, tyme is real time
+#   limit (float or None): child doist tyme limit. None means run forever
+#   doers (list[Doers]): child doist List of Doers
+#   temp (bool or None): True means use temporary file resources
+#   boss (Bossage or None): Bosser info for Crewer. May be filled at enter time.
+#     Crewer uses to contact Bosser.
 Loadage = namedtuple("Loadage", "name tyme tock real limit doers temp boss")
 
 
@@ -69,29 +67,27 @@ TAGREX = r'^\{"tag":"(?P<tag>[A-Z]*)"'
 # if match := retag.match(memo): tag =match.group(0)
 Retag = re.compile(TAGREX)  # compile is faster
 
-"""RawDom hidden methods
-
-    Inherited Class Methods:
-        _fromdict(cls, d: dict): return dataclass converted from dict d
-        _fromjson(cls, s: str|bytes): return dataclass converted from json s
-        _fromcbor(cls, s: bytes): return dataclass converted from cbor s
-        _frommgpk(cls, s: bytes): return dataclass converted from mgpk s
-
-    Inherited Methods:
-        __iter__(self): asdict(self)
-        _asdict(self): return self converted to dict
-        _asjson(self): return bytes self converted to json
-        _ascbor(self): return bytes self converted to cbor
-        _asmgpk(self): return bytes self converted to mgpk
-
-"""
+# RawDom hidden methods:
+#
+# Inherited class methods:
+#   _fromdict(cls, d: dict): return dataclass converted from dict d
+#   _fromjson(cls, s: str or bytes): return dataclass converted from json s
+#   _fromcbor(cls, s: bytes): return dataclass converted from cbor s
+#   _frommgpk(cls, s: bytes): return dataclass converted from mgpk s
+#
+# Inherited methods:
+#   __iter__(self): asdict(self)
+#   _asdict(self): return self converted to dict
+#   _asjson(self): return bytes self converted to json
+#   _ascbor(self): return bytes self converted to cbor
+#   _asmgpk(self): return bytes self converted to mgpk
 @dataclass
 class HandDom(RawDom):
     """Configuration dataclass of Crewer crew hand info managed by its Bosser
     boss.
 
     Attributes:
-        proc (typing.Any | None): crew hand subprocess or None
+        proc (typing.Any or None): crew hand subprocess or None
         exiting (bool): True means commanded to exit but may not have exited yet
                         False means not yet commanded to exit
 
@@ -111,13 +107,13 @@ class CrewDom(RawDom):
     Attributes:
         name (str): child doist identifier for resources.
         tyme (float): child doist start tyme
-        tock (float | None): child doist tock, tyme lag between runs
+        tock (float or None): child doist tock, tyme lag between runs
         real (bool): child doist True means run in real time, tyme is real time
-        limit (float | None): child doist tyme limit. None means run forever
+        limit (float or None): child doist tyme limit. None means run forever
         doers (list[Doers]): child doist List of Doers
-        temp (bool | None): True means use temporary file resources
-        boss (Bossage | None): Bosser  info for Crewer. May be filled at enter time
-                                Crewer uses to contact Bosser.
+        temp (bool or None): True means use temporary file resources
+        boss (Bossage or None): Bosser info for Crewer. May be filled at enter time
+                    Crewer uses to contact Bosser.
     """
     name: str ='child'  # unique identifier of child process and associated resources
     tyme: float = 0.0    # child doist start tyme
@@ -258,13 +254,17 @@ class MultiDoerBase(Namer, PeerMemoer, Doer):
 
     See Namer, PeerMemoer, and Doer for inherited attributes, properties, and methods.
 
-    Inherited Class Attributes:
+    Inherited Class Attributes::
+
         See Namer, PeerMemoer and Doer Classes
 
-    Class Attributes:
+    Class Attributes::
+
         Tagex (TagDomCodex):  codex mapping memo tags to memo doms
 
-    Inherited Attributes:  (See Doer and PeerMemoer for all)
+    Inherited Attributes::
+
+        (See Doer and PeerMemoer for all)
         done (bool): completion state:
                      True means completed fully. Otherwise incomplete.
                      Incompletion value may be None or False.
@@ -276,10 +276,11 @@ class MultiDoerBase(Namer, PeerMemoer, Doer):
                      False otherwise
         reopen (bool): True (re)open with this init
                        False not (re)open with this init but later (default)
-        bc (int | None): count of transport buffers of MaxGramSize
+        bc (int or None): count of transport buffers of MaxGramSize
 
-    Attributes:
-        logger (Logger | None): from module scope ogler created at enter time
+    Attributes::
+
+        logger (Logger or None): from module scope ogler created at enter time
                         with local resources.
         graceful (bool): indication to gracefully exit on next recur. Set by
                          .force signal handler. Must add check in .self.recur
@@ -287,7 +288,8 @@ class MultiDoerBase(Namer, PeerMemoer, Doer):
                          True means exit on next recur
                          False otherwise.
 
-    Inherited Properties:
+    Inherited Properties::
+
         tyme (float): is float relative cycle time of associated Tymist .tyme obtained
             via injected .tymth function wrapper closure.
         tymth (closure): function wrapper closure returned by Tymist.tymen()
@@ -303,9 +305,8 @@ class MultiDoerBase(Namer, PeerMemoer, Doer):
         countNameAddr (int): count of entries in .addrByName
 
 
-    Properties:
+    Inherited Methods::
 
-    Inherited Methods:
         __call__()  makes instance callable as generator function returning generator
         do() generator method that returns generator
         enter() is enter context action method
@@ -329,7 +330,8 @@ class MultiDoerBase(Namer, PeerMemoer, Doer):
     def __init__(self, *, name='base', temp=False, reopen=False, bc=4, **kwa):
         """Initialize instance.
 
-        Inherited Parameters:  (see Doer and PeerMemoer for all)
+        Inherited Parameters::  (see Doer and PeerMemoer for all)
+
             name (str): unique identifier for this Bosser boss to be used
                         to manage local resources
             temp (bool): True means logger or other file resources created by
@@ -337,11 +339,11 @@ class MultiDoerBase(Namer, PeerMemoer, Doer):
                          False otherwise
             reopen (bool): True (re)open with this init
                            False not (re)open with this init but later (default)
-            bc (int | None): count of transport buffers of MaxGramSize
+            bc (int or None): count of transport buffers of MaxGramSize
 
-        Parameters:
+        Parameters::
 
-
+            None
         """
         super(MultiDoerBase, self).__init__(name=name,
                                             temp=temp,
@@ -365,8 +367,9 @@ class MultiDoerBase(Namer, PeerMemoer, Doer):
         Start processes with config from .loads
         Not a generator method.
 
-        Parameters:
-            temp (bool | None): True means use temporary file resources if any.
+        Parameters::
+
+            temp (bool or None): True means use temporary file resources if any.
                                 None means ignore parameter value. Use self.temp.
 
         Inject temp or self.temp into file resources here if any
@@ -393,11 +396,14 @@ class MultiDoerBase(Namer, PeerMemoer, Doer):
     def tojson(d):
         """Returns compact JSON serialization of d suitable for .memoit.
 
-        Parameters:
-            d (dict | list): object to be serialized
+        Parameters::
 
-        Returns:
+            d (dict or list): object to be serialized
+
+        Returns::
+
             s (str): serialized JSON
+
         """
         return json.dumps(d, separators=(",", ":"),ensure_ascii=False )
 
@@ -413,14 +419,17 @@ class Bosser(MultiDoerBase):
 
     See MultiDoerBase for all inherited attributes, properties, and methods.
 
-    Inherited Class Attributes:
+    Inherited Class Attributes::
+
         See MultiDoerBase Class
 
 
-    Inherited Attributes:  (See MultiDoerBase Class for all)
+    Inherited Attributes::
+
+        (See MultiDoerBase Class for all)
         name (str): unique identifier for this instance
                     used to manage local resources
-        logger (Logger | None): from module scope ogler created at enter time
+        logger (Logger or None): from module scope ogler created at enter time
                         with local resources.
         graceful (bool): indication to gracefully exit on next recur. Set by
                          .force signal handler. Must add check in .self.recur
@@ -428,35 +437,38 @@ class Bosser(MultiDoerBase):
                          True means exit on next recur
                          False otherwise.
 
-    Attributes:
+    Attributes::
+
         loads (list[dict]): Bosser info to be injected into Crewer .start()
                             containing both crew doist parmss for Process target
                             kwargs and and Crewer parms
                             (see Loadage._asdict() or CrewDom._asdict())
-        ctx (mp.context.SpawnContext | None): context under which to spawn processes
+        ctx (mp.context.SpawnContext or None): context under which to spawn processes
         crew (dict): values HandDom instances keyed by name
         crewed (bool): True means all crew members have registered memo interface
                             with this boss.
                        False means not yet
 
 
-    Inherited Properties:
+    Inherited Properties::
+
         See MultiDoerBase Class
 
-    Properties:
+    Inherited Methods::
 
-    Inherited Methods:
         See MultiDoerBase Class
     """
 
     def __init__(self, *, name='boss',loads=None, **kwa):
         """Initialize instance.
 
-        Inherited Parameters:  (see Doer and PeerMemoer for all)
+        Inherited Parameters::  (see Doer and PeerMemoer for all)
+
             name (str): unique identifier for this instance to be used
                         to manage local resources
 
-        Parameters:
+        Parameters::
+
             loads (list[dict]): parameters used to spinup crew hand subprocess
                                 .start(). See fields of Loadage and Bossage
 
@@ -475,8 +487,9 @@ class Bosser(MultiDoerBase):
         Start processes with config from .loads
         Not a generator method.
 
-        Parameters:
-            temp (bool | None): True means use temporary file resources if any.
+        Parameters::
+
+            temp (bool or None): True means use temporary file resources if any.
                                 None means ignore parameter value. Use self.temp.
 
         Inject temp or self.temp into file resources here if any
@@ -617,19 +630,20 @@ class Bosser(MultiDoerBase):
         """Process target function to spinup and run doist inside crew subprocess
         after it has been started.
 
-        Parameters:
+        Parameters::
+
             name (str): unique crew hand name to be used to manage resources
             tyme (float): crew doist initial value of cycle time in seconds
-            tock (float | None): crew doist tock time in seconds. None means run Asap
+            tock (float or None): crew doist tock time in seconds. None means run Asap
             real (bool): crew doist True means run in real time,
                         Otherwise run faster than real
-            limit (float | None): crew doist seconds for max run time of doist.
+            limit (float or None): crew doist seconds for max run time of doist.
                                   None means no limit.
-            doers (iterable[Doer] | None): crew doist Doer class instances
+            doers (iterable[Doer] or None): crew doist Doer class instances
                                    First entry must be Crewer
-            temp (bool | None): True means use temp file resources by injection.
+            temp (bool or None): True means use temp file resources by injection.
                                 Otherwise ignore do not inject.
-            boss (Bossage | None): boss info. May be filled at enter time
+            boss (Bossage or None): boss info. May be filled at enter time
                                   Crewer uses to contact Bosser.
 
 
@@ -669,14 +683,17 @@ class Crewer(MultiDoerBase):
 
     See MultiDoerBase for all inherited attributes, properties, and methods.
 
-    Inherited Class Attributes:
+    Inherited Class Attributes::
+
         See MultiDoerBase Class
 
 
-    Inherited Attributes:  (See MultiDoerBase Class for all)
+    Inherited Attributes::
+
+        (See MultiDoerBase Class for all)
         name (str): unique identifier for this instance
                     used to manage local resources
-        logger (Logger | None): from module scope ogler created at enter time
+        logger (Logger or None): from module scope ogler created at enter time
                         with local resources.
         graceful (bool): indication to gracefully exit on next recur. Set by
                          .force signal handler. Must add check in .self.recur
@@ -684,18 +701,19 @@ class Crewer(MultiDoerBase):
                          True means exit on next recur
                          False otherwise.
 
-    Attributes:
-        boss (Bossage | None): contact info for communicating with boss
+    Attributes::
+
+        boss (Bossage or None): contact info for communicating with boss
         registered (bool): True means .path acked registered with boss memoing
                            False not yet registered
 
 
-    Inherited Properties:
+    Inherited Properties::
+
         See MultiDoerBase Class
 
-    Properties:
+    Inherited Methods::
 
-    Inherited Methods:
         See MultiDoerBase Class
 
     """
@@ -703,12 +721,15 @@ class Crewer(MultiDoerBase):
     def __init__(self, *, name='crew', boss=None, **kwa):
         """Initialize instance.
 
-        Inherited Parameters:
+        Inherited Parameters::
+
             name (str): unique identifier for this instance to be used
                         to manage local resources
             temp (bool): True means logger or other file resources created by
+                         .start() will use temp
 
-        Parameters:
+        Parameters::
+
             boss (Bossage): contact info for Bosser. assigned by boss at enter
 
 
@@ -729,8 +750,9 @@ class Crewer(MultiDoerBase):
         Set up resources. Comparable to context manager enter.
         Not a generator method.
 
-        Parameters:
-            temp (bool | None): True means use temporary file resources if any
+        Parameters::
+
+            temp (bool or None): True means use temporary file resources if any
                                 None means ignore parameter value. Use self.temp
 
         Inject temp or self.temp into file resources here if any
@@ -837,6 +859,3 @@ class Crewer(MultiDoerBase):
                     for name, addr in load.items():
                         if name != self.name:  # don't put self in own address book
                             self.addNameAddr(name=name, addr=addr)
-
-
-
