@@ -29,7 +29,8 @@ def actify(name, *, base=None, attrs=None):
     Registers new subclass in ActBase.Registry. Then instantiates cls and returns
     instance.
 
-    Returns:
+    Returns::
+
         instance (cls): instance of new subclass
 
     Updates the class attributes of new subclass with attrs if any.
@@ -40,15 +41,17 @@ def actify(name, *, base=None, attrs=None):
     But when given a function on can decorate it with actify so that a new
     subclass of ActBase is created and registered.
 
-    Usage:
+    Usage::
+
         @actify(name="Tact")
-        def test(self, **kwa):  # signature for .act with **iops as **kwa
+        def test(self, **kwa):  # signature for .act with ``**iops`` as ``**kwa``
             assert kwa == self.iops
             return self.iops
 
         t = test(iops=dict(what=1), hello="hello", nabe=Nabe.redo)
 
     Notes:
+
     In Python, when a function is assigned as the value of a class attribute,
     the value of that attribute is automagically converted to a bound method of
     that class with injected self as first argument.
@@ -111,7 +114,8 @@ def register(names=None):
     A class decorator is necessary so that the class object is already created
     when decorator is applied.
 
-    Parameters:
+    Parameters::
+
         names (None|str|Iterator): iterator of names as aliases besides class
             name to register class in Act registry and assigned to cls.Names
 
@@ -147,7 +151,8 @@ def register(names=None):
 class ActBase(Mixin):
     """Act Base Class. Callable with Registry of itself and its subclasses.
 
-    Class Attributes:
+    Class Attributes::
+
         Registry (dict): subclass registry whose items are (name, cls) where:
                 name is unique name for subclass
                 cls is reference to class object
@@ -157,16 +162,19 @@ class ActBase(Mixin):
                 overrides with a subclass specific Index value to track
                 subclass specific instance default names.
 
-    Attributes:
+    Attributes::
+
         hold (Hold): data shared by boxwork
 
 
-    Properties:
+    Properties::
+
         name (str): unique name string of instance
         iops (dict): input-output-parameters for .act
         nabe (str): action nabe (context) for .act
 
-    Hidden
+    Hidden::
+
         _name (str): unique name of instance for .name property
         _iopts (dict): input-output-paramters for .act for .iops property
         _nabe (str): action nabe (context) for .act for .nabe property
@@ -181,7 +189,8 @@ class ActBase(Mixin):
         """Adds cls to cls.Registry entry by name. Raises HierError if already
         registered.
 
-        Parameters:
+        Parameters::
+
             cls (Type[Act]): class to be registered
             name (None|str): key to register cls under.
                              When None then use cls.__name__
@@ -214,7 +223,8 @@ class ActBase(Mixin):
     def __init__(self, *, name=None, iops=None, nabe=Nabes.endo, hold=None, **kwa):
         """Initialization method for instance.
 
-        Parameters:
+        Parameters::
+
             name (str|None): unique name of this instance. When None then
                 generate name from .Index. Used for .name property which is
                  used for registering Act instance in Act registry
@@ -236,7 +246,7 @@ class ActBase(Mixin):
         """Make ActBase instance a callable object.
         Call its .act method with expanded self.iops as parameters
 
-        This enables compiled exec/eval str to have **iops in local scope
+        This enables compiled exec/eval str to have ``**iops`` in local scope
         """
         return self.act(**self.iops)  # put self.iops into local scope of .act
 
@@ -244,8 +254,8 @@ class ActBase(Mixin):
     def act(self, **iops):
         """Act called by Actor. Should override in subclass.
 
-        Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+        Parameters::
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
@@ -256,7 +266,8 @@ class ActBase(Mixin):
     def name(self):
         """Property getter for ._name
 
-        Returns:
+        Returns::
+
             name (str): unique identifier of instance
         """
         return self._name
@@ -266,7 +277,8 @@ class ActBase(Mixin):
     def name(self, name=None):
         """Property setter for ._name
 
-        Parameters:
+        Parameters::
+
             name (str|None): unique identifier of instance. When None generate
                 unique name using .Index
         """
@@ -291,7 +303,8 @@ class ActBase(Mixin):
     def iops(self):
         """Property getter for ._iopts. Makes ._iopts read only
 
-        Returns:
+        Returns::
+
             iops (dict): input-output-parameters for .act
         """
         return self._iops
@@ -301,7 +314,8 @@ class ActBase(Mixin):
     def nabe(self):
         """Property getter for ._nabe. Makes ._nabe read only
 
-        Returns:
+        Returns::
+
             nabe (str): action nabe (context) for .act
         """
         return self._nabe
@@ -316,7 +330,8 @@ class Act(ActBase):
 
     do(deed)
 
-    Inherited Class Attributes:
+    Inherited Class Attributes::
+
         Registry (dict): subclass registry whose items are (name, cls) where:
                 name is unique name for subclass
                 cls is reference to class object
@@ -328,30 +343,36 @@ class Act(ActBase):
         Names (tuple[str]): tuple of aliases (names) under which this subclas
                             appears in .Registry. Created by @register
 
-    Overridden Class Attributes
+    Overridden Class Attributes::
+
         Index (int): default naming index for subclass instances. Each subclass
                 overrides with a subclass specific Index value to track
                 subclass specific instance default names.
 
 
-    Inherited Properties:
+    Inherited Properties::
+
         name (str): unique name string of instance
         iops (dict): input-output-parameters for .act
         nabe (str): action nabe (context) for .act
 
-    Inherited Attributes:
+    Inherited Attributes::
+
         hold (Hold): data shared by boxwork
 
-    Attributes:
+    Attributes::
 
+        None.
 
-    Properties:
+    Properties::
+
         deed (Callable|str): action to be called with .iops as parameters else
                 executable set of statements with H as local
         compiled (bool): True means ._code holds compiled .deed
                          False means not yet compiled
 
-    Hidden:
+    Hidden::
+
         _name (str|None): unique name of instance
         _iopts (dict): input-output-paramters for .act
         _nabe (str): action nabe (context) for .act
@@ -367,7 +388,8 @@ class Act(ActBase):
     def __init__(self, deed=None, **kwa):
         """Initialization method for instance.
 
-        Inherited Parameters:
+        Inherited Parameters::
+
             name (str|None): unique name of this instance. When None then
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
@@ -376,7 +398,8 @@ class Act(ActBase):
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
-        Parameters:
+        Parameters::
+
             deed (None|str|Callable): compilable exec str or callable to be
                                       actioned with iops
                                       None means use default lambda
@@ -393,8 +416,9 @@ class Act(ActBase):
     def act(self, **iops):  # passed in by call
         """Act called by ActBase.
 
-        Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+        Parameters::
+
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
         """
         if callable(self.deed):  # not compilable str
@@ -411,7 +435,8 @@ class Act(ActBase):
     def deed(self):
         """Property getter for ._deed
 
-        Returns:
+        Returns::
+
             deed (str|Callable): compilable exec statement str or callable.
         """
         return self._deed
@@ -421,7 +446,8 @@ class Act(ActBase):
     def deed(self, deed):
         """Property setter for ._expr
 
-        Parameters:
+        Parameters::
+
             deed (str|Callable): compilable exec statement str or Callable
         """
         self._deed = deed
@@ -432,7 +458,8 @@ class Act(ActBase):
     def compiled(self):
         """Property compiled
 
-        Returns:
+        Returns::
+
             compiled (bool): True means ._code holds compiled ._expr
                              False means not yet compiled or Callable
         """
@@ -454,7 +481,8 @@ class Goact(ActBase):
     need expression to determine if a transition condition is satified for
     transition to its destination box.
 
-    Inherited Class Attributes:
+    Inherited Class Attributes::
+
         Registry (dict): subclass registry whose items are (name, cls) where:
                 name is unique name for subclass
                 cls is reference to class object
@@ -466,24 +494,29 @@ class Goact(ActBase):
         Names (tuple[str]): tuple of aliases (names) under which this subclas
                             appears in .Registry. Created by @register
 
-    Overridden Class Attributes
+    Overridden Class Attributes::
+
         Index (int): default naming index for subclass instances. Each subclass
                 overrides with a subclass specific Index value to track
                 subclass specific instance default names.
 
-    Inherited Properties:
+    Inherited Properties::
+
         name (str): unique name string of instance
         iops (dict): input-output-parameters for .act
         nabe (str): action nabe (context) for .act
 
-    Inherited Attributes:
+    Inherited Attributes::
+
         hold (Hold): data shared by boxwork
 
-    Attributes:
+    Attributes::
+
         dest (Box): destination Box for this transition.
         need (Need): transition condition to be evaluated
 
-    Hidden
+    Hidden::
+
         _name (str|None): unique name of instance
         _iops (dict): input-output-paramters for .act
         _context (str): action context for .act
@@ -497,7 +530,8 @@ class Goact(ActBase):
     def __init__(self, dest=None, need=None, **kwa):
         """Initialization method for instance.
 
-        Inherited Parameters:
+        Inherited Parameters::
+
             name (str|None): unique name of this instance. When None then
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
@@ -506,7 +540,8 @@ class Goact(ActBase):
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
-        Parameters:
+        Parameters::
+
             dest (None|str|Box): destination Box for this transition.
                 When None then resolve later to next box of current box
                 When str is box name then resolve to box with that name
@@ -530,8 +565,9 @@ class Goact(ActBase):
     def act(self, **iops):
         """Act called by ActBase.
 
-        Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+        Parameters::
+
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
@@ -551,7 +587,8 @@ class EndAct(ActBase):
 
 
 
-    Inherited Class Attributes:
+    Inherited Class Attributes::
+
         Registry (dict): subclass registry whose items are (name, cls) where:
                 name is unique name for subclass
                 cls is reference to class object
@@ -563,27 +600,34 @@ class EndAct(ActBase):
         Names (tuple[str]): tuple of aliases (names) under which this subclas
                             appears in .Registry. Created by @register
 
-    Overridden Class Attributes
+    Overridden Class Attributes::
+
         Index (int): default naming index for subclass instances. Each subclass
                 overrides with a subclass specific Index value to track
                 subclass specific instance default names.
 
 
-    Inherited Properties:
+    Inherited Properties::
+
         name (str): unique name string of instance
         iops (dict): input-output-parameters for .act
         nabe (str): action nabe (context) for .act
 
-    Inherited Attributes:
+    Inherited Attributes::
+
         hold (Hold): data shared by boxwork
 
-    Attributes:
+    Attributes::
 
-    Used iops:
+        None.
+
+    Used iops::
+
         _boxer (str):  boxer name
 
 
-    Hidden
+    Hidden::
+
         _name (str|None): unique name of instance
         _iops (dict): input-output-parameters for .act
         _nabe (str): action nabe (context) for .act
@@ -594,7 +638,8 @@ class EndAct(ActBase):
     def __init__(self, nabe=Nabes.endo, **kwa):
         """Initialization method for instance.
 
-        Inherited Parameters:
+        Inherited Parameters::
+
             name (str|None): unique name of this instance. When None then
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
@@ -603,9 +648,12 @@ class EndAct(ActBase):
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
-        Parameters:
+        Parameters::
 
-        Used iops:
+            None.
+
+        Used iops::
+
             _boxer (str): boxer name. Implicit iop injected by verb (do etc)
 
 
@@ -627,8 +675,9 @@ class EndAct(ActBase):
     def act(self, **iops):
         """Act called by ActBase.
 
-        Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+        Parameters::
+
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
@@ -643,7 +692,8 @@ class Beact(ActBase):
 
     be(lhs, rhs)  left_hand_side = right_hand_side
 
-    Inherited Class Attributes:
+    Inherited Class Attributes::
+
         Registry (dict): subclass registry whose items are (name, cls) where:
                 name is unique name for subclass
                 cls is reference to class object
@@ -655,21 +705,25 @@ class Beact(ActBase):
         Names (tuple[str]): tuple of aliases (names) under which this subclas
                             appears in .Registry. Created by @register
 
-    Overridden Class Attributes
+    Overridden Class Attributes::
+
         Index (int): default naming index for subclass instances. Each subclass
                 overrides with a subclass specific Index value to track
                 subclass specific instance default names.
 
 
-    Inherited Properties:
+    Inherited Properties::
+
         name (str): unique name string of instance
         iops (dict): input-output-parameters for .act
         nabe (str): action nabe (context) for .act
 
-    Inherited Attributes:
+    Inherited Attributes::
+
         hold (Hold): data shared by boxwork
 
-    Properties:
+    Properties::
+
         lhs (tuple[str]): left hand sige of assignment of form (key,field)
             to be assigned as .mine[key][field]
         rhs (None|str|Callable):
@@ -679,7 +733,8 @@ class Beact(ActBase):
         compiled (bool): True means ._code holds compiled rhs
                          False means not yet compiled
 
-    Hidden:
+    Hidden::
+
         _name (str|None): unique name of instance
         _iopts (dict): input-output-paramters for .act
         _nabe (str): action nabe (context) for .act
@@ -697,7 +752,8 @@ class Beact(ActBase):
     def __init__(self, lhs: str|tuple([str]), rhs: None|str|Callable=None, **kwa):
         """Initialization method for instance.
 
-        Inherited Parameters:
+        Inherited Parameters::
+
             name (str|None): unique name of this instance. When None then
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
@@ -706,7 +762,8 @@ class Beact(ActBase):
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
-        Parameters:
+        Parameters::
+
             lhs (str|tuple(str])): left hand side of assignment in mine[key][field]
                 when str of form key.field in mine to be assigned.
                 Resolves lhs to (key, field)
@@ -733,8 +790,9 @@ class Beact(ActBase):
     def act(self, **iops):  # passed in by call
         """Act called by ActBase.
 
-        Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+        Parameters::
+
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
         """
         key, field = self.lhs
@@ -759,7 +817,8 @@ class Beact(ActBase):
     def lhs(self):
         """Property getter for ._lhs
 
-        Returns:
+        Returns::
+
             lhs (tuple[str]): of form (key, field)
         """
         return self._lhs
@@ -769,7 +828,8 @@ class Beact(ActBase):
     def lhs(self, lhs):
         """Property setter for ._lhs
 
-        Parameters:
+        Parameters::
+
             lhs (str|tuple[str]): left hand side of assignment in mine[key][field]
                 when str of form key.field in mine to be assigned.
                 Resolves lhs to (key, field)
@@ -784,7 +844,8 @@ class Beact(ActBase):
     def rhs(self):
         """Property getter for ._rhs
 
-        Returns:
+        Returns::
+
             rhs (None|str|Callable):  right hand side of assignment
                 When None assign directly
                 When str compile to evable expression
@@ -797,7 +858,8 @@ class Beact(ActBase):
     def rhs(self, rhs):
         """Property setter for ._rhs
 
-        Parameters:
+        Parameters::
+
             rhs (None|str|Callable):  right hand side of assignment
                 When None assign directly
                 When str compile to evable expression
@@ -810,7 +872,8 @@ class Beact(ActBase):
     def compiled(self):
         """Property compiled
 
-        Returns:
+        Returns::
+
             compiled (bool): True means ._code holds compiled ._expr
                              False means not yet compiled
         """
@@ -831,7 +894,8 @@ class Mark(ActBase):
     """Mark is base class that is subclass of ActBase whose .act marks a box
     for a special need condition.
 
-    Inherited Class Attributes:
+    Inherited Class Attributes::
+
         Registry (dict): subclass registry whose items are (name, cls) where:
                 name is unique name for subclass
                 cls is reference to class object
@@ -843,29 +907,35 @@ class Mark(ActBase):
         Names (tuple[str]): tuple of aliases (names) under which this subclas
                             appears in .Registry. Created by @register
 
-    Overridden Class Attributes
+    Overridden Class Attributes::
+
         Index (int): default naming index for subclass instances. Each subclass
                 overrides with a subclass specific Index value to track
                 subclass specific instance default names.
 
 
-    Inherited Properties:
+    Inherited Properties::
+
         name (str): unique name string of instance
         iops (dict): input-output-parameters for .act
         nabe (str): action nabe (context) for .act
 
-    Inherited Attributes:
+    Inherited Attributes::
+
         hold (Hold): data shared by boxwork
 
-    Attributes:
+    Attributes::
+
         bag (Bag): marked bag in Mine
 
-    Used iops:
+    Used iops::
+
         _boxer (str):  boxer name
         _box (str): box name in boxer
 
 
-    Hidden
+    Hidden::
+
         _name (str|None): unique name of instance
         _iopts (dict): input-output-paramters for .act
         _nabe (str): action nabe (context) for .act
@@ -878,7 +948,8 @@ class Mark(ActBase):
     def __init__(self, nabe=Nabes.enmark, **kwa):
         """Initialization method for instance.
 
-        Inherited Parameters:
+        Inherited Parameters::
+
             name (str|None): unique name of this instance. When None then
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
@@ -887,9 +958,12 @@ class Mark(ActBase):
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
-        Parameters:
+        Parameters::
 
-        Used iops:
+            None.
+
+        Used iops::
+
             _boxer (str): boxer name. Implicit iop injected by verb
             _box (str): box name in boxer.  Implicit iop injected by verb
 
@@ -911,8 +985,9 @@ class Mark(ActBase):
 
         Override in subclass
 
-        Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+        Parameters::
+
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
@@ -933,7 +1008,8 @@ class LapseMark(Mark):
     def __init__(self, nabe=Nabes.enmark, **kwa):
         """Initialization method for instance.
 
-        Inherited Parameters:
+        Inherited Parameters::
+
             name (str|None): unique name of this instance. When None then
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
@@ -942,9 +1018,12 @@ class LapseMark(Mark):
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
-        Parameters:
+        Parameters::
 
-        Used iops:
+            None.
+
+        Used iops::
+
             _boxer (str): boxer name. Implicit iop injected by verb
             _box (str): box name in boxer.  Implicit iop injected by verb
             _key (str): marked bag key. Injected by on verb
@@ -962,8 +1041,9 @@ class LapseMark(Mark):
     def act(self, **iops):
         """Act called by ActBase.
 
-        Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+        Parameters::
+
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
@@ -987,7 +1067,7 @@ class RelapseMark(Mark):
     def __init__(self, nabe=Nabes.remark, **kwa):
         """Initialization method for instance.
 
-        Inherited Parameters:
+        Inherited Parameters::
             name (str|None): unique name of this instance. When None then
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
@@ -996,9 +1076,11 @@ class RelapseMark(Mark):
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
-        Parameters:
+        Parameters::
 
-        Used iops:
+            None.
+
+        Used iops::
             _boxer (str): boxer name. Implicit iop injected by verb
             _box (str): box name in boxer.  Implicit iop injected by verb
             _key (str): marked bag key. Injected by on verb
@@ -1016,8 +1098,8 @@ class RelapseMark(Mark):
     def act(self, **iops):
         """Act called by ActBase.
 
-        Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+        Parameters::
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
@@ -1041,7 +1123,7 @@ class Count(Mark):
     def __init__(self, nabe=Nabes.redo, **kwa):
         """Initialization method for instance.
 
-        Inherited Parameters:
+        Inherited Parameters::
             name (str|None): unique name of this instance. When None then
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
@@ -1050,9 +1132,11 @@ class Count(Mark):
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
-        Parameters:
+        Parameters::
 
-        Used iops:
+            None.
+
+        Used iops::
             _boxer (str): boxer name. Implicit iop injected by verb
             _box (str): box name in boxer.  Implicit iop injected by verb
 
@@ -1069,8 +1153,8 @@ class Count(Mark):
     def act(self, **iops):
         """Act called by ActBase.
 
-        Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+        Parameters::
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
@@ -1097,7 +1181,7 @@ class Discount(Mark):
     def __init__(self, nabe=Nabes.exdo, **kwa):
         """Initialization method for instance.
 
-        Inherited Parameters:
+        Inherited Parameters::
             name (str|None): unique name of this instance. When None then
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
@@ -1106,9 +1190,11 @@ class Discount(Mark):
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
-        Parameters:
+        Parameters::
 
-        Used iops:
+            None.
+
+        Used iops::
             _boxer (str): boxer name. Implicit iop injected by verb
             _box (str): box name in boxer.  Implicit iop injected by verb
 
@@ -1124,8 +1210,8 @@ class Discount(Mark):
     def act(self, **iops):
         """Act called by ActBase.
 
-        Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+        Parameters::
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
@@ -1143,7 +1229,8 @@ class BagMark(Mark):
     """BagMark (Mine Mark) is base classubclass of ActBase whose .act marks a
     bag value when in a box for a special need condition.
 
-    Inherited Class Attributes:
+    Inherited Class Attributes::
+
         Registry (dict): subclass registry whose items are (name, cls) where:
                 name is unique name for subclass
                 cls is reference to class object
@@ -1155,30 +1242,33 @@ class BagMark(Mark):
         Names (tuple[str]): tuple of aliases (names) under which this subclas
                             appears in .Registry. Created by @register
 
-    Overridden Class Attributes
+    Overridden Class Attributes::
+
         Index (int): default naming index for subclass instances. Each subclass
                 overrides with a subclass specific Index value to track
                 subclass specific instance default names.
 
 
-    Inherited Properties:
+    Inherited Properties::
+
         name (str): unique name string of instance
         iops (dict): input-output-parameters for .act
         nabe (str): action nabe (context) for .act
 
-    Inherited Attributes:
+    Inherited Attributes::
+
         hold (Hold): data shared by boxwork
 
-    Attributes:
+    Attributes::
         bag (Bag): marked bag in Mine
 
-    Used iops:
+    Used iops::
         _boxer (str):  boxer name
         _box (str): box name in boxer
         _key (str): marked bag key. Injected by on verb
 
 
-    Hidden
+    Hidden::
         _name (str|None): unique name of instance
         _iopts (dict): input-output-paramters for .act
         _nabe (str): action nabe (context) for .act
@@ -1191,7 +1281,7 @@ class BagMark(Mark):
     def __init__(self, nabe=Nabes.enmark, **kwa):
         """Initialization method for instance.
 
-        Inherited Parameters:
+        Inherited Parameters::
             name (str|None): unique name of this instance. When None then
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
@@ -1200,9 +1290,11 @@ class BagMark(Mark):
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
-        Parameters:
+        Parameters::
 
-        Used iops:
+            None.
+
+        Used iops::
             _boxer (str): boxer name. Implicit iop injected by verb
             _box (str): box name in boxer.  Implicit iop injected by verb
             _key (str): marked bag key. Injected by on verb
@@ -1226,8 +1318,8 @@ class BagMark(Mark):
 
         Override in subclass
 
-        Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+        Parameters::
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
@@ -1248,7 +1340,7 @@ class UpdateMark(BagMark):
     def __init__(self, nabe=Nabes.enmark, **kwa):
         """Initialization method for instance.
 
-        Inherited Parameters:
+        Inherited Parameters::
             name (str|None): unique name of this instance. When None then
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
@@ -1257,9 +1349,11 @@ class UpdateMark(BagMark):
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
-        Parameters:
+        Parameters::
 
-        Used iops:
+            None.
+
+        Used iops::
             _boxer (str): boxer name. Implicit iop injected by verb
             _box (str): box name in boxer.  Implicit iop injected by verb
             _key (str): marked bag key. Injected by on verb
@@ -1279,8 +1373,8 @@ class UpdateMark(BagMark):
     def act(self, **iops):
         """Act called by ActBase.
 
-        Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+        Parameters::
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
@@ -1304,7 +1398,7 @@ class ReupdateMark(BagMark):
     def __init__(self, nabe=Nabes.remark, **kwa):
         """Initialization method for instance.
 
-        Inherited Parameters:
+        Inherited Parameters::
             name (str|None): unique name of this instance. When None then
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
@@ -1313,9 +1407,11 @@ class ReupdateMark(BagMark):
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
-        Parameters:
+        Parameters::
 
-        Used iops:
+            None.
+
+        Used iops::
             _boxer (str): boxer name. Implicit iop injected by verb
             _box (str): box name in boxer.  Implicit iop injected by verb
             _key (str): marked bag key. Injected by on verb
@@ -1336,8 +1432,8 @@ class ReupdateMark(BagMark):
     def act(self, **iops):
         """Act called by ActBase.
 
-        Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+        Parameters::
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
@@ -1362,7 +1458,7 @@ class ChangeMark(BagMark):
     def __init__(self, nabe=Nabes.enmark, **kwa):
         """Initialization method for instance.
 
-        Inherited Parameters:
+        Inherited Parameters::
             name (str|None): unique name of this instance. When None then
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
@@ -1371,9 +1467,11 @@ class ChangeMark(BagMark):
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
-        Parameters:
+        Parameters::
 
-        Used iops:
+            None.
+
+        Used iops::
             _boxer (str): boxer name. Implicit iop injected by verb
             _box (str): box name in boxer.  Implicit iop injected by verb
             _key (str): marked bag key. Injected by on verb
@@ -1393,8 +1491,8 @@ class ChangeMark(BagMark):
     def act(self, **iops):
         """Act called by ActBase.
 
-        Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+        Parameters::
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
@@ -1420,7 +1518,7 @@ class RechangeMark(BagMark):
     def __init__(self, nabe=Nabes.remark, **kwa):
         """Initialization method for instance.
 
-        Inherited Parameters:
+        Inherited Parameters::
             name (str|None): unique name of this instance. When None then
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
@@ -1429,9 +1527,11 @@ class RechangeMark(BagMark):
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
-        Parameters:
+        Parameters::
 
-        Used iops:
+            None.
+
+        Used iops::
             _boxer (str): boxer name. Implicit iop injected by verb
             _box (str): box name in boxer.  Implicit iop injected by verb
             _key (str): marked bag key. Injected by on verb
@@ -1451,8 +1551,8 @@ class RechangeMark(BagMark):
     def act(self, **iops):
         """Act called by ActBase.
 
-        Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+        Parameters::
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
@@ -1472,7 +1572,7 @@ class CloseAct(ActBase):
     instance provided by iops item "it", if iops item "clear" provided then
     passes that value as clear parameter to it.close
 
-    Inherited Class Attributes:
+    Inherited Class Attributes::
         Registry (dict): subclass registry whose items are (name, cls) where:
                 name is unique name for subclass
                 cls is reference to class object
@@ -1484,29 +1584,32 @@ class CloseAct(ActBase):
         Names (tuple[str]): tuple of aliases (names) under which this subclas
                             appears in .Registry. Created by @register
 
-    Overridden Class Attributes
+    Overridden Class Attributes::
         Index (int): default naming index for subclass instances. Each subclass
                 overrides with a subclass specific Index value to track
                 subclass specific instance default names.
 
 
-    Inherited Properties:
+    Inherited Properties::
         name (str): unique name string of instance
         iops (dict): input-output-parameters for .act
         nabe (str): action nabe (context) for .act
 
-    Inherited Attributes:
+    Inherited Attributes::
         hold (Hold): data shared by boxwork
 
-    Attributes:
+    Attributes::
+
         it (Any): instance with Callable attribute .close
         clear (bool|None): clear parameter for .close method
 
-    Used iops:
+    Used iops::
+
         it (Any):  instance with .close method
         clear (bool|None):  when not None passes value to .close method
 
-    Hidden
+    Hidden::
+
         _name (str|None): unique name of instance
         _iops (dict): input-output-parameters for .act
         _nabe (str): action nabe (context) for .act
@@ -1517,7 +1620,8 @@ class CloseAct(ActBase):
     def __init__(self, nabe=Nabes.exdo, **kwa):
         """Initialization method for instance.
 
-        Inherited Parameters:
+        Inherited Parameters::
+
             name (str|None): unique name of this instance. When None then
                 generate name from .Index
             iops (dict|None): input-output-parameters for .act. When None then
@@ -1526,9 +1630,12 @@ class CloseAct(ActBase):
             mine (None|Mine): ephemeral bags in mine (in memory) shared by boxwork
             dock (None|Dock): durable bags in dock (on disc) shared by boxwork
 
-        Parameters:
+        Parameters::
 
-        Used iops:
+            None.
+
+        Used iops::
+
             it (Any):  instance with .close method
             clear (bool|None):  when not None passes value to .close method
 
@@ -1557,8 +1664,9 @@ class CloseAct(ActBase):
     def act(self, **iops):
         """Act called by ActBase.
 
-        Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+        Parameters::
+
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         """
