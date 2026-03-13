@@ -28,10 +28,8 @@ class Filer(hioing.Mixin):
         HeadDirPath (str): default abs dir path head such as "/usr/local/var"
         TailDirPath (str): default rel dir path tail when using head
         CleanTailDirPath (str): default rel dir path tail when creating clean
-        AltHeadDirPath (str): default alt dir path head such as  "~"
-                              as fallback when desired head not permitted.
-        AltTailDirPath (str): default alt rel dir path tail as fallback
-                              when using alt head.
+        AltHeadDirPath (str): default alt dir path head such as "~" (fallback).
+        AltTailDirPath (str): default alt rel dir path tail (alt head).
         AltCleanTailDirPath (str): default alt rel path tail when creating clean
         TempHeadDir (str): default temp abs dir path head such as "/tmp"
         TempPrefix (str): default rel dir path prefix when using temp head
@@ -46,16 +44,12 @@ class Filer(hioing.Mixin):
         headDirPath (str): head directory path
         path (str | None):  full directory or file path once created else None
         perm (int):  octal OS permissions for path directory and/or file
-        filed (bool): True means .path ends in file.
-                       False means .path ends in directory
-        extensioned (bool): When not filed:
-                                True means ensure .path ends with fext
-                                False means do not ensure .path ends with fext
+        filed (bool): True means .path ends in file. False means .path ends in directory
+        extensioned (bool): When not filed, True means ensure .path ends with fext.
         mode (str): file open mode if filed
         fext (str): file extension if filed
         file (File | None): File instance when filed and created.
-        opened (bool): True means directory created and if filed then file
-                is opened. False otherwise
+        opened (bool): True means directory created and if filed then file is opened. False otherwise
 
     Properties:
         name (str): unique path component used in directory or file path name
@@ -64,7 +58,8 @@ class Filer(hioing.Mixin):
         _name (str): unique name for .name property
 
 
-    File/Directory Creation Mode Notes:
+    File/Directory Creation Mode Notes::
+
         .Perm provides default restricted access permissions to directory and/or files
         stat.S_ISVTX | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
         0o1700==960
@@ -551,7 +546,7 @@ def openFiler(cls=None, name="test", temp=True, reopen=True, clear=False, **kwa)
                           False means do not remove directory upon close when reopening
     See filing.Filer for other keyword parameter passthroughs
 
-    Usage:
+    Usage::
 
     with openFiler(name="bob") as filer:
 
