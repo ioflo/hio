@@ -5,7 +5,8 @@ hio.base.hier.hiering Module
 Provides hierarchical action support
 
 
-Syntax notes for Mine and Dock use in boxwork:
+Syntax notes for Mine and Dock use in boxwork::
+
     H hold (Hold) boxwork shared data attribute syntax with locally scoped
        variable H ref for hold .
 
@@ -47,7 +48,8 @@ from ...help import isNonStringIterable, MapDom, modify, Renam
 """Nabage (namedtuple):
 Action nabes (contexts mileu neighborhood) for Acts
 
-Fields:
+Fields::
+
    native (str): native nabe
    predo (str): predo nabe
    remark (str): remark sub-nabe of rendo
@@ -75,7 +77,8 @@ class WorkDom(MapDom):
     make methods of Boxer by workify wrapper.
 
 
-    Attributes:
+    Attributes::
+
         box (Box | None): current box in box work. None if not yet a box
         over (Box | None): current over Box in box work. None if top level
         bxpre (str):  default box name prefix used to generate unique box name
@@ -91,5 +94,3 @@ class WorkDom(MapDom):
     bxidx: int = 0  # default box name index when name not provided
     acts: dict = field(default_factory=dict)  # registry of Acts by name & aliases
     nabe: str = Nabes.native  # current action nabe (context)
-
-

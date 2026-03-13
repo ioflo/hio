@@ -46,10 +46,12 @@ class Hold(Mine):
     of the Can when Can or Durq when Durq
 
 
-    Properties:
+    Properties::
+
         subery (None|Subery): gets instance from item at '_hold_subery' or None
 
-    Methods:
+    Methods::
+
         inject(self, key, val): injects .cans into val._sdb and key into val._key
 
 
@@ -59,9 +61,9 @@ class Hold(Mine):
         Mapping to '.' joined strings
 
         dict __init__ signature options are:
-            dict(**kwa)
-            dict(mapping, **kwa)
-            dict(iterable, **kwa)
+            ``dict(**kwa)``
+            ``dict(mapping, **kwa)``
+            ``dict(iterable, **kwa)``
         dict.update has same call signature
             d.update({"a": 5, "b": 2,}, c=3 , d=4)
         """
@@ -81,9 +83,9 @@ class Hold(Mine):
         Mapping to '.' joined strings
 
         dict __init__ signature options are:
-            dict(**kwa)
-            dict(mapping, **kwa)
-            dict(iterable, **kwa)
+            ``dict(**kwa)``
+            ``dict(mapping, **kwa)``
+            ``dict(iterable, **kwa)``
         dict.update has same call signature
             d.update({"a": 5, "b": 2,}, c=3 , d=4)
 
@@ -125,7 +127,8 @@ class Hold(Mine):
         """When val is instance of CanDom, injects .tokey(key) into val._key and
         .subery.cans into val._sdb
 
-        Parameters:
+        Parameters::
+
             key (str): for item
             val (Any|CanDom): for item. When instance subclass of CanDom then
                 inject to ._key and ._sdb
@@ -148,10 +151,8 @@ class Hold(Mine):
     def subery(self):
         """Gets value of special item '_hold_subery'
 
-        Returns:
+        Returns::
+
             subery (None|Subery): instance or None
         """
         return self["_hold_subery"]
-
-
-
