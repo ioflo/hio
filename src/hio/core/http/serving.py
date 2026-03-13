@@ -397,42 +397,17 @@ class Responder():
 
     def start(self, status, response_headers, exc_info=None):
         """
-        WSGI application start_response callable
+        WSGI application start_response callable.
 
-        Parameters:
+        Arguments:
+        - `status`: status string like "200 OK" or integer status code.
+        - `response_headers`: list of (field, value) tuples.
+        - `exc_info`: optional exception info; if headers already sent, re-raise.
 
-        status is string of status code and status reason '200 OK' or simple
-            status code int which will be replaced with string
-
-        response_headers is list of tuples of strings of the form (field, value)
-                          one tuple for each header example:
-                          [
-                              ('Content-type', 'text/plain'),
-                              ('X-Some-Header', 'value')
-                          ]
-
-        exc_info is optional exception info if exception occurred while
-                    processing request in wsgi application
-                    If exc_info is supplied, and no HTTP headers have been output yet,
-                    start_response should replace the currently-stored
-                    HTTP response headers with the newly-supplied ones,
-                    thus allowing the application to "change its mind" about
-                    the output when an error has occurred.
-
-                    However, if exc_info is provided, and the HTTP headers
-                    have already been sent, start_response must raise an error,
-                    and should re-raise using the exc_info tuple. That is:
-
-                    raise exc_info[1].with_traceback(exc_info[2]) (python3)
-
-        Nonstandard modifiction to allow for iterable/generator of body to change
-           headers and status before first write to support async processing of
-           responses whose iterator/generator yields empty before first non-empty
-           yield.  In .service yielding empty does not cause write so status line
-           and headers are not sent until first non-empty write.
-
-           The mode is that the app.headers and app.status are consulted to see
-           if changed from when .start = wsgi start_response was first called.
+        Nonstandard modification: allow iterables or generators to update
+        headers and status before the first non-empty write. In `.service`,
+        empty yields do not write, so headers are sent on the first non-empty
+        write. The app consults `app.headers` and `app.status` at that time.
         """
         if exc_info:
             try:
@@ -1369,7 +1344,7 @@ class ServerDoer(doing.Doer):
 
 
     def recur(self, tyme):
-        """"""
+        """Service the HTTP server once per recurrence."""
         self.server.service()
 
 
