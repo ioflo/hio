@@ -41,7 +41,7 @@ class PeerMemoer(Peer, Memoer):
         ha (tuple): host address of form (host,port) of type (str, int) of this
                 peer's socket address.
 
-        bc (int | None): count of transport buffers of MaxGramSize
+        bc (int or None): count of transport buffers of MaxGramSize
         bs (int): buffer size
         wl (WireLog): instance ref for debug logging of over the wire tx and rx
 
@@ -159,7 +159,8 @@ def openPM(cls=None, name="test", temp=True, reopen=True, **kwa):
 
     See udping.Peer for other keyword parameter passthroughs
 
-    Usage:
+    Usage::
+
         with openPM() as peer:
             peer.receive()
 

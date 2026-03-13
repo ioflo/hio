@@ -162,17 +162,18 @@ class PackifierPart(Part):
 
     Assumes unsigned fields values.
     Assumes network big endian so first fields element is high order bits.
-    Each field in format string is number of bits for the associated bit field
-    Fields with length of 1 are treated as has having boolean truthy field values
-       that is,   nonzero is True and packs as a 1
-    for 2+ length bit fields the field element is truncated to the number of
-       low order bits in the bit field
-    if sum of number of bits in fmt less than size bytes then the last byte in
-       the bytearray is right zero padded
-    if sum of number of bits in fmt greater than size bytes returns exception
+    Each field in format string is number of bits for the associated bit field.
+    Fields with length of 1 are treated as having boolean truthy field values
+    that is, nonzero is True and packs as a 1.
+    For 2+ length bit fields the field element is truncated to the number of
+    low order bits in the bit field.
+    If sum of number of bits in fmt less than size bytes then the last byte in
+    the bytearray is right zero padded.
+    If sum of number of bits in fmt greater than size bytes returns exception.
     to pad just use 0 value in source field.
-    example
-    packify("1 3 2 2", (True, 4, 0, 3)). returns bytearry([0xc3])
+    Example::
+
+        packify("1 3 2 2", (True, 4, 0, 3)). returns bytearry([0xc3])
     """
     Format = ''  # default packer struct format string for packed
 
@@ -347,4 +348,3 @@ class Packet(Part):
         Pack into .packed
         """
         return self.packed
-

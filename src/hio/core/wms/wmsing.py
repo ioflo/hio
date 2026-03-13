@@ -58,13 +58,13 @@ class Peer(filing.Filer):
         base (str): another unique path component inserted before name
         temp (bool): True means use TempHeadDir in /tmp directory
         headDirPath (str): head directory path
-        path (str | None):  full directory or file path once created else None
+        path (str or None):  full directory or file path once created else None
         perm (int):  numeric os permissions for directory and/or file(s)
         filed (bool): True means .path ends in file.
                        False means .path ends in directory
         mode (str): file open mode if filed
         fext (str): file extension if filed
-        file (File | None): File instance when filed and created.
+        file (File or None): File instance when filed and created.
         opened (bool): True means directory path, uxd file, and socket are
                 created and opened. False otherwise
 
@@ -77,7 +77,7 @@ class Peer(filing.Filer):
     Attributes:
         umask (int): unpermission mask for uxd file, usually octal 0o022
                      .umask is applied after .perm is set if any
-        bc (int | None): count of transport buffers of MaxGramSize
+        bc (int or None): count of transport buffers of MaxGramSize
         bs (int): buffer size of transport buffers. When .bc then .bs is calculated
             by multiplying, .bs = .bc * .MaxGramSize. When .bc is None then .bs
             is provided value or default .BufSize

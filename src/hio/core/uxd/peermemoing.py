@@ -36,7 +36,7 @@ class PeerMemoer(Peer, Memoer):
         """Initialization method for instance.
 
         Inherited Parameters:
-            bc (int | None): count of transport buffers of MaxGramSize
+            bc (int or None): count of transport buffers of MaxGramSize
 
             See memoing.Memoer for other inherited paramters
             See Peer for other inherited paramters
@@ -76,7 +76,8 @@ def openPM(cls=None, name="test", temp=True, reopen=True, clear=True,
 
     See filing.Filer and uxding.Peer for other keyword parameter passthroughs
 
-    Usage:
+    Usage::
+
         with openPM() as peer:
             peer.receive()
 
@@ -145,4 +146,3 @@ class PeerMemoerDoer(doing.Doer):
     def exit(self):
         """"""
         self.peer.close(clear=True)
-

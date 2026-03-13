@@ -36,7 +36,8 @@ def openServer(cls=None, **kwa):
     Parameters:
         cls is Class instance of subclass instance
 
-    Usage:
+    Usage::
+
         with openServer() as server0:
             server0.
 
@@ -80,11 +81,9 @@ class Acceptor(tyming.Tymee):
     def __init__(self, ha=None, bs=8096, bl=128, **kwa):
         """
         Initialization method for instance.
-        ha is host address duple (host, port) listen interfaces
-              host = "" or "0.0.0.0" means listen on all interfaces
-        bs = buffer size
-        bl (int): backlog size of not yet accepted concurrent tcp connections
-
+        ha is host address duple (host, port) listen interfaces. host = "" or
+        "0.0.0.0" means listen on all interfaces. bs is buffer size. bl is
+        backlog size of not yet accepted concurrent tcp connections.
         """
         super(Acceptor, self).__init__(**kwa)
         self.ha = ha or (host, port)  # ha = host address
@@ -435,18 +434,13 @@ def initServerContext(context=None,
 
     If certify is not None then use certify value provided Otherwise use default
 
-    context = context object for tls/ssl If None use default
-    version = ssl protocol version If None use default
-    certify = cert requirement If None use default
-              ssl.CERT_NONE = 0
-              ssl.CERT_OPTIONAL = 1
-              ssl.CERT_REQUIRED = 2
-    keypath = pathname of local server side PKI private key file path
-              If given apply to context
-    certpath = pathname of local server side PKI public cert file path
-              If given apply to context
-    cafilepath = Cert Authority file path to use to verify client cert
-              If given apply to context
+    context is the tls/ssl context object; if None use default.
+    version is ssl protocol version; if None use default.
+    certify is cert requirement; if None use default (ssl.CERT_NONE,
+    ssl.CERT_OPTIONAL, ssl.CERT_REQUIRED).
+    keypath is local server PKI private key file path; if given apply to context.
+    certpath is local server PKI public cert file path; if given apply to context.
+    cafilepath is cert authority file path to verify client cert; if given apply.
     """
     if context is None:  # create context
         if not version:  # use default context with default protocol version
@@ -598,10 +592,7 @@ class ServerTls(Server):
     def serviceConnects(self):
         """
         Service accept and handshake attempts
-        If not already accepted and handshaked  Then
-             make nonblocking attempt
-        For each successful handshaked add to .ixes
-        Returns handshakeds
+        For each successful handshake add to .ixes.
         """
         self.serviceAxes()
         self.serviceCxes()
@@ -627,16 +618,11 @@ class Remoter(tyming.Tymee):
 
         """
         Initialization method for instance.
-        ha = host address duple (host, port) near side of connection. cs.getsockname()
-             useful for debugging after cs is closed
-        ca = connection address used as key in severs's ixes. Need this to
-             know how to delete from .ixes when connection closed as .cs loses
-             cs.getpeername() after its closed.
-        cs = connection socket object
-        tymeout = tymeout for .tymer
-        refreshable = True if tx/rx activity refreshes timer False otherwise
-        bs = buffer size
-        wl = WireLog object if any
+           ha is host address duple (host, port) near side of connection.
+           ca is connection address used as key in server ixes.
+           cs is connection socket object. tymeout is tymeout for .tymer.
+           refreshable True means tx/rx activity refreshes timer.
+           bs is buffer size. wl is WireLog object if any.
         """
         super(Remoter, self).__init__(**kwa)
         self.ha = ha  # connection address of server
@@ -863,18 +849,13 @@ class RemoterTls(Remoter):
 
         """
         Initialization method for instance.
-        context = context object for tls/ssl If None use default
-        version = ssl version If None use default
-        certify = cert requirement If None use default
-                  ssl.CERT_NONE = 0
-                  ssl.CERT_OPTIONAL = 1
-                  ssl.CERT_REQUIRED = 2
-        keypath = pathname of local server side PKI private key file path
-                  If given apply to context
-        certpath = pathname of local server side PKI public cert file path
-                  If given apply to context
-        cafilepath = Cert Authority file path to use to verify client cert
-                  If given apply to context
+            context is tls/ssl context object; if None use default.
+            version is ssl version; if None use default.
+            certify is cert requirement; if None use default (ssl.CERT_NONE,
+            ssl.CERT_OPTIONAL, ssl.CERT_REQUIRED).
+            keypath is local server PKI private key file path; if given apply.
+            certpath is local server PKI public cert file path; if given apply.
+            cafilepath is cert authority file path to verify client cert; if given apply.
         """
         super(RemoterTls, self).__init__(**kwa)
 
@@ -1114,4 +1095,3 @@ class EchoServerDoer(ServerDoer):
     def exit(self):
         """"""
         self.server.close()
-

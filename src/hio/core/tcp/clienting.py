@@ -28,7 +28,8 @@ def openClient(cls=None, **kwa):
     Parameters:
         cls is Class instance of subclass instance
 
-    Usage:
+    Usage::
+
         with openClient() as client0:
             client0.accept()
 
@@ -802,5 +803,3 @@ class ClientDoer(doing.Doer):
     def exit(self):
         """"""
         self.client.close()
-
-
