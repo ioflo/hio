@@ -31,10 +31,8 @@ class Duror(Filer):
         HeadDirPath (str): default abs dir path head such as "/usr/local/var"
         TailDirPath (str): default rel dir path tail when using head
         CleanTailDirPath (str): default rel dir path tail when creating clean
-        AltHeadDirPath (str): default alt dir path head such as  "~"
-                              as fallback when desired head not permitted.
-        AltTailDirPath (str): default alt rel dir path tail as fallback
-                              when using alt head.
+        AltHeadDirPath (str): default alt dir path head such as "~" (fallback).
+        AltTailDirPath (str): default alt rel dir path tail (alt head).
         AltCleanTailDirPath (str): default alt rel path tail when creating clean
         TempHeadDir (str): default temp abs dir path head such as "/tmp"
         TempPrefix (str): default rel dir path prefix when using temp head
@@ -51,26 +49,22 @@ class Duror(Filer):
         headDirPath (str): head directory path
         path (str | None):  full directory or file path once created else None
         perm (int):  octal OS permissions for path directory and/or file
-        filed (bool): True means .path ends in file.
-                      False means .path ends in directory
-        extensioned (bool): When not filed:
-                                True means ensure .path ends with fext
-                                False means do not ensure .path ends with fext
+        filed (bool): True means .path ends in file. False means .path ends in directory
+        extensioned (bool): When not filed, True means ensure .path ends with fext.
         mode (str): file open mode if filed
         fext (str): file extension if filed
         file (File | None): File instance when filed and created.
-        opened (bool): True means directory created and if filed then file
-                is opened. False otherwise
+        opened (bool): True means directory created and if filed then file is opened. False otherwise
 
 
     Attributes:
         env (lmdb.env): LMDB main (super) database environment
         readonly (bool): True means open LMDB env as readonly
 
-    Properties:
-        version
+    Properties: version.
 
-    File/Directory Creation Mode Notes:
+    File/Directory Creation Mode Notes::
+
         .Perm provides default restricted access permissions to directory and/or files
         stat.S_ISVTX | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
         0o1700==960
@@ -434,9 +428,8 @@ class Duror(Filer):
     @staticmethod
     def suffix(key: bytes|str|memoryview, ion: int, *, sep: bytes|str=b'.'):
         """
-        Returns:
-           iokey (bytes): actual DB key after concatenating suffix as hex version
-           of insertion ordering ordinal int ion using separator sep.
+        Return iokey after concatenating the hex ordinal suffix to `key` using
+        `sep`.
 
         Parameters:
             key (bytes|str|memoryview): apparent effective database key (unsuffixed)
@@ -455,12 +448,7 @@ class Duror(Filer):
     @staticmethod
     def unsuffix(iokey: bytes|str|memoryview, *, sep: bytes|str=b'.'):
         """
-        Returns:
-           result (tuple): (bytes: key, int: ion) from splitting iokey at rightmost
-            separator sep.
-            Where key is bytes apparent effective DB key
-            Where ion is int insertion orderered ordinal number converted from
-                stripped off hex suffix
+        Return `(key, ion)` from splitting `iokey` at the rightmost `sep`.
 
         Parameters:
             iokey (bytes|str|memoryview): actual database key suffixed
@@ -484,13 +472,8 @@ class Duror(Filer):
     def getIoValFirst(self, sdb, key, *, ion=0, sep=b'.'):
         """Gets first of the insertion ordered set of values at key,
         None if no entry.
-
-        Returns:
-            val (bytes|None): first val at same apparent effective key
-                        whose iokey >= iokey from ion
-                        Uses hidden ordinal key suffix for insertion ordering.
-                        The suffix is appended and stripped transparently.
-                        None if no entry at key
+        Returns the first value at the apparent effective key whose iokey is
+        greater than or equal to the iokey from `ion`, or None if no entry.
 
         Parameters:
             db (lmdb._Database): instance of named sub db with dupsort==False
@@ -511,13 +494,10 @@ class Duror(Filer):
 
     def getIoValLast(self, sdb, key, *, sep=b'.'):
         """Gets last value (last in) of insertion ordered set values at key
+        Returns the last value at the apparent effective key, or None if no entry.
 
-        Returns:
-            val (bytes|None): last added empty at apparent effective
-                    key if any, otherwise None if no entry
-
-        Uses hidden ordinal key suffix for insertion ordering.
-            The suffix is appended and stripped transparently.
+        Uses hidden ordinal key suffix for insertion ordering. The suffix is
+        appended and stripped transparently.
 
         Parameters:
             db (lmdb._Database): instance of named sub db with dupsort==False
@@ -967,12 +947,13 @@ def openDuror(*, cls=None, name="test", temp=True, **kwa):
         temp (bool):  True means open in temporary directory, clear on close
                     Otherwise open in persistent directory, do not clear on close
 
-    Usage:
+    Usage::
 
-    with openHolder(name="gen1") as baser1:
-        baser1.env  ....
+        with openDuror(name="gen1") as duror1:
+            duror1.env
 
-    with openHolder(name="gen2, cls=Baser)
+        with openDuror(name="gen2", cls=Baser) as duror2:
+            duror2.env
 
     """
     duror = None
@@ -1282,19 +1263,7 @@ class SuberBase():
 
 
 class Suber(SuberBase):
-    """Subclass of SuberBase with no LMDB duplicates (i.e. multiple values at same key).
-
-    Inherited Class Attribues:
-        Sep (str): default separator to convert keys iterator to key bytes for db key
-
-    Inherited Attributes:
-        db (dbing.LMDBer): base LMDB db
-        sdb (lmdb._Database): instance of lmdb named sub db for this Suber
-        sep (str): separator for combining keys tuple of strs into key bytes
-        verify (bool): True means reverify when ._des from db when applicable
-                       False means do not reverify. Default False
-
-    """
+    """Subclass of `SuberBase` without LMDB duplicates."""
 
     def __init__(self, db: Duror, *,
                        subkey: str = 'docs.',
@@ -1367,7 +1336,8 @@ class Suber(SuberBase):
             data (str): decoded as utf-8 or whatever ._des provides
             None if no entry at keys
 
-        Usage:
+        Usage::
+
             Use walrus operator to catch and raise missing entry
             if (data := mydb.get(keys)) is None:
                 raise ExceptionHere
@@ -1394,37 +1364,9 @@ class Suber(SuberBase):
 
 
 class IoSuber(SuberBase):
-    """Insertion Ordered Suber class that supports a durable queue (list) of
-    entries at a given effective database key but with dupsort==False. Does not
-    dedup entries. For dedup see IoSetSuber.
+    """Insertion-ordered Suber that supports a durable queue of values per key.
 
-    Effective data model is that there are multiple values a list of values
-    where every entry has the same key (duplicate key).
-    The list is ordered using insertion order. Any given value may appear
-    multiple times in the list.
-
-    Here the key is augmented with a hidden numbered suffix that provides a
-    an ordinal that makes each key unique per entry.  The effective key includes
-    the ordinal suffix. The suffix is appended and stripped transparently. The
-    list of multiple items can be retrieved in insertion order when iterating
-    or as a list of elements or as FIFO queue.
-
-    Inherited Class Attribues:
-        Sep (str): default separator to convert keys iterator to key bytes for db key
-
-    ClassAttributes:
-        IonSep (str): default separator to suffix insertion order ordinal number
-
-    Inherited Attributes:
-        db (dbing.LMDBer): base LMDB db
-        sdb (lmdb._Database): instance of lmdb named sub db for this Suber
-        sep (str): separator for combining keys tuple of strs into key bytes
-        verify (bool): True means reverify when ._des from db when applicable
-                       False means do not reverify. Default False
-
-    Attributes
-        ionsep (str): separator to suffix insertion order ordinal number
-                       default is self.IonSep == '.'
+    Uses a hidden ordinal suffix to preserve insertion order.
     """
     IonSep = '.'  # separator for suffixing insertion order ordinal number
 
@@ -1672,38 +1614,9 @@ class IoSuber(SuberBase):
 
 
 class IoSetSuber(SuberBase):
-    """Insertion Ordered Set Suber factory class that supports
-    a set of distinct entries at a given effective database key but with
-    dupsort==False. Effective data model is that there are multiple values in a
-    set of values where every member of the set has the same key (duplicate key).
-    The set of values is an ordered set using insertion order. Any given value
-    may appear only once in the set (not a list).
+    """Insertion-ordered Suber that supports a set of distinct values per key.
 
-    This works similarly to the IO value duplicates for the LMDBer class with a
-    sub db  of LMDB (dupsort==True) but without its size limitation of 511 bytes
-    for each value when dupsort==True.
-    Here the key is augmented with a hidden numbered suffix that provides a
-    an ordered set of values at each effective key (duplicate key). The suffix
-    is appended and stripped transparently. The set of multiple items with
-    duplicate keys are retrieved in insertion order when iterating or as a list
-    of the set elements.
-
-    Inherited Class Attribues:
-        Sep (str): default separator to convert keys iterator to key bytes for db key
-
-    ClassAttributes:
-        IonSep (str): default separator to suffix insertion order ordinal number
-
-    Inherited Attributes:
-        db (dbing.LMDBer): base LMDB db
-        sdb (lmdb._Database): instance of lmdb named sub db for this Suber
-        sep (str): separator for combining keys tuple of strs into key bytes
-        verify (bool): True means reverify when ._des from db when applicable
-                       False means do not reverify. Default False
-
-    Attributes
-        ionsep (str): separator to suffix insertion order ordinal number
-                       default is self.IonSep == '.'
+    Uses a hidden ordinal suffix to preserve insertion order.
     """
     IonSep = '.'  # separator for suffixing insertion order ordinal number
 
@@ -1961,33 +1874,9 @@ class IoSetSuber(SuberBase):
 
 
 class DomSuberBase(SuberBase):
-    """Subclass of Suber with values that are serialized RegDom subclasses.
+    """Suber that serializes `RegDom` subclasses.
 
-    forces .sep to '_'
-    changes ._ser and ._des methods to serialize RegDom subclasses for db
-    with default prosep for class name proem from json body is `\n`
-
-    Prepends and strips RegDom subclass name as proem to value when serializing
-    which is then stripped off when deserializing. Uses proem to lookup in
-    RegDom._registry the class object to use to reinstantiate when deserializing.
-
-    Inherited Class Attribues:
-        Sep (str): default separator to convert keys iterator to key bytes for db key
-
-    Inherited Attributes:
-        db (dbing.LMDBer): base LMDB db
-        sdb (lmdb._Database): instance of lmdb named sub db for this Suber
-        sep (str): separator for combining keys tuple of strs into key bytes
-        verify (bool): True means reverify when ._des from db when applicable
-                       False means do not reverify. Default False
-
-    ClassAttributes:
-        ProSep (str): separator class name proem to serialized RegDom instance
-
-    Attributes
-        prosep (str): separator class name proem to serialized RegDom instance
-                      default is self.ProSep == '\n'
-
+    Forces `.sep` to `_` and uses a class-name proem (LF) when serializing.
     """
     ProSep = '\n'  # separator class name proem to serialized RegDom instance
 
@@ -2007,7 +1896,7 @@ class DomSuberBase(SuberBase):
 
         Parameters:
             prosep (str|None): separator class name proem to serialized RegDom instance
-                               default is self.ProSep == '\n'
+                               default is self.ProSep (LF)
         """
         super(DomSuberBase, self).__init__(db=db, subkey=subkey, sep=sep, **kwa)
         self.prosep = prosep if prosep is not None else self.ProSep
@@ -2015,7 +1904,7 @@ class DomSuberBase(SuberBase):
 
     def _ser(self, val: RegDom):
         """Serialize value to json bytes to store in db with proem that is
-        class name. Must be in registry. Uses b'\n' as separator between
+        class name. Must be in registry. Uses LF (byte 0x0A) as separator between
         proem class name and json serialization of val
 
         Parameters:
@@ -2032,11 +1921,11 @@ class DomSuberBase(SuberBase):
     def _des(self, val: bytes|memoryview):
         """Deserialize val to RegDom subclass instance as given by proem
         prepended to json serialization of RegDom subclass instance
-        Uses b'\n' as separator between proem class name and json serialization
+        Uses LF (byte 0x0A) as separator between proem class name and json serialization
         of val
 
         Parameters:
-            val (bytes|memoryview): proem\njson
+            val (bytes|memoryview): proem + LF + json
 
         Returns:
             dom (RegDom): instance of RegDom subclass as registered under proem
@@ -2058,30 +1947,7 @@ class DomSuberBase(SuberBase):
 
 
 class DomSuber(DomSuberBase, Suber):
-    """Subclass of (DomSuberBase, Suber) with values that are serialized CanDom
-    subclasses.
-
-    forces .sep to '_'
-    forces .prosep to '\n'
-
-    Prepends and strips RegDom subclass name as proem to value when serializing
-    which is then stripped off when deserializing. Uses proem to lookup in
-    RegDom._registry the class object to use to reinstantiate when deserializing.
-
-    Inherited Class Attribues:
-        Sep (str): default separator to convert keys iterator to key bytes for db key
-        ProSep (str): separator class name proem to serialized RegDom instance
-
-    Inherited Attributes:
-        db (dbing.LMDBer): base LMDB db
-        sdb (lmdb._Database): instance of lmdb named sub db for this Suber
-        sep (str): separator for combining keys tuple of strs into key bytes
-        verify (bool): True means reverify when ._des from db when applicable
-                       False means do not reverify. Default False
-        prosep (str): separator class name proem to serialized RegDom instance
-                      default is self.ProSep == '\n'
-
-    """
+    """Suber that serializes `CanDom` subclasses with LF proem."""
 
     def __init__(self, db: Duror, *, subkey: str = 'cans.', sep='_', prosep='\n',
                  **kwa):
@@ -2097,7 +1963,7 @@ class DomSuber(DomSuberBase, Suber):
             verify (bool): True means reverify when ._des from db when applicable
                            False means do not reverify. Default False
             prosep (str|None): separator class name proem to serialized CanDom instance
-                               default is self.ProSep == '\n'
+                               default is self.ProSep (LF)
 
         """
         super(DomSuber, self).__init__(db=db, subkey=subkey,
@@ -2105,34 +1971,7 @@ class DomSuber(DomSuberBase, Suber):
 
 
 class DomIoSuber(DomSuberBase, IoSuber):
-    """Subclass of (DomSuberBase, IoSuber) with values that are serialized
-    RegDom subclasses.  Insertion ordered list. No dedup.
-
-    forces .ser to '_'
-    forces .ionsep to '.'
-    forces .prosep to '\n'
-
-    Prepends and strips RegDom subclass name as proem to value when serializing
-    which is then stripped off when deserializing. Uses proem to lookup in
-    RegDom._registry the class object to use to reinstantiate when deserializing.
-
-    Inherited Class Attribues:
-        Sep (str): default separator to convert keys iterator to key bytes for db key
-        ProSep (str): separator class name proem to serialized RegDom instance
-        IonSep (str): default separator to suffix insertion order ordinal number
-
-    Inherited Attributes:
-        db (dbing.LMDBer): base LMDB db
-        sdb (lmdb._Database): instance of lmdb named sub db for this Suber
-        sep (str): separator for combining keys tuple of strs into key bytes
-        verify (bool): True means reverify when ._des from db when applicable
-                       False means do not reverify. Default False
-        prosep (str): separator class name proem to serialized RegDom instance
-                      default is self.ProSep == '\n'
-        ionsep (str): separator to suffix insertion order ordinal number
-                       default is self.IonSep == '.'
-
-    """
+    """Insertion-ordered Suber that serializes `RegDom` subclasses with LF proem."""
 
     def __init__(self, db: Duror, *, subkey: str = 'dsqs.', sep='_',
                  prosep='\n', ionsep='.', **kwa):
@@ -2148,7 +1987,7 @@ class DomIoSuber(DomSuberBase, IoSuber):
             verify (bool): True means reverify when ._des from db when applicable
                            False means do not reverify. Default False
             prosep (str|None): separator class name proem to serialized CanDom instance
-                               default is self.ProSep == '\n'
+                               default is self.ProSep (LF)
             ionsep (str|None): separator to suffix insertion order ordinal number
                        default is self.IonSep == '.'
 
@@ -2160,34 +1999,7 @@ class DomIoSuber(DomSuberBase, IoSuber):
 
 
 class DomIoSetSuber(DomSuberBase, IoSetSuber):
-    """Subclass of (DomSuberBase, IoSetSuber) with values that are serialized
-    RegDom subclasses.  Insertion ordered set with dedup.
-
-    forces .ser to '_'
-    forces .ionsep to '.'
-    forces .prosep to '\n'
-
-    Prepends and strips RegDom subclass name as proem to value when serializing
-    which is then stripped off when deserializing. Uses proem to lookup in
-    RegDom._registry the class object to use to reinstantiate when deserializing.
-
-    Inherited Class Attribues:
-        Sep (str): default separator to convert keys iterator to key bytes for db key
-        ProSep (str): separator class name proem to serialized RegDom instance
-        IonSep (str): default separator to suffix insertion order ordinal number
-
-    Inherited Attributes:
-        db (dbing.LMDBer): base LMDB db
-        sdb (lmdb._Database): instance of lmdb named sub db for this Suber
-        sep (str): separator for combining keys tuple of strs into key bytes
-        verify (bool): True means reverify when ._des from db when applicable
-                       False means do not reverify. Default False
-        prosep (str): separator class name proem to serialized RegDom instance
-                      default is self.ProSep == '\n'
-        ionsep (str): separator to suffix insertion order ordinal number
-                       default is self.IonSep == '.'
-
-    """
+    """Insertion-ordered set Suber that serializes `RegDom` subclasses with LF proem."""
 
     def __init__(self, db: Duror, *, subkey: str = 'dsqs.', sep='_',
                  prosep='\n', ionsep='.', **kwa):
@@ -2203,7 +2015,7 @@ class DomIoSetSuber(DomSuberBase, IoSetSuber):
             verify (bool): True means reverify when ._des from db when applicable
                            False means do not reverify. Default False
             prosep (str|None): separator class name proem to serialized CanDom instance
-                               default is self.ProSep == '\n'
+                               default is self.ProSep (LF)
             ionsep (str|None): separator to suffix insertion order ordinal number
                        default is self.IonSep == '.'
 
@@ -2246,4 +2058,3 @@ class Subery(Duror):
         self.dsqs = DomIoSetSuber(db=self, subkey="dsqs.")  # durable set queue
 
         return self.env
-
