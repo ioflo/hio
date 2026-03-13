@@ -904,18 +904,20 @@ class Client():
         This is a differential request that reuses latest values if not changed.
         Requires that patron already be setup with scheme host port
 
-        request = dict([('method', method),
-                         ('path', path),
-                         ('qargs', dict([("auth", self.token.value)])),
-                         ('headers', dict([('Accept', 'application/json'),
-                                            ('Connection', 'Keep-Alive'),
-                                            ('Keep-Alive', 'timeout=60, max=100'),
-                                            ])),
-                         ('body', body),
-                         ('reply', dict([('rid', rid), ('rdeck', replies)])),
-                         ])
+        Example::
 
-        self.patron.value.requests.append(request)
+            request = dict([('method', method),
+                             ('path', path),
+                             ('qargs', dict([("auth", self.token.value)])),
+                             ('headers', dict([('Accept', 'application/json'),
+                                                ('Connection', 'Keep-Alive'),
+                                                ('Keep-Alive', 'timeout=60, max=100'),
+                                                ])),
+                             ('body', body),
+                             ('reply', dict([('rid', rid), ('rdeck', replies)])),
+                             ])
+
+            self.patron.value.requests.append(request)
         """
         request = dict()
         request['method'] = method.upper() if method is not None else self.requester.method
@@ -1314,11 +1316,10 @@ class ClientDoer(doing.Doer):
         """Do 'enter' context actions.
         Set up resources. Comparable to context manager enter.
 
-        Parameters:
-            temp (bool | None): True means use temporary file resources if any
-                                None means ignore parameter value. Use self.temp
+        temp is bool or None. True means use temporary file resources if any.
+        None means ignore parameter value and use self.temp.
 
-        Inject temp or self.temp into file resources here if any
+        Inject temp or self.temp into file resources here if any.
         """
 
 
@@ -1328,11 +1329,10 @@ class ClientDoer(doing.Doer):
 
 
     def recur(self, tyme):
-        """"""
+        """Service the client once per cycle."""
         self.client.service()
 
 
     def exit(self):
-        """"""
+        """Close client resources."""
         self.client.close()
-
