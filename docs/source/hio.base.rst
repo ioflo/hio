@@ -11,6 +11,7 @@ hio.base.basing module
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 hio.base.doing module
 ---------------------
@@ -19,6 +20,7 @@ hio.base.doing module
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 hio.base.tyming module
 ----------------------
@@ -27,6 +29,7 @@ hio.base.tyming module
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 Module contents
 ---------------
@@ -35,3 +38,4 @@ Module contents
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:

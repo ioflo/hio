@@ -12,6 +12,7 @@
 #
 import os
 import sys
+sys.path.insert(0, os.path.abspath('./../../src'))
 sys.path.insert(0, os.path.abspath('./../..'))
 
 import hio
@@ -44,7 +45,13 @@ extensions = [
 
 napoleon_include_init_with_doc = True
 
-autoapi_dirs = ['./../../src/']
+autoapi_dirs = [os.path.abspath('./../../src/hio/base')]
+autoapi_options = [
+    "members",
+    "undoc-members",
+    "show-inheritance",
+    "noindex",
+]
 
 if os.getenv('SPELLCHECK'):
     extensions += 'sphinxcontrib.spelling',
