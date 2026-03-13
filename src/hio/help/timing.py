@@ -10,15 +10,11 @@ from .. import hioing
 
 
 class TimerError(hioing.HioError):
-    """Generic Timer Errors
-    Usage:
-        raise TimerError("error message")
-    """
+    """Generic Timer Errors. Usage: raise TimerError("error message")."""
 
 class RetroTimerError(TimerError):
-    """Error due to real time being retrograded before start time of timer
-    Usage:
-        raise RetroTimerError("error message")
+    """Error due to real time being retrograded before start time of timer.
+    Usage: raise RetroTimerError("error message").
     """
 
 
@@ -137,13 +133,11 @@ class MonoTimer(Timer):
 
     def __init__(self, duration=0.0, start=None, retro=True):
         """Initialization method for instance.
-        Parameters:
-            duration in seconds (fractional)
-            start is float optional start time in seconds allows starting before
-               or after current time
-            retro is boolean, True means automatically shift timer whenever
-                              retrograded clock detected
-                              Otherwise raise RetroTimerError
+        duration is in seconds (fractional).
+        start is an optional start time in seconds allowing start before or
+        after current time.
+        retro is boolean. True means automatically shift timer whenever a
+        retrograded clock is detected, otherwise raise RetroTimerError.
         """
         self._start = float(start) if start is not None else time.time()
         self._stop = self._start + float(duration)  # need for default duration
@@ -330,4 +324,3 @@ def fromIso8601(dts):
     if hasattr(dts, "decode"):
         dts = dts.decode("utf-8")
     return (datetime.datetime.fromisoformat(dts))
-

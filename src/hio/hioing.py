@@ -21,7 +21,7 @@ class Mixin():
     """
     Base class to enable consistent MRO for mixin multiple inheritance
     Allows each subclass to call
-    super(MixinSubClass, self).__init__(*pa, **kwa)
+    ``super(MixinSubClass, self).__init__(*pa, **kwa)``
     So the __init__ propagates to common top of Tree
     https://medium.com/geekculture/cooperative-multiple-inheritance-in-python-practice-60e3ac5f91cc
     """
@@ -37,25 +37,17 @@ class HioError(Exception):
     """
 
 class SizeError(HioError):
-    """
-    Resource size related errors
-    Usage:
-        raise SizeError("error message")
-    """
+    """Resource size related errors. Usage: raise SizeError("error message")."""
 
 class ValidationError(HioError):
-    """
-    Validation related errors
-    Usage:
-        raise ValidationError("error message")
-    """
+    """Validation related errors. Usage: raise ValidationError("error message")."""
 
 
 class VersionError(ValidationError):
     """
     Bad or Unsupported Version
 
-    Usage:
+    Usage::
         raise VersionError("error message")
     """
 
@@ -63,7 +55,7 @@ class OglerError(HioError):
     """
     Error using or configuring Ogler
 
-    Usage:
+    Usage::
         raise OglerError("error message")
     """
 
@@ -71,7 +63,7 @@ class FilerError(HioError):
     """
     Error using or configuring Filer
 
-    Usage:
+    Usage::
         raise FilerError("error message")
     """
 
@@ -79,7 +71,7 @@ class NamerError(HioError):
     """
     Error using or configuring Namer
 
-    Usage:
+    Usage::
         raise NamerError("error message")
     """
 
@@ -87,7 +79,7 @@ class MultiError(HioError):
     """
     Error using or configuring multiprocessing support classes
 
-    Usage:
+    Usage::
         raise MultiError("error message")
     """
 
@@ -95,7 +87,7 @@ class HierError(HioError):
     """
     Error using or configuring hiering support classes
 
-    Usage:
+    Usage::
         raise HierError("error message")
     """
 
@@ -103,7 +95,7 @@ class MemoerError(HioError):
     """
     Error using or configuring Memoer
 
-    Usage:
+    Usage::
         raise MemoGramError("error message")
     """
 
@@ -111,6 +103,6 @@ class MemoerVerifyError(MemoerError):
     """
     Error extracting and verifying memo gram signature
 
-    Usage:
+    Usage::
         raise MemoerSignatureError("error message")
     """

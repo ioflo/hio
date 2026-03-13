@@ -158,7 +158,7 @@ class IceRawDom(IceMapDom):
         _fromdict(cls, d: dict): return dataclass converted from dict d
 
     Class Methods:
-        _fromjson(cls, s: str|bytes): return dataclass converted from json s
+        _fromjson(cls, s: str or bytes): return dataclass converted from json s
         _fromcbor(cls, s: bytes): return dataclass converted from cbor s
         _frommgpk(cls, s: bytes): return dataclass converted from mgpk s
 
@@ -277,7 +277,7 @@ class IceTymeDom(IceRegDom):
             Assigned by @registerify decorator
 
     Non-Field Class Attributes:
-        _names (ClassVar[tuple[str]|None]): tuple of field names for class
+        _names (ClassVar[tuple[str] or None]): tuple of field names for class
             Assigned by @namify decorator
 
     Properties:
@@ -445,28 +445,38 @@ def modify(mods: MapDom|None=None, klas: Type[MapDom]=MapDom)->Callable[..., Any
     injected mods whichever was provided.
 
     Assumes wrapped function defines mods argument as a keyword only parameter
-    using '*' such as:
-       def f(name='box, over=None, *, mods=None):
+    using '*' such as::
 
-    To use inline:
+        def f(name='box', over=None, *, mods=None):
+
+    To use inline::
+
         mods = WorkDom(box=None, over=None, bepre='box', beidx=0)
         g = modify(mods)(f)
 
-    Later calling g as:
+    Later calling g as::
+
         g(name="mid", over="top")
-    Actually has mods inject as if called as:
+
+    Actually has mods injected as if called as::
+
         g(name="mid", over="top", mods=mods)
 
-    Also can be used on a method not just a function.
-       def m(self, name='box, over=None, *, mods=None):
+    Also can be used on a method not just a function::
 
-    To use inline:
+        def m(self, name='box', over=None, *, mods=None):
+
+    To use inline::
+
         mods = dict(box=None, over=None, bepre='box', beidx=0)
         m = modify(mods)(self.m)
 
-    Later calling m as:
+    Later calling m as::
+
         m(name="mid", over="top")
-    Actually has mods injectd as if called as:
+
+    Actually has mods injected as if called as::
+
         m(name="mid", over="top", mods=mods)  where self is also injected into method
 
     Since mods is a mutable collection i.e. dataclass, not an immutable object
@@ -474,17 +484,21 @@ def modify(mods: MapDom|None=None, klas: Type[MapDom]=MapDom)->Callable[..., Any
     be a lexical closure defined in the defining scope not the calling scope.
     Depends on what the use case it for it.
 
-    Example:
+    Example::
+
         mods = WorkDom(box=None, over=None, bepre='box', beidx=0)
         @modify(mods=mods)
-        def f(name="box), over=None, *, mods=None)
+        def f(name="box", over=None, *, mods=None)
 
-    Later calling f as:
+    Later calling f as::
+
         f(name="mid", over="top")
-    Actually has mods injected as if called as:
+
+    Actually has mods injected as if called as::
+
         f(name="mid", over="top", mods=mods)
 
-    But the mods in this case is from the defining scope,not the calling scope.
+    But the mods in this case is from the defining scope, not the calling scope.
 
     Likewise passing in mods=None would result in a lexical closure of mods
     with default values initially that would be shared everywhere f() is called.
@@ -516,44 +530,58 @@ def modize(mods: dict|None=None) -> Callable[..., Any]:
     injected mods whichever was provided.
 
     Assumes wrapped function defines mods argument as a keyword only parameter
-    using '*' such as:
-       def f(name='box, over=None, *, mods=None):
+    using '*' such as::
 
-    To use inline:
+        def f(name='box', over=None, *, mods=None):
+
+    To use inline::
+
         mods = dict(box=None, over=None, bepre='box', beidx=0)
         g = modize(mods)(f)
 
-    Later calling g as:
+    Later calling g as::
+
         g(name="mid", over="top")
-    Actually has mods injected as if called as:
+
+    Actually has mods injected as if called as::
+
         g(name="mid", over="top", mods=mods)
 
-    If method then works as well.
-       def f(self, name='box, over=None, *, mods=None):
+    If method then works as well::
 
-    To use inline:
+        def f(self, name='box', over=None, *, mods=None):
+
+    To use inline::
+
         mods = dict(box=None, over=None, bepre='box', beidx=0)
         f = modize(mods)(self.f)
 
-    Later calling f as:
+    Later calling f as::
+
         f(name="mid", over="top")
-    Actually has mods injected as if called as:
-        f(name="mid", over="top", mods=mods)  the self is automaticall supplied
+
+    Actually has mods injected as if called as::
+
+        f(name="mid", over="top", mods=mods)  the self is automatically supplied
 
     Since mods is a mutable collection i.e. dict, not an immutable string then
     using it as decorator could be problematic as the mods would have lexical
     defining scope not calling scope.
     Which is ok if mods has lexical module scope intentionally.
 
-    Example:
+    Example::
+
         mods = dict(box=None, over=None, bepre='box', beidx=0)
 
         @modize(mods=mods)
-        def f(name="box), over=None, *, mods=None)
+        def f(name="box", over=None, *, mods=None)
 
-    Later calling as:
+    Later calling as::
+
         f(name="mid", over="top")
-    Actually has mods injected as if called as:
+
+    Actually has mods injected as if called as::
+
         f(name="mid", over="top", mods=mods)
 
     But the mods in this case is from the defining scope not the calling scope.
@@ -720,17 +748,17 @@ class TymeDom(RegDom):
             Assigned by @namify decorator
 
     Non-Field Attributes:
-        _tymth (None|Callable): function wrapper closure returned by
+        _tymth (None or Callable): function wrapper closure returned by
             Tymist.tymen() method. When .tymth is called it returns associated
             Tymist.tyme. Provides injected dependency on Tymist cycle tyme base.
             None means not assigned yet.
             Use ._wind method to assign ._tymth after init of bag.
-        _tyme (None|Float): cycle tyme of last update of a bag field.
+        _tyme (None or Float): cycle tyme of last update of a bag field.
             None means either ._tymth as not yet been assigned or this bag's
             fields have not yet been updated.
 
     Properties:
-        _now (None|float): current tyme given by ._tymth if not None.
+        _now (None or float): current tyme given by ._tymth if not None.
 
     """
     _names: ClassVar[tuple[str]|None] = None  # Assigned in  __post_init__
@@ -761,7 +789,7 @@ class TymeDom(RegDom):
         """Gets current tyme from injected ._tymth closure from Tymist.
         tyme is float cycle time in seconds
         Returns:
-            _now (float | None): tyme from self.tymth() when wound else None
+            _now (float or None): tyme from self.tymth() when wound else None
         """
         return self._tymth() if self._tymth else None
 
@@ -773,4 +801,3 @@ class TymeDom(RegDom):
         tymist.tymth base
         """
         self._tymth = tymth
-
