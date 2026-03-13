@@ -45,6 +45,8 @@ class Doist(tyming.Tymist):
     coroutine objects .send() method. Usually this can be wrapped try: except:
     that catches the StopIteraction
 
+    Example::
+
         async def acorf():
             return True
 
@@ -56,7 +58,7 @@ class Doist(tyming.Tymist):
             result = ex.value  # get final returned value from acoro
             assert result == True
 
-    Usage:
+    Usage::
 
         .enter method prepares deeds deque of triples (dog, retyme, doer) where
         dog is a doer generator returned by calling doer generator instances,
@@ -69,13 +71,16 @@ class Doist(tyming.Tymist):
         .do method repeatedly runs .recur until generators are complete. It may
         either repeat as fast as possbile or repeat at real time increments.
 
-    Inherited Class Attributes:
+    Inherited Class Attributes::
+
         .Tock provides default value for .tock
 
-    Inherited Attributes:
+    Inherited Attributes::
 
+        None
 
-    Attributes:
+    Attributes::
+
         name (str): unique identifier of doist uses for identifying resources of
                     doists running in child processes in multiprocessing
         real (bool): True means run in real time, Otherwise as fast as possible.
@@ -98,16 +103,21 @@ class Doist(tyming.Tymist):
                      When True inject into doer enters when True.
                      Otherwise do not inject into doer enters.
 
-    Inherited Properties:
+    Inherited Properties::
+
         tyme: (float): starting relative cycle time, .tyme is artificial time
         tock (float | None): float tyme lag of .tick(). None means asap
 
-    Properties:
+    Properties::
 
-    Inherited Methods:
+        None
+
+    Inherited Methods::
+
         .tick() increments .tyme by one .tock or provided tock
 
-    Methods:
+    Methods::
+
         .do repeadedly call .recur until all dogs in deeds are complete or
             times out do to reaching time limit. Calls .enter., .recur, .exit
         .ado async def version of .do
@@ -121,14 +131,17 @@ class Doist(tyming.Tymist):
     def __init__(self, *, name='doist', real=False, limit=None, doers=None,
                           temp=False, **kwa):
         """
-        Returns:
+        Returns::
+
             instance
 
-        Inherited Parameters:
+        Inherited Parameters::
+
             tyme (float): initial value of cycle time in seconds
             tock (float | None): lag tyme in seconds between runs, None means run ASAP
 
-        Parameters:
+        Parameters::
+
             name (str): unique identifier of doist to manage resources
             real (boolean): True means run in real time,
                             Otherwise run faster than real
@@ -165,6 +178,7 @@ class Doist(tyming.Tymist):
         Readys deeds deque from .doers or doers if any and then iteratively
         runs .recur over deeds deque until completion of all deeds.
         Each entry in deeds is a triple (dog, retyme, doer)  where:
+
             dog is generator
             retyme is tyme (real or simulated) in seconds when dog should run next
             doer is from .doers list used to assign its .done state given
@@ -177,7 +191,8 @@ class Doist(tyming.Tymist):
         Once finally clause closes a generator it must be reinited
         before it can be run again
 
-        Parameters:
+        Parameters::
+
             doers (iterable): generator method or function callables with attributes
                 tock, done, and opts dict(). This may be used to update the .doers
                 attribute which is used throughout the execution lifecycle.
@@ -185,12 +200,13 @@ class Doist(tyming.Tymist):
                 Parameterization here of doers enables some special cases.
                 The normal case is to initialize in .__init__ or here.
             limit (float): is real time limit on execution. Forces close of all dogs.
-            tyme  (float): is optional starting tyme. Resets .tyme to tyme whe provided.
-               If not provided uses current .tyme
-               temp (bool): True means use temp resources such as file path, inject
-                         into doers when True. Otherwise do not inject.
+            tyme (float): is optional starting tyme. Resets .tyme to tyme when provided.
+                If not provided uses current .tyme
+            temp (bool): True means use temp resources such as file path, inject
+                into doers when True. Otherwise do not inject.
 
-        Returns:
+        Returns::
+
             None
 
         See: https://stackoverflow.com/questions/40528867/setting-attributes-on-func
@@ -306,19 +322,22 @@ class Doist(tyming.Tymist):
 
     def enter(self, doers=None, *, temp=None):
         """Enter context
-        Returns (deque):  deeds deque of triples (dog, retyme, doer)  where:
-            dog is generator
-            retyme is tyme (real or simulated) in seconds when dog should run next
-            doer is from .doers list used to assign its .done state given
-                completion state of its dog
+
+        Returns::
+
+            deeds (deque): deeds deque of triples (dog, retyme, doer) where dog is generator,
+            retyme is tyme (real or simulated) in seconds when dog should run next, and
+            doer is from .doers list used to assign its .done state given completion
+            state of its dog
 
         Calls each generator callable (instance or function or method) in .doers
         to create each generator dog. Injects own tymth function closure, and
-            generator function's own tock, and opts.
+        generator function's own tock, and opts.
 
         Runs enter context of each dog by calling next(dog)
 
-        Parameters:
+        Parameters::
+
             doers is list of generator method or function callables with attributes
                 .tock is tyme increment in seconds
                 .done is Boolean completion state
@@ -330,7 +349,8 @@ class Doist(tyming.Tymist):
 
         Inject temp or self.temp into file resources here if any
 
-        Returns:
+        Returns::
+
             deeds deque():
                 A deed is tuple of form (dog, retyme, doer). If not provided
                 uses .deeds.
@@ -384,7 +404,8 @@ class Doist(tyming.Tymist):
         Each cycle checks all generators in deeds deque and runs if retyme past.
         At end of cycle advances .tyme by one .tock by calling .tick()
 
-        Parameters:
+        Parameters::
+
             deeds (deque):  tuples of form (dog, retyme, doer).
                     Parameterization here of deeds enables some special cases.
 
@@ -434,7 +455,8 @@ class Doist(tyming.Tymist):
         Close any running dogs in reverse order so that enters and exits are
         nested pairs so that the corresponding exits appear in reverse order
         to their entes. This preserves nested resource dependencies.
-        For example:
+        For example::
+
             enter A,
                 enter B,
                     enter C,
@@ -442,7 +464,8 @@ class Doist(tyming.Tymist):
                 exit B,
             exit A
 
-        Parameters:
+        Parameters::
+
             deeds (deque): tuples of form (dog, retyme, doer).
                 If not provided uses .deeds.
                 Parameterization here of deeds enables some special cases.
@@ -471,7 +494,8 @@ class Doist(tyming.Tymist):
         Extend .doers list with doers. Ready deeds from doers and extend .doers
         and .deeds.  Edit deeds in place so not replace deque.
 
-        Parameters:
+        Parameters::
+
             doers is list of doers to add as extension.
 
         """
@@ -486,7 +510,8 @@ class Doist(tyming.Tymist):
         Remove doers from .doers list and any associated deeds from .deeds deque.
         Force close removed deeds.
 
-        Parameters:
+        Parameters::
+
             doers is list of doers to remove.
 
         """
@@ -517,13 +542,15 @@ def doify(f, *, name=None, tock=0.0, temp=None, **opts):
     Allows multiple instances of copy, g, of generator function/method, f, each with
     unique attributes.
 
-    Usage:
-    def f():
-       pass
+    Usage::
 
-    c = doify(f, name='c')
+        def f():
+           pass
 
-    Parameters:
+        c = doify(f, name='c')
+
+    Parameters::
+
         f (function): generator function
         name (str): new function name for returned doified copy g. Default is to copy
             f.__name__
@@ -551,12 +578,14 @@ def doize(*, tock=0.0, temp=None, **opts):
     DoDoer.enter().
     Only one instance of decorated function with shared attributes is allowed.
 
-    Usage:
-    @doize
-    def f():
-       pass
+    Usage::
 
-    Parameters:
+        @doize
+        def f():
+           pass
+
+    Parameters::
+
         tock (float): default tock attribute of doized f
         opts (dict): remaining parameters that becomes .opts attribute
             of doized f
@@ -579,7 +608,8 @@ class Doer(tyming.Tymee):
     attributes that a plain generator function does not
 
     The .do method executes other methods each corresponding to one of the
-    six econtexts:
+    six econtexts::
+
         enter, recur, clean, exit, cease (forced), abort (forced)
 
     Actual context order may be one of:
@@ -588,14 +618,16 @@ class Doer(tyming.Tymee):
         enter, recur, abort, exit
         enter, abort, exit
 
-    Attributes:
+    Attributes::
+
         done (bool): completion state:
             True means completed
             Otherwise incomplete. Incompletion maybe due to close or abort.
         opts (dict): injected options into its .do generator by scheduler
         temp (bool): True means use temporary file resources if any
 
-    Inherited Properties:
+    Inherited Properties::
+
         tyme (float): is float relative cycle time of associated Tymist .tyme obtained
             via injected .tymth function wrapper closure.
         tymth (closure): function wrapper closure returned by Tymist.tymen()
@@ -603,14 +635,17 @@ class Doer(tyming.Tymee):
                         Tymist.tyme. Provides injected dependency on Tymist
                         tyme base.
 
-    Properties:
+    Properties::
+
         tock (float): desired time in seconds between runs or until next run,
                  non negative, zero means run asap
 
-    Inherited Methods:
+    Inherited Methods::
+
         wind  injects ._tymth dependency from associated Tymist to get its .tyme
 
-    Methods:
+    Methods::
+
         .__call__ makes instance callable
             Appears as generator function that returns generator
         .do is generator method that returns generator
@@ -621,7 +656,8 @@ class Doer(tyming.Tymee):
         .cease is cease context method
         .abort is abort context method
 
-    Hidden:
+    Hidden::
+
         _tymth (closure): is injected function wrapper closure returned by .tymen() of
             associated Tymist instance that returns Tymist .tyme. when called.
         _tock (float): is hidden attribute for .tock property
@@ -632,14 +668,16 @@ class Doer(tyming.Tymee):
         """
         Initialize instance.
 
-        Inherited Parameters:
+        Inherited Parameters::
+
             tymth (closure): injected function wrapper closure returned by .tymen() of
                 Tymist instance. Calling tymth() returns associated Tymist .tyme.
 
-        Parameters:
-           tock (float): seconds initial value of .tock
-           opts (dict): injected options into its .do generator by scheduler
-           temp (bool): True means use temporary file resources if any
+        Parameters::
+
+            tock (float): seconds initial value of .tock
+            opts (dict): injected options into its .do generator by scheduler
+            temp (bool): True means use temporary file resources if any
 
         """
         super(Doer, self).__init__(tymth=tymth, **kwa)
@@ -684,10 +722,12 @@ class Doer(tyming.Tymee):
         """Generator method to run this doer.
         Calling this method returns generator.
         Interface matches generator function for compatibility.
-        To customize create subclasses and override the lifecycle methods:
+        To customize create subclasses and override the lifecycle methods::
+
             .enter, .recur, .exit, .cease, .abort
 
-        Parameters:
+        Parameters::
+
             tymth (closure): function wrapper closure returned by Tymist.tymen()
                         method. When .tymth is called it returns associated
                         Tymist.tyme. Provides injected dependency on Tymist
@@ -742,9 +782,11 @@ class Doer(tyming.Tymee):
         """Do 'enter' context actions. Override in subclass. Not a generator method.
         Set up resources. Comparable to context manager enter.
 
-        Parameters:
+        Parameters::
+
             temp (bool | None): True means use temporary file resources if any
                                 None means ignore parameter value. Use self.temp
+
 
         Inject temp or self.temp into file resources here if any
         """
@@ -757,16 +799,15 @@ class Doer(tyming.Tymee):
         Assumes resource setup in .enter() and resource takedown in .exit()
         (see ReDoer below for example of .recur that is a generator method)
 
-        Returns completion state of recurrence actions.
-           True means done False means continue
+        Returns completion state of recurrence actions: True means done,
+        False means continue.
 
-        Parameters:
-            Doist feeds its .tyme through .send to .do yield which passes it here.
-
+        Doist provides the time value.
 
         .recur maybe implemented by a subclass either as a non-generator method
         or a generator method. This stub here is as a non-generator method.
-        The base class .do detects which type:
+        The base class .do detects which type::
+
             If non-generator .do method runs .recur method once per iteration
                 until .recur returns (True)
             If generator .do method runs .recur with (yield from) until .recur
@@ -805,8 +846,10 @@ class Doer(tyming.Tymee):
     def abort(self, ex):
         """
         Do 'abort' context actions. Override in subclass. Not a generator method.
-        Parameters:
+        Parameters::
+
             ex is Exception instance that caused abort.
+
         Unexpected exception that results in generator exiting but not GeneratorExit.
         .exit() is finally called after .abort().
         """
@@ -818,13 +861,15 @@ class ReDoer(Doer):
     and executes it using yield from instead of just calling the method.
 
 
-    Inherited Attributes:
+    Inherited Attributes::
+
         done (bool | None): completion state: True means completed
             Otherwise incomplete. Incompletion maybe due to close or abort.
         opts (dict): injected options into its .do generator by scheduler
         temp (bool | None): use temporary file resources if any
 
-    Inherited Properties:
+    Inherited Properties::
+
         tyme (float): relative cycle time of associated Tymist .tyme obtained
             via injected .tymth function wrapper closure.
         tymth (closure): function wrapper closure returned by Tymist.tymen() method.
@@ -833,7 +878,8 @@ class ReDoer(Doer):
         tock (float): desired time in seconds between runs or until next run,
                  non negative, zero means run asap
 
-    Inherited Methods:
+    Inherited Methods::
+
         .wind  injects ._tymth dependency from associated Tymist to get its .tyme
         .__call__ makes instance callable
             Appears as generator function that returns generator
@@ -844,22 +890,25 @@ class ReDoer(Doer):
         .close is close context method
         .abort is abort context method
 
-    Overidden Methods:
+    Overidden Methods::
+
         .recur
 
-    Hidden:
+    Hidden::
+
        ._tymth is injected function wrapper closure returned by .tymen() of
             associated Tymist instance that returns Tymist .tyme. when called.
        ._tock is hidden attribute for .tock property
 
-    Test Console:
-    ****** ReDoer Test **********
-    ReDoer enter: temp=None in doist.enter next doer.do -> .enter
-    ReDoer recur before yield: tock=1.0, tyme=None, count=0 in doist.enter next doer.do enter
-    ReDoer recur after yield: tyme=0.0, count=1 in doist.recur send doer.do recur
-    ReDoer recur after yield: tyme=1.0, count=2 in doist.recur send doer.do recur
-    ReDoer recur after yield: tyme=2.0, count=3 in doist.recur send doer.do recur
-    ReDoer recur after break: tyme=2.0, count=3
+    Test Console::
+
+        ****** ReDoer Test **********
+        ReDoer enter: temp=None in doist.enter next doer.do -> .enter
+        ReDoer recur before yield: tock=1.0, tyme=None, count=0 in doist.enter next doer.do enter
+        ReDoer recur after yield: tyme=0.0, count=1 in doist.recur send doer.do recur
+        ReDoer recur after yield: tyme=1.0, count=2 in doist.recur send doer.do recur
+        ReDoer recur after yield: tyme=2.0, count=3 in doist.recur send doer.do recur
+        ReDoer recur after break: tyme=2.0, count=3
 
 
     """
@@ -868,9 +917,11 @@ class ReDoer(Doer):
         """Do 'enter' context actions. Override in subclass. Not a generator method.
         Set up resources. Comparable to context manager enter.
 
-        Parameters:
+        Parameters::
+
             temp (bool | None): True means use temporary file resources if any
                                 None means ignore parameter value. Use self.temp
+
 
         Inject temp or self.temp into file resources here if any
         """
@@ -880,7 +931,8 @@ class ReDoer(Doer):
     def recur(self, tock=None):
         """Do 'recur' context actions as a generator method. Override in subclass.
 
-        Parameters:
+        Parameters::
+
             tock (float|None): this doer when creating this generator in recur
                 section of its .do method supplies its .tock as this method's
                 tock parameter.
@@ -890,10 +942,11 @@ class ReDoer(Doer):
                 run again ASAP (on next iteration of doist.do)
 
 
-        Returns:
-           completion (bool): completion state of recurrence actions.
-                              True means completed successfully
-                              False completed unsuccessfully
+        Returns::
+
+            completion (bool): completion state of recurrence actions.
+                True means completed successfully
+                False completed unsuccessfully
 
         Note that "tyme" is not a parameter when recur is a generator method
         since doist tyme is injected by the explicit yield below.
@@ -935,21 +988,25 @@ class DoDoer(Doer):
     """
     DoDoer implements Doist like functionality to allow nested scheduling of Doers.
     Each DoDoer runs a list of doers like a Doist but using the tyme from its
-       injected tymth for the associated tymist as injected by its ultimate root
-       parent Doist and any intervening parent DoDoer(s).
+    injected tymth for the associated tymist as injected by its ultimate root
+    parent Doist and any intervening parent DoDoer(s).
 
     Scheduling hierarchy: Doist->DoDoer...->DoDoer->Doers
 
-    Inherited Attributes:
+    Inherited Attributes::
+
         done (bool): completion state:
                     True means completed
                     Otherwise incomplete. Incompletion maybe due to close or abort.
         opts (dict): injected options for its generator .do
         temp (bool | None): use temporary file resources if any
 
-    Attributes:
+    Attributes::
 
-    Inherited Properties:
+        None
+
+    Inherited Properties::
+
         .tyme is float relative cycle time of associated Tymist .tyme obtained
             via injected .tymth function wrapper closure.
         .tymth is function wrapper closure returned by Tymist .tymeth() method.
@@ -958,7 +1015,8 @@ class DoDoer(Doer):
         .tock is float, desired time in seconds between runs or until next run,
                  non negative, zero means run asap
 
-    Properties:
+    Properties::
+
         doers (list): Doer or Doist compatible generator instances,
             functions, or methods.
         deeds (deque):  tuples of form (dog, retyme, doer)  where:
@@ -972,7 +1030,8 @@ class DoDoer(Doer):
             are complete. Enables dynamically managing extending or removing
             doers and associated deeds while running.
 
-    Inherited Methods:
+    Inherited Methods::
+
         .wind  injects ._tymth dependency from associated Tymist to get its .tyme
         .__call__ makes instance callable
             Appears as generator function that returns generator
@@ -984,13 +1043,15 @@ class DoDoer(Doer):
         .close is close context method
         .abort is abort context method
 
-    Overidden Methods:
+    Overidden Methods::
+
         .do
         .enter
         .recur
         .exit
 
-    Hidden:
+    Hidden::
+
        ._tymth is injected function wrapper closure returned by .tymen() of
             associated Tymist instance that returns Tymist .tyme. when called.
        ._tock is hidden attribute for .tock property
@@ -1004,12 +1065,14 @@ class DoDoer(Doer):
         """
         Initialize instance.
 
-        Inherited Parameters:
+        Inherited Parameters::
+
             tymth is injected function wrapper closure returned by .tymen() of
                 Tymist instance. Calling tymth() returns associated Tymist .tyme.
             tock is float seconds initial value of .tock
 
-        Parameters:
+        Parameters::
+
             doers (iterable): Doer class instances, generator methods or function
                 callables with attributes tock, done, and opts dict() used to
                 initialize .doers.
@@ -1032,8 +1095,7 @@ class DoDoer(Doer):
     def doers(self):
         """
         doers property getter, get ._doers
-        .doers is list of doist compatible generator instances, functions, or
-            methods
+        .doers is list of doist compatible generator instances, functions, or methods.
         """
         return self._doers
 
@@ -1052,7 +1114,7 @@ class DoDoer(Doer):
     def deeds(self):
         """
         deeds property getter, get ._deeds
-        .deeds is deque of triples, each of form (dog, retyme, doer)
+        .deeds is deque of triples, each of form (dog, retyme, doer).
         """
         return self._deeds
 
@@ -1072,8 +1134,8 @@ class DoDoer(Doer):
         """
         always property getter, get ._always
         .always is Boolean, True means keep running even when all dogs in deeds
-            are complete. Enables dynamically managing extending or removing
-            doers and associated deeds while running.
+        are complete. Enables dynamically managing extending or removing doers
+        and associated deeds while running.
         """
         return self._always
 
@@ -1092,7 +1154,8 @@ class DoDoer(Doer):
         Calling this method returns generator
         Interface matched generator function for compatibility
 
-        Parameters:
+        Parameters::
+
             tymth (closure): injected function wrapper closure returned by
                 Tymist.tymen(). Calling tymth() returns associated Tymist.tyme.
             tock (float): injected initial tock value
@@ -1106,7 +1169,7 @@ class DoDoer(Doer):
                 are complete. Enables dynamically managing extending or removing
                 doers and associated deeds while running.
                 When not provided use .always.
-                temp (bool): True means use temporary file resources if any
+            temp (bool): True means use temporary file resources if any
             opts (dict): injected optional additional parameters
         """
         temp = temp or (self.temp if self.temp else temp)  # inject if temp or self.temp
@@ -1160,7 +1223,8 @@ class DoDoer(Doer):
 
         Runs enter context of each dog by calling next(dog)
 
-        Parameters:
+        Parameters::
+
             doers (list): Doer Instance, generator method or function callables
                 with attributes tock, done, and opts dict().
                 If not provided uses .doers.
@@ -1172,7 +1236,8 @@ class DoDoer(Doer):
 
         Inject temp or self.temp into file resources here if any
 
-        Returns:
+        Returns::
+
             deeds (deque): A deed is tuple of form (dog, retyme, doer).
                            If not provided uses .deeds.
 
@@ -1220,17 +1285,14 @@ class DoDoer(Doer):
         """
         Do 'recur' context actions. Equivalent of Doist.recur
 
-        Parameters:
-            tyme (float): is output of send fed to do yield, The root scheduler
-                Doist feeds its .tyme which propagates down the chain of DoDoers
-                Because tymist is injected by doist or dodoer, self.tyme is same
-                as tyme. So may use either which is more convenient.
-             deeds (deque): tuples of form (dog, retyme, doer).
-                If not provided uses .deeds.
-                Parameterization here of deeds enables some special cases.
+        Time value is output of send fed to do yield. Doist feeds its .tyme down
+        the chain of DoDoers. Because tymist is injected by doist or dodoer,
+        self.tyme is same as tyme. So may use either which is more convenient.
+        Deeds are tuples of form (dog, retyme, doer). If not provided uses
+        .deeds. Parameterization here of deeds enables some special cases.
 
-        Returns completion state of recurrence actions.
-           True means done False means continue
+          Returns completion state of recurrence actions.
+              True means done False means continue
 
         Cycle once through deeds deque and update in place
 
@@ -1270,7 +1332,8 @@ class DoDoer(Doer):
         """
         Do 'exit' context actions.
 
-        Parameters:
+        Parameters::
+
             deeds (deque): of deed tuples of form (dog, retyme, doer)
                 If not provided uses .deeds.
                 Parameterization here of deeds enables some special cases.
@@ -1302,7 +1365,8 @@ class DoDoer(Doer):
         Extend .doers list with doers. Ready deeds from doers and extend .doers
         and .deeds.  Edit deeds in place so not replace deque.
 
-        Parameters:
+        Parameters::
+
             doers is list of doers to add as extension.
 
         """
@@ -1317,7 +1381,8 @@ class DoDoer(Doer):
         Remove doers from .doers list and any associated deeds from .deeds deque.
         Force close removed deeds.
 
-        Parameters:
+        Parameters::
+
             doers is list of doers to remove.
 
         """
@@ -1351,13 +1416,15 @@ def bareDo(tymth=None, tock=0.0, *, temp=None, **opts):
     Decorating copied renamed function with doize returns singleton with injected
     parameter values.
 
-    Injected Attributes:
+    Injected Attributes::
+
         g.tock = tock  # default tock attributes
         g.done = None  # default done state
         g.temp = None  # temporary resources
         g.opts = opts
 
-    Parameters:
+    Parameters::
+
         tymth (closure): injected function wrapper closure returned by
                 Tymist.tymen(). Calling tymth() returns associated Tymist.tyme.
         tock (float): injected initial tock value
@@ -1405,9 +1472,10 @@ class ExDoer(Doer):
 
     See Doer for inherited attributes, properties, and methods.
 
-    Attributes:
-       states (list): State namedtuples (tyme, context, feed, count)
-       count (int): iteration count
+    Attributes::
+
+        states (list): State namedtuples (tyme, context, feed, count)
+        count (int): iteration count
 
     """
 
@@ -1424,7 +1492,8 @@ class ExDoer(Doer):
         """Do 'enter' context actions. Override in subclass. Not a generator method.
         Set up resources. Comparable to context manager enter.
 
-        Parameters:
+        Parameters::
+
             temp (bool | None): True means use temporary file resources if any
                                 None means ignore parameter value. Use self.temp
 
@@ -1474,7 +1543,8 @@ def doifyExDo(tymth, tock=0.0, states=None, *, temp=None, **opts):
     Calling this function returns generator.
     Wrapping this function with doify returns copy with unique attributes
 
-    Parameters:
+    Parameters::
+
         tymth (closure): injected function wrapper closure returned by
                 Tymist.tymen(). Calling tymth() returns associated Tymist.tyme.
         tock (float): injected initial tock value
@@ -1520,7 +1590,8 @@ def doizeExDo(tymth, tock=0.0, states=None, *, temp=None, **opts):
     Example non-class based generator
     Calling this function returns generator
 
-    Parameters:
+    Parameters::
+
         tymth (closure): injected function wrapper closure returned by
                 Tymist.tymen(). Calling tymth() returns associated Tymist.tyme.
         tock (float): injected initial tock value
@@ -1562,19 +1633,22 @@ def doizeExDo(tymth, tock=0.0, states=None, *, temp=None, **opts):
 class TryDoer(Doer):
     """TryDoer supports testing with methods to record sends and yields
 
-    Inherited Attributes:
+    Inherited Attributes::
+
         done (bool | None): completion state:
                              True means completed Otherwise incomplete.
                              Incompletion maybe due to close or abort.
         opts (dict): injected options into its .do generator by scheduler
         temp (bool | None): use temporary file resources if any
 
-    Attributes:
-       states (list): State namedtuples (tyme, context, feed, count)
-       count (int): is context count
-       stop (int): count where doer completes
+    Attributes::
 
-    Inherited Properties:
+        states (list): State namedtuples (tyme, context, feed, count)
+        count (int): is context count
+        stop (int): count where doer completes
+
+    Inherited Properties::
+
         tyme (float): relative cycle time of associated Tymist .tyme obtained
             via injected .tymth function wrapper closure.
         tymth (closure): injected function wrapper closure returned by
@@ -1582,9 +1656,12 @@ class TryDoer(Doer):
         tock (float): injected initial tock value. non negative, zero means run asap
 
 
-    Properties:
+    Properties::
 
-    Methods:
+        None
+
+    Methods::
+
         .wind  injects ._tymth dependency from associated Tymist to get its .tyme
         .__call__ makes instance callable
             Appears as generator function that returns generator
@@ -1599,11 +1676,15 @@ class TryDoer(Doer):
     def __init__(self, stop=3, **kwa):
         """
         Initialize instance.
-        Inherited Parameters:
-           tymist is Tymist instance
-           tock is float seconds initial value of .tock
-        Parameters:
-           stop is count when complete
+
+        Inherited Parameters::
+
+            tymist (Tymist): instance
+            tock (float): seconds initial value of .tock
+
+        Parameters::
+
+            stop (int): count when complete
 
         """
         super(TryDoer, self).__init__(**kwa)
@@ -1615,7 +1696,8 @@ class TryDoer(Doer):
         """Do 'enter' context actions. Override in subclass. Not a generator method.
         Set up resources. Comparable to context manager enter.
 
-        Parameters:
+        Parameters::
+
             temp (bool | None): True means use temporary file resources if any
                                 None means ignore parameter value. Use self.temp
 
@@ -1667,7 +1749,8 @@ def tryDo(states, tymth, tock=0.0, *, temp=None, **opts):
     """Generator function test example non-class based generator.
     Calling this function returns generator:
 
-    Parameters:
+    Parameters::
+
         tymth (closure): injected function wrapper closure returned by
                 Tymist.tymen(). Calling tymth() returns associated Tymist.tyme.
         tock (float): injected initial tock value
