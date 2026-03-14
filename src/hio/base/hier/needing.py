@@ -25,57 +25,33 @@ class Need(Mixin):
         hold (Hold): data shared by boxwork
 
     Properties:
-        expr (str): evalable boolean expression.
-        compiled (bool): True means ._code holds compiled ._expr
-                         False means not yet compiled
+        expr (str): evaluable boolean expression.
+        compiled (bool): True means ._code holds compiled ._expr; False means not yet compiled
 
 
     Hidden:
-        _expr (str): evalable boolean expression.
-        _code (None|CodeType): compiled evalable boolean expression .expr
-            None means not yet compiled from .expr
+        _expr (str): evaluable boolean expression.
+        _code (None|CodeType): compiled evaluable boolean expression .expr; None means not yet compiled from .expr
 
 
 
     Compilation Notes:
-        c = compile("True", '<string>', 'eval')
-        c
-        <code object <module> at 0x1042f2250, file "<string>", line 1>
-        type(c)
-        <class 'code'>
-        import types
-        isinstance(c, types.CodeType)
-        True
+        The need returned by an ``on()`` call keeps the string expression because
+        compiled code objects are not pickleable. In multiprocessing, the child
+        process recompiles the expression from the string form. Keeping the string
+        representation also helps debugging and introspection.
 
-        import pickle
-        s = pickle.dumps(c)
-        builtins.TypeError: cannot pickle code objects
+    Expression Syntax Notes:
+        ``H`` is a local reference to ``self.hold`` during evaluation. Need
+        expressions can use dotted hold paths directly, for example,
+        ``H.root_dog.value``. This is equivalent to either
+        ``self.hold["root_dog"].value`` or ``self.hold[("root", "dog")].value``.
 
-        eval(c)
-        True
-
-        So  the need returned by an on() call must keep around the string
-        representation for multiprocessing because the code object itself is not
-        pickleable and must be recompiled inside the child process.
-        Also having the string rep around can be helpful in debugging if define
-        __repr__ and __str__ for need objects.
-
-    Expr syntax notes:
-        H (Hold) shared data syntax  with locally scope variables H ref for .hold
-
-        so need syntax does not heed to "quote" paths keys into the bags
-        containers Hold dict subclass with attribute and durable support.
-
-        H.root_dog.value  is equivalent to self.hold["root_dog"].value or
-                                           self.hold[("root", "dog")].value
-
-        So need term  "H.root_dog.value > 5" should compile directly and eval
-        as long as H is in the locals() and H is a Hold instance.
-
-        So no need to do substitutions or shorthand
-        The hierarchy in the .hold is indicated by '_' separated keys
-        The Box Boxer Actor names are forbidden from having '_" as an element
-        with Renam regex test.
+        The expression ``H.root_dog.value > 5`` compiles and evaluates directly
+        as long as ``H`` is present in locals and references a ``Hold`` instance.
+        No substitution shorthand is required. Hierarchy in ``.hold`` uses
+        underscore-separated keys, so Box/Boxer/Actor names may not contain
+        ``_`` (enforced by the ``Renam`` regex).
 
     """
 
@@ -84,7 +60,7 @@ class Need(Mixin):
         """Initialization method for instance.
 
         Parameters:
-            expr (str): evalable boolean expression.
+            expr (str): evaluable boolean expression.
                         if empty or None then use default = 'True'
             hold (None|Hold): data shared by boxwork
         """
@@ -98,7 +74,7 @@ class Need(Mixin):
         """Make Need instance a callable object.
 
         Parameters:
-            iops (dict):  run time input output parms for need.
+            iops (dict):  run time input output parameters for need.
                           Usually provided when need is Act deed.
 
         """
@@ -113,7 +89,7 @@ class Need(Mixin):
         """Property getter for ._expr
 
         Returns:
-            expr (str): evalable boolean expression.
+            expr (str): evaluable boolean expression.
         """
         return self._expr
 
@@ -123,7 +99,7 @@ class Need(Mixin):
         """Property setter for ._expr
 
         Parameters:
-            expr (str): evalable boolean expression.
+            expr (str): evaluable boolean expression.
         """
         self._expr = expr if expr else 'True'
         self._code = None  # force lazy recompilation
@@ -141,10 +117,9 @@ class Need(Mixin):
 
 
     def compile(self):
-        """Compile evable boolean expression str ._expr into compiled code
+        """Compile evaluable boolean expression str ._expr into compiled code
         object ._code to be evaluated at run time.
         Because code objects are not pickleable the compilation must happen
         at prep (enter) time not init time.
         """
         self._code = compile(self.expr, '<string>', 'eval')
-

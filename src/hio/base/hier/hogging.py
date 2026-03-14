@@ -48,10 +48,8 @@ class Hog(ActBase, Filer):
         HeadDirPath (str): default abs dir path head such as "/usr/local/var"
         TailDirPath (str): default rel dir path tail when using head
         CleanTailDirPath (str): default rel dir path tail when creating clean
-        AltHeadDirPath (str): default alt dir path head such as  "~"
-                              as fallback when desired head not permitted.
-        AltTailDirPath (str): default alt rel dir path tail as fallback
-                              when using alt head.
+        AltHeadDirPath (str): default alt dir path head such as "~"; fallback when desired head not permitted.
+        AltTailDirPath (str): default alt rel dir path tail as fallback when using alt head.
         AltCleanTailDirPath (str): default alt rel path tail when creating clean
         TempHeadDir (str): default temp abs dir path head such as "/tmp"
         TempPrefix (str): default rel dir path prefix when using temp head
@@ -61,37 +59,27 @@ class Hog(ActBase, Filer):
         Fext (str): default file extension such as "text" for "fname.text"
 
     Class Attributes:
-        ReservedTags (dict[str]): of reserved tags to protect from collision with
-                                  defined parameter names that may not be used for
-                                  log tags when using **kwa to provide hold
-                                  log leys. Uses dict since inclusion test is
-                                  faster than with list
+        ReservedTags (dict[str]): reserved tags that prevent collisions with defined parameter names; these may not be used for log tags when using ``**kwa`` to provide hold log keys. Uses dict because inclusion test is faster than list.
 
-    Inherited Attributes  see Act, File
+    Inherited Attributes (see Act, File):
         hold (Hold): data shared by boxwork
 
-        name (str): overriden by .name property from Act (see name property)
+        name (str): overridden by .name property from Act (see name property)
         base (str): another unique path component inserted before name
         temp (bool): True means use TempHeadDir in /tmp directory
         headDirPath (str): head directory path
         path (str | None):  full directory or file path once created else None
         perm (int):  octal OS permissions for path directory and/or file
-        filed (bool): True means .path ends in file.
-                       False means .path ends in directory
-        extensioned (bool): When not filed:
-                                True means ensure .path ends with fext
-                                False means do not ensure .path ends with fext
+        filed (bool): True means .path ends in file; False means .path ends in directory
+        extensioned (bool): When not filed, True means ensure .path ends with fext; False means do not ensure .path ends with fext
         mode (str): file open mode if filed
         fext (str): file extension if filed
         file (File | None): File instance when filed and created.
-        opened (bool): True means directory created and if filed then file
-                is opened. False otherwise
+        opened (bool): True means directory is created and, if filed, file is opened; False otherwise
 
 
-    Inherited Properties  see Act, File
-        name (str): unique name string of instance used for registering Act
-                    instance in Act registry as well providing a unique path
-                    component used in file path name
+    Inherited Properties (see Act, File):
+        name (str): unique instance name used for registering Act instance in Act registry and providing a unique path component in file path name
         iops (dict): input-output-parameters for .act
         nabe (str): action nabe (context) for .act
 
@@ -101,43 +89,42 @@ class Hog(ActBase, Filer):
                         False means logging has not yet begun needs header
         first (float|None): tyme when began logging, None means not yet running
         last (float|None): tyme when last logged, None means not yet running
-                      realtime equiv of last = began + (last - first)
+            realtime equiv of last = began + (last - first)
         rule (str): condition for log to fire one of Rules
                     (once, every, span, update, change)
-        span (float): tyme span seconds for periodic logging 0.0 means everytyme
+        span (float): tyme span seconds for periodic logging 0.0 means every tyme
         onced (bool): True means logged at least one (first) record
                       False means not yet logged one (first) record
         header (str): header for log file(s)
         rid (str):  universally unique run ID for given run of hog
         flushSpan (float): tyme span seconds between flushes (flush)
-                           0.0 means everytyme
+                           0.0 means every tyme
         flushForce (bool): True means force flush on every log
-                               False means only flush at appropriate times
+            False means only flush at appropriate times
         flushLast (float|None): tyme last flushed, None means not yet running
         cycleCount (int): number of cycled logs, 0 means do not cycle (count)
         cyclePeriod (float): min tyme span for cycling logs (cycle). 0.0 means
-                           cycle based on cycleHigh not tyme span. One of
-                           cycleSpan or cycleHigh must be non zero
+            cycle based on cycleHigh not tyme span. One of cycleSpan or
+            cycleHigh must be non zero
         cycleSize (int): maximum size in bytes allowed for each cycled log
-                         0 means no maximum. One of cycleSpan or cycleHigh must
-                         be non zero
+            0 means no maximum. One of cycleSpan or cycleHigh must be non zero
         cyclePaths (list[str]): paths for cycled logs
         cycleLast (float|None): tyme last cycled. None means not yet running
         hits (dict): hold items to log. Item label is log header tag
-                      Item value is hold key that provides value to log
+            Item value is hold key that provides value to log
         marks (dict): tyme or value tuples marks of hold items logged with
-                      updated or changed rule. Label is hold key.
+            updated or changed rule. Label is hold key.
         activeKey (str|None): hold key to active box name of boxer given by iops
-                              None otherwise
+            None otherwise
         tockKey (str|None): hold key to tock value of boxer given by iops
-                            None otherwise
-        tockKey (str|None): hold key to tyme value of boxer given by iops
-                            None otherwise
+            None otherwise
+        tymeKey (str|None): hold key to tyme value of boxer given by iops
+            None otherwise
 
 
     Hidden:
         _name (str): unique name of instance for .name property
-        _iopts (dict): input-output-paramters for .act for .iops property
+        _iopts (dict): input-output-parameters for .act for .iops property
         _nabe (str): action nabe (context) for .act for .nabe property
 
 
@@ -146,15 +133,15 @@ class Hog(ActBase, Filer):
     So opening file during init is compatible as its in the enter context of the
     its Doer even though its not in the endo context of its box.
     It still needs to be closed. Unlike the hold subery the Boxer doesn't know
-    about any Hogs runing as acts inside its boxes so can't close in its BoxerDoer
-    exit context. So much be closed inside with a close do act
+    about any Hogs running as acts inside its boxes so can't close in its BoxerDoer
+    exit context. So must be closed inside with a close do act
 
     Since filed it should reopen without truncating so does not overwrite
     existing log file of same name so uses mode = 'a+'.
     Need to test reopen logic
     Always rewrites header on first log after restart which may have changed
     log behavior so header demarcation enables recognition of log parameters.
-    Log header includes rid (unique run id) and datatime stamp so can always
+    Log header includes rid (unique run id) and datetime stamp so can always
     uniquely match a given run data to header even when reusing same log file.
     This is most important when rotating logs.
     Because each individual log record after header always starts with tyme as
@@ -203,7 +190,7 @@ class Hog(ActBase, Filer):
             hold (None|Hold): data shared across boxwork
 
             base (str): optional directory path segment inserted before name
-                that allows further differentation with a hierarchy. "" means
+                that allows further differentiation with a hierarchy. "" means
                 optional.
             temp (bool): assign to .temp
                 True then open in temporary directory, clear on close
@@ -221,7 +208,7 @@ class Hog(ActBase, Filer):
             clean (bool): True means path uses clean tail variant
                              False means path uses normal tail variant
             filed (bool): True means .path is file path not directory path
-                          False means .path is directiory path not file path
+                          False means .path is directory path not file path
             extensioned (bool): When not filed:
                                 True means ensure .path ends with fext
                                 False means do not ensure .path ends with fext
@@ -240,16 +227,16 @@ class Hog(ActBase, Filer):
             flushForce (bool): True means force flush on every log
                                False means only flush at appropriate times
             cycleCount (int): number of cycled logs, 0 means do not cycle
-            cycleSapn (float): cycle tyme span, tyme between log cycles
+            cycleSpan (float): cycle tyme span, tyme between log cycles
             cycleSize (int): maximum size in bytes allowed for each cycled log
                        0 means no maximum
             hits (None|dict): hold items to log. Item label is log header tag
                       Item value is hold key that provides value to log
-                    None means use unreserved items in **kwa wrt .ReservedTags
+                      None means use unreserved items in ``**kwa`` with respect to .ReservedTags
 
 
         When made (created and inited) by boxer.do then have "_boxer" and
-        "_box" keys in self.iops = dict(_boxer=self.name, _box=m.box.name, **iops)
+        "_box" keys in self.iops = ``dict(_boxer=self.name, _box=m.box.name, **iops)``
 
         """
         if not base:
@@ -327,11 +314,11 @@ class Hog(ActBase, Filer):
         """Act called by ActBase.
 
         Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
-                         local scope in case act compliles exec/eval str
+                iops (dict): input/output parameters, same as self.iops. Puts ``**iops`` in
+                    local scope in case act compiles exec/eval str
 
         When made by boxer.do then have "_boxer" and "_box" keys in self.iops
-           iops = dict(_boxer=self.name, _box=m.box.name, **iops)
+              iops = ``dict(_boxer=self.name, _box=m.box.name, **iops)``
         """
         if not self.started:
 
@@ -469,7 +456,7 @@ class Hog(ActBase, Filer):
 
 
     def record(self):
-        """Generate on record line .hits values from .hold
+        """Generate one record line from .hits values from .hold
 
         Returns:
            record (str): one newline delimited line of tab delimited values

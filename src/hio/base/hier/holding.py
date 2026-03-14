@@ -50,7 +50,7 @@ class Hold(Mine):
         subery (None|Subery): gets instance from item at '_hold_subery' or None
 
     Methods:
-        inject(self, key, val): injects .cans into val._sdb and key into val._key
+        - inject: injects .cans into val._sdb and key into val._key
 
 
     """
@@ -59,9 +59,9 @@ class Hold(Mine):
         Mapping to '.' joined strings
 
         dict __init__ signature options are:
-            dict(**kwa)
-            dict(mapping, **kwa)
-            dict(iterable, **kwa)
+            ``dict(**kwa)``
+            ``dict(mapping, **kwa)``
+            ``dict(iterable, **kwa)``
         dict.update has same call signature
             d.update({"a": 5, "b": 2,}, c=3 , d=4)
         """
@@ -81,9 +81,9 @@ class Hold(Mine):
         Mapping to '.' joined strings
 
         dict __init__ signature options are:
-            dict(**kwa)
-            dict(mapping, **kwa)
-            dict(iterable, **kwa)
+            ``dict(**kwa)``
+            ``dict(mapping, **kwa)``
+            ``dict(iterable, **kwa)``
         dict.update has same call signature
             d.update({"a": 5, "b": 2,}, c=3 , d=4)
 
@@ -152,6 +152,3 @@ class Hold(Mine):
             subery (None|Subery): instance or None
         """
         return self["_hold_subery"]
-
-
-

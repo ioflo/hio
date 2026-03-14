@@ -24,10 +24,9 @@ import typing
 from . import tyming
 from .doing import Doist, Doer
 from .. import hioing
-from .. import help
 from ..help import ogling, timing, helping, Namer, RawDom, IceMapDom
 
-from ..core.uxd import PeerMemoer
+from ..core.uxd.peermemoing import PeerMemoer
 
 ogler = ogling.initOgler(prefix='hio_mp', name="Boss", level=logging.ERROR)
 
@@ -44,7 +43,7 @@ Bossage = namedtuple("Bossage", "name path")
 
 # Loadage (namedtuple):
 # Bosser info to be injected into Crewer .start() containing both crew doist
-# parms for Process target kwargs and and Crewer parms.
+# parameters for Process target kwargs and Crewer parameters.
 #
 # Fields:
 #   name (str): child doist identifier for resources
@@ -307,22 +306,22 @@ class MultiDoerBase(Namer, PeerMemoer, Doer):
 
     Inherited Methods::
 
-        __call__()  makes instance callable as generator function returning generator
-        do() generator method that returns generator
-        enter() is enter context action method
-        recur() recur context action method or generator method
-        clean() clean context action method
-        exit() exit context method
-        close() close context method
-        abort() abort context method
-        wind()  injects ._tymth dependency from associated Tymist to get its .tyme
-        clearAllNameAddr()
-        getAddr(name)
-        getName(addr)
-        addNameAddr(name, addr)
-        remNameAddr(name=None, addr=None)
-        changeAddrAtName(name=None, addr=None)
-        changeNameAtAddr(addr=None, name=None)
+        - __call__(): makes instance callable as generator function returning generator
+        - do(): generator method that returns generator
+        - enter(): is enter context action method
+        - recur(): recur context action method or generator method
+        - clean(): clean context action method
+        - exit(): exit context method
+        - close(): close context method
+        - abort(): abort context method
+        - wind(): injects ._tymth dependency from associated Tymist to get its .tyme
+        - clearAllNameAddr()
+        - getAddr(name)
+        - getName(addr)
+        - addNameAddr(name, addr)
+        - remNameAddr(name=None, addr=None)
+        - changeAddrAtName(name=None, addr=None)
+        - changeNameAtAddr(addr=None, name=None)
 
     """
     Tagex = TagDex
@@ -352,7 +351,7 @@ class MultiDoerBase(Namer, PeerMemoer, Doer):
                                             **kwa)
 
         self.logger = None  # assign later from ogler in enter time/scope
-        self.graceful = False  # indiction by .force signal handler to exit on next recur
+        self.graceful = False  # indication by .force signal handler to exit on next recur
 
 
 
@@ -377,13 +376,13 @@ class MultiDoerBase(Namer, PeerMemoer, Doer):
 
         """
         self.logger = ogler.getLogger()  # uses ogler in enter scope
-        signal.signal(signal.SIGINT, self.force)  # register signal handers
-        signal.signal(signal.SIGTERM, self.force) # register signal handers
+        signal.signal(signal.SIGINT, self.force)  # register signal handlers
+        signal.signal(signal.SIGTERM, self.force) # register signal handlers
 
 
     def recur(self, tyme):
         """Do 'recur' context.
-        Must be overidden in subclass
+        Must be overridden in subclass
         """
         if self.graceful:  # signal handler.force caught signal so exit here
             sys.exit()
@@ -440,8 +439,8 @@ class Bosser(MultiDoerBase):
     Attributes::
 
         loads (list[dict]): Bosser info to be injected into Crewer .start()
-                            containing both crew doist parmss for Process target
-                            kwargs and and Crewer parms
+                    containing both crew doist parameters for Process target
+                    kwargs and Crewer parameters
                             (see Loadage._asdict() or CrewDom._asdict())
         ctx (mp.context.SpawnContext or None): context under which to spawn processes
         crew (dict): values HandDom instances keyed by name
