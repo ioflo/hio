@@ -8,7 +8,7 @@ from __future__ import annotations  # so type hints of classes get resolved late
 
 import re
 from collections.abc import Iterable, Mapping
-from ..help import isNonStringIterable, NonStringIterable
+from .helping import isNonStringIterable, NonStringIterable
 
 
 
@@ -25,24 +25,24 @@ class Mine(dict):
     will only allow actual keys as str. Iterables passed in as key are converted
     to a "_' joined str. Uses "_" so can use dict constuctor if need be with str
     path. Assumes items in Iterable do not contain '_'.
-    Supports attribute syntax to access items:
-        mine.a = 5
-        mine.a_b = 4
+    Supports attribute syntax to access items, e.g. mine.a = 5 and mine.a_b = 4.
 
-    Special staticmethods:
-        tokeys(k) returns split of k at separator '_' as tuple.
+    Special static methods: tokeys(k) returns split of k at separator '_' as tuple.
     """
 
     def __init__(self, *pa, **kwa):
         """Convert keys that are tuples when positional argument is Iterable or
         Mapping to '.' joined strings
 
-        dict __init__ signature options are:
+        dict __init__ signature options are::
+
             dict(**kwa)
             dict(mapping, **kwa)
             dict(iterable, **kwa)
-        dict.update has same call signature
-            d.update({"a": 5, "b": 2,}, c=3 , d=4)
+
+        dict.update has same call signature::
+
+            d.update({"a": 5, "b": 2}, c=3, d=4)
         """
         self.update(*pa, **kwa)
 
@@ -93,12 +93,15 @@ class Mine(dict):
         """Convert keys that are tuples when positional argument is Iterable or
         Mapping to '.' joined strings
 
-        dict __init__ signature options are:
+        dict __init__ signature options are::
+
             dict(**kwa)
             dict(mapping, **kwa)
             dict(iterable, **kwa)
-        dict.update has same call signature
-            d.update({"a": 5, "b": 2,}, c=3 , d=4)
+
+        dict.update has same call signature::
+
+            d.update({"a": 5, "b": 2}, c=3, d=4)
 
         """
         if len(pa) > 1:
@@ -165,5 +168,3 @@ class Mine(dict):
             keys (tuple[str]): split of key on '_' into path key components
         """
         return tuple(key.split('_'))
-
-

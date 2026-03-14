@@ -361,7 +361,7 @@ class MapDom():
         __iter__():  asdict(self)
         __getitem__(self, name)  map like interface
         __setitem__(self, name, value)  map like interface
-        _update(*pa,**kwa): update attributes using dict like update syntax
+        _update(\*pa, \*\*kwa): update attributes using dict like update syntax
         _asdict(): return self converted to dict
         _astuple(): return self converted to tuple
     """
@@ -631,7 +631,7 @@ class RawDom(MapDom):
         __iter__(self): asdict(self)
         _asdict(self): return self converted to dict
         _astuple(): return self converted to tuple
-        _update(*pa,**kwa): update attributes using dict like update syntax
+        _update(\*pa, \*\*kwa): update attributes using dict like update syntax
 
     Methods:
         _asjson(self): return bytes self converted to json
