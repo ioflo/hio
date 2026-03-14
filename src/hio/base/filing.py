@@ -99,7 +99,7 @@ class Filer(hioing.Mixin):
                 When system employs more than one keri installation, name allows
                 differentiating each instance by name
             base (str): optional directory path segment inserted before name
-                that allows further differentation with a hierarchy. "" means
+                that allows further differentiation with a hierarchy. "" means
                 optional.
             temp (bool): assign to .temp
                 True then open in temporary directory, clear on close
@@ -117,7 +117,7 @@ class Filer(hioing.Mixin):
             clean (bool): True means path uses clean tail variant
                              False means path uses normal tail variant
             filed (bool): True means .path is file path not directory path
-                          False means .path is directiory path not file path
+                          False means .path is directory path not file path
             extensioned (bool): When not filed:
                                 True means ensure .path ends with fext
                                 False means do not ensure .path ends with fext
@@ -255,7 +255,7 @@ class Filer(hioing.Mixin):
                           False means make path normally (not clean)
 
             filed (bool): True means .path is file path not directory path
-                          False means .path is directiory path not file path
+                          False means .path is directory path not file path
             extensioned (bool): When not filed:
                                 True means ensure .path ends with fext
                                 False means do not ensure .path ends with fext
@@ -418,7 +418,7 @@ class Filer(hioing.Mixin):
                           False means make path normally (not clean)
 
             filed (bool): True means .path is file path not directory path
-                          False means .path is directiory path not file path
+                          False means .path is directory path not file path
             extensioned (bool): When not filed:
                                 True means ensure .path ends with fext
                                 False means do not ensure .path ends with fext
@@ -548,9 +548,11 @@ def openFiler(cls=None, name="test", temp=True, reopen=True, clear=False, **kwa)
 
     Usage::
 
-    with openFiler(name="bob") as filer:
+        with openFiler(name="bob") as filer:
+            pass
 
-    with openFiler(name="eve", cls=FilerSubClass) as filer:
+        with openFiler(name="eve", cls=FilerSubClass) as filer:
+            pass
 
     """
     filer = None

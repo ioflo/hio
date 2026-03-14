@@ -22,16 +22,16 @@ class Tymist(hioing.Mixin):
     .tyme may be synchronized with real time by a .tyme manager
 
     Class Attributes:
-        .Tock is default .tock
+        Tock: default .tock
 
     Attributes:
 
     Properties:
-        .tyme is float relative cycle time, .tyme is artificial time
-        .tock is float tyme increment of .tick()
+        tyme: float relative cycle time, .tyme is artificial time
+        tock: float tyme increment of .tick()
 
     Methods:
-        .tick increments .tyme by one .tock or provided tock
+        tick method increments .tyme by one .tock or provided tock
 
     """
     Tock = 0.03125  # 1/32
@@ -119,7 +119,7 @@ class Tymee(hioing.Mixin):
             None means not assigned yet.
 
     Methods:
-        .wind  injects ._tymth dependency from associated Tymist to get its .tyme
+        - wind: injects ._tymth dependency from associated Tymist to get its .tyme
 
     Hidden:
         _tymth is injected function wrapper closure returned by .tymen() of
@@ -183,13 +183,13 @@ class Tymer(Tymee):
 
     Inherited attributes and properties are documented on Tymee.
 
-        Properties:
+    Properties:
         - duration (float): tyme duration in seconds from ._start to ._stop.
         - elapsed (float): tyme elapsed in seconds since ._start.
         - remaining (float): tyme remaining in seconds until ._stop.
         - expired (bool): True if expired (.tyme >= ._stop).
 
-        Hidden attributes: _tymth, _start, _stop.
+    Hidden attributes: _tymth, _start, _stop.
 
     """
     Duration = 0.0  # default duration when not provided
