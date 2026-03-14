@@ -54,30 +54,29 @@ class WireLog():
     buffers for logging 'over the wire' network tx and rx packets as bytes
 
     Attributes:
-        .rxed is Boolean True means log rx
-        .txed is Boolean True means log tx
-        .samed is Boolean True means log both rx and tx to same file or buffer
-        .filed is Boolean True means log to file False means log to memory buffer
-        .fmt is io write bytes printf style format string
+        rxed (bool): True means log rx
+        txed (bool): True means log tx
+        samed (bool): True means log both rx and tx to same file or buffer
+        filed (bool): True means log to file; False means log to memory buffer
+        fmt (bytes): io write bytes printf style format string
             Default is::
 
                 b"\\n%(dx)b %(who)b:\\n%(data)b\\n"
 
-            where:
-                who is src or dst for rx tx respectively
-                dx is the io direction and will be set to either b'tx' or b'rx' and
-                data is the actual io data as bytes
-            to write io data without direction who or line feeds use fmt= b'%(data)b'
-        .name is str used in file name
-        .temp is Boolean True means use /tmp directory
-        .prefix is str used as part of path prefix and formating
-        .headDirPath is str used as head of path
-        .tailDirpath is str used as tail of path
-        .altTailDirPath is str used a alternate tail of path
-        .dirPath is full directory path
-        .rxl is rx log io file or io buffer
-        .txl is tx log io file or io buffer
-        .opened is Boolean, True means file is opened Otherwise False
+            Placeholder semantics: ``who`` is src or dst for rx/tx,
+            ``dx`` is the io direction (b'tx' or b'rx'), and ``data`` is
+            the actual io payload bytes. To write data without direction,
+            who, or line feeds, use ``fmt=b'%(data)b'``.
+        name (str): used in file name
+        temp (bool): True means use /tmp directory
+        prefix (str): used as part of path prefix and formatting
+        headDirPath (str): used as head of path
+        tailDirPath (str): used as tail of path
+        altTailDirPath (str): alternate tail of path
+        dirPath (str): full directory path
+        rxl (io.IOBase | io.BytesIO | None): rx log file or memory buffer
+        txl (io.IOBase | io.BytesIO | None): tx log file or memory buffer
+        opened (bool): True means file/buffer is opened; False otherwise
 
     """
     Prefix = "hio"

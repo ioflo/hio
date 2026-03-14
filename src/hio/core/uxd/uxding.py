@@ -32,10 +32,8 @@ class Peer(filing.Filer):
         HeadDirPath (str): default abs dir path head such as "/usr/local/var"
         TailDirPath (str): default rel dir path tail when using head
         CleanTailDirPath (str): default rel dir path tail when creating clean
-        AltHeadDirPath (str): default alt dir path head such as  "~"
-                              as fallback when desired head not permitted.
-        AltTailDirPath (str): default alt rel dir path tail as fallback
-                              when using alt head.
+        AltHeadDirPath (str): default alt dir path head such as "~" as fallback when desired head not permitted.
+        AltTailDirPath (str): default alt rel dir path tail as fallback when using alt head.
         AltCleanTailDirPath (str): default alt rel path tail when creating clean
         TempHeadDir (str): default temp abs dir path head such as "/tmp"
         TempPrefix (str): default rel dir path prefix when using temp head
@@ -57,17 +55,14 @@ class Peer(filing.Filer):
         headDirPath (str): head directory path
         path (str or None):  full directory or file path once created else None
         perm (int):  numeric os permissions for directory and/or file(s)
-        filed (bool): True means .path ends in file.
-                       False means .path ends in directory
+        filed (bool): True means .path ends in file; False means .path ends in directory
         mode (str): file open mode if filed
         fext (str): file extension if filed
         file (File or None): File instance when filed and created.
-        opened (bool): True means directory path, uxd file, and socket are
-                created and opened. False otherwise
+        opened (bool): True means directory path, uxd file, and socket are created and opened. False otherwise
 
     Attributes:
-        umask (int): unpermission mask for uxd file, usually octal 0o022
-                     .umask is applied after .perm is set if any
+        umask (int): permission mask for uxd file, usually octal 0o022; .umask is applied after .perm is set if any
         bc (int or None): count of transport buffers of MaxGramSize
         bs (int): buffer size of transport buffers. When .bc then .bs is calculated
             by multiplying, .bs = .bc * .MaxGramSize. When .bc is None then .bs
@@ -112,15 +107,17 @@ class Peer(filing.Filer):
             clear (bool): True means remove directory upon close when reopening
                           False means do not remove directory upon close when reopening
             filed (bool): True means .path is file path not directory path
-                          False means .path is directiory path not file path
+                          False means .path is directory path not file path
             extensioned (bool): When not filed:
                                 True means ensure .path ends with fext
                                 False means do not ensure .path ends with fext
-            See Filing.Filer for other inherited paramters
+
+        See Also:
+            filing.Filer: other inherited parameters.
 
 
         Parameters:
-            umask (int): unpermission mask for uxd file, usually octal 0o022
+            umask (int): permission mask for uxd file, usually octal 0o022
             bc (int | None): count of transport buffers of MaxGramSize
             bs (int | None): buffer size of transport buffers. When .bc is provided
                 then .bs is calculated by multiplying, .bs = .bc * .MaxGramSize.
@@ -148,10 +145,10 @@ class Peer(filing.Filer):
 
 
     def actualBufSizes(self):
-        """Returns:
-            sizes (tuple); duple of the form (int, int) of the (tx, rx)
-                actual socket send and receive buffer size
+        """Return actual socket send and receive buffer size.
 
+        Returns:
+            tuple: (tx, rx) actual socket send and receive buffer sizes.
         """
         if not self.ls:
             return (0, 0)
@@ -164,10 +161,10 @@ class Peer(filing.Filer):
         """Opens socket in non blocking mode.
 
         Returns:
-            result (bool): True of opened successfully. False otherwise
+            result (bool): True if opened successfully. False otherwise
 
-        if socket not closed properly, binding socket gets error
-            OSError: (48, 'Address already in use')
+        Notes:
+            If socket is not closed properly, binding may raise OSError: (48, 'Address already in use').
         """
         if len(self.path) > self.MaxUxdPathSize:
             self.close()
@@ -225,12 +222,14 @@ class Peer(filing.Filer):
         """Idempotently open socket by closing first if need be
 
         Returns:
-            result (bool): True of opened successfully. False otherwise
+            result (bool): True if opened successfully. False otherwise
 
         Inherited Parameters:
             clear (bool): True means remove directory and uxd file upon close
                           False means do not remove directory and uxd file upon close
-            See filing.Filer for other inherited parameters
+
+        See Also:
+            filing.Filer: other inherited parameters.
         """
         opened = super(Peer, self).reopen(clear=clear, **kwa)
         if not opened:
@@ -245,7 +244,9 @@ class Peer(filing.Filer):
         Inherited Parameters:
             clear (bool): True means remove directory/uxd file upon close
                           False means do not remove directory/uxd file upon close
-            See filing.Filer for other inherited parameters
+
+        See Also:
+            filing.Filer: other inherited parameters.
         """
         if self.ls:
             self.ls.close() #close socket
@@ -335,7 +336,7 @@ def openPeer(cls=None, name="test", temp=True, reopen=True, clear=True,
 
     Parameters:
         cls (Class): instance of subclass instance
-        name (str): unique identifer of peer. Unique path part so can have many
+        name (str): unique identifier of peer. Unique path part so can have many
             Peers each at different paths that each use different dirs or files
         temp (bool): True means open in temporary directory, clear on close
                      Otherwise open in persistent directory, do not clear on close
@@ -344,7 +345,7 @@ def openPeer(cls=None, name="test", temp=True, reopen=True, clear=True,
         clear (bool): True means remove directory upon close when reopening
                       False means do not remove directory upon close when reopening
         filed (bool): True means .path is file path not directory path
-                      False means .path is directiory path not file path
+                      False means .path is directory path not file path
         extensioned (bool): When not filed:
                             True means ensure .path ends with fext
                             False means do not ensure .path ends with fext

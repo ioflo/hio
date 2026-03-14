@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from ... import help
 
 from ...base import doing
-from ..uxd import Peer
+from .uxding import Peer
 from ..memo import Memoer
 
 logger = help.ogler.getLogger()
@@ -38,8 +38,8 @@ class PeerMemoer(Peer, Memoer):
         Inherited Parameters:
             bc (int or None): count of transport buffers of MaxGramSize
 
-            See memoing.Memoer for other inherited paramters
-            See Peer for other inherited paramters
+            See memoing.Memoer for other inherited parameters
+            See Peer for other inherited parameters
 
 
         Parameters:
@@ -58,7 +58,7 @@ def openPM(cls=None, name="test", temp=True, reopen=True, clear=True,
 
     Parameters:
         cls (Class): instance of subclass instance
-        name (str): unique identifer of PeerMemoer peer.
+        name (str): unique identifier of PeerMemoer peer.
                     Enables management of transport by name.
                     Provides unique path part so can have many peers each at
                     different paths but in same directory.
@@ -69,7 +69,7 @@ def openPM(cls=None, name="test", temp=True, reopen=True, clear=True,
         clear (bool): True means remove directory upon close when reopening
                       False means do not remove directory upon close when reopening
         filed (bool): True means .path is file path not directory path
-                      False means .path is directiory path not file path
+                      False means .path is directory path not file path
         extensioned (bool): When not filed:
                             True means ensure .path ends with fext
                             False means do not ensure .path ends with fext
