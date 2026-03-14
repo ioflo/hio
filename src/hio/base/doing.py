@@ -60,20 +60,20 @@ class Doist(tyming.Tymist):
 
     Usage::
 
-        .enter method prepares deeds deque of triples (dog, retyme, doer) where
-        dog is a doer generator returned by calling doer generator instances,
-        functions, or methods.
+                - enter method prepares deeds deque of triples (dog, retyme, doer) where
+                    dog is a doer generator returned by calling doer generator instances,
+                    functions, or methods.
 
-        .recur method runs its deeds deque of triples (dog, retyme, doer) once
-         per invocation.
-        This synchronizes their cycle time .tyme to the Doist's tyme.
+                - recur method runs its deeds deque of triples (dog, retyme, doer) once
+                    per invocation. This synchronizes their cycle time .tyme to the Doist's
+                    tyme.
 
-        .do method repeatedly runs .recur until generators are complete. It may
-        either repeat as fast as possbile or repeat at real time increments.
+                - do method repeatedly runs .recur until generators are complete. It may
+                    either repeat as fast as possbile or repeat at real time increments.
 
     Inherited Class Attributes::
 
-        .Tock provides default value for .tock
+        - Tock provides default value for .tock
 
     Inherited Attributes::
 
@@ -114,18 +114,18 @@ class Doist(tyming.Tymist):
 
     Inherited Methods::
 
-        .tick() increments .tyme by one .tock or provided tock
+        - tick(): increments .tyme by one .tock or provided tock
 
     Methods::
 
-        .do repeadedly call .recur until all dogs in deeds are complete or
-            times out do to reaching time limit. Calls .enter., .recur, .exit
-        .ado async def version of .do
-        .enter prepare deeds, deque of triples (dog, retyme, doer)
-        .recur  run through all deeds once each invocaton of .recur
-        .exit  cleanly exit doers upon exception
-        .extend  cleanly add more doers at runtime
-        .remove  cleanly remove some or all doers at runtime
+                - do: repeadedly call .recur until all dogs in deeds are complete or
+                    times out do to reaching time limit. Calls .enter., .recur, .exit
+                - ado: async def version of .do
+                - enter: prepare deeds, deque of triples (dog, retyme, doer)
+                - recur: run through all deeds once each invocaton of .recur
+                - exit: cleanly exit doers upon exception
+                - extend: cleanly add more doers at runtime
+                - remove: cleanly remove some or all doers at runtime
     """
 
     def __init__(self, *, name='doist', real=False, limit=None, doers=None,
@@ -339,9 +339,9 @@ class Doist(tyming.Tymist):
         Parameters::
 
             doers is list of generator method or function callables with attributes
-                .tock is tyme increment in seconds
-                .done is Boolean completion state
-                .opts is dict() of optional parameters
+                - tock is tyme increment in seconds
+                - done is Boolean completion state
+                - opts is dict() of optional parameters
                 If not provided uses .doers.
                 The normal case is to initialize in .__init__. or .do().
             temp (bool | None): True means use temporary file resources if any
@@ -646,15 +646,15 @@ class Doer(tyming.Tymee):
 
     Methods::
 
-        .__call__ makes instance callable
-            Appears as generator function that returns generator
-        .do is generator method that returns generator
-        .enter is enter context action method
-        .recur is recur context action method or generator method
-        .clean is clean context action method
-        .exit is exit context method
-        .cease is cease context method
-        .abort is abort context method
+                - __call__: makes instance callable. Appears as generator function
+                    that returns generator
+                - do: generator method that returns generator
+                - enter: enter context action method
+                - recur: recur context action method or generator method
+                - clean: clean context action method
+                - exit: exit context method
+                - cease: cease context method
+                - abort: abort context method
 
     Hidden::
 
@@ -724,7 +724,11 @@ class Doer(tyming.Tymee):
         Interface matches generator function for compatibility.
         To customize create subclasses and override the lifecycle methods::
 
-            .enter, .recur, .exit, .cease, .abort
+            - enter
+            - recur
+            - exit
+            - cease
+            - abort
 
         Parameters::
 
@@ -880,25 +884,25 @@ class ReDoer(Doer):
 
     Inherited Methods::
 
-        .wind  injects ._tymth dependency from associated Tymist to get its .tyme
-        .__call__ makes instance callable
-            Appears as generator function that returns generator
-        .do is generator method that returns generator
-        .enter is enter context action method
-        .recur is recur context action method or generator method
-        .exit is exit context method
-        .close is close context method
-        .abort is abort context method
+                - wind: injects ._tymth dependency from associated Tymist to get its .tyme
+                - __call__: makes instance callable. Appears as generator function
+                    that returns generator
+                - do: is generator method that returns generator
+                - enter: is enter context action method
+                - recur: is recur context action method or generator method
+                - exit: is exit context method
+                - close: is close context method
+                - abort: is abort context method
 
     Overidden Methods::
 
-        .recur
+        - recur
 
     Hidden::
 
-       ._tymth is injected function wrapper closure returned by .tymen() of
+         - _tymth is injected function wrapper closure returned by .tymen() of
             associated Tymist instance that returns Tymist .tyme. when called.
-       ._tock is hidden attribute for .tock property
+         - _tock is hidden attribute for .tock property
 
     Test Console::
 
@@ -1007,13 +1011,13 @@ class DoDoer(Doer):
 
     Inherited Properties::
 
-        .tyme is float relative cycle time of associated Tymist .tyme obtained
-            via injected .tymth function wrapper closure.
-        .tymth is function wrapper closure returned by Tymist .tymeth() method.
-            When .tymth is called it returns associated Tymist .tyme.
-            .tymth provides injected dependency on Tymist tyme base.
-        .tock is float, desired time in seconds between runs or until next run,
-                 non negative, zero means run asap
+                - tyme is float relative cycle time of associated Tymist .tyme obtained
+                    via injected .tymth function wrapper closure.
+                - tymth is function wrapper closure returned by Tymist .tymeth() method.
+                    When .tymth is called it returns associated Tymist .tyme.
+                    .tymth provides injected dependency on Tymist tyme base.
+                - tock is float, desired time in seconds between runs or until next run,
+                    non negative, zero means run asap
 
     Properties::
 
@@ -1032,32 +1036,32 @@ class DoDoer(Doer):
 
     Inherited Methods::
 
-        .wind  injects ._tymth dependency from associated Tymist to get its .tyme
-        .__call__ makes instance callable
-            Appears as generator function that returns generator
-        .do is generator method that returns generator
-        .enter is enter context action method
-        .recur is recur context action method or generator method
-        .clean is clean context action method
-        .exit is exit context method
-        .close is close context method
-        .abort is abort context method
+                - wind: injects ._tymth dependency from associated Tymist to get its .tyme
+                - __call__: makes instance callable. Appears as generator function
+                    that returns generator
+                - do: is generator method that returns generator
+                - enter: is enter context action method
+                - recur: is recur context action method or generator method
+                - clean: is clean context action method
+                - exit: is exit context method
+                - close: is close context method
+                - abort: is abort context method
 
     Overidden Methods::
 
-        .do
-        .enter
-        .recur
-        .exit
+        - do
+        - enter
+        - recur
+        - exit
 
     Hidden::
 
-       ._tymth is injected function wrapper closure returned by .tymen() of
+         - _tymth is injected function wrapper closure returned by .tymen() of
             associated Tymist instance that returns Tymist .tyme. when called.
-       ._tock is hidden attribute for .tock property
-       ._always is hidden attribute for .always property
-       ._doers is hidden attribute for .doers property
-       ._deeds is hidden attribute for .deeds property
+         - _tock is hidden attribute for .tock property
+         - _always is hidden attribute for .always property
+         - _doers is hidden attribute for .doers property
+         - _deeds is hidden attribute for .deeds property
 
     """
 
@@ -1418,10 +1422,10 @@ def bareDo(tymth=None, tock=0.0, *, temp=None, **opts):
 
     Injected Attributes::
 
-        g.tock = tock  # default tock attributes
-        g.done = None  # default done state
-        g.temp = None  # temporary resources
-        g.opts = opts
+        g.tock: tock  # default tock attributes
+        g.done: None  # default done state
+        g.temp: None  # temporary resources
+        g.opts: opts
 
     Parameters::
 
@@ -1662,15 +1666,15 @@ class TryDoer(Doer):
 
     Methods::
 
-        .wind  injects ._tymth dependency from associated Tymist to get its .tyme
-        .__call__ makes instance callable
-            Appears as generator function that returns generator
-        .do is generator method that returns generator
-        .enter is enter context action method
-        .recur is recur context action method or generator method
-        .exit is exit context method
-        .close is close context method
-        .abort is abort context method
+                - wind: injects ._tymth dependency from associated Tymist to get its .tyme
+                - __call__: makes instance callable. Appears as generator function
+                    that returns generator
+                - do: is generator method that returns generator
+                - enter: is enter context action method
+                - recur: is recur context action method or generator method
+                - exit: is exit context method
+                - close: is close context method
+                - abort: is abort context method
     """
 
     def __init__(self, stop=3, **kwa):
