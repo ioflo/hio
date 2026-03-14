@@ -36,19 +36,22 @@ version = release
 extensions = [
               'myst_parser',
               'sphinx.ext.napoleon',
-              'sphinx.ext.viewcode',
               'sphinx.ext.autosummary',
               'sphinx.ext.autodoc',
               'autoapi.extension',
               "sphinx_rtd_theme",
               ]
 
+# Work around a Sphinx viewcode crash on Python 3.14 during collect_pages.
+# Keep viewcode enabled on earlier Python versions.
+if sys.version_info < (3, 14):
+    extensions.append('sphinx.ext.viewcode')
+
 napoleon_include_init_with_doc = True
 
-autoapi_dirs = [os.path.abspath('./../../src/hio/base')]
+autoapi_dirs = [os.path.abspath('./../../src/hio')]
 autoapi_options = [
     "members",
-    "undoc-members",
     "show-inheritance",
     "noindex",
 ]
@@ -66,7 +69,7 @@ templates_path = ['_templates']
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'test.md']
 
 
 # -- Options for HTML output -------------------------------------------------

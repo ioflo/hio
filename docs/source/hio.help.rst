@@ -11,6 +11,7 @@ hio.help.helping module
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 hio.help.ogling module
 ----------------------
@@ -19,6 +20,7 @@ hio.help.ogling module
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 hio.help.timing module
 ----------------------
@@ -27,6 +29,7 @@ hio.help.timing module
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 Module contents
 ---------------
@@ -35,3 +38,4 @@ Module contents
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:

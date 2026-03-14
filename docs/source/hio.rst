@@ -22,6 +22,7 @@ hio.cli module
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 hio.daemon module
 -----------------
@@ -30,6 +31,7 @@ hio.daemon module
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 hio.hioing module
 -----------------
@@ -38,6 +40,7 @@ hio.hioing module
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 Module contents
 ---------------
@@ -46,3 +49,4 @@ Module contents
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
