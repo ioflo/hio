@@ -38,7 +38,7 @@ def actify(name, *, base=None, attrs=None):
     Any callable usually function that is not already a subclass of ActBase can be
     converted to a subclass of ActBase and then registered in the Registry by its
     given name. Usually when defining a class simply make is a subclass of ActBase.
-    But when given a function on can decorate it with actify so that a new
+    But when given a function one can decorate it with actify so that a new
     subclass of ActBase is created and registered.
 
     Usage::
@@ -48,12 +48,12 @@ def actify(name, *, base=None, attrs=None):
             assert kwa == self.iops
             return self.iops
 
-        t = test(iops=dict(what=1), hello="hello", nabe=Nabe.redo)
+        t = test(iops=dict(what=1), hello="hello", nabe=Nabes.redo)
 
     Notes:
 
     In Python, when a function is assigned as the value of a class attribute,
-    the value of that attribute is automagically converted to a bound method of
+    the value of that attribute is automatically converted to a bound method of
     that class with injected self as first argument.
 
     class A():
@@ -81,7 +81,7 @@ def actify(name, *, base=None, attrs=None):
     # assign Act attrs
     attrs.update(dict(Registry=base.Registry, Instances=base.Instances, Index=0,
                       Names=() ))
-    cls = type(name, (base, ), attrs)  # create new subclass of base of Act.
+    cls = type(name, (base, ), attrs)  # create new subclass from Act base.
     cls.registerbyname()  # register subclass in cls.Registry by cls.__name__
 
     def decorator(func):
@@ -110,7 +110,7 @@ def registerone(cls):
 
 def register(names=None):
     """Parametrized class Decorator to add cls as cls.Registry entry for itself
-    keyed by its own .__name__ as well as being keyed by alises in names.
+    keyed by its own .__name__ as well as being keyed by aliases in names.
     A class decorator is necessary so that the class object is already created
     when decorator is applied.
 
@@ -130,15 +130,15 @@ def register(names=None):
     def decorator(cls):
         name = cls.__name__
         if name in cls.Registry:  # already registration for name
-            if cls.Registry[name] is not cls:  # different cls at name
+            if cls.Registry[name] is not cls:  # different class at name
                 raise hioing.HierError(f"Different Act by same {name=} already "
                                        f"registered.")
-        else:  # not yet regisered under name
+        else:  # not yet registered under name
             cls.Registry[name] = cls
         cls.Names = names  # creates class specific attribute .Names
         for name in names:
             if name in cls.Registry:   # already registration for name
-                if cls.Registry[name] is not cls:  # different cls at name
+                if cls.Registry[name] is not cls:  # different class at name
                     raise hioing.HierError(f"Different Act by same {name=} already "
                                            f"registered.")
             else:  # not yet registered under name
@@ -176,13 +176,13 @@ class ActBase(Mixin):
     Hidden::
 
         _name (str): unique name of instance for .name property
-        _iopts (dict): input-output-paramters for .act for .iops property
+        _iopts (dict): input-output-parameters for .act for .iops property
         _nabe (str): action nabe (context) for .act for .nabe property
 
     """
     Registry = {}  # subclass registry
     Instances = {}  # instance name registry
-    Index = 0  # naming index for default names of this subclasses instances
+    Index = 0  # naming index for default names of this subclass instances
 
     @classmethod
     def registerbyname(cls, name=None):
@@ -197,7 +197,7 @@ class ActBase(Mixin):
         """
         name = name if name is not None else cls.__name__
         if name in cls.Registry:  # already registration for name
-            if cls.Registry[name] is not cls:  # different cls at name
+            if cls.Registry[name] is not cls:  # different class at name
                 raise hioing.HierError(f"Different Act by same {name=} already "
                                            f"registered.")
         else:  # not yet registered under name
@@ -206,14 +206,14 @@ class ActBase(Mixin):
 
     @classmethod
     def _clear(cls):
-        """Clears Instances and and Index for testing purposes"""
+        """Clears Instances and Index for testing purposes"""
         cls.Instances = {}
         cls.Index = 0
 
 
     @classmethod
     def _clearall(cls):
-        """Clears Instances and and Index for testing purposes"""
+        """Clears Instances and Index for testing purposes"""
         registry = ActBase.Registry.values()
         registry = set(registry)  # so only one copy, accounts for aliases
         for klas in registry:
@@ -255,8 +255,8 @@ class ActBase(Mixin):
         """Act called by Actor. Should override in subclass.
 
         Parameters::
-            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
-                         local scope in case act compliles exec/eval str
+            iops (dict): input/output parameters, same as self.iops. Puts ``**iops`` in
+                         local scope in case act compiles exec/eval str
 
         """
         return iops  # for debugging
@@ -323,10 +323,10 @@ class ActBase(Mixin):
 
 @register()
 class Act(ActBase):
-    """Act for do verb deeds as  or executable statements orcallables.
+    """Act for do verb deeds as executable statements or callables.
     At make (compile) time any callable that is available in the scope of the
     do verb in the boxer.make method can be passed in as the deed parameter and
-    will be executed with ,iops as its parameters.
+    will be executed with iops as its parameters.
 
     do(deed)
 
@@ -340,7 +340,7 @@ class Act(ActBase):
         Index (int): default naming index for subclass instances. Each subclass
                 overrides with a subclass specific Index value to track
                 subclass specific instance default names.
-        Names (tuple[str]): tuple of aliases (names) under which this subclas
+        Names (tuple[str]): tuple of aliases (names) under which this subclass
                             appears in .Registry. Created by @register
 
     Overridden Class Attributes::
@@ -374,7 +374,7 @@ class Act(ActBase):
     Hidden::
 
         _name (str|None): unique name of instance
-        _iopts (dict): input-output-paramters for .act
+        _iopts (dict): input-output-parameters for .act
         _nabe (str): action nabe (context) for .act
         _deed (Callable|str):  action to be called with .iops as parameters else
                 executable set of statements with H as local
@@ -382,7 +382,7 @@ class Act(ActBase):
                                None means not yet compiled from .deed
 
     """
-    Index = 0  # naming index for default names of this subclasses instances
+    Index = 0  # naming index for default names of this subclass instances
 
 
     def __init__(self, deed=None, **kwa):
@@ -418,8 +418,8 @@ class Act(ActBase):
 
         Parameters::
 
-            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
-                         local scope in case act compliles exec/eval str
+            iops (dict): input/output parameters, same as self.iops. Puts ``**iops`` in
+                         local scope in case act compiles exec/eval str
         """
         if callable(self.deed):  # not compilable str
             return self.deed(**self.iops)  # injected H=self.hold into iops
@@ -478,7 +478,7 @@ class Act(ActBase):
 @register()
 class Goact(ActBase):
     """Goact (go act) is subclass of ActBase whose .act evaluates conditional
-    need expression to determine if a transition condition is satified for
+    need expression to determine if a transition condition is satisfied for
     transition to its destination box.
 
     Inherited Class Attributes::
@@ -491,7 +491,7 @@ class Goact(ActBase):
         Index (int): default naming index for subclass instances. Each subclass
                 overrides with a subclass specific Index value to track
                 subclass specific instance default names.
-        Names (tuple[str]): tuple of aliases (names) under which this subclas
+        Names (tuple[str]): tuple of aliases (names) under which this subclass
                             appears in .Registry. Created by @register
 
     Overridden Class Attributes::
@@ -518,11 +518,11 @@ class Goact(ActBase):
     Hidden::
 
         _name (str|None): unique name of instance
-        _iops (dict): input-output-paramters for .act
+        _iops (dict): input-output-parameters for .act
         _context (str): action context for .act
 
     """
-    Index = 0  # naming index for default names of this subclasses instances
+    Index = 0  # naming index for default names of this subclass instances
     #Names = () tuple of aliases for this subclass created by @register
 
 
@@ -567,8 +567,8 @@ class Goact(ActBase):
 
         Parameters::
 
-            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
-                         local scope in case act compliles exec/eval str
+            iops (dict): input/output parameters, same as self.iops. Puts ``**iops`` in
+                         local scope in case act compiles exec/eval str
 
         """
         if self.need():
@@ -597,7 +597,7 @@ class EndAct(ActBase):
         Index (int): default naming index for subclass instances. Each subclass
                 overrides with a subclass specific Index value to track
                 subclass specific instance default names.
-        Names (tuple[str]): tuple of aliases (names) under which this subclas
+        Names (tuple[str]): tuple of aliases (names) under which this subclass
                             appears in .Registry. Created by @register
 
     Overridden Class Attributes::
@@ -633,7 +633,7 @@ class EndAct(ActBase):
         _nabe (str): action nabe (context) for .act
 
     """
-    Index = 0  # naming index for default names of this subclasses instances
+    Index = 0  # naming index for default names of this subclass instances
 
     def __init__(self, nabe=Nabes.endo, **kwa):
         """Initialization method for instance.
@@ -677,8 +677,8 @@ class EndAct(ActBase):
 
         Parameters::
 
-            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
-                         local scope in case act compliles exec/eval str
+            iops (dict): input/output parameters, same as self.iops. Puts ``**iops`` in
+                         local scope in case act compiles exec/eval str
 
         """
         boxerName = self.iops['_boxer']  # get boxer name
@@ -702,7 +702,7 @@ class Beact(ActBase):
         Index (int): default naming index for subclass instances. Each subclass
                 overrides with a subclass specific Index value to track
                 subclass specific instance default names.
-        Names (tuple[str]): tuple of aliases (names) under which this subclas
+        Names (tuple[str]): tuple of aliases (names) under which this subclass
                             appears in .Registry. Created by @register
 
     Overridden Class Attributes::
@@ -724,11 +724,11 @@ class Beact(ActBase):
 
     Properties::
 
-        lhs (tuple[str]): left hand sige of assignment of form (key,field)
+        lhs (tuple[str]): left hand side of assignment of form (key,field)
             to be assigned as .mine[key][field]
         rhs (None|str|Callable):
             When None assign directly
-            When str compile to evable expression
+            When str compiles to evaluable expression
             When Callable then call directly with iops
         compiled (bool): True means ._code holds compiled rhs
                          False means not yet compiled
@@ -736,17 +736,17 @@ class Beact(ActBase):
     Hidden::
 
         _name (str|None): unique name of instance
-        _iopts (dict): input-output-paramters for .act
+        _iopts (dict): input-output-parameters for .act
         _nabe (str): action nabe (context) for .act
         _lhs (tuple[str]): of form (key, field)
         _rhs (None|str|Callable):  When None assign directly
-                                   When str compile to evable expression
+                                   When str compiles to evaluable expression
                                    When Callable then call directly with iops
-        _code (None|CodeType): compiled evalable boolean expression .rhs
+        _code (None|CodeType): compiled evaluable boolean expression .rhs
                                None means not yet compiled from .rhs
 
     """
-    Index = 0  # naming index for default names of this subclasses instances
+    Index = 0  # naming index for default names of this subclass instances
 
 
     def __init__(self, lhs: str|tuple([str]), rhs: None|str|Callable=None, **kwa):
@@ -769,7 +769,7 @@ class Beact(ActBase):
                 Resolves lhs to (key, field)
             rhs (None|str|Callable): right hand side of assignment
                 When None assign directly
-                When str compile to evable expression
+                When str compiles to evaluable expression
                 When Callable then call directly with iops
 
         """
@@ -792,8 +792,8 @@ class Beact(ActBase):
 
         Parameters::
 
-            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
-                         local scope in case act compliles exec/eval str
+            iops (dict): input/output parameters, same as self.iops. Puts ``**iops`` in
+                         local scope in case act compiles exec/eval str
         """
         key, field = self.lhs
 
@@ -848,7 +848,7 @@ class Beact(ActBase):
 
             rhs (None|str|Callable):  right hand side of assignment
                 When None assign directly
-                When str compile to evable expression
+                When str compiles to evaluable expression
                 When Callable then call directly with iops
         """
         return self._rhs
@@ -862,7 +862,7 @@ class Beact(ActBase):
 
             rhs (None|str|Callable):  right hand side of assignment
                 When None assign directly
-                When str compile to evable expression
+                When str compiles to evaluable expression
                 When Callable then call directly with iops
         """
         self._rhs = rhs
@@ -881,7 +881,7 @@ class Beact(ActBase):
 
 
     def compile(self):
-        """Compile evable boolean expression str ._expr into compiled code
+        """Compile evaluable boolean expression str ._expr into compiled code
         object ._code to be evaluated at run time.
         Because code objects are not pickleable the compilation must happen
         at prep (enter) time not init time.
@@ -904,7 +904,7 @@ class Mark(ActBase):
         Index (int): default naming index for subclass instances. Each subclass
                 overrides with a subclass specific Index value to track
                 subclass specific instance default names.
-        Names (tuple[str]): tuple of aliases (names) under which this subclas
+        Names (tuple[str]): tuple of aliases (names) under which this subclass
                             appears in .Registry. Created by @register
 
     Overridden Class Attributes::
@@ -937,12 +937,12 @@ class Mark(ActBase):
     Hidden::
 
         _name (str|None): unique name of instance
-        _iopts (dict): input-output-paramters for .act
+        _iopts (dict): input-output-parameters for .act
         _nabe (str): action nabe (context) for .act
 
 
     """
-    Index = 0  # naming index for default names of this subclasses instances
+    Index = 0  # naming index for default names of this subclass instances
 
 
     def __init__(self, nabe=Nabes.enmark, **kwa):
@@ -987,8 +987,8 @@ class Mark(ActBase):
 
         Parameters::
 
-            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
-                         local scope in case act compliles exec/eval str
+            iops (dict): input/output parameters, same as self.iops. Puts ``**iops`` in
+                         local scope in case act compiles exec/eval str
 
         """
         boxerName = self.iops['_boxer']  # get boxer name
@@ -1002,7 +1002,7 @@ class LapseMark(Mark):
     condition to transit based on elapsed time in a box.
 
     """
-    Index = 0  # naming index for default names of this subclasses instances
+    Index = 0  # naming index for default names of this subclass instances
 
 
     def __init__(self, nabe=Nabes.enmark, **kwa):
@@ -1043,8 +1043,8 @@ class LapseMark(Mark):
 
         Parameters::
 
-            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
-                         local scope in case act compliles exec/eval str
+            iops (dict): input/output parameters, same as self.iops. Puts ``**iops`` in
+                         local scope in case act compiles exec/eval str
 
         """
         boxerName = self.iops['_boxer']  # get boxer name
@@ -1061,7 +1061,7 @@ class RelapseMark(Mark):
     condition to transit based on elapsed time in a box.
 
     """
-    Index = 0  # naming index for default names of this subclasses instances
+    Index = 0  # naming index for default names of this subclass instances
 
 
     def __init__(self, nabe=Nabes.remark, **kwa):
@@ -1099,8 +1099,8 @@ class RelapseMark(Mark):
         """Act called by ActBase.
 
         Parameters::
-            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
-                         local scope in case act compliles exec/eval str
+            iops (dict): input/output parameters, same as self.iops. Puts ``**iops`` in
+                         local scope in case act compiles exec/eval str
 
         """
         boxerName = self.iops['_boxer']  # get boxer name
@@ -1117,7 +1117,7 @@ class Count(Mark):
     where this act is actioned.
 
     """
-    Index = 0  # naming index for default names of this subclasses instances
+    Index = 0  # naming index for default names of this subclass instances
 
 
     def __init__(self, nabe=Nabes.redo, **kwa):
@@ -1154,8 +1154,8 @@ class Count(Mark):
         """Act called by ActBase.
 
         Parameters::
-            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
-                         local scope in case act compliles exec/eval str
+            iops (dict): input/output parameters, same as self.iops. Puts ``**iops`` in
+                         local scope in case act compiles exec/eval str
 
         """
         boxerName = self.iops['_boxer']  # get boxer name
@@ -1172,10 +1172,10 @@ class Count(Mark):
 @register(names=('discount',))
 class Discount(Mark):
     """Discount resets count to None of box in mine for count special need
-    in the nabe where this act is actioned, usually Nabe.exdo.
+    in the nabe where this act is actioned, usually Nabes.exdo.
 
     """
-    Index = 0  # naming index for default names of this subclasses instances
+    Index = 0  # naming index for default names of this subclass instances
 
 
     def __init__(self, nabe=Nabes.exdo, **kwa):
@@ -1211,8 +1211,8 @@ class Discount(Mark):
         """Act called by ActBase.
 
         Parameters::
-            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
-                         local scope in case act compliles exec/eval str
+            iops (dict): input/output parameters, same as self.iops. Puts ``**iops`` in
+                         local scope in case act compiles exec/eval str
 
         """
         boxerName = self.iops['_boxer']  # get boxer name
@@ -1226,7 +1226,7 @@ class Discount(Mark):
 
 @register()
 class BagMark(Mark):
-    """BagMark (Mine Mark) is base classubclass of ActBase whose .act marks a
+    """BagMark (Mine Mark) is a base subclass of ActBase whose .act marks a
     bag value when in a box for a special need condition.
 
     Inherited Class Attributes::
@@ -1239,7 +1239,7 @@ class BagMark(Mark):
         Index (int): default naming index for subclass instances. Each subclass
                 overrides with a subclass specific Index value to track
                 subclass specific instance default names.
-        Names (tuple[str]): tuple of aliases (names) under which this subclas
+        Names (tuple[str]): tuple of aliases (names) under which this subclass
                             appears in .Registry. Created by @register
 
     Overridden Class Attributes::
@@ -1270,12 +1270,12 @@ class BagMark(Mark):
 
     Hidden::
         _name (str|None): unique name of instance
-        _iopts (dict): input-output-paramters for .act
+        _iopts (dict): input-output-parameters for .act
         _nabe (str): action nabe (context) for .act
 
 
     """
-    Index = 0  # naming index for default names of this subclasses instances
+    Index = 0  # naming index for default names of this subclass instances
 
 
     def __init__(self, nabe=Nabes.enmark, **kwa):
@@ -1319,8 +1319,8 @@ class BagMark(Mark):
         Override in subclass
 
         Parameters::
-            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
-                         local scope in case act compliles exec/eval str
+            iops (dict): input/output parameters, same as self.iops. Puts ``**iops`` in
+                         local scope in case act compiles exec/eval str
 
         """
         boxerName = self.iops['_boxer']  # get boxer name
@@ -1334,7 +1334,7 @@ class UpdateMark(BagMark):
     """UpdateMark marks bag in mine for tyme update special need
 
     """
-    Index = 0  # naming index for default names of this subclasses instances
+    Index = 0  # naming index for default names of this subclass instances
 
 
     def __init__(self, nabe=Nabes.enmark, **kwa):
@@ -1374,8 +1374,8 @@ class UpdateMark(BagMark):
         """Act called by ActBase.
 
         Parameters::
-            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
-                         local scope in case act compliles exec/eval str
+            iops (dict): input/output parameters, same as self.iops. Puts ``**iops`` in
+                         local scope in case act compiles exec/eval str
 
         """
         boxerName = self.iops['_boxer']  # get boxer name
@@ -1392,7 +1392,7 @@ class ReupdateMark(BagMark):
     """ReupdateMark marks bag in mine for tyme reupdate special need
 
     """
-    Index = 0  # naming index for default names of this subclasses instances
+    Index = 0  # naming index for default names of this subclass instances
 
 
     def __init__(self, nabe=Nabes.remark, **kwa):
@@ -1433,8 +1433,8 @@ class ReupdateMark(BagMark):
         """Act called by ActBase.
 
         Parameters::
-            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
-                         local scope in case act compliles exec/eval str
+            iops (dict): input/output parameters, same as self.iops. Puts ``**iops`` in
+                         local scope in case act compiles exec/eval str
 
         """
         boxerName = self.iops['_boxer']  # get boxer name
@@ -1452,7 +1452,7 @@ class ChangeMark(BagMark):
     Creates tuple of non-hidden fields in associated bag.
 
     """
-    Index = 0  # naming index for default names of this subclasses instances
+    Index = 0  # naming index for default names of this subclass instances
 
 
     def __init__(self, nabe=Nabes.enmark, **kwa):
@@ -1492,8 +1492,8 @@ class ChangeMark(BagMark):
         """Act called by ActBase.
 
         Parameters::
-            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
-                         local scope in case act compliles exec/eval str
+            iops (dict): input/output parameters, same as self.iops. Puts ``**iops`` in
+                         local scope in case act compiles exec/eval str
 
         """
         boxerName = self.iops['_boxer']  # get boxer name
@@ -1512,7 +1512,7 @@ class RechangeMark(BagMark):
     Creates tuple of non-hidden fields in associated bag.
 
     """
-    Index = 0  # naming index for default names of this subclasses instances
+    Index = 0  # naming index for default names of this subclass instances
 
 
     def __init__(self, nabe=Nabes.remark, **kwa):
@@ -1552,8 +1552,8 @@ class RechangeMark(BagMark):
         """Act called by ActBase.
 
         Parameters::
-            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
-                         local scope in case act compliles exec/eval str
+            iops (dict): input/output parameters, same as self.iops. Puts ``**iops`` in
+                         local scope in case act compiles exec/eval str
 
         """
         boxerName = self.iops['_boxer']  # get boxer name
@@ -1581,7 +1581,7 @@ class CloseAct(ActBase):
         Index (int): default naming index for subclass instances. Each subclass
                 overrides with a subclass specific Index value to track
                 subclass specific instance default names.
-        Names (tuple[str]): tuple of aliases (names) under which this subclas
+        Names (tuple[str]): tuple of aliases (names) under which this subclass
                             appears in .Registry. Created by @register
 
     Overridden Class Attributes::
@@ -1615,7 +1615,7 @@ class CloseAct(ActBase):
         _nabe (str): action nabe (context) for .act
 
     """
-    Index = 0  # naming index for default names of this subclasses instances
+    Index = 0  # naming index for default names of this subclass instances
 
     def __init__(self, nabe=Nabes.exdo, **kwa):
         """Initialization method for instance.
@@ -1666,8 +1666,8 @@ class CloseAct(ActBase):
 
         Parameters::
 
-            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
-                         local scope in case act compliles exec/eval str
+            iops (dict): input/output parameters, same as self.iops. Puts ``**iops`` in
+                         local scope in case act compiles exec/eval str
 
         """
         parms = {}
