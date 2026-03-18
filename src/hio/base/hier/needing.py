@@ -21,23 +21,27 @@ class Need(Mixin):
     The calling it evaluates a need expression. May be used as the transition
     condition of a Gact.
 
-    Attributes:
+    Attributes::
+
         hold (Hold): data shared by boxwork
 
-    Properties:
+    Properties::
+
         expr (str): evalable boolean expression.
         compiled (bool): True means ._code holds compiled ._expr
                          False means not yet compiled
 
 
-    Hidden:
+    Hidden::
+
         _expr (str): evalable boolean expression.
         _code (None|CodeType): compiled evalable boolean expression .expr
             None means not yet compiled from .expr
 
 
 
-    Compilation Notes:
+    Compilation Notes::
+
         c = compile("True", '<string>', 'eval')
         c
         <code object <module> at 0x1042f2250, file "<string>", line 1>
@@ -60,7 +64,8 @@ class Need(Mixin):
         Also having the string rep around can be helpful in debugging if define
         __repr__ and __str__ for need objects.
 
-    Expr syntax notes:
+    Expr syntax notes::
+
         H (Hold) shared data syntax  with locally scope variables H ref for .hold
 
         so need syntax does not heed to "quote" paths keys into the bags
@@ -83,7 +88,8 @@ class Need(Mixin):
     def __init__(self,  *, expr='True', hold=None, **kwa):
         """Initialization method for instance.
 
-        Parameters:
+        Parameters::
+
             expr (str): evalable boolean expression.
                         if empty or None then use default = 'True'
             hold (None|Hold): data shared by boxwork
@@ -97,7 +103,8 @@ class Need(Mixin):
     def __call__(self, **iops):
         """Make Need instance a callable object.
 
-        Parameters:
+        Parameters::
+
             iops (dict):  run time input output parms for need.
                           Usually provided when need is Act deed.
 
@@ -112,7 +119,8 @@ class Need(Mixin):
     def expr(self):
         """Property getter for ._expr
 
-        Returns:
+        Returns::
+
             expr (str): evalable boolean expression.
         """
         return self._expr
@@ -122,7 +130,8 @@ class Need(Mixin):
     def expr(self, expr):
         """Property setter for ._expr
 
-        Parameters:
+        Parameters::
+
             expr (str): evalable boolean expression.
         """
         self._expr = expr if expr else 'True'
@@ -133,7 +142,8 @@ class Need(Mixin):
     def compiled(self):
         """Property compiled
 
-        Returns:
+        Returns::
+
             compiled (bool): True means ._code holds compiled ._expr
                              False means not yet compiled
         """
@@ -147,4 +157,3 @@ class Need(Mixin):
         at prep (enter) time not init time.
         """
         self._code = compile(self.expr, '<string>', 'eval')
-

@@ -35,13 +35,15 @@ class IceBag(IceTymeDom):
     Frozen dataclass do not allow change or upate of either field or non-field
     attributes after __init__ this includes in the  __post_init__ method.
 
-    Inherited Non-Field Class Attributes:
+    Inherited Non-Field Class Attributes::
+
         _registry (ClassVar[dict]): dict of subclasses keyed by class.__name__
             Assigned by @registerify decorator
         _names (ClassVar[tuple[str]|None]): tuple of field names for class
             Assigned by @namify decorator
 
-    Inherited Properties:
+    Inherited Properties::
+
         _tymth (None|Callable):  Emulates interface for non-frozen TymeDom
                                  Returns None
         _tyme (None|Float): Emulates interface for non-frozen TymeDom
@@ -49,8 +51,9 @@ class IceBag(IceTymeDom):
         _now (None|float): Emulates interface for non-frozen TymeDom
                            Returns None
 
-    Field Attributes:
-       value (Any):  generic value field
+     Field Attributes::
+
+         value (Any):  generic value field
     """
     value: Any = None  # generic value
 
@@ -72,13 +75,15 @@ class Bag(TymeDom):
     may a frozen dataclass be a subclass of a frozen dataclass.
 
 
-    Inherited Non-Field Class Attributes:
+    Inherited Non-Field Class Attributes::
+
         _registry (ClassVar[dict]): dict of subclasses keyed by class.__name__
             Assigned by @registerify decorator
         _names (ClassVar[tuple[str]|None]): tuple of field names for class
             Assigned by @namify decorator
 
-    Inherited Non-Field Attributes:
+    Inherited Non-Field Attributes::
+
         _tymth (None|Callable): function wrapper closure returned by
             Tymist.tymen() method. When .tymth is called it returns associated
             Tymist.tyme. Provides injected dependency on Tymist cycle tyme base.
@@ -88,11 +93,13 @@ class Bag(TymeDom):
             None means either ._tymth as not yet been assigned or this bag's
             fields have not yet been updated.
 
-    Inherited Properties:
+    Inherited Properties::
+
         _now (None|float): current tyme given by ._tymth if not None.
 
-    Field Attributes:
-       value (Any):  generic value field
+     Field Attributes::
+
+         value (Any):  generic value field
     """
     value: Any = None  # generic value
 
@@ -103,4 +110,3 @@ class Bag(TymeDom):
         in every subclass
         """
         return hash((self.__class__.__name__,) + self._astuple())  # almost same as __eq__
-

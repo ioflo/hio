@@ -17,7 +17,8 @@ class Dusq():
     .sdb and .key will store its ordered set durably and allow access as a
     deduped FIFO queue. A set is deduped.
 
-    Properties
+    Properties::
+
         stale (bool): True means in-memory and durable on disk not synced
                      False means in-memory and durable on disk synced
         durable (bool): True means ._sdb and ._key and ._sdb.db and
@@ -25,7 +26,8 @@ class Dusq():
                         False otherwise
 
 
-    Hidden:
+    Hidden::
+
        _oset (oset):  in-memory cache as ordered set
        _sdb (DomIoSuber): instance of durable store
        _key (str): into .sdb
@@ -38,8 +40,9 @@ class Dusq():
     def __init__(self, *pa):
         """Initialize instance
 
-        Parameters:
-           pa[0] (NonStringeIteralble[RegDom]): instances to preload self._oset
+          Parameters::
+
+              pa[0] (NonStringeIteralble[RegDom]): instances to preload self._oset
 
         """
         self._oset = oset()
@@ -81,7 +84,8 @@ class Dusq():
     def stale(self):
         """Getter for ._stale
 
-        Returns:
+        Returns::
+
             stale (bool): True means in-memory and durable on disk not synced
                          False means in-memory and durable on disk synced
         """
@@ -91,7 +95,8 @@ class Dusq():
     def durable(self):
         """Property durable True when durable subdb injected and opened.
 
-        Returns:
+        Returns::
+
             durable (bool): True means ._sdb and ._key and ._sdb.db and
                                 .sdb.db.opened are not None
                             False otherwise
@@ -104,7 +109,8 @@ class Dusq():
         """Update ._deq with vals
         Peforms equivalent operation on durable .sdb at .key if any
 
-        Parameters:
+        Parameters::
+
             vals (NonStringIterable[RegDom]): to add to dusq
             deep (bool): True means deepcopy to ensure can't mutate outside
                          False means do not deepcopy
@@ -130,7 +136,8 @@ class Dusq():
         """If not None, add val add val to last in if unique. Otherwise ignore
         Peforms equivalent operation on durable .sdb at .key if any
 
-        Parameters:
+        Parameters::
+
             val (RegDom): element to be appended to deck (deque)
         """
         if val is not None:
@@ -155,7 +162,8 @@ class Dusq():
 
         Peforms equivalent operation on durable .sdb at .key if any
 
-        Parameters:
+        Parameters::
+
             emptive (bool): True means return None instead of raise IndexError
                when attempt to pull
                False means normal behavior of deque
@@ -197,7 +205,8 @@ class Dusq():
     def remove(self, value: RegDom|IceRegDom):
         """Remove value if contained
 
-        Returns:
+        Returns::
+
             result (bool): True value was removed
                            Raises KeyError if value not found
 
@@ -272,7 +281,7 @@ class Dusq():
         and ._stale or force then reads own data from ._sdb at ._key if any.
         If not attempts to write to ._sdb at ._key
 
-        Parameters:
+        Parameters::
             force (bool): True means force read even if not ._stale
                           Flase means do not force read
         """

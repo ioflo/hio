@@ -25,13 +25,15 @@ class CanDom(TymeDom):
     only. Assignment to Hold instance at key, injects ._sdb and ._key. This
     makes the in-memory key in Hold and the durable key the same.
 
-    Inherited Non-Field Class Attributes:
+    Inherited Non-Field Class Attributes::
+
         _registry (ClassVar[dict]): dict of subclasses keyed by class.__name__
             Assigned by @registerify decorator
         _names (ClassVar[tuple[str]|None]): tuple of field names for class
             Assigned by @namify decorator
 
-    Inherited Non-Field Attributes:
+    Inherited Non-Field Attributes::
+
         _tymth (None|Callable): function wrapper closure returned by
             Tymist.tymen() method. When .tymth is called it returns associated
             Tymist.tyme. Provides injected dependency on Tymist cycle tyme base.
@@ -41,15 +43,18 @@ class CanDom(TymeDom):
             None means either ._tymth as not yet been assigned or this bag's
             fields have not yet been updated.
 
-    Inherited Properties:
+    Inherited Properties::
+
         _now (None|float): current tyme given by ._tymth if not None.
 
-    Properties:
+    Properties::
+
         _durable (bool): True means ._sdb and ._key and ._sdb.db and
                                 .sdb.db.opened are not None
                          False otherwise
 
-    Non-Field Attributes:
+    Non-Field Attributes::
+
         _sdb (DomSuber|None): SuberBase subclass instance of durable subdb of Duror
         _key (str|None): database key used to store serialized field in ._cans
         _stale (bool): True means fields not yet been synced by write/read with durable
@@ -131,7 +136,8 @@ class CanDom(TymeDom):
     def _durable(self):
         """Property durable True when durable subdb injected and opened.
 
-        Returns:
+        Returns::
+
             durable (bool): True means ._sdb and ._key and ._sdb.db and
                                 .sdb.db.opened are not None
                             False otherwise
@@ -158,7 +164,8 @@ class CanDom(TymeDom):
         Toggles ._fresh during read so can update own fields from read without
         triggering a write.
 
-        Parameters:
+        Parameters::
+
             force (bool): True means force read even if not ._stale
                           Flase means do not force read
         """
@@ -185,13 +192,15 @@ class Can(CanDom):
     """CanDom is base class that adds support for durable storage via its ._cans
     non-field attribute
 
-    Inherited Non-Field Class Attributes:
+    Inherited Non-Field Class Attributes::
+
         _registry (ClassVar[dict]): dict of subclasses keyed by class.__name__
             Assigned by @registerify decorator
         _names (ClassVar[tuple[str]|None]): tuple of field names for class
             Assigned by @namify decorator
 
-    Inherited Non-Field Attributes:
+    Inherited Non-Field Attributes::
+
         _tymth (None|Callable): function wrapper closure returned by
             Tymist.tymen() method. When .tymth is called it returns associated
             Tymist.tyme. Provides injected dependency on Tymist cycle tyme base.
@@ -203,12 +212,14 @@ class Can(CanDom):
         _sdb (DomSuber|None): SuberBase subclass instance of durable subdb of Duror
         _key (str|None): database key used to store serialized field in ._cans
 
-    Inherited Properties:
+    Inherited Properties::
+
         _now (None|float): current tyme given by ._tymth if not None.
         _durable (bool):  True means ._sdb and ._key are not None
                           False otherwise
 
-    Field Attributes:
+    Field Attributes::
+
         value (Any):  generic value field
     """
     value: Any = None  # generic value
@@ -220,4 +231,3 @@ class Can(CanDom):
         in every subclass
         """
         return hash((self.__class__.__name__,) + self._astuple())  # almost same as __eq__
-

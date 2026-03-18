@@ -17,7 +17,8 @@ class Durq():
     .sdb and .key will store its ordered list durably and allow access as a FIFO
     queue
 
-    Properties
+    Properties::
+
         stale (bool): True means in-memory and durable on disk not synced
                      False means in-memory and durable on disk synced
         durable (bool): True means ._sdb and ._key and ._sdb.db and
@@ -25,7 +26,8 @@ class Durq():
                         False otherwise
 
 
-    Hidden:
+    Hidden::
+
        _deq (deque):  in-memory cache as deque
        _sdb (DomIoSuber): instance of durable store
        _key (str): into .sdb
@@ -37,8 +39,9 @@ class Durq():
     def __init__(self, *pa):
         """Initialize instance
 
-        Parameters:
-           pa[0] (NonStringeIteralble[RegDom]): instances to preload self._deq
+          Parameters::
+
+              pa[0] (NonStringeIteralble[RegDom]): instances to preload self._deq
 
         """
         self._deq = deque()
@@ -78,7 +81,8 @@ class Durq():
     def stale(self):
         """Getter for ._stale
 
-        Returns:
+        Returns::
+
             stale (bool): True means in-memory and durable on disk not synced
                          False means in-memory and durable on disk synced
         """
@@ -88,7 +92,8 @@ class Durq():
     def durable(self):
         """Property durable True when durable subdb injected and opened.
 
-        Returns:
+        Returns::
+
             durable (bool): True means ._sdb and ._key and ._sdb.db and
                                 .sdb.db.opened are not None
                             False otherwise
@@ -120,7 +125,8 @@ class Durq():
         """If not None, add val to last in. Otherwise ignore
         Peforms equivalent operation on durable .sdb at .key if any
 
-        Parameters:
+        Parameters::
+
             val (RegDom): element to be appended to deck (deque)
         """
         if val is not None:
@@ -141,7 +147,8 @@ class Durq():
 
         Peforms equivalent operation on durable .sdb at .key if any
 
-        Parameters:
+        Parameters::
+
             emptive (bool): True means return None instead of raise IndexError
                when attempt to pull
                False means normal behavior of deque
@@ -241,7 +248,7 @@ class Durq():
         and ._stale or force then reads own data from ._sdb at ._key if any.
         If not attempts to write to ._sdb at ._key
 
-        Parameters:
+        Parameters::
             force (bool): True means force read even if not ._stale
                           Flase means do not force read
         """
@@ -256,4 +263,3 @@ class Durq():
                 return self.pin()
 
         return None
-

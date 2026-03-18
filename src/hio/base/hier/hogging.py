@@ -35,7 +35,8 @@ class Hog(ActBase, Filer):
 
     Act comes before Filer in .__mro__ so Act.name property is used not Filer.name
 
-    Inherited Class Attributes:
+    Inherited Class Attributes::
+
         Registry (dict): subclass registry whose items are (name, cls) where:
                 name is unique name for subclass
                 cls is reference to class object
@@ -60,14 +61,16 @@ class Hog(ActBase, Filer):
         Mode (str): open mode such as "r+"
         Fext (str): default file extension such as "text" for "fname.text"
 
-    Class Attributes:
+    Class Attributes::
+
         ReservedTags (dict[str]): of reserved tags to protect from collision with
                                   defined parameter names that may not be used for
-                                  log tags when using **kwa to provide hold
+                                  log tags when using ``**kwa`` to provide hold
                                   log leys. Uses dict since inclusion test is
                                   faster than with list
 
-    Inherited Attributes  see Act, File
+    Inherited Attributes  see Act, File::
+
         hold (Hold): data shared by boxwork
 
         name (str): overriden by .name property from Act (see name property)
@@ -88,7 +91,8 @@ class Hog(ActBase, Filer):
                 is opened. False otherwise
 
 
-    Inherited Properties  see Act, File
+    Inherited Properties  see Act, File::
+
         name (str): unique name string of instance used for registering Act
                     instance in Act registry as well providing a unique path
                     component used in file path name
@@ -96,7 +100,8 @@ class Hog(ActBase, Filer):
         nabe (str): action nabe (context) for .act
 
 
-    Attributes:
+    Attributes::
+
         started (bool): True means logging has begun with header
                         False means logging has not yet begun needs header
         first (float|None): tyme when began logging, None means not yet running
@@ -135,7 +140,8 @@ class Hog(ActBase, Filer):
                             None otherwise
 
 
-    Hidden:
+    Hidden::
+
         _name (str): unique name of instance for .name property
         _iopts (dict): input-output-paramters for .act for .iops property
         _nabe (str): action nabe (context) for .act for .nabe property
@@ -173,7 +179,8 @@ class Hog(ActBase, Filer):
     def _genRid(cls):
         """Generates random universally unique hog run ID rid, not iteration
 
-        Returns:
+        Returns::
+
             rid (str): run id in 24 bit aligned Base64
         """
         ps = 2  # pad size, use unit test to ensure .Proem is at least length 2
@@ -190,7 +197,8 @@ class Hog(ActBase, Filer):
                        hits=None, **kwa):
         """Initialize instance.
 
-        Inherited Parameters:
+        Inherited Parameters::
+
             name (str|None): unique name of this instance. When None then
                 generate name from .Index. Used for .name property which is
                  used for registering Act instance in Act registry as well
@@ -228,7 +236,8 @@ class Hog(ActBase, Filer):
             mode (str): File open mode when filed
             fext (str): File extension when filed or extensioned
 
-        Parameters:
+        Parameters::
+
             rid (str|None):  universally unique run ID for given run of hog
                              None means create one using uuid lib
             rule (str|None): condition for log to fire, one of Rules default every
@@ -245,11 +254,11 @@ class Hog(ActBase, Filer):
                        0 means no maximum
             hits (None|dict): hold items to log. Item label is log header tag
                       Item value is hold key that provides value to log
-                    None means use unreserved items in **kwa wrt .ReservedTags
+                    None means use unreserved items in ``**kwa`` wrt .ReservedTags
 
 
         When made (created and inited) by boxer.do then have "_boxer" and
-        "_box" keys in self.iops = dict(_boxer=self.name, _box=m.box.name, **iops)
+        "_box" keys in self.iops = ``dict(_boxer=self.name, _box=m.box.name, **iops)``
 
         """
         if not base:
@@ -326,12 +335,12 @@ class Hog(ActBase, Filer):
     def act(self, **iops):
         """Act called by ActBase.
 
-        Parameters:
-            iops (dict): input/output parms, same as self.iops. Puts **iops in
+        Parameters::
+            iops (dict): input/output parms, same as self.iops. Puts ``**iops`` in
                          local scope in case act compliles exec/eval str
 
         When made by boxer.do then have "_boxer" and "_box" keys in self.iops
-           iops = dict(_boxer=self.name, _box=m.box.name, **iops)
+           iops = ``dict(_boxer=self.name, _box=m.box.name, **iops)``
         """
         if not self.started:
 
@@ -433,7 +442,8 @@ class Hog(ActBase, Filer):
     def log(self, record, tyme, force=False):
         """Write one record to file and flush when indicated
 
-        Parameters:
+        Parameters::
+
             record (str):  one line of tab delimited newline ended values
             tyme (float):  tyme of log record
             force (bool): True means force flush even when not flushSpan elapsed
@@ -471,8 +481,9 @@ class Hog(ActBase, Filer):
     def record(self):
         """Generate on record line .hits values from .hold
 
-        Returns:
-           record (str): one newline delimited line of tab delimited values
+          Returns::
+
+              record (str): one newline delimited line of tab delimited values
                          from .hits. Each hit time value is key into hold
                          vector holds each get entry in record per field
 
@@ -490,7 +501,8 @@ class Hog(ActBase, Filer):
     def cycle(self, tyme):
         """Cycle log files
 
-        Parameters:
+        Parameters::
+
             tyme (float): current tyme of cycle
         """
         self.flush
@@ -530,7 +542,8 @@ def openHog(cls=None, name=None, temp=True, reopen=True, clear=False, **kwa):
     Defaults to using temporary directory path.
     Context 'with' statements call .close on exit of 'with' block
 
-    Parameters:
+    Parameters::
+
         cls is Class instance of subclass instance
         name is str name of Filer instance path part so can have multiple Filers
              at different paths that each use different dirs or files
@@ -540,13 +553,15 @@ def openHog(cls=None, name=None, temp=True, reopen=True, clear=False, **kwa):
                            False not (re)open with this init but later (default)
         clear (bool): True means remove directory upon close when reopening
                           False means do not remove directory upon close when reopening
+
     See hogging.Hog for other keyword parameter passthroughs
 
-    Usage:
+    Usage::
 
-    with openHog(name="bob") as hog:
+        with openHog(name="bob") as hog:
 
-    with openHog(name="eve", cls=HogSubClass) as hog:
+        with openHog(name="eve", cls=HogSubClass) as hog:
+
 
     """
     hog = None
@@ -566,13 +581,15 @@ class HogDoer(Doer):
     """
     Basic Hog Doer
 
-    Attributes:
+    Attributes::
+
         done (bool): completion state:
             True means completed
             Otherwise incomplete. Incompletion maybe due to close or abort.
         hog (Hog): instance
 
-    Properties:
+    Properties::
+
         tyme (float): relative cycle time of associated Tymist .tyme obtained
             via injected .tymth function wrapper closure.
         tymth (func): closure returned by Tymist .tymeth() method.
@@ -585,8 +602,9 @@ class HogDoer(Doer):
 
     def __init__(self, hog, **kwa):
         """
-        Parameters:
-           tymist (Tymist): instance
+          Parameters::
+
+              tymist (Tymist): instance
            tock (float): initial value of .tock in seconds
            hog (Hog): instance
         """
@@ -598,7 +616,8 @@ class HogDoer(Doer):
         """Do 'enter' context actions. Override in subclass. Not a generator method.
         Set up resources. Comparable to context manager enter.
 
-        Parameters:
+        Parameters::
+
             temp (bool | None): True means use temporary file resources if any
                                 None means ignore parameter value. Use self.temp
 
