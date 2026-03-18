@@ -18,17 +18,16 @@ def packify(fmt=u'8', fields=[0x00], size=None, reverse=False):
 
     Assumes unsigned fields values.
     Assumes network big endian so first fields element is high order bits.
-    Each field in format string is number of bits for the associated bit field
-    Fields with length of 1 are treated as has having boolean truthy field values
-       that is,   nonzero is True and packs as a 1
-    for 2+ length bit fields the field element is truncated to the number of
-       low order bits in the bit field
-    if sum of number of bits in fmt less than size bytes then the last byte in
-       the bytearray is right zero padded
-    if sum of number of bits in fmt greater than size bytes returns exception
-    to pad just use 0 value in source field.
-    example
-    packify("1 3 2 2", (True, 4, 0, 3)). returns bytearry([0xc3])
+    Each field in format string is number of bits for the associated bit field.
+    Fields with length of 1 are treated as having boolean truthy field values;
+    nonzero is True and packs as a 1.
+    For 2+ length bit fields the field element is truncated to the number of
+    low order bits in the bit field.
+    If sum of number of bits in fmt is less than size bytes then the last byte
+    in the bytearray is right zero padded.
+    If sum of number of bits in fmt is greater than size bytes, returns
+    exception. To pad just use 0 value in source field.
+    Example: ``packify("1 3 2 2", (True, 4, 0, 3))`` returns ``bytearray([0xc3])``.
     """
     tbfl = sum((int(x) for x in fmt.split()))
     if size is None:
@@ -66,7 +65,7 @@ def packifyInto(b, fmt=u'8', fields=[0x00], size=None, offset=0, reverse=False):
     starting at offset and packing into size bytes
     Each white space separated field of fmt is the length of the associated bit field
     If not provided size is the least integer number of bytes that hold the fmt.
-    Extends the length of b to accomodate size after offset if not enough.
+    Extends the length of b to accommodate size after offset if not enough.
     Returns actual size of portion packed into.
     The default assumes big endian.
     If reverse is True then reverses the byte order before extending. Useful for
@@ -74,17 +73,16 @@ def packifyInto(b, fmt=u'8', fields=[0x00], size=None, offset=0, reverse=False):
 
     Assumes unsigned fields values.
     Assumes network big endian so first fields element is high order bits.
-    Each field in format string is number of bits for the associated bit field
-    Fields with length of 1 are treated as has having boolean truthy field values
-       that is,   nonzero is True and packs as a 1
-    for 2+ length bit fields the field element is truncated
-    to the number of low order bits in the bit field
-    if sum of number of bits in fmt less than size bytes then the last byte in
-       the bytearray is right zero padded
-    if sum of number of bits in fmt greater than size bytes returns exception
-    to pad just use 0 value in source field.
-    example
-    packify("1 3 2 2", (True, 4, 0, 3)). returns bytearry([0xc3])
+    Each field in format string is number of bits for the associated bit field.
+    Fields with length of 1 are treated as having boolean truthy field values;
+    nonzero is True and packs as a 1.
+    For 2+ length bit fields the field element is truncated to the number of
+    low order bits in the bit field.
+    If sum of number of bits in fmt is less than size bytes then the last byte
+    in the bytearray is right zero padded.
+    If sum of number of bits in fmt is greater than size bytes, returns
+    exception. To pad just use 0 value in source field.
+    Example: ``packify("1 3 2 2", (True, 4, 0, 3))`` returns ``bytearray([0xc3])``.
     """
     tbfl = sum((int(x) for x in fmt.split()))
     if size is None:
@@ -140,17 +138,17 @@ def unpackify(fmt=u'1 1 1 1 1 1 1 1',
 
     Assumes network big endian so first fmt is high order bits.
     Format string is number of bits per bit field
-    If boolean parameter is True then return boolean values for
-       bit fields of length 1
+    If boolean parameter is True then return boolean values for bit fields of
+    length 1.
 
-    if sum of number of bits in fmt less than 8 * size) then remaining
-    bits are returned as additional field in result.
+    If sum of number of bits in fmt is less than 8 * size then remaining bits
+    are returned as additional field in result.
 
     if sum of number of bits in fmt greater 8 * len(b) returns exception
 
-    example:
-    unpackify(u"1 3 2 2", bytearray([0xc3]), False) returns (1, 4, 0, 3)
-    unpackify(u"1 3 2 2", 0xc3, True) returns (True, 4, 0, 3)
+    Examples: ``unpackify(u"1 3 2 2", bytearray([0xc3]), False)`` returns
+    ``(1, 4, 0, 3)`` and ``unpackify(u"1 3 2 2", 0xc3, True)`` returns
+    ``(True, 4, 0, 3)``.
     """
     b = bytearray(b)
     if reverse:
@@ -191,4 +189,3 @@ def unpackify(fmt=u'1 1 1 1 1 1 1 1',
 
         fields.append(bits) #assign to fields list
     return tuple(fields) #convert to tuple
-

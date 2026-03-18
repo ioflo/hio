@@ -35,26 +35,26 @@ class Deck(deque):
 
     Local methods::
 
-        .push(x) = add x if x is not None to the right side of deque (like append)
-        .pull(x) = remove and return element from left side of deque (like popleft)
+        .push(x): add x if x is not None to the right side of deque (like append)
+        .pull(x): remove and return element from left side of deque (like popleft)
 
 
     Inherited methods from deque::
 
-        .append(x)             = add x to right side of deque
-        .appendleft(x)         = add x to left side of deque
-        .clear()               = clear all items from deque leaving it a length 0
-        .count(x)              = count the number of deque elements equal to x.
-        .extend(iterable)      = append elements of iterable to right side
-        .extendleft(iterable)  = append elemets of iterable to left side
+        .append(x): add x to right side of deque
+        .appendleft(x): add x to left side of deque
+        .clear(): clear all items from deque leaving it a length 0
+        .count(x): count the number of deque elements equal to x.
+        .extend(iterable): append elements of iterable to right side
+        .extendleft(iterable): append elemets of iterable to left side
                                  (this reverses iterable)
-        .pop()                 = remove and return element from right side
+        .pop(): remove and return element from right side
                                   if empty then raise IndexError
-        .popleft()             = remove and return element from left side
+        .popleft(): remove and return element from left side
                                   if empty then raise IndexError
-        .remove(x)             = remove first occurence of x left to right
+        .remove(x): remove first occurence of x left to right
                                   if not found raise ValueError
-        .rotate(n)             = rotate n steps to right if neg rotate to left
+        .rotate(n): rotate n steps to right if neg rotate to left
 
     Built in methods supported::
 
@@ -66,7 +66,7 @@ class Deck(deque):
 
     Attributes::
 
-        .maxlen  = maximum size of Deck or None if unbounded
+        .maxlen: maximum size of Deck or None if unbounded
 
     """
     def __repr__(self):

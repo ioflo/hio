@@ -134,10 +134,8 @@ class Namer(hioing.Mixin):
         All mappings must be one-to-one
 
         Returns:
-            result (bool):  True if successfully added new entry.
-                            False If matching entry already exists.
-                            Otherwise raises NamerError if partial matching
-                                entry with either name or addr
+            bool: True if a new entry was added; False if matching entry already
+            exists. Raises NamerError for conflicting partial matches.
 
         Parameters:
             name (str): name of entry
@@ -175,14 +173,15 @@ class Namer(hioing.Mixin):
            All mappings must be one-to-one
 
         Returns:
-            result (bool):  True if matching entry successfully deleted
-                            False if no matching entry, nothing deleted
+            bool: True if matching entry was deleted; False when no matching
+            entry exists.
 
         Parameters:
             name (str | None): name of remote to delete or None if delete by addr
             addr (str | None): addr of remote to delete or None if delete by name
 
-            When both name and addr provided deletes by name
+        Notes:
+            When both name and addr are provided, delete by name.
 
         Raise error when at least one of name or addr is not None and no mappings
         exist.
@@ -226,9 +225,8 @@ class Namer(hioing.Mixin):
         All mappings must be one-to-one
 
         Returns:
-            result (bool):  True If successfully updated existing entries.
-                            False If matching entry already exists, no change.
-                            Otherwise raises NamerError
+            bool: True if existing entries were updated; False if no change.
+            Raises NamerError for conflicts.
 
         Parameters:
             name (str): name of entry
@@ -263,9 +261,8 @@ class Namer(hioing.Mixin):
         All mappings must be one-to-one
 
         Returns:
-            result (bool):  True If successfully updated existing entries.
-                            False If matching entry already exists, no change.
-                            Otherwise raises NamerError
+            bool: True if existing entries were updated; False if no change.
+            Raises NamerError for conflicts.
 
         Parameters:
             addr (str): address of entry
@@ -292,4 +289,3 @@ class Namer(hioing.Mixin):
         self._addrByName[name] = addr
 
         return True  # updated entries
-

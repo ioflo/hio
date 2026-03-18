@@ -20,19 +20,20 @@ class RetroTimerError(TimerError):
 
 class Timer(hioing.Mixin):
     """Class to manage real elaspsed time using time module.
-    Attributes:
-        ._start is start tyme in seconds
-        ._stop  is stop tyme in seconds
 
-    Properties:
-        .duration is float time duration in seconds of timer from ._start to ._stop
-        .elaspsed is float time elasped in seconds since ._start
-        .remaining is float time remaining in seconds until ._stop
-        .expired is boolean, True if expired, False otherwise, i.e. time >= ._stop
+    Attribute notes:
+        - ._start is start tyme in seconds
+        - ._stop is stop tyme in seconds
 
-    methods:
-        .start()  start timer at current time
-        .restart() = restart timer at last ._stop so no time lost
+    Property notes:
+        - .duration is float time duration in seconds of timer from ._start to ._stop
+        - .elaspsed is float time elasped in seconds since ._start
+        - .remaining is float time remaining in seconds until ._stop
+        - .expired is boolean, True if expired, False otherwise, i.e. time >= ._stop
+
+    Method notes:
+        - start() starts timer at current time
+        - restart() restarts timer at last ._stop so no time lost
     """
 
     def __init__(self, duration=0.0, start=None, **kwa):
@@ -126,9 +127,9 @@ class MonoTimer(Timer):
         .expired is boolean True if expired, False otherwise, i.e. time >= ._stop
         .latest is float latest measured time in seconds with retrograte handling
 
-    methods:
-        .start() = start timer at current time returns start time
-        .restart() = restart timer at last ._stop so no time lost, returns start time
+    Methods:
+        - start: start timer at current time and return start time
+        - restart: restart timer at last ._stop with no time lost, returns start time
     """
 
     def __init__(self, duration=0.0, start=None, retro=True):
@@ -201,9 +202,9 @@ class AsyncTimer(Timer):
         .remaining is float time remaining in seconds until ._stop
         .expired is boolean, True if expired, False otherwise, i.e. time >= ._stop
 
-    methods:
-        .start()  start timer at current time
-        .restart() = restart timer at last ._stop so no time lost
+    Methods:
+        - start: start timer at current time
+        - restart: restart timer at last ._stop so no time lost
     """
 
     def __init__(self, duration=0.0, start=None, **kwa):

@@ -17,22 +17,21 @@ class Hict(CIMultiDict):
 
     https://multidict.readthedocs.io/en/stable/
     CIMultiDict keys must be subclass of str no ints allowed
-    In CIMultiDict:
-        .add(key,value)  appends value to the valuelist at key
+    In CIMultiDict::
 
+        .add(key, value) appends value to the valuelist at key
         m["key"] = value replaces the valuelist at key with [value]
-
         m["key"] returns the first added element of the valuelist at key
 
     MultiDict methods access values in FIFO order
     Hict adds method to access values in LIFO order
 
-    Extended methods in Hict but not in CIMultiDict are:
-       nabone(key [,default])  get last value at key else default or KeyError
-       nab(key [,default])  get last value at key else default or None
-       naball(key [,default]) get all values inverse order else default or KeyError
-       firsts() get all items where item value is first inserted value at key
-       lasts() get all items where item value is last insterted value at key
+    Extended methods in Hict but not in CIMultiDict:
+        - nabone(key [,default]): get last value at key else default or KeyError
+        - nab(key [,default]): get last value at key else default or None
+        - naball(key [,default]): get all values inverse order else default or KeyError
+        - firsts(): get all items where item value is first inserted value at key
+        - lasts(): get all items where item value is last inserted value at key
     """
 
     def __repr__(self):
@@ -122,20 +121,19 @@ class Mict(MultiDict):
 
     https://multidict.readthedocs.io/en/stable/
     MultiDict keys must be subclass of str no ints allowed
-    In MultiDict:
-        .add(key,value)  appends value to the valuelist at key
+    In MultiDict::
 
+        .add(key, value) appends value to the valuelist at key
         m["key"] = value replaces the valuelist at key with [value]
-
         m["key"] returns the first added element of the valuelist at key
 
     MultiDict methods access values in FIFO order
     Mict adds methods to access values in LIFO order
 
-    Extended methods in Mict but not in MultiDict are:
-       nabone(key [,default])  get last value at key else default or KeyError
-       nab(key [,default])  get last value at key else default or None
-       naball(key [,default]) get all values inverse order else default or KeyError
+    Extended methods in Mict but not in MultiDict:
+        - nabone(key [,default]): get last value at key else default or KeyError
+        - nab(key [,default]): get last value at key else default or None
+        - naball(key [,default]): get all values inverse order else default or KeyError
 
     """
 
@@ -213,4 +211,3 @@ class Mict(MultiDict):
         """
         keys = oset(self.keys())  # get rid of duplicates provided by .keys()
         return [(k, self.nabone(k)) for k in keys]
-

@@ -489,7 +489,7 @@ def intToB64b(i, l=1):
     """Converts int i to at least l Base64 chars as bytes.
 
     Returns:
-        b64 (bytes): Base64 converstion of i of length minimum l. If more than
+        b64 (bytes): Base64 conversion of i of length minimum l. If more than
                      l bytes are needed to represent i in Base64 then returned
                      bytes is extended appropriately. When less then l bytes
                      is needed then returned bytes is prepadded with b'A' bytes.
@@ -498,7 +498,7 @@ def intToB64b(i, l=1):
         i (int): to be converted
         l (int): min number of b64 digits. When empty these are left padded with
                  Base64 0 == b'A' digits.
-                 The length of return bytes is extended to accomodate full
+                 The length of return bytes is extended to accommodate full
                  Base64 encoding of i regardless of l.
     """
     return (intToB64(i=i, l=l).encode())
