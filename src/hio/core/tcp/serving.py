@@ -209,19 +209,17 @@ class Server(Acceptor):
     See tyming.Tymee for inherited attributes, properties, and methods
 
     Inherited Attributes:
-        .ha is (host,port) duple (two tuple)
-               host = "" or "0.0.0.0" means listen on all interfaces
-        .eha is normalized (host, port) duple for incoming TLS connections
-                as external facing address for TLS context
-        .bs is buffer size
-        .ss is server listen socket for incoming accept requests
-        .axes is deque of accepte connection duples (ca, cs)
-        .opened is boolean, True if listen socket .ss opened. False otherwise
+        ha (tuple[str, int]): (host, port) duple; host = "" or "0.0.0.0" means listen on all interfaces
+        eha (tuple[str, int]): normalized external-facing (host, port) for TLS context
+        bs (int): buffer size
+        ss (socket.socket | None): server listen socket for incoming accept requests
+        axes (deque): accepted connection duples (ca, cs)
+        opened (bool): True if listen socket ss is open; False otherwise
 
     Attributes:
-        .tymeout is tymeout in seconds for connection refresh
-        .wl is WireLog instance if any
-        .ixes is dict of incoming connections indexed by remote (host, port) duple
+        tymeout (float): timeout in seconds for connection refresh
+        wl (WireLog | None): WireLog instance if any
+        ixes (dict): incoming connections indexed by remote (host, port) duple
     """
 
     Tymeout = 1.0  # tymeout in seconds virtual tyme
@@ -489,25 +487,23 @@ class ServerTls(Server):
     See tyming.Tymee for inherited attributes, properties, and methods
 
     Inherited Attributes:
-        .ha is (host,port) duple (two tuple)
-               host = "" or "0.0.0.0" means listen on all interfaces
-        .eha is normalized (host, port) duple for incoming TLS connections
-                as external facing address for TLS context
-        .bs is buffer size
-        .ss is server listen socket for incoming accept requests
-        .axes is deque of accepte connection duples (ca, cs)
-        .opened is boolean, True if listen socket .ss opened. False otherwise
-        .timeout is timeout in seconds for connection refresh
-        .wl is WireLog instance if any
-        .ixes is dict of incoming connections indexed by remote (host, port) duple
+        ha (tuple[str, int]): (host, port) duple; host = "" or "0.0.0.0" means listen on all interfaces
+        eha (tuple[str, int]): normalized external-facing (host, port) for TLS context
+        bs (int): buffer size
+        ss (socket.socket | None): server listen socket for incoming accept requests
+        axes (deque): accepted connection duples (ca, cs)
+        opened (bool): True if listen socket ss is open; False otherwise
+        timeout (float): timeout in seconds for connection refresh
+        wl (WireLog | None): WireLog instance if any
+        ixes (dict): incoming connections indexed by remote (host, port) duple
 
     Attributes:
-        .context is TLS context instance
-        .version is TLS version
-        .certify is boolean, True to client certify, False otherwise
-        .keypath is path to key file
-        .certpath is path to cert file
-        .cafilepath is path to ca file
+        context (ssl.SSLContext | None): TLS context instance
+        version (int | None): TLS version
+        certify (bool | None): True to require client cert verification
+        keypath (str | None): path to key file
+        certpath (str | None): path to cert file
+        cafilepath (str | None): path to CA file
     """
     def __init__(self,
                  context=None,

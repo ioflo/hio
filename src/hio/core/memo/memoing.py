@@ -201,7 +201,7 @@ The variables ghs, and ghns are fixed for given transport service type reliable
 or unreliable with head and neck fields defined appropriately
 The variables gs, gbs,and mms are derived from transport MTU size
 The desired gs for a given transport MTU instance may be smaller than the allowed
-maximum to accomodate buffers etc.
+maximum to accommodate buffers etc.
 Given the fixed gram head size for service type, ghs one can calculate the
 maximum memo size mms that includes the header overhead given the contraint of
 no more than 2**24-1 grams in a given memo due to 24 size of gram count gram num.
@@ -350,7 +350,7 @@ class Memoer(hioing.Mixin):
     On the receive side each complete memogram (gram) is put in a gram receive
     deque as a memogram (datagram sized) segment of a memo.
     These deques are indexed by the sender's source addr.
-    The grams in the gram recieve deque are then desegmented into a memo
+    The grams in the gram receive deque are then desegmented into a memo
     and placed in the memo deque for consumption by the application or some other
     higher level protocol.
 
@@ -363,10 +363,10 @@ class Memoer(hioing.Mixin):
     When using non-blocking IO, asynchronous datagram transport
     protocols may have hidden buffering constraints that result in fragmentation
     of the sent datagram which means the whole datagram is not sent at once via
-    a non-blocking send call. This means that the remainer of the datagram must
+    a non-blocking send call. This means that the remainder of the datagram must
     be sent later and may take multiple send calls to complete. The datagram
     protocol is responsible for managing the buffering and fragmentation but
-    depends on the sender repeated attempts to send the reaminder of the
+    depends on the sender repeated attempts to send the remainder of the
     full datagram. This is ensured with the final tier with a raw transmit
     buffer that waits until it is empty before attempting to send another
     gram. Because sending to different destinations may fail for different reasons
@@ -379,7 +379,7 @@ class Memoer(hioing.Mixin):
     serialization of the header (qb2 or qb64). This is more efficient and since
     gram headers will be stripped and discarded there is no need to archive them.
     The encapsulated unpartitioned memogram with its signature it what is meant
-    for archivel not the partitioned gram and per gram signature.
+    for archival not the partitioned gram and per gram signature.
 
     Inherited Class Attributes::
 
@@ -1367,12 +1367,12 @@ class Memoer(hioing.Mixin):
 
 
     def receive(self, *, echoic=False) -> (bytes, str or tuple or None):
-        """Attemps to receive bytes from remote source.
+        """Attempts to receive bytes from remote source.
 
         May use echoic=True and .echos to mock a transport layer for testing
-        Puts sent gram into .echos so that .recieve can extract it when using
-        same Memoer to send and recieve to itself via its own .echos
-        When using different Memoers each for send and recieve then must
+        Puts sent gram into .echos so that .receive can extract it when using
+        same Memoer to send and receive to itself via its own .echos
+        When using different Memoers each for send and receive then must
         manually copy from sender Memoer .echos to Receiver Memoer .echos
 
         Must be overridden in subclass.
@@ -1765,12 +1765,12 @@ class Memoer(hioing.Mixin):
 
 
     def send(self, gram, dst, *, echoic=False) -> int:
-        """Attemps to send bytes in txbs to remote destination dst.
+        """Attempts to send bytes in txbs to remote destination dst.
 
         May use echoic=True and .echos to mock a transport layer for testing
-        Puts sent gram into .echos so that .recieve can extract it when using
-        same Memoer to send and recieve to itself via its own .echos
-        When using different Memoers each for send and recieve then must
+        Puts sent gram into .echos so that .receive can extract it when using
+        same Memoer to send and receive to itself via its own .echos
+        When using different Memoers each for send and receive then must
         manually copy from sender Memoer .echos to Receiver Memoer .echos
 
         Must be overridden in subclass.
@@ -1992,7 +1992,7 @@ def openMemoer(cls=None, name="test", **kwa):
 
     Parameters:
         cls (Class): instance of subclass instance
-        name (str): unique identifer of Memoer peer.
+        name (str): unique identifier of Memoer peer.
             Enables management of transport by name.
     Usage::
 
@@ -2253,7 +2253,7 @@ def openSM(cls=None, name="test", **kwa):
 
     Parameters:
         cls (Class): instance of subclass instance
-        name (str): unique identifer of Memoer peer.
+        name (str): unique identifier of Memoer peer.
             Enables management of transport by name.
     Usage::
 

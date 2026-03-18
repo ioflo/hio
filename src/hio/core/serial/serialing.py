@@ -42,10 +42,10 @@ class Console():
         rxbs (bytearray): of received characters (bytes)
 
     Methods:
-        reopen ():  closes and reopens .fd, sets .opened
-        close ():   closes .fd unsets .opened
-        get (): returns chars including newline but no more than bs characters
-        put ():  puts characters
+        - reopen: closes and reopens .fd, sets .opened
+        - close: closes .fd and unsets .opened
+        - get: returns chars including newline but no more than bs characters
+        - put: puts characters
 
     Hidden:
         ._line is bytearray of line buffer

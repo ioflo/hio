@@ -37,7 +37,7 @@ class Peer(hioing.Mixin):
 
 
     Attributes:
-        name (str): unique identifier of peer for managment purposes
+        name (str): unique identifier of peer for management purposes
         ha (tuple): host address of form (host,port) of type (str, int) of this
                 peer's socket address.
 
@@ -287,7 +287,7 @@ def openPeer(cls=None, name="test", **kwa):
 
     Parameters:
         cls (Class): instance of subclass instance
-        name (str): unique identifer of peer. Enables management of Peer sockets
+        name (str): unique identifier of peer. Enables management of Peer sockets
                     by name.
     Usage:
         with openPeer() as peer0:

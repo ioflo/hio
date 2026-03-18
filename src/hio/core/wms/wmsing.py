@@ -30,7 +30,7 @@ class Peer(filing.Filer):
     """Class to manage reliable datagram transport on Windows using Mailslots
     instead of unix domain sockets. WinMailSlot (wms)
 
-    Because win-mail-slots (wms) are reliable no need for retry tymer.
+    Because win-mail-slots (wms) are reliable no need for retry timer.
     Because win-mail-slots do not attach the source address we have to
     embed the source address in the memogram header. So we need a new memogram
     header code for wms as reliable transport replacement for uxd on Windows.
@@ -41,10 +41,8 @@ class Peer(filing.Filer):
         HeadDirPath (str): default abs dir path head such as "/usr/local/var"
         TailDirPath (str): default rel dir path tail when using head
         CleanTailDirPath (str): default rel dir path tail when creating clean
-        AltHeadDirPath (str): default alt dir path head such as  "~"
-                              as fallback when desired head not permitted.
-        AltTailDirPath (str): default alt rel dir path tail as fallback
-                              when using alt head.
+        AltHeadDirPath (str): default alt dir path head such as "~" as fallback when desired head not permitted.
+        AltTailDirPath (str): default alt rel dir path tail as fallback when using alt head.
         AltCleanTailDirPath (str): default alt rel path tail when creating clean
         TempHeadDir (str): default temp abs dir path head such as "/tmp"
         TempPrefix (str): default rel dir path prefix when using temp head
@@ -60,13 +58,11 @@ class Peer(filing.Filer):
         headDirPath (str): head directory path
         path (str or None):  full directory or file path once created else None
         perm (int):  numeric os permissions for directory and/or file(s)
-        filed (bool): True means .path ends in file.
-                       False means .path ends in directory
+        filed (bool): True means .path ends in file; False means .path ends in directory.
         mode (str): file open mode if filed
         fext (str): file extension if filed
         file (File or None): File instance when filed and created.
-        opened (bool): True means directory path, uxd file, and socket are
-                created and opened. False otherwise
+        opened (bool): True means directory path, uxd file, and socket are created and opened; False otherwise.
 
     Class Attributes:
         Umask (int): octal default umask permissions such as 0o022
@@ -75,12 +71,12 @@ class Peer(filing.Filer):
 
 
     Attributes:
-        umask (int): unpermission mask for uxd file, usually octal 0o022
-                     .umask is applied after .perm is set if any
+        umask (int): permission mask for uxd file, usually octal 0o022;
+            .umask is applied after .perm is set if any.
         bc (int or None): count of transport buffers of MaxGramSize
-        bs (int): buffer size of transport buffers. When .bc then .bs is calculated
-            by multiplying, .bs = .bc * .MaxGramSize. When .bc is None then .bs
-            is provided value or default .BufSize
+        bs (int): buffer size of transport buffers. When .bc then .bs is
+            calculated by multiplying (.bs = .bc * .MaxGramSize). When .bc is
+            None then .bs is provided value or default .BufSize.
         wl (WireLog): instance ref for debug logging of over the wire tx and rx
         ls (socket.socket): local slot of this Peer
 
@@ -109,20 +105,22 @@ class Peer(filing.Filer):
         """Initialization method for instance.
 
         Inherited Parameters:
-            reopen (bool): True (re)open with this init
-                           False not (re)open with this init but later (default)
-            clear (bool): True means remove directory upon close when reopening
-                          False means do not remove directory upon close when reopening
-            filed (bool): True means .path is file path not directory path
-                          False means .path is directiory path not file path
+            reopen (bool): True (re)open with this init. False means do not
+                (re)open with this init but later (default).
+            clear (bool): True means remove directory upon close when reopening;
+                False means do not remove directory upon close when reopening.
+            filed (bool): True means .path is file path not directory path;
+                False means .path is directory path not file path.
             extensioned (bool): When not filed:
-                                True means ensure .path ends with fext
-                                False means do not ensure .path ends with fext
-            See Filing.Filer for other inherited paramters
+                True means ensure .path ends with fext.
+                False means do not ensure .path ends with fext.
+
+        See Also:
+            Filing.Filer: other inherited parameters.
 
 
         Parameters:
-            umask (int): unpermission mask for uxd file, usually octal 0o022
+            umask (int): permission mask for uxd file, usually octal 0o022
             bc (int | None): count of transport buffers of MaxGramSize
             bs (int | None): buffer size of transport buffers. When .bc is provided
                 then .bs is calculated by multiplying, .bs = .bc * .MaxGramSize.
@@ -185,11 +183,12 @@ class Peer(filing.Filer):
         """
         Perform a non-blocking read on the mailslot
 
-        Returns tuple of form (data, sa)
-        if no data, returns ('', None)
-          but always returns a tuple with 2 elements
+        Returns:
+            tuple: (data, sa). If no data, returns (b'', None), but always
+            returns a tuple with 2 elements.
 
-        Note win32file.ReadFile returns a tuple: (errcode, data)
+        Notes:
+            win32file.ReadFile returns a tuple: (errcode, data).
 
         """
         try:
@@ -216,7 +215,7 @@ class Peer(filing.Filer):
         """
         Perform a non-blocking write on the mailslot
         data is string in python2 and bytes in python3
-        da is destination mailslot path
+        dest is destination mailslot path
 
         Parameters:
             data (bytes): to send

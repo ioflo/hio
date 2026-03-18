@@ -20,13 +20,10 @@ class PeerMemoer(Peer, Memoer):
 
 
     Inherited Class Attributes:
-        (Peer)
         BufSize (int): used to set default buffer size for transport datagram buffers
         MaxGramSize (int): max gram bytes for this transport
 
-        (Memoer)
-        Version (Versionage): default version consisting of namedtuple of form
-            (major: int, minor: int)
+        Version (Versionage): default version namedtuple of form (major: int, minor: int)
         Codex (GramDex): dataclass ref to gram codex
         Codes (dict): maps codex names to codex values
         Names (dict): maps codex values to codex names
@@ -36,10 +33,8 @@ class PeerMemoer(Peer, Memoer):
         MaxGramCount (int): absolute max gram count
 
     Inherited Attributes:
-        (Peer)
-        name (str): unique identifier of peer for managment purposes
-        ha (tuple): host address of form (host,port) of type (str, int) of this
-                peer's socket address.
+        name (str): unique identifier of peer for management purposes
+        ha (tuple): host address of form (host,port) of type (str, int) of this peer's socket address.
 
         bc (int or None): count of transport buffers of MaxGramSize
         bs (int): buffer size
@@ -48,78 +43,66 @@ class PeerMemoer(Peer, Memoer):
         ls (socket.socket): local socket of this Peer
         opened (bool): True local socket is created and opened. False otherwise
 
-        bcast (bool): True enables sending to broadcast addresses from local socket
-                      False otherwise
+        bcast (bool): True enables sending to broadcast addresses from local socket; False otherwise
 
-        (Memoer)
         version (Versionage): version for this memoir instance consisting of
-                namedtuple of form (major: int, minor: int)
+            namedtuple of form (major: int, minor: int)
         rxgs (dict): keyed by mid (memoID) with value of dict where each
-                value dict holds grams from memo keyed by gram number.
-                Grams have been stripped of their headers.
-                The mid appears in every gram from the same memo.
+            value dict holds grams from memo keyed by gram number.
+            Grams have been stripped of their headers.
+            The mid appears in every gram from the same memo.
         sources (dict): keyed by mid (memoID) that holds the src for the memo.
             This enables reattaching src to fused memo in rxms deque tuple.
         counts (dict): keyed by mid (memoID) that holds the gram count from
             the first gram for the memo. This enables lookup of the gram count when
             fusing its grams.
         oids (dict[mid: (oid | None)]): keyed by mid that holds the origin ID str for
-                the memo indexed by its mid (memoID). This enables reattaching
-                the oid to memo when placing fused memo in rxms deque.
-                Vid is only present when signed header otherwise oid is None
+            the memo indexed by its mid (memoID). This enables reattaching
+            the oid to memo when placing fused memo in rxms deque.
+            Vid is only present when signed header otherwise oid is None
         rxms (deque): holding rx (receive) memo tuples desegmented from rxgs grams
-                each entry in deque is tuple of form:
-                (memo: str, src: str, oid: str) where:
-                memo is fused memo, src is source addr, oid is origin ID
+            each entry in deque is tuple of form:
+            (memo: str, src: str, oid: str) where:
+            memo is fused memo, src is source addr, oid is origin ID
         txms (deque): holding tx (transmit) memo tuples to be segmented into
-                txgs grams where each entry in deque is tuple of form
-                (memo: str, dst: str, oid: str | None)
-                memo is memo to be partitioned into gram
-                dst is dst addr for grams
-                oid is verification id when gram is to be signed or None otherwise
+            txgs grams where each entry in deque is tuple of form
+            (memo: str, dst: str, oid: str | None)
+            memo is memo to be partitioned into gram
+            dst is dst addr for grams
+            oid is verification id when gram is to be signed or None otherwise
         txgs (deque): grams to transmit, each entry is duple of form:
-                (gram: bytes, dst: str).
+            (gram: bytes, dst: str).
         txbs (tuple): current transmisstion duple of form:
             (gram: bytearray, dst: str). gram bytearray may hold untransmitted
             portion when Encodesdatagram is not able to be sent all at once so can
             keep trying. Nothing to send indicated by (bytearray(), None)
             for (gram, dst)
         echos (deque): holding echo receive duples for testing. Each duple of
-                       form: (gram: bytes, dst: str).
+            form: (gram: bytes, dst: str).
 
 
     Inherited Properties:
-        (Peer)
         host (str): element of .ha duple
         port (int): element of .ha duple
         path (tuple): .ha (host, port)  alias to match .uxd
 
-        (Memoer)
         code (bytes | None): gram code for gram header when rending for tx
-        curt (bool): True means when rending for tx encode header in base2
-                     False means when rending for tx encode header in base64
+        curt (bool): True means when rending for tx encode header in base2; False means when rending for tx encode header in base64
         size (int): gram size when rending for tx.
-            first gram size = over head size + neck size + body size.
-            other gram size = over head size + body size.
-            Min gram body size is one.
-            Gram size also limited by MaxGramSize and MaxGramCount relative to
-            MaxMemoSize.
-        verific (bool): True means any rx grams must be signed.
-                        False otherwise
-        echoic (bool): True means use .echos in .send and .receive to mock the
-                            transport layer for testing and debugging.
-                       False means do not use .echos
-                       Each entry in .echos is a duple of form:
-                           (gram: bytes, src: str)
-                       Default echo is duple that
-                           indicates nothing to receive of form (b'', None)
-                       When False may be overridden by a method parameter
-        keep (dict): labels are oids, values are Keyage instances
-                         named tuple of signature key pair:
-                         sigkey = private signing key
-                         verkey = public verifying key
-                        Keyage = namedtuple("Keyage", "sigkey verkey")
+        verific (bool): True means any rx grams must be signed; False otherwise
+        echoic (bool): True means use .echos in .send and .receive to mock transport.
+        keep (dict): labels are oids and values are Keyage instances.
         oid (str|None): own oid defaults used to lookup keys to sign on tx
+
+        Notes:
+                - size: first gram size = over head size + neck size + body size;
+                    subsequent grams use over head size + body size; gram body size is at
+                    least one and is limited by MaxGramSize and MaxGramCount relative to
+                    MaxMemoSize.
+                - echoic: each entry in .echos is (gram: bytes, src: str); default echo
+                    is (b'', None); when False it may be overridden by method parameter.
+                - keep: Keyage is namedtuple("Keyage", "sigkey verkey") with private
+                    signing key sigkey and public verifying key verkey.
 
     """
 
@@ -129,8 +112,9 @@ class PeerMemoer(Peer, Memoer):
         Inherited Parameters:
             bc (int | None): count of transport buffers of MaxGramSize
 
-            See memoing.Memoer for other inherited paramters
-            See Peer for other inherited paramters
+        See Also:
+            memoing.Memoer: other inherited parameters.
+            Peer: other inherited parameters.
 
 
         Parameters:
@@ -148,7 +132,7 @@ def openPM(cls=None, name="test", temp=True, reopen=True, **kwa):
 
     Parameters:
         cls (Class): instance of subclass instance
-        name (str): unique identifer of PeerMemoer peer.
+        name (str): unique identifier of PeerMemoer peer.
                     Enables management of transport by name.
                     Provides unique path part so can have many peers each at
                     different paths but in same directory.
@@ -158,6 +142,9 @@ def openPM(cls=None, name="test", temp=True, reopen=True, **kwa):
                        False not (re)open with this init but later
 
     See udping.Peer for other keyword parameter passthroughs
+
+    See Also:
+        udping.Peer: other keyword parameter passthroughs.
 
     Usage::
 
