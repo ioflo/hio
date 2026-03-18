@@ -50,9 +50,8 @@ class Hold(Mine):
 
         subery (None|Subery): gets instance from item at '_hold_subery' or None
 
-    Methods::
-
-        inject(self, key, val): injects .cans into val._sdb and key into val._key
+    Methods:
+        - inject: injects .cans into val._sdb and key into val._key
 
 
     """

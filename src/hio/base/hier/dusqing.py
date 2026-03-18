@@ -17,32 +17,26 @@ class Dusq():
     .sdb and .key will store its ordered set durably and allow access as a
     deduped FIFO queue. A set is deduped.
 
-    Properties::
-
-        stale (bool): True means in-memory and durable on disk not synced
-                     False means in-memory and durable on disk synced
+    Properties:
+        stale (bool): True means in-memory and durable on disk not synced.
+            False means in-memory and durable on disk synced.
         durable (bool): True means ._sdb and ._key and ._sdb.db and
-                                .sdb.db.opened are not None
-                        False otherwise
+            ._sdb.db.opened are not None.
+            False otherwise.
 
-
-    Hidden::
-
-       _oset (oset):  in-memory cache as ordered set
+    Hidden:
+       _oset (oset): in-memory cache as ordered set
        _sdb (DomIoSuber): instance of durable store
        _key (str): into .sdb
-       _stale (bool): for .stale property:
-                       True means in-memory and durable on disk not synced
-                       False means in-memory and durable on disk synced
+       _stale (bool): stale-status cache for .stale property.
 
     """
 
     def __init__(self, *pa):
         """Initialize instance
 
-          Parameters::
-
-              pa[0] (NonStringeIteralble[RegDom]): instances to preload self._oset
+        Parameters:
+           pa[0] (NonStringIterable[hio.help.doming.RegDom]): instances to preload self._oset
 
         """
         self._oset = oset()
@@ -70,7 +64,7 @@ class Dusq():
 
 
     def __iter__(self):
-        """Makes iterator out of self by returning iterable ._deq"""
+        """Makes iterator out of self by returning iterable ._oset"""
         return iter(tuple(val if val.__dataclass_params__.frozen else deepcopy(val)
                           for val in self._oset))  # ensure not mutable outside
         #return iter(self._oset)
@@ -84,10 +78,8 @@ class Dusq():
     def stale(self):
         """Getter for ._stale
 
-        Returns::
-
-            stale (bool): True means in-memory and durable on disk not synced
-                         False means in-memory and durable on disk synced
+        Returns:
+            stale (bool): True means in-memory and durable on disk not synced; False means in-memory and durable on disk synced
         """
         return self._stale
 
@@ -98,20 +90,19 @@ class Dusq():
         Returns::
 
             durable (bool): True means ._sdb and ._key and ._sdb.db and
-                                .sdb.db.opened are not None
-                            False otherwise
+                ._sdb.db.opened are not None
+                False otherwise
         """
         return (self._sdb is not None and self._key is not None and self._sdb.db
                 and self._sdb.db.opened)
 
 
     def update(self, vals: NonStringIterable[RegDom|IceRegDom], *, deep=True):
-        """Update ._deq with vals
-        Peforms equivalent operation on durable .sdb at .key if any
+        """Update ._oset with vals
+        Performs equivalent operation on durable .sdb at .key if any
 
-        Parameters::
-
-            vals (NonStringIterable[RegDom]): to add to dusq
+        Parameters:
+            vals (NonStringIterable[hio.help.doming.RegDom]): to add to dusq
             deep (bool): True means deepcopy to ensure can't mutate outside
                          False means do not deepcopy
 
@@ -134,11 +125,10 @@ class Dusq():
 
     def push(self, val: RegDom|IceRegDom):
         """If not None, add val add val to last in if unique. Otherwise ignore
-        Peforms equivalent operation on durable .sdb at .key if any
+        Performs equivalent operation on durable .sdb at .key if any
 
-        Parameters::
-
-            val (RegDom): element to be appended to deck (deque)
+        Parameters:
+            val (hio.help.doming.RegDom): element to be appended to deck (deque)
         """
         if val is not None:
             if not isinstance(val, (RegDom, IceRegDom)):
@@ -160,7 +150,7 @@ class Dusq():
         """Remove and return first in val
         If empty and emptive return None else raise IndexError
 
-        Peforms equivalent operation on durable .sdb at .key if any
+        Performs equivalent operation on durable .sdb at .key if any
 
         Parameters::
 
@@ -188,7 +178,7 @@ class Dusq():
 
     def clear(self):
         """Clear all values
-        Peforms equivalent operation on durable .sdb at .key if any
+        Performs equivalent operation on durable .sdb at .key if any
         """
         prior = len(self._oset)
         self._oset.clear()
@@ -210,7 +200,7 @@ class Dusq():
             result (bool): True value was removed
                            Raises KeyError if value not found
 
-        Peforms equivalent operation on durable .sdb at .key if any
+        Performs equivalent operation on durable .sdb at .key if any
         """
         if not isinstance(val, (RegDom, IceRegDom)):
             raise HierError(f"Expected RegDom instance got {val}")
@@ -265,12 +255,12 @@ class Dusq():
 
 
     def pin(self):
-        """Pins all of ._deq to ._sdb at ._key if any.
+        """Pins all of ._oset to ._sdb at ._key if any.
         Sets ._stale to False on success
         """
         if self.durable:
             vals = [val for val in self._oset]
-            self._sdb.pin(self._key, vals)  # pin sdb._ser to ._deq vals
+            self._sdb.pin(self._key, vals)  # pin sdb._ser to ._oset vals
             self._stale = False
             return True
         return None
@@ -283,7 +273,7 @@ class Dusq():
 
         Parameters::
             force (bool): True means force read even if not ._stale
-                          Flase means do not force read
+                          False means do not force read
         """
         if self.durable and (self.stale or force):
             if self._sdb.cnt(self._key):  # not empty

@@ -17,31 +17,25 @@ class Durq():
     .sdb and .key will store its ordered list durably and allow access as a FIFO
     queue
 
-    Properties::
-
-        stale (bool): True means in-memory and durable on disk not synced
-                     False means in-memory and durable on disk synced
+    Properties:
+        stale (bool): True means in-memory and durable on disk not synced.
+            False means in-memory and durable on disk synced.
         durable (bool): True means ._sdb and ._key and ._sdb.db and
-                                .sdb.db.opened are not None
-                        False otherwise
+            ._sdb.db.opened are not None.
+            False otherwise.
 
-
-    Hidden::
-
-       _deq (deque):  in-memory cache as deque
+    Hidden:
+       _deq (deque): in-memory cache as deque
        _sdb (DomIoSuber): instance of durable store
        _key (str): into .sdb
-       _stale (bool): for .stale property:
-                       True means in-memory and durable on disk not synced
-                       False means in-memory and durable on disk synced
+       _stale (bool): stale-status cache for .stale property.
 
     """
     def __init__(self, *pa):
         """Initialize instance
 
-          Parameters::
-
-              pa[0] (NonStringeIteralble[RegDom]): instances to preload self._deq
+        Parameters:
+           pa[0] (NonStringIterable[hio.help.doming.RegDom]): instances to preload self._deq
 
         """
         self._deq = deque()
@@ -81,10 +75,8 @@ class Durq():
     def stale(self):
         """Getter for ._stale
 
-        Returns::
-
-            stale (bool): True means in-memory and durable on disk not synced
-                         False means in-memory and durable on disk synced
+        Returns:
+            stale (bool): True means in-memory and durable on disk not synced; False means in-memory and durable on disk synced
         """
         return self._stale
 
@@ -95,8 +87,8 @@ class Durq():
         Returns::
 
             durable (bool): True means ._sdb and ._key and ._sdb.db and
-                                .sdb.db.opened are not None
-                            False otherwise
+                ._sdb.db.opened are not None
+                False otherwise
         """
         return (self._sdb is not None and self._key is not None and self._sdb.db
                 and self._sdb.db.opened)
@@ -104,7 +96,7 @@ class Durq():
 
     def extend(self, vals: NonStringIterable[RegDom|IceRegDom]):
         """Extend ._deq with vals
-        Peforms equivalent operation on durable .sdb at .key if any
+        Performs equivalent operation on durable .sdb at .key if any
 
         """
         if not vals:
@@ -123,11 +115,10 @@ class Durq():
 
     def push(self, val: RegDom|IceRegDom):
         """If not None, add val to last in. Otherwise ignore
-        Peforms equivalent operation on durable .sdb at .key if any
+        Performs equivalent operation on durable .sdb at .key if any
 
-        Parameters::
-
-            val (RegDom): element to be appended to deck (deque)
+        Parameters:
+            val (hio.help.doming.RegDom): element to be appended to deck (deque)
         """
         if val is not None:
             if not isinstance(val, (RegDom, IceRegDom)):
@@ -145,7 +136,7 @@ class Durq():
         """Remove and return first in value
         If empty and emptive return None else raise IndexError
 
-        Peforms equivalent operation on durable .sdb at .key if any
+        Performs equivalent operation on durable .sdb at .key if any
 
         Parameters::
 
@@ -172,7 +163,7 @@ class Durq():
 
     def clear(self):
         """Clear all values from deque
-        Peforms equivalent operation on durable .sdb at .key if any
+        Performs equivalent operation on durable .sdb at .key if any
 
         """
         prior = len(self._deq)
@@ -250,7 +241,7 @@ class Durq():
 
         Parameters::
             force (bool): True means force read even if not ._stale
-                          Flase means do not force read
+                          False means do not force read
         """
         if self.durable and (self.stale or force):
             if self._sdb.cnt(self._key):  # not empty

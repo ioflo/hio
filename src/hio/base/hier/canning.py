@@ -39,9 +39,8 @@ class CanDom(TymeDom):
             Tymist.tyme. Provides injected dependency on Tymist cycle tyme base.
             None means not assigned yet.
             Use ._wind method to assign ._tymth after init of bag.
-        _tyme (None|Float): cycle tyme of last update of a bag field.
-            None means either ._tymth as not yet been assigned or this bag's
-            fields have not yet been updated.
+        _tyme (None|Float): cycle tyme of last update of a bag field;
+            None means either ._tymth has not yet been assigned or this bag fields have not yet been updated.
 
     Inherited Properties::
 
@@ -50,19 +49,16 @@ class CanDom(TymeDom):
     Properties::
 
         _durable (bool): True means ._sdb and ._key and ._sdb.db and
-                                .sdb.db.opened are not None
-                         False otherwise
+            ._sdb.db.opened are not None
+            False otherwise
 
     Non-Field Attributes::
 
         _sdb (DomSuber|None): SuberBase subclass instance of durable subdb of Duror
         _key (str|None): database key used to store serialized field in ._cans
-        _stale (bool): True means fields not yet been synced by write/read with durable
-                       False means fields have been synced by write/read with durable
-        _fresh (bool): True means fields being synced by read from durable
-                       False means fields not being synced by read from durable
-        _bulk (bool): True means do not write individual fields wait for bulk update
-                      False means write individual fields as updated
+        _stale (bool): True means fields not yet been synced by write/read with durable; False means fields have been synced by write/read with durable
+        _fresh (bool): True means fields being synced by read from durable; False means fields not being synced by read from durable
+        _bulk (bool): True means do not write individual fields and wait for bulk update; False means write individual fields as updated
 
     """
     _sdb: InitVar[None|DomSuber] = None  # durable storage of serialized fields
@@ -139,8 +135,8 @@ class CanDom(TymeDom):
         Returns::
 
             durable (bool): True means ._sdb and ._key and ._sdb.db and
-                                .sdb.db.opened are not None
-                            False otherwise
+                ._sdb.db.opened are not None
+                False otherwise
         """
         return (self._sdb is not None and self._key is not None and self._sdb.db
                 and self._sdb.db.opened)
@@ -167,7 +163,7 @@ class CanDom(TymeDom):
         Parameters::
 
             force (bool): True means force read even if not ._stale
-                          Flase means do not force read
+                          False means do not force read
         """
         if self._durable and (self._stale or force):
             if can := self._sdb.get(self._key):  # not empty
@@ -206,17 +202,13 @@ class Can(CanDom):
             Tymist.tyme. Provides injected dependency on Tymist cycle tyme base.
             None means not assigned yet.
             Use ._wind method to assign ._tymth after init of bag.
-        _tyme (None|Float): cycle tyme of last update of a bag field.
-            None means either ._tymth as not yet been assigned or this bag's
-            fields have not yet been updated.
-        _sdb (DomSuber|None): SuberBase subclass instance of durable subdb of Duror
-        _key (str|None): database key used to store serialized field in ._cans
+
+        Additional inherited non-field attributes include _tyme (last field-update tyme), _sdb (durable subdb instance), and _key (storage key in ._cans).
 
     Inherited Properties::
 
         _now (None|float): current tyme given by ._tymth if not None.
-        _durable (bool):  True means ._sdb and ._key are not None
-                          False otherwise
+        _durable (bool): True means ._sdb and ._key are not None; False otherwise
 
     Field Attributes::
 

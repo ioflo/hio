@@ -860,7 +860,7 @@ class Boxer(Tymee):
 
             expr (None|str|Need): need for transition to dest.
                 When None then conditional always True. Always godo.
-                When str then evalable python boolean expression to be
+                When str then evaluable python boolean expression to be
                     resolved into a Need instance for eval at run time
                 When Need instance then use as is
 
@@ -894,7 +894,7 @@ class Boxer(Tymee):
 
         if isinstance(expr, Need):
             need = expr
-        else:   # assumes evalable expr str
+        else:   # assumes evaluable expr str
             need = Need(expr=expr, hold=self.hold)
 
         goact = Goact(dest=dest, need=need)
@@ -912,7 +912,7 @@ class Boxer(Tymee):
             deed (None|str|Type[ActBase]|Callable):
                     When None use Act with default lambda and iops as parameters
                     When str name of class in ActBase registry.
-                    When issubclass of ActBase then create instance
+                    When subclass of ActBase then create instance
                     When Callable use Act with iops as parameters.
             name (None|str): name of act instance created by do.
                     When None use default indexed name created by Act.
@@ -922,7 +922,7 @@ class Boxer(Tymee):
                 None is just to allow definition as keyword arg. Assumes in
                 actual usage that mods is always provided as WorkDom instance.
 
-            iops (dict): input-output-parms for Act
+            iops (dict): input-output-parameters for Act
 
         """
         m = mods  # alias more compact
@@ -971,9 +971,9 @@ class Boxer(Tymee):
         Parameters::
 
             cond (None|str): special need condition to be satisfied. This is
-                resolved in evalable boolean expression.
+                resolved in evaluable boolean expression.
                 When None then ignore
-                When str then special need condition to be resolved into evalable
+                When str then special need condition to be resolved into evaluable
                 boolean expression
 
             key (None|str): key to mine item ref for special need cond when
@@ -983,10 +983,10 @@ class Boxer(Tymee):
                 When str then resolve key to mine at key
 
 
-            expr (None|str): evalable boolean expression as additional constraint(s)
+            expr (None|str): evaluable boolean expression as additional constraint(s)
                 ANDed with result of cond.
                 When None or empty then ignore
-                When str then evalable python boolean expression to be ANDed with
+                When str then evaluable python boolean expression to be ANDed with
                     the result of cond resolution.
 
             mods (None | WorkDom):  state variables used to construct box work
@@ -1002,7 +1002,7 @@ class Boxer(Tymee):
                     acts (dict):  registry of ActBase subclasses by name (including aliases)
                     nabe (str): action nabe (context) for act
 
-            iops (dict): input-output-parms for Act
+            iops (dict): input-output-parameters for Act
 
         """
         m = mods  # alias more compact
@@ -1155,7 +1155,7 @@ class Boxer(Tymee):
 
         Parameters::
 
-            nabe (str): action nabe (context) for mods. Defualt is native
+            nabe (str): action nabe (context) for mods. Default is native
 
             mods (None | WorkDom):  state variables used to construct box work
                 None is just to allow definition as keyword arg. Assumes in
@@ -1174,11 +1174,11 @@ class Boxer(Tymee):
                  name: str|None=None, mods: WorkDom|None=None, **iops)->str:
         """Make Beact instance that assigns mine bag at lhs to value from rhs.
         lhs is of form "key.field"
-        rhs may be either a Callable or an evalable expression or None.
+        rhs may be either a Callable or an evaluable expression or None.
         Resulting act performs one of::
 
             H.key.field = None   when rhs is None
-            H.key.field = eval(rhs)  when rhs is evalable str
+            H.key.field = eval(rhs)  when rhs is evaluable str
             H.key.field = rhs(``**parms``)  when rhs is callable
 
         Usage::
@@ -1191,7 +1191,7 @@ class Boxer(Tymee):
                 Resolves lhs to (key, field)
             rhs (None|str|Callable):
                 When None assign directly
-                When str compile to evable expression
+                When str compiles to evaluable expression
                 When Callable then call directly with iops
             nabe (None|str): action nabe (context) for act instance created by do.
                     None means use nabe from mods.
@@ -1200,7 +1200,7 @@ class Boxer(Tymee):
             mods (None | WorkDom):  state variables used to construct box work
                 None is just to allow definition as keyword arg. Assumes in
                 actual usage that mods is always provided as WorkDom instance.
-            iops (dict): input-output-parms for Beact
+            iops (dict): input-output-parameters for Beact
 
         """
         m = mods  # alias more compact
@@ -1251,7 +1251,7 @@ class Boxer(Tymee):
                 rendos is list of common boxes in both nears and fars to be re-entered
                     These are boxes retained in pile.
                 The sets of boxes in rexdos and rendos are the same set but rexdos
-                is reversed to bottum up order. These are boxes retained in the
+                is reversed to bottom up order. These are boxes retained in the
                 pile before and after the transition. This is where common exdo/endo
                 actions for the non-common boxes can be actioned non-redundantly.
 
@@ -1418,23 +1418,23 @@ class BoxerDoer(Doer):
 
     Inherited Methods::
 
-        .wind  injects ._tymth dependency from associated Tymist to get its .tyme
-        .__call__ makes instance callable
-            Appears as generator function that returns generator
-        .do is generator method that returns generator
-        .enter is enter context action method
-        .recur is recur context action method or generator method
-        .exit is exit context method
-        .close is close context method
-        .abort is abort context method
+                - wind: injects ._tymth dependency from associated Tymist to get its .tyme
+                - __call__: makes instance callable. Appears as generator function
+                    that returns generator
+                - do: is generator method that returns generator
+                - enter: is enter context action method
+                - recur: is recur context action method or generator method
+                - exit: is exit context method
+                - close: is close context method
+                - abort: is abort context method
 
     Attributes::
 
         boxer (Boxer): boxwork instance this doer runs
 
-    Overidden Methods::
+    Overridden Methods::
 
-        .recur
+        - recur
 
     Hidden::
 

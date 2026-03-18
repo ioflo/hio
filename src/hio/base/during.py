@@ -104,7 +104,7 @@ class Duror(Filer):
                 When system employs more than one keri installation, name allows
                 differentiating each instance by name
             base (str): optional directory path segment inserted before name
-                that allows further differentation with a hierarchy. "" means
+                that allows further differentiation with a hierarchy. "" means
                 optional.
             temp (bool): assign to .temp
                 True then open in temporary directory, clear on close
@@ -122,7 +122,7 @@ class Duror(Filer):
             clean (bool): True means path uses clean tail variant
                              False means path uses normal tail variant
             filed (bool): True means .path is file path not directory path
-                          False means .path is directiory path not file path
+                          False means .path is directory path not file path
             extensioned (bool): When not filed:
                                 True means ensure .path ends with fext
                                 False means do not ensure .path ends with fext
@@ -147,25 +147,17 @@ class Duror(Filer):
         Open lmdb and assign to .env
 
         Inherited Parameters:  (see Filer)
-            temp (bool): assign to .temp
-                         True means open in temporary directory, clear on close
-                         False means open persistent directory, do not clear on close
-            headDirPath (str): optional head directory pathname for main database
-                               Default .HeadDirpath
-            perm (int): optional numeric os dir permissions for database
-                         directory and database files. Default .Perm
-            clear (bool): True means remove directory upon close
-                             False means do not remove directory upon close
-            reuse (bool): True means reuse self.path if already exists
-                             False means do not reuse but remake self.path
-            clean (bool): True means path uses clean tail variant
-                             False means path uses normal tail variant
+            temp (bool): assign to .temp; temporary means clear on close, persistent means do not clear.
+            headDirPath (str): optional head directory pathname for main database. Default .HeadDirPath.
+            perm (int): optional numeric os dir permissions for database directory and files. Default .Perm.
+            clear (bool): True means remove directory upon close; False means keep directory.
+            reuse (bool): True means reuse self.path if already exists; False means remake self.path.
+            clean (bool): True means path uses clean tail variant; False means normal tail variant.
             mode (str): file open mode when .filed
             fext (str): File extension when .filed
 
         Parameters:
-            readonly (bool): True means open database in readonly mode
-                                False means open database in read/write mode
+            readonly (bool): True means open database in readonly mode; False means read/write mode.
         """
         exists = self.exists(name=self.name, base=self.base)
         opened = super(Duror, self).reopen(**kwa)
@@ -271,8 +263,7 @@ class Duror(Filer):
         """Write serialized bytes val to location key in db (subdb)
         Does not overwrite.
         Returns:
-            result (bool):  True if val successfully written
-                            False if val at key already exitss
+            result (bool): True if val successfully written; False if val at key already exists
 
         Parameters:
             db (lmdb._Database): opened named subdb with dupsort=False
@@ -291,8 +282,7 @@ class Duror(Filer):
         """Write serialized bytes val to location key in db
         Overwrites existing val if any
         Returns:
-            result (bool): True If val successfully written
-                           False otherwise
+            result (bool): True if val successfully written; False otherwise
 
         Parameters:
             db (lmdb._Database): opened named subdb with dupsort=False
@@ -545,10 +535,8 @@ class Duror(Filer):
         """Gets list of all the insertion ordered set of values at key
 
         Returns:
-            vals (list[bytes]): the insertion ordered set of values at same apparent
-                           effective key.
-                          Uses hidden ordinal key suffix for insertion ordering.
-                          The suffix is appended and stripped transparently.
+            vals (list[bytes]): insertion-ordered values at same apparent effective key;
+                hidden ordinal key suffix is used for insertion ordering and stripped transparently.
 
         Parameters:
             db (lmdb._Database): instance of named sub db with dupsort==False
@@ -1149,7 +1137,7 @@ class SuberBase():
         'a.1'and 'a.2' but not 'ab'
 
         Parameters:
-            keys (Iteratabke[str | bytes | memoryview]): of key parts that may be
+            keys (Iterable[str | bytes | memoryview]): of key parts that may be
                 a truncation of a full keys tuple in  in order to address all the
                 items from multiple branches of the key space.
                 If keys is empty then trims all items in database.
@@ -1185,7 +1173,7 @@ class SuberBase():
             valuespace which may be useful in debugging or testing.
 
         Parameters:
-            keys (str|bytes|memoryview|Iteratable[str | bytes | memoryview]):
+            keys (str|bytes|memoryview|Iterable[str | bytes | memoryview]):
                 of key parts that may be
                 a truncation of a full keys tuple in  in order to address all the
                 items from multiple branches of the key space.
@@ -1806,12 +1794,9 @@ class IoSetSuber(SuberBase):
                         if val is empty then remove all values at key
 
         Returns:
-            When val:
-                result (bool): True if effective key with val exists so rem successful.
-                           False otherwise
-            Otherwise:
-                result (bool): True if effective key with val exists so rem successful.
-                           False otherwise
+            result (bool): True if deletion succeeds; False otherwise.
+                If val is provided, remove matching value at effective key.
+                If val is empty, remove all values at effective key.
 
         """
         if val:
