@@ -11,6 +11,7 @@ hio.core.tcp.clienting module
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 hio.core.tcp.serving module
 ---------------------------
@@ -19,6 +20,7 @@ hio.core.tcp.serving module
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 hio.core.tcp.tcping module
 --------------------------
@@ -27,6 +29,7 @@ hio.core.tcp.tcping module
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 Module contents
 ---------------
@@ -35,3 +38,4 @@ Module contents
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:

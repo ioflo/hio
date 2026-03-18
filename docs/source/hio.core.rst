@@ -21,6 +21,7 @@ hio.core.coring module
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 hio.core.wiring module
 ----------------------
@@ -29,6 +30,7 @@ hio.core.wiring module
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 Module contents
 ---------------
@@ -37,3 +39,4 @@ Module contents
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
