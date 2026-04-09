@@ -519,7 +519,10 @@ class Memoer(hioing.Mixin):
     Sizes = {
                 '__': Sizage(hz=2, mz=22, xz=0, nz=4, zz=0, az=0, oz=28),
                 '_-': Sizage(hz=2, mz=22, xz=44, nz=4, zz=0, az=88, oz=160),
-                '1AAQ': Sizage(hz=4, mz=24, xz=44, nz=4, zz=0, az=88, oz=164),
+                '1AAQ': Sizage(hz=4, mz=24, xz=0, nz=4, zz=4, az=0, oz=36),
+                '1AAR': Sizage(hz=4, mz=24, xz=0, nz=4, zz=0, az=0, oz=32),
+                '1AAS': Sizage(hz=4, mz=24, xz=44, nz=4, zz=4, az=88, oz=168),
+                '1AAT': Sizage(hz=4, mz=24, xz=44, nz=4, zz=0, az=88, oz=164),
              }
 
     # Base2 Binary index representation of Text Base64 Char Codes
