@@ -142,6 +142,7 @@ def test_memoer_class():
         assert not az % 4   # sig size must be on 24 bit boundary
         assert nz and not nz % 4   # neck (num) size must be on 24 bit boundary
         assert not zz % 4   # when zeroth cnt size must be on 24 bit boundary
+        assert zz == (nz if zz else 0)
         assert oz and not oz % 4   # head size must be on 24 bit boundary
         if xz:
             assert az  # az must not be empty if xz not empty
