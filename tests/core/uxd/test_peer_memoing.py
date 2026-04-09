@@ -10,7 +10,7 @@ import pytest
 
 from hio.help import helping
 from hio.base import doing, tyming
-from hio.core.memo import GramDex
+from hio.core.memo import MemoDex
 from hio.core.uxd import uxding, peermemoing
 
 
@@ -20,7 +20,7 @@ def test_memoer_peer_basic():
         return
     alpha = peermemoing.PeerMemoer(name="alpha", temp=True, size=38)
     assert alpha.name == "alpha"
-    assert alpha.code == GramDex.MemoGram
+    assert alpha.code == MemoDex.MemoGram
     assert not alpha.curt
     assert alpha.Sizes[alpha.code] == (2, 22, 0, 4, 0, 28)  # cz mz oz nz sz hz
     assert alpha.size == 38
@@ -149,7 +149,7 @@ def test_memoer_peer_open():
     with (peermemoing.openPM(name='alpha', size=38) as alpha,
           peermemoing.openPM(name='beta', size=38) as beta):
         assert alpha.name == "alpha"
-        assert alpha.code == GramDex.MemoGram
+        assert alpha.code == MemoDex.MemoGram
         assert not alpha.curt
         assert alpha.Sizes[alpha.code] == (2, 22, 0, 4, 0, 28)  # cz mz oz nz sz hz
         assert alpha.size == 38

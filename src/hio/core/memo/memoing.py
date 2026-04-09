@@ -255,23 +255,10 @@ hz is the head (header) size int number of chars::
 """
 Sizage = namedtuple("Sizage", "cz mz oz nz sz hz")
 
-@dataclass(frozen=True)
-class GramCodex:
-    """GramCodex is codex of all Gram Codes.
-    Only provide defined codes.
-    Undefined are left out so that inclusion(exclusion) via 'in' operator works.
-    """
-    MemoGram:     str = '__'  # memogram code
-    AuthMemoGram:    str = '_-'  # authenticated memogram code (signed)
-
-    def __iter__(self):
-        return iter(astuple(self))
-
-GramDex = GramCodex()  # Make instance
 
 @dataclass(frozen=True)
 class MemoGramCodex:
-    """MemoGramCodex is codex of all MemoGram Codes.
+    """MemoGramCodex is codex of all varieties of MemoGram Hard Codes.
     Only provide defined codes.
     Undefined are left out so that inclusion(exclusion) via 'in' operator works.
     """
@@ -282,6 +269,35 @@ class MemoGramCodex:
         return iter(astuple(self))
 
 MemoDex = MemoGramCodex()  # Make instance
+
+@dataclass(frozen=True)
+class GramCodex:
+    """GramCodex is codex of all Gram Hard Codes.
+    Only provide defined codes.
+    Undefined are left out so that inclusion(exclusion) via 'in' operator works.
+    """
+    MemoGram:     str = '__'  # memogram code
+
+    def __iter__(self):
+        return iter(astuple(self))
+
+GramDex = GramCodex()  # Make instance
+
+
+@dataclass(frozen=True)
+class AuthGramCodex:
+    """AuthGramCodex is codex of all AuthGram (authenticated signed) Hard Codes.
+    Only provide defined codes.
+    Undefined are left out so that inclusion(exclusion) via 'in' operator works.
+    """
+    AuthMemoGram:    str = '_-'   # authenticated memogram code (signed)
+
+    def __iter__(self):
+        return iter(astuple(self))
+
+AuthDex = AuthGramCodex()  # Make instance
+
+
 
 #@dataclass(frozen=True)
 #class AckGramCodex:
@@ -297,18 +313,7 @@ MemoDex = MemoGramCodex()  # Make instance
 
 #AckDex = AckGramCodex()  # Make instance
 
-@dataclass(frozen=True)
-class AuthGramCodex:
-    """AuthGramCodex is codex of all AuthGram (authenticated signed) Codes.
-    Only provide defined codes.
-    Undefined are left out so that inclusion(exclusion) via 'in' operator works.
-    """
-    AuthMemoGram:    str = '_-'   # authenticated memogram code (signed)
 
-    def __iter__(self):
-        return iter(astuple(self))
-
-AuthDex = AuthGramCodex()  # Make instance
 
 
 class Memoer(hioing.Mixin):
@@ -495,7 +500,7 @@ class Memoer(hioing.Mixin):
         _oid (str or None): see oid property
     """
     Version = Versionage(major=0, minor=0)  # default version
-    Codex = GramDex
+    Codex = MemoDex
     Codes = asdict(Codex)  # map code name to code
     Names = {val : key for key, val in Codes.items()} # invert map code to code name
     Sodex = AuthDex  # signed gram codex
@@ -545,7 +550,7 @@ class Memoer(hioing.Mixin):
 
         qb64 = code + b64.decode()  # fully qualified base64 oid with prefix code
 
-        _, _, oz, _, _, _ = cls.Sizes[AuthDex.AuthMemoGram]  # cz mz oz nz sz hz
+        _, _, oz, _, _, _ = cls.Sizes[MemoDex.AuthMemoGram]  # cz mz oz nz sz hz
         if len(qb64) != oz:
             hioing.MemoerError(f"Invalid oid qb64 size={len(qb64) != {oz}}")
 
@@ -795,7 +800,7 @@ class Memoer(hioing.Mixin):
 
         qb64 = code + b64.decode()  # fully qualified base64 with prefixqb64de
 
-        _, _, _, _, sz, _ = cls.Sizes[AuthDex.AuthMemoGram]  # cz mz oz nz sz hz
+        _, _, _, _, sz, _ = cls.Sizes[MemoDex.AuthMemoGram]  # cz mz oz nz sz hz
         if len(qb64) != sz:
             hioing.MemoerError(f"Invalid sig qb64 size={len(qb64) != {sz}}")
 
@@ -861,7 +866,7 @@ class Memoer(hioing.Mixin):
                  txms=None,
                  txgs=None,
                  txbs=None,
-                 code=GramDex.MemoGram,
+                 code=MemoDex.MemoGram,
                  curt=False,
                  size=None,
                  verific=False,
@@ -1150,7 +1155,7 @@ class Memoer(hioing.Mixin):
         """Determines encoding of gram bytes header when parsing grams.
         The encoding maybe either base2 or base64.
 
-        Returns:
+        Returns::
             curt (bool):    True means base2 encoding
                             False means base64 encoding
                             Otherwise raises hioing.MemoerError
@@ -1180,8 +1185,8 @@ class Memoer(hioing.Mixin):
         All Base2 codes for Base64 chars are unique since the B2 codes are just
         the count from 0 to 63. There is one collision, however, between Base2 and
         Base 64 for invalid gram headers. This is because 0o27 is the
-        base2 code for ascii 'V'. This means that Base2 encodings
-        that begin with 0o27 wich is the Base2 encoding of the ascii 'V, would be
+        base2 code for ascii 'X'. This means that Base2 encodings
+        that begin with 0o27 which is the Base2 encoding of the ascii 'X', would be
         incorrectly detected as text not binary.
         """
 
@@ -1189,6 +1194,66 @@ class Memoer(hioing.Mixin):
         if sextet == 0o27:
             return False  # base64 text encoding
         if sextet == 0o77:
+            return True  # base2 binary encoding
+
+        raise hioing.MemoerError(f"Unexpected {sextet=} at gram head start.")
+
+    def wiffNew(self, gram):
+        """Determines encoding of gram bytes header when parsing grams.
+        The encoding maybe either base2 or base64.
+
+        Returns::
+            curt (bool):    True means base2 encoding
+                            False means base64 encoding
+                            Otherwise raises hioing.MemoerError
+
+        All gram head codes start with '1' in base64 text or in base2 binary.
+        Given only allowed chars are from the set of base64 then can determine
+        if header is in base64 or base2.
+
+        1AAQ, 1AAR, 1AAS, 1AAT, 1AAU, 1AAV, 1AAW, 1AAX, 1AAY, 1AAZ
+
+        First sextet:  0b is binary, 0o is octal 2 octal digits or 6 bits
+                       0x is hexadecimal 1 sextet is 1.5 hex digits or octets
+
+        0o14 = 0b001100 means first sextet of '1' in base64 (0b00110001)
+        0o65 = 0b110101 means first sextet of '1' in base2  (0b110101)
+
+        Assuming that only '1' is allowed as the first char of a valid gram head,
+        in either Base64 or Base2 encoding, a parser can unambiguously determine
+        if the gram header encoding is binary Base2 or text Base64 because
+        0o14 != 0o65.
+
+        The sextet 0o14 is not a unique first sextet among Base64 ascii chars.
+        It is shared with the ascii chars '0', '1', '2', '3'. So an invalidly
+        encoded gram header when in Base64 encoding is not fully detectable
+        unless the full first octet (8bits) is examined. But an invalid gram
+        header could have any of the following sextets also encoded invalidly.
+        Thise means that in general some other mechanism is required to detect
+        and invalidly encoded gram header. Therefore some additional tamper
+        evident mechanism such as a digest or signature is required to detect
+        and invalidly encoded gram header. But all we really need wiff to do is
+        to detect if a validly encoded gram header is encoded in Base64 or Base2
+        and merely examining the first sextet is enough to unambiguously make that
+        determination.
+
+        In addition there is one collision (see below) with invalid gram headers
+        in Base2 encoding. So an erroneously constructed gram might
+        not be detected merely by looking at the first sextet.
+
+        All Base2 codes for Base64 chars are unique since the B2 codes are just
+        the count from 0 to 63. There is one collision, however, between Base2 and
+        Base 64 for the first sextet of an invalid gram header.
+        This is because 0o14 is the base2 code for ascii 'M'. This means that
+        invalid Base2 encoded gram headers that begin with 0o14 (the Base2
+        encoding of the ascii 'M') would be incorrectly detected by wiff as text
+        not binary.
+        """
+
+        sextet = gram[0] >> 2
+        if sextet == 0o14:
+            return False  # base64 text encoding
+        if sextet == 0o65:
             return True  # base2 binary encoding
 
         raise hioing.MemoerError(f"Unexpected {sextet=} at gram head start.")
@@ -2189,7 +2254,7 @@ class SureMemoer(Tymee, Memoer):
     """
     Tymeout = 0.0  # tymeout in seconds, tymeout of 0.0 means ignore tymeout
 
-    def __init__(self, *, tymeout=None, code=GramDex.AuthMemoGram, verific=True, **kwa):
+    def __init__(self, *, tymeout=None, code=MemoDex.AuthMemoGram, verific=True, **kwa):
         """
         Initialization method for instance.
         Inherited Parameters:
