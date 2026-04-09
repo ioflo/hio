@@ -112,32 +112,36 @@ def test_memoer_class():
     # Codes table with sizes of code (hard) and full primitive material
     assert Memoer.Sizes == \
     {
-        '__': Sizage(cz=2, mz=22, oz=0, nz=4, sz=0, hz=28),
-        '_-': Sizage(cz=2, mz=22, oz=44, nz=4, sz=88, hz=160),
+        '__': Sizage(hz=2, mz=22, xz=0, nz=4, zz=0, az=0, oz=28),
+        '_-': Sizage(hz=2, mz=22, xz=44, nz=4, zz=0, az=88, oz=160),
+        '1AAQ': Sizage(hz=4, mz=24, xz=44, nz=4, zz=0, az=88, oz=164),
     }
     #  verify Sizes and Codes
     for code, val in Memoer.Sizes.items():
-        cz = val.cz
-        mz = val.mz
-        oz = val.oz
-        nz = val.nz
-        sz = val.sz
         hz = val.hz
+        mz = val.mz
+        xz = val.xz
+        nz = val.nz
+        zz = val.zz
+        az = val.az
+        oz = val.oz
 
-        assert len(code) == cz == 2
-        assert code[0] == '_'
-        code[1] in 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234567890-_'
-        assert hz > 0
-        assert hz == cz + mz + oz + sz + nz
+        assert len(code) == hz
+        assert hz == 2 or hz == 4
+        assert code[0] == '_' or code[0] == '1'
+        assert code[1] in 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234567890-_'
+        assert oz > 0
+        assert oz == hz + mz + xz + zz + az + nz
         assert mz  # ms must not be empty
         pz = (3 - ((mz) % 3)) % 3  # net pad size for mid
-        assert pz == (cz % 4)  #  combined code + mid size must lie on 24 bit boundary
-        assert not oz % 4   # oid size must be on 24 bit boundary
-        assert not sz % 4   # sig size must be on 24 bit boundary
-        assert nz and not nz % 4   # neck (num or cnt) size must be on 24 bit boundary
-        assert hz and not hz % 4   # head size must be on 24 bit boundary
-        if oz:
-            assert sz  # sz must not be empty if oz not empty
+        assert pz == (hz % 4)  #  combined code + mid size must lie on 24 bit boundary
+        assert not xz % 4   # oid size must be on 24 bit boundary
+        assert not az % 4   # sig size must be on 24 bit boundary
+        assert nz and not nz % 4   # neck (num) size must be on 24 bit boundary
+        assert not zz % 4   # when zeroth cnt size must be on 24 bit boundary
+        assert oz and not oz % 4   # head size must be on 24 bit boundary
+        if xz:
+            assert az  # az must not be empty if xz not empty
 
     assert Memoer.Names == \
     {
@@ -164,8 +168,8 @@ def test_memoer_class():
     raw, code = Memoer._decodeOID(oid)
     assert raw == verkey
     assert code == 'B'  # nontrans AID
-    _, _, oz, _, _, _ = Memoer.Sizes[MemoDex.AuthMemoGram]  # cz mz oz nz sz hz
-    assert len(oid) == 44 == oz
+    _, _, xz, _, _, _, _ = Memoer.Sizes[MemoDex.AuthMemoGram]  # hz mz xz nz zz az oz
+    assert len(oid) == 44 == xz
 
     qvk = Memoer._encodeQVK(raw=verkey)
     assert qvk == 'BG-R9L4kTXULe33Tqidn0c-W-x6xU4lIXCdhZQYrsih2'
@@ -189,8 +193,8 @@ def test_memoer_class():
     raw, code = Memoer._decodeSGN(sgntr)
     assert raw == signature
     assert code == '0B'
-    _, _, _, _, sz, _ = Memoer.Sizes[MemoDex.AuthMemoGram]  # cz mz oz nz sz hz
-    assert len(sgntr) == 88 == sz
+    _, _, _, _, _, az, _ = Memoer.Sizes[MemoDex.AuthMemoGram]  # hz mz xz nz zz az oz
+    assert len(sgntr) == 88 == az
 
     """Done Test"""
 
@@ -251,7 +255,7 @@ def test_memoer_sign_verify():
     assert peer.bs == memoing.Memoer.BufSize == 65535
     assert peer.code == memoing.MemoDex.AuthMemoGram == '_-'
     assert not peer.curt
-    assert peer.Sizes[peer.code] == (2, 22, 44, 4, 88, 160)  # cz mz oz nz sz hz
+    assert peer.Sizes[peer.code] == (2, 22, 44, 4, 0, 88, 160)  # hz mz xz nz zz az oz
     assert peer.size == peer.MaxGramSize
     assert not peer.verific
     assert not peer.echoic
@@ -307,7 +311,7 @@ def test_memoer_basic():
     assert peer.bs == memoing.Memoer.BufSize == 65535
     assert peer.code == memoing.MemoDex.MemoGram == '__'
     assert not peer.curt
-    assert peer.Sizes[peer.code] == (2, 22, 0, 4, 0, 28)  # cz mz oz nz sz hz
+    assert peer.Sizes[peer.code] == (2, 22, 0, 4, 0, 0, 28)  # hz mz xz nz zz az oz
     assert peer.size == peer.MaxGramSize
     assert not peer.verific
     assert not peer.echoic
@@ -457,7 +461,7 @@ def test_memoer_small_gram_size():
     assert peer.bs == memoing.Memoer.BufSize == 65535
     assert peer.code == memoing.MemoDex.MemoGram == '__'
     assert not peer.curt
-    assert peer.Sizes[peer.code] == (2, 22, 0, 4, 0, 28)  # cz mz oz nz sz hz
+    assert peer.Sizes[peer.code] == (2, 22, 0, 4, 0, 0, 28)  # hz mz xz nz zz az oz
     assert peer.size == 33  # can't be smaller than head + neck + 1
     assert not peer.verific
     assert not peer.echoic
@@ -823,7 +827,7 @@ def test_memoer_basic_signed():
     assert peer.bs == memoing.Memoer.BufSize == 65535
     assert peer.code == memoing.MemoDex.AuthMemoGram == '_-'
     assert not peer.curt
-    assert peer.Sizes[peer.code] == (2, 22, 44, 4, 88, 160)  # cz mz oz nz sz hz
+    assert peer.Sizes[peer.code] == (2, 22, 44, 4, 0, 88, 160)  # hz mz xz nz zz az oz
     assert peer.size == peer.MaxGramSize
     assert not peer.verific
     assert not peer.echoic
@@ -1167,7 +1171,7 @@ def test_memoer_verific():
     assert peer.bs == memoing.Memoer.BufSize == 65535
     assert peer.code == memoing.MemoDex.MemoGram == '__'
     assert not peer.curt
-    assert peer.Sizes[peer.code] == (2, 22, 0, 4, 0, 28)  # cz mz oz nz sz hz
+    assert peer.Sizes[peer.code] == (2, 22, 0, 4, 0, 0, 28)  # hz mz xz nz zz az oz
     assert peer.size == peer.MaxGramSize
     assert peer.verific
     assert not peer.echoic
@@ -1404,8 +1408,8 @@ def test_sure_memoer_basic():
     assert peer.keep == keep
     assert peer.oid == oid
 
-    assert peer.Sizes[peer.code] == Sizage(cz=2, mz=22, oz=44, nz=4, sz=88, hz=160)
-    assert peer.Sizes[peer.code] == (2, 22, 44, 4, 88, 160)  # cz mz oz nz sz hz
+    assert peer.Sizes[peer.code] == Sizage(hz=2, mz=22, xz=44, nz=4, zz=0, az=88, oz=160)
+    assert peer.Sizes[peer.code] == (2, 22, 44, 4, 0, 88, 160)  # hz mz xz nz zz az oz
     assert peer.size == peer.MaxGramSize
     assert peer.tymeout == 0.0
     assert peer.tymers == {}
