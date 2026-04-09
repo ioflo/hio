@@ -264,6 +264,10 @@ class MemoGramCodex:
     """
     MemoGram:     str = '__'  # memogram code
     AuthMemoGram:    str = '_-'  # authenticated memogram code (signed)
+    GramZero:     str = '1AAQ'  # zeroth gram code
+    Gram:    str = '1AAR'  # non-zeroth gram code
+    GramAuthZero:     str = '1AAS'  # zeroth authenticated gram code (signed)
+    GramAuth:    str = '1AAT'  # non-zeroth authenticated gram code (signed)
 
     def __iter__(self):
         return iter(astuple(self))
@@ -291,6 +295,8 @@ class AuthGramCodex:
     Undefined are left out so that inclusion(exclusion) via 'in' operator works.
     """
     AuthMemoGram:    str = '_-'   # authenticated memogram code (signed)
+    GramAuthZero:     str = '1AAS'  # zeroth authenticated gram code (signed)
+    GramAuth:    str = '1AAT'  # non-zeroth authenticated gram code (signed)
 
     def __iter__(self):
         return iter(astuple(self))

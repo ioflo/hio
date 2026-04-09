@@ -103,6 +103,10 @@ def test_memoer_class():
     {
         'MemoGram': '__',
         'AuthMemoGram': '_-',
+        'GramZero': '1AAQ',
+        'Gram': '1AAR',
+        'GramAuthZero': '1AAS',
+        'GramAuth': '1AAT' ,
     }
 
     # Codes table with sizes of code (hard) and full primitive material
@@ -135,7 +139,15 @@ def test_memoer_class():
         if oz:
             assert sz  # sz must not be empty if oz not empty
 
-    assert Memoer.Names == {'__': 'MemoGram', '_-': 'AuthMemoGram'}
+    assert Memoer.Names == \
+    {
+        '__': 'MemoGram',
+        '_-': 'AuthMemoGram',
+        '1AAQ': 'GramZero',
+        '1AAR': 'Gram',
+        '1AAS': 'GramAuthZero',
+        '1AAT': 'GramAuth',
+    }
     assert Memoer.Sodex == AuthDex
 
     # Base2 Binary index representation of Text Base64 Char Codes
