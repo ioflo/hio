@@ -273,6 +273,12 @@ class MemoGramCodex:
     Gram:    str = '1AAR'  # non-zeroth gram code
     GramAuthZero:     str = '1AAS'  # zeroth authenticated gram code (signed)
     GramAuth:    str = '1AAT'  # non-zeroth authenticated gram code (signed)
+    GramSureZero:     str = '1AAU'  # zeroth reliable gram code (acked)
+    GramSure:    str = '1AAV'  # non-zeroth reliable gram code (acked)
+    GramSureAuthZero:     str = '1AAW'  # zeroth reliable authenticated gram code (acked & signed)
+    GramSureAuth:    str = '1AAX'  # non-zeroth reliable authenticated gram code (acked & signed)
+    Ack:     str = '1AAY'  # ack code to enable reliable grams
+    AckAuth:    str = '1AAZ'  # authenticated ack code to enable reliable grams (signed)
 
     def __iter__(self):
         return iter(astuple(self))
@@ -302,6 +308,9 @@ class AuthGramCodex:
     AuthMemoGram:    str = '_-'   # authenticated memogram code (signed)
     GramAuthZero:     str = '1AAS'  # zeroth authenticated gram code (signed)
     GramAuth:    str = '1AAT'  # non-zeroth authenticated gram code (signed)
+    GramSureAuthZero:     str = '1AAW'  # zeroth reliable authenticated gram code (acked & signed)
+    GramSureAuth:    str = '1AAX'  # non-zeroth reliable authenticated gram code (acked & signed)
+    AckAuth:    str = '1AAZ'  # authenticated ack code to enable reliable grams (signed)
 
     def __iter__(self):
         return iter(astuple(self))
@@ -523,7 +532,20 @@ class Memoer(hioing.Mixin):
                 '1AAR': Sizage(hz=4, mz=24, xz=0, nz=4, zz=0, az=0, oz=32),
                 '1AAS': Sizage(hz=4, mz=24, xz=44, nz=4, zz=4, az=88, oz=168),
                 '1AAT': Sizage(hz=4, mz=24, xz=44, nz=4, zz=0, az=88, oz=164),
+                '1AAU': Sizage(hz=4, mz=24, xz=0, nz=4, zz=4, az=0, oz=36),
+                '1AAV': Sizage(hz=4, mz=24, xz=0, nz=4, zz=0, az=0, oz=32),
+                '1AAW': Sizage(hz=4, mz=24, xz=44, nz=4, zz=4, az=88, oz=168),
+                '1AAX': Sizage(hz=4, mz=24, xz=44, nz=4, zz=0, az=88, oz=164),
+                '1AAY': Sizage(hz=4, mz=24, xz=0, nz=4, zz=0, az=0, oz=32),
+                '1AAZ': Sizage(hz=4, mz=24, xz=44, nz=4, zz=0, az=88, oz=164),
              }
+
+    Pairs = dict()  # pair the zeroth code with the non-zeroth code of same type
+    Pairs[MemoDex.GramZero] = MemoDex.Gram
+    Pairs[MemoDex.GramAuthZero] = MemoDex.GramAuth
+    Pairs[MemoDex.GramSureZero] = MemoDex.GramSure
+    Pairs[MemoDex.GramSureAuthZero] = MemoDex.GramSureAuth
+
 
     # Base2 Binary index representation of Text Base64 Char Codes
     #Bodes = ({helping.codeB64ToB2(c): c for n, c in Codes.items()})

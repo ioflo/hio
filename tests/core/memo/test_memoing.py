@@ -107,6 +107,12 @@ def test_memoer_class():
         'Gram': '1AAR',
         'GramAuthZero': '1AAS',
         'GramAuth': '1AAT' ,
+        'GramSureZero': '1AAU',
+        'GramSure': '1AAV',
+        'GramSureAuthZero': '1AAW',
+        'GramSureAuth': '1AAX',
+        'Ack': '1AAY',
+        'AckAuth': '1AAZ',
     }
 
     # Codes table with sizes of code (hard) and full primitive material
@@ -118,6 +124,12 @@ def test_memoer_class():
         '1AAR': Sizage(hz=4, mz=24, xz=0, nz=4, zz=0, az=0, oz=32),
         '1AAS': Sizage(hz=4, mz=24, xz=44, nz=4, zz=4, az=88, oz=168),
         '1AAT': Sizage(hz=4, mz=24, xz=44, nz=4, zz=0, az=88, oz=164),
+        '1AAU': Sizage(hz=4, mz=24, xz=0, nz=4, zz=4, az=0, oz=36),
+        '1AAV': Sizage(hz=4, mz=24, xz=0, nz=4, zz=0, az=0, oz=32),
+        '1AAW': Sizage(hz=4, mz=24, xz=44, nz=4, zz=4, az=88, oz=168),
+        '1AAX': Sizage(hz=4, mz=24, xz=44, nz=4, zz=0, az=88, oz=164),
+        '1AAY': Sizage(hz=4, mz=24, xz=0, nz=4, zz=0, az=0, oz=32),
+        '1AAZ': Sizage(hz=4, mz=24, xz=44, nz=4, zz=0, az=88, oz=164),
     }
     #  verify Sizes and Codes
     for code, val in Memoer.Sizes.items():
@@ -143,7 +155,7 @@ def test_memoer_class():
         assert nz and not nz % 4   # neck (num) size must be on 24 bit boundary
         assert not zz % 4   # when zeroth cnt size must be on 24 bit boundary
         assert zz == (nz if zz else 0)
-        assert oz and not oz % 4   # head size must be on 24 bit boundary
+        assert oz and not oz % 4   # overhead size must be on 24 bit boundary
         if xz:
             assert az  # az must not be empty if xz not empty
 
@@ -155,8 +167,21 @@ def test_memoer_class():
         '1AAR': 'Gram',
         '1AAS': 'GramAuthZero',
         '1AAT': 'GramAuth',
+        '1AAU': 'GramSureZero',
+        '1AAV': 'GramSure',
+        '1AAW': 'GramSureAuthZero',
+        '1AAX': 'GramSureAuth',
+        '1AAY': 'Ack',
+        '1AAZ': 'AckAuth',
     }
+
+
     assert Memoer.Sodex == AuthDex
+
+    assert Memoer.Pairs[MemoDex.GramZero] == MemoDex.Gram
+    assert Memoer.Pairs[MemoDex.GramAuthZero] == MemoDex.GramAuth
+    assert Memoer.Pairs[MemoDex.GramSureZero] == MemoDex.GramSure
+    assert Memoer.Pairs[MemoDex.GramSureAuthZero] == MemoDex.GramSureAuth
 
     # Base2 Binary index representation of Text Base64 Char Codes
     #assert Memoer.Bodes == {b'\xff\xf0': '__', b'\xff\xe0': '_-'}
