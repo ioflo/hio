@@ -20,9 +20,7 @@ class PeerMemoer(Peer, Memoer):
 
 
     Inherited Class Attributes:
-        BufSize (int): used to set default buffer size for transport datagram buffers
         MaxGramSize (int): max gram bytes for this transport
-
         Version (Versionage): default version namedtuple of form (major: int, minor: int)
         Codex (GramDex): dataclass ref to gram codex
         Codes (dict): maps codex names to codex values
@@ -31,6 +29,8 @@ class PeerMemoer(Peer, Memoer):
         Sizes (dict): gram head part sizes Sizage instances keyed by gram codes
         MaxMemoSize (int): absolute max memo size
         MaxGramCount (int): absolute max gram count
+        BufSize (int): used to set default buffer size for transport datagram buffers
+        Tymeout (float): default timeout for retry tymer(s) if any
 
     Inherited Attributes:
         name (str): unique identifier of peer for management purposes
@@ -79,9 +79,23 @@ class PeerMemoer(Peer, Memoer):
             for (gram, dst)
         echos (deque): holding echo receive duples for testing. Each duple of
             form: (gram: bytes, dst: str).
+        inbox (deque): holds final received complete memos for testing when not
+                       overridden in subclass to further process otherwise
+        tymeout (float): default timeout for retry tymer(s) if any
+        tymers (dict): keys are tid and values are Tymers for retry tymers for
+                       each inflight tx
 
 
     Inherited Properties:
+        tyme (float or None):  relative cycle time of associated Tymist which is
+            provided by calling .tymth function wrapper closure which is obtained
+            from Tymist.tymen().
+            None means not assigned yet.
+        tymth (Callable or None): function wrapper closure returned by
+            Tymist.tymen() method. When .tymth is called it returns associated
+            Tymist.tyme. Provides injected dependency on Tymist cycle tyme base.
+            None means not assigned yet.
+
         host (str): element of .ha duple
         port (int): element of .ha duple
         path (tuple): .ha (host, port)  alias to match .uxd
@@ -94,15 +108,15 @@ class PeerMemoer(Peer, Memoer):
         keep (dict): labels are oids and values are Keyage instances.
         oid (str|None): own oid defaults used to lookup keys to sign on tx
 
-        Notes:
-                - size: first gram size = over head size + neck size + body size;
-                    subsequent grams use over head size + body size; gram body size is at
-                    least one and is limited by MaxGramSize and MaxGramCount relative to
-                    MaxMemoSize.
-                - echoic: each entry in .echos is (gram: bytes, src: str); default echo
-                    is (b'', None); when False it may be overridden by method parameter.
-                - keep: Keyage is namedtuple("Keyage", "sigkey verkey") with private
-                    signing key sigkey and public verifying key verkey.
+        Notes::
+        - size: first gram size = over head size + neck size + body size;
+            subsequent grams use over head size + body size; gram body size is at
+            least one and is limited by MaxGramSize and MaxGramCount relative to
+            MaxMemoSize.
+        - echoic: each entry in .echos is (gram: bytes, src: str); default echo
+            is (b'', None); when False it may be overridden by method parameter.
+        - keep: Keyage is namedtuple("Keyage", "sigkey verkey") with private
+            signing key sigkey and public verifying key verkey.
 
     """
 

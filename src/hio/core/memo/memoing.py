@@ -484,13 +484,11 @@ class Memoer(Tymee):
                        form: (gram: bytes, dst: str).
         inbox (deque): holds final received complete memos for testing when not
                        overridden in subclass to further process otherwise
-
         tymeout (float): default timeout for retry tymer(s) if any
         tymers (dict): keys are tid and values are Tymers for retry tymers for
                        each inflight tx
 
     Inherited Properties (Tymee)::
-
         tyme (float or None):  relative cycle time of associated Tymist which is
             provided by calling .tymth function wrapper closure which is obtained
             from Tymist.tymen().
@@ -502,7 +500,6 @@ class Memoer(Tymee):
 
 
     Properties::
-
         code (bytes or None): gram code for gram header when rending for tx
         curt (bool): True means when rending for tx encode header in base2
                      False means when rending for tx encode header in base64

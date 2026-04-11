@@ -17,11 +17,9 @@ class PeerMemoer(Peer, Memoer):
     """Class for sending memograms over UXD transport
     Mixin base classes Peer and Memoer to attain memogram over uxd transport.
 
-
     Inherited Class Attributes:
         See Peer Class
         See memoing.Memoer Class
-
 
     Inherited Attributes:
         See Peer Class
