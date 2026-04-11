@@ -358,33 +358,6 @@ class Memoer(hioing.Mixin):
         in order to create a new subclass that adds memogram support to the
         datagram transport class. For example MemoerUdp or MemoerUxd
 
-    Each direction of dataflow uses a tiered set of buffers that respect
-    the constraints of non-blocking asynchronous IO with datagram transports.
-
-    On the transmit side memos are placed in a memo deque (double ended queue).
-    Each memo is then segmented into grams (memograms) that respect the size constraints
-    of the underlying datagram transport. These grams are placed in the outgoing
-    gram deque. Each entry in this deque is a duple of form:
-    (gram: bytes, dst: str). Each  duple is pulled off the self._serviceOneRxMemo()deque and its
-    gram is put in bytearray for transport.
-
-    Flow::
-
-        memo -> .txms deque -> rend -> grams -> .txgs deque -> send -> .txbs
-
-    On the receive side each complete memogram (gram) is put in a gram receive
-    deque as a memogram (datagram sized) segment of a memo.
-    These deques are indexed by the sender's source addr.
-    The grams in the gram receive deque are then desegmented into a memo
-    and placed in the memo deque for consumption by the application or some other
-    higher level protocol.
-
-    Receive flow::
-
-        receive -> (gram, src) -> grams parsed to .rxgs  .counts .oids .sources ->
-        signing key pair sigkey and verifier key ->
-               fuse -> memo .rxms deque
-
     When using non-blocking IO, asynchronous datagram transport
     protocols may have hidden buffering constraints that result in fragmentation
     of the sent datagram which means the whole datagram is not sent at once via
@@ -405,6 +378,31 @@ class Memoer(hioing.Mixin):
     gram headers will be stripped and discarded there is no need to archive them.
     The encapsulated unpartitioned memogram with its signature it what is meant
     for archival not the partitioned gram and per gram signature.
+
+    Each direction of dataflow uses a tiered set of buffers that respect
+    the constraints of non-blocking asynchronous IO with datagram transports.
+
+    Transmit Flow::
+        memo to .txms deque -> .rend -> grams to .txgs deque -> .send to .txbs
+
+    On the transmit side memos are placed in a memo deque (double ended queue).
+    Each memo is then segmented into grams (memograms) that respect the size
+    constraints of the underlying datagram transport. These grams are placed
+    in the outgoing gram deque. Each entry in this deque is a duple of form:
+    (gram: bytes, dst: str). Each  duple is pulled off the self._serviceOneRxMemo()deque and its
+    gram is put in bytearray for transport.
+
+    Receive Flow::
+        .receive -> (gram, src) -> grams parsed to .rxgs  .counts .oids .sources ->
+        signing key pair sigkey and verifier key ->
+               .fuse -> memo .rxms deque
+
+    On the receive side each complete memogram (gram) is put in a gram receive
+    deque as a memogram (datagram sized) segment of a memo.
+    These deques are indexed by the sender's source addr.
+    The grams in the gram receive deque are then desegmented into a memo
+    and placed in the memo deque for consumption by the application or some other
+    higher level protocol.
 
     Inherited Class Attributes::
 
