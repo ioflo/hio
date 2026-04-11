@@ -286,7 +286,7 @@ def test_memoer_sign_verify():
     assert not peer.curt
     assert peer.Sizes[peer.code] == (2, 22, 44, 4, 0, 88, 160)  # hz mz xz nz zz az oz
     assert peer.size == peer.MaxGramSize
-    assert not peer.verific
+    assert not peer.authic
     assert not peer.echoic
     assert peer.keep == keep
     assert peer.oid == oid
@@ -342,10 +342,14 @@ def test_memoer_basic():
     assert not peer.curt
     assert peer.Sizes[peer.code] == (2, 22, 0, 4, 0, 0, 28)  # hz mz xz nz zz az oz
     assert peer.size == peer.MaxGramSize
-    assert not peer.verific
+    assert not peer.authic
     assert not peer.echoic
     assert peer.keep == dict()
     assert peer.oid is None
+
+    assert peer.tymeout == 0.0
+    assert peer.tymers == {}
+
 
     peer.reopen()
     assert peer.opened == True
@@ -492,7 +496,7 @@ def test_memoer_small_gram_size():
     assert not peer.curt
     assert peer.Sizes[peer.code] == (2, 22, 0, 4, 0, 0, 28)  # hz mz xz nz zz az oz
     assert peer.size == 33  # can't be smaller than head + neck + 1
-    assert not peer.verific
+    assert not peer.authic
     assert not peer.echoic
     assert peer.keep == dict()
     assert peer.oid is None
@@ -667,7 +671,7 @@ def test_memoer_multiple():
     assert peer.bs == memoing.Memoer.BufSize == 65535
     assert peer.code == memoing.MemoDex.MemoGram == '__'
     assert not peer.curt
-    assert not peer.verific
+    assert not peer.authic
     assert not peer.echoic
     assert peer.keep == dict()
     assert peer.oid is None
@@ -746,7 +750,7 @@ def test_memoer_multiple_echoic_service_tx_rx():
     assert peer.bs == memoing.Memoer.BufSize == 65535
     assert peer.code == memoing.MemoDex.MemoGram == '__'
     assert not peer.curt
-    assert not peer.verific
+    assert not peer.authic
     assert peer.echoic
     assert peer.keep == dict()
     assert peer.oid is None
@@ -800,7 +804,7 @@ def test_memoer_multiple_echoic_service_all():
     assert peer.bs == memoing.Memoer.BufSize == 65535
     assert peer.code == memoing.MemoDex.MemoGram == '__'
     assert not peer.curt
-    assert not peer.verific
+    assert not peer.authic
     assert peer.echoic
     assert peer.keep == dict()
     assert peer.oid is None
@@ -858,7 +862,7 @@ def test_memoer_basic_signed():
     assert not peer.curt
     assert peer.Sizes[peer.code] == (2, 22, 44, 4, 0, 88, 160)  # hz mz xz nz zz az oz
     assert peer.size == peer.MaxGramSize
-    assert not peer.verific
+    assert not peer.authic
     assert not peer.echoic
     assert peer.keep == keep
     assert peer.oid == oid
@@ -1055,7 +1059,7 @@ def test_memoer_multiple_signed():
     assert peer.bs == memoing.Memoer.BufSize == 65535
     assert peer.code == memoing.MemoDex.AuthMemoGram == '_-'
     assert not peer.curt
-    assert not peer.verific  # force rx must be signed
+    assert not peer.authic  # force rx must be signed
     assert not peer.echoic
     assert peer.keep == keep
     assert peer.oid == oid
@@ -1182,7 +1186,7 @@ def test_memoer_multiple_signed():
 
 
 def test_memoer_verific():
-    """Test Memoer class with verific (signed required)
+    """Test Memoer class with authic (signed required)
     """
     salt = b"ABCDEFGHIJKLMNOP"
     try:
@@ -1193,7 +1197,7 @@ def test_memoer_verific():
     oid = list(keep.keys())[0]
     assert oid == 'BJZTHNWXscuT-SPokPzSeBkShpHj6g8bQrP0Rh7IJNUp'
 
-    peer = memoing.Memoer(verific=True, keep=keep, oid=oid)
+    peer = memoing.Memoer(authic=True, keep=keep, oid=oid)
     assert peer.name == "main"
     assert peer.opened == False
     assert peer.bc is None
@@ -1202,7 +1206,7 @@ def test_memoer_verific():
     assert not peer.curt
     assert peer.Sizes[peer.code] == (2, 22, 0, 4, 0, 0, 28)  # hz mz xz nz zz az oz
     assert peer.size == peer.MaxGramSize
-    assert peer.verific
+    assert peer.authic
     assert not peer.echoic
     assert peer.keep == keep
     assert peer.oid is oid
@@ -1275,9 +1279,9 @@ def test_memoer_multiple_signed_verific_echoic_service_all():
     vidBeta = list(keep.keys())[1]
     assert vidBeta == 'DGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'
 
-    # verific forces rx memos to be signed or dropped
+    # authic forces rx memos to be signed or dropped
     # to force signed tx then use Signed code
-    peer = memoing.Memoer(code=MemoDex.AuthMemoGram, size=170, verific=True,
+    peer = memoing.Memoer(code=MemoDex.AuthMemoGram, size=170, authic=True,
                           echoic=True, keep=keep, oid=oid)
     assert peer.size == 170
     assert peer.name == "main"
@@ -1286,7 +1290,7 @@ def test_memoer_multiple_signed_verific_echoic_service_all():
     assert peer.bs == memoing.Memoer.BufSize == 65535
     assert peer.code == memoing.MemoDex.AuthMemoGram == '_-'
     assert not peer.curt
-    assert peer.verific
+    assert peer.authic
     assert peer.echoic
     assert peer.keep == keep
     assert peer.oid == oid
@@ -1374,6 +1378,8 @@ def test_open_memoer():
 
         assert zeta.opened
         assert zeta.name == 'zeta'
+        assert zeta.tymeout == 0.0
+        assert zeta.tymers == {}
 
 
     assert not zeta.opened
@@ -1410,8 +1416,8 @@ def test_memoer_doer():
 
 
 
-def test_sure_memoer_basic():
-    """Test SureMemoer class basic
+def test_auth_memoer_basic():
+    """Test AuthMemoer class basic
     """
     try:
         keep = _setupKeep()  # uses default salt
@@ -1424,7 +1430,7 @@ def test_sure_memoer_basic():
     oidBeta = list(keep.keys())[1]
     assert oidBeta == 'DJb1Z0pHx36MCOuIHWR4yPxfIiBxVzg6UCamv8fAN8gH'
 
-    peer = memoing.SureMemoer(echoic=True, keep=keep, oid=oid)
+    peer = memoing.AuthMemoer(echoic=True, keep=keep, oid=oid)
     assert peer.size == 65535
     assert peer.name == "main"
     assert peer.opened == False
@@ -1432,7 +1438,7 @@ def test_sure_memoer_basic():
     assert peer.bs == memoing.Memoer.BufSize == 65535
     assert peer.code == memoing.MemoDex.AuthMemoGram == '_-'
     assert not peer.curt
-    assert peer.verific
+    assert peer.authic
     assert peer.echoic
     assert peer.keep == keep
     assert peer.oid == oid
@@ -1566,7 +1572,7 @@ def test_open_sm():
     except MemoerError as ex:
         return
 
-    with (memoing.openSM(name='zeta') as zeta):
+    with (memoing.openAM(name='zeta') as zeta):
 
         assert zeta.opened
         assert zeta.name == 'zeta'
@@ -1579,8 +1585,8 @@ def test_open_sm():
     """ End Test """
 
 
-def test_sure_memoer_multiple_echoic_service_all():
-    """Test SureMemoer class with small gram size and multiple queued memos signed
+def test_auth_memoer_multiple_echoic_service_all():
+    """Test AuthMemoer class with small gram size and multiple queued memos signed
     using echos for transport
     """
     try:
@@ -1594,10 +1600,10 @@ def test_sure_memoer_multiple_echoic_service_all():
     oidBeta = list(keep.keys())[1]
     assert oidBeta == 'DJb1Z0pHx36MCOuIHWR4yPxfIiBxVzg6UCamv8fAN8gH'
 
-    # verific forces rx memos to be signed or dropped
-    # to force signed tx then use Signed code
+    # authic forces rx memos to be authenticated/signed or dropped
+    # to force signed tx then use Auth type header code
 
-    with memoing.openSM(size=170, echoic=True, keep=keep, oid=oid) as peer:
+    with memoing.openAM(size=170, echoic=True, keep=keep, oid=oid) as peer:
         assert peer.size == 170
         assert peer.name == "test"
         assert peer.opened == True
@@ -1605,7 +1611,7 @@ def test_sure_memoer_multiple_echoic_service_all():
         assert peer.bs == memoing.Memoer.BufSize == 65535
         assert peer.code == memoing.MemoDex.AuthMemoGram == '_-'
         assert not peer.curt
-        assert peer.verific
+        assert peer.authic
         assert peer.echoic
         assert peer.keep == keep
         assert peer.oid is oid
@@ -1684,8 +1690,8 @@ def test_sure_memoer_multiple_echoic_service_all():
     """ End Test """
 
 
-def test_sure_memoer_doer():
-    """Test SureMemoerDoer class
+def test_auth_memoer_doer():
+    """Test AuthMemoerDoer class
     """
     try:
         keep = _setupKeep()  # uses default salt
@@ -1702,9 +1708,9 @@ def test_sure_memoer_doer():
     assert doist.limit == limit == 0.125
     assert doist.doers == []
 
-    peer = memoing.SureMemoer()
+    peer = memoing.AuthMemoer()
 
-    tmgdoer = memoing.SureMemoerDoer(peer=peer)
+    tmgdoer = memoing.AuthMemoerDoer(peer=peer)
     assert tmgdoer.peer == peer
     assert not tmgdoer.peer.opened
     assert tmgdoer.tock == 0.0  # ASAP
@@ -1741,8 +1747,8 @@ if __name__ == "__main__":
     test_memoer_multiple_signed_verific_echoic_service_all()
     test_open_memoer()
     test_memoer_doer()
-    test_sure_memoer_basic()
+    test_auth_memoer_basic()
     test_open_sm()
-    test_sure_memoer_multiple_echoic_service_all()
-    test_sure_memoer_doer()
+    test_auth_memoer_multiple_echoic_service_all()
+    test_auth_memoer_doer()
 

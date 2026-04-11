@@ -89,7 +89,7 @@ class PeerMemoer(Peer, Memoer):
         code (bytes | None): gram code for gram header when rending for tx
         curt (bool): True means when rending for tx encode header in base2; False means when rending for tx encode header in base64
         size (int): gram size when rending for tx.
-        verific (bool): True means any rx grams must be signed; False otherwise
+        authic (bool): True means any rx grams must be signed; False otherwise
         echoic (bool): True means use .echos in .send and .receive to mock transport.
         keep (dict): labels are oids and values are Keyage instances.
         oid (str|None): own oid defaults used to lookup keys to sign on tx
