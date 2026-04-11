@@ -11,7 +11,7 @@ import pytest
 
 from hio.help import helping
 from hio.base import doing, tyming
-from hio.core.memo import GramDex
+from hio.core.memo import MemoDex
 from hio.core.udp import udping, peermemoing
 
 
@@ -23,9 +23,9 @@ def test_memoer_peer_basic():
 
     alpha = peermemoing.PeerMemoer(name="alpha", temp=True)
     assert alpha.name == "alpha"
-    assert alpha.code == GramDex.MemoGram
+    assert alpha.code == MemoDex.MemoGram
     assert not alpha.curt
-    assert alpha.Sizes[alpha.code] == (2, 22, 0, 4, 0, 28)  # cz mz oz nz sz hz
+    assert alpha.Sizes[alpha.code] == (2, 22, 0, 4, 0, 0, 28)  # hz mz xz nz zz az oz
     assert alpha.size == 1240  # default MaxGramSize for udp
     assert alpha.bc == 1024
     assert not alpha.opened
@@ -36,9 +36,9 @@ def test_memoer_peer_basic():
     size = 38  # force gram size to be smaller than default so forces segmentation
     alpha = peermemoing.PeerMemoer(name="alpha", temp=True, size=size, port=alphaPort)
     assert alpha.name == "alpha"
-    assert alpha.code == GramDex.MemoGram
+    assert alpha.code == MemoDex.MemoGram
     assert not alpha.curt
-    assert alpha.Sizes[alpha.code] == (2, 22, 0, 4, 0, 28)  # cz mz oz nz sz hz
+    assert alpha.Sizes[alpha.code] == (2, 22, 0, 4, 0, 0, 28)  # hz mz xz nz zz az oz
     assert alpha.size == size
     assert alpha.bc == 1024
     assert not alpha.opened
@@ -173,9 +173,9 @@ def test_memoer_peer_open():
 
 
         assert alpha.name == "alpha"
-        assert alpha.code == GramDex.MemoGram
+        assert alpha.code == MemoDex.MemoGram
         assert not alpha.curt
-        assert alpha.Sizes[alpha.code] == (2, 22, 0, 4, 0, 28)  # cz mz oz nz sz hz
+        assert alpha.Sizes[alpha.code] == (2, 22, 0, 4, 0, 0, 28)  # hz mz xz nz zz az oz
         assert alpha.size == size
         assert alpha.bc == 1024
 
