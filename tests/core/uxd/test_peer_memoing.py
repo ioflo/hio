@@ -22,7 +22,7 @@ def test_memoer_peer_basic():
     assert alpha.name == "alpha"
     assert alpha.code == MemoDex.MemoGram
     assert not alpha.curt
-    assert alpha.Sizes[alpha.code] == (2, 22, 4, 0, 0, 28)  # hz mz nz vz az oz
+    assert alpha.Sizes[alpha.code] == (2, 22, 4, 0, 0)  # hz mz nz vz az
     assert alpha.size == 38
 
     assert alpha.bc == 4
@@ -151,7 +151,7 @@ def test_memoer_peer_open():
         assert alpha.name == "alpha"
         assert alpha.code == MemoDex.MemoGram
         assert not alpha.curt
-        assert alpha.Sizes[alpha.code] == (2, 22, 4, 0, 0, 28)  # hz mz nz vz az oz
+        assert alpha.Sizes[alpha.code] == (2, 22, 4, 0, 0)  # hz mz nz vz az
         assert alpha.size == 38
         assert alpha.bc == 4
 
