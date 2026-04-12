@@ -576,6 +576,28 @@ class Memoer(Tymee):
     Tymeout = 0.0  # tymeout in seconds, tymeout of 0.0 means ignore tymeout
 
     @classmethod
+    def makeMID(cls, code='0A'):
+        """Make new random memo ID (MID) as 24 char CESR encoded qb64 UUID
+
+        Returns::
+            mid (str): 24 char qb64 CESR encoded qualified base64 from 128 bit UUID
+                       CESR code '0A' labeled Salt_128
+
+        Parameters::
+            code (str): CESR code for MID
+        """
+        code = '0A'  # Salt_128
+        ps = (3 - (len(code) % 3)) % 3  # net pad size for code
+        uuid = uuid.uuid1().bytes  # random UUID sorted in time order
+        if ps != (3 - (len(uuid) % 3)) % 3:  # compare pad sizes
+            raise ValueError(f"Mismatch code and uuid pad sizes. "
+                             f"Both not {ps=}")
+        # prepad convert strip midpad and then prefix code
+        mid = code.encode() + encodeB64(bytes([0] * ps) + uuid)[ps:]
+        return mid  # fully qualified mid with prefixed code
+
+
+    @classmethod
     def _encodeOID(cls, raw, code='B'):
         """Utility method for use with signed headers that encodes raw oid
         (origin ID) as CESR compatible fully qualified B64 text domain str
