@@ -580,7 +580,7 @@ class Bosser(MultiDoerBase):
         Override in subclass to handle result(s) and put them somewhere
         """
         while self.rxms:
-            memo, src, oid = self._serviceOneRxMemo()
+            memo, src, vid = self._serviceOneRxMemo()
             self.logger.debug("Boss Peer RX: name=%s rx from src=%s memo=%s.",
                                 self.name, src, memo)
 
@@ -818,7 +818,7 @@ class Crewer(MultiDoerBase):
         Override in subclass to handle result(s) and put them somewhere
         """
         while self.rxms:
-            memo, src, oid = self._serviceOneRxMemo()
+            memo, src, vid = self._serviceOneRxMemo()
             self.logger.debug("Hand Peer RX: name=%s rx from src=%s memo=%s.",
                                 self.name, src, memo)
 

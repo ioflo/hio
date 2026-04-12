@@ -56,20 +56,20 @@ class PeerMemoer(Peer, Memoer):
         counts (dict): keyed by mid (memoID) that holds the gram count from
             the first gram for the memo. This enables lookup of the gram count when
             fusing its grams.
-        oids (dict[mid: (oid | None)]): keyed by mid that holds the origin ID str for
+        vids (dict[mid: (vid | None)]): keyed by mid that holds the verifier ID str for
             the memo indexed by its mid (memoID). This enables reattaching
-            the oid to memo when placing fused memo in rxms deque.
-            Vid is only present when signed header otherwise oid is None
+            the vid to memo when placing fused memo in rxms deque.
+            Vid is only present when signed header otherwise vid is None
         rxms (deque): holding rx (receive) memo tuples desegmented from rxgs grams
             each entry in deque is tuple of form:
-            (memo: str, src: str, oid: str) where:
-            memo is fused memo, src is source addr, oid is origin ID
+            (memo: str, src: str, vid: str) where:
+            memo is fused memo, src is source addr, vid is verifier ID
         txms (deque): holding tx (transmit) memo tuples to be segmented into
             txgs grams where each entry in deque is tuple of form
-            (memo: str, dst: str, oid: str | None)
+            (memo: str, dst: str, vid: str | None)
             memo is memo to be partitioned into gram
             dst is dst addr for grams
-            oid is verification id when gram is to be signed or None otherwise
+            vid is verification id when gram is to be signed or None otherwise
         txgs (deque): grams to transmit, each entry is duple of form:
             (gram: bytes, dst: str).
         txbs (tuple): current transmisstion duple of form:
@@ -105,8 +105,8 @@ class PeerMemoer(Peer, Memoer):
         size (int): gram size when rending for tx.
         authic (bool): True means any rx grams must be signed; False otherwise
         echoic (bool): True means use .echos in .send and .receive to mock transport.
-        keep (dict): labels are oids and values are Keyage instances.
-        oid (str|None): own oid defaults used to lookup keys to sign on tx
+        keep (dict): labels are vids and values are Keyage instances.
+        vid (str|None): own vid defaults used to lookup keys to sign on tx
 
         Notes::
         - size: first gram size = over head size + neck size + body size;

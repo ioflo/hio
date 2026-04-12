@@ -24,10 +24,10 @@ def _setupKeep(salt=None):
     """Setup Keep for signed memos
 
     Parameters:
-        salt(str|bytes): salt used to generate key pairs and oids for keep
+        salt(str|bytes): salt used to generate key pairs and vids for keep
 
     Returns:
-        keep (dict): labels are oids, values are keyage instances
+        keep (dict): labels are vids, values are keyage instances
 
 
     Ed25519_Seed: str = 'A'  # Ed25519 256 bit random seed for private key
@@ -41,7 +41,7 @@ def _setupKeep(salt=None):
 
     keep = {}
 
-    # non transferable verkey as oid
+    # non transferable verkey as vid
     sigseed = pysodium.crypto_pwhash(outlen=32,
                                     passwd="0",
                                     salt=salt,
@@ -51,13 +51,13 @@ def _setupKeep(salt=None):
     # creates signing/verification key pair from seed
     verkey, sigkey = pysodium.crypto_sign_seed_keypair(sigseed)  # raw
 
-    oid = Memoer._encodeOID(raw=verkey, code='B')  # make fully qualified
+    vid = Memoer._encodeVID(raw=verkey, code='B')  # make fully qualified
     qvk = Memoer._encodeQVK(raw=verkey)  # make fully qualified
     qss = Memoer._encodeQSS(raw=sigseed)  # make fully qualified
     keyage = Keyage(qvk=qvk, qss=qss)  # raw
-    keep[oid] = keyage
+    keep[vid] = keyage
 
-    # transferable verkey as oid
+    # transferable verkey as vid
     sigseed = pysodium.crypto_pwhash(outlen=32,
                                     passwd="1",
                                     salt=salt,
@@ -67,13 +67,13 @@ def _setupKeep(salt=None):
     # creates signing/verification key pair from seed
     verkey, sigkey = pysodium.crypto_sign_seed_keypair(sigseed)  # raw
 
-    oid = Memoer._encodeOID(raw=verkey, code='D')  # make fully qualified
+    vid = Memoer._encodeVID(raw=verkey, code='D')  # make fully qualified
     qvk = Memoer._encodeQVK(raw=verkey)  # make fully qualified
     qss = Memoer._encodeQSS(raw=sigseed)  # make fully qualified
     keyage = Keyage(qvk=qvk, qss=qss)  # raw
-    keep[oid] = keyage
+    keep[vid] = keyage
 
-    # digest of verkey as oid
+    # digest of verkey as vid
     sigseed = pysodium.crypto_pwhash(outlen=32,
                                     passwd="2",
                                     salt=salt,
@@ -84,11 +84,11 @@ def _setupKeep(salt=None):
     verkey, sigkey = pysodium.crypto_sign_seed_keypair(sigseed)  # raw
     dig = digest = blake3.blake3(verkey).digest()
 
-    oid = Memoer._encodeOID(raw=dig, code='E')
+    vid = Memoer._encodeVID(raw=dig, code='E')
     qvk = Memoer._encodeQVK(raw=verkey)  # make fully qualified
     qss = Memoer._encodeQSS(raw=sigseed)  # make fully qualified
     keyage = Keyage(qvk=qvk, qss=qss)  # raw
-    keep[oid] = keyage
+    keep[vid] = keyage
 
     return keep
 
@@ -150,7 +150,7 @@ def test_memoer_class():
         assert mz  # mid must not be empty
         pz = (3 - ((mz) % 3)) % 3  # net pad size for mid
         assert pz == (hz % 4)  #  combined code + mid size must lie on 24 bit boundary
-        assert not vz % 4   # oid size must be on 24 bit boundary
+        assert not vz % 4   # vid size must be on 24 bit boundary
         assert not az % 4   # sig size must be on 24 bit boundary
         assert nz and not nz % 4   # neck (num) size must be on 24 bit boundary
 
@@ -190,17 +190,17 @@ def test_memoer_class():
     assert Memoer.BufSize == (2**16-1) # default buffersize
 
     verkey = (b"o\x91\xf4\xbe$Mu\x0b{}\xd3\xaa'g\xd1\xcf\x96\xfb\x1e\xb1S\x89H\\'ae\x06+\xb2(v")
-    oid = Memoer._encodeOID(raw=verkey)
-    assert oid == 'BG-R9L4kTXULe33Tqidn0c-W-x6xU4lIXCdhZQYrsih2'
-    raw, code = Memoer._decodeOID(oid)
+    vid = Memoer._encodeVID(raw=verkey)
+    assert vid == 'BG-R9L4kTXULe33Tqidn0c-W-x6xU4lIXCdhZQYrsih2'
+    raw, code = Memoer._decodeVID(vid)
     assert raw == verkey
     assert code == 'B'  # nontrans AID
     _, _, _, vz, _ = Memoer.Sizes[MemoDex.AuthMemoGram]  # hz mz nz vz az
-    assert len(oid) == 44 == vz
+    assert len(vid) == 44 == vz
 
     qvk = Memoer._encodeQVK(raw=verkey)
     assert qvk == 'BG-R9L4kTXULe33Tqidn0c-W-x6xU4lIXCdhZQYrsih2'
-    raw, code = Memoer._decodeQVK(oid)
+    raw, code = Memoer._decodeQVK(vid)
     assert raw == verkey
     assert code == 'B'
     assert len(qvk) == 44
@@ -272,10 +272,10 @@ def test_memoer_sign_verify():
     except MemoerError as ex:
         return
 
-    oid = list(keep.keys())[0]
-    assert oid == 'BJZTHNWXscuT-SPokPzSeBkShpHj6g8bQrP0Rh7IJNUp'
+    vid = list(keep.keys())[0]
+    assert vid == 'BJZTHNWXscuT-SPokPzSeBkShpHj6g8bQrP0Rh7IJNUp'
 
-    peer = memoing.Memoer(code=MemoDex.AuthMemoGram, keep=keep, oid=oid)
+    peer = memoing.Memoer(code=MemoDex.AuthMemoGram, keep=keep, vid=vid)
     assert peer.name == "main"
     assert peer.opened == False
     assert peer.bc is None
@@ -287,42 +287,42 @@ def test_memoer_sign_verify():
     assert not peer.authic
     assert not peer.echoic
     assert peer.keep == keep
-    assert peer.oid == oid
+    assert peer.vid == vid
 
     memo = "Hello There"
 
-    oid = 'DGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'   # not default .oid
-    assert oid in peer.keep
+    vid = 'DGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'   # not default .vid
+    assert vid in peer.keep
     mid = '_-ALBI68S1ZIxqwFOSWFF1L2'
     lneck = 'AAAC' # gram count 2
 
     # create signed portion of gram long neck
     neck = 'AAAA'  # gram number 0
-    head = mid + oid + neck + lneck
+    head = mid + vid + neck + lneck
     sgram = (head + "Hello There").encode()
     #sign
-    sgntr = peer.sign(oid, sgram)
+    sgntr = peer.sign(vid, sgram)
     #verify
-    assert peer.verify(oid, sgntr, sgram)
+    assert peer.verify(vid, sgntr, sgram)
 
     # test invalid  bad gram
     bgram = (head + "Hello Where").encode()
     with pytest.raises(MemoerVerifyError):
-        peer.verify(oid, sgntr, bgram)
+        peer.verify(vid, sgntr, bgram)
 
     # create signed portion of gram short neck
     neck = 'AAAB'  # gram number 1
-    head = mid + oid + neck
+    head = mid + vid + neck
     sgram = (head + "Hello There").encode()
     #sign
-    sgntr = peer.sign(oid, sgram)
+    sgntr = peer.sign(vid, sgram)
     #verify
-    assert peer.verify(oid, sgntr, sgram)
+    assert peer.verify(vid, sgntr, sgram)
 
     # test invalid  bad gram
     bgram = (head + "Hello Where").encode()
     with pytest.raises(MemoerVerifyError):
-        peer.verify(oid, sgntr, bgram)
+        peer.verify(vid, sgntr, bgram)
 
     """Done"""
 
@@ -343,7 +343,7 @@ def test_memoer_basic():
     assert not peer.authic
     assert not peer.echoic
     assert peer.keep == dict()
-    assert peer.oid is None
+    assert peer.vid is None
 
     assert peer.tymeout == 0.0
     assert peer.tymers == {}
@@ -497,7 +497,7 @@ def test_memoer_small_gram_size():
     assert not peer.authic
     assert not peer.echoic
     assert peer.keep == dict()
-    assert peer.oid is None
+    assert peer.vid is None
 
     peer = memoing.Memoer(size=38)
     assert peer.size == 38
@@ -672,7 +672,7 @@ def test_memoer_multiple():
     assert not peer.authic
     assert not peer.echoic
     assert peer.keep == dict()
-    assert peer.oid is None
+    assert peer.vid is None
 
     peer.reopen()
     assert peer.opened == True
@@ -751,7 +751,7 @@ def test_memoer_multiple_echoic_service_tx_rx():
     assert not peer.authic
     assert peer.echoic
     assert peer.keep == dict()
-    assert peer.oid is None
+    assert peer.vid is None
 
     peer.reopen()
     assert peer.opened == True
@@ -805,7 +805,7 @@ def test_memoer_multiple_echoic_service_all():
     assert not peer.authic
     assert peer.echoic
     assert peer.keep == dict()
-    assert peer.oid is None
+    assert peer.vid is None
 
     peer.reopen()
     assert peer.opened == True
@@ -848,10 +848,10 @@ def test_memoer_basic_signed():
     except MemoerError as ex:
         return
 
-    oid = list(keep.keys())[0]
-    assert oid == 'BJZTHNWXscuT-SPokPzSeBkShpHj6g8bQrP0Rh7IJNUp'
+    vid = list(keep.keys())[0]
+    assert vid == 'BJZTHNWXscuT-SPokPzSeBkShpHj6g8bQrP0Rh7IJNUp'
 
-    peer = memoing.Memoer(code=MemoDex.AuthMemoGram, keep=keep, oid=oid)
+    peer = memoing.Memoer(code=MemoDex.AuthMemoGram, keep=keep, vid=vid)
     assert peer.name == "main"
     assert peer.opened == False
     assert peer.bc is None
@@ -863,7 +863,7 @@ def test_memoer_basic_signed():
     assert not peer.authic
     assert not peer.echoic
     assert peer.keep == keep
-    assert peer.oid == oid
+    assert peer.vid == vid
 
     peer.reopen()
     assert peer.opened == True
@@ -877,9 +877,9 @@ def test_memoer_basic_signed():
     memo = "Hello There"
     dst = "beta"
 
-    oid = 'DGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'   # not default .oid
-    peer.memoit(memo, dst, oid)
-    assert peer.txms[0] == ('Hello There', 'beta', oid)
+    vid = 'DGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'   # not default .vid
+    peer.memoit(memo, dst, vid)
+    assert peer.txms[0] == ('Hello There', 'beta', vid)
     peer.serviceTxMemos()
     assert not peer.txms
     g, d = peer.txgs[0]
@@ -902,7 +902,7 @@ def test_memoer_basic_signed():
 
     # test with invalid signature
     sig = ('A' * 88)
-    gram = (mid + oid + 'AAAA' + 'AAAB' + "Hello There" + sig).encode()
+    gram = (mid + vid + 'AAAA' + 'AAAB' + "Hello There" + sig).encode()
     echo = (gram, "beta")
     peer.echos.append(echo)
     peer.serviceReceives(echoic=True)
@@ -911,9 +911,9 @@ def test_memoer_basic_signed():
 
     # test with valid signature
     # create signed portion of gram
-    sgram = (mid + oid + 'AAAA' + 'AAAB' + "Hello There").encode()
-    qvk, qss = peer.keep[oid]
-    sig = peer.sign(oid, sgram)
+    sgram = (mid + vid + 'AAAA' + 'AAAB' + "Hello There").encode()
+    qvk, qss = peer.keep[vid]
+    sig = peer.sign(vid, sgram)
     gram = sgram + sig
     echo = (gram, "beta")
     peer.echos.append(echo)
@@ -925,16 +925,16 @@ def test_memoer_basic_signed():
     assert not peer.rxgs
     assert not peer.counts
     assert not peer.sources
-    assert peer.rxms[0] == ('Hello There', 'beta', oid)
+    assert peer.rxms[0] == ('Hello There', 'beta', vid)
     peer.serviceRxMemos()
     assert not peer.rxms
 
     # send and receive via echo
     memo = "See ya later!"
     dst = "beta"
-    oid = 'DGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'   # not default .oid
-    peer.memoit(memo, dst, oid)
-    assert peer.txms[0] == ('See ya later!', 'beta', oid)
+    vid = 'DGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'   # not default .vid
+    peer.memoit(memo, dst, vid)
+    assert peer.txms[0] == ('See ya later!', 'beta', vid)
     peer.serviceTxMemos()
     assert not peer.txms
     g, d = peer.txgs[0]
@@ -963,7 +963,7 @@ def test_memoer_basic_signed():
     assert not peer.counts
     assert not peer.sources
     peer.rxms[0]
-    assert peer.rxms[0] == ('See ya later!', 'beta', oid)
+    assert peer.rxms[0] == ('See ya later!', 'beta', vid)
     peer.serviceRxMemos()
     assert not peer.rxms
 
@@ -971,9 +971,9 @@ def test_memoer_basic_signed():
     peer.curt = True  # set to binary base2
     memo = "Hello There"
     dst = "beta"
-    oid = 'DGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'   # not default .oid
-    peer.memoit(memo, dst, oid)
-    assert peer.txms[0] == ('Hello There', 'beta', oid)
+    vid = 'DGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'   # not default .vid
+    peer.memoit(memo, dst, vid)
+    assert peer.txms[0] == ('Hello There', 'beta', vid)
     peer.serviceTxMemos()
     assert not peer.txms
     g, d = peer.txgs[0]
@@ -995,16 +995,16 @@ def test_memoer_basic_signed():
     mid = '_-ALBI68S1ZIxqwFOSWFF1L2'  # signed header
 
     # test with valid signature
-    oid = 'DGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'   # not default .oid
-    head = mid + oid + 'AAAA' + 'AAAB'
+    vid = 'DGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'   # not default .vid
+    head = mid + vid + 'AAAA' + 'AAAB'
     assert len(head) == 76
     head = decodeB64(head.encode())  # qb2 version of head
     assert len(head) == 57
     sgram = head + memo.encode()  # sign the qb2 version
     assert len(sgram) == 68
     assert peer.curt
-    qvk, qss = peer.keep[oid]
-    tail = peer.sign(oid, sgram)  # returns sig in qb2 becaue .curt
+    qvk, qss = peer.keep[vid]
+    tail = peer.sign(vid, sgram)  # returns sig in qb2 becaue .curt
     assert len(tail) == 66
     gram = head + memo.encode() + tail # qb2 version
 
@@ -1020,13 +1020,13 @@ def test_memoer_basic_signed():
     assert not peer.rxgs
     assert not peer.counts
     assert not peer.sources
-    assert peer.rxms[0] == ('Hello There', 'beta', oid)
+    assert peer.rxms[0] == ('Hello There', 'beta', vid)
     peer.serviceRxMemos()
     assert not peer.rxms
 
-    assert peer.inbox[0] == ('Hello There', 'beta', oid)
-    assert peer.inbox[1] == ('See ya later!', 'beta', oid)
-    assert peer.inbox[2] == ('Hello There', 'beta', oid)
+    assert peer.inbox[0] == ('Hello There', 'beta', vid)
+    assert peer.inbox[1] == ('See ya later!', 'beta', vid)
+    assert peer.inbox[2] == ('Hello There', 'beta', vid)
 
     peer.inbox = deque()  # clear it
 
@@ -1043,13 +1043,13 @@ def test_memoer_multiple_signed():
     except MemoerError as ex:
         return
 
-    oid = list(keep.keys())[0]
-    assert oid == 'BJZTHNWXscuT-SPokPzSeBkShpHj6g8bQrP0Rh7IJNUp'
+    vid = list(keep.keys())[0]
+    assert vid == 'BJZTHNWXscuT-SPokPzSeBkShpHj6g8bQrP0Rh7IJNUp'
 
     oidBeta = list(keep.keys())[1]
     assert oidBeta == 'DGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'
 
-    peer = memoing.Memoer(code=MemoDex.AuthMemoGram, size=170, keep=keep, oid=oid)
+    peer = memoing.Memoer(code=MemoDex.AuthMemoGram, size=170, keep=keep, vid=vid)
     assert peer.size == 170
     assert peer.name == "main"
     assert peer.opened == False
@@ -1060,7 +1060,7 @@ def test_memoer_multiple_signed():
     assert not peer.authic  # force rx must be signed
     assert not peer.echoic
     assert peer.keep == keep
-    assert peer.oid == oid
+    assert peer.vid == vid
 
     peer.reopen()
     assert peer.opened == True
@@ -1109,7 +1109,7 @@ def test_memoer_multiple_signed():
     assert not peer.counts
     assert not peer.sources
     assert len(peer.rxms) == 2
-    assert peer.rxms[0] == ('Hello there.', 'alpha', oid)
+    assert peer.rxms[0] == ('Hello there.', 'alpha', vid)
     assert peer.rxms[1] == ('How ya doing?', 'beta', oidBeta)
     peer.serviceRxMemos()
     assert not peer.rxms
@@ -1164,16 +1164,16 @@ def test_memoer_multiple_signed():
     assert not peer.counts
     assert not peer.sources
     assert len(peer.rxms) == 2
-    assert peer.rxms[0] == ('Hello there.', 'alpha', oid)
+    assert peer.rxms[0] == ('Hello there.', 'alpha', vid)
     assert peer.rxms[1] == ('How ya doing?', 'beta', oidBeta)
     peer.serviceRxMemos()
     assert not peer.rxms
 
     assert peer.inbox == deque(
     [
-        ('Hello there.', 'alpha', oid),
+        ('Hello there.', 'alpha', vid),
         ('How ya doing?', 'beta', oidBeta),
-        ('Hello there.', 'alpha', oid),
+        ('Hello there.', 'alpha', vid),
         ('How ya doing?', 'beta', oidBeta)
     ])
 
@@ -1192,10 +1192,10 @@ def test_memoer_verific():
     except MemoerError as ex:
         return
 
-    oid = list(keep.keys())[0]
-    assert oid == 'BJZTHNWXscuT-SPokPzSeBkShpHj6g8bQrP0Rh7IJNUp'
+    vid = list(keep.keys())[0]
+    assert vid == 'BJZTHNWXscuT-SPokPzSeBkShpHj6g8bQrP0Rh7IJNUp'
 
-    peer = memoing.Memoer(authic=True, keep=keep, oid=oid)
+    peer = memoing.Memoer(authic=True, keep=keep, vid=vid)
     assert peer.name == "main"
     assert peer.opened == False
     assert peer.bc is None
@@ -1207,7 +1207,7 @@ def test_memoer_verific():
     assert peer.authic
     assert not peer.echoic
     assert peer.keep == keep
-    assert peer.oid is oid
+    assert peer.vid is vid
 
     peer.reopen()
     assert peer.opened == True
@@ -1230,11 +1230,11 @@ def test_memoer_verific():
     assert not peer.sources
     assert not peer.rxms
     mid = '_-ALBI68S1ZIxqwFOSWFF1L2'  # signed code
-    oid = list(keep.keys())[1]
+    vid = list(keep.keys())[1]
     sig = ('A' * 88)
-    sgram = (mid + oid + 'AAAA' + 'AAAB' + "Hello There").encode()
-    qvk, qss = peer.keep[oid]
-    sig = peer.sign(oid, sgram)
+    sgram = (mid + vid + 'AAAA' + 'AAAB' + "Hello There").encode()
+    qvk, qss = peer.keep[vid]
+    sig = peer.sign(vid, sgram)
     gram = sgram + sig
     echo = (gram, "beta")
     peer.echos.append(echo)
@@ -1247,13 +1247,13 @@ def test_memoer_verific():
     assert not peer.rxgs
     assert not peer.counts
     assert not peer.sources
-    assert peer.rxms[0] == ('Hello There', 'beta', oid)
+    assert peer.rxms[0] == ('Hello There', 'beta', vid)
     peer.serviceRxMemos()
     assert not peer.rxms
 
     assert peer.inbox == deque(
     [
-        ('Hello There', 'beta', oid)
+        ('Hello There', 'beta', vid)
     ])
 
     peer.close()
@@ -1271,8 +1271,8 @@ def test_memoer_multiple_signed_verific_echoic_service_all():
     except MemoerError as ex:
         return
 
-    oid = list(keep.keys())[0]
-    assert oid == 'BJZTHNWXscuT-SPokPzSeBkShpHj6g8bQrP0Rh7IJNUp'
+    vid = list(keep.keys())[0]
+    assert vid == 'BJZTHNWXscuT-SPokPzSeBkShpHj6g8bQrP0Rh7IJNUp'
 
     vidBeta = list(keep.keys())[1]
     assert vidBeta == 'DGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'
@@ -1280,7 +1280,7 @@ def test_memoer_multiple_signed_verific_echoic_service_all():
     # authic forces rx memos to be signed or dropped
     # to force signed tx then use Signed code
     peer = memoing.Memoer(code=MemoDex.AuthMemoGram, size=170, authic=True,
-                          echoic=True, keep=keep, oid=oid)
+                          echoic=True, keep=keep, vid=vid)
     assert peer.size == 170
     assert peer.name == "main"
     assert peer.opened == False
@@ -1291,7 +1291,7 @@ def test_memoer_multiple_signed_verific_echoic_service_all():
     assert peer.authic
     assert peer.echoic
     assert peer.keep == keep
-    assert peer.oid == oid
+    assert peer.vid == vid
 
     peer.reopen()
     assert peer.opened == True
@@ -1321,7 +1321,7 @@ def test_memoer_multiple_signed_verific_echoic_service_all():
 
     assert peer.inbox == deque(
     [
-        ('Hello there.', 'alpha', oid),
+        ('Hello there.', 'alpha', vid),
         ('How ya doing?', 'beta', vidBeta)
     ])
 
@@ -1356,9 +1356,9 @@ def test_memoer_multiple_signed_verific_echoic_service_all():
 
     assert peer.inbox == deque(
     [
-        ('Hello there.', 'alpha', oid),
+        ('Hello there.', 'alpha', vid),
         ('How ya doing?', 'beta', vidBeta),
-        ('Hello there.', 'alpha', oid),
+        ('Hello there.', 'alpha', vid),
         ('How ya doing?', 'beta', vidBeta),
     ])
 
@@ -1422,13 +1422,13 @@ def test_auth_memoer_basic():
     except MemoerError as ex:
         return
 
-    oid = list(keep.keys())[0]
-    assert oid == 'BG-R9L4kTXULe33Tqidn0c-W-x6xU4lIXCdhZQYrsih2'
+    vid = list(keep.keys())[0]
+    assert vid == 'BG-R9L4kTXULe33Tqidn0c-W-x6xU4lIXCdhZQYrsih2'
 
     oidBeta = list(keep.keys())[1]
     assert oidBeta == 'DJb1Z0pHx36MCOuIHWR4yPxfIiBxVzg6UCamv8fAN8gH'
 
-    peer = memoing.AuthMemoer(echoic=True, keep=keep, oid=oid)
+    peer = memoing.AuthMemoer(echoic=True, keep=keep, vid=vid)
     assert peer.size == 65535
     assert peer.name == "main"
     assert peer.opened == False
@@ -1439,7 +1439,7 @@ def test_auth_memoer_basic():
     assert peer.authic
     assert peer.echoic
     assert peer.keep == keep
-    assert peer.oid == oid
+    assert peer.vid == vid
 
     assert peer.Sizes[peer.code] == Sizage(hz=2, mz=22, nz=4, vz=44, az=88)
     assert peer.Sizes[peer.code] == (2, 22, 4, 44, 88)  # hz mz nz vz az
@@ -1592,8 +1592,8 @@ def test_auth_memoer_multiple_echoic_service_all():
     except MemoerError as ex:
         return
 
-    oid = list(keep.keys())[0]
-    assert oid == 'BG-R9L4kTXULe33Tqidn0c-W-x6xU4lIXCdhZQYrsih2'
+    vid = list(keep.keys())[0]
+    assert vid == 'BG-R9L4kTXULe33Tqidn0c-W-x6xU4lIXCdhZQYrsih2'
 
     oidBeta = list(keep.keys())[1]
     assert oidBeta == 'DJb1Z0pHx36MCOuIHWR4yPxfIiBxVzg6UCamv8fAN8gH'
@@ -1601,7 +1601,7 @@ def test_auth_memoer_multiple_echoic_service_all():
     # authic forces rx memos to be authenticated/signed or dropped
     # to force signed tx then use Auth type header code
 
-    with memoing.openAM(size=170, echoic=True, keep=keep, oid=oid) as peer:
+    with memoing.openAM(size=170, echoic=True, keep=keep, vid=vid) as peer:
         assert peer.size == 170
         assert peer.name == "test"
         assert peer.opened == True
@@ -1612,7 +1612,7 @@ def test_auth_memoer_multiple_echoic_service_all():
         assert peer.authic
         assert peer.echoic
         assert peer.keep == keep
-        assert peer.oid is oid
+        assert peer.vid is vid
 
         # send and receive multiple via echo
         peer.memoit("Hello there.", "alpha")
@@ -1640,7 +1640,7 @@ def test_auth_memoer_multiple_echoic_service_all():
 
         assert peer.inbox == deque(
         [
-            ('Hello there.', 'alpha', oid),
+            ('Hello there.', 'alpha', vid),
             ('How ya doing?', 'beta', oidBeta)
         ])
 
@@ -1676,9 +1676,9 @@ def test_auth_memoer_multiple_echoic_service_all():
 
         assert peer.inbox == deque(
         [
-            ('Hello there.', 'alpha', oid),
+            ('Hello there.', 'alpha', vid),
             ('How ya doing?', 'beta', oidBeta),
-            ('Hello there.', 'alpha', oid),
+            ('Hello there.', 'alpha', vid),
             ('How ya doing?', 'beta', oidBeta),
         ])
 
