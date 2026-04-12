@@ -25,7 +25,7 @@ def test_memoer_peer_basic():
     assert alpha.name == "alpha"
     assert alpha.code == MemoDex.MemoGram
     assert not alpha.curt
-    assert alpha.Sizes[alpha.code] == (2, 22, 0, 4, 0, 0, 28)  # hz mz xz nz zz az oz
+    assert alpha.Sizes[alpha.code] == (2, 22, 0, 4, 0, 0, 28)  # hz mz vz nz zz az oz
     assert alpha.size == 1240  # default MaxGramSize for udp
     assert alpha.bc == 1024
     assert not alpha.opened
@@ -38,7 +38,7 @@ def test_memoer_peer_basic():
     assert alpha.name == "alpha"
     assert alpha.code == MemoDex.MemoGram
     assert not alpha.curt
-    assert alpha.Sizes[alpha.code] == (2, 22, 0, 4, 0, 0, 28)  # hz mz xz nz zz az oz
+    assert alpha.Sizes[alpha.code] == (2, 22, 0, 4, 0, 0, 28)  # hz mz vz nz zz az oz
     assert alpha.size == size
     assert alpha.bc == 1024
     assert not alpha.opened
@@ -175,7 +175,7 @@ def test_memoer_peer_open():
         assert alpha.name == "alpha"
         assert alpha.code == MemoDex.MemoGram
         assert not alpha.curt
-        assert alpha.Sizes[alpha.code] == (2, 22, 0, 4, 0, 0, 28)  # hz mz xz nz zz az oz
+        assert alpha.Sizes[alpha.code] == (2, 22, 0, 4, 0, 0, 28)  # hz mz vz nz zz az oz
         assert alpha.size == size
         assert alpha.bc == 1024
 

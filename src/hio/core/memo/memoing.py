@@ -94,7 +94,7 @@ Gram Header Fields unsigned::
     HeadCode hc = b'__'
     HeadCodeSize hcs = 2
     MemoIDSize mis = 22
-    Gram OID xz =0
+    Gram VID vz =0
     GramNumSize gns = 4
     GramCntSize gcs = 4
     GramHeadSize ghs  = 28  short
@@ -107,7 +107,7 @@ Gram Header Fields signed::
     HeadCode hc = b'_-'
     HeadCodeSize hcs = 2
     MemoIDSize mis = 22
-    Gram OID xz = 44
+    Gram VID vz = 44
     GramNumSize gns = 4
     GramCntSize gcs = 4
     GramHeadSize ghs  = 28 + 44 = 72  short
@@ -120,8 +120,8 @@ Gram Header Fields signed::
 Sizes::
 
     {
-        '__': Sizage(hz=2, mz=22, xz=0, nz=4, zz=0, az=0, oz=28),
-        '_-': Sizage(hz=2, mz=22, xz=44, nz=4, zz=0, az=88, oz=160),
+        '__': Sizage(hz=2, mz=22, vz=0, nz=4, zz=0, az=0, oz=28),
+        '_-': Sizage(hz=2, mz=22, vz=44, nz=4, zz=0, az=88, oz=160),
     }
 
 Sizing:
@@ -238,17 +238,18 @@ there is no conversion needed to verify the signature.
 """Sizage: namedtuple for gram header part size entries in Memoer code tables
 hz is the serialization hard code part size int number of chars in hard code part
 mz is the mid (memo ID) part size int number of chars in the mid part
-xz is the oid (origin ID) part size int number of chars in the oid part
+
 nz is the gram num (neck) part size int number of chars for the gram number
 zz is the gram count part size int count of grams in memo. It only appears in the
       zeroth gram in a memo.
+vz is the vid (verifier id, origin ID) part size int number of chars in the vid part
 az is the authenticator (signature) part size int number of chars in the auth part
       the authenticator part is discontinuously attached after the body part but
       its size is included in the overhead size computation for the body size
 oz is the overhead size int number of chars::
 
             overhead is header with short neck and authenticator
-                oz = hz + mz + xz + nz + zz+ az
+                oz = hz + mz + + nz + vz + az
 
             zeroth overhead is header with long neck relative to short neck
                 zoz = oz (short) + zz  (note zz in zeroth gram = nz otherwise 0)
@@ -258,7 +259,7 @@ The gram count only appears in the zeroth gram
 The zeroth gram has a long neck consiting of two nz sized fields
 All other grams have a short neck consisting of 1 nz sized field
 """
-Sizage = namedtuple("Sizage", "hz mz xz nz zz az oz")
+Sizage = namedtuple("Sizage", "hz mz vz nz zz az oz")
 
 
 @dataclass(frozen=True)
@@ -498,7 +499,6 @@ class Memoer(Tymee):
             Tymist.tyme. Provides injected dependency on Tymist cycle tyme base.
             None means not assigned yet.
 
-
     Properties::
         code (bytes or None): gram code for gram header when rending for tx
         curt (bool): True means when rending for tx encode header in base2
@@ -541,20 +541,20 @@ class Memoer(Tymee):
     Codes = asdict(Codex)  # map code name to code
     Names = {val : key for key, val in Codes.items()} # invert map code to code name
     Sodex = AuthDex  # signed gram codex
-    # dict of gram header part sizes keyed by gram codes: hz mz xz nz zz az oz
+    # dict of gram header part sizes keyed by gram codes: hz mz vz nz zz az oz
     Sizes = {
-                '__': Sizage(hz=2, mz=22, xz=0, nz=4, zz=0, az=0, oz=28),
-                '_-': Sizage(hz=2, mz=22, xz=44, nz=4, zz=0, az=88, oz=160),
-                '1AAQ': Sizage(hz=4, mz=24, xz=0, nz=4, zz=4, az=0, oz=36),
-                '1AAR': Sizage(hz=4, mz=24, xz=0, nz=4, zz=0, az=0, oz=32),
-                '1AAS': Sizage(hz=4, mz=24, xz=44, nz=4, zz=4, az=88, oz=168),
-                '1AAT': Sizage(hz=4, mz=24, xz=44, nz=4, zz=0, az=88, oz=164),
-                '1AAU': Sizage(hz=4, mz=24, xz=0, nz=4, zz=4, az=0, oz=36),
-                '1AAV': Sizage(hz=4, mz=24, xz=0, nz=4, zz=0, az=0, oz=32),
-                '1AAW': Sizage(hz=4, mz=24, xz=44, nz=4, zz=4, az=88, oz=168),
-                '1AAX': Sizage(hz=4, mz=24, xz=44, nz=4, zz=0, az=88, oz=164),
-                '1AAY': Sizage(hz=4, mz=24, xz=0, nz=4, zz=0, az=0, oz=32),
-                '1AAZ': Sizage(hz=4, mz=24, xz=44, nz=4, zz=0, az=88, oz=164),
+                '__': Sizage(hz=2, mz=22, vz=0, nz=4, zz=0, az=0, oz=28),
+                '_-': Sizage(hz=2, mz=22, vz=44, nz=4, zz=0, az=88, oz=160),
+                '1AAQ': Sizage(hz=4, mz=24, vz=0, nz=4, zz=0, az=0, oz=32),
+                '1AAR': Sizage(hz=4, mz=24, vz=0, nz=4, zz=0, az=0, oz=32),
+                '1AAS': Sizage(hz=4, mz=24, vz=44, nz=4, zz=0, az=88, oz=164),
+                '1AAT': Sizage(hz=4, mz=24, vz=0, nz=4, zz=0, az=88, oz=120),
+                '1AAU': Sizage(hz=4, mz=24, vz=0, nz=4, zz=0, az=0, oz=32),
+                '1AAV': Sizage(hz=4, mz=24, vz=0, nz=4, zz=0, az=0, oz=32),
+                '1AAW': Sizage(hz=4, mz=24, vz=44, nz=4, zz=0, az=88, oz=164),
+                '1AAX': Sizage(hz=4, mz=24, vz=0, nz=4, zz=0, az=88, oz=120),
+                '1AAY': Sizage(hz=4, mz=24, vz=0, nz=4, zz=0, az=0, oz=32),
+                '1AAZ': Sizage(hz=4, mz=24, vz=44, nz=4, zz=0, az=88, oz=164),
              }
 
     Pairs = dict()  # pair the zeroth code with the non-zeroth code of same type
@@ -605,9 +605,9 @@ class Memoer(Tymee):
 
         qb64 = code + b64.decode()  # fully qualified base64 oid with prefix code
 
-        _, _, xz, _, _, _, _ = cls.Sizes[MemoDex.AuthMemoGram]  # hz mz xz nz zz az oz
-        if len(qb64) != xz:
-            hioing.MemoerError(f"Invalid oid qb64 size={len(qb64) != {xz}}")
+        _, _, vz, _, _, _, _ = cls.Sizes[MemoDex.AuthMemoGram]  # hz mz vz nz zz az oz
+        if len(qb64) != vz:
+            hioing.MemoerError(f"Invalid oid qb64 size={len(qb64) != {vz}}")
 
         return qb64  # fully qualified base64 oid with prefix code
 
@@ -855,7 +855,7 @@ class Memoer(Tymee):
 
         qb64 = code + b64.decode()  # fully qualified base64 with prefixqb64de
 
-        _, _, _, _, _, az, _ = cls.Sizes[MemoDex.AuthMemoGram]  # hz mz xz nz zz az oz
+        _, _, _, _, _, az, _ = cls.Sizes[MemoDex.AuthMemoGram]  # hz mz vz nz zz az oz
         if len(qb64) != az:
             hioing.MemoerError(f"Invalid sig qb64 size={len(qb64) != {az}}")
 
@@ -1125,7 +1125,7 @@ class Memoer(Tymee):
             size (int or None): gram size for rending memo
 
         """
-        _, _, _, nz, _, _, oz = self.Sizes[self.code]  # hz mz xz nz zz az oz
+        _, _, _, nz, _, _, oz = self.Sizes[self.code]  # hz mz vz nz zz az oz
         size = size if size is not None else self.MaxGramSize
         if self.curt:  # minimum header smaller when in base2 curt
             oz = 3 * oz // 4
@@ -1394,10 +1394,15 @@ class Memoer(Tymee):
         returns (mid, gn, gc). Raises MemoerError if unrecognized or invalid
         header this includes signature verification failure when signed.
 
-        When signed the signature is computed on the domain qb64b or qb2 that
-        the packet is transmitted in. Note the packet itself is not concatenation
-        composable as per CESR only the header elements and sig are CESR 24 bit
-        aligned so there is no enmass conversion of concatenated memograms.
+        When signed the signature is computed on the body of the gram as is when
+        gramified for transmission whether the body be in domain qb64b or qb2.
+        The body is assumed to always be in the raw domain ser when signed.
+        The header and signature parts are converted to raw from base2 or base64
+
+        Note the full packet itself is not concatenation composable (does not
+        align on 24 bit boundary) as per CESR. Only the header elements and sig
+        are CESR 24 bit aligned so there is no enmass conversion possible of
+        concatenated memograms.
         This is ok for a datagram segmentation that is decidedly not a stream.
 
         Returns:
@@ -1422,91 +1427,83 @@ class Memoer(Tymee):
         """
         curt = self.wiff(gram)  # rx gram encoding True=B2 or False=B64
         if curt:  # base2 binary encoding in triplets
+            if len(gram) < 3:  # assumes len(code) must be 3 triplets (4 sextexts)
+                raise hioing.MemoerError(f"Gram length={len(gram)} to short to "
+                                         f"hold code.")
+            code = helping.codeB2ToB64(gram, 4)  # code from first 4 sextets
+            if self.authic and code not in self.Sodex:  # must be signed
+                raise hioing.MemoerError(f"Unsigned gram {code =} when signed "
+                                         f"required.")
+
+            hz, mz, vz, nz, zz, az, oz = self.Sizes[code]  # hz mz vz nz zz az oz
+            # head encoced as b2 means bz head part sizes (bizes) are smaller by 3/4
+            hz = 3 * hz // 4
+            mz = 3 * mz // 4
+            vz = 3 * vz // 4
+            nz = 3 * nz // 4
+            zz = 3 * zz // 4
+            az = 3 * az // 4
+            oz = 3 * oz // 4
+
+            if len(gram) < oz :  # not big enough for overhead
+                raise hioing.MemoerError(f"Not enough rx bytes for b2 gram"
+                                         f" < {oz}.")
+
+            mid = encodeB64(gram[hz:hz+mz])  # convert to b64b
+            oid = encodeB64(gram[hz+mz:hz+mz+vz])  # convert to b64b
+            gnum = gram[hz+mz+vz:hz+mz+vz+nz]  # bytearray to bytes gnum
+            gn = int.from_bytes(gnum)  # gram number convert to int
+
+            if zz: # first (zeroth) gram so long neck get gram count
+                if gn != 0:  # zeroth gram must have gram num == 0
+                    raise hioing.MemoerError(f"Invalid zeroth gram, number"
+                                             f"not zero ={gn}")
+
+                gcnt = bytes(gram[hz+mz+vz+nz:hz+mz+vz+nz+zz])  # bytearray to bytes
+                gc = int.from_bytes(gcnt)  # gram count convert to int
+            else:
+                gc = None
+
+            sig = encodeB64(gram[-az if az else len(gram):])   # last ss bytes are signature
+            del gram[-az if az else len(gram):]  # strip sig if any
+            sgram = bytes(gram[:])  # signed raw part make bytes copy to sign
+            del gram[:oz-az]  # strip off fore head leaving body in gram
+
+        else:  # base64 text encoding in quadlets
             if len(gram) < 4:  # assumes len(code) must be 4
                 raise hioing.MemoerError(f"Gram length={len(gram)} to short to "
                                          f"hold code.")
-            code = helping.codeB2ToB64(gram, 4)  # code is first 4 sextets
+            code = gram[:4].decode()  # assumes len(code) must be 2
             if self.authic and code not in self.Sodex:  # must be signed
                 raise hioing.MemoerError(f"Unsigned gram {code =} when signed "
                                          f"required.")
+            hz, mz, vz, nz, zz, az, oz = self.Sizes[code]  # hz mz vz nz zz az oz
 
-            hz, mz, xz, nz, zz, az, oz = self.Sizes[code]  # hz mz xz nz zz az oz
-            pz = (3 - ((mz) % 3)) % 3  # net pad size for mid
-            cms = 3 * (hz + mz) // 4  # hz + mz are aligned on 24 bit boundary
-            oz = 3 * oz // 4  # encoding b2 means head part sizes smaller by 3/4
-            nz = 3 * nz // 4  # encoding b2 means head part sizes smaller by 3/4
-            zz = 3 * zz // 4  # encoding b2 means head part sizes smaller by 3/4
-            xz = 3 * xz // 4  # encoding b2 means head part sizes smaller by 3/4
-            az = 3 * az // 4  # encoding b2 means head part sizes smaller by 3/4
-
-            if len(gram) < (oz + 1):  # not big enough for non-first gram
-                raise hioing.MemoerError(f"Not enough rx bytes for b2 gram"
-                                         f" < {oz + 1}.")
-
-            mid = encodeB64(gram[:cms])  # convert to b64b with prefix code
-            oid = encodeB64(gram[cms:cms+xz])  # convert to b64b
-            neck = gram[cms+xz:cms+xz+nz]  # bytearray to bytes short part of neck
-            gn = int.from_bytes(neck)  # gram number convert to int
-            #neck = encodeB64(neck)  # convert to b64b
-            #head = mid + oid + neck   # bytes
-            if gn == 0:  # first (zeroth) gram so long neck
-                if len(gram) < oz + nz + 1:
-                    raise hioing.MemoerError(f"Not enough rx bytes for b2 "
-                                             f"gram < {oz + nz + 1}.")
-                lneck = bytes(gram[cms+xz+nz:cms+xz+2*nz])  # bytearray to bytes
-                gc = int.from_bytes(lneck)  # gram count convert to int
-                lneck = encodeB64(lneck)  # convert to b64b
-                sig = encodeB64(gram[-az if az else len(gram):])   # last ss bytes are signature
-                del gram[-az if az else len(gram):]  # strip sig if any
-                sgram = bytes(gram[:])  # signed part make bytes copy to sign
-                del gram[:oz-az+nz]  # strip off fore head leaving body in gram
-                #head += lneck
-            else:  # non-zeroth gram so short neck
-                gc = None
-                sig = encodeB64(gram[-az if az else len(gram):])
-                del gram[-az if az else len(gram):]  # strip sig if any
-                sgram = bytes(gram[:])  # signed part make bytes copy to sign
-                del gram[:oz-az]  # strip of fore head leaving body in gram
-
-        else:  # base64 text encoding in quadlets
-            if len(gram) < 2:  # assumes len(code) must be 2
-                raise hioing.MemoerError(f"Gram length={len(gram)} to short to "
-                                         f"hold code.")
-            code = gram[:2].decode()  # assumes len(code) must be 2
-            if self.authic and code not in self.Sodex:  # must be signed
-                raise hioing.MemoerError(f"Unsigned gram {code =} when signed "
-                                         f"required.")
-            hz, mz, xz, nz, zz, az, oz = self.Sizes[code]  # hz mz xz nz zz az oz
-
-            if len(gram) < (oz + 1):  # not big enough for non-first gram
+            if len(gram) < (oz):  # not big enough for overhead
                 raise hioing.MemoerError(f"Not enough rx bytes for b64 gram"
-                                         f" < {oz + 1}.")
+                                         f" < {oz}.")
 
-            mid = bytes(gram[:hz+mz])  # bytearray to bytes qb64b with prefix
-            oid = bytes(gram[hz+mz:hz+mz+xz]) #bytearry to bytes qb64b convert to qb64
-            neck = bytes(gram[hz+mz+xz:hz+mz+xz+nz])  # qb64b short part of neck
-            gn = helping.b64ToInt(neck)
-            #head = mid + oid + neck  # bytes
-            if gn == 0:  # first (zeroth) gram so long neck
-                if len(gram) < oz + nz + 1:
-                    raise hioing.MemoerError(f"Not enough rx bytes for b64 "
-                                             f"gram < {oz + nz + 1}.")
-                lneck = bytes(gram[hz+mz+xz+nz:hz+mz+xz+2*nz])  # bytearray to bytes copy
-                gc = helping.b64ToInt(lneck)  # convert to int
-                sig = bytes(gram[-az if az else len(gram):])  # last az bytes signature
-                del gram[-az if az else len(gram):]  # strip sig if any
-                sgram = bytes(gram[:]) # signed part make bytes copy to sign
-                del gram[:oz-az+nz]  # strip of fore head leaving body in gram
-                #head += lneck  # bytes
-            else:  # non-zeroth gram short neck
+            mid = bytes(gram[hz:hz+mz])  # bytearray to bytes qb64b with prefix
+            oid = bytes(gram[hz+mz:hz+mz+vz]) #bytearry to bytes qb64b convert to qb64
+            gnum = bytes(gram[hz+mz+vz:hz+mz+vz+nz])  # qb64b short part of neck
+            gn = helping.b64ToInt(gnum)
+
+            if zz: # first (zeroth) gram so long neck get gram count
+                if gn != 0:  # zeroth gram must have gram num == 0
+                    raise hioing.MemoerError(f"Invalid zeroth gram, number"
+                                             f"not zero ={gn}")
+
+                gcnt = bytes(gram[hz+mz+vz+nz:hz+mz+vz+nz+zz])  # bytearray to bytes
+                gc = helping.b64ToInt(gcnt)  # convert to int
+            else:
                 gc = None
-                sig = bytes(gram[-az if az else len(gram):])
-                del gram[-az if az else len(gram):]  # strip sig if any
-                sgram = bytes(gram[:]) # signed part make bytes copy to sign
-                del gram[:oz-az]  # strip of fore head leaving body in gram
+
+            sig = bytes(gram[-az if az else len(gram):])  # last az bytes signature
+            del gram[-az if az else len(gram):]  # strip sig if any
+            sgram = bytes(gram[:]) # signed raw part make bytes copy to sign
+            del gram[:oz-az]  # strip of fore head leaving body in gram
 
         if sig:  # signature not empty
-            #sgram = head + bytes(gram)  # bytearray to bytes
             self.verify(oid, sig, sgram)  # raises MemoerVerifyError if invalid
 
         return (mid.decode(), oid.decode() if oid else None, gn, gc)
@@ -1553,13 +1550,13 @@ class Memoer(Tymee):
                 raise hioing.MemoerError(f"Unsigned gram {code =} when signed "
                                          f"required.")
 
-            hz, mz, xz, nz, zz, az, oz = self.Sizes[code]  # hz mz xz nz zz az oz
+            hz, mz, vz, nz, zz, az, oz = self.Sizes[code]  # hz mz vz nz zz az oz
             pz = (3 - ((mz) % 3)) % 3  # net pad size for mid
             cms = 3 * (hz + mz) // 4  # hz + mz are aligned on 24 bit boundary
             oz = 3 * oz // 4  # encoding b2 means head part sizes smaller by 3/4
             nz = 3 * nz // 4  # encoding b2 means head part sizes smaller by 3/4
             zz = 3 * zz // 4  # encoding b2 means head part sizes smaller by 3/4
-            xz = 3 * xz // 4  # encoding b2 means head part sizes smaller by 3/4
+            vz = 3 * vz // 4  # encoding b2 means head part sizes smaller by 3/4
             az = 3 * az // 4  # encoding b2 means head part sizes smaller by 3/4
 
             if len(gram) < (oz + 1):  # not big enough for non-first gram
@@ -1567,8 +1564,8 @@ class Memoer(Tymee):
                                          f" < {oz + 1}.")
 
             mid = encodeB64(gram[:cms])  # convert to b64b with prefix code
-            oid = encodeB64(gram[cms:cms+xz])  # convert to b64b
-            neck = gram[cms+xz:cms+xz+nz]  # bytearray to bytes short part of neck
+            oid = encodeB64(gram[cms:cms+vz])  # convert to b64b
+            neck = gram[cms+vz:cms+vz+nz]  # bytearray to bytes short part of neck
             gn = int.from_bytes(neck)  # gram number convert to int
             #neck = encodeB64(neck)  # convert to b64b
             #head = mid + oid + neck   # bytes
@@ -1576,7 +1573,7 @@ class Memoer(Tymee):
                 if len(gram) < oz + nz + 1:
                     raise hioing.MemoerError(f"Not enough rx bytes for b2 "
                                              f"gram < {oz + nz + 1}.")
-                lneck = bytes(gram[cms+xz+nz:cms+xz+2*nz])  # bytearray to bytes
+                lneck = bytes(gram[cms+vz+nz:cms+vz+2*nz])  # bytearray to bytes
                 gc = int.from_bytes(lneck)  # gram count convert to int
                 lneck = encodeB64(lneck)  # convert to b64b
                 sig = encodeB64(gram[-az if az else len(gram):])   # last ss bytes are signature
@@ -1599,22 +1596,22 @@ class Memoer(Tymee):
             if self.authic and code not in self.Sodex:  # must be signed
                 raise hioing.MemoerError(f"Unsigned gram {code =} when signed "
                                          f"required.")
-            hz, mz, xz, nz, zz, az, oz = self.Sizes[code]  # hz mz xz nz zz az oz
+            hz, mz, vz, nz, zz, az, oz = self.Sizes[code]  # hz mz vz nz zz az oz
 
             if len(gram) < (oz + 1):  # not big enough for non-first gram
                 raise hioing.MemoerError(f"Not enough rx bytes for b64 gram"
                                          f" < {oz + 1}.")
 
             mid = bytes(gram[:hz+mz])  # bytearray to bytes qb64b with prefix
-            oid = bytes(gram[hz+mz:hz+mz+xz]) #bytearry to bytes qb64b convert to qb64
-            neck = bytes(gram[hz+mz+xz:hz+mz+xz+nz])  # qb64b short part of neck
+            oid = bytes(gram[hz+mz:hz+mz+vz]) #bytearry to bytes qb64b convert to qb64
+            neck = bytes(gram[hz+mz+vz:hz+mz+vz+nz])  # qb64b short part of neck
             gn = helping.b64ToInt(neck)
             #head = mid + oid + neck  # bytes
             if gn == 0:  # first (zeroth) gram so long neck
                 if len(gram) < oz + nz + 1:
                     raise hioing.MemoerError(f"Not enough rx bytes for b64 "
                                              f"gram < {oz + nz + 1}.")
-                lneck = bytes(gram[hz+mz+xz+nz:hz+mz+xz+2*nz])  # bytearray to bytes copy
+                lneck = bytes(gram[hz+mz+vz+nz:hz+mz+vz+2*nz])  # bytearray to bytes copy
                 gc = helping.b64ToInt(lneck)  # convert to int
                 sig = bytes(gram[-az if az else len(gram):])  # last az bytes signature
                 del gram[-az if az else len(gram):]  # strip sig if any
@@ -1957,12 +1954,12 @@ class Memoer(Tymee):
         grams = []
         memo = bytearray(memo.encode()) # convert and copy to bytearray
         # self.size is max gram size
-        hz, mz, xz, nz, zz, az, oz = self.Sizes[self.code]  # hz mz xz n zz az oz
+        hz, mz, vz, nz, zz, az, oz = self.Sizes[self.code]  # hz mz vz n zz az oz
 
         oid = oid if oid is not None else self.oid
 
-        if xz and (not oid or len(oid) != xz):
-            raise hioing.MemoerError(f"Missing or invalid {oid=} for {xz=}")
+        if vz and (not oid or len(oid) != vz):
+            raise hioing.MemoerError(f"Missing or invalid {oid=} for {vz=}")
 
         pz = (3 - ((mz) % 3)) % 3  # net pad size for mid
         # memo ID is 16 byte random UUID converted to 22 char Base64 right aligned
@@ -1977,7 +1974,7 @@ class Memoer(Tymee):
             oz = 3 * oz // 4  # encoding b2 means head part sizes smaller by 3/4
             nz = 3 * nz // 4  # encoding b2 means head part sizes smaller by 3/4
             zz = 3 * zz // 4  # encoding b2 means head part sizes smaller by 3/4
-            xz = 3 * xz // 4  # encoding b2 means head part sizes smaller by 3/4
+            vz = 3 * vz // 4  # encoding b2 means head part sizes smaller by 3/4
             az = 3 * az // 4  # encoding b2 means head part sizes smaller by 3/4
             mid = decodeB64(mid)
 
@@ -2008,7 +2005,7 @@ class Memoer(Tymee):
             else:
                 num = helping.intToB64b(gn, l=nz)  # num size must always be neck size
 
-            if xz:  # need oid part, but can't mod here may need below to sign
+            if vz:  # need oid part, but can't mod here may need below to sign
                 if self.curt:
                     oidp = decodeB64(oid.encode())  # oid part b2
                 else:
