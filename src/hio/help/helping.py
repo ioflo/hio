@@ -549,11 +549,11 @@ def codeB64ToB2(s):
 
 
 def codeB2ToB64(b, l):
-    """Convert l sextets from base2 b to base64 str
+    """Converts first l sextets of base2 b bytes to base64 str and returns
 
-    Returns:
+    Returns::
         code (str): conversion (encode) of l Base2 sextets from front of b
-        to Base64 chars.
+                    to Base64 chars.
 
     One char for each of l sextets from front (left) of b.
     This is useful for encoding as code characters, sextets from the front of
@@ -561,7 +561,7 @@ def codeB2ToB64(b, l):
     and l=4. Both require 3 bytes in b. Trailing pad bits are removed so
     returned sextets as characters are right aligned .
 
-    Parameters:
+    Parameters::
         b (bytes | str): target from which to nab sextets
         l (int): number of sextets to convert from front of b
     """

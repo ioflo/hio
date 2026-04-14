@@ -4,7 +4,8 @@ hio.core.memo Package
 """
 
 
-from .memoing import (Versionage, Sizage, MemoDex, GramDex, AuthDex, Keyage,
+from .memoing import (Versionage, Sizage, Keyage,
+                      MemoDex, ZeroDex, GramDex, AuthDex, AckDex,
                       openMemoer, Memoer, MemoerDoer,
-                      openSM, SureMemoer, SureMemoerDoer)
+                      openAM, AuthMemoer, AuthMemoerDoer)
 

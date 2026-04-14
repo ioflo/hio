@@ -20,9 +20,7 @@ class PeerMemoer(Peer, Memoer):
 
 
     Inherited Class Attributes:
-        BufSize (int): used to set default buffer size for transport datagram buffers
         MaxGramSize (int): max gram bytes for this transport
-
         Version (Versionage): default version namedtuple of form (major: int, minor: int)
         Codex (GramDex): dataclass ref to gram codex
         Codes (dict): maps codex names to codex values
@@ -31,6 +29,8 @@ class PeerMemoer(Peer, Memoer):
         Sizes (dict): gram head part sizes Sizage instances keyed by gram codes
         MaxMemoSize (int): absolute max memo size
         MaxGramCount (int): absolute max gram count
+        BufSize (int): used to set default buffer size for transport datagram buffers
+        Tymeout (float): default timeout for retry tymer(s) if any
 
     Inherited Attributes:
         name (str): unique identifier of peer for management purposes
@@ -56,20 +56,20 @@ class PeerMemoer(Peer, Memoer):
         counts (dict): keyed by mid (memoID) that holds the gram count from
             the first gram for the memo. This enables lookup of the gram count when
             fusing its grams.
-        oids (dict[mid: (oid | None)]): keyed by mid that holds the origin ID str for
+        vids (dict[mid: (vid | None)]): keyed by mid that holds the verifier ID str for
             the memo indexed by its mid (memoID). This enables reattaching
-            the oid to memo when placing fused memo in rxms deque.
-            Vid is only present when signed header otherwise oid is None
+            the vid to memo when placing fused memo in rxms deque.
+            Vid is only present when signed header otherwise vid is None
         rxms (deque): holding rx (receive) memo tuples desegmented from rxgs grams
             each entry in deque is tuple of form:
-            (memo: str, src: str, oid: str) where:
-            memo is fused memo, src is source addr, oid is origin ID
+            (memo: str, src: str, vid: str) where:
+            memo is fused memo, src is source addr, vid is verifier ID
         txms (deque): holding tx (transmit) memo tuples to be segmented into
             txgs grams where each entry in deque is tuple of form
-            (memo: str, dst: str, oid: str | None)
+            (memo: str, dst: str, vid: str | None)
             memo is memo to be partitioned into gram
             dst is dst addr for grams
-            oid is verification id when gram is to be signed or None otherwise
+            vid is verification id when gram is to be signed or None otherwise
         txgs (deque): grams to transmit, each entry is duple of form:
             (gram: bytes, dst: str).
         txbs (tuple): current transmisstion duple of form:
@@ -79,9 +79,23 @@ class PeerMemoer(Peer, Memoer):
             for (gram, dst)
         echos (deque): holding echo receive duples for testing. Each duple of
             form: (gram: bytes, dst: str).
+        inbox (deque): holds final received complete memos for testing when not
+                       overridden in subclass to further process otherwise
+        tymeout (float): default timeout for retry tymer(s) if any
+        tymers (dict): keys are tid and values are Tymers for retry tymers for
+                       each inflight tx
 
 
     Inherited Properties:
+        tyme (float or None):  relative cycle time of associated Tymist which is
+            provided by calling .tymth function wrapper closure which is obtained
+            from Tymist.tymen().
+            None means not assigned yet.
+        tymth (Callable or None): function wrapper closure returned by
+            Tymist.tymen() method. When .tymth is called it returns associated
+            Tymist.tyme. Provides injected dependency on Tymist cycle tyme base.
+            None means not assigned yet.
+
         host (str): element of .ha duple
         port (int): element of .ha duple
         path (tuple): .ha (host, port)  alias to match .uxd
@@ -89,20 +103,20 @@ class PeerMemoer(Peer, Memoer):
         code (bytes | None): gram code for gram header when rending for tx
         curt (bool): True means when rending for tx encode header in base2; False means when rending for tx encode header in base64
         size (int): gram size when rending for tx.
-        verific (bool): True means any rx grams must be signed; False otherwise
+        authic (bool): True means any rx grams must be signed; False otherwise
         echoic (bool): True means use .echos in .send and .receive to mock transport.
-        keep (dict): labels are oids and values are Keyage instances.
-        oid (str|None): own oid defaults used to lookup keys to sign on tx
+        keep (dict): labels are vids and values are Keyage instances.
+        vid (str|None): own vid defaults used to lookup keys to sign on tx
 
-        Notes:
-                - size: first gram size = over head size + neck size + body size;
-                    subsequent grams use over head size + body size; gram body size is at
-                    least one and is limited by MaxGramSize and MaxGramCount relative to
-                    MaxMemoSize.
-                - echoic: each entry in .echos is (gram: bytes, src: str); default echo
-                    is (b'', None); when False it may be overridden by method parameter.
-                - keep: Keyage is namedtuple("Keyage", "sigkey verkey") with private
-                    signing key sigkey and public verifying key verkey.
+        Notes::
+        - size: first gram size = over head size + neck size + body size;
+            subsequent grams use over head size + body size; gram body size is at
+            least one and is limited by MaxGramSize and MaxGramCount relative to
+            MaxMemoSize.
+        - echoic: each entry in .echos is (gram: bytes, src: str); default echo
+            is (b'', None); when False it may be overridden by method parameter.
+        - keep: Keyage is namedtuple("Keyage", "sigkey verkey") with private
+            signing key sigkey and public verifying key verkey.
 
     """
 
