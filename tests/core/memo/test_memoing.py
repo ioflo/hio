@@ -16,8 +16,10 @@ from hio.hioing import MemoerError, MemoerVerifyError
 from hio.help import helping
 from hio.base import doing, tyming
 from hio.core.memo import memoing
-from hio.core.memo import (Versionage, Sizage, Keyage, MemoDex, GramDex, AuthDex,
-                           Memoer, )
+from hio.core.memo import (Versionage, Sizage, Keyage,
+                           MemoDex, ZeroDex, GramDex, AuthDex, AckDex,
+                           Memoer, AuthMemoer, openMemoer, openAM,
+                           MemoerDoer, AuthMemoerDoer)
 
 
 def _setupKeep(salt=None):
@@ -101,8 +103,6 @@ def test_memoer_class():
 
     assert Memoer.Codes == \
     {
-        'MemoGram': '__',
-        'AuthMemoGram': '_-',
         'GramZero': '1AAQ',
         'Gram': '1AAR',
         'GramAuthZero': '1AAS',
@@ -118,8 +118,6 @@ def test_memoer_class():
     # Codes table with sizes of code (hard) and full primitive material
     assert Memoer.Sizes == \
     {
-        '__': Sizage(hz=2, mz=22, nz=4, vz=0, az=0),
-        '_-': Sizage(hz=2, mz=22,  nz=4, vz=44,az=88),
         '1AAQ': Sizage(hz=4, mz=24, nz=4, vz=0, az=0),
         '1AAR': Sizage(hz=4, mz=24, nz=4, vz=0, az=0),
         '1AAS': Sizage(hz=4, mz=24, nz=4, vz=44,az=88),
@@ -159,8 +157,6 @@ def test_memoer_class():
 
     assert Memoer.Names == \
     {
-        '__': 'MemoGram',
-        '_-': 'AuthMemoGram',
         '1AAQ': 'GramZero',
         '1AAR': 'Gram',
         '1AAS': 'GramAuthZero',
@@ -173,8 +169,21 @@ def test_memoer_class():
         '1AAZ': 'AckAuth',
     }
 
+    assert Memoer.Zedex == ZeroDex
+    assert Memoer.Audex == AuthDex
 
-    assert Memoer.Sodex == AuthDex
+    for zero, nonzero in Memoer.Pairs.items():
+        assert zero in ZeroDex
+        assert nonzero in GramDex
+
+    zdex = list(ZeroDex)  # astuple
+    gdex = list(GramDex)  # astuple
+    keys = list(Memoer.Pairs.keys())
+    vals = list(Memoer.Pairs.values())
+    for i, zero in enumerate(zdex):
+        assert zdex[i] == keys[i] == zero
+    for i, gram in enumerate(gdex):
+        assert gdex[i] == vals[i] == gram
 
     assert Memoer.Pairs[MemoDex.GramZero] == MemoDex.Gram
     assert Memoer.Pairs[MemoDex.GramAuthZero] == MemoDex.GramAuth
@@ -195,7 +204,7 @@ def test_memoer_class():
     raw, code = Memoer._decodeVID(vid)
     assert raw == verkey
     assert code == 'B'  # nontrans AID
-    _, _, _, vz, _ = Memoer.Sizes[MemoDex.AuthMemoGram]  # hz mz nz vz az
+    _, _, _, vz, _ = Memoer.Sizes[MemoDex.GramAuthZero]  # hz mz nz vz az
     assert len(vid) == 44 == vz
 
     qvk = Memoer._encodeQVK(raw=verkey)
@@ -220,7 +229,7 @@ def test_memoer_class():
     raw, code = Memoer._decodeSGN(sgntr)
     assert raw == signature
     assert code == '0B'
-    _, _, _, _, az = Memoer.Sizes[MemoDex.AuthMemoGram]  # hz mz nz vz az
+    _, _, _, _, az = Memoer.Sizes[MemoDex.GramAuthZero]  # hz mz nz vz az
     assert len(sgntr) == 88 == az
 
     """Done Test"""
@@ -272,52 +281,50 @@ def test_memoer_sign_verify():
     except MemoerError as ex:
         return
 
+    mid = Memoer.makeMID()  # test class method
+    assert len(mid) == 24
+    assert mid[:2] == '0A'
+
+    # default vid
     vid = list(keep.keys())[0]
     assert vid == 'BJZTHNWXscuT-SPokPzSeBkShpHj6g8bQrP0Rh7IJNUp'
+    code = MemoDex.GramAuthZero
 
-    peer = memoing.Memoer(code=MemoDex.AuthMemoGram, keep=keep, vid=vid)
+    peer = Memoer(code=code, keep=keep, vid=vid)
     assert peer.name == "main"
     assert peer.opened == False
     assert peer.bc is None
-    assert peer.bs == memoing.Memoer.BufSize == 65535
-    assert peer.code == memoing.MemoDex.AuthMemoGram == '_-'
+    assert peer.bs == Memoer.BufSize == 65535
+    assert peer.code == MemoDex.GramAuthZero == '1AAS'
     assert not peer.curt
-    assert peer.Sizes[peer.code] == (2, 22, 4, 44, 88)  # hz mz nz vz az
+    assert peer.Sizes[peer.code] == (4, 24, 4, 44, 88)  # hz mz nz vz az
     assert peer.size == peer.MaxGramSize
     assert not peer.authic
     assert not peer.echoic
     assert peer.keep == keep
     assert peer.vid == vid
 
-    memo = "Hello There"
-
+    # manually generate memogram
+    mid = '0AD5s502N14R8bWw8qyvRW-S'  # hard code here for test
+    gcnt = 'AAAB' # gram count 1
+    # serder vid
     vid = 'DGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'   # not default .vid
     assert vid in peer.keep
-    mid = '_-ALBI68S1ZIxqwFOSWFF1L2'
-    lneck = 'AAAC' # gram count 2
+    head = code + mid + gcnt + vid
+    assert head == '1AAS0AD5s502N14R8bWw8qyvRW-SAAABDGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'
 
-    # create signed portion of gram long neck
-    neck = 'AAAA'  # gram number 0
-    head = mid + vid + neck + lneck
-    sgram = (head + "Hello There").encode()
+    memo = "Hello There"  # body
+
+    sgram = (head + memo).encode()
     #sign
     sgntr = peer.sign(vid, sgram)
     #verify
     assert peer.verify(vid, sgntr, sgram)
 
-    # test invalid  bad gram
-    bgram = (head + "Hello Where").encode()
-    with pytest.raises(MemoerVerifyError):
-        peer.verify(vid, sgntr, bgram)
-
-    # create signed portion of gram short neck
-    neck = 'AAAB'  # gram number 1
-    head = mid + vid + neck
-    sgram = (head + "Hello There").encode()
-    #sign
-    sgntr = peer.sign(vid, sgram)
-    #verify
-    assert peer.verify(vid, sgntr, sgram)
+    gram = head + memo + sgntr.decode()
+    assert gram == ('1AAS0AD5s502N14R8bWw8qyvRW-SAAABDGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'
+                    'Hello There'
+                    '0BBvO2SHplT7vjLMvcKU5s11d4lt_KVg0zbzZDiaRZ9jQhEZhPxqSo71DQSnk5YTpZphbooVW14sea2UL2DT_aMB')
 
     # test invalid  bad gram
     bgram = (head + "Hello Where").encode()
@@ -331,14 +338,14 @@ def test_memoer_sign_verify():
 def test_memoer_basic():
     """Test Memoer class basic
     """
-    peer = memoing.Memoer()
+    peer = Memoer()
     assert peer.name == "main"
     assert peer.opened == False
     assert peer.bc is None
-    assert peer.bs == memoing.Memoer.BufSize == 65535
-    assert peer.code == memoing.MemoDex.MemoGram == '__'
+    assert peer.bs == Memoer.BufSize == 65535
+    assert peer.code == MemoDex.GramZero == '1AAQ'
     assert not peer.curt
-    assert peer.Sizes[peer.code] == (2, 22, 4, 0, 0)  # hz mz nz vz az
+    assert peer.Sizes[peer.code] == (4, 24, 4, 0, 0)  # hz mz nz vz az
     assert peer.size == peer.MaxGramSize
     assert not peer.authic
     assert not peer.echoic
@@ -347,7 +354,6 @@ def test_memoer_basic():
 
     assert peer.tymeout == 0.0
     assert peer.tymers == {}
-
 
     peer.reopen()
     assert peer.opened == True
@@ -377,8 +383,10 @@ def test_memoer_basic():
     assert not peer.counts
     assert not peer.sources
     assert not peer.rxms
-    mid = '__ALBI68S1ZIxqwFOSWFF1L2'
-    gram = (mid + 'AAAA' + 'AAAB' + "Hello There").encode()
+
+    code = '1AAQ'
+    mid = '0AD5s502N14R8bWw8qyvRW-S'  # hard code here for test
+    gram = (code + mid + 'AAAB' + "Hello There").encode()
     echo = (gram, "beta")
     peer.echos.append(echo)
     peer.serviceReceives(echoic=True)
@@ -454,9 +462,11 @@ def test_memoer_basic():
     assert not peer.counts
     assert not peer.sources
     assert not peer.rxms
-    mid = '__ALBI68S1ZIxqwFOSWFF1L2'
-    headneck = decodeB64((mid + 'AAAA' + 'AAAB').encode())
-    gram = headneck + b"Hello There"
+
+    code = '1AAQ'
+    mid = '0AD5s502N14R8bWw8qyvRW-S'  # hard code here for test
+    head = decodeB64((code + mid + 'AAAB').encode())  # base 2
+    gram = head + b"Hello There"
     assert peer.wiff(gram)  # base2
     echo = (gram, "beta")
     peer.echos.append(echo)
@@ -490,10 +500,10 @@ def test_memoer_small_gram_size():
     assert peer.opened == False
     assert peer.bc is None
     assert peer.bs == memoing.Memoer.BufSize == 65535
-    assert peer.code == memoing.MemoDex.MemoGram == '__'
+    assert peer.code == memoing.MemoDex.GramZero == '1AAQ'
     assert not peer.curt
-    assert peer.Sizes[peer.code] == (2, 22, 4, 0, 0)  # hz mz nz vz az
-    assert peer.size == 33  # can't be smaller than head + neck + 1
+    assert peer.Sizes[peer.code] == (4, 24, 4, 0, 0)  # hz mz nz vz az
+    assert peer.size == 33  # overhead + 1 is minimum size
     assert not peer.authic
     assert not peer.echoic
     assert peer.keep == dict()
@@ -528,13 +538,19 @@ def test_memoer_small_gram_size():
     assert not peer.counts
     assert not peer.sources
     assert not peer.rxms
-    b'__DFymLrtlZG6bp0HhlUsR6uAAAAAAACHello '
-    b'__DFymLrtlZG6bp0HhlUsR6uAAABThere'
-    mid = '__DFymLrtlZG6bp0HhlUsR6u'
-    gram = (mid + 'AAAA' + 'AAAC' + "Hello ").encode()
+
+
+    code = '1AAQ'
+    mid = '0AD5s502N14R8bWw8qyvRW-S'  # hard code here for test
+    gcnt = 'AAAC'  # 2
+    gram = (code + mid + gcnt + "Hello ").encode()
+    assert len(gram) == peer.size == 38
     echo = (gram, "beta")
     peer.echos.append(echo)
-    gram = (mid + 'AAAB' + "There").encode()
+
+    code = '1AAR'
+    gnum = 'AAAB'  # 1
+    gram =  (code + mid + gnum + "There").encode()
     echo = (gram, "beta")
     peer.echos.append(echo)
     peer.serviceReceives(echoic=True)
@@ -561,7 +577,7 @@ def test_memoer_small_gram_size():
     assert peer.txms[0] == ('See ya later!', 'beta', None)
     peer.serviceTxMemos()
     assert not peer.txms
-    assert len(peer.txgs) == 2
+    assert len(peer.txgs) == 3
     for m, d in peer.txgs:
         assert not peer.wiff(m)  # base64
         assert d == dst == 'beta'
@@ -574,14 +590,16 @@ def test_memoer_small_gram_size():
     assert not peer.rxms
     assert not peer.counts
     assert not peer.sources
+
     peer.serviceReceives(echoic=True)
     assert not peer.echos
     mid = list(peer.rxgs.keys())[0]
-    assert len(peer.rxgs[mid]) == 2
-    assert peer.counts[mid] == 2
+    assert len(peer.rxgs[mid]) == 3
+    assert peer.counts[mid] == 3
     assert peer.sources[mid] == 'beta'
     assert peer.rxgs[mid][0] == bytearray(b'See ya')
-    assert peer.rxgs[mid][1] == bytearray(b' later!')
+    assert peer.rxgs[mid][1] == bytearray(b' later')
+    assert peer.rxgs[mid][2] == bytearray(b'!')
     assert not peer.echos
     peer.serviceRxGrams()
     assert not peer.rxgs
@@ -605,7 +623,7 @@ def test_memoer_small_gram_size():
     assert peer.txms[0] == ('See ya later alligator!', 'beta', None)
     peer.serviceTxMemos()
     assert not peer.txms
-    assert len(peer.txgs) == 2
+    assert len(peer.txgs) == 3
     for m, d in peer.txgs:
         assert peer.wiff(m)   # base2
         assert d == dst == 'beta'
@@ -619,16 +637,21 @@ def test_memoer_small_gram_size():
     assert not peer.rxms
     assert not peer.echos
 
-    b'__DFymLrtlZG6bp0HhlUsR6uAAAAAAACHello '
-    b'__DFymLrtlZG6bp0HhlUsR6uAAABThere'
-    mid = '__DFymLrtlZG6bp0HhlUsR6u'
-    headneck = decodeB64((mid + 'AAAA' + 'AAAC').encode())
-    gram = headneck + b"See ya later a"
-    assert peer.wiff(gram)   # base2
+    code = '1AAQ'
+    mid = '0AD5s502N14R8bWw8qyvRW-S'  # hard code here for test
+    gcnt = 'AAAC'  # 2
+    head = decodeB64((code + mid + gcnt).encode())  # base 2
+    gram = head + b"See ya later a"
+    assert len(gram) == peer.size == 38
+    assert peer.wiff(gram)  # base2
     echo = (gram, "beta")
     peer.echos.append(echo)
-    head = decodeB64((mid + 'AAAB').encode())
+
+    code = '1AAR'
+    gnum = 'AAAB'  # 1
+    head = decodeB64((code + mid + gnum).encode())
     gram = head + b"lligator!"
+    assert len(gram) == 33
     assert peer.wiff(gram)  # base2
     echo = (gram, "beta")
     peer.echos.append(echo)
@@ -661,13 +684,13 @@ def test_memoer_small_gram_size():
 def test_memoer_multiple():
     """Test Memoer class with small gram size and multiple queued memos
     """
-    peer = memoing.Memoer(size=38)
+    peer = Memoer(size=38)
     assert peer.size == 38
     assert peer.name == "main"
     assert peer.opened == False
     assert peer.bc is None
-    assert peer.bs == memoing.Memoer.BufSize == 65535
-    assert peer.code == memoing.MemoDex.MemoGram == '__'
+    assert peer.bs == Memoer.BufSize == 65535
+    assert peer.code == MemoDex.GramZero == '1AAQ'
     assert not peer.curt
     assert not peer.authic
     assert not peer.echoic
@@ -683,14 +706,14 @@ def test_memoer_multiple():
     assert len(peer.txms) == 2
     peer.serviceTxMemos()
     assert not peer.txms
-    assert len(peer.txgs) == 4
+    assert len(peer.txgs) == 5
     for m, d in peer.txgs:
         assert not peer.wiff(m)  # base64
         assert d in ("alpha", "beta")
     peer.serviceTxGrams(echoic=True)
     assert not peer.txgs
     assert peer.txbs == (b'', None)
-    assert len(peer.echos) == 4
+    assert len(peer.echos) == 5
     assert not peer.rxgs
     assert not peer.rxms
     assert not peer.counts
@@ -711,10 +734,11 @@ def test_memoer_multiple():
 
     mid = list(peer.rxgs.keys())[1]
     assert peer.sources[mid] == 'beta'
-    assert peer.counts[mid] == 2
-    assert len(peer.rxgs[mid]) == 2
+    assert peer.counts[mid] == 3
+    assert len(peer.rxgs[mid]) == 3
     assert peer.rxgs[mid][0] == bytearray(b'How ya')
-    assert peer.rxgs[mid][1] == bytearray(b' doing?')
+    assert peer.rxgs[mid][1] == bytearray(b' doing')
+    assert peer.rxgs[mid][2] == bytearray(b'?')
 
     peer.serviceRxGrams()
     assert not peer.rxgs
@@ -746,7 +770,7 @@ def test_memoer_multiple_echoic_service_tx_rx():
     assert peer.opened == False
     assert peer.bc is None
     assert peer.bs == memoing.Memoer.BufSize == 65535
-    assert peer.code == memoing.MemoDex.MemoGram == '__'
+    assert peer.code == memoing.MemoDex.GramZero == '1AAQ'
     assert not peer.curt
     assert not peer.authic
     assert peer.echoic
@@ -765,7 +789,7 @@ def test_memoer_multiple_echoic_service_tx_rx():
     assert not peer.txms
     assert not peer.txgs
     assert peer.txbs == (b'', None)
-    assert len(peer.echos) == 4
+    assert len(peer.echos) == 5
 
     assert not peer.rxgs
     assert not peer.rxms
@@ -800,7 +824,7 @@ def test_memoer_multiple_echoic_service_all():
     assert peer.opened == False
     assert peer.bc is None
     assert peer.bs == memoing.Memoer.BufSize == 65535
-    assert peer.code == memoing.MemoDex.MemoGram == '__'
+    assert peer.code == memoing.MemoDex.GramZero == '1AAQ'
     assert not peer.curt
     assert not peer.authic
     assert peer.echoic
@@ -820,7 +844,7 @@ def test_memoer_multiple_echoic_service_all():
     assert not peer.txms
     assert not peer.txgs
     assert peer.txbs == (b'', None)
-    assert len(peer.echos) == 4  # Rx not serviced yet after Tx serviced
+    assert len(peer.echos) == 5  # Rx not serviced yet after Tx serviced
 
     peer.serviceAll()  # services Rx first then Tx so have to serviceAll twice
     assert not peer.echos
@@ -851,14 +875,14 @@ def test_memoer_basic_signed():
     vid = list(keep.keys())[0]
     assert vid == 'BJZTHNWXscuT-SPokPzSeBkShpHj6g8bQrP0Rh7IJNUp'
 
-    peer = memoing.Memoer(code=MemoDex.AuthMemoGram, keep=keep, vid=vid)
+    peer = Memoer(code=MemoDex.GramAuthZero, keep=keep, vid=vid)
     assert peer.name == "main"
     assert peer.opened == False
     assert peer.bc is None
     assert peer.bs == memoing.Memoer.BufSize == 65535
-    assert peer.code == memoing.MemoDex.AuthMemoGram == '_-'
+    assert peer.code == memoing.MemoDex.GramAuthZero == '1AAS'
     assert not peer.curt
-    assert peer.Sizes[peer.code] == (2, 22, 4, 44, 88)  # hz mz nz vz az
+    assert peer.Sizes[peer.code] == (4, 24, 4, 44, 88)  # hz mz nz vz az
     assert peer.size == peer.MaxGramSize
     assert not peer.authic
     assert not peer.echoic
@@ -886,7 +910,7 @@ def test_memoer_basic_signed():
     assert not peer.wiff(g)  # base64
     assert g.find(memo.encode()) != -1
     assert len(g) == 160 + 4 + len(memo)
-    assert g[:2].decode() == MemoDex.AuthMemoGram
+    assert g[:4].decode() == MemoDex.GramAuthZero
     assert d == dst == 'beta'
     peer.serviceTxGrams()
     assert not peer.txgs
@@ -898,11 +922,17 @@ def test_memoer_basic_signed():
     assert not peer.rxms
 
     # Test with signed header
-    mid = '_-ALBI68S1ZIxqwFOSWFF1L2'  # signed header
+    code = '1AAS'
+    mid = '0AD5s502N14R8bWw8qyvRW-S'  # hard code here for test
+    gcnt = 'AAAB'  # 1
+    head = (code + mid + gcnt + vid).encode()
+    sgram = head + b"Hello There"
+    assert len(sgram) == 87
+    assert not peer.wiff(sgram)  # base64
 
     # test with invalid signature
-    sig = ('A' * 88)
-    gram = (mid + vid + 'AAAA' + 'AAAB' + "Hello There" + sig).encode()
+    sig = (b'A' * 88)
+    gram = sgram + sig
     echo = (gram, "beta")
     peer.echos.append(echo)
     peer.serviceReceives(echoic=True)
@@ -911,7 +941,6 @@ def test_memoer_basic_signed():
 
     # test with valid signature
     # create signed portion of gram
-    sgram = (mid + vid + 'AAAA' + 'AAAB' + "Hello There").encode()
     qvk, qss = peer.keep[vid]
     sig = peer.sign(vid, sgram)
     gram = sgram + sig
@@ -941,7 +970,7 @@ def test_memoer_basic_signed():
     assert not peer.wiff(g)  # base64
     assert g.find(memo.encode()) != -1
     assert len(g) == 160 + 4 + len(memo)
-    assert g[:2].decode() == MemoDex.AuthMemoGram
+    assert g[:4].decode() == MemoDex.GramAuthZero
     assert d == dst == 'beta'
     peer.serviceTxGrams(echoic=True)
     assert not peer.txgs
@@ -977,10 +1006,10 @@ def test_memoer_basic_signed():
     peer.serviceTxMemos()
     assert not peer.txms
     g, d = peer.txgs[0]
-    assert peer.wiff(g)  # base64
+    assert peer.wiff(g)  # base2
     assert g.find(memo.encode()) != -1
     assert len(g) == 3 * (160 + 4) // 4 + len(memo)
-    assert helping.codeB2ToB64(g, 2) == MemoDex.AuthMemoGram
+    assert helping.codeB2ToB64(g, 4) == MemoDex.GramAuthZero
     assert d == dst == 'beta'
     peer.serviceTxGrams()
     assert not peer.txgs
@@ -992,13 +1021,15 @@ def test_memoer_basic_signed():
     assert not peer.rxms
 
     # test with signed header
-    mid = '_-ALBI68S1ZIxqwFOSWFF1L2'  # signed header
-
+    code = '1AAS'
+    mid = '0AD5s502N14R8bWw8qyvRW-S'  # hard code here for test
+    gcnt = 'AAAB'  # 1
     # test with valid signature
     vid = 'DGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'   # not default .vid
-    head = mid + vid + 'AAAA' + 'AAAB'
+    head = (code + mid + gcnt + vid).encode()
+
     assert len(head) == 76
-    head = decodeB64(head.encode())  # qb2 version of head
+    head = decodeB64(head)  # qb2 version of head
     assert len(head) == 57
     sgram = head + memo.encode()  # sign the qb2 version
     assert len(sgram) == 68
@@ -1046,16 +1077,16 @@ def test_memoer_multiple_signed():
     vid = list(keep.keys())[0]
     assert vid == 'BJZTHNWXscuT-SPokPzSeBkShpHj6g8bQrP0Rh7IJNUp'
 
-    oidBeta = list(keep.keys())[1]
-    assert oidBeta == 'DGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'
+    vidBeta = list(keep.keys())[1]
+    assert vidBeta == 'DGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'
 
-    peer = memoing.Memoer(code=MemoDex.AuthMemoGram, size=170, keep=keep, vid=vid)
+    peer = Memoer(code=MemoDex.GramAuthZero, size=170, keep=keep, vid=vid)
     assert peer.size == 170
     assert peer.name == "main"
     assert peer.opened == False
     assert peer.bc is None
     assert peer.bs == memoing.Memoer.BufSize == 65535
-    assert peer.code == memoing.MemoDex.AuthMemoGram == '_-'
+    assert peer.code == memoing.MemoDex.GramAuthZero == '1AAS'
     assert not peer.curt
     assert not peer.authic  # force rx must be signed
     assert not peer.echoic
@@ -1065,9 +1096,9 @@ def test_memoer_multiple_signed():
     peer.reopen()
     assert peer.opened == True
 
-    # send and receive multiple via echo not signed
+    # send and receive multiple via echo signed
     peer.memoit("Hello there.", "alpha")  # use default for vidAlpha
-    peer.memoit("How ya doing?", "beta", oidBeta)
+    peer.memoit("How ya doing?", "beta", vidBeta)
     assert len(peer.txms) == 2
     peer.serviceTxMemos()
     assert not peer.txms
@@ -1110,7 +1141,7 @@ def test_memoer_multiple_signed():
     assert not peer.sources
     assert len(peer.rxms) == 2
     assert peer.rxms[0] == ('Hello there.', 'alpha', vid)
-    assert peer.rxms[1] == ('How ya doing?', 'beta', oidBeta)
+    assert peer.rxms[1] == ('How ya doing?', 'beta', vidBeta)
     peer.serviceRxMemos()
     assert not peer.rxms
 
@@ -1122,7 +1153,7 @@ def test_memoer_multiple_signed():
 
     # send and receive multiple via echo in base2 .curt = True mode
     peer.memoit("Hello there.", "alpha")  # use default for vidAlpha
-    peer.memoit("How ya doing?", "beta", oidBeta)
+    peer.memoit("How ya doing?", "beta", vidBeta)
     assert len(peer.txms) == 2
     peer.serviceTxMemos()
     assert not peer.txms
@@ -1165,16 +1196,16 @@ def test_memoer_multiple_signed():
     assert not peer.sources
     assert len(peer.rxms) == 2
     assert peer.rxms[0] == ('Hello there.', 'alpha', vid)
-    assert peer.rxms[1] == ('How ya doing?', 'beta', oidBeta)
+    assert peer.rxms[1] == ('How ya doing?', 'beta', vidBeta)
     peer.serviceRxMemos()
     assert not peer.rxms
 
     assert peer.inbox == deque(
     [
         ('Hello there.', 'alpha', vid),
-        ('How ya doing?', 'beta', oidBeta),
+        ('How ya doing?', 'beta', vidBeta),
         ('Hello there.', 'alpha', vid),
-        ('How ya doing?', 'beta', oidBeta)
+        ('How ya doing?', 'beta', vidBeta)
     ])
 
 
@@ -1183,7 +1214,7 @@ def test_memoer_multiple_signed():
     """ End Test """
 
 
-def test_memoer_verific():
+def test_memoer_authic():
     """Test Memoer class with authic (signed required)
     """
     salt = b"ABCDEFGHIJKLMNOP"
@@ -1195,14 +1226,14 @@ def test_memoer_verific():
     vid = list(keep.keys())[0]
     assert vid == 'BJZTHNWXscuT-SPokPzSeBkShpHj6g8bQrP0Rh7IJNUp'
 
-    peer = memoing.Memoer(authic=True, keep=keep, vid=vid)
+    peer = Memoer(authic=True, keep=keep, vid=vid)  # only recieves not send signed
     assert peer.name == "main"
     assert peer.opened == False
     assert peer.bc is None
     assert peer.bs == memoing.Memoer.BufSize == 65535
-    assert peer.code == memoing.MemoDex.MemoGram == '__'
+    assert peer.code == memoing.MemoDex.GramZero == '1AAQ'
     assert not peer.curt
-    assert peer.Sizes[peer.code] == (2, 22, 4, 0, 0)  # hz mz nz vz az
+    assert peer.Sizes[peer.code] == (4, 24, 4, 0, 0)  # hz mz nz vz az
     assert peer.size == peer.MaxGramSize
     assert peer.authic
     assert not peer.echoic
@@ -1216,12 +1247,18 @@ def test_memoer_verific():
     assert not peer.counts
     assert not peer.sources
     assert not peer.rxms
-    mid = '__ALBI68S1ZIxqwFOSWFF1L2'  # not signed code
-    gram = (mid + 'AAAA' + 'AAAB' + "Hello There").encode()
+
+    # send non-signed memo to authic memoer
+    code = '1AAQ'
+    mid = '0AD5s502N14R8bWw8qyvRW-S'  # hard code here for test
+    gcnt = 'AAAB'  # 1
+    head = (code + mid + gcnt).encode()
+
+    gram = head + "Hello There".encode()
     echo = (gram, "beta")
     peer.echos.append(echo)
     peer.serviceReceives(echoic=True)
-    assert not peer.rxgs  # dropped gram
+    assert not peer.rxgs  # dropped gram because not signed
     assert not peer.echos
     assert not peer.rxms
 
@@ -1229,10 +1266,13 @@ def test_memoer_verific():
     assert not peer.counts
     assert not peer.sources
     assert not peer.rxms
-    mid = '_-ALBI68S1ZIxqwFOSWFF1L2'  # signed code
+
+    code = '1AAS'  # signed gram
+    mid = '0AD5s502N14R8bWw8qyvRW-S'  # hard code here for test
+    gcnt = 'AAAB'  # 1
     vid = list(keep.keys())[1]
-    sig = ('A' * 88)
-    sgram = (mid + vid + 'AAAA' + 'AAAB' + "Hello There").encode()
+    head = (code + mid + gcnt + vid).encode()
+    sgram = head + "Hello There".encode()
     qvk, qss = peer.keep[vid]
     sig = peer.sign(vid, sgram)
     gram = sgram + sig
@@ -1279,14 +1319,14 @@ def test_memoer_multiple_signed_verific_echoic_service_all():
 
     # authic forces rx memos to be signed or dropped
     # to force signed tx then use Signed code
-    peer = memoing.Memoer(code=MemoDex.AuthMemoGram, size=170, authic=True,
+    peer = Memoer(code=MemoDex.GramAuthZero, size=170, authic=True,
                           echoic=True, keep=keep, vid=vid)
     assert peer.size == 170
     assert peer.name == "main"
     assert peer.opened == False
     assert peer.bc is None
     assert peer.bs == memoing.Memoer.BufSize == 65535
-    assert peer.code == memoing.MemoDex.AuthMemoGram == '_-'
+    assert peer.code == memoing.MemoDex.GramAuthZero == '1AAS'
     assert not peer.curt
     assert peer.authic
     assert peer.echoic
@@ -1372,7 +1412,7 @@ def test_memoer_multiple_signed_verific_echoic_service_all():
 def test_open_memoer():
     """Test contextmanager decorator openMemoer
     """
-    with (memoing.openMemoer(name='zeta') as zeta):
+    with (openMemoer(name='zeta') as zeta):
 
         assert zeta.opened
         assert zeta.name == 'zeta'
@@ -1398,7 +1438,7 @@ def test_memoer_doer():
     assert doist.limit == limit == 0.125
     assert doist.doers == []
 
-    peer = memoing.Memoer()
+    peer = Memoer()
 
     mgdoer = memoing.MemoerDoer(peer=peer)
     assert mgdoer.peer == peer
@@ -1428,21 +1468,21 @@ def test_auth_memoer_basic():
     oidBeta = list(keep.keys())[1]
     assert oidBeta == 'DJb1Z0pHx36MCOuIHWR4yPxfIiBxVzg6UCamv8fAN8gH'
 
-    peer = memoing.AuthMemoer(echoic=True, keep=keep, vid=vid)
+    peer = AuthMemoer(echoic=True, keep=keep, vid=vid)
     assert peer.size == 65535
     assert peer.name == "main"
     assert peer.opened == False
     assert peer.bc is None
     assert peer.bs == memoing.Memoer.BufSize == 65535
-    assert peer.code == memoing.MemoDex.AuthMemoGram == '_-'
+    assert peer.code == memoing.MemoDex.GramAuthZero == '1AAS'
     assert not peer.curt
     assert peer.authic
     assert peer.echoic
     assert peer.keep == keep
     assert peer.vid == vid
 
-    assert peer.Sizes[peer.code] == Sizage(hz=2, mz=22, nz=4, vz=44, az=88)
-    assert peer.Sizes[peer.code] == (2, 22, 4, 44, 88)  # hz mz nz vz az
+    assert peer.Sizes[peer.code] == Sizage(hz=4, mz=24, nz=4, vz=44, az=88)
+    assert peer.Sizes[peer.code] == (4, 24, 4, 44, 88)  # hz mz nz vz az
     assert peer.size == peer.MaxGramSize
     assert peer.tymeout == 0.0
     assert peer.tymers == {}
@@ -1570,7 +1610,7 @@ def test_open_sm():
     except MemoerError as ex:
         return
 
-    with (memoing.openAM(name='zeta') as zeta):
+    with (openAM(name='zeta') as zeta):
 
         assert zeta.opened
         assert zeta.name == 'zeta'
@@ -1606,8 +1646,8 @@ def test_auth_memoer_multiple_echoic_service_all():
         assert peer.name == "test"
         assert peer.opened == True
         assert peer.bc is None
-        assert peer.bs == memoing.Memoer.BufSize == 65535
-        assert peer.code == memoing.MemoDex.AuthMemoGram == '_-'
+        assert peer.bs == Memoer.BufSize == 65535
+        assert peer.code == MemoDex.GramAuthZero == '1AAS'
         assert not peer.curt
         assert peer.authic
         assert peer.echoic
@@ -1706,9 +1746,9 @@ def test_auth_memoer_doer():
     assert doist.limit == limit == 0.125
     assert doist.doers == []
 
-    peer = memoing.AuthMemoer()
+    peer = AuthMemoer()
 
-    tmgdoer = memoing.AuthMemoerDoer(peer=peer)
+    tmgdoer = AuthMemoerDoer(peer=peer)
     assert tmgdoer.peer == peer
     assert not tmgdoer.peer.opened
     assert tmgdoer.tock == 0.0  # ASAP
@@ -1741,7 +1781,7 @@ if __name__ == "__main__":
     test_memoer_multiple_echoic_service_all()
     test_memoer_basic_signed()
     test_memoer_multiple_signed()
-    test_memoer_verific()
+    test_memoer_authic()
     test_memoer_multiple_signed_verific_echoic_service_all()
     test_open_memoer()
     test_memoer_doer()

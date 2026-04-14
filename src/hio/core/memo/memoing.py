@@ -263,15 +263,12 @@ the gram num only appears in non-zeroth grams
 """
 Sizage = namedtuple("Sizage", "hz mz nz vz az")
 
-
 @dataclass(frozen=True)
 class MemoGramCodex:
     """MemoGramCodex is codex of all varieties of MemoGram Hard Codes.
     Only provide defined codes.
     Undefined are left out so that inclusion(exclusion) via 'in' operator works.
     """
-    MemoGram:     str = '__'  # memogram code
-    AuthMemoGram:    str = '_-'  # authenticated memogram code (signed)
     GramZero:     str = '1AAQ'  # zeroth gram code
     Gram:    str = '1AAR'  # non-zeroth gram code
     GramAuthZero:     str = '1AAS'  # zeroth authenticated gram code (signed)
@@ -288,13 +285,33 @@ class MemoGramCodex:
 
 MemoDex = MemoGramCodex()  # Make instance
 
+
 @dataclass(frozen=True)
-class GramCodex:
-    """GramCodex is codex of all Gram Hard Codes.
+class ZeroGramCodex:
+    """GramCodex is codex of all Zero Gram Hard Codes.
     Only provide defined codes.
     Undefined are left out so that inclusion(exclusion) via 'in' operator works.
     """
-    MemoGram:     str = '__'  # memogram code
+    GramZero:     str = '1AAQ'  # zeroth gram code
+    GramAuthZero:     str = '1AAS'  # zeroth authenticated gram code (signed)
+    GramSureZero:     str = '1AAU'  # zeroth reliable gram code (acked)
+    GramSureAuthZero:     str = '1AAW'  # zeroth reliable authenticated gram code (acked & signed)
+
+    def __iter__(self):
+        return iter(astuple(self))
+
+ZeroDex = ZeroGramCodex()  # Make instance
+
+@dataclass(frozen=True)
+class GramCodex:
+    """GramCodex is codex of all Non-Zero Gram Hard Codes.
+    Only provide defined codes.
+    Undefined are left out so that inclusion(exclusion) via 'in' operator works.
+    """
+    Gram:    str = '1AAR'  # non-zeroth gram code
+    GramAuth:    str = '1AAT'  # non-zeroth authenticated gram code (signed)
+    GramSure:    str = '1AAV'  # non-zeroth reliable gram code (acked)
+    GramSureAuth:    str = '1AAX'  # non-zeroth reliable authenticated gram code (acked & signed)
 
     def __iter__(self):
         return iter(astuple(self))
@@ -308,7 +325,6 @@ class AuthGramCodex:
     Only provide defined codes.
     Undefined are left out so that inclusion(exclusion) via 'in' operator works.
     """
-    AuthMemoGram:    str = '_-'   # authenticated memogram code (signed)
     GramAuthZero:     str = '1AAS'  # zeroth authenticated gram code (signed)
     GramAuth:    str = '1AAT'  # non-zeroth authenticated gram code (signed)
     GramSureAuthZero:     str = '1AAW'  # zeroth reliable authenticated gram code (acked & signed)
@@ -321,22 +337,19 @@ class AuthGramCodex:
 AuthDex = AuthGramCodex()  # Make instance
 
 
+@dataclass(frozen=True)
+class AckCodex:
+    """AckCodex is codex of all Ack Hard Codes.
+    Only provide defined codes.
+    Undefined are left out so that inclusion(exclusion) via 'in' operator works.
+    """
+    Ack:     str = '1AAY'  # ack code to enable reliable grams
+    AckAuth:    str = '1AAZ'  # authenticated ack code to enable reliable grams (signed)
 
-#@dataclass(frozen=True)
-#class AckGramCodex:
-    #"""AckGramCodex is codex of all AckGram (acknowledge) Codes.
-    #Only provide defined codes.
-    #Undefined are left out so that inclusion(exclusion) via 'in' operator works.
-    #"""
-    #AckGram:     str = '_9'  #  acknowledge gram code
-    #AuthAckGram:    str = '_8'  # authenticated acknowledge gram code (signed)
+    def __iter__(self):
+        return iter(astuple(self))
 
-    #def __iter__(self):
-        #return iter(astuple(self))
-
-#AckDex = AckGramCodex()  # Make instance
-
-
+AckDex = AckCodex()  # Make instance
 
 
 class Memoer(Tymee):
@@ -543,11 +556,11 @@ class Memoer(Tymee):
     Codex = MemoDex
     Codes = asdict(Codex)  # map code name to code
     Names = {val : key for key, val in Codes.items()} # invert map code to code name
-    Sodex = AuthDex  # signed gram codex
+    Zedex = ZeroDex  # only zeroth gram codes for rending
+    Audex = AuthDex  # signed gram codex
+
     # dict of gram header part sizes keyed by gram codes: hz mz nz vz az
     Sizes = {
-                '__': Sizage(hz=2, mz=22, nz=4, vz=0, az=0),
-                '_-': Sizage(hz=2, mz=22,  nz=4, vz=44,az=88),
                 '1AAQ': Sizage(hz=4, mz=24, nz=4, vz=0, az=0),
                 '1AAR': Sizage(hz=4, mz=24, nz=4, vz=0, az=0),
                 '1AAS': Sizage(hz=4, mz=24, nz=4, vz=44,az=88),
@@ -566,7 +579,6 @@ class Memoer(Tymee):
     Pairs[MemoDex.GramSureZero] = MemoDex.GramSure
     Pairs[MemoDex.GramSureAuthZero] = MemoDex.GramSureAuth
 
-
     # Base2 Binary index representation of Text Base64 Char Codes
     #Bodes = ({helping.codeB64ToB2(c): c for n, c in Codes.items()})
     # big enough to hold a CESR big frame with code
@@ -582,19 +594,18 @@ class Memoer(Tymee):
 
         Returns::
             mid (str): 24 char qb64 CESR encoded qualified base64 from 128 bit UUID
-                       CESR code '0A' labeled Salt_128
+                       default CESR code '0A' labeled Salt_128
 
         Parameters::
             code (str): CESR code for MID
         """
-        code = '0A'  # Salt_128
-        ps = (3 - (len(code) % 3)) % 3  # net pad size for code
-        uuid = uuid.uuid1().bytes  # random UUID sorted in time order
-        if ps != (3 - (len(uuid) % 3)) % 3:  # compare pad sizes
-            raise ValueError(f"Mismatch code and uuid pad sizes. "
-                             f"Both not {ps=}")
+        raw = uuid.uuid1().bytes  # random UUID sorted in time order
+        ps = (3 - (len(raw) % 3)) % 3  # net pad size for raw
+        if ps != len(code) % 4:  # compare pad for raw and code
+            raise ValueError(f"Mismatch length code with raw uuid pad size, "
+                             f" {len(code)} != {ps}")
         # prepad convert strip midpad and then prefix code
-        mid = code.encode() + encodeB64(bytes([0] * ps) + uuid)[ps:]
+        mid = code + encodeB64(bytes([0] * ps) + raw)[ps:].decode()
         return mid  # fully qualified mid with prefixed code
 
 
@@ -630,7 +641,7 @@ class Memoer(Tymee):
 
         qb64 = code + b64.decode()  # fully qualified base64 vid with prefix code
 
-        _, _,  _, vz, _ = cls.Sizes[MemoDex.AuthMemoGram]  # hz mz nz vz az
+        _, _,  _, vz, _ = cls.Sizes[MemoDex.GramAuthZero]  # hz mz nz vz az
         if len(qb64) != vz:
             hioing.MemoerError(f"Invalid vid qb64 size={len(qb64) != {vz}}")
 
@@ -880,7 +891,7 @@ class Memoer(Tymee):
 
         qb64 = code + b64.decode()  # fully qualified base64 with prefixqb64de
 
-        _, _, _, _, az = cls.Sizes[MemoDex.AuthMemoGram]  # hz mz nz vz az
+        _, _, _, _, az = cls.Sizes[MemoDex.GramAuthZero]  # hz mz nz vz az
         if len(qb64) != az:
             hioing.MemoerError(f"Invalid sig qb64 size={len(qb64) != {az}}")
 
@@ -947,7 +958,7 @@ class Memoer(Tymee):
                  txms=None,
                  txgs=None,
                  txbs=None,
-                 code=MemoDex.MemoGram,
+                 code=MemoDex.GramZero,
                  curt=False,
                  size=None,
                  authic=False,
@@ -1082,7 +1093,7 @@ class Memoer(Tymee):
     def code(self):
         """Property getter for ._code
 
-        Returns:
+        Returns::
             code (str): two char base64 gram code
         """
         return self._code
@@ -1092,10 +1103,10 @@ class Memoer(Tymee):
     def code(self, code):
         """Property setter for ._code
 
-        Parameters:
+        Parameters::
             code (str): two char base64 gram code
         """
-        if code not in self.Codex:
+        if code not in self.Zedex:  # code for rending must be a zero gram
             raise hioing.MemoerError(f"Invalid {code=}.")
 
         self._code = code
@@ -1107,7 +1118,7 @@ class Memoer(Tymee):
     def curt(self):
         """Property getter for ._curt
 
-        Returns:
+        Returns::
             curt (bool): True means when rending for tx encode header in base2
                          False means when rending for tx encode header in base64
         """
@@ -1129,12 +1140,12 @@ class Memoer(Tymee):
 
     @property
     def size(self):
-        """Property getter for ._size
+        """Property getter for ._size, maximum gram size when rending for tx
 
         Returns:
             size (int): gram size when rending for tx.
-                        First gram size = head size + neck size + body size.
-                        Other gram size = head size + body size.
+                        Zeroth gram size = zeroth overhead + body.
+                        Non-Zeroth gram size = non-zeroth overhead + body.
                         Min gram body size is one.
                         Gram size also limited by MaxGramSize and MaxGramCount
                         relative to MaxMemoSize.
@@ -1144,21 +1155,24 @@ class Memoer(Tymee):
 
     @size.setter
     def size(self, size):
-        """Property setter for ._size
+        """Property setter for ._size of maximum gram size when rending for tx
 
         Parameters:
             size (int or None): gram size for rending memo
 
         """
+        size = size if size is not None else self.MaxGramSize
+
         hz, mz, nz, vz, az = self.Sizes[self.code]  # hz mz nz vz az
         oz = hz + mz + nz + vz + az
-        size = size if size is not None else self.MaxGramSize
         if self.curt:  # minimum header smaller when in base2 curt
             oz = 3 * oz // 4
-            nz = 3 * nz // 4
-
-        # mininum size must be big enough for first gram header and 1 body byte
-        self._size = max(min(size, self.MaxGramSize), oz + nz + 1)
+        # min size is big enough for zeroth gram overhead plus 1 body byte
+        size = max(size, oz + 1)
+        if size > self.MaxGramSize:
+            hioing.MemoerError(f"Invalid {size=} exceeds "
+                               f"MaxGramSize={self.MaxGramSize}")
+        self._size = size
 
 
     @property
@@ -1257,7 +1271,7 @@ class Memoer(Tymee):
         pass
 
 
-    def wiff(self, gram):
+    def wiffOld(self, gram):
         """Determines encoding of gram bytes header when parsing grams.
         The encoding maybe either base2 or base64.
 
@@ -1304,7 +1318,7 @@ class Memoer(Tymee):
 
         raise hioing.MemoerError(f"Unexpected {sextet=} at gram head start.")
 
-    def wiffNew(self, gram):
+    def wiff(self, gram):
         """Determines encoding of gram bytes header when parsing grams.
         The encoding maybe either base2 or base64.
 
@@ -1415,7 +1429,7 @@ class Memoer(Tymee):
         return True
 
 
-    def pickNew(self, gram):
+    def pick(self, gram):
         """Strips header from gram bytearray leaving only gram body in gram and
         returns (mid, gn, gc). Raises MemoerError if unrecognized or invalid
         header this includes signature verification failure when signed.
@@ -1457,7 +1471,7 @@ class Memoer(Tymee):
                 raise hioing.MemoerError(f"Gram length={len(gram)} to short to "
                                          f"hold code.")
             code = helping.codeB2ToB64(gram, 4)  # code from first 4 sextets
-            if self.authic and code not in self.Sodex:  # must be signed
+            if self.authic and code not in self.Audex:  # must be signed
                 raise hioing.MemoerError(f"Unsigned gram {code =} when signed "
                                          f"required.")
 
@@ -1478,14 +1492,21 @@ class Memoer(Tymee):
             mid = encodeB64(gram[hz:hz+mz])  # convert to b64b
             gnum = gram[hz+mz:hz+mz+nz]  # bytearray to bytes gnum
             gn = int.from_bytes(gnum)  # gram number/count convert to int
-
-            if True: # first (zeroth) gram so long neck get gram count
+            vid = encodeB64(gram[hz+mz+nz:hz+mz+nz+vz])  # convert to b64b
+            if code in ZeroDex: # first (zeroth) gram so get gram count
                 gc = gn  # zeroth so gcnt in neck where gnum
                 gn = 0   # zeroth so gnum must be zero
-            else:
+            elif code in GramDex:
                 gc = None # not provided in this gram
+                if not vid:
+                    vid = self.vids.get(mid.decode()) # if not then get from .vids
+                    vid = vid.encode() if vid is not None else b""
+            elif code in AckDex:
+                pass
+            else:
+                raise hioing.MemoerError(f"Invalid {code=}")
 
-            vid = encodeB64(gram[hz+mz+nz:hz+mz+nz+vz])  # convert to b64b
+
             sig = encodeB64(gram[-az if az else len(gram):])   # last ss bytes are signature
             del gram[-az if az else len(gram):]  # strip sig if any
             sgram = bytes(gram[:])  # signed raw part make bytes copy to sign
@@ -1496,7 +1517,7 @@ class Memoer(Tymee):
                 raise hioing.MemoerError(f"Gram length={len(gram)} to short to "
                                          f"hold code.")
             code = gram[:4].decode()  # assumes len(code) must be 2
-            if self.authic and code not in self.Sodex:  # must be signed
+            if self.authic and code not in self.Audex:  # must be signed
                 raise hioing.MemoerError(f"Unsigned gram {code =} when signed "
                                          f"required.")
             hz, mz, nz, vz, az = self.Sizes[code]  # hz mz nz vz az
@@ -1510,25 +1531,32 @@ class Memoer(Tymee):
 
             gnum = bytes(gram[hz+mz:hz+mz+nz])  # qb64b short part of neck
             gn = helping.b64ToInt(gnum)
-            if True: # first (zeroth) gram so long neck get gram count
-                gc = gn  # zeroth so gcnt in neck where gnum
-                gn = 0   # zeroth so gnum must be zer
-            else:
-                gc = None  # not provided in this gram
-
             vid = bytes(gram[hz+mz+nz:hz+mz+nz+vz]) #bytearry to bytes qb64b convert to qb64
+            if code in ZeroDex: # first (zeroth) gram so get gram count
+                gc = gn  # zeroth so gcnt in neck where gnum
+                gn = 0   # zeroth so gnum must be zero
+            elif code in GramDex:
+                gc = None # not provided in this gram
+                if not vid:
+                    vid = self.vids.get(mid.decode()) # if not then get from .vids
+                    vid = vid.encode() if vid is not None else b""
+            elif code in AckDex:
+                pass
+            else:
+                raise hioing.MemoerError(f"Invalid {code=}")
+
             sig = bytes(gram[-az if az else len(gram):])  # last az bytes signature
             del gram[-az if az else len(gram):]  # strip sig if any
             sgram = bytes(gram[:]) # signed raw part make bytes copy to sign
             del gram[:oz-az]  # strip of fore head leaving body in gram
 
-        if sig:  # signature not empty
+        if sig:  # signature not empty when Auth code sig is never empty
             self.verify(vid, sig, sgram)  # raises MemoerVerifyError if invalid
 
         return (mid.decode(), vid.decode() if vid else None, gn, gc)
 
 
-    def pick(self, gram):
+    def pickOld(self, gram):
         """Strips header from gram bytearray leaving only gram body in gram and
         returns (mid, gn, gc). Raises MemoerError if unrecognized or invalid
         header this includes signature verification failure when signed.
@@ -1565,7 +1593,7 @@ class Memoer(Tymee):
                 raise hioing.MemoerError(f"Gram length={len(gram)} to short to "
                                          f"hold code.")
             code = helping.codeB2ToB64(gram, 2)  # assumes len(code) must be 2
-            if self.authic and code not in self.Sodex:  # must be signed
+            if self.authic and code not in self.Audex:  # must be signed
                 raise hioing.MemoerError(f"Unsigned gram {code =} when signed "
                                          f"required.")
 
@@ -1614,7 +1642,7 @@ class Memoer(Tymee):
                 raise hioing.MemoerError(f"Gram length={len(gram)} to short to "
                                          f"hold code.")
             code = gram[:2].decode()  # assumes len(code) must be 2
-            if self.authic and code not in self.Sodex:  # must be signed
+            if self.authic and code not in self.Audex:  # must be signed
                 raise hioing.MemoerError(f"Unsigned gram {code =} when signed "
                                          f"required.")
             hz, mz, nz, vz, az = self.Sizes[code]  # hz mz nz vz az
@@ -1975,83 +2003,84 @@ class Memoer(Tymee):
         """
         grams = []
         memo = bytearray(memo.encode()) # convert and copy to bytearray
-        # self.size is max gram size
-        hz, mz, nz, vz, az = self.Sizes[self.code]  # hz mz nz vz az
-        oz =  hz + mz + nz + vz + az
+
+        zcode = self.code  # zeroth gram code
+        zhz, zmz, znz, zvz, zaz = self.Sizes[zcode]  # hz mz nz vz az
+        zoz =  zhz + zmz + znz + zvz + zaz  # overhead on zeroth gram
+
+        ncode = self.Pairs[zcode]  # non-zeroth gram code
+        nhz, nmz, nnz, nvz, naz = self.Sizes[ncode] # hz mz nz vz az
+        noz =  nhz + nmz + nnz + nvz + naz  # overhead on non-zeroth grams
 
         vid = vid if vid is not None else self.vid
+        if zvz and (not vid or len(vid) != zvz):
+            raise hioing.MemoerError(f"Missing or invalid {vid=} for {zvz=}")
 
-        if vz and (not vid or len(vid) != vz):
-            raise hioing.MemoerError(f"Missing or invalid {vid=} for {vz=}")
+        mid = self.makeMID()
+        if len(mid) != zmz:
+            raise hioing.MemoerError(f"Invalid {mid=} for {zmz=}")
 
-        pz = (3 - ((mz) % 3)) % 3  # net pad size for mid
-        # memo ID is 16 byte random UUID converted to 22 char Base64 right aligned
-        mid = encodeB64(bytes([0] * pz) + uuid.uuid1().bytes)[pz:] #pzrepad, convert, and prestrip
-        if hz != pz or hz != len(self.code):
-            raise hioing.MemoerError(f"Invalid code size {hz=} for {pz=} or "
-                                     f"code={self.code}")
-        mid = self.code.encode() + mid  # fully qualified mid with prefix code
-        ml = len(memo)
+        zcodeb = zcode.encode()  # make bytes
+        ncodeb = ncode.encode()  # make bytes
+        vidb = vid.encode() if vid else b''  # convert to bytes
+        midb = mid.encode() # convert to bytes
 
         if self.curt:  # rend header parts in base2 instead of base64
             # encoding b2 means head part sizes smaller by 3/4
-            hz = 3 * hz // 4
-            mz = 3 * mz // 4
-            nz = 3 * nz // 4
-            vz = 3 * vz // 4
-            az = 3 * az // 4
-            oz = 3 * oz // 4
-            mid = decodeB64(mid)
+            zhz = 3 * zhz // 4
+            zmz = 3 * zmz // 4
+            znz = 3 * znz // 4
+            zvz = 3 * zvz // 4
+            zaz = 3 * zaz // 4
+            zoz = 3 * zoz // 4
+            zcodeb = decodeB64(zcodeb)  # convert to base2 bytes
+            ncodeb = decodeB64(ncodeb)  # convert to base2 bytes
+            midb = decodeB64(midb)  # convert to base2 bytes
+            vidb = decodeB64(vidb)  # convert to base2 bytes
 
-        bz = (self.size - oz)  # max standard gram body size without neck
-        # compute gram count based on overhead note added neck overhead in first gram
-        # first gram is special its header is longer by ns than the other grams
-        # which means its payload body is shorter by ns than the other gram bodies
-        # so take ml and subtract first payload size = ml - (bs-ns) to get the
-        # portion of memo carried by other grams. Divide this by bs rounded up
-        # (ceil) to get cnt of other grams and add 1 for the first gram to get
-        # total gram cnt.
-        # gc = ceil((ml-(bs-ns))/bs + 1) = ceil((ml-bs+ns)/bs + 1)
-        gc = math.ceil((ml-bz+nz)/bz+1)  # includes added neck ns overhead
-        mms = min(self.MaxMemoSize, (bz * self.MaxGramCount) - nz)  # max memo payload
-
+        # self.size is min-max gram size computed on zeroth gram
+        zbz = (self.size - zoz)  # max zeroth gram body size >=1
+        nbz = (self.size - noz)  # max non-zeroth gram body size >=1
+        ml = len(memo)
+        gc = math.ceil((ml+nbz-zbz)/nbz)
+        mms = min(self.MaxMemoSize, (nbz*(self.MaxGramCount-1) + zbz))  # max memo payload
         if ml > mms:
-            raise hioing.MemoerError(f"Memo length={ml} exceeds max={mms}.")
+            raise hioing.MemoerError(f"Memo length={ml} exceeds max={mms}")
 
         if self.curt:
-            neck = gc.to_bytes(nz)
+            gcnt = gc.to_bytes(znz)  # gcnt as b2 bytes
         else:
-            neck = helping.intToB64b(gc, l=nz)
+            gcnt = helping.intToB64b(gc, l=znz)  # gcnt as b64 bytes
 
         gn = 0
         while memo:
-            if self.curt:
-                num = gn.to_bytes(nz)  # num size must always be neck size
-            else:
-                num = helping.intToB64b(gn, l=nz)  # num size must always be neck size
-
-            if vz:  # need vid part, but can't mod here may need below to sign
-                if self.curt:
-                    oidp = decodeB64(vid.encode())  # vid part b2
-                else:
-                    oidp = vid.encode()  # vid part b64 bytes
-                head = mid + oidp + num
-            else:
-                head = mid + num
 
             if gn == 0:
-                gram = head + neck + memo[:bz-nz]  # copy slice past end just copies to end
-                del memo[:bz-nz]  # del slice past end just deletes to end
-            else:
-                gram = head + memo[:bz]  # copy slice past end just copies to end
-                del memo[:bz]  # del slice past end just deletes to end
+                head = zcodeb + midb + gcnt
+                if zvz:
+                    head += vidb
+                gram = head + memo[:zbz]  # copy slice past end just copies to end
+                del memo[:zbz]  # del slice past end just deletes to end
+                if zaz:  # signed gram, .sign returns proper sig format when .curt
+                    sig = self.sign(vid, gram) # raises MemoerError if invalid
+                    gram = gram + sig
 
-            if az:  # signed gram, .sign returns proper sig format when .curt
-                sig = self.sign(vid, gram) # raises MemoerError if invalid
-                gram = gram + sig
+            else:
+                if self.curt:
+                    gnum = gn.to_bytes(znz)  # gnum as b2 bytes
+                else:
+                    gnum = helping.intToB64b(gn, l=znz)  # gnum as b64 bytes
+
+                head = ncodeb + midb + gnum
+                if nvz:
+                    head += vidb
+                gram = head + memo[:nbz]  # copy slice past end just copies to end
+                del memo[:nbz]  # del slice past end just deletes to end
+                if naz:  # signed gram, .sign returns proper sig format when .curt
+                    sig = self.sign(vid, gram) # raises MemoerError if invalid
+                    gram = gram + sig
 
             grams.append(gram)
-
             gn += 1
 
         return grams
@@ -2494,7 +2523,7 @@ class AuthMemoer(Memoer):
     """
 
 
-    def __init__(self, *, code=MemoDex.AuthMemoGram, authic=True, **kwa):
+    def __init__(self, *, code=MemoDex.GramAuthZero, authic=True, **kwa):
         """Initialization method for instance.
 
         Force code to Auth type

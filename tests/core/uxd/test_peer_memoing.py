@@ -20,9 +20,9 @@ def test_memoer_peer_basic():
         return
     alpha = peermemoing.PeerMemoer(name="alpha", temp=True, size=38)
     assert alpha.name == "alpha"
-    assert alpha.code == MemoDex.MemoGram
+    assert alpha.code == MemoDex.GramZero
     assert not alpha.curt
-    assert alpha.Sizes[alpha.code] == (2, 22, 4, 0, 0)  # hz mz nz vz az
+    assert alpha.Sizes[alpha.code] == (4, 24, 4, 0, 0)  # hz mz nz vz az
     assert alpha.size == 38
 
     assert alpha.bc == 4
@@ -43,7 +43,7 @@ def test_memoer_peer_basic():
     assert len(alpha.txms) == 2
     alpha.serviceTxMemos()
     assert not alpha.txms
-    assert len(alpha.txgs) == 4
+    assert len(alpha.txgs) == 5
     for m, d in alpha.txgs:
         assert not alpha.wiff(m)  # base64
         assert d == beta.path
@@ -71,10 +71,11 @@ def test_memoer_peer_basic():
 
     mid = list(beta.rxgs.keys())[1]
     assert beta.sources[mid] == alpha.path
-    assert beta.counts[mid] == 2
-    assert len(beta.rxgs[mid]) == 2
+    assert beta.counts[mid] == 3
+    assert len(beta.rxgs[mid]) == 3
     assert beta.rxgs[mid][0] == bytearray(b'How ya')
-    assert beta.rxgs[mid][1] == bytearray(b' doing?')
+    assert beta.rxgs[mid][1] == bytearray(b' doing')
+    assert beta.rxgs[mid][2] == bytearray(b'?')
 
     beta.serviceRxGrams()
     assert not beta.rxgs
@@ -109,13 +110,13 @@ def test_memoer_peer_basic():
 
     mid = list(alpha.rxgs.keys())[0]
     assert alpha.sources[mid] == beta.path
-    assert alpha.counts[mid] == 4
-    assert len(alpha.rxgs[mid]) == 4
+    assert alpha.counts[mid] == 5
+    assert len(alpha.rxgs[mid]) == 5
 
     mid = list(alpha.rxgs.keys())[1]
     assert alpha.sources[mid] == beta.path
-    assert alpha.counts[mid] == 3
-    assert len(alpha.rxgs[mid]) == 3
+    assert alpha.counts[mid] == 4
+    assert len(alpha.rxgs[mid]) == 4
 
     alpha.serviceRxGrams()
     assert not alpha.rxgs
@@ -149,9 +150,9 @@ def test_memoer_peer_open():
     with (peermemoing.openPM(name='alpha', size=38) as alpha,
           peermemoing.openPM(name='beta', size=38) as beta):
         assert alpha.name == "alpha"
-        assert alpha.code == MemoDex.MemoGram
+        assert alpha.code == MemoDex.GramZero
         assert not alpha.curt
-        assert alpha.Sizes[alpha.code] == (2, 22, 4, 0, 0)  # hz mz nz vz az
+        assert alpha.Sizes[alpha.code] == (4, 24, 4, 0, 0)  # hz mz nz vz az
         assert alpha.size == 38
         assert alpha.bc == 4
 
@@ -168,7 +169,7 @@ def test_memoer_peer_open():
         assert len(alpha.txms) == 2
         alpha.serviceTxMemos()
         assert not alpha.txms
-        assert len(alpha.txgs) == 4
+        assert len(alpha.txgs) == 5
         for m, d in alpha.txgs:
             assert not alpha.wiff(m)  # base64
             assert d == beta.path
@@ -196,10 +197,11 @@ def test_memoer_peer_open():
 
         mid = list(beta.rxgs.keys())[1]
         assert beta.sources[mid] == alpha.path
-        assert beta.counts[mid] == 2
-        assert len(beta.rxgs[mid]) == 2
+        assert beta.counts[mid] == 3
+        assert len(beta.rxgs[mid]) == 3
         assert beta.rxgs[mid][0] == bytearray(b'How ya')
-        assert beta.rxgs[mid][1] == bytearray(b' doing?')
+        assert beta.rxgs[mid][1] == bytearray(b' doing')
+        assert beta.rxgs[mid][2] == bytearray(b'?')
 
         beta.serviceRxGrams()
         assert not beta.rxgs
@@ -234,13 +236,13 @@ def test_memoer_peer_open():
 
         mid = list(alpha.rxgs.keys())[0]
         assert alpha.sources[mid] == beta.path
-        assert alpha.counts[mid] == 4
-        assert len(alpha.rxgs[mid]) == 4
+        assert alpha.counts[mid] == 5
+        assert len(alpha.rxgs[mid]) == 5
 
         mid = list(alpha.rxgs.keys())[1]
         assert alpha.sources[mid] == beta.path
-        assert alpha.counts[mid] == 3
-        assert len(alpha.rxgs[mid]) == 3
+        assert alpha.counts[mid] == 4
+        assert len(alpha.rxgs[mid]) == 4
 
         alpha.serviceRxGrams()
         assert not alpha.rxgs
