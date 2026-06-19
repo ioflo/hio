@@ -1290,115 +1290,6 @@ class Memoer(Tymee):
         """
         pass
 
-
-    def wiffOlder(self, gram):
-        """Determines encoding of gram bytes header when parsing grams.
-        The encoding maybe either base2 or base64.
-
-        Returns::
-            curt (bool):    True means base2 encoding
-                            False means base64 encoding
-                            Otherwise raises hioing.MemoerError
-
-        All gram head codes start with '_' in base64 text or in base2 binary.
-        Given only allowed chars are from the set of base64 then can determine
-        if header is in base64 or base2.
-
-        First sextet:  (0b is binary, 0o is octal, 0x is hexadecimal)
-
-        0o27 = 0b010111 means first sextet of '_' in base64
-        0o77 = 0b111111 means first sextet of '_' in base2
-
-        Assuming that only '_' is allowed as the first char of a valid gram head,
-        in either Base64 or Base2 encoding, a parser can unambiguously determine
-        if the gram header encoding is binary Base2 or text Base64 because
-        0o27 != 0o77.
-
-        Furthermore, it just so happens that 0o27 is a unique first sextet
-        among Base64 ascii chars. So an invalid gram header when in Base64 encoding
-        is detectable. However, there is one collision (see below) with invalid
-        gram headers in Base2 encoding. So an erroneously constructed gram might
-        not be detected merely by looking at the first sextet. Therefore
-        unreliable transports must provide some additional mechanism such as a
-        hash or signature on the gram.
-
-        All Base2 codes for Base64 chars are unique since the B2 codes are just
-        the count from 0 to 63. There is one collision, however, between Base2 and
-        Base 64 for invalid gram headers. This is because 0o27 is the
-        base2 code for ascii 'X'. This means that Base2 encodings
-        that begin with 0o27 which is the Base2 encoding of the ascii 'X', would be
-        incorrectly detected as text not binary.
-        """
-
-        sextet = gram[0] >> 2
-        if sextet == 0o27:
-            return False  # base64 text encoding
-        if sextet == 0o77:
-            return True  # base2 binary encoding
-
-        raise hioing.MemoerError(f"Unexpected {sextet=} at gram head start.")
-
-    def wiffOld(self, gram):
-        """Determines encoding of gram bytes header when parsing grams.
-        The encoding maybe either base2 or base64.
-
-        Returns::
-            curt (bool):    True means base2 encoding
-                            False means base64 encoding
-                            Otherwise raises hioing.MemoerError
-
-        All gram head codes start with '1' in base64 text or in base2 binary.
-        Given only allowed chars are from the set of base64 then can determine
-        if header is in base64 or base2.
-
-        1AAQ, 1AAR, 1AAS, 1AAT, 1AAU, 1AAV, 1AAW, 1AAX, 1AAY, 1AAZ
-
-        First sextet:  0b is binary, 0o is octal 2 octal digits or 6 bits
-                       0x is hexadecimal 1 sextet is 1.5 hex digits or octets
-
-        0o14 = 0b001100 means first sextet of '1' in base64 (0b00110001)
-        0o65 = 0b110101 means first sextet of '1' in base2  (0b110101)
-
-        Assuming that only '1' is allowed as the first char of a valid gram head,
-        in either Base64 or Base2 encoding, a parser can unambiguously determine
-        if the gram header encoding is binary Base2 or text Base64 because
-        0o14 != 0o65.
-
-        The sextet 0o14 is not a unique first sextet among Base64 ascii chars.
-        It is shared with the ascii chars '0', '1', '2', '3'. So an invalidly
-        encoded gram header when in Base64 encoding is not fully detectable
-        unless the full first octet (8bits) is examined. But an invalid gram
-        header could have any of the following sextets also encoded invalidly.
-        Thise means that in general some other mechanism is required to detect
-        and invalidly encoded gram header. Therefore some additional tamper
-        evident mechanism such as a digest or signature is required to detect
-        and invalidly encoded gram header. But all we really need wiff to do is
-        to detect if a validly encoded gram header is encoded in Base64 or Base2
-        and merely examining the first sextet is enough to unambiguously make that
-        determination.
-
-        In addition there is one collision (see below) with invalid gram headers
-        in Base2 encoding. So an erroneously constructed gram might
-        not be detected merely by looking at the first sextet.
-
-        All Base2 codes for Base64 chars are unique since the B2 codes are just
-        the count from 0 to 63. There is one collision, however, between Base2 and
-        Base 64 for the first sextet of an invalid gram header.
-        This is because 0o14 is the base2 code for ascii 'M'. This means that
-        invalid Base2 encoded gram headers that begin with 0o14 (the Base2
-        encoding of the ascii 'M') would be incorrectly detected by wiff as text
-        not binary.
-        """
-
-        sextet = gram[0] >> 2
-        if sextet == 0o14:
-            return False  # base64 text encoding
-        if sextet == 0o65:
-            return True  # base2 binary encoding
-
-        raise hioing.MemoerError(f"Unexpected {sextet=} at gram head start.")
-
-
     def wiff(self, gram):
         """Determines encoding of gram bytes header when parsing grams.
         The encoding maybe either base2 or base64.
@@ -1620,133 +1511,6 @@ class Memoer(Tymee):
             self.verify(vid, sig, sgram)  # raises MemoerVerifyError if invalid
 
         return (mid.decode(), vid.decode() if vid else None, gn, gc)
-
-
-    #def pickOld(self, gram):
-        #"""Strips header from gram bytearray leaving only gram body in gram and
-        #returns (mid, gn, gc). Raises MemoerError if unrecognized or invalid
-        #header this includes signature verification failure when signed.
-
-        #When signed the signature is computed on the domain qb64b or qb2 that
-        #the packet is transmitted in. Note the packet itself is not concatenation
-        #composable as per CESR only the header elements and sig are CESR 24 bit
-        #aligned so there is no enmass conversion of concatenated memograms.
-        #This is ok for a datagram segmentation that is decidedly not a stream.
-
-        #Returns:
-            #result (tuple): tuple of form:
-                #(mid: str, vid: str, gn: int, gc: int or None) where:
-                #mid is fully qualified memoID,
-                #vid is verifier ID used to look up signature verification key,
-                #gn is gram number,
-                #gc is gram count.
-                #When first gram (zeroth) returns (mid, vid, 0, gc).
-                #When other gram returns (mid, vid, gn, None)
-                #When code has empty vid then vid is None
-                #Otherwise raises MemoerError error.
-
-        #When valid recognized header, strips header bytes from front of gram
-        #leaving the gram body part bytearray.
-
-        #Parameters:
-            #gram (bytearray): memo gram from which to parse and strip its header.
-
-
-        #"""
-        #curt = self.wiff(gram)  # rx gram encoding True=B2 or False=B64
-        #if curt:  # base2 binary encoding in triplets
-            #if len(gram) < 2:  # assumes len(code) must be 2
-                #raise hioing.MemoerError(f"Gram length={len(gram)} to short to "
-                                         #f"hold code.")
-            #code = helping.codeB2ToB64(gram, 2)  # assumes len(code) must be 2
-            #if self.authic and code not in self.Audex:  # must be signed
-                #raise hioing.MemoerError(f"Unsigned gram {code =} when signed "
-                                         #f"required.")
-
-            #bz, nz, mz, vz, az = self.Sizes[code]  # bz nz mz vz az
-            ## encoding b2 means head part sizes smaller by 3/4
-            ## pad = (3 - ((mz) % 3)) % 3  # net pad size
-            #cms = 3 * (bz + mz) // 4  # bz + mz are aligned on 24 bit boundary
-            #mz = 3 * mz // 4
-            #nz = 3 * nz // 4
-            #vz = 3 * vz // 4
-            #az = 3 * az // 4
-
-            #oz =  bz + mz + nz + vz + az
-
-            #if len(gram) < (oz + 1):  # not big enough for non-first gram
-                #raise hioing.MemoerError(f"Not enough rx bytes for b2 gram"
-                                         #f" < {oz + 1}.")
-
-            #mid = encodeB64(gram[:cms])  # convert to b64b with prefix code
-            #vid = encodeB64(gram[cms:cms+vz])  # convert to b64b
-            #neck = gram[cms+vz:cms+vz+nz]  # bytearray to bytes short part of neck
-            #gn = int.from_bytes(neck)  # gram number convert to int
-            ##neck = encodeB64(neck)  # convert to b64b
-            ##head = mid + vid + neck   # bytes
-            #if gn == 0:  # first (zeroth) gram so long neck
-                #if len(gram) < oz + nz + 1:
-                    #raise hioing.MemoerError(f"Not enough rx bytes for b2 "
-                                             #f"gram < {oz + nz + 1}.")
-                #lneck = bytes(gram[cms+vz+nz:cms+vz+2*nz])  # bytearray to bytes
-                #gc = int.from_bytes(lneck)  # gram count convert to int
-                #lneck = encodeB64(lneck)  # convert to b64b
-                #sig = encodeB64(gram[-az if az else len(gram):])   # last ss bytes are signature
-                #del gram[-az if az else len(gram):]  # strip sig if any
-                #sgram = bytes(gram[:])  # signed part make bytes copy to sign
-                #del gram[:oz-az+nz]  # strip off fore head leaving body in gram
-                ##head += lneck
-            #else:  # non-zeroth gram so short neck
-                #gc = None
-                #sig = encodeB64(gram[-az if az else len(gram):])
-                #del gram[-az if az else len(gram):]  # strip sig if any
-                #sgram = bytes(gram[:])  # signed part make bytes copy to sign
-                #del gram[:oz-az]  # strip of fore head leaving body in gram
-
-        #else:  # base64 text encoding in quadlets
-            #if len(gram) < 2:  # assumes len(code) must be 2
-                #raise hioing.MemoerError(f"Gram length={len(gram)} to short to "
-                                         #f"hold code.")
-            #code = gram[:2].decode()  # assumes len(code) must be 2
-            #if self.authic and code not in self.Audex:  # must be signed
-                #raise hioing.MemoerError(f"Unsigned gram {code =} when signed "
-                                         #f"required.")
-            #bz, nz, mz, vz, az = self.Sizes[code]  # bz nz mz vz az
-            #oz =  bz + mz + nz + vz + az
-
-            #if len(gram) < (oz + 1):  # not big enough for non-first gram
-                #raise hioing.MemoerError(f"Not enough rx bytes for b64 gram"
-                                         #f" < {oz + 1}.")
-
-            #mid = bytes(gram[:bz+mz])  # bytearray to bytes qb64b with prefix
-            #vid = bytes(gram[bz+mz:bz+mz+vz]) #bytearry to bytes qb64b convert to qb64
-            #neck = bytes(gram[bz+mz+vz:bz+mz+vz+nz])  # qb64b short part of neck
-            #gn = helping.b64ToInt(neck)
-            ##head = mid + vid + neck  # bytes
-            #if gn == 0:  # first (zeroth) gram so long neck
-                #if len(gram) < oz + nz + 1:
-                    #raise hioing.MemoerError(f"Not enough rx bytes for b64 "
-                                             #f"gram < {oz + nz + 1}.")
-                #lneck = bytes(gram[bz+mz+vz+nz:bz+mz+vz+2*nz])  # bytearray to bytes copy
-                #gc = helping.b64ToInt(lneck)  # convert to int
-                #sig = bytes(gram[-az if az else len(gram):])  # last az bytes signature
-                #del gram[-az if az else len(gram):]  # strip sig if any
-                #sgram = bytes(gram[:]) # signed part make bytes copy to sign
-                #del gram[:oz-az+nz]  # strip of fore head leaving body in gram
-                ##head += lneck  # bytes
-            #else:  # non-zeroth gram short neck
-                #gc = None
-                #sig = bytes(gram[-az if az else len(gram):])
-                #del gram[-az if az else len(gram):]  # strip sig if any
-                #sgram = bytes(gram[:]) # signed part make bytes copy to sign
-                #del gram[:oz-az]  # strip of fore head leaving body in gram
-
-        #if sig:  # signature not empty
-            ##sgram = head + bytes(gram)  # bytearray to bytes
-            #self.verify(vid, sig, sgram)  # raises MemoerVerifyError if invalid
-
-        #return (mid.decode(), vid.decode() if vid else None, gn, gc)
-
 
 
     def receive(self, *, echoic=False) -> (bytes, str or tuple or None):
@@ -2120,7 +1884,7 @@ class Memoer(Tymee):
         while memo:
 
             if gn == 0:
-                head = zcodeb + gcnt + midb  # zcodeb + midb + gcnt
+                head = zcodeb + gcnt + midb
                 if zvz:
                     head += vidb
                 gram = head + memo[:zbz]  # copy slice past end just copies to end
@@ -2135,7 +1899,7 @@ class Memoer(Tymee):
                 else:
                     gnum = helping.intToB64b(gn, l=znz)  # gnum as b64 bytes
 
-                head = ncodeb + gnum + midb   #  ncodeb + midb + gnum
+                head = ncodeb + gnum + midb
                 if nvz:
                     head += vidb
                 gram = head + memo[:nbz]  # copy slice past end just copies to end
