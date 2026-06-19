@@ -444,7 +444,7 @@ def test_memoer_basic():
 
     code = 'bAAA'
     mid = '0AD5s502N14R8bWw8qyvRW-S'  # hard code here for test
-    gram = (code + mid + 'AAAB' + "Hello There").encode()
+    gram = (code + 'AAAB'+ mid  + "Hello There").encode()
     echo = (gram, "beta")
     peer.echos.append(echo)
     peer.serviceReceives(echoic=True)
@@ -523,7 +523,7 @@ def test_memoer_basic():
 
     code = 'bAAA'
     mid = '0AD5s502N14R8bWw8qyvRW-S'  # hard code here for test
-    head = decodeB64((code + mid + 'AAAB').encode())  # base 2
+    head = decodeB64((code + 'AAAB'+ mid ).encode())  # base 2
     gram = head + b"Hello There"
     assert peer.wiff(gram)  # base2
     echo = (gram, "beta")
@@ -601,14 +601,14 @@ def test_memoer_small_gram_size():
     code = MemoDex.GramZero # 'bAAA'
     mid = '0AD5s502N14R8bWw8qyvRW-S'  # hard code here for test
     gcnt = 'AAAC'  # 2
-    gram = (code + mid + gcnt + "Hello ").encode()
+    gram = (code + gcnt + mid  + "Hello ").encode()
     assert len(gram) == peer.size == 38
     echo = (gram, "beta")
     peer.echos.append(echo)
 
     code = MemoDex.Gram # 'bAAB'
     gnum = 'AAAB'  # 1
-    gram =  (code + mid + gnum + "There").encode()
+    gram =  (code + gnum + mid  + "There").encode()
     echo = (gram, "beta")
     peer.echos.append(echo)
     peer.serviceReceives(echoic=True)
@@ -698,7 +698,7 @@ def test_memoer_small_gram_size():
     code = MemoDex.GramZero # 'bAAA'
     mid = '0AD5s502N14R8bWw8qyvRW-S'  # hard code here for test
     gcnt = 'AAAC'  # 2
-    head = decodeB64((code + mid + gcnt).encode())  # base 2
+    head = decodeB64((code + gcnt + mid ).encode())  # base 2
     gram = head + b"See ya later a"
     assert len(gram) == peer.size == 38
     assert peer.wiff(gram)  # base2
@@ -707,7 +707,7 @@ def test_memoer_small_gram_size():
 
     code = MemoDex.Gram # 'bAAB'
     gnum = 'AAAB'  # 1
-    head = decodeB64((code + mid + gnum).encode())
+    head = decodeB64((code + gnum + mid ).encode())
     gram = head + b"lligator!"
     assert len(gram) == 33
     assert peer.wiff(gram)  # base2
@@ -983,7 +983,7 @@ def test_memoer_basic_signed():
     code = MemoDex.GramAuthZero #'bAAC'
     mid = '0AD5s502N14R8bWw8qyvRW-S'  # hard code here for test
     gcnt = 'AAAB'  # 1
-    head = (code + mid + gcnt + vid).encode()
+    head = (code + gcnt + mid + vid).encode()
     sgram = head + b"Hello There"
     assert len(sgram) == 87
     assert not peer.wiff(sgram)  # base64
@@ -1084,7 +1084,7 @@ def test_memoer_basic_signed():
     gcnt = 'AAAB'  # 1
     # test with valid signature
     vid = 'DGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'   # not default .vid
-    head = (code + mid + gcnt + vid).encode()
+    head = (code + gcnt + mid + vid).encode()
 
     assert len(head) == 76
     head = decodeB64(head)  # qb2 version of head
@@ -1329,7 +1329,7 @@ def test_memoer_authic():
     mid = '0AD5s502N14R8bWw8qyvRW-S'  # hard code here for test
     gcnt = 'AAAB'  # 1
     vid = list(keep.keys())[1]
-    head = (code + mid + gcnt + vid).encode()
+    head = (code + gcnt + mid + vid).encode()
     sgram = head + "Hello There".encode()
     qvk, qss = peer.keep[vid]
     sig = peer.sign(vid, sgram)
