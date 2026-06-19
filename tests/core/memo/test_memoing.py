@@ -4,6 +4,7 @@ tests.core.test_memoing module
 
 """
 from collections import deque
+from dataclasses import asdict
 from base64 import urlsafe_b64encode as encodeB64
 from base64 import urlsafe_b64decode as decodeB64
 
@@ -17,7 +18,7 @@ from hio.help import helping
 from hio.base import doing, tyming
 from hio.core.memo import memoing
 from hio.core.memo import (Versionage, Sizage, Keyage,
-                           MemoDex, ZeroDex, GramDex, AuthDex, AckDex,
+                           MemoDex, ZeroDex, GramDex, AuthDex, SureDex, AckDex,
                            Memoer, AuthMemoer, openMemoer, openAM,
                            MemoerDoer, AuthMemoerDoer)
 
@@ -94,6 +95,63 @@ def _setupKeep(salt=None):
 
     return keep
 
+def test_memoing_codices():
+    """Test codices"""
+    assert asdict(MemoDex) == \
+    {
+        'GramZero': 'bAAA',
+        'Gram': 'bAAB',
+        'GramAuthZero': 'bAAC',
+        'GramAuth': 'bAAD',
+        'GramSureZero': 'bAAE',
+        'GramSure': 'bAAF',
+        'GramSureAuthZero': 'bAAG',
+        'GramSureAuth': 'bAAH',
+        'Ack': 'bAAI',
+        'AckAuth': 'bAAJ'
+    }
+
+    assert asdict(ZeroDex) == \
+    {
+        'GramZero': 'bAAA',
+        'GramAuthZero': 'bAAC',
+        'GramSureZero': 'bAAE',
+        'GramSureAuthZero': 'bAAG',
+    }
+
+    assert asdict(GramDex) == \
+    {
+        'Gram': 'bAAB',
+        'GramAuth': 'bAAD',
+        'GramSure': 'bAAF',
+        'GramSureAuth': 'bAAH',
+    }
+
+    assert asdict(AuthDex) == \
+    {
+        'GramAuthZero': 'bAAC',
+        'GramAuth': 'bAAD',
+        'GramSureAuthZero': 'bAAG',
+        'GramSureAuth': 'bAAH',
+        'AckAuth': 'bAAJ',
+    }
+
+    assert asdict(SureDex) == \
+    {
+        'GramSureZero': 'bAAE',
+        'GramSure': 'bAAF',
+        'GramSureAuthZero': 'bAAG',
+        'GramSureAuth': 'bAAH',
+    }
+
+    assert asdict(AckDex) == \
+    {
+        'Ack': 'bAAI',
+        'AckAuth': 'bAAJ'
+    }
+
+
+    """Done Test"""
 
 def test_memoer_class():
     """Test class attributes of Memoer class"""
@@ -103,51 +161,51 @@ def test_memoer_class():
 
     assert Memoer.Codes == \
     {
-        'GramZero': '1AAQ',
-        'Gram': '1AAR',
-        'GramAuthZero': '1AAS',
-        'GramAuth': '1AAT' ,
-        'GramSureZero': '1AAU',
-        'GramSure': '1AAV',
-        'GramSureAuthZero': '1AAW',
-        'GramSureAuth': '1AAX',
-        'Ack': '1AAY',
-        'AckAuth': '1AAZ',
+        'GramZero': 'bAAA',
+        'Gram': 'bAAB',
+        'GramAuthZero': 'bAAC',
+        'GramAuth': 'bAAD',
+        'GramSureZero': 'bAAE',
+        'GramSure': 'bAAF',
+        'GramSureAuthZero': 'bAAG',
+        'GramSureAuth': 'bAAH',
+        'Ack': 'bAAI',
+        'AckAuth': 'bAAJ'
     }
 
     # Codes table with sizes of code (hard) and full primitive material
     assert Memoer.Sizes == \
     {
-        '1AAQ': Sizage(hz=4, mz=24, nz=4, vz=0, az=0),
-        '1AAR': Sizage(hz=4, mz=24, nz=4, vz=0, az=0),
-        '1AAS': Sizage(hz=4, mz=24, nz=4, vz=44,az=88),
-        '1AAT': Sizage(hz=4, mz=24, nz=4, vz=0, az=88),
-        '1AAU': Sizage(hz=4, mz=24, nz=4, vz=0,az=0),
-        '1AAV': Sizage(hz=4, mz=24, nz=4, vz=0, az=0),
-        '1AAW': Sizage(hz=4, mz=24, nz=4, vz=44, az=88),
-        '1AAX': Sizage(hz=4, mz=24, nz=4, vz=0, az=88),
-        '1AAY': Sizage(hz=4, mz=24, nz=4, vz=0, az=0),
-        '1AAZ': Sizage(hz=4, mz=24, nz=4, vz=44, az=88),
+        'bAAA': Sizage(bz=4, nz=4, mz=24, vz=0, az=0),
+        'bAAB': Sizage(bz=4, nz=4, mz=24, vz=0, az=0),
+        'bAAC': Sizage(bz=4, nz=4, mz=24, vz=44, az=88),
+        'bAAD': Sizage(bz=4, nz=4, mz=24, vz=0, az=88),
+        'bAAE': Sizage(bz=4, nz=4, mz=24, vz=0, az=0),
+        'bAAF': Sizage(bz=4, nz=4, mz=24, vz=0, az=0),
+        'bAAG': Sizage(bz=4, nz=4, mz=24, vz=44, az=88),
+        'bAAH': Sizage(bz=4, nz=4, mz=24, vz=0, az=88),
+        'bAAI': Sizage(bz=4, nz=4, mz=24, vz=0, az=0),
+        'bAAJ': Sizage(bz=4, nz=4, mz=24, vz=44, az=88)
     }
     #  verify Sizes and Codes
     for code, val in Memoer.Sizes.items():
-        hz = val.hz
+        bz = val.bz
         mz = val.mz
         nz = val.nz
         vz = val.vz
         az = val.az
 
-        oz = hz + mz + nz + vz + az
+        oz = bz + mz + nz + vz + az
         assert oz and not oz % 4   # overhead size nonzero and on 24 bit boundary
 
-        assert len(code) == hz
-        assert hz == 2 or hz == 4
-        assert code[0] == '_' or code[0] == '1'
+        assert len(code) == bz
+        assert bz == 4
+        assert code[0] == 'b'
         assert code[1] in 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234567890-_'
         assert oz > 0
         assert mz  # mid must not be empty
         pz = (3 - ((mz) % 3)) % 3  # net pad size for mid
-        assert pz == (hz % 4)  #  combined code + mid size must lie on 24 bit boundary
+        assert pz == (bz % 4)  #  combined code + mid size must lie on 24 bit boundary
         assert not vz % 4   # vid size must be on 24 bit boundary
         assert not az % 4   # sig size must be on 24 bit boundary
         assert nz and not nz % 4   # neck (num) size must be on 24 bit boundary
@@ -157,16 +215,16 @@ def test_memoer_class():
 
     assert Memoer.Names == \
     {
-        '1AAQ': 'GramZero',
-        '1AAR': 'Gram',
-        '1AAS': 'GramAuthZero',
-        '1AAT': 'GramAuth',
-        '1AAU': 'GramSureZero',
-        '1AAV': 'GramSure',
-        '1AAW': 'GramSureAuthZero',
-        '1AAX': 'GramSureAuth',
-        '1AAY': 'Ack',
-        '1AAZ': 'AckAuth',
+        'bAAA': 'GramZero',
+        'bAAB': 'Gram',
+        'bAAC': 'GramAuthZero',
+        'bAAD': 'GramAuth',
+        'bAAE': 'GramSureZero',
+        'bAAF': 'GramSure',
+        'bAAG': 'GramSureAuthZero',
+        'bAAH': 'GramSureAuth',
+        'bAAI': 'Ack',
+        'bAAJ': 'AckAuth'
     }
 
     assert Memoer.Zedex == ZeroDex
@@ -204,7 +262,7 @@ def test_memoer_class():
     raw, code = Memoer._decodeVID(vid)
     assert raw == verkey
     assert code == 'B'  # nontrans AID
-    _, _, _, vz, _ = Memoer.Sizes[MemoDex.GramAuthZero]  # hz mz nz vz az
+    _, _, _, vz, _ = Memoer.Sizes[MemoDex.GramAuthZero]  # bz nz mz vz az
     assert len(vid) == 44 == vz
 
     qvk = Memoer._encodeQVK(raw=verkey)
@@ -229,7 +287,7 @@ def test_memoer_class():
     raw, code = Memoer._decodeSGN(sgntr)
     assert raw == signature
     assert code == '0B'
-    _, _, _, _, az = Memoer.Sizes[MemoDex.GramAuthZero]  # hz mz nz vz az
+    _, _, _, _, az = Memoer.Sizes[MemoDex.GramAuthZero]  # bz nz mz vz az
     assert len(sgntr) == 88 == az
 
     """Done Test"""
@@ -295,9 +353,9 @@ def test_memoer_sign_verify():
     assert peer.opened == False
     assert peer.bc is None
     assert peer.bs == Memoer.BufSize == 65535
-    assert peer.code == MemoDex.GramAuthZero == '1AAS'
+    assert peer.code == MemoDex.GramAuthZero == 'bAAC'
     assert not peer.curt
-    assert peer.Sizes[peer.code] == (4, 24, 4, 44, 88)  # hz mz nz vz az
+    assert peer.Sizes[peer.code] == (4, 4, 24, 44, 88)  # bz nz mz vz az
     assert peer.size == peer.MaxGramSize
     assert not peer.authic
     assert not peer.echoic
@@ -311,7 +369,7 @@ def test_memoer_sign_verify():
     vid = 'DGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'   # not default .vid
     assert vid in peer.keep
     head = code + mid + gcnt + vid
-    assert head == '1AAS0AD5s502N14R8bWw8qyvRW-SAAABDGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'
+    assert head == 'bAAC0AD5s502N14R8bWw8qyvRW-SAAABDGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'
 
     memo = "Hello There"  # body
 
@@ -322,9 +380,9 @@ def test_memoer_sign_verify():
     assert peer.verify(vid, sgntr, sgram)
 
     gram = head + memo + sgntr.decode()
-    assert gram == ('1AAS0AD5s502N14R8bWw8qyvRW-SAAABDGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'
+    assert gram == ('bAAC0AD5s502N14R8bWw8qyvRW-SAAABDGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'
                     'Hello There'
-                    '0BBvO2SHplT7vjLMvcKU5s11d4lt_KVg0zbzZDiaRZ9jQhEZhPxqSo71DQSnk5YTpZphbooVW14sea2UL2DT_aMB')
+                    '0BBhEnsvhXwiY9pPKnM48NmLiw-NTXD-WbfOKeI0bcEOWHP3rw5jp0cKrvfg4-3bGWBCv8poE3oFR4JHOGDs2ycF')
 
     # test invalid  bad gram
     bgram = (head + "Hello Where").encode()
@@ -343,9 +401,9 @@ def test_memoer_basic():
     assert peer.opened == False
     assert peer.bc is None
     assert peer.bs == Memoer.BufSize == 65535
-    assert peer.code == MemoDex.GramZero == '1AAQ'
+    assert peer.code == MemoDex.GramZero == 'bAAA'
     assert not peer.curt
-    assert peer.Sizes[peer.code] == (4, 24, 4, 0, 0)  # hz mz nz vz az
+    assert peer.Sizes[peer.code] == (4, 4, 24, 0, 0)  # bz nz mz vz az
     assert peer.size == peer.MaxGramSize
     assert not peer.authic
     assert not peer.echoic
@@ -384,9 +442,9 @@ def test_memoer_basic():
     assert not peer.sources
     assert not peer.rxms
 
-    code = '1AAQ'
+    code = 'bAAA'
     mid = '0AD5s502N14R8bWw8qyvRW-S'  # hard code here for test
-    gram = (code + mid + 'AAAB' + "Hello There").encode()
+    gram = (code + 'AAAB'+ mid  + "Hello There").encode()
     echo = (gram, "beta")
     peer.echos.append(echo)
     peer.serviceReceives(echoic=True)
@@ -463,9 +521,9 @@ def test_memoer_basic():
     assert not peer.sources
     assert not peer.rxms
 
-    code = '1AAQ'
+    code = 'bAAA'
     mid = '0AD5s502N14R8bWw8qyvRW-S'  # hard code here for test
-    head = decodeB64((code + mid + 'AAAB').encode())  # base 2
+    head = decodeB64((code + 'AAAB'+ mid ).encode())  # base 2
     gram = head + b"Hello There"
     assert peer.wiff(gram)  # base2
     echo = (gram, "beta")
@@ -500,9 +558,9 @@ def test_memoer_small_gram_size():
     assert peer.opened == False
     assert peer.bc is None
     assert peer.bs == memoing.Memoer.BufSize == 65535
-    assert peer.code == memoing.MemoDex.GramZero == '1AAQ'
+    assert peer.code == memoing.MemoDex.GramZero == 'bAAA'
     assert not peer.curt
-    assert peer.Sizes[peer.code] == (4, 24, 4, 0, 0)  # hz mz nz vz az
+    assert peer.Sizes[peer.code] == (4, 4, 24, 0, 0)  # bz nz mz vz az
     assert peer.size == 33  # overhead + 1 is minimum size
     assert not peer.authic
     assert not peer.echoic
@@ -540,17 +598,17 @@ def test_memoer_small_gram_size():
     assert not peer.rxms
 
 
-    code = '1AAQ'
+    code = MemoDex.GramZero # 'bAAA'
     mid = '0AD5s502N14R8bWw8qyvRW-S'  # hard code here for test
     gcnt = 'AAAC'  # 2
-    gram = (code + mid + gcnt + "Hello ").encode()
+    gram = (code + gcnt + mid  + "Hello ").encode()
     assert len(gram) == peer.size == 38
     echo = (gram, "beta")
     peer.echos.append(echo)
 
-    code = '1AAR'
+    code = MemoDex.Gram # 'bAAB'
     gnum = 'AAAB'  # 1
-    gram =  (code + mid + gnum + "There").encode()
+    gram =  (code + gnum + mid  + "There").encode()
     echo = (gram, "beta")
     peer.echos.append(echo)
     peer.serviceReceives(echoic=True)
@@ -637,19 +695,19 @@ def test_memoer_small_gram_size():
     assert not peer.rxms
     assert not peer.echos
 
-    code = '1AAQ'
+    code = MemoDex.GramZero # 'bAAA'
     mid = '0AD5s502N14R8bWw8qyvRW-S'  # hard code here for test
     gcnt = 'AAAC'  # 2
-    head = decodeB64((code + mid + gcnt).encode())  # base 2
+    head = decodeB64((code + gcnt + mid ).encode())  # base 2
     gram = head + b"See ya later a"
     assert len(gram) == peer.size == 38
     assert peer.wiff(gram)  # base2
     echo = (gram, "beta")
     peer.echos.append(echo)
 
-    code = '1AAR'
+    code = MemoDex.Gram # 'bAAB'
     gnum = 'AAAB'  # 1
-    head = decodeB64((code + mid + gnum).encode())
+    head = decodeB64((code + gnum + mid ).encode())
     gram = head + b"lligator!"
     assert len(gram) == 33
     assert peer.wiff(gram)  # base2
@@ -690,7 +748,7 @@ def test_memoer_multiple():
     assert peer.opened == False
     assert peer.bc is None
     assert peer.bs == Memoer.BufSize == 65535
-    assert peer.code == MemoDex.GramZero == '1AAQ'
+    assert peer.code == MemoDex.GramZero == 'bAAA'
     assert not peer.curt
     assert not peer.authic
     assert not peer.echoic
@@ -770,7 +828,7 @@ def test_memoer_multiple_echoic_service_tx_rx():
     assert peer.opened == False
     assert peer.bc is None
     assert peer.bs == memoing.Memoer.BufSize == 65535
-    assert peer.code == memoing.MemoDex.GramZero == '1AAQ'
+    assert peer.code == memoing.MemoDex.GramZero == 'bAAA'
     assert not peer.curt
     assert not peer.authic
     assert peer.echoic
@@ -824,7 +882,7 @@ def test_memoer_multiple_echoic_service_all():
     assert peer.opened == False
     assert peer.bc is None
     assert peer.bs == memoing.Memoer.BufSize == 65535
-    assert peer.code == memoing.MemoDex.GramZero == '1AAQ'
+    assert peer.code == memoing.MemoDex.GramZero == 'bAAA'
     assert not peer.curt
     assert not peer.authic
     assert peer.echoic
@@ -880,9 +938,9 @@ def test_memoer_basic_signed():
     assert peer.opened == False
     assert peer.bc is None
     assert peer.bs == memoing.Memoer.BufSize == 65535
-    assert peer.code == memoing.MemoDex.GramAuthZero == '1AAS'
+    assert peer.code == memoing.MemoDex.GramAuthZero == 'bAAC'
     assert not peer.curt
-    assert peer.Sizes[peer.code] == (4, 24, 4, 44, 88)  # hz mz nz vz az
+    assert peer.Sizes[peer.code] == (4, 4, 24, 44, 88)  # bz nz mz vz az
     assert peer.size == peer.MaxGramSize
     assert not peer.authic
     assert not peer.echoic
@@ -922,10 +980,10 @@ def test_memoer_basic_signed():
     assert not peer.rxms
 
     # Test with signed header
-    code = '1AAS'
+    code = MemoDex.GramAuthZero #'bAAC'
     mid = '0AD5s502N14R8bWw8qyvRW-S'  # hard code here for test
     gcnt = 'AAAB'  # 1
-    head = (code + mid + gcnt + vid).encode()
+    head = (code + gcnt + mid + vid).encode()
     sgram = head + b"Hello There"
     assert len(sgram) == 87
     assert not peer.wiff(sgram)  # base64
@@ -1021,12 +1079,12 @@ def test_memoer_basic_signed():
     assert not peer.rxms
 
     # test with signed header
-    code = '1AAS'
+    code = MemoDex.GramAuthZero  # `bAAC`'1AAS'
     mid = '0AD5s502N14R8bWw8qyvRW-S'  # hard code here for test
     gcnt = 'AAAB'  # 1
     # test with valid signature
     vid = 'DGORBFFJe5Zj4T1FQHpRFSe41hQuq8HULAMWyc9C07ni'   # not default .vid
-    head = (code + mid + gcnt + vid).encode()
+    head = (code + gcnt + mid + vid).encode()
 
     assert len(head) == 76
     head = decodeB64(head)  # qb2 version of head
@@ -1086,7 +1144,7 @@ def test_memoer_multiple_signed():
     assert peer.opened == False
     assert peer.bc is None
     assert peer.bs == memoing.Memoer.BufSize == 65535
-    assert peer.code == memoing.MemoDex.GramAuthZero == '1AAS'
+    assert peer.code == memoing.MemoDex.GramAuthZero == 'bAAC'   # '1AAS'
     assert not peer.curt
     assert not peer.authic  # force rx must be signed
     assert not peer.echoic
@@ -1231,9 +1289,9 @@ def test_memoer_authic():
     assert peer.opened == False
     assert peer.bc is None
     assert peer.bs == memoing.Memoer.BufSize == 65535
-    assert peer.code == memoing.MemoDex.GramZero == '1AAQ'
+    assert peer.code == memoing.MemoDex.GramZero == 'bAAA'
     assert not peer.curt
-    assert peer.Sizes[peer.code] == (4, 24, 4, 0, 0)  # hz mz nz vz az
+    assert peer.Sizes[peer.code] == (4, 4, 24, 0, 0)  # bz nz mz vz az
     assert peer.size == peer.MaxGramSize
     assert peer.authic
     assert not peer.echoic
@@ -1249,7 +1307,7 @@ def test_memoer_authic():
     assert not peer.rxms
 
     # send non-signed memo to authic memoer
-    code = '1AAQ'
+    code = MemoDex.GramZero # 'bAAA'
     mid = '0AD5s502N14R8bWw8qyvRW-S'  # hard code here for test
     gcnt = 'AAAB'  # 1
     head = (code + mid + gcnt).encode()
@@ -1267,11 +1325,11 @@ def test_memoer_authic():
     assert not peer.sources
     assert not peer.rxms
 
-    code = '1AAS'  # signed gram
+    code = MemoDex.GramAuthZero # 'bAAC'   1AAS'  # signed gram
     mid = '0AD5s502N14R8bWw8qyvRW-S'  # hard code here for test
     gcnt = 'AAAB'  # 1
     vid = list(keep.keys())[1]
-    head = (code + mid + gcnt + vid).encode()
+    head = (code + gcnt + mid + vid).encode()
     sgram = head + "Hello There".encode()
     qvk, qss = peer.keep[vid]
     sig = peer.sign(vid, sgram)
@@ -1326,7 +1384,7 @@ def test_memoer_multiple_signed_verific_echoic_service_all():
     assert peer.opened == False
     assert peer.bc is None
     assert peer.bs == memoing.Memoer.BufSize == 65535
-    assert peer.code == memoing.MemoDex.GramAuthZero == '1AAS'
+    assert peer.code == memoing.MemoDex.GramAuthZero == 'bAAC' # '1AAS'
     assert not peer.curt
     assert peer.authic
     assert peer.echoic
@@ -1474,15 +1532,15 @@ def test_auth_memoer_basic():
     assert peer.opened == False
     assert peer.bc is None
     assert peer.bs == memoing.Memoer.BufSize == 65535
-    assert peer.code == memoing.MemoDex.GramAuthZero == '1AAS'
+    assert peer.code == memoing.MemoDex.GramAuthZero == 'bAAC' #'1AAS'
     assert not peer.curt
     assert peer.authic
     assert peer.echoic
     assert peer.keep == keep
     assert peer.vid == vid
 
-    assert peer.Sizes[peer.code] == Sizage(hz=4, mz=24, nz=4, vz=44, az=88)
-    assert peer.Sizes[peer.code] == (4, 24, 4, 44, 88)  # hz mz nz vz az
+    assert peer.Sizes[peer.code] == Sizage(bz=4, nz=4, vz=44, mz=24, az=88)
+    assert peer.Sizes[peer.code] == (4, 4, 24, 44, 88)  # bz nz mz vz az
     assert peer.size == peer.MaxGramSize
     assert peer.tymeout == 0.0
     assert peer.tymers == {}
@@ -1602,6 +1660,7 @@ def test_auth_memoer_basic():
     assert peer.opened == False
     """ End Test """
 
+
 def test_open_sm():
     """Test contextmanager decorator openTM for openTymeeMemoer
     """
@@ -1647,7 +1706,7 @@ def test_auth_memoer_multiple_echoic_service_all():
         assert peer.opened == True
         assert peer.bc is None
         assert peer.bs == Memoer.BufSize == 65535
-        assert peer.code == MemoDex.GramAuthZero == '1AAS'
+        assert peer.code == MemoDex.GramAuthZero == 'bAAC'  #'1AAS'
         assert not peer.curt
         assert peer.authic
         assert peer.echoic
@@ -1771,6 +1830,7 @@ def test_auth_memoer_doer():
 
 
 if __name__ == "__main__":
+    test_memoing_codices()
     test_memoer_class()
     test_setup_keep()
     test_memoer_sign_verify()
