@@ -269,20 +269,20 @@ Sizage = namedtuple("Sizage", "bz nz mz vz az")
 
 @dataclass(frozen=True)
 class MemoGramCodex:
-    """MemoGramCodex is codex of all varieties of MemoGram Hard Codes.
+    """MemoGramCodex is codex of all varieties of MemoGram Both Codes.
     Only provide defined codes.
     Undefined are left out so that inclusion(exclusion) via 'in' operator works.
     """
-    GramZero:     str = '1AAQ'  # zeroth gram code
-    Gram:    str = '1AAR'  # non-zeroth gram code
-    GramAuthZero:     str = '1AAS'  # zeroth authenticated gram code (signed)
-    GramAuth:    str = '1AAT'  # non-zeroth authenticated gram code (signed)
-    GramSureZero:     str = '1AAU'  # zeroth reliable gram code (acked)
-    GramSure:    str = '1AAV'  # non-zeroth reliable gram code (acked)
-    GramSureAuthZero:     str = '1AAW'  # zeroth reliable authenticated gram code (acked & signed)
-    GramSureAuth:    str = '1AAX'  # non-zeroth reliable authenticated gram code (acked & signed)
-    Ack:     str = '1AAY'  # ack code to enable reliable grams
-    AckAuth:    str = '1AAZ'  # authenticated ack code to enable reliable grams (signed)
+    GramZero:     str = 'bAAA'  # zeroth gram code
+    Gram:    str = 'bAAB'  # non-zeroth gram code
+    GramAuthZero:     str = 'bAAC'  # zeroth authenticated gram code (signed)
+    GramAuth:    str = 'bAAD'  # non-zeroth authenticated gram code (signed)
+    GramSureZero:     str = 'bAAE'  # zeroth reliable gram code (acked)
+    GramSure:    str = 'bAAF'  # non-zeroth reliable gram code (acked)
+    GramSureAuthZero:     str = 'bAAG'  # zeroth reliable authenticated gram code (acked & signed)
+    GramSureAuth:    str = 'bAAH'  # non-zeroth reliable authenticated gram code (acked & signed)
+    Ack:     str = 'bAAI'  # ack code to enable reliable grams
+    AckAuth:    str = 'bAAJ'  # authenticated ack code to enable reliable grams (signed)
 
     def __iter__(self):
         return iter(astuple(self))
@@ -292,14 +292,14 @@ MemoDex = MemoGramCodex()  # Make instance
 
 @dataclass(frozen=True)
 class ZeroGramCodex:
-    """GramCodex is codex of all Zero Gram Hard Codes.
+    """GramCodex is codex of all Zero Gram Both Codes.
     Only provide defined codes.
     Undefined are left out so that inclusion(exclusion) via 'in' operator works.
     """
-    GramZero:     str = '1AAQ'  # zeroth gram code
-    GramAuthZero:     str = '1AAS'  # zeroth authenticated gram code (signed)
-    GramSureZero:     str = '1AAU'  # zeroth reliable gram code (acked)
-    GramSureAuthZero:     str = '1AAW'  # zeroth reliable authenticated gram code (acked & signed)
+    GramZero:     str = 'bAAA'  # zeroth gram code
+    GramAuthZero:     str = 'bAAC'  # zeroth authenticated gram code (signed)
+    GramSureZero:     str = 'bAAE'  # zeroth reliable gram code (acked)
+    GramSureAuthZero:     str = 'bAAG'  # zeroth reliable authenticated gram code (acked & signed)
 
     def __iter__(self):
         return iter(astuple(self))
@@ -308,14 +308,14 @@ ZeroDex = ZeroGramCodex()  # Make instance
 
 @dataclass(frozen=True)
 class GramCodex:
-    """GramCodex is codex of all Non-Zero Gram Hard Codes.
+    """GramCodex is codex of all Non-Zero Gram Both Codes.
     Only provide defined codes.
     Undefined are left out so that inclusion(exclusion) via 'in' operator works.
     """
-    Gram:    str = '1AAR'  # non-zeroth gram code
-    GramAuth:    str = '1AAT'  # non-zeroth authenticated gram code (signed)
-    GramSure:    str = '1AAV'  # non-zeroth reliable gram code (acked)
-    GramSureAuth:    str = '1AAX'  # non-zeroth reliable authenticated gram code (acked & signed)
+    Gram:    str = 'bAAB'  # non-zeroth gram code
+    GramAuth:    str = 'bAAD'  # non-zeroth authenticated gram code (signed)
+    GramSure:    str = 'bAAF'  # non-zeroth reliable gram code (acked)
+    GramSureAuth:    str = 'bAAH'  # non-zeroth reliable authenticated gram code (acked & signed)
 
     def __iter__(self):
         return iter(astuple(self))
@@ -325,30 +325,46 @@ GramDex = GramCodex()  # Make instance
 
 @dataclass(frozen=True)
 class AuthGramCodex:
-    """AuthGramCodex is codex of all AuthGram (authenticated signed) Hard Codes.
+    """AuthGramCodex is codex of all AuthGram (authenticated signed) Both Codes.
     Only provide defined codes.
     Undefined are left out so that inclusion(exclusion) via 'in' operator works.
     """
-    GramAuthZero:     str = '1AAS'  # zeroth authenticated gram code (signed)
-    GramAuth:    str = '1AAT'  # non-zeroth authenticated gram code (signed)
-    GramSureAuthZero:     str = '1AAW'  # zeroth reliable authenticated gram code (acked & signed)
-    GramSureAuth:    str = '1AAX'  # non-zeroth reliable authenticated gram code (acked & signed)
-    AckAuth:    str = '1AAZ'  # authenticated ack code to enable reliable grams (signed)
+    GramAuthZero:     str = 'bAAC'  # zeroth authenticated gram code (signed)
+    GramAuth:    str = 'bAAD'  # non-zeroth authenticated gram code (signed)
+    GramSureAuthZero:     str = 'bAAG'  # zeroth reliable authenticated gram code (acked & signed)
+    GramSureAuth:    str = 'bAAH'  # non-zeroth reliable authenticated gram code (acked & signed)
+    AckAuth:    str = 'bAAJ'  # authenticated ack code to enable reliable grams (signed)
 
     def __iter__(self):
         return iter(astuple(self))
 
 AuthDex = AuthGramCodex()  # Make instance
 
-
 @dataclass(frozen=True)
-class AckCodex:
-    """AckCodex is codex of all Ack Hard Codes.
+class SureGramCodex:
+    """SureGramCodex is codex of all SureGram (reliable) Both Codes.
     Only provide defined codes.
     Undefined are left out so that inclusion(exclusion) via 'in' operator works.
     """
-    Ack:     str = '1AAY'  # ack code to enable reliable grams
-    AckAuth:    str = '1AAZ'  # authenticated ack code to enable reliable grams (signed)
+    GramSureZero:     str = 'bAAE'  # zeroth reliable gram code (acked)
+    GramSure:    str = 'bAAF'  # non-zeroth reliable gram code (acked)
+    GramSureAuthZero:     str = 'bAAG'  # zeroth reliable authenticated gram code (acked & signed)
+    GramSureAuth:    str = 'bAAH'  # non-zeroth reliable authenticated gram code (acked & signed)
+
+    def __iter__(self):
+        return iter(astuple(self))
+
+SureDex = SureGramCodex()  # Make instance
+
+
+@dataclass(frozen=True)
+class AckCodex:
+    """AckCodex is codex of all Ack Both Codes.
+    Only provide defined codes.
+    Undefined are left out so that inclusion(exclusion) via 'in' operator works.
+    """
+    Ack:     str = 'bAAI'  # ack code to enable reliable grams
+    AckAuth:    str = 'bAAJ'  # authenticated ack code to enable reliable grams (signed)
 
     def __iter__(self):
         return iter(astuple(self))
@@ -565,16 +581,16 @@ class Memoer(Tymee):
 
     # dict of gram header part sizes keyed by gram codes: bz nz mz vz az
     Sizes = {
-                '1AAQ': Sizage(bz=4, nz=4, mz=24, vz=0, az=0),
-                '1AAR': Sizage(bz=4, nz=4, mz=24, vz=0, az=0),
-                '1AAS': Sizage(bz=4, nz=4, mz=24,vz=44, az=88),
-                '1AAT': Sizage(bz=4, nz=4, mz=24, vz=0, az=88),
-                '1AAU': Sizage(bz=4, nz=4, mz=24, vz=0, az=0),
-                '1AAV': Sizage(bz=4, nz=4, mz=24, vz=0, az=0),
-                '1AAW': Sizage(bz=4, nz=4, mz=24, vz=44, az=88),
-                '1AAX': Sizage(bz=4, nz=4, mz=24, vz=0, az=88),
-                '1AAY': Sizage(bz=4, nz=4, mz=24, vz=0, az=0),
-                '1AAZ': Sizage(bz=4, nz=4, mz=24, vz=44, az=88),
+                'bAAA': Sizage(bz=4, nz=4, mz=24, vz=0, az=0),
+                'bAAB': Sizage(bz=4, nz=4, mz=24, vz=0, az=0),
+                'bAAC': Sizage(bz=4, nz=4, mz=24,vz=44, az=88),
+                'bAAD': Sizage(bz=4, nz=4, mz=24, vz=0, az=88),
+                'bAAE': Sizage(bz=4, nz=4, mz=24, vz=0, az=0),
+                'bAAF': Sizage(bz=4, nz=4, mz=24, vz=0, az=0),
+                'bAAG': Sizage(bz=4, nz=4, mz=24, vz=44, az=88),
+                'bAAH': Sizage(bz=4, nz=4, mz=24, vz=0, az=88),
+                'bAAI': Sizage(bz=4, nz=4, mz=24, vz=0, az=0),
+                'bAAJ': Sizage(bz=4, nz=4, mz=24, vz=44, az=88),
              }
 
     Pairs = dict()  # pair the zeroth code with the non-zeroth code of same type
@@ -1275,7 +1291,7 @@ class Memoer(Tymee):
         pass
 
 
-    def wiffOld(self, gram):
+    def wiffOlder(self, gram):
         """Determines encoding of gram bytes header when parsing grams.
         The encoding maybe either base2 or base64.
 
@@ -1322,7 +1338,7 @@ class Memoer(Tymee):
 
         raise hioing.MemoerError(f"Unexpected {sextet=} at gram head start.")
 
-    def wiff(self, gram):
+    def wiffOld(self, gram):
         """Determines encoding of gram bytes header when parsing grams.
         The encoding maybe either base2 or base64.
 
@@ -1378,6 +1394,49 @@ class Memoer(Tymee):
         if sextet == 0o14:
             return False  # base64 text encoding
         if sextet == 0o65:
+            return True  # base2 binary encoding
+
+        raise hioing.MemoerError(f"Unexpected {sextet=} at gram head start.")
+
+
+    def wiff(self, gram):
+        """Determines encoding of gram bytes header when parsing grams.
+        The encoding maybe either base2 or base64.
+
+        Returns::
+            curt (bool):    True means base2 encoding
+                            False means base64 encoding
+                            Otherwise raises hioing.MemoerError
+
+        All gram head codes start with 'b' in base64 text or the equvalent in
+        base2 binary.
+        Given only allowed chars are from the set of base64 then can determine
+        if header is in base64 or base2.
+
+        bAAA, bAAB, bAAC, bAAD, bAAE, bAAF, bAAG, bAAH, bAAI, bAAJ
+        First sextet:  0b is binary, 0o is octal 2 octal digits or 6 bits
+                       0x is hexadecimal 1 sextet is 1.5 hex digits or octets
+
+        0o30 = 0b011000  means first sextet of 'b' in base64 (0b01100010)
+        0o33 = 0b011011 means first sextet of 'b' in base2  (0b011011)
+
+        Assuming that only 'b' is allowed as the first char of a valid gram head,
+        in either Base64 or Base2 encoding, a parser can unambiguously determine
+        if the gram header encoding is binary Base2 or text Base64 because
+        0o14 != 0o65.
+
+        The sextet 0o30 is not a unique first sextet among Base64 ascii chars.
+        The sextet 0o33 is not a unique first sextet among Base2 encoded ascii chars.
+
+        This means that only if 'b' is not guaranteed to be the first char in
+        either base64 or base2 then the wiff could be erroneous.
+
+        """
+
+        sextet = gram[0] >> 2
+        if sextet == 0o30:
+            return False  # base64 text encoding
+        if sextet == 0o33:
             return True  # base2 binary encoding
 
         raise hioing.MemoerError(f"Unexpected {sextet=} at gram head start.")
