@@ -118,36 +118,36 @@ def test_memoer_class():
     # Codes table with sizes of code (hard) and full primitive material
     assert Memoer.Sizes == \
     {
-        '1AAQ': Sizage(hz=4, nz=4, mz=24, vz=0, az=0),
-        '1AAR': Sizage(hz=4, nz=4, mz=24, vz=0, az=0),
-        '1AAS': Sizage(hz=4, nz=4, mz=24, vz=44, az=88),
-        '1AAT': Sizage(hz=4, nz=4, mz=24, vz=0, az=88),
-        '1AAU': Sizage(hz=4, nz=4, mz=24, vz=0, az=0),
-        '1AAV': Sizage(hz=4, nz=4, mz=24, vz=0, az=0),
-        '1AAW': Sizage(hz=4, nz=4, mz=24, vz=44, az=88),
-        '1AAX': Sizage(hz=4, nz=4, mz=24, vz=0, az=88),
-        '1AAY': Sizage(hz=4, nz=4, mz=24, vz=0, az=0),
-        '1AAZ': Sizage(hz=4, nz=4, mz=24, vz=44, az=88),
+        '1AAQ': Sizage(bz=4, nz=4, mz=24, vz=0, az=0),
+        '1AAR': Sizage(bz=4, nz=4, mz=24, vz=0, az=0),
+        '1AAS': Sizage(bz=4, nz=4, mz=24, vz=44, az=88),
+        '1AAT': Sizage(bz=4, nz=4, mz=24, vz=0, az=88),
+        '1AAU': Sizage(bz=4, nz=4, mz=24, vz=0, az=0),
+        '1AAV': Sizage(bz=4, nz=4, mz=24, vz=0, az=0),
+        '1AAW': Sizage(bz=4, nz=4, mz=24, vz=44, az=88),
+        '1AAX': Sizage(bz=4, nz=4, mz=24, vz=0, az=88),
+        '1AAY': Sizage(bz=4, nz=4, mz=24, vz=0, az=0),
+        '1AAZ': Sizage(bz=4, nz=4, mz=24, vz=44, az=88),
     }
     #  verify Sizes and Codes
     for code, val in Memoer.Sizes.items():
-        hz = val.hz
+        bz = val.bz
         mz = val.mz
         nz = val.nz
         vz = val.vz
         az = val.az
 
-        oz = hz + mz + nz + vz + az
+        oz = bz + mz + nz + vz + az
         assert oz and not oz % 4   # overhead size nonzero and on 24 bit boundary
 
-        assert len(code) == hz
-        assert hz == 2 or hz == 4
-        assert code[0] == '_' or code[0] == '1'
+        assert len(code) == bz
+        assert bz == 4
+        assert code[0] == '1'
         assert code[1] in 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234567890-_'
         assert oz > 0
         assert mz  # mid must not be empty
         pz = (3 - ((mz) % 3)) % 3  # net pad size for mid
-        assert pz == (hz % 4)  #  combined code + mid size must lie on 24 bit boundary
+        assert pz == (bz % 4)  #  combined code + mid size must lie on 24 bit boundary
         assert not vz % 4   # vid size must be on 24 bit boundary
         assert not az % 4   # sig size must be on 24 bit boundary
         assert nz and not nz % 4   # neck (num) size must be on 24 bit boundary
@@ -204,7 +204,7 @@ def test_memoer_class():
     raw, code = Memoer._decodeVID(vid)
     assert raw == verkey
     assert code == 'B'  # nontrans AID
-    _, _, _, vz, _ = Memoer.Sizes[MemoDex.GramAuthZero]  # hz nz mz vz az
+    _, _, _, vz, _ = Memoer.Sizes[MemoDex.GramAuthZero]  # bz nz mz vz az
     assert len(vid) == 44 == vz
 
     qvk = Memoer._encodeQVK(raw=verkey)
@@ -229,7 +229,7 @@ def test_memoer_class():
     raw, code = Memoer._decodeSGN(sgntr)
     assert raw == signature
     assert code == '0B'
-    _, _, _, _, az = Memoer.Sizes[MemoDex.GramAuthZero]  # hz nz mz vz az
+    _, _, _, _, az = Memoer.Sizes[MemoDex.GramAuthZero]  # bz nz mz vz az
     assert len(sgntr) == 88 == az
 
     """Done Test"""
@@ -297,7 +297,7 @@ def test_memoer_sign_verify():
     assert peer.bs == Memoer.BufSize == 65535
     assert peer.code == MemoDex.GramAuthZero == '1AAS'
     assert not peer.curt
-    assert peer.Sizes[peer.code] == (4, 4, 24, 44, 88)  # hz nz mz vz az
+    assert peer.Sizes[peer.code] == (4, 4, 24, 44, 88)  # bz nz mz vz az
     assert peer.size == peer.MaxGramSize
     assert not peer.authic
     assert not peer.echoic
@@ -345,7 +345,7 @@ def test_memoer_basic():
     assert peer.bs == Memoer.BufSize == 65535
     assert peer.code == MemoDex.GramZero == '1AAQ'
     assert not peer.curt
-    assert peer.Sizes[peer.code] == (4, 4, 24, 0, 0)  # hz nz mz vz az
+    assert peer.Sizes[peer.code] == (4, 4, 24, 0, 0)  # bz nz mz vz az
     assert peer.size == peer.MaxGramSize
     assert not peer.authic
     assert not peer.echoic
@@ -502,7 +502,7 @@ def test_memoer_small_gram_size():
     assert peer.bs == memoing.Memoer.BufSize == 65535
     assert peer.code == memoing.MemoDex.GramZero == '1AAQ'
     assert not peer.curt
-    assert peer.Sizes[peer.code] == (4, 4, 24, 0, 0)  # hz nz mz vz az
+    assert peer.Sizes[peer.code] == (4, 4, 24, 0, 0)  # bz nz mz vz az
     assert peer.size == 33  # overhead + 1 is minimum size
     assert not peer.authic
     assert not peer.echoic
@@ -882,7 +882,7 @@ def test_memoer_basic_signed():
     assert peer.bs == memoing.Memoer.BufSize == 65535
     assert peer.code == memoing.MemoDex.GramAuthZero == '1AAS'
     assert not peer.curt
-    assert peer.Sizes[peer.code] == (4, 4, 24, 44, 88)  # hz nz mz vz az
+    assert peer.Sizes[peer.code] == (4, 4, 24, 44, 88)  # bz nz mz vz az
     assert peer.size == peer.MaxGramSize
     assert not peer.authic
     assert not peer.echoic
@@ -1233,7 +1233,7 @@ def test_memoer_authic():
     assert peer.bs == memoing.Memoer.BufSize == 65535
     assert peer.code == memoing.MemoDex.GramZero == '1AAQ'
     assert not peer.curt
-    assert peer.Sizes[peer.code] == (4, 4, 24, 0, 0)  # hz nz mz vz az
+    assert peer.Sizes[peer.code] == (4, 4, 24, 0, 0)  # bz nz mz vz az
     assert peer.size == peer.MaxGramSize
     assert peer.authic
     assert not peer.echoic
@@ -1481,8 +1481,8 @@ def test_auth_memoer_basic():
     assert peer.keep == keep
     assert peer.vid == vid
 
-    assert peer.Sizes[peer.code] == Sizage(hz=4, nz=4, vz=44, mz=24, az=88)
-    assert peer.Sizes[peer.code] == (4, 4, 24, 44, 88)  # hz nz mz vz az
+    assert peer.Sizes[peer.code] == Sizage(bz=4, nz=4, vz=44, mz=24, az=88)
+    assert peer.Sizes[peer.code] == (4, 4, 24, 44, 88)  # bz nz mz vz az
     assert peer.size == peer.MaxGramSize
     assert peer.tymeout == 0.0
     assert peer.tymers == {}
