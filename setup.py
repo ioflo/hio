@@ -94,6 +94,7 @@ setup(
         'multidict>=6.7.0',
         'falcon>=4.2.0',
         'ordered-set>=4.1.0',
+        'sortedcontainers>=2.4.0',
         'pysodium>=0.7.18',
         'blake3>=1.0.8',
     ],

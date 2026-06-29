@@ -12,7 +12,6 @@ from dataclasses import dataclass, astuple, asdict, field, fields, InitVar
 
 from ...help import NonStringIterable, namify, registerify, TymeDom
 from ...hioing import HierError
-from ..during import DomSuber
 
 
 @namify
