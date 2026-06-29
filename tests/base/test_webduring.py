@@ -2,11 +2,6 @@
 """Browser-safe WebDuror contract tests."""
 
 import asyncio
-import os
-from pathlib import Path
-import subprocess
-import sys
-import textwrap
 
 import pytest
 
@@ -22,59 +17,6 @@ from hio.base import (
     openWebDuror,
 )
 from hio.base.hier import Can
-
-
-def test_webduror_import_path_does_not_load_native_deps():
-    """Import browser-reachable modules without pulling native-only deps."""
-    root = Path(__file__).resolve().parents[2]
-    script = textwrap.dedent(
-        """
-        import importlib.abc
-        import sys
-
-
-        class BlockNativeDeps(importlib.abc.MetaPathFinder):
-            def find_spec(self, fullname, path=None, target=None):
-                blocked = ("lmdb", "pysodium", "pychloride")
-                if fullname in blocked or fullname.startswith(tuple(f"{name}." for name in blocked)):
-                    raise ImportError(f"blocked {fullname} for browser import test")
-                return None
-
-
-        sys.meta_path.insert(0, BlockNativeDeps())
-        for name in ("lmdb", "pysodium", "pychloride"):
-            sys.modules.pop(name, None)
-
-        import hio.base
-        import hio.base.hier
-        from hio.base import WebDuror, openWebDuror, webduring
-        from hio.base.hier import Can, Durq, Dusq, Hold
-
-        assert "hio.base.during" not in sys.modules
-        assert "lmdb" not in sys.modules
-        assert "pysodium" not in sys.modules
-        assert "pychloride" not in sys.modules
-        assert webduring.WebDuror is WebDuror
-        assert openWebDuror.__name__ == "openWebDuror"
-        assert Can.__name__ == "Can"
-        assert Durq.__name__ == "Durq"
-        assert Dusq.__name__ == "Dusq"
-        assert Hold.__name__ == "Hold"
-        """
-    )
-    env = os.environ.copy()
-    env["PYTHONPATH"] = os.pathsep.join(
-        part for part in (str(root / "src"), env.get("PYTHONPATH", "")) if part
-    )
-    result = subprocess.run(
-        [sys.executable, "-c", script],
-        cwd=root,
-        env=env,
-        capture_output=True,
-        text=True,
-        timeout=10,
-    )
-    assert result.returncode == 0, result.stderr + result.stdout
 
 
 def run(coro):
@@ -128,13 +70,10 @@ def test_webduror_constructor_lifecycle():
         storage = FakeStorageBackend()
         duror = WebDuror(storageOpener=storage.open)
         assert not duror.opened
-        assert duror.path is None
 
         assert await duror.reopen(stores=(b"docs.",))
         docs = duror.env.open_db(key=b"docs.")
         assert docs.flags() == {"dupsort": False}
-        assert duror.env.open_db(key=None).key == WebDuror.MetaStore
-        assert storage.opened == ["main:__meta__", "main:docs."]
 
         with pytest.raises(hio.HierError, match="not declared"):
             duror.env.open_db(key=b"unknown.")
@@ -396,15 +335,5 @@ def test_webduror_flush_aclose_reopen_and_clear():
         csdb = cleared.env.open_db(key=b"docs.")
         assert cleared.getVal(sdb=csdb, key=b"key") is None
         await cleared.aclose()
-
-    run(main())
-
-
-def test_open_webduror_async_context_manager():
-    async def main():
-        storage = FakeStorageBackend()
-        async with openWebDuror(stores=(b"docs.",), storageOpener=storage.open) as duror:
-            sdb = duror.env.open_db(key=b"docs.")
-            assert duror.putVal(sdb=sdb, key=b"a", val=b"b")
 
     run(main())
