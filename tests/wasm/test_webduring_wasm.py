@@ -19,7 +19,7 @@ pytest_pyodide = pytest.importorskip("pytest_pyodide")
 run_in_pyodide = pytest_pyodide.run_in_pyodide
 copy_files_to_pyodide = pytest_pyodide.decorator.copy_files_to_pyodide
 
-WASM_PACKAGES = ["cbor2", "micropip", "msgpack", "multidict", "sortedcontainers"]
+WASM_PACKAGES = ["micropip", "msgpack", "multidict", "sortedcontainers"]
 
 HIO_FILES = [
     ("src/hio/__init__.py", "/home/pyodide/hio/__init__.py"),
@@ -50,7 +50,7 @@ async def test_webduror_wasm_contract(selenium):
     import sys
     import micropip
 
-    await micropip.install("ordered_set")
+    await micropip.install(["cbor2==5.9.0", "ordered_set"])
     sys.path.insert(0, "/home/pyodide")
 
     import hio
