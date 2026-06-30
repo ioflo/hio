@@ -28,8 +28,8 @@ jobs:
           to: dist
       - name: Install test dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install pytest-pyodide playwright wheel
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install pytest-pyodide playwright
           python -m playwright install --with-deps
       - name: Build HIO wheel
         run: |
