@@ -42,7 +42,7 @@ async def test_webduror_wasm_contract(selenium):
 
     await micropip.install(["cbor2==5.9.0", "ordered_set"])
     hio_wheel = next(Path("/home/pyodide").glob("hio-*.whl"))
-    await micropip.install(str(hio_wheel), deps=False)
+    await micropip.install(f"emfs:{hio_wheel}", deps=False)
 
     import hio
     import hio.base
