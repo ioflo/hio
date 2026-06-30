@@ -5,6 +5,7 @@ tests.wasm.test_webduring_wasm module
 WASM smoke tests for WebDuror, run inside Pyodide via pytest-pyodide.
 """
 import os
+from pathlib import Path
 
 import pytest
 
@@ -21,37 +22,27 @@ copy_files_to_pyodide = pytest_pyodide.decorator.copy_files_to_pyodide
 
 WASM_PACKAGES = ["micropip", "msgpack", "multidict", "sortedcontainers"]
 
-HIO_FILES = [
-    ("src/hio/__init__.py", "/home/pyodide/hio/__init__.py"),
-    ("src/hio/hioing.py", "/home/pyodide/hio/hioing.py"),
-    ("src/hio/base/__init__.py", "/home/pyodide/hio/base/__init__.py"),
-    ("src/hio/base/basing.py", "/home/pyodide/hio/base/basing.py"),
-    ("src/hio/base/doing.py", "/home/pyodide/hio/base/doing.py"),
-    ("src/hio/base/during.py", "/home/pyodide/hio/base/during.py"),
-    ("src/hio/base/filing.py", "/home/pyodide/hio/base/filing.py"),
-    ("src/hio/base/tyming.py", "/home/pyodide/hio/base/tyming.py"),
-    ("src/hio/base/webduring.py", "/home/pyodide/hio/base/webduring.py"),
-    ("src/hio/help/__init__.py", "/home/pyodide/hio/help/__init__.py"),
-    ("src/hio/help/decking.py", "/home/pyodide/hio/help/decking.py"),
-    ("src/hio/help/doming.py", "/home/pyodide/hio/help/doming.py"),
-    ("src/hio/help/helping.py", "/home/pyodide/hio/help/helping.py"),
-    ("src/hio/help/hicting.py", "/home/pyodide/hio/help/hicting.py"),
-    ("src/hio/help/mining.py", "/home/pyodide/hio/help/mining.py"),
-    ("src/hio/help/naming.py", "/home/pyodide/hio/help/naming.py"),
-    ("src/hio/help/ogling.py", "/home/pyodide/hio/help/ogling.py"),
-    ("src/hio/help/timing.py", "/home/pyodide/hio/help/timing.py"),
-]
+HIO_WHEELS = sorted(Path("dist").glob("hio-*.whl"))
+if not HIO_WHEELS:
+    raise RuntimeError("Build the HIO wheel into dist before running WASM tests.")
+HIO_WHEEL = HIO_WHEELS[-1]
 
 
-@copy_files_to_pyodide(file_list=HIO_FILES)
+@copy_files_to_pyodide(
+    file_list=[(HIO_WHEEL, f"/home/pyodide/{HIO_WHEEL.name}")],
+    install_wheels=False,
+)
 @run_in_pyodide(packages=WASM_PACKAGES)
 async def test_webduror_wasm_contract(selenium):
     """Verify WebDuror imports and core storage behavior in WASM."""
     import sys
+    from pathlib import Path
+
     import micropip
 
     await micropip.install(["cbor2==5.9.0", "ordered_set"])
-    sys.path.insert(0, "/home/pyodide")
+    hio_wheel = next(Path("/home/pyodide").glob("hio-*.whl"))
+    await micropip.install(str(hio_wheel), deps=False)
 
     import hio
     import hio.base
