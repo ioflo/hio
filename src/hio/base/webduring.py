@@ -175,7 +175,11 @@ class WebDuror(Filer):
         return self.opened
 
     def close(self, clear=False):
-        """Close local handles and clear in-memory store state."""
+        """Close local handles and clear in-memory store state.
+
+        Use await flush() or await aclose() to persist pending writes.
+        Use await aclose(clear=True) to clear persisted browser storage.
+        """
         self.env = None
         self.opened = False
         self._stores = {}
