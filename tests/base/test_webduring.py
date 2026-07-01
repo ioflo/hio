@@ -337,3 +337,56 @@ def test_webduror_flush_aclose_reopen_and_clear():
         await cleared.aclose()
 
     run(main())
+
+
+def test_webduror_sync_close_flushes_and_clears_on_running_loop():
+    async def main():
+        storage = FakeStorageBackend()
+        writer = WebDuror(storageOpener=storage.open)
+        await writer.reopen(stores=(b"docs.",))
+        sdb = writer.env.open_db(key=b"docs.")
+        assert writer.pinVal(sdb=sdb, key=b"key", val=b"value")
+
+        assert writer.close()
+        await asyncio.sleep(0)
+
+        reader = WebDuror(storageOpener=storage.open)
+        await reader.reopen(stores=(b"docs.",))
+        rsdb = reader.env.open_db(key=b"docs.")
+        assert reader.getVal(sdb=rsdb, key=b"key") == b"value"
+        assert reader.pinVal(sdb=rsdb, key=b"next", val=b"value")
+
+        assert reader.close(clear=True)
+        await asyncio.sleep(0)
+
+        cleared = WebDuror(storageOpener=storage.open)
+        await cleared.reopen(stores=(b"docs.",))
+        csdb = cleared.env.open_db(key=b"docs.")
+        assert cleared.getVal(sdb=csdb, key=b"key") is None
+        assert cleared.getVal(sdb=csdb, key=b"next") is None
+        await cleared.aclose()
+
+    run(main())
+
+
+def test_webduror_sync_close_flushes_without_running_loop():
+    storage = FakeStorageBackend()
+    writer = WebDuror(storageOpener=storage.open)
+    run(writer.reopen(stores=(b"docs.",)))
+    sdb = writer.env.open_db(key=b"docs.")
+    assert writer.pinVal(sdb=sdb, key=b"key", val=b"value")
+
+    assert writer.close()
+
+    reader = WebDuror(storageOpener=storage.open)
+    run(reader.reopen(stores=(b"docs.",)))
+    rsdb = reader.env.open_db(key=b"docs.")
+    assert reader.getVal(sdb=rsdb, key=b"key") == b"value"
+
+    assert reader.close(clear=True)
+
+    cleared = WebDuror(storageOpener=storage.open)
+    run(cleared.reopen(stores=(b"docs.",)))
+    csdb = cleared.env.open_db(key=b"docs.")
+    assert cleared.getVal(sdb=csdb, key=b"key") is None
+    run(cleared.aclose())

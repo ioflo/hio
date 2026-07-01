@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from contextlib import asynccontextmanager
 import json
 
@@ -21,6 +22,28 @@ except ImportError:  # pragma: no cover
 
 
 _RECORDS_KEY = "__records__"
+
+
+async def _clear_handles(handles):
+    """Clear persisted records for captured browser storage handles."""
+    for handle in handles.values():
+        handle[_RECORDS_KEY] = "{}"
+        await handle.sync()
+
+
+async def _persist_stores(handles, stores, dirty):
+    """Persist captured dirty stores through captured browser storage handles."""
+    persisted = []
+    for store in tuple(stores):
+        if store not in dirty:
+            continue
+        handles[store][_RECORDS_KEY] = json.dumps(
+            {key.hex(): val.hex() for key, val in stores[store].items()},
+            sort_keys=True,
+        )
+        await handles[store].sync()
+        persisted.append(store)
+    return persisted
 
 
 def _to_bytes(value):
@@ -175,11 +198,23 @@ class WebDuror(Filer):
         return self.opened
 
     def close(self, clear=False):
-        """Close local handles and clear in-memory store state.
+        """Close local handles after persisting or clearing pending state.
 
-        Use await flush() or await aclose() to persist pending writes.
-        Use await aclose(clear=True) to clear persisted browser storage.
+        When called inside a running loop, persistence is scheduled on that loop.
+        Use await aclose() when the caller must wait for completion.
         """
+        if self.opened and (clear or self._dirty):
+            handles = dict(self._handles)
+            stores = {store: SortedDict(items) for store, items in self._stores.items()}
+            dirty = set(self._dirty)
+            task = _clear_handles(handles) if clear else _persist_stores(handles, stores, dirty)
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                asyncio.run(task)
+            else:
+                loop.create_task(task)
+
         self.env = None
         self.opened = False
         self._stores = {}
@@ -190,12 +225,12 @@ class WebDuror(Filer):
 
     async def aclose(self, clear=False):
         """Flush pending writes, optionally clear persisted browser records, and close."""
-        if self.opened and self._dirty and not clear:
-            await self.flush()
-        if self.opened and clear:
-            for handle in self._handles.values():
-                handle[_RECORDS_KEY] = "{}"
-                await handle.sync()
+        if self.opened:
+            if clear:
+                await _clear_handles(dict(self._handles))
+                self._dirty.clear()
+            elif self._dirty:
+                await self.flush()
         self.close()
         return self.opened
 
@@ -205,18 +240,9 @@ class WebDuror(Filer):
             return 0
         if not self.opened:
             raise HierError("WebDuror is not open.")
-        count = 0
-        for store in tuple(self._stores):
-            if store not in self._dirty:
-                continue
-            self._handles[store][_RECORDS_KEY] = json.dumps(
-                {key.hex(): val.hex() for key, val in self._stores[store].items()},
-                sort_keys=True,
-            )
-            await self._handles[store].sync()
-            self._dirty.remove(store)
-            count += 1
-        return count
+        persisted = await _persist_stores(self._handles, self._stores, self._dirty)
+        self._dirty.difference_update(persisted)
+        return len(persisted)
 
     @property
     def version(self):
