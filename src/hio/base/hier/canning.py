@@ -7,12 +7,14 @@ Provides durable dom support for items in Hold
 from __future__ import annotations  # so type hints of classes get resolved later
 
 from collections.abc import Mapping
-from typing import Any, Type, ClassVar
+from typing import Any, Type, ClassVar, TYPE_CHECKING
 from dataclasses import dataclass, astuple, asdict, field, fields, InitVar
 
 from ...help import NonStringIterable, namify, registerify, TymeDom
 from ...hioing import HierError
-from ..during import DomSuber
+
+if TYPE_CHECKING:
+    from ..during import DomSuber
 
 
 @namify

@@ -14,7 +14,6 @@ from collections.abc import Mapping
 from contextlib import contextmanager
 from typing import Any
 
-import lmdb
 from ordered_set import OrderedSet as oset
 
 from hio import HierError

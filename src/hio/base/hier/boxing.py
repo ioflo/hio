@@ -14,7 +14,6 @@ from typing import Type
 
 from ..tyming import Tymee
 from ..doing import Doer
-from ..during import Subery
 from ...hioing import Mixin, HierError
 from .hiering import Nabes, WorkDom
 from .holding import Hold
@@ -737,6 +736,8 @@ class Boxer(Tymee):
         fun = fun if fun is not None else self.fun
         durable = durable if durable is not None else self.durable
         if durable:
+            from ..during import Subery
+
             if self.hold.subery and not self.hold.subery.opened:
                 self.hold.subery.reopen(temp=temp)
             else:
