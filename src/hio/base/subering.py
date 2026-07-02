@@ -4,21 +4,11 @@
 Support for Durable storage abstracted subclasses  (lmdb or wasm pyodide IndexedDB)
 """
 
-from __future__ import annotations  # so type hints of classes get resolved later
-
-import os
 import sys
-import platform
-import stat
-import tempfile
-from contextlib import contextmanager
 
 from ordered_set import OrderedSet as oset
 
-import hio
-
 from hio import HierError
-from .doing import Doer
 from ..help import isNonStringIterable, RegDom, IceRegDom
 
 PYODIDE = 'emscripten' in sys.platform
