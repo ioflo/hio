@@ -11,10 +11,12 @@ import os
 import time
 import socket
 from collections import deque
+from unittest.mock import Mock
 import ssl
 
 from hio.base import tyming, doing
 from hio.core import tcp
+
 
 def test_tcp_basic():
     """
@@ -23,14 +25,14 @@ def test_tcp_basic():
     client send from and receive to port is ephemeral
     server receive to and send from port is well known
 
-    Server listens on ist well know  receive to and send from port
+    Server listens on its well known receive to and send from port
 
     So incoming to server.
         Source address is client host and client ephemeral port
         Destination address is server host and server well known port
 
     Each accept socket on server is a different duple of client source, server dest
-        all the dest are the same but each source is differenct so can route
+        all the dest are the same but each source is different so can route
         based on the source.
 
     Server routes incoming packets to accept socket port. The routing uses
@@ -1518,6 +1520,122 @@ def test_echo_server_client_doers():
     ca, ix = list(server.ixes.items())[0]
     assert bytes(ix.rxbs) == b""  # empty server rxbs becaue echoed
     """End Test """
+
+
+def test_remoter_services_sends_after_peer_half_close():
+    """Receive EOF does not prevent a Remoter from sending its response."""
+    tymist = tyming.Tymist()
+    cs, peer = socket.socketpair()
+    peer.settimeout(1.0)
+    remoter = tcp.Remoter(ha=("127.0.0.1", 6101),
+                         ca=("127.0.0.1", 6102),
+                         cs=cs,
+                         tymth=tymist.tymen())
+
+    try:
+        peer.shutdown(socket.SHUT_WR)
+        remoter.serviceReceives()
+
+        assert remoter.cutoff is True
+        assert remoter.txCutoff is False
+
+        response = b"response after request EOF"
+        remoter.tx(response)
+        remoter.serviceSends()
+
+        assert not remoter.txbs
+        received = bytearray()
+        while len(received) < len(response):
+            chunk = peer.recv(len(response) - len(received))
+            assert chunk
+            received.extend(chunk)
+        assert bytes(received) == response
+    finally:
+        remoter.close()
+        peer.close()
+
+
+def test_remoter_retries_partial_sends_after_receive_cutoff():
+    """Prove receive cutoff permits blocked and partial sends in later cycles.
+
+    Each ``serviceSends`` call models one scheduler cycle. The mocked send
+    counts force no progress, partial progress, and then completion after EOF.
+    """
+    tymist = tyming.Tymist()
+    cs = Mock()
+    cs.recv.return_value = b""  # receive EOF sets cutoff, not txCutoff
+    cs.send.side_effect = [0, 3, 5]  # bytes accepted on successive sends
+    remoter = tcp.Remoter(ha=("127.0.0.1", 6101),
+                         ca=("127.0.0.1", 6102),
+                         cs=cs,
+                         tymth=tymist.tymen())
+
+    try:
+        remoter.serviceReceives()
+        assert remoter.cutoff is True
+        assert remoter.txCutoff is False
+
+        remoter.tx(b"response")
+
+        remoter.serviceSends()  # cycle 1: blocked, no bytes accepted
+        assert bytes(remoter.txbs) == b"response"
+
+        remoter.serviceSends()  # cycle 2: three bytes accepted
+        assert bytes(remoter.txbs) == b"ponse"
+
+        remoter.serviceSends()  # cycle 3: remaining five bytes accepted
+        assert not remoter.txbs
+        assert cs.send.call_count == 3
+    finally:
+        remoter.close()
+
+
+def test_remoter_shutdown_sets_directional_cutoffs():
+    """Local socket shutdown records only the affected directions."""
+    tymist = tyming.Tymist()
+    cs, peer = socket.socketpair()
+    remoter = tcp.Remoter(ha=("127.0.0.1", 6101),
+                         ca=("127.0.0.1", 6102),
+                         cs=cs,
+                         tymth=tymist.tymen())
+
+    try:
+        assert remoter.cutoff is False
+        assert remoter.txCutoff is False
+
+        remoter.shutdownReceive()
+        assert remoter.cutoff is True
+        assert remoter.txCutoff is False
+
+        remoter.shutdownSend()
+        assert remoter.cutoff is True
+        assert remoter.txCutoff is True
+    finally:
+        remoter.close()
+        peer.close()
+
+
+def test_remoter_sets_tx_cutoff_after_broken_send():
+    """A terminal send failure leaves receive servicing available."""
+    tymist = tyming.Tymist()
+    cs, peer = socket.socketpair()
+    remoter = tcp.Remoter(ha=("127.0.0.1", 6101),
+                         ca=("127.0.0.1", 6102),
+                         cs=cs,
+                         tymth=tymist.tymen())
+
+    try:
+        remoter.cs.shutdown(socket.SHUT_WR)  # bypass HIO's tx bookkeeping
+        message = b"unsent after write shutdown"
+        remoter.tx(message)
+        remoter.serviceSends()
+
+        assert remoter.cutoff is False
+        assert remoter.txCutoff is True
+        assert bytes(remoter.txbs) == message
+    finally:
+        remoter.close()
+        peer.close()
 
 
 if __name__ == "__main__":
