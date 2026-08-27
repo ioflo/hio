@@ -16,6 +16,48 @@ import ssl
 from hio.base import tyming, doing
 from hio.core import tcp
 
+
+def test_remoter_refresh_resets_idle_tymeout():
+    """Test Remoter activity resets its idle tymer from current tyme."""
+    tymist = tyming.Tymist()
+    remoter = tcp.Remoter(
+        tymth=tymist.tymen(),
+        ha=("127.0.0.1", 56000),
+        ca=("127.0.0.1", 56001),
+        cs=None,
+        tymeout=1.0,
+    )
+
+    assert remoter.tymer.duration == 1.0
+    assert remoter.tymer.remaining == 1.0
+
+    tymist.tick(tock=0.75)
+    assert remoter.tymer.remaining == 0.25
+
+    remoter.refresh()
+    assert remoter.tymer.duration == 1.0
+    assert remoter.tymer.remaining == pytest.approx(1.0)
+
+    # Multiple activity notifications at the same tyme must not accumulate
+    # additional idle-time credit.
+    remoter.refresh()
+    assert remoter.tymer.remaining == pytest.approx(1.0)
+
+    tymist.tick(tock=1.25)
+    assert remoter.tymer.expired
+
+    # Activity after expiration starts a new full idle interval.
+    remoter.refresh()
+    assert not remoter.tymer.expired
+    assert remoter.tymer.duration == 1.0
+    assert remoter.tymer.remaining == pytest.approx(1.0)
+
+    # Remoters without an injected tyme base have no idle time to refresh.
+    unwound = tcp.Remoter(ha=remoter.ha, ca=remoter.ca, cs=None)
+    unwound.refresh()
+    assert unwound.tymer.duration == 0.0
+
+
 def test_tcp_basic():
     """
     Test the tcp connection between client and server
@@ -731,6 +773,11 @@ def  test_tcp_tls_default_context():
         assert ixBeta.ca == beta.ca
         assert ixBeta.ha == beta.ha
 
+        ixBeta.tymeout = 1.0
+        ixBeta.tymer.start(duration=ixBeta.tymeout)
+        tymist.tick(tock=0.75)
+        assert ixBeta.tymer.remaining == pytest.approx(0.25)
+
         msgOut = b"Beta sends to Server\n"
         beta.tx(msgOut)
         while not( not beta.txbs and ixBeta.rxbs):
@@ -743,7 +790,11 @@ def  test_tcp_tls_default_context():
 
         msgIn = bytes(ixBeta.rxbs)
         assert msgIn == msgOut
+        assert ixBeta.tymer.remaining == pytest.approx(1.0)
         ixBeta.clearRxbs()
+
+        tymist.tick(tock=0.75)
+        assert ixBeta.tymer.remaining == pytest.approx(0.25)
 
         msgOut = b'Server sends to Beta\n'
         ixBeta.tx(msgOut)
@@ -754,6 +805,7 @@ def  test_tcp_tls_default_context():
 
         msgIn = bytes(beta.rxbs)
         assert msgIn == msgOut
+        assert ixBeta.tymer.remaining == pytest.approx(1.0)
         beta.clearRxbs()
 
     assert beta.opened == False

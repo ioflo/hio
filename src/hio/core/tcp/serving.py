@@ -690,9 +690,10 @@ class Remoter(tyming.Tymee):
 
     def refresh(self):
         """
-        Restart tymer
+        Reset idle tymer from current tyme.
         """
-        self.tymer.restart()
+        if self.tymer.tyme is not None:
+            self.tymer.start()
 
 
     def receive(self):
@@ -965,6 +966,9 @@ class RemoterTls(Remoter):
             if self.wl:  # log over the wire rx
                 self.wl.writeRx(data, who=self.cs.getpeername())
 
+            if self.refreshable:
+                self.refresh()
+
         else:  # data empty so connection closed on other end
             self.cutoff = True
 
@@ -1002,6 +1006,9 @@ class RemoterTls(Remoter):
         if result:
             if self.wl:
                 self.wl.writeTx(data[:result], who=self.cs.getpeername())
+
+            if self.refreshable:
+                self.refresh()
 
         return result
 
