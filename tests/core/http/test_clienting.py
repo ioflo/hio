@@ -28,6 +28,64 @@ tlsdirpath = os.path.dirname(
 certdirpath = os.path.join(tlsdirpath, 'tls', 'certs')
 
 
+def _respondent_waiting_for_chunk_body():
+    """Create a real Respondent paused after parsing chunked response headers."""
+    respondent = clienting.Respondent(
+        msg=bytearray(b"HTTP/1.1 200 OK\r\n"
+                      b"Transfer-Encoding: chunked\r\n\r\n"))
+    respondent.parse()
+    assert respondent.headed
+    assert not respondent.bodied
+    assert respondent.parser is not None
+    return respondent
+
+
+def _service_respondent(respondent, limit=8):
+    """Drive a finite response parser without hiding a terminal EOF stall."""
+    for _ in range(limit):
+        respondent.parse()
+        if respondent.parser is None:
+            return
+    raise AssertionError("response parser did not settle")
+
+
+def test_respondent_chunked_eof_consumes_terminal_zero_chunk():
+    """Buffered response chunks remain incomplete until zero framing is read."""
+    respondent = _respondent_waiting_for_chunk_body()
+    respondent.msg.extend(b"4\r\nWiki\r\n0\r\n\r\n")
+    respondent.close()
+
+    _service_respondent(respondent)
+
+    assert respondent.closed
+    assert respondent.ended
+    assert not respondent.errored
+    assert respondent.bodied
+    assert respondent.body == b"Wiki"
+    assert not respondent.msg
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        b"4\r\nWiki\r\n",
+        b"4\r\nWiki\r\n0\r\nTrailer: value\r\n",
+    ],
+)
+def test_respondent_chunked_eof_rejects_incomplete_terminator(body):
+    """EOF after data cannot replace the zero chunk and complete trailers."""
+    respondent = _respondent_waiting_for_chunk_body()
+    respondent.msg.extend(body)
+    respondent.close()
+
+    _service_respondent(respondent)
+
+    assert respondent.closed
+    assert respondent.ended
+    assert respondent.errored
+    assert "closed unexpectedly" in respondent.error.lower()
+
+
 def mockEchoService(server):
     """
     mock echo server service for testing
