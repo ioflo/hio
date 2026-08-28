@@ -11,7 +11,8 @@ import pytest
 from hio import help
 from hio.help import helping
 from hio.base import tyming, doing
-from hio.core import http
+from hio.core import http, tcp
+from hio.core.http import serving
 
 
 logger = help.ogler.getLogger()
@@ -21,6 +22,58 @@ tlsdirpath = os.path.dirname(
                         os.path.abspath(
                             sys.modules.get(__name__).__file__)))
 certdirpath = os.path.join(tlsdirpath, 'tls', 'certs')
+
+
+def test_wsgi_server_reuse_resets_request_scoped_response_state():
+    """A reused responder derives transfer state from the next request."""
+    ca = ("127.0.0.1", 6101)
+    # Use the production connection type without opening a socket; no I/O occurs.
+    remoter = tcp.Remoter(ha=("127.0.0.1", 6100), ca=ca, cs=None)
+
+    # Model the next parsed HTTP/1.1 request on the same connection.
+    class Requestant:
+        parser = True
+        ended = False
+        errored = False
+        error = None
+        method = "GET"
+        path = "/next"
+        version = (1, 1)
+        headers = help.Hict()
+        body = bytearray()
+
+        def parse(self):
+            self.parser = None
+            self.ended = True
+
+    # Seed response-scoped state left by the prior HTTP/1.1 SSE response.
+    responder = serving.Responder(incomer=remoter,
+                                  app=None,
+                                  environ={"request": "old"},
+                                  chunkable=True)
+    responder.start("200 OK", [("Content-Type", "text/event-stream")])
+    responder.ended = True
+    assert responder.evented
+    assert responder.chunkable
+
+    requestant = Requestant()
+    requestant.remoter = remoter
+    # Isolate the Server handoff that reuses the existing Responder.
+    server = serving.Server(app=None, port=6101)
+    server.reqs[ca] = requestant
+    server.reps[ca] = responder
+    server.buildEnviron = lambda request: {"request": "next"}
+
+    server.serviceReqs()  # calls responder.reset, passing in "chunkable" during reset
+
+    assert responder.environ == {"request": "next"}
+    assert responder.chunkable  # should have received this from the .reset call
+    assert not responder.evented
+
+    responder.start("200 OK", [("Content-Type", "text/plain")])
+    head = responder.build()
+    assert b"Transfer-Encoding: chunked\r\n" in head  # verifies passed in "chunked" is used
+
 
 def test_bare_server_echo():
     """
