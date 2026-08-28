@@ -97,12 +97,13 @@ class Requestant(httping.Parsent):
         # create generator
         lineParser = httping.parseLine(raw=self.msg, eols=(CRLF, LF), kind="status line")
         while True:  # parse until we get full start line
-            if self.closed:  # connection closed prematurely
-                raise httping.PrematureClosure("Connection closed unexpectedly "
-                                               "while parsing request start line")
-
             line = next(lineParser)
             if line is None:
+                if self.closed:
+                    lineParser.close()
+                    raise httping.PrematureClosure(
+                        "Connection closed unexpectedly while parsing request "
+                        "start line")
                 (yield None)
                 continue
             lineParser.close()  # close generator
@@ -134,14 +135,15 @@ class Requestant(httping.Parsent):
                                    eols=(CRLF, LF),
                                    kind="leader header line")
         while True:
-            if self.closed:  # connection closed prematurely
-                raise httping.PrematureClosure("Connection closed unexpectedly "
-                                               "while parsing request header")
-
             headers = next(leaderParser)
             if headers is not None:
                 leaderParser.close()
                 break
+            if self.closed:
+                leaderParser.close()
+                raise httping.PrematureClosure(
+                    "Connection closed unexpectedly while parsing request "
+                    "header")
             (yield None)
         self.headers.update(headers)
 

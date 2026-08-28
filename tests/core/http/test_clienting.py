@@ -28,6 +28,74 @@ tlsdirpath = os.path.dirname(
 certdirpath = os.path.join(tlsdirpath, 'tls', 'certs')
 
 
+def _service_respondent(respondent, limit=8):
+    """Drive a finite response parser without hiding a terminal EOF stall."""
+    for _ in range(limit):
+        respondent.parse()
+        if respondent.parser is None:
+            return
+    raise AssertionError("response parser did not settle")
+
+
+@pytest.mark.parametrize(
+    "initial, buffered, expected_body",
+    [
+        (b"",
+         b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n",
+         b""),
+        (b"HTTP/1.1 200 OK\r\n",
+         b"Content-Length: 0\r\n\r\n",
+         b""),
+        (b"HTTP/1.1 200 OK\r\nContent-Length: 4\r\n\r\n",
+         b"test",
+         b"test"),
+    ],
+)
+def test_respondent_consumes_complete_buffered_framing_before_eof(
+        initial, buffered, expected_body):
+    """Complete start-line, headers, or fixed body buffered at EOF are valid."""
+    respondent = clienting.Respondent(msg=bytearray(initial))
+    respondent.parse()
+    assert respondent.parser is not None
+
+    respondent.msg.extend(buffered)
+    respondent.close()
+    _service_respondent(respondent)
+
+    assert respondent.closed
+    assert respondent.ended
+    assert not respondent.errored
+    assert respondent.headed
+    assert respondent.bodied
+    assert respondent.body == expected_body
+    assert not respondent.msg
+
+
+@pytest.mark.parametrize(
+    "initial, partial",
+    [
+        (b"", b"HTTP/1.1 200"),
+        (b"HTTP/1.1 200 OK\r\n", b"Content-Length: 0\r\n"),
+        (b"HTTP/1.1 100 Continue\r\n", b"Extension: partial"),
+        (b"HTTP/1.1 200 OK\r\nContent-Length: 4\r\n\r\n", b"te"),
+    ],
+)
+def test_respondent_rejects_partial_buffered_framing_at_eof(initial, partial):
+    """Partial start-line, headers, or fixed body at EOF settle as failure."""
+    respondent = clienting.Respondent(msg=bytearray(initial))
+    respondent.parse()
+    assert respondent.parser is not None
+
+    respondent.msg.extend(partial)
+    respondent.close()
+    _service_respondent(respondent)
+
+    assert respondent.closed
+    assert respondent.ended
+    assert respondent.errored
+    assert "closed unexpectedly" in respondent.error.lower()
+
+
 def mockEchoService(server):
     """
     mock echo server service for testing
