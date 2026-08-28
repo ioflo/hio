@@ -98,7 +98,7 @@ def test_tcp_basic():
     assert server.opened == False
 
     tymist = tyming.Tymist()
-    with tcp.openServer(tymth=tymist.tymen(), ha=("", 6101)) as server, \
+    with tcp.openServer(tymth=tymist.tymen(), ha=("", 6101), tymeout=1.5) as server, \
          tcp.openClient(tymth=tymist.tymen(), ha=("127.0.0.1", 6101)) as beta, \
          tcp.openClient(tymth=tymist.tymen(), ha=("127.0.0.1", 6101)) as gamma:
 
@@ -136,6 +136,8 @@ def test_tcp_basic():
         assert ixBeta.cs.getpeername() == beta.cs.getsockname()  # ixBeta remote beta local
         assert ixBeta.ca == beta.ca == ixBeta.cs.getpeername()
         assert ixBeta.ha == beta.ha == ixBeta.cs.getsockname()
+        assert ixBeta.tymeout == server.tymeout == 1.5
+        assert ixBeta.tymer.duration == ixBeta.tymeout
 
         msgOut = b"Beta sends to Server"
         count = beta.send(msgOut)
@@ -472,6 +474,42 @@ def test_tcp_basic():
 
     """Done Test"""
 
+
+def test_server_idle_tymeout_enables_remoter_cleanup():
+    """
+    Test a supervisor can remove an idle Remoter at the Server's tymeout.
+    """
+    tymist = tyming.Tymist()
+    with tcp.openServer(tymth=tymist.tymen(),
+                        ha=("127.0.0.1", 0),
+                        tymeout=1.0) as server:
+        # Acceptor does not refresh .eha after binding an ephemeral port.
+        server.eha = server.ha
+
+        with tcp.openClient(tymth=tymist.tymen(), ha=server.ha) as client:
+            for _ in range(10):
+                client.serviceConnect()
+                server.serviceConnects()
+                if client.connected and client.ca in server.ixes:
+                    break
+                time.sleep(0.05)
+
+            assert client.connected == True
+            assert client.ca in server.ixes
+
+            remoter = server.ixes[client.ca]
+            assert server.tymeout == 1.0
+
+            tymist.tick(tock=server.tymeout)
+
+            # HIO HTTP and KERIpy supervisors treat zero tymeout as disabled.
+            if remoter.tymeout > 0.0 and remoter.tymer.expired:
+                server.removeIx(client.ca)
+
+            assert client.ca not in server.ixes
+            assert remoter.cs is None
+
+
 def test_tcp_service():
     """
     Test Classes tcp service methods
@@ -691,6 +729,7 @@ def  test_tcp_tls_default_context():
     with tcp.openServer(cls=tcp.ServerTls,
                     tymth=tymist.tymen(),
                     ha=("", 6101),
+                    tymeout=1.5,
                     bs=16192,
                     keypath=serverKeyPath,
                     certpath=serverCertPath,
@@ -730,6 +769,8 @@ def  test_tcp_tls_default_context():
         assert ixBeta.cs.getpeername() == beta.cs.getsockname()
         assert ixBeta.ca == beta.ca
         assert ixBeta.ha == beta.ha
+        assert ixBeta.tymeout == server.tymeout == 1.5
+        assert ixBeta.tymer.duration == ixBeta.tymeout
 
         msgOut = b"Beta sends to Server\n"
         beta.tx(msgOut)

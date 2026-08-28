@@ -278,7 +278,7 @@ class Server(Acceptor):
                               cs=cs,
                               bs=self.bs,
                               wl=self.wl,
-                              timeout=self.tymeout)
+                              tymeout=self.tymeout)
             if ca in self.ixes and self.ixes[ca] is not remoter:
                 self.shutdownIx(ca)
             self.ixes[ca] = remoter
@@ -556,7 +556,7 @@ class ServerTls(Server):
                                  bs=self.bs,
                                  cs=cs,
                                  wl=self.wl,
-                                 timeout=self.tymeout,
+                                 tymeout=self.tymeout,
                                  context=self.context,
                                  version=self.version,
                                  certify=self.certify,
