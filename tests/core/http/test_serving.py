@@ -12,6 +12,7 @@ from hio import help
 from hio.help import helping
 from hio.base import tyming, doing
 from hio.core import http
+from hio.core.http import serving
 
 
 logger = help.ogler.getLogger()
@@ -21,6 +22,49 @@ tlsdirpath = os.path.dirname(
                         os.path.abspath(
                             sys.modules.get(__name__).__file__)))
 certdirpath = os.path.join(tlsdirpath, 'tls', 'certs')
+
+
+def test_responder_content_length_closes_producer():
+    """Content-Length completion closes rather than resumes the producer."""
+    # Responder writes outbound HTTP bytes to an accepted TCP/TLS connection
+    # through tx(). This stand-in captures that transport queue without adding
+    # socket scheduling to a producer-lifecycle test.
+    class Incomer:
+        def __init__(self):
+            self.txbs = bytearray()
+
+        def tx(self, msg):
+            self.txbs.extend(msg)
+
+    events = []
+
+    # HIO's Server is configured with a WSGI application like this generator.
+    # Responder calls it with environ and start_response, then service() drives
+    # the returned response-body iterable. Parsent is not involved here.
+    def app(environ, start_response):
+        try:
+            start_response("200 OK", [("Content-Length", "4")])
+            yield b"body"
+            events.append("resumed")  # must not resume after the framed body
+        finally:
+            # Closing the WSGI producer must still release its resources.
+            events.append("closed")
+
+    incomer = Incomer()
+    responder = serving.Responder(incomer=incomer,
+                                  app=app,
+                                  environ={},
+                                  chunkable=True)
+
+    responder.service()
+
+    assert responder.size == 4
+    assert responder.ended
+    assert responder.iterator is None
+    assert events == ["closed"]
+    assert incomer.txbs.endswith(b"body")
+    assert incomer.txbs.count(b"body") == 1
+
 
 def test_bare_server_echo():
     """
