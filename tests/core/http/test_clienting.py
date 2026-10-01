@@ -28,6 +28,125 @@ tlsdirpath = os.path.dirname(
 certdirpath = os.path.join(tlsdirpath, 'tls', 'certs')
 
 
+def _service_client_connection(client, server):
+    """Drive a real nonblocking Client connection through server acceptance."""
+    for _ in range(100):
+        client.connector.serviceConnect()
+        server.serviceConnects()
+        if (client.connector.connected and
+                client.connector.ca in server.ixes):
+            return
+        time.sleep(0.01)
+    raise AssertionError("client did not connect")
+
+
+def test_respondent_reopen_resets_parser_generation():
+    """A new transport generation explicitly resets terminal parser state."""
+    respondent = clienting.Respondent(msg=bytearray())
+    old_parser = respondent.parser
+    respondent.started = True
+    respondent.headed = True
+    respondent.bodied = True
+    respondent.ended = True
+    respondent.closed = True
+    respondent.errored = True
+    respondent.error = "old transport failed"
+
+    respondent.reopen()
+
+    assert respondent.parser is not old_parser
+    assert not respondent.started
+    assert not respondent.headed
+    assert not respondent.bodied
+    assert not respondent.ended
+    assert not respondent.closed
+    assert not respondent.errored
+    assert respondent.error is None
+
+
+def test_client_reopen_resets_parser_generation():
+    """Manual reopen rearms parsing after opening a real new socket."""
+    with tcp.openServer(ha=("127.0.0.1", 0)) as server:
+        # Acceptor does not refresh .eha after binding an ephemeral port.
+        server.eha = server.ha
+        with clienting.openClient(hostname=server.ha[0],
+                                  port=server.ha[1]) as client:
+            _service_client_connection(client, server)
+            old_socket = client.connector.cs
+            old_parser = client.respondent.parser
+            client.respondent.close()
+
+            assert client.reopen()
+
+            assert old_socket.fileno() == -1
+            assert client.connector.cs is not old_socket
+            assert client.respondent.parser is not old_parser
+            assert not client.respondent.closed
+
+
+def test_client_automatic_reconnect_resets_parser_generation():
+    """A real cutoff/reconnect uses the parser-generation transition."""
+    tymist = tyming.Tymist(tyme=0.0)
+    with tcp.openServer(tymth=tymist.tymen(),
+                        ha=("127.0.0.1", 0)) as server:
+        server.eha = server.ha
+        with clienting.openClient(hostname=server.ha[0],
+                                  port=server.ha[1],
+                                  tymth=tymist.tymen(),
+                                  reconnectable=True,
+                                  tymeout=1.0) as client:
+            _service_client_connection(client, server)
+            old_parser = client.respondent.parser
+
+            server.removeIx(client.connector.ca)  # trigger server EOF; client eventually gets EOF
+            for _ in range(100):
+                client.connector.serviceReceives()
+                if client.connector.cutoff:
+                    break
+                time.sleep(0.01)
+            assert client.connector.cutoff  # we've received EOF and should be cutoff
+
+            tymist.tick(tock=1.1)
+            assert client.connector.tymer.expired
+            client.service()  # triggers new parser setup
+
+            assert client.respondent.parser is not old_parser  # should have new parser
+            assert not client.respondent.closed
+            assert not client.connector.cutoff
+
+
+def test_cross_origin_redirect_resets_parser_generation():
+    """A real cross-origin connector replacement rearms response parsing."""
+    with tcp.openServer(ha=("127.0.0.1", 0)) as origin, \
+         tcp.openServer(ha=("127.0.0.1", 0)) as target:
+        origin.eha = origin.ha
+        target.eha = target.ha
+        with clienting.openClient(hostname=origin.ha[0],
+                                  port=origin.ha[1]) as client:
+            _service_client_connection(client, origin)
+            old_connector = client.connector
+            old_socket = old_connector.cs
+            old_parser = client.respondent.parser
+            client.respondent.close()
+            client.redirects = [{
+                "headers": help.Hict({
+                    "Location": "http://{}:{}/next".format(*target.ha),
+                }),
+                "method": "GET",
+            }]
+
+            client.redirect()
+
+            assert old_socket.fileno() == -1
+            assert client.connector is not old_connector
+            assert isinstance(client.connector, tcp.Client)
+            assert client.connector.ha == target.ha
+            assert client.respondent.msg is client.connector.rxbs
+            assert client.respondent.parser is not old_parser
+            assert not client.respondent.closed
+            _service_client_connection(client, target)
+
+
 def mockEchoService(server):
     """
     mock echo server service for testing
