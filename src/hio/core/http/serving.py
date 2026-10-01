@@ -202,16 +202,17 @@ class Requestant(httping.Parsent):
         if self.chunked:  # chunked takes precedence over length
             self.parms = dict()
             while True:  # parse all chunks here
-                if self.closed:  # connection closed prematurely
-                    raise httping.PrematureClosure("Connection closed unexpectedly"
-                                                   " while parsing request body chunk")
-
                 chunkParser = httping.parseChunk(raw=self.msg)
                 while True:  # parse another chunk
                     result = next(chunkParser)
                     if result is not None:
                         chunkParser.close()
                         break
+                    if self.closed:
+                        chunkParser.close()
+                        raise httping.PrematureClosure(
+                            "Connection closed unexpectedly while parsing "
+                            "request body chunk")
                     (yield None)
 
                 size, parms, trails, chunk = result
@@ -221,10 +222,6 @@ class Requestant(httping.Parsent):
 
                 if size:  # size non zero so append chunk but keep iterating
                     self.body.extend(chunk)
-
-                    if self.closed:  # no more data so finish
-                        chunkParser.close()
-                        break
 
                 else:  # last chunk when empty chunk so done
                     if trails:
