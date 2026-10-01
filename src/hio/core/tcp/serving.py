@@ -268,12 +268,22 @@ class Server(Acceptor):
         self.serviceAccepts()  # populate .axes
         while self.axes:
             cs, ca = self.axes.popleft()
-            if ca != cs.getpeername() or self.eha[1] != cs.getsockname()[1]: # only port on eha
+            try:
+                peer = cs.getpeername()
+                ha = cs.getsockname()
+            except OSError as ex:
+                logger.debug("Discarding unusable accepted socket from %s.\n%s\n",
+                             ca, ex)
+                cs.close()
+                continue
+
+            if ca != peer or self.eha[1] != ha[1]: # only port on eha
+                cs.close()
                 raise ValueError("Accepted socket host addresses malformed for "
                                  "peer. ca {0} != {1} or ha port {2} != {3}\n"
-                                 "".format(ca, cs.getpeername(), self.eha, cs.getsockname()))
+                                 "".format(ca, peer, self.eha, ha))
             remoter = Remoter(tymth=self.tymth,
-                              ha=cs.getsockname(),
+                              ha=ha,
                               ca=ca,
                               cs=cs,
                               bs=self.bs,
@@ -546,12 +556,22 @@ class ServerTls(Server):
         self.serviceAccepts()  # populate .axes
         while self.axes:
             cs, ca = self.axes.popleft()
-            if ca != cs.getpeername() or self.eha[1] != cs.getsockname()[1]: # only port on eha
+            try:
+                peer = cs.getpeername()
+                ha = cs.getsockname()
+            except OSError as ex:
+                logger.debug("Discarding unusable accepted socket from %s.\n%s\n",
+                             ca, ex)
+                cs.close()
+                continue
+
+            if ca != peer or self.eha[1] != ha[1]: # only port on eha
+                cs.close()
                 raise ValueError("Accepted socket host addresses malformed for "
                                  "peer. ca {0} != {1} or ha port {2} != {3}\n"
-                                 "".format(ca, cs.getpeername(), self.eha, cs.getsockname()))
+                                 "".format(ca, peer, self.eha, ha))
             remoter = RemoterTls(tymth=self.tymth,
-                                 ha=cs.getsockname(),
+                                 ha=ha,
                                  ca=ca,
                                  bs=self.bs,
                                  cs=cs,
