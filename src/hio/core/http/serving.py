@@ -304,6 +304,14 @@ class Responder():
         self.closed = True
 
 
+    def closeIterator(self):
+        """Close and forget the WSGI application response iterator."""
+        iterator = self.iterator
+        self.iterator = None
+        if iterator is not None and hasattr(iterator, "close"):
+            iterator.close()
+
+
     def reset(self, environ, chunkable=None):
         """
         Reset attributes for another request-response
@@ -472,8 +480,9 @@ class Responder():
             else:
                 if msg:  # only write if not empty allows async processing
                     self.write(msg)
-                    if self.length is not None and self.size >= self.length:
-                        self.ended = True
+                if self.length is not None and self.size >= self.length:
+                    self.ended = True
+                    self.closeIterator()
 
 
 @contextmanager
