@@ -310,7 +310,7 @@ class Responder():
         """
         self.environ = environ
 
-        if self.chunkable is not None:
+        if chunkable is not None:
             self.chunkable = chunkable
 
         self.started = False
@@ -322,6 +322,7 @@ class Responder():
         self.headers = help.Hict()
         self.length = None
         self.size = 0
+        self.evented = False
 
 
     def build(self):
@@ -780,8 +781,8 @@ class Server():
                                  requestant.body)
                     # create or restart wsgi app responder here
                     environ = self.buildEnviron(requestant)
+                    chunkable = True if requestant.version >= (1, 1) else False
                     if ca not in self.reps:
-                        chunkable = True if requestant.version >= (1, 1) else False
                         responder = Responder(incomer=requestant.remoter,
                                                   app=self.app,
                                                   environ=environ,
@@ -789,7 +790,8 @@ class Server():
                         self.reps[ca] = responder
                     else:  # reuse
                         responder = self.reps[ca]
-                        responder.reset(environ=environ)
+                        responder.reset(environ=environ,
+                                        chunkable=chunkable)
 
 
     def serviceReps(self):
