@@ -286,6 +286,7 @@ class Responder():
         self.chunked = False  # True if should send in chunks
         self.ended = False  # True if response body completely sent
         self.closed = False  # True if connection closed by far side
+        self.iterable = None  # application body whose close method WSGI owns
         self.iterator = None  # iterator on application body
         self.status = status
         self.headers = help.Hict()  # headers
@@ -298,16 +299,32 @@ class Responder():
         """
         Close any resources
         """
-        if self.started and not self.closed and not self.ended:
-            self.write(b'')  # in case chunked send empty chunk to terminate
-        self.ended = True
-        self.closed = True
+        try:
+            if self.started and not self.closed and not self.ended:
+                self.write(b'')  # in case chunked send empty chunk to terminate
+        finally:
+            self.ended = True
+            self.closed = True
+            self.closeIterator()
+
+
+    def closeIterator(self):
+        """Release the application iterable exactly once, including on errors."""
+        iterable = self.iterable
+        self.iterable = self.iterator = None
+        try:
+            close = getattr(iterable, 'close', None)
+            if close is not None:
+                close()
+        except Exception as ex:
+            logger.error("Error closing WSGI response iterable.\n%s\n", ex)
 
 
     def reset(self, environ, chunkable=None):
         """
         Reset attributes for another request-response
         """
+        self.closeIterator()
         self.environ = environ
 
         if self.chunkable is not None:
@@ -442,8 +459,8 @@ class Responder():
         """
         if not self.closed and not self.ended:
             if self.iterator is None:  # initiate application
-                self.iterator = iter(self.app(self.environ,
-                                              start_response=self.start))
+                self.iterable = self.app(self.environ, start_response=self.start)
+                self.iterator = iter(self.iterable)
             try:
                 msg = next(self.iterator)
             except StopIteration as ex:
@@ -474,6 +491,9 @@ class Responder():
                     self.write(msg)
                     if self.length is not None and self.size >= self.length:
                         self.ended = True
+            finally:
+                if self.ended:
+                    self.closeIterator()
 
 
 @contextmanager
