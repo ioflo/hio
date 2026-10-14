@@ -217,12 +217,18 @@ class Server(Acceptor):
         opened (bool): True if listen socket ss is open; False otherwise
 
     Attributes:
-        tymeout (float): timeout in seconds for connection refresh
+        tymeout (float): idle tymeout in seconds passed to each accepted
+            Remoter. A connection with no bytes received or sent for tymeout
+            has an expired .tymer; the owner of the server decides whether to
+            drop it. 0.0 means never time out.
         wl (WireLog | None): WireLog instance if any
         ixes (dict): incoming connections indexed by remote (host, port) duple
     """
 
-    Tymeout = 1.0  # tymeout in seconds virtual tyme
+    # 0.0 means accepted connections never time out. This was 1.0, but the
+    # value never reached Remoter (it was passed as timeout=), so 0.0 is the
+    # behavior every caller has actually had; pass tymeout to opt in.
+    Tymeout = 0.0  # tymeout in seconds virtual tyme
 
     def __init__(self,
                  ha=None,
@@ -258,6 +264,16 @@ class Server(Acceptor):
             rm.wind(tymth)
 
 
+    def setTymeout(self, tymeout):
+        """
+        Set .tymeout for connections accepted from now on and apply it to the
+        connections already in .ixes. See Remoter.setTymeout.
+        """
+        self.tymeout = tymeout
+        for rm in self.ixes.values():  # remoter
+            rm.setTymeout(tymeout)
+
+
     def serviceAxes(self):
         """
         Service axes
@@ -278,9 +294,9 @@ class Server(Acceptor):
                               cs=cs,
                               bs=self.bs,
                               wl=self.wl,
-                              timeout=self.tymeout)
+                              tymeout=self.tymeout)
             if ca in self.ixes and self.ixes[ca] is not remoter:
-                self.shutdownIx(ca)
+                self.ixes[ca].close()  # replaced so close old socket
             self.ixes[ca] = remoter
 
 
@@ -493,7 +509,12 @@ class ServerTls(Server):
         ss (socket.socket | None): server listen socket for incoming accept requests
         axes (deque): accepted connection duples (ca, cs)
         opened (bool): True if listen socket ss is open; False otherwise
-        timeout (float): timeout in seconds for connection refresh
+        tymeout (float): tymeout in seconds passed to each accepted
+            RemoterTls. A connection that has not completed its TLS handshake
+            within tymeout of being accepted is dropped. This is a total
+            deadline, not an idle limit: handshake traffic does not restart
+            the tymer. Once connected, tymeout is an idle limit as for
+            Server. 0.0 means never time out.
         wl (WireLog | None): WireLog instance if any
         ixes (dict): incoming connections indexed by remote (host, port) duple
 
@@ -536,6 +557,27 @@ class ServerTls(Server):
                                         )
 
 
+    def wind(self, tymth):
+        """
+        Inject new tymist.tymth as new ._tymth. Changes tymist.tyme base.
+        Also winds connections still in handshake in .cxes so they can expire.
+        """
+        super(ServerTls, self).wind(tymth)
+        for cx in self.cxes.values():  # remoterTls
+            cx.wind(tymth)
+
+
+    def setTymeout(self, tymeout):
+        """
+        Set .tymeout for connections accepted from now on and apply it to the
+        connections already in .ixes and still handshaking in .cxes. A
+        handshake deadline still counts from accept, see Remoter.setTymeout.
+        """
+        super(ServerTls, self).setTymeout(tymeout)
+        for cx in self.cxes.values():  # remoterTls
+            cx.setTymeout(tymeout)
+
+
     def serviceAxes(self):
         """
         Service accepteds
@@ -556,7 +598,7 @@ class ServerTls(Server):
                                  bs=self.bs,
                                  cs=cs,
                                  wl=self.wl,
-                                 timeout=self.tymeout,
+                                 tymeout=self.tymeout,
                                  context=self.context,
                                  version=self.version,
                                  certify=self.certify,
@@ -564,7 +606,8 @@ class ServerTls(Server):
                                  certpath=self.certpath,
                                  cafilepath=self.cafilepath,
                                 )
-
+            if ca in self.cxes and self.cxes[ca] is not remoter:
+                self.cxes[ca].close()  # replaced so close old socket
             self.cxes[ca] = remoter
 
 
@@ -572,15 +615,25 @@ class ServerTls(Server):
         """
         Service handshakes for every remoter in .cxes
         If successful move to .ixes
+        Drop any whose handshake has not completed within its tymeout
         """
         for ca, cx in list(self.cxes.items()):  # list so can remove during iteration
             cx.handshake()
             if cx.connected:  # handshake completed successfully
                 del self.cxes[ca]
+                cx.refresh()  # idle tyme on ixes counts from handshake completion
+                if ca in self.ixes and self.ixes[ca] is not cx:
+                    self.ixes[ca].close()  # replaced so close old socket
                 self.ixes[ca] = cx  # add to incoming connections
                 continue
             if cx.aborted:  # handshake completed unsuccessfully
                 del self.cxes[ca] # remove and let client startover
+                continue
+            if cx.expired:  # handshake never completed so drop
+                logger.debug("Dropping incoming connection from %s: tls "
+                            "handshake not completed within %s s.", ca, cx.tymeout)
+                cx.close()
+                del self.cxes[ca]
                 continue
 
 
@@ -628,6 +681,8 @@ class Remoter(tyming.Tymee):
             self.cs.setblocking(0)  # linux does not preserve blocking from accept
         self.tymeout = tymeout if tymeout is not None else self.Tymeout
         self.tymer = tyming.Tymer(tymth=self.tymth, duration=self.tymeout)
+        # restarted only by send progress, see .sendExpired
+        self.sendTymer = tyming.Tymer(tymth=self.tymth, duration=self.tymeout)
         self.cutoff = False # True when detect connection closed on far side
         self.refreshable = refreshable
         self.bs = bs
@@ -643,6 +698,7 @@ class Remoter(tyming.Tymee):
         """
         super(Remoter, self).wind(tymth)
         self.tymer.wind(tymth)
+        self.sendTymer.wind(tymth)
 
 
     def shutdown(self, how=socket.SHUT_RDWR):
@@ -688,11 +744,59 @@ class Remoter(tyming.Tymee):
             self.cs = None
 
 
+    @property
+    def expired(self):
+        """
+        Returns True if this connection has been idle for longer than .tymeout.
+        Never True when .tymeout is 0.0 or when no tymth has been wound, since
+        without a tyme there is no idle tyme to measure.
+        """
+        return (self.tymeout > 0.0 and self.tymer.tyme is not None
+                and self.tymer.expired)
+
+
+    @property
+    def sendExpired(self):
+        """
+        Returns True if bytes have been waiting in .txbs for longer than
+        .tymeout without any send progress. Only received bytes do not count,
+        so a peer that keeps sending but has stopped reading still expires.
+        Never True when .tymeout is 0.0 or when no tymth has been wound.
+        """
+        return (self.tymeout > 0.0 and self.sendTymer.tyme is not None
+                and self.sendTymer.expired)
+
+
+    def setTymeout(self, tymeout):
+        """
+        Replace .tymeout and the duration of .tymer and .sendTymer, keeping
+        the tyme each started at. So a deadline counted from accept, such as
+        a TLS handshake's, still counts from accept, and setting it again
+        cannot extend it.
+        """
+        self.tymeout = tymeout
+        for tymer in (self.tymer, self.sendTymer):
+            start = 0.0 if tymer.tyme is None else tymer.tyme - tymer.elapsed
+            tymer.start(duration=tymeout, start=start)
+
+
     def refresh(self):
         """
-        Restart tymer
+        Restart tymer from now, so .tymeout measures idle tyme since the
+        latest activity. Not a lossless restart: that would add a whole
+        tymeout per refresh and a trickling peer would never expire.
         """
-        self.tymer.restart()
+        if self.tymer.tyme is not None:  # no tymth wound means nothing to time
+            self.tymer.start()
+
+
+    def refreshSend(self):
+        """
+        Restart sendTymer from now, on send progress or when bytes are queued
+        onto an empty .txbs.
+        """
+        if self.sendTymer.tyme is not None:  # no tymth wound means nothing to time
+            self.sendTymer.start()
 
 
     def receive(self):
@@ -800,6 +904,7 @@ class Remoter(tyming.Tymee):
 
             if self.refreshable:
                 self.refresh()
+                self.refreshSend()
 
         return count
 
@@ -807,7 +912,11 @@ class Remoter(tyming.Tymee):
     def tx(self, data):
         '''
         Queue data onto .txbs
+        Queuing onto an empty .txbs restarts .sendTymer, so time spent with
+        nothing to send does not count against sending what is queued now.
         '''
+        if data and not self.txbs and self.refreshable:
+            self.refreshSend()
         self.txbs.extend(data)
 
 
@@ -965,6 +1074,9 @@ class RemoterTls(Remoter):
             if self.wl:  # log over the wire rx
                 self.wl.writeRx(data, who=self.cs.getpeername())
 
+            if self.refreshable:
+                self.refresh()
+
         else:  # data empty so connection closed on other end
             self.cutoff = True
 
@@ -1002,6 +1114,10 @@ class RemoterTls(Remoter):
         if result:
             if self.wl:
                 self.wl.writeTx(data[:result], who=self.cs.getpeername())
+
+            if self.refreshable:
+                self.refresh()
+                self.refreshSend()
 
         return result
 

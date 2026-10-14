@@ -79,7 +79,7 @@ def test_tcp_basic():
     assert client.cutoff == False
 
     server = tcp.Server()
-    assert server.tymeout == 1.0
+    assert server.tymeout == 0.0
 
     assert server.ha == ('', 56000)
     assert server.eha == ('127.0.0.1', 56000)
