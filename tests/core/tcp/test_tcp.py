@@ -10,6 +10,8 @@ import sys
 import os
 import time
 import socket
+import select
+import struct
 from collections import deque
 import ssl
 
@@ -586,6 +588,37 @@ def test_client_auto_reconnect():
          tcp.openClient(tymth=tymist.tymen(), tymeout=0.2, reconnectable=True,
                     ha=("127.0.0.1", 6101)) as beta:
 
+        msgOut = b"Beta sends to Server on reconnect"
+        beta.tx(msgOut)
+
+        # POSIX can lose the peer address before HIO accepts the connection.
+        # Windows retains it after this reset; its normal reconnect flow follows.
+        if sys.platform != 'win32':
+            # Establish TCP without letting HIO publish connection acceptance yet.
+            beta.cs.setblocking(True)
+            beta.cs.connect(beta.ha)
+            beta.cs.setblocking(False)
+
+            # An abortive peer close sends a real TCP reset, not a graceful EOF.
+            assert select.select([server.ss], [], [], 1.0)[0] == [server.ss]
+            with server.ss.accept()[0] as peer:
+                linger = struct.pack('ii', 1, 0)
+                peer.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, linger)
+            assert select.select([beta.cs], [], [], 1.0)[0] == [beta.cs]
+
+            # Failed acceptance must preserve the message for the reconnect below.
+            addresses = beta.ca, beta.ha
+            timer = beta.tymer
+            deadline = timer.tyme + timer.remaining
+            txbs, rxbs = beta.txbs, beta.rxbs
+
+            assert beta.connect() is False
+            assert not beta.accepted and not beta.connected
+            assert (beta.ca, beta.ha) == addresses
+            assert beta.txbs is txbs and beta.txbs == msgOut
+            assert beta.rxbs is rxbs and not beta.rxbs
+            assert beta.tymer is timer and timer.tyme + timer.remaining == deadline
+
         # close server
         server.close()
         assert server.opened == False
@@ -631,8 +664,6 @@ def test_client_auto_reconnect():
         assert ixBeta.ca == beta.ca
         assert ixBeta.ha == beta.ha
 
-        msgOut = b"Beta sends to Server on reconnect"
-        beta.tx(msgOut)
         while not ixBeta.rxbs and beta.txbs:
             beta.serviceSends()
             time.sleep(0.05)

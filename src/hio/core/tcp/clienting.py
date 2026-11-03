@@ -318,9 +318,18 @@ class Client(tyming.Tymee):
             return False  # try again later
 
         # now self.cs has new virtual port see self.cs.getsockname()
-        self.ca = self.cs.getsockname()  # resolved local connection address
-        # self.cs.getpeername() is self.ha
-        self.ha = self.cs.getpeername()  # resolved remote connection address
+        ca = self.cs.getsockname()  # resolved local connection address
+        try:
+            ha = self.cs.getpeername()  # resolved remote connection address
+        except OSError as ex:
+            if ex.errno == errno.ENOTCONN:
+                return False  # connection is not ready; retain this socket
+            if ex.errno == errno.EINVAL:  # socket has been shut down on macOS
+                self.reopen()
+                return False
+            raise
+
+        self.ca, self.ha = ca, ha
 
         self.accepted = True  # also sets .connected == True
         self.cutoff = False
