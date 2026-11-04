@@ -375,12 +375,12 @@ def test_client_request_echo_port_empty():
 
     """
     with tcp.openServer(port = 80, bufsize=131072) as alpha:
-        if sys.platform == "linux" or sys.platform == "win32":
-            assert alpha.ha == ('', 80)
-            assert alpha.eha == ('127.0.0.1', 80)
-        else:
+        if alpha.opened:
             assert alpha.ha == ('0.0.0.0', 80)
-            assert alpha.eha == ('127.0.0.1', 80)
+        else:
+            assert sys.platform in ("linux", "win32")
+            assert alpha.ha == ('', 80)
+        assert alpha.eha == ('127.0.0.1', 80)
 
         host = alpha.eha[0]
         port = alpha.eha[1]
