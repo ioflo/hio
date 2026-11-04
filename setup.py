@@ -91,7 +91,7 @@ setup(
         'lmdb>=1.7.5',
         'msgpack>=1.1.2',
         'cbor2>=5.7.1',
-        'multidict>=6.7.0',
+        'multidict>=6.7.0,<7',
         'falcon>=4.2.0',
         'ordered-set>=4.1.0',
         'sortedcontainers>=2.4.0',
