@@ -318,9 +318,15 @@ class Client(tyming.Tymee):
             return False  # try again later
 
         # now self.cs has new virtual port see self.cs.getsockname()
+        try:
+            peer = self.cs.getpeername()  # resolved remote connection address
+        except OSError as ex:
+            if ex.errno not in (errno.EINVAL, errno.ENOTCONN):
+                raise
+            self.reopen()
+            return False
         self.ca = self.cs.getsockname()  # resolved local connection address
-        # self.cs.getpeername() is self.ha
-        self.ha = self.cs.getpeername()  # resolved remote connection address
+        self.ha = peer
 
         self.accepted = True  # also sets .connected == True
         self.cutoff = False
