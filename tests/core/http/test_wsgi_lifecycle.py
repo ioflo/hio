@@ -168,6 +168,60 @@ def test_cleanup_error_does_not_prevent_connection_teardown(monkeypatch):
     assert errors == ['application cleanup failed']
 
 
+@pytest.mark.parametrize('error', [RuntimeError('response failed'), http.HTTPError(500)])
+def test_failed_response_closes_body_without_terminating_chunked_response(error):
+    class FailingBody:
+        def __init__(self):
+            self.closes = 0
+            self.sent = False
+
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            if self.sent:
+                raise error
+            self.sent = True
+            return b'partial'
+
+        def close(self):
+            self.closes += 1
+
+    body = FailingBody()
+    sent = []
+
+    def application(environ, start_response):
+        start_response('200 OK', [('Content-Type', 'text/plain')])
+        return body
+
+    responder = http.serving.Responder(SimpleNamespace(tx=sent.append), application, {}, chunkable=True)
+    responder.service()
+    responder.service()
+    assert responder.closed
+    assert body.closes == 1
+    responder.close()
+    assert body.closes == 1
+    assert not b''.join(sent).endswith(b'0\r\n\r\n')
+
+
+def test_failure_creating_iterator_closes_application_body():
+    class FailingBody:
+        closes = 0
+
+        def __iter__(self):
+            raise RuntimeError('iterator creation failed')
+
+        def close(self):
+            self.closes += 1
+
+    body = FailingBody()
+    responder = http.serving.Responder(SimpleNamespace(tx=lambda msg: None),
+                                        lambda environ, start_response: body, {})
+    responder.service()
+    assert responder.closed
+    assert body.closes == 1
+
+
 def test_wsgi_persistent_connection_releases_each_body():
     bodies = []
 

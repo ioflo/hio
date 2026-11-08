@@ -458,10 +458,10 @@ class Responder():
         Service wsgi compatible application
         """
         if not self.closed and not self.ended:
-            if self.iterator is None:  # initiate application
-                self.iterable = self.app(self.environ, start_response=self.start)
-                self.iterator = iter(self.iterable)
             try:
+                if self.iterator is None:  # initiate application
+                    self.iterable = self.app(self.environ, start_response=self.start)
+                    self.iterator = iter(self.iterable)
                 msg = next(self.iterator)
             except StopIteration as ex:
                 if hasattr(ex, "value") and ex.value:
@@ -484,15 +484,17 @@ class Responder():
                 else:
                     logger.error("HTTPError streaming body after headers sent.\n"
                                     "%s\n", ex)
+                    self.closed = True
             except Exception as ex:  # handle http exceptions not caught by app
                 logger.error("Unexcepted Server Error.\n%s\n", ex)
+                self.closed = True
             else:
                 if msg:  # only write if not empty allows async processing
                     self.write(msg)
                     if self.length is not None and self.size >= self.length:
                         self.ended = True
             finally:
-                if self.ended:
+                if self.ended or self.closed:
                     self.closeIterator()
 
 
