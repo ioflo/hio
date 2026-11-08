@@ -457,45 +457,50 @@ class Responder():
         """
         Service wsgi compatible application
         """
-        if not self.closed and not self.ended:
-            try:
-                if self.iterator is None:  # initiate application
-                    self.iterable = self.app(self.environ, start_response=self.start)
-                    self.iterator = iter(self.iterable)
-                msg = next(self.iterator)
-            except StopIteration as ex:
-                if hasattr(ex, "value") and ex.value:
-                    self.write(ex.value)  # new style generators in python3.3+
-                self.write(b'')  # in case chunked send empty chunk to terminate
-                self.ended = True
-            except httping.HTTPError as ex:
-                if not self.headed:
-                    headers = help.Hict()
-                    headers.update(ex.headers.items())
-                    if 'content-type' not in headers:
-                        headers['content-type'] = 'text/plain'
-                    msg = ex.render()
-                    headers['content-length'] = str(len(msg))
-                    # WSGI status is string of status code and reason
-                    status = "{} {}".format(ex.status, ex.reason)
-                    self.start(status, headers.items(), sys.exc_info())
-                    self.write(msg)
+        try:
+            if not self.closed and not self.ended:
+                try:
+                    if self.iterator is None:  # initiate application
+                        self.iterable = self.app(self.environ, start_response=self.start)
+                        self.iterator = iter(self.iterable)
+                    msg = next(self.iterator)
+                except StopIteration as ex:
+                    if hasattr(ex, "value") and ex.value:
+                        self.write(ex.value)  # new style generators in python3.3+
+                    self.write(b'')  # in case chunked send empty chunk to terminate
                     self.ended = True
-                else:
-                    logger.error("HTTPError streaming body after headers sent.\n"
-                                    "%s\n", ex)
-                    self.closed = True
-            except Exception as ex:  # handle http exceptions not caught by app
-                logger.error("Unexcepted Server Error.\n%s\n", ex)
-                self.closed = True
-            else:
-                if msg:  # only write if not empty allows async processing
-                    self.write(msg)
-                    if self.length is not None and self.size >= self.length:
+                except httping.HTTPError as ex:
+                    if not self.headed:
+                        headers = help.Hict()
+                        headers.update(ex.headers.items())
+                        if 'content-type' not in headers:
+                            headers['content-type'] = 'text/plain'
+                        msg = ex.render()
+                        headers['content-length'] = str(len(msg))
+                        # WSGI status is string of status code and reason
+                        status = "{} {}".format(ex.status, ex.reason)
+                        self.start(status, headers.items(), sys.exc_info())
+                        self.write(msg)
                         self.ended = True
-            finally:
-                if self.ended or self.closed:
-                    self.closeIterator()
+                    else:
+                        logger.error("HTTPError streaming body after headers sent.\n"
+                                        "%s\n", ex)
+                        self.closed = True
+                except Exception as ex:  # handle http exceptions not caught by app
+                    logger.error("Unexcepted Server Error.\n%s\n", ex)
+                    self.closed = True
+                else:
+                    if msg:  # only write if not empty allows async processing
+                        self.write(msg)
+                        if self.length is not None and self.size >= self.length:
+                            self.ended = True
+                finally:
+                    if self.ended or self.closed:
+                        self.closeIterator()
+        except BaseException:
+            self.closed = True
+            self.closeIterator()
+            raise
 
 
 @contextmanager

@@ -204,6 +204,31 @@ def test_failed_response_closes_body_without_terminating_chunked_response(error)
     assert not b''.join(sent).endswith(b'0\r\n\r\n')
 
 
+
+@pytest.mark.parametrize('fail_at', [0, 1, 2])
+def test_write_failure_closes_application_body(fail_at):
+    body = ResponseBody(lambda status, headers: None, [b'partial'])
+    sent = []
+
+    def application(environ, start_response):
+        start_response('200 OK', [('Content-Type', 'text/plain')])
+        return body
+
+    def write(message):
+        if len(sent) == fail_at:
+            raise OSError('write failed')
+        sent.append(message)
+
+    responder = http.serving.Responder(SimpleNamespace(tx=write), application, {}, chunkable=True)
+    with pytest.raises(OSError, match='write failed'):
+        while not responder.ended:
+            responder.service()
+    assert responder.closed
+    assert body.closes == 1 and body.finalized
+    responder.close()
+    assert body.closes == 1
+
+
 def test_failure_creating_iterator_closes_application_body():
     class FailingBody:
         closes = 0
