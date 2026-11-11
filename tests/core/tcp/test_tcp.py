@@ -589,6 +589,9 @@ def test_client_auto_reconnect():
         # close server
         server.close()
         assert server.opened == False
+        while tymist.tyme <= 0.25:  # wait for shutdown to fully complete
+            tymist.tick()
+            time.sleep(0.05)
 
         assert beta.opened == True
         assert beta.accepted == False
