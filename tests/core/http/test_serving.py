@@ -11,7 +11,8 @@ import pytest
 from hio import help
 from hio.help import helping
 from hio.base import tyming, doing
-from hio.core import http
+from hio.core import http, tcp
+from hio.core.http import serving
 
 
 logger = help.ogler.getLogger()
@@ -21,6 +22,55 @@ tlsdirpath = os.path.dirname(
                         os.path.abspath(
                             sys.modules.get(__name__).__file__)))
 certdirpath = os.path.join(tlsdirpath, 'tls', 'certs')
+
+
+def _service_requestant(requestant, limit=8):
+    """Drive a finite request parser without hiding a terminal EOF stall."""
+    for _ in range(limit):
+        requestant.parse()
+        if requestant.parser is None:
+            return
+    raise AssertionError("request parser did not settle")
+
+
+@pytest.mark.parametrize(
+    "initial, buffered, expected_body",
+    [
+        (b"",
+         b"GET /buffered HTTP/1.1\r\nHost: localhost\r\n\r\n",
+         b""),
+        (b"GET /buffered HTTP/1.1\r\n",
+         b"Host: localhost\r\n\r\n",
+         b""),
+        (b"POST /buffered HTTP/1.1\r\nHost: localhost\r\n"
+         b"Content-Length: 4\r\n\r\n",
+         b"test",
+         b"test"),
+    ],
+)
+def test_requestant_consumes_complete_buffered_framing_before_eof(
+        initial, buffered, expected_body):
+    """Complete start-line, headers, or fixed body buffered at EOF are valid."""
+    remoter = tcp.Remoter(ha=("127.0.0.1", 6101),
+                          ca=("127.0.0.1", 6102),
+                          cs=None)
+    requestant = serving.Requestant(msg=bytearray(initial), remoter=remoter)
+    requestant.parse()
+    assert requestant.parser is not None
+
+    requestant.msg.extend(buffered)
+    requestant.close()
+    _service_requestant(requestant)
+
+    assert requestant.closed
+    assert requestant.ended
+    assert not requestant.errored
+    assert requestant.headed
+    assert requestant.bodied
+    assert requestant.path == "/buffered"
+    assert requestant.body == expected_body
+    assert not requestant.msg
+
 
 def test_bare_server_echo():
     """
