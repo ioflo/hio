@@ -303,8 +303,10 @@ class Client(tyming.Tymee):
         Returns True if successful
         Returns False if not so try again later
         """
+        reopened = False
         if not self.cs:
             self.reopen()
+            reopened = True
 
         try:
             result = self.cs.connect_ex(self.ha)  # async connect
@@ -315,12 +317,14 @@ class Client(tyming.Tymee):
         if result not in [0, errno.EISCONN]:  # not connected
             if result in (errno.EINVAL, errno.ECONNREFUSED):  # server not listening so must reopen
                 self.reopen()
+                reopened = True
             return False  # try again later
 
         # now self.cs has new virtual port see self.cs.getsockname()
         self.ca = self.cs.getsockname()  # resolved local connection address
-        # self.cs.getpeername() is self.ha
-        self.ha = self.cs.getpeername()  # resolved remote connection address
+        
+        if not self.ha or reopened:  # self.cs.getpeername() is self.ha
+            self.ha = self.cs.getpeername()  # resolved remote connection address
 
         self.accepted = True  # also sets .connected == True
         self.cutoff = False
