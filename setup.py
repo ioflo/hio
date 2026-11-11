@@ -89,7 +89,7 @@ setup(
     python_requires='~=3.14.0',
     install_requires=[
         'lmdb==2.3.0',
-        'msgpack==1.2.2',
+        'msgpack==1.2.3',
         'cbor2==6.1.4',
         'multidict==6.9.1',
         'falcon==4.3.1',
