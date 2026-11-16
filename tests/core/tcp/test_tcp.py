@@ -4,6 +4,7 @@ tests.core.test_tcp module
 
 """
 import pytest
+from unittest import mock
 
 import platform
 import sys
@@ -471,6 +472,68 @@ def test_tcp_basic():
     assert server.opened == False
 
     """Done Test"""
+
+
+@pytest.mark.parametrize(
+    "server_cls, remoter_attr",
+    ((tcp.Server, "ixes"), (tcp.ServerTls, "cxes")),
+    ids=("tcp", "tls"),
+)
+def test_server_discards_unusable_accepted_socket(server_cls, remoter_attr):
+    """
+    Test discarding an unusable socket while servicing later accepts.
+    """
+    tymist = tyming.Tymist()
+    with tcp.openServer(cls=server_cls,
+                        tymth=tymist.tymen(),
+                        ha=("127.0.0.1", 0)) as server:
+        # Acceptor does not refresh .eha after binding an ephemeral port.
+        server.eha = server.ha
+        remoters = getattr(server, remoter_attr)
+        dead = None
+
+        try:
+            with socket.create_connection(server.ha) as unusable_client, \
+                 socket.create_connection(server.ha) as healthy_client:
+                unusable_ca = unusable_client.getsockname()
+                healthy_ca = healthy_client.getsockname()
+
+                for _ in range(10):
+                    server.serviceAccepts()
+                    if len(server.axes) == 2:
+                        break
+                    time.sleep(0.05)
+
+                assert len(server.axes) == 2
+                accepted = {ca: cs for cs, ca in server.axes}
+                dead = accepted[unusable_ca]
+                healthy = accepted[healthy_ca]
+
+                # Preserve real I/O while making only the platform-dependent
+                # peer lookup fail, and queue it first to exercise continuation.
+                unusable = mock.Mock(wraps=dead)
+                unusable.getpeername.side_effect = OSError("Socket not connected")
+                server.axes.clear()
+                server.axes.extend(((unusable, unusable_ca),
+                                    (healthy, healthy_ca)))
+
+                server.serviceAxes()
+
+                assert not server.axes
+                assert dead.fileno() == -1
+                assert set(remoters) == {healthy_ca}
+
+        finally:
+            if dead is not None and dead.fileno() != -1:
+                dead.close()
+            while server.axes:
+                cs, _ = server.axes.popleft()
+                cs.close()
+            if isinstance(server, tcp.ServerTls):
+                for remoter in server.cxes.values():
+                    remoter.close()
+                server.cxes.clear()
+
 
 def test_tcp_service():
     """
