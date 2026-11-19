@@ -286,6 +286,7 @@ class Responder():
         self.chunked = False  # True if should send in chunks
         self.ended = False  # True if response body completely sent
         self.closed = False  # True if connection closed by far side
+        self.iterable = None  # application body whose close method WSGI owns
         self.iterator = None  # iterator on application body
         self.status = status
         self.headers = help.Hict()  # headers
@@ -298,16 +299,32 @@ class Responder():
         """
         Close any resources
         """
-        if self.started and not self.closed and not self.ended:
-            self.write(b'')  # in case chunked send empty chunk to terminate
-        self.ended = True
-        self.closed = True
+        try:
+            if self.started and not self.closed and not self.ended:
+                self.write(b'')  # in case chunked send empty chunk to terminate
+        finally:
+            self.ended = True
+            self.closed = True
+            self.closeIterator()
+
+
+    def closeIterator(self):
+        """Release the application iterable exactly once, including on errors."""
+        iterable = self.iterable
+        self.iterable = self.iterator = None
+        try:
+            close = getattr(iterable, 'close', None)
+            if close is not None:
+                close()
+        except Exception as ex:
+            logger.error("Error closing WSGI response iterable.\n%s\n", ex)
 
 
     def reset(self, environ, chunkable=None):
         """
         Reset attributes for another request-response
         """
+        self.closeIterator()
         self.environ = environ
 
         if self.chunkable is not None:
@@ -440,40 +457,50 @@ class Responder():
         """
         Service wsgi compatible application
         """
-        if not self.closed and not self.ended:
-            if self.iterator is None:  # initiate application
-                self.iterator = iter(self.app(self.environ,
-                                              start_response=self.start))
-            try:
-                msg = next(self.iterator)
-            except StopIteration as ex:
-                if hasattr(ex, "value") and ex.value:
-                    self.write(ex.value)  # new style generators in python3.3+
-                self.write(b'')  # in case chunked send empty chunk to terminate
-                self.ended = True
-            except httping.HTTPError as ex:
-                if not self.headed:
-                    headers = help.Hict()
-                    headers.update(ex.headers.items())
-                    if 'content-type' not in headers:
-                        headers['content-type'] = 'text/plain'
-                    msg = ex.render()
-                    headers['content-length'] = str(len(msg))
-                    # WSGI status is string of status code and reason
-                    status = "{} {}".format(ex.status, ex.reason)
-                    self.start(status, headers.items(), sys.exc_info())
-                    self.write(msg)
+        try:
+            if not self.closed and not self.ended:
+                try:
+                    if self.iterator is None:  # initiate application
+                        self.iterable = self.app(self.environ, start_response=self.start)
+                        self.iterator = iter(self.iterable)
+                    msg = next(self.iterator)
+                except StopIteration as ex:
+                    if hasattr(ex, "value") and ex.value:
+                        self.write(ex.value)  # new style generators in python3.3+
+                    self.write(b'')  # in case chunked send empty chunk to terminate
                     self.ended = True
-                else:
-                    logger.error("HTTPError streaming body after headers sent.\n"
-                                    "%s\n", ex)
-            except Exception as ex:  # handle http exceptions not caught by app
-                logger.error("Unexcepted Server Error.\n%s\n", ex)
-            else:
-                if msg:  # only write if not empty allows async processing
-                    self.write(msg)
-                    if self.length is not None and self.size >= self.length:
+                except httping.HTTPError as ex:
+                    if not self.headed:
+                        headers = help.Hict()
+                        headers.update(ex.headers.items())
+                        if 'content-type' not in headers:
+                            headers['content-type'] = 'text/plain'
+                        msg = ex.render()
+                        headers['content-length'] = str(len(msg))
+                        # WSGI status is string of status code and reason
+                        status = "{} {}".format(ex.status, ex.reason)
+                        self.start(status, headers.items(), sys.exc_info())
+                        self.write(msg)
                         self.ended = True
+                    else:
+                        logger.error("HTTPError streaming body after headers sent.\n"
+                                        "%s\n", ex)
+                        self.closed = True
+                except Exception as ex:  # handle http exceptions not caught by app
+                    logger.error("Unexcepted Server Error.\n%s\n", ex)
+                    self.closed = True
+                else:
+                    if msg:  # only write if not empty allows async processing
+                        self.write(msg)
+                        if self.length is not None and self.size >= self.length:
+                            self.ended = True
+                finally:
+                    if self.ended or self.closed:
+                        self.closeIterator()
+        except BaseException:
+            self.closed = True
+            self.closeIterator()
+            raise
 
 
 @contextmanager
