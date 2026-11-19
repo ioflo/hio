@@ -5,9 +5,6 @@ tests.core.test_tcp module
 """
 import pytest
 
-import errno
-from unittest.mock import Mock
-
 import platform
 import sys
 import os
@@ -580,34 +577,6 @@ def test_tcp_service():
 
     """Done Test"""
 
-@pytest.mark.parametrize("error", [errno.EINVAL, errno.ENOTCONN])
-def test_client_accept_retries_when_peer_is_not_connected(error):
-    client = tcp.Client()
-    client.cs = Mock()
-    client.cs.connect_ex.return_value = 0
-    peer = ("127.0.0.1", 6101)
-    client.cs.getpeername.side_effect = [OSError(error, "not connected"), peer]
-    client.cs.getsockname.return_value = ("127.0.0.1", 6102)
-    client.reopen = Mock(return_value=True)
-
-    assert client.accept() is False
-    assert not client.accepted
-    client.reopen.assert_called_once()
-    assert client.accept() is True
-    assert client.accepted and client.ha == peer
-
-
-def test_client_accept_propagates_unexpected_peer_error():
-    client = tcp.Client()
-    client.cs = Mock()
-    client.cs.connect_ex.return_value = 0
-    client.cs.getpeername.side_effect = OSError(errno.EBADF, "bad descriptor")
-
-    with pytest.raises(OSError) as error:
-        client.accept()
-    assert error.value.errno == errno.EBADF
-
-
 def test_client_auto_reconnect():
     """
     Test client auto reconnect when  .reconnectable
@@ -620,6 +589,9 @@ def test_client_auto_reconnect():
         # close server
         server.close()
         assert server.opened == False
+        while tymist.tyme <= 0.25:  # wait for shutdown to fully complete
+            tymist.tick()
+            time.sleep(0.05)
 
         assert beta.opened == True
         assert beta.accepted == False

@@ -44,7 +44,7 @@ from setuptools import setup
 
 setup(
     name='hio',
-    version='0.7.20',  #  also change in src/hio/__init__.py
+    version='0.7.21',  #  also change in src/hio/__init__.py
     license='Apache Software License 2.0',
     description='Hierarchical Concurrency with Async IO',
     long_description=("HIO Hierarchical Concurrency and Asynchronous IO Library. "
@@ -86,26 +86,33 @@ setup(
                "structured concurrency",
         # eg: 'keyword1', 'keyword2', 'keyword3',
     ],
-    python_requires='>=3.14.0',
+    python_requires='~=3.14.0',
     install_requires=[
-        'lmdb>=1.7.5',
-        'msgpack>=1.1.2',
-        'cbor2>=5.7.1',
-        'multidict>=6.7.0,<7',
-        'falcon>=4.2.0',
-        'ordered-set>=4.1.0',
-        'sortedcontainers>=2.4.0',
-        'pysodium>=0.7.18',
-        'blake3>=1.0.8',
+        'lmdb==2.3.0',
+        'msgpack==1.2.2',
+        'cbor2==6.1.4',
+        'multidict==6.9.1',
+        'falcon==4.3.1',
+        'ordered-set==4.1.0',
+        'sortedcontainers==2.4.0',
+        'pysodium==0.7.18',
+        'blake3==1.0.9',
     ],
     extras_require={
-        # eg:
-        #   'rst': ['docutils>=0.11'],
-        #   ':python_version=="2.6"': ['argparse'],
+        #'test': [
+            #'coverage==7.16.0',
+            #'pytest==9.1.1',
+            #'pytest-cov==7.1.0',
+            #'pytest-shell==0.3.2',
+            #'pytest-xdist==3.8.0',
+        #],
     },
     tests_require=[
-                    'coverage>=7.12.0',
-                    'pytest>=9.0.1',
+                    'coverage==7.16.0',
+                    'pytest==9.1.1',
+                    'pytest-cov==7.1.0',
+                    'pytest-shell==0.3.2',
+                    'pytest-xdist==3.8.0',
                   ],
     setup_requires=[
     ],

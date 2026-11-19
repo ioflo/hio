@@ -132,3 +132,6 @@ dmypy.json
 .pyre/
 
 .idea.vscode
+
+# Wing private task files (not committed)
+.TASKS/
