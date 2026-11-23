@@ -538,13 +538,15 @@ class Respondent(httping.Parsent):
             while True:  # parse all chunks here
                 chunkParser = httping.parseChunk(raw=self.msg)
                 while True:  # parse another chunk
-                    if self.closed and not self.msg:  # connection closed prematurely
-                        raise httping.PrematureClosure("Connection closed "
-                                "unexpectedly while parsing response body chunk")
                     result = next(chunkParser)
                     if result is not None:
                         chunkParser.close()
                         break
+                    if self.closed:
+                        chunkParser.close()
+                        raise httping.PrematureClosure(
+                            "Connection closed unexpectedly while parsing "
+                            "response body chunk")
                     (yield None)
 
                 size, parms, trails, chunk = result
@@ -562,10 +564,6 @@ class Respondent(httping.Parsent):
                         if (self.eventSource.leid is not None and
                                 self.leid != self.eventSource.leid):
                             self.leid = self.eventSource.leid
-
-                    if self.closed and not self.msg:  # no more data so finish
-                        chunkParser.close()
-                        break
 
                 else:  # last chunk when empty chunk so done
                     if trails:
