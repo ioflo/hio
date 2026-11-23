@@ -409,12 +409,13 @@ class Respondent(httping.Parsent):
         # create generator
         lineParser = httping.parseLine(raw=self.msg, eols=(CRLF, LF), kind="status line")
         while True:  # parse until we get a non-100 status
-            if self.closed and not self.msg:  # connection closed prematurely
-                raise httping.PrematureClosure("Connection closed unexpectedly"
-                                               " while parsing response start line")
-
             line = next(lineParser)
             if line is None:
+                if self.closed:
+                    lineParser.close()
+                    raise httping.PrematureClosure(
+                        "Connection closed unexpectedly while parsing response "
+                        "start line")
                 (yield None)
                 continue
             lineParser.close()  # close generator
@@ -427,13 +428,15 @@ class Respondent(httping.Parsent):
                                             eols=(CRLF, LF),
                                             kind="continue header line")
             while True:
-                if self.closed and not self.msg:  # connection closed prematurely
-                    raise httping.PrematureClosure("Connection closed unexpectedly"
-                            " while parsing response header")
                 headers = next(leaderParser)
                 if headers is not None:
                     leaderParser.close()
                     break
+                if self.closed:
+                    leaderParser.close()
+                    raise httping.PrematureClosure(
+                        "Connection closed unexpectedly while parsing response "
+                        "header")
                 (yield None)
 
         self.code = self.status = status
@@ -450,13 +453,15 @@ class Respondent(httping.Parsent):
                                    eols=(CRLF, LF),
                                    kind="leader header line")
         while True:
-            if self.closed and not self.msg:  # connection closed prematurely
-                raise httping.PrematureClosure("Connection closed unexpectedly"
-                                               " while parsing response header")
             headers = next(leaderParser)
             if headers is not None:
                 leaderParser.close()
                 break
+            if self.closed:
+                leaderParser.close()
+                raise httping.PrematureClosure(
+                    "Connection closed unexpectedly while parsing response "
+                    "header")
             (yield None)
         self.headers.update(headers)
 
@@ -575,7 +580,7 @@ class Respondent(httping.Parsent):
 
         elif self.length != None:  # known content length
             while len(self.msg) < self.length:
-                if self.closed and not self.msg:  # connection closed prematurely
+                if self.closed:
                     raise httping.PrematureClosure("Connection closed unexpectedly"
                                                    " while parsing response body")
                 (yield None)
