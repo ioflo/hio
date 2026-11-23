@@ -48,6 +48,7 @@ async def test_webduror_wasm_contract(selenium):
     import hio.base
     from hio.base import WebDuror
 
+    # WASM must not eagerly import native-only persistence backends.
     assert "hio.base.during" not in sys.modules
     assert "pysodium" not in sys.modules
     assert "pychloride" not in sys.modules
