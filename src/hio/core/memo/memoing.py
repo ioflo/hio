@@ -43,14 +43,6 @@ Keyage = namedtuple("Keyage", "qvk qss")
 
 """Design Discusssion of Memo and Gram Sizing and Encoding:
 
-Each GramCode (tv) Typing/Version code uses a base64 two char code.
-Codes always start with `_` and second char in code starts at `_`
-and walks backwards through B64 code table for each gram type-version (tv) code.
-
-tv 0 is '__'
-tv 1 is '_-'
-tv 3 is '_9'
-...
 
 Each of total head length including code and total neck length must be a
 multiple of 4 characters (3 bytes) to align on 24 bit boundary for clean Base64
@@ -69,10 +61,21 @@ translating the gram tv code to an equivalent entry in the  two char cesr
 primitive code table. When doing so the neck is always attached and then
 stripped when not needed.
 
-The equivalent CESR codes, albeit different, map one-to-one to the gram tv codes.
-This enables representing headers as CESR primitives for management but not
-over the wire. One can transform Memogram Grams to CESR primitives to tunnel in
-some CESR stream.
+The actually CESR codes are TBD. A set of unused codes is used now for testing.
+
+
+GramZero:         str = 'bAAA'  # zeroth gram code
+Gram:             str = 'bAAB'  # non-zeroth gram code
+GramAuthZero:     str = 'bAAC'  # zeroth authenticated gram code (signed)
+GramAuth:         str = 'bAAD'  # non-zeroth authenticated gram code (signed)
+GramSureZero:     str = 'bAAE'  # zeroth reliable gram code (acked)
+GramSure:         str = 'bAAF'  # non-zeroth reliable gram code (acked)
+GramSureAuthZero: str = 'bAAG'  # zeroth reliable authenticated gram code (acked & signed)
+GramSureAuth:     str = 'bAAH'  # non-zeroth reliable authenticated gram code (acked & signed)
+Ack:              str = 'bAAI'  # ack code to enable reliable grams
+AckAuth:          str = 'bAAJ'  # authenticated ack code to enable reliable grams (signed)
+
+
 
 Normally CESR streams are tunneled inside Memoer memograms sent over-the-wire.
 In this case, the memogram is the wrapper and each gram uses the gram TV code
@@ -88,41 +91,6 @@ Morover when a MemoGram payload is a tunneled CESR Stream, the memogram parser
 will parse and strip the MemoGram gram wrappers to construct the tunneled,
 stream so the wrapper is transarent to the CESR stream and the CESR stream
 payload is opaque to the memogram wrapper, i.e. no ambiguity.
-
-Gram Header Fields unsigned::
-
-    HeadCode hc = b'__'
-    HeadCodeSize hcs = 2
-    MemoIDSize mis = 22
-    Gram VID vz =0
-    GramNumSize gns = 4
-    GramCntSize gcs = 4
-    GramHeadSize ghs  = 28  short
-    GramHeadSize ghs  = 32  long
-    Gram Sig size az = 0
-    GramHeadNeckLongSize ghns = 28 + 4 = 32
-
-Gram Header Fields signed::
-
-    HeadCode hc = b'_-'
-    HeadCodeSize hcs = 2
-    MemoIDSize mis = 22
-    Gram VID vz = 44
-    GramNumSize gns = 4
-    GramCntSize gcs = 4
-    GramHeadSize ghs  = 28 + 44 = 72  short
-    GramHeadSize ghs  = 32+ 44 = 76  long
-    GramHeadNeckSize ghns = 28 + 4 = 32
-    GramSigSize az = 88
-    GramHeadNeckSigSize ghnss = 72 + 88 = 160  short
-    GramHeadNeckSigSize ghnss = 76 + 88 = 164  long
-
-Sizes::
-
-    {
-        '__': Sizage(bz=2, mz=22, nz=4, vz=0, az=0),
-        '_-': Sizage(bz=2, mz=22, nz=4, vz=44, az=88),
-    }
 
 Sizing:
 
