@@ -57,11 +57,12 @@ limited set of possible fields ever needed for memogram transport types.
 All gram head and neck fields are mid-pad B64 primitives. This makes for stable
 coding at fron and back of head neck parts. This also means that gram parts can
 can be losslessly transformed to/from equivalent CESR primitives merely by
-translating the gram tv code to an equivalent entry in the  two char cesr
-primitive code table. When doing so the neck is always attached and then
-stripped when not needed.
+translating the gram code to an equivalent entry in the four char CESR
+primitive code table.
 
-The actually CESR codes are TBD. A set of unused codes is used now for testing.
+The actually CESR codes are TBD.
+
+
 
 
 GramZero:         str = 'bAAA'  # zeroth gram code
@@ -1276,19 +1277,23 @@ class Memoer(Tymee):
         First sextet:  0b is binary, 0o is octal 2 octal digits or 6 bits
                        0x is hexadecimal 1 sextet is 1.5 hex digits or octets
 
-        0o30 = 0b011000  means first sextet of 'b' in base64 (0b01100010)
+        0o30 = 0b011000 means first sextet of 'b' in base64 (0b011000)
         0o33 = 0b011011 means first sextet of 'b' in base2  (0b011011)
 
         Assuming that only 'b' is allowed as the first char of a valid gram head,
         in either Base64 or Base2 encoding, a parser can unambiguously determine
         if the gram header encoding is binary Base2 or text Base64 because
-        0o14 != 0o65.
+        0o30 != 0o33.
 
         The sextet 0o30 is not a unique first sextet among Base64 ascii chars.
         The sextet 0o33 is not a unique first sextet among Base2 encoded ascii chars.
 
-        This means that only if 'b' is not guaranteed to be the first char in
-        either base64 or base2 then the wiff could be erroneous.
+        This means that as long as 'b' is guaranteed to be the first char in
+        either base64 or base2 then a parser can unambiguously determine if
+        base64 or base2 otherwise not.
+
+        Why 'b' as first character.  What to use something that does not collide
+        with CESR group
 
         """
 
