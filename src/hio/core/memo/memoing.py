@@ -56,14 +56,11 @@ limited set of possible fields ever needed for memogram transport types.
 
 All gram head and neck fields are mid-pad B64 primitives. This makes for stable
 coding at fron and back of head neck parts. This also means that gram parts can
-can be losslessly transformed to/from equivalent CESR primitives merely by
-translating the gram code to an equivalent entry in the four char CESR
-primitive code table.
+can be CESR primitives.
 
-The actually CESR codes are TBD.
-
-
-
+The gram head code in the CESR single character code table is `b`.
+Gram head codes are a total of 4 base64 characters including the code `b`.
+This means there can be at most 64**3 unique gram head codes.
 
 GramZero:         str = 'bAAA'  # zeroth gram code
 Gram:             str = 'bAAB'  # non-zeroth gram code
@@ -241,6 +238,10 @@ class MemoGramCodex:
     """MemoGramCodex is codex of all varieties of MemoGram Both Codes.
     Only provide defined codes.
     Undefined are left out so that inclusion(exclusion) via 'in' operator works.
+
+    The gram head code in the CESR single character code table is `b`.
+    Gram head codes are a total of 4 base64 characters including the code `b`.
+    This means there can be at most 64**3 unique gram head codes.
     """
     GramZero:     str = 'bAAA'  # zeroth gram code
     Gram:    str = 'bAAB'  # non-zeroth gram code
